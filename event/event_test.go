@@ -14,8 +14,8 @@ func TestNewBaseEvent(t *testing.T) {
 		event := NewBaseEvent("test.event")
 
 		assert.Equal(t, "test.event", event.Type())
-		assert.Equal(t, "", event.Source()) // Default empty source
-		assert.NotEmpty(t, event.Id())      // Should generate ID
+		assert.Equal(t, "", event.Source())    // Default empty source
+		assert.NotEmpty(t, event.Id())         // Should generate ID
 		assert.False(t, event.Time().IsZero()) // Should set current time
 		assert.Equal(t, 0, len(event.Meta()))  // Empty metadata
 	})
@@ -117,7 +117,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		assert.Equal(t, "", jsonMap["source"])
 		assert.NotEmpty(t, jsonMap["id"])
 		assert.NotEmpty(t, jsonMap["time"])
-		
+
 		// Metadata should be omitted when empty
 		_, hasMetadata := jsonMap["metadata"]
 		assert.False(t, hasMetadata)

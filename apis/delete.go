@@ -19,7 +19,7 @@ import (
 // Type parameters:
 //   - TModel: The database model type
 type DeleteAPI[TModel any] struct {
-	preDelete  PreDeleteProcessor[TModel] // Function to execute before deleting the model
+	preDelete  PreDeleteProcessor[TModel]  // Function to execute before deleting the model
 	postDelete PostDeleteProcessor[TModel] // Function to execute after deleting the model
 }
 
@@ -118,9 +118,10 @@ func (d *DeleteAPI[TModel]) Delete(ctx fiber.Ctx, db orm.Db) error {
 // Use method chaining to configure pre/post processing hooks.
 //
 // Example:
-//   api := NewDeleteAPI[User]().
-//     WithPreDelete(checkPermissions).
-//     WithPostDelete(auditDelete)
+//
+//	api := NewDeleteAPI[User]().
+//	  WithPreDelete(checkPermissions).
+//	  WithPostDelete(auditDelete)
 func NewDeleteAPI[TModel any]() *DeleteAPI[TModel] {
 	return new(DeleteAPI[TModel])
 }

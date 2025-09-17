@@ -171,7 +171,7 @@ func TestRedisStoreIteration(t *testing.T) {
 
 	t.Run("Keys without prefix", func(t *testing.T) {
 		store := createRedisStore(client, redisOptions{})
-		
+
 		// Setup test data for this test only
 		testData := map[string][]byte{
 			"user:1":    []byte("1"),
@@ -200,7 +200,7 @@ func TestRedisStoreIteration(t *testing.T) {
 
 	t.Run("Keys with prefix", func(t *testing.T) {
 		store := createRedisStore(client, redisOptions{})
-		
+
 		// Setup test data for this test only
 		testData := map[string][]byte{
 			"user:1":    []byte("1"),
@@ -235,7 +235,7 @@ func TestRedisStoreIteration(t *testing.T) {
 
 	t.Run("ForEach without prefix", func(t *testing.T) {
 		store := createRedisStore(client, redisOptions{})
-		
+
 		// Setup test data for this test only
 		testData := map[string][]byte{
 			"user:1":    []byte("1"),
@@ -267,7 +267,7 @@ func TestRedisStoreIteration(t *testing.T) {
 
 	t.Run("ForEach with prefix", func(t *testing.T) {
 		store := createRedisStore(client, redisOptions{})
-		
+
 		// Setup test data for this test only
 		testData := map[string][]byte{
 			"user:1":    []byte("1"),
@@ -303,7 +303,7 @@ func TestRedisStoreIteration(t *testing.T) {
 
 	t.Run("ForEach early termination", func(t *testing.T) {
 		store := createRedisStore(client, redisOptions{})
-		
+
 		// Setup test data for this test only
 		testData := map[string][]byte{
 			"item1": []byte("value1"),
@@ -337,7 +337,7 @@ func TestRedisStoreIteration(t *testing.T) {
 
 	t.Run("Size", func(t *testing.T) {
 		store := createRedisStore(client, redisOptions{})
-		
+
 		// Setup test data for this test only
 		testData := map[string][]byte{
 			"item1": []byte("value1"),

@@ -95,9 +95,10 @@ func (u *UpdateAPI[TModel, TParams]) Update(ctx fiber.Ctx, db orm.Db, logger log
 // Use method chaining to configure pre/post processing hooks.
 //
 // Example:
-//   api := NewUpdateAPI[User, UpdateUserParams]().
-//     WithPreUpdate(validateChanges).
-//     WithPostUpdate(auditUpdate)
+//
+//	api := NewUpdateAPI[User, UpdateUserParams]().
+//	  WithPreUpdate(validateChanges).
+//	  WithPostUpdate(auditUpdate)
 func NewUpdateAPI[TModel, TParams any]() *UpdateAPI[TModel, TParams] {
 	return new(UpdateAPI[TModel, TParams])
 }

@@ -72,11 +72,11 @@ func TestParseTime(t *testing.T) {
 
 	t.Run("parse different date formats", func(t *testing.T) {
 		testCases := []struct {
-			name   string
-			input  string
-			year   int
-			month  time.Month
-			day    int
+			name  string
+			input string
+			year  int
+			month time.Month
+			day   int
 		}{
 			{
 				name:  "MM/DD/YYYY",

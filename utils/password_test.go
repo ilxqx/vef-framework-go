@@ -139,7 +139,7 @@ func TestVerifyPassword(t *testing.T) {
 	t.Run("handles long password verification", func(t *testing.T) {
 		password := strings.Repeat("a", 1000)
 		hashedPassword, err := HashPassword(password)
-		
+
 		// Since HashPassword should error for long passwords, we expect an error
 		assert.Error(t, err)
 		assert.Empty(t, hashedPassword)

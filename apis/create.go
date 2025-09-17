@@ -83,9 +83,10 @@ func (c *CreateAPI[TModel, TParams]) Create(ctx fiber.Ctx, db orm.Db, logger log
 // Use method chaining to configure pre/post processing hooks.
 //
 // Example:
-//   api := NewCreateAPI[User, CreateUserParams]().
-//     WithPreCreate(validateUser).
-//     WithPostCreate(sendWelcomeEmail)
+//
+//	api := NewCreateAPI[User, CreateUserParams]().
+//	  WithPreCreate(validateUser).
+//	  WithPostCreate(sendWelcomeEmail)
 func NewCreateAPI[TModel, TParams any]() *CreateAPI[TModel, TParams] {
 	return new(CreateAPI[TModel, TParams])
 }

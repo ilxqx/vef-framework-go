@@ -35,7 +35,7 @@ func TestScheduler_NewJob_OneTime(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed int32
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
@@ -68,7 +68,7 @@ func TestScheduler_NewJob_Duration(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed int32
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
@@ -101,7 +101,7 @@ func TestScheduler_NewJob_Cron(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed int32
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
@@ -134,7 +134,7 @@ func TestScheduler_NewJob_DurationRandom(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed int32
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
@@ -169,7 +169,7 @@ func TestScheduler_Jobs(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	// Initially no jobs
 	jobs := scheduler.Jobs()
 	assert.Len(t, jobs, 0)
@@ -195,7 +195,7 @@ func TestScheduler_RemoveJob(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	// Add a job
 	jobDef := NewOneTimeJob(nil,
 		WithName("test-job"),
@@ -224,20 +224,20 @@ func TestScheduler_RemoveByTags(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	// Add jobs with different tags
 	job1Def := NewOneTimeJob(nil,
 		WithName("job1"),
 		WithTags("group1", "test"),
 		WithTask(func() {}),
 	)
-	
+
 	job2Def := NewOneTimeJob(nil,
 		WithName("job2"),
 		WithTags("group2", "test"),
 		WithTask(func() {}),
 	)
-	
+
 	job3Def := NewOneTimeJob(nil,
 		WithName("job3"),
 		WithTags("group1"),
@@ -270,7 +270,7 @@ func TestScheduler_UpdateJob(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed1, executed2 int32
 	testFunc1 := func() {
 		atomic.AddInt32(&executed1, 1)
@@ -314,10 +314,10 @@ func TestScheduler_WithContext(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed int32
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	testFunc := func(jobCtx context.Context) {
 		select {
 		case <-jobCtx.Done():
@@ -356,7 +356,7 @@ func TestScheduler_StopJobs(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed int32
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
@@ -381,11 +381,11 @@ func TestScheduler_StopJobs(t *testing.T) {
 
 	// Record executions after stop
 	executedAfterStop := atomic.LoadInt32(&executed)
-	
+
 	// Wait and verify no more executions
 	time.Sleep(150 * time.Millisecond)
 	finalExecuted := atomic.LoadInt32(&executed)
-	
+
 	assert.Equal(t, executedAfterStop, finalExecuted, "Jobs should not execute after being stopped")
 }
 
@@ -395,7 +395,7 @@ func TestJob_RunNow(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	var executed int32
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
@@ -431,7 +431,7 @@ func TestJob_NextRuns(t *testing.T) {
 	defer gocronScheduler.Shutdown()
 
 	scheduler := NewScheduler(gocronScheduler)
-	
+
 	// Create a job that runs every minute
 	jobDef := NewCronJob("0 * * * * *", true, // every minute at second 0
 		WithName("test-next-runs"),

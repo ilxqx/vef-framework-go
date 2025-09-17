@@ -194,11 +194,11 @@ func TestRedisCacheIteration(t *testing.T) {
 
 	// Setup test data
 	testUsers := map[string]TestUser{
-		"admin:1":    {ID: 1, Name: "Admin Alice", Age: 35},
-		"admin:2":    {ID: 2, Name: "Admin Bob", Age: 40},
-		"user:1":     {ID: 3, Name: "User Charlie", Age: 25},
-		"user:2":     {ID: 4, Name: "User David", Age: 30},
-		"guest:1":    {ID: 5, Name: "Guest Eve", Age: 22},
+		"admin:1": {ID: 1, Name: "Admin Alice", Age: 35},
+		"admin:2": {ID: 2, Name: "Admin Bob", Age: 40},
+		"user:1":  {ID: 3, Name: "User Charlie", Age: 25},
+		"user:2":  {ID: 4, Name: "User David", Age: 30},
+		"guest:1": {ID: 5, Name: "Guest Eve", Age: 22},
 	}
 
 	for key, user := range testUsers {

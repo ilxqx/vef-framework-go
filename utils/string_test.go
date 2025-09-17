@@ -218,4 +218,3 @@ func TestParseQueryString(t *testing.T) {
 		assert.Equal(t, "%20", result["space"])
 	})
 }
-
