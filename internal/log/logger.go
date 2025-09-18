@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	logger = newLogger() // logger is the default logger instance
+	logger = newLogger()
 )
 
 func Named(name string) log.Logger {
@@ -18,8 +18,10 @@ func Named(name string) log.Logger {
 }
 
 func newLogger() *zapLogger {
-	level := zap.InfoLevel                                           // level is the default log level
-	levelString := strings.ToLower(os.Getenv(constants.EnvLogLevel)) // levelString gets log level from environment
+	// level is the default log level
+	level := zap.InfoLevel
+	// levelString gets log level from environment
+	levelString := strings.ToLower(os.Getenv(constants.EnvLogLevel))
 	switch levelString {
 	case "debug":
 		level = zap.DebugLevel
@@ -32,6 +34,6 @@ func newLogger() *zapLogger {
 	}
 
 	return &zapLogger{
-		logger: newZapLogger(level).WithOptions(zap.AddCallerSkip(1)), // logger with caller skip for wrapper
+		logger: newZapLogger(level).WithOptions(zap.AddCallerSkip(1)),
 	}
 }

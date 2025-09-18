@@ -2,15 +2,20 @@ package validator
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"reflect"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/result"
 
+	enLocale "github.com/go-playground/locales/en"
 	zhLocale "github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	v "github.com/go-playground/validator/v10"
+	enTranslation "github.com/go-playground/validator/v10/translations/en"
 	zhTranslation "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/samber/lo"
 )
@@ -26,18 +31,48 @@ var (
 )
 
 func init() {
-	zh := zhLocale.New()
-	universalTranslator := ut.New(zh, zh)
+	// TODO: Consider refactoring this initialization logic for better extensibility
+	// Current implementation has several areas for improvement:
+	// 1. Language detection is hardcoded to two languages (zh-CN, en)
+	// 2. Direct environment variable access could be abstracted
+	// 3. Translator initialization could support more locales dynamically
+	// 4. Error handling during initialization could be more graceful
+	// 5. Consider moving to a factory pattern or configuration-based initialization
+	// This would allow for better testing, configuration management, and extensibility
 
-	translator, _ = universalTranslator.GetTranslator("zh")
+	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
+	localeTranslator := lo.TernaryF(
+		preferredLanguage == constants.DefaultI18NLanguage,
+		zhLocale.New,
+		enLocale.New,
+	)
+	universalTranslator := ut.New(localeTranslator, localeTranslator)
+
+	translator, _ = universalTranslator.GetTranslator(
+		lo.Ternary(
+			preferredLanguage == constants.DefaultI18NLanguage,
+			"zh",
+			"en",
+		),
+	)
 	validator = v.New(v.WithRequiredStructEnabled())
 
-	// RegisterDefaultTranslations registers Chinese translations
-	if err := zhTranslation.RegisterDefaultTranslations(validator, translator); err != nil {
-		logger.Panicf("Failed to register default translations: %v", err)
+	// Register translations
+	if err := lo.TernaryF(
+		preferredLanguage == constants.DefaultI18NLanguage,
+		func() error {
+			return zhTranslation.RegisterDefaultTranslations(validator, translator)
+		},
+		func() error {
+			return enTranslation.RegisterDefaultTranslations(validator, translator)
+		},
+	); err != nil {
+		panic(
+			fmt.Errorf("failed to register default translations: %w", err),
+		)
 	}
 
-	// RegisterTagNameFunc sets custom field name function
+	// Register field name function
 	validator.RegisterTagNameFunc(func(field reflect.StructField) string {
 		label := field.Tag.Get(tagLabel)
 		if lo.IsEmpty(label) {
@@ -51,10 +86,14 @@ func init() {
 }
 
 // RegisterValidationRules registers custom validation rules.
-func RegisterValidationRules(rules ...ValidationRule) {
+func RegisterValidationRules(rules ...ValidationRule) error {
 	for _, rule := range rules {
-		rule.register(validator)
+		if err := rule.register(validator); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // TypeFunc defines a custom type function for validation.

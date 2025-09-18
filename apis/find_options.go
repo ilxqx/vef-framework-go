@@ -54,6 +54,9 @@ type FindOptionsAPI[TModel, TSearch any] struct {
 	defaultConfig *OptionsConfig
 }
 
+// WithDefaultConfig sets the default configuration for options queries.
+// This configuration provides fallback values for field mapping when not explicitly specified in queries.
+// Returns the API instance for method chaining.
 func (a *FindOptionsAPI[TModel, TSearch]) WithDefaultConfig(config *OptionsConfig) *FindOptionsAPI[TModel, TSearch] {
 	a.defaultConfig = config
 	return a
@@ -98,10 +101,8 @@ func (a *FindOptionsAPI[TModel, TSearch]) FindOptions(ctx fiber.Ctx, db orm.Db, 
 		query.OrderBy(config.SortField)
 	}
 
-	if a.queryApplier == nil {
-		if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
-			query.OrderBy(orm.ColumnCreatedAt)
-		}
+	if a.sortApplier == nil && config.SortField == constants.Empty && schema.HasField(orm.ColumnCreatedAt) {
+		query.OrderBy(orm.ColumnCreatedAt)
 	}
 
 	// Execute query with limit
@@ -118,7 +119,12 @@ func (a *FindOptionsAPI[TModel, TSearch]) FindOptions(ctx fiber.Ctx, db orm.Db, 
 
 // NewFindOptionsAPI creates a new FindOptionsAPI with the specified options.
 func NewFindOptionsAPI[TModel, TSearch any]() *FindOptionsAPI[TModel, TSearch] {
-	api := new(FindOptionsAPI[TModel, TSearch])
+	api := &FindOptionsAPI[TModel, TSearch]{
+		defaultConfig: &OptionsConfig{
+			LabelField: defaultLabelField,
+			ValueField: defaultValueField,
+		},
+	}
 	api.findAPI = newFindAPI[TModel, TSearch, PostFindProcessor[[]Option, []Option]](api)
 
 	return api

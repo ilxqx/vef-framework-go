@@ -10,28 +10,32 @@ import (
 
 // queryVersion queries the version of the database.
 func queryVersion(dbType string, db *bun.DB) (string, error) {
-	var version string // version stores the database version string
+	var version string
 
 	switch dbType {
 	case "sqlite":
-		if err := db.NewSelect().ColumnExpr("sqlite_version()").Scan(context.Background(), &version); err != nil { // Queries SQLite version using sqlite_version() function
+		// Queries SQLite version using sqlite_version() function
+		if err := db.NewSelect().ColumnExpr("sqlite_version()").Scan(context.Background(), &version); err != nil {
 			return constants.Empty, err
 		}
 
 		return version, nil
 	case "postgres":
-		if err := db.NewSelect().ColumnExpr("version()").Scan(context.Background(), &version); err != nil { // Queries PostgreSQL version using version() function
+		// Queries PostgreSQL version using version() function
+		if err := db.NewSelect().ColumnExpr("version()").Scan(context.Background(), &version); err != nil {
 			return constants.Empty, err
 		}
 
 		return version, nil
 	case "mysql":
-		if err := db.NewSelect().ColumnExpr("version()").Scan(context.Background(), &version); err != nil { // Queries MySQL version using version() function
+		// Queries MySQL version using version() function
+		if err := db.NewSelect().ColumnExpr("version()").Scan(context.Background(), &version); err != nil {
 			return constants.Empty, err
 		}
 
 		return version, nil
 	default:
-		return constants.Empty, errors.New("unsupported database type: " + dbType) // Returns error for unsupported database types
+		// Returns error for unsupported database types
+		return constants.Empty, errors.New("unsupported database type: " + dbType)
 	}
 }

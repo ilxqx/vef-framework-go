@@ -9,7 +9,10 @@ import (
 
 // setup initializes preset validation rules and type functions.
 func setup() {
-	RegisterValidationRules(presetValidationRules...)
+	if err := RegisterValidationRules(presetValidationRules...); err != nil {
+		panic(err)
+	}
+
 	RegisterTypeFunc(
 		func(field reflect.Value) any {
 			switch v := field.Interface().(type) {
@@ -58,7 +61,7 @@ func setup() {
 					return v.Decimal
 				}
 			default:
-				logger.Warnf("unsupported null type: %T", field.Interface())
+				logger.Warnf("Unsupported null type: %T", field.Interface())
 			}
 
 			return nil

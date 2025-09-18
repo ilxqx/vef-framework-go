@@ -14,7 +14,7 @@ import (
 func NewFromType(t reflect.Type) Search {
 	t = reflectx.Indirect(t)
 	if t.Kind() != reflect.Struct {
-		logger.Warnf("[filter] invalid value type, expected struct, got %s", t.Name())
+		logger.Warnf("Invalid value type, expected struct, got %s", t.Name())
 		return Search{}
 	}
 
@@ -40,7 +40,7 @@ func parseStruct(t reflect.Type) []Condition {
 				if fieldType.Kind() == reflect.Struct {
 					conditions = append(conditions, parseStruct(fieldType)...)
 				} else {
-					logger.Warnf("invalid dive field type, expected struct, got %s", fieldType.Name())
+					logger.Warnf("Invalid dive field type, expected struct, got %s", fieldType.Name())
 				}
 				continue
 			}

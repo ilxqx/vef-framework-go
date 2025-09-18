@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	logger = log.Named("config") // logger is the config module logger
-	Module = fx.Module(          // Module is the fx module for configuration management
+	logger = log.Named("config")
+	Module = fx.Module(
 		"vef:config",
 		fx.Provide(
 			newConfig,

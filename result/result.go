@@ -2,7 +2,7 @@ package result
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/vef-framework-go/internal/i18n"
+	"github.com/ilxqx/vef-framework-go/i18n"
 )
 
 // The Result is a struct that represents a result of an API call.

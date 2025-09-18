@@ -12,38 +12,38 @@ import (
 
 func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
 	config := zap.Config{
-		Level:       zap.NewAtomicLevelAt(level), // Level sets the minimum log level
-		Development: false,                       // Development is false for production logging
-		Encoding:    "console",                   // Encoding uses console format for human readability
+		Level:       zap.NewAtomicLevelAt(level),
+		Development: false,
+		Encoding:    "console",
 		EncoderConfig: zapcore.EncoderConfig{
-			TimeKey:       "time",                           // TimeKey is the key for timestamp field
-			LevelKey:      "level",                          // LevelKey is the key for log level field
-			NameKey:       "logger",                         // NameKey is the key for logger name field
-			FunctionKey:   zapcore.OmitKey,                  // FunctionKey is omitted to reduce noise
-			MessageKey:    "message",                        // MessageKey is the key for log message field
-			StacktraceKey: zapcore.OmitKey,                  // StacktraceKey is omitted by default
-			CallerKey:     zapcore.OmitKey,                  // CallerKey is omitted by default
-			LineEnding:    zapcore.DefaultLineEnding,        // LineEnding uses default line ending
-			EncodeLevel:   zapcore.CapitalColorLevelEncoder, // EncodeLevel uses colored level encoding
-			EncodeTime: func() zapcore.TimeEncoder { // EncodeTime creates a custom time encoder
-				layout := time.DateOnly + "T" + time.TimeOnly + ".000" // layout defines the time format
+			TimeKey:       "time",
+			LevelKey:      "level",
+			NameKey:       "logger",
+			FunctionKey:   zapcore.OmitKey,
+			MessageKey:    "message",
+			StacktraceKey: zapcore.OmitKey,
+			CallerKey:     zapcore.OmitKey,
+			LineEnding:    zapcore.DefaultLineEnding,
+			EncodeLevel:   zapcore.CapitalColorLevelEncoder,
+			EncodeTime: func() zapcore.TimeEncoder {
+				layout := time.DateOnly + "T" + time.TimeOnly + ".000"
 				return func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 					enc.AppendString(
-						color.CyanString(t.Format(layout)), // color.CyanString makes time cyan colored
+						color.CyanString(t.Format(layout)),
 					)
 				}
 			}(),
-			EncodeDuration: zapcore.StringDurationEncoder, // EncodeDuration uses string format for durations
-			EncodeName: func(name string, enc zapcore.PrimitiveArrayEncoder) { // EncodeName creates a custom name encoder
-				enc.AppendString(constants.LeftBracket + color.HiGreenString(name) + constants.RightBracket) // color.HiGreenString makes logger name bright green
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeName: func(name string, enc zapcore.PrimitiveArrayEncoder) {
+				enc.AppendString(constants.LeftBracket + color.HiGreenString(name) + constants.RightBracket)
 			},
 		},
-		DisableStacktrace: true,               // DisableStacktrace disables stack traces by default
-		OutputPaths:       []string{"stdout"}, // OutputPaths sends logs to stdout
-		ErrorOutputPaths:  []string{"stderr"}, // ErrorOutputPaths sends errors to stderr
+		DisableStacktrace: true,
+		OutputPaths:       []string{"stdout"},
+		ErrorOutputPaths:  []string{"stderr"},
 	}
 
-	// Build creates the logger with caller information
+	// Build creates the logger without caller information
 	logger, err := config.Build(zap.WithCaller(false))
 	if err != nil {
 		// Panic if logger creation fails

@@ -1,10 +1,10 @@
 package security
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 
+	"github.com/goccy/go-json"
 	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/samber/lo"
@@ -14,12 +14,9 @@ import (
 type PrincipalType string
 
 const (
-	// PrincipalTypeUser is the type of the user.
-	PrincipalTypeUser PrincipalType = "user"
-	// PrincipalTypeExternalApp is the type of the external app.
-	PrincipalTypeExternalApp PrincipalType = "external_app"
-	// PrincipalTypeSystem is the type of the system.
-	PrincipalTypeSystem PrincipalType = orm.OperatorSystem
+	PrincipalTypeUser        PrincipalType = "user"             // PrincipalTypeUser is the type of the user.
+	PrincipalTypeExternalApp PrincipalType = "external_app"     // PrincipalTypeExternalApp is the type of the external app.
+	PrincipalTypeSystem      PrincipalType = orm.OperatorSystem // PrincipalTypeSystem is the type of the system.
 )
 
 var (
@@ -27,12 +24,11 @@ var (
 		Type: PrincipalTypeSystem,
 		Id:   orm.OperatorSystem,
 		Name: "系统",
-	} // PrincipalSystem is the principal of the system.
+	}
+	PrincipalAnonymous = NewUser(orm.OperatorAnonymous, "匿名")
 
-	PrincipalAnonymous = NewUser(orm.OperatorAnonymous, "匿名") // PrincipalAnonymous is the principal of the anonymous.
-
-	userDetailsType        = reflect.TypeFor[map[string]any]() // userDetailsType is the type of the user details.
-	externalAppDetailsType = reflect.TypeFor[map[string]any]() // externalAppDetailsType is the type of the external app details.
+	userDetailsType        = reflect.TypeFor[map[string]any]()
+	externalAppDetailsType = reflect.TypeFor[map[string]any]()
 )
 
 // SetUserDetailsType sets the type of the user details.

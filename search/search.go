@@ -38,7 +38,7 @@ type Condition struct {
 func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...string) {
 	value := reflect.Indirect(reflect.ValueOf(target))
 	if value.Kind() != reflect.Struct {
-		logger.Warnf("[search] invalid target type, expected struct, got %s", value.Type().Name())
+		logger.Warnf("Invalid target type, expected struct, got %s", value.Type().Name())
 		return
 	}
 

@@ -74,12 +74,14 @@ func (q *bunQuery) SelectAll() orm.Query {
 }
 
 func (q *bunQuery) Select(columns ...string) orm.Query {
-	q.query.Column(columns...)
+	for _, column := range columns {
+		q.query.ColumnExpr("?", parseColumnExpr(column))
+	}
 	return q
 }
 
 func (q *bunQuery) SelectAs(column string, alias string) orm.Query {
-	q.query.ColumnExpr("? AS ?", bun.Ident(column), bun.Name(alias))
+	q.query.ColumnExpr("? AS ?", parseColumnExpr(column), bun.Name(alias))
 	return q
 }
 

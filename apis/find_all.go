@@ -39,10 +39,8 @@ func (a *FindAllAPI[TModel, TSearch]) FindAll(ctx fiber.Ctx, db orm.Db, search T
 	)
 
 	// Add default ordering by created_at if no custom query applier is set
-	if a.queryApplier == nil {
-		if schema.HasField(orm.ColumnCreatedAt) {
-			query.OrderByDesc(orm.ColumnCreatedAt)
-		}
+	if a.sortApplier == nil && schema.HasField(orm.ColumnCreatedAt) {
+		query.OrderByDesc(orm.ColumnCreatedAt)
 	}
 
 	// Execute query with safety limit

@@ -1,4 +1,3 @@
-// Package apis utilities for common validation and configuration functions.
 package apis
 
 import (

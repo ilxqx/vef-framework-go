@@ -1,6 +1,8 @@
 package validator
 
 import (
+	"fmt"
+
 	ut "github.com/go-playground/universal-translator"
 	v "github.com/go-playground/validator/v10"
 )
@@ -24,9 +26,9 @@ type ValidationRule struct {
 }
 
 // register registers the validation rule to the validator.
-func (vr ValidationRule) register(validator *v.Validate) {
+func (vr ValidationRule) register(validator *v.Validate) error {
 	if err := validator.RegisterValidation(vr.RuleTag, vr.Validate, vr.CallValidationEvenIfNull); err != nil {
-		logger.Panicf("Failed to register %s validation rule: %v", vr.RuleTag, err)
+		return fmt.Errorf("failed to register '%s' validation rule: %w", vr.RuleTag, err)
 	}
 
 	if err := validator.RegisterTranslation(
@@ -45,6 +47,8 @@ func (vr ValidationRule) register(validator *v.Validate) {
 			return msg
 		},
 	); err != nil {
-		logger.Panicf("Failed to register %s validation rule: %v", vr.RuleTag, err)
+		return fmt.Errorf("failed to register '%s' validation rule: %w", vr.RuleTag, err)
 	}
+
+	return nil
 }

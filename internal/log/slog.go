@@ -33,7 +33,7 @@ func (s sLogHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (s sLogHandler) Handle(ctx context.Context, record slog.Record) error {
-	fields := make([]string, 0, record.NumAttrs()+len(s.attrs)) // fields stores formatted attribute strings
+	fields := make([]string, 0, record.NumAttrs()+len(s.attrs))
 
 	record.Attrs(func(attr slog.Attr) bool {
 		if field := formatAttr(attr); field != constants.Empty {

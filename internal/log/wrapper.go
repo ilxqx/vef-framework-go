@@ -6,7 +6,7 @@ import (
 )
 
 type zapLogger struct {
-	logger *zap.SugaredLogger // logger is the underlying zap sugared logger
+	logger *zap.SugaredLogger
 }
 
 func (l *zapLogger) Named(name string) logPkg.Logger {

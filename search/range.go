@@ -55,13 +55,13 @@ func parseStringRange(value string, conditionArgs map[string]string) (any, any, 
 func parseIntRange(values []string) (any, any, bool) {
 	start, err := cast.ToIntE(values[0])
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected int, got %v", values[0])
+		logger.Warnf("Invalid range value, expected int, got %v", values[0])
 		return nil, nil, false
 	}
 
 	end, err := cast.ToIntE(values[1])
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected int, got %v", values[1])
+		logger.Warnf("Invalid range value, expected int, got %v", values[1])
 		return nil, nil, false
 	}
 
@@ -72,13 +72,13 @@ func parseIntRange(values []string) (any, any, bool) {
 func parseDecimalRange(values []string) (any, any, bool) {
 	start, err := decimal.NewFromString(values[0])
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected decimal, got %v", values[0])
+		logger.Warnf("Invalid range value, expected decimal, got %v", values[0])
 		return nil, nil, false
 	}
 
 	end, err := decimal.NewFromString(values[1])
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected decimal, got %v", values[1])
+		logger.Warnf("Invalid range value, expected decimal, got %v", values[1])
 		return nil, nil, false
 	}
 
@@ -89,13 +89,13 @@ func parseDecimalRange(values []string) (any, any, bool) {
 func parseDateRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.DateOnly, values[0], time.Local)
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected date, got %v", values[0])
+		logger.Warnf("Invalid range value, expected date, got %v", values[0])
 		return nil, nil, false
 	}
 
 	end, err := time.ParseInLocation(time.DateOnly, values[1], time.Local)
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected date, got %v", values[1])
+		logger.Warnf("Invalid range value, expected date, got %v", values[1])
 		return nil, nil, false
 	}
 
@@ -106,13 +106,13 @@ func parseDateRange(values []string) (any, any, bool) {
 func parseTimeRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.TimeOnly, values[0], time.Local)
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected time, got %v", values[0])
+		logger.Warnf("Invalid range value, expected time, got %v", values[0])
 		return nil, nil, false
 	}
 
 	end, err := time.ParseInLocation(time.TimeOnly, values[1], time.Local)
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected time, got %v", values[1])
+		logger.Warnf("Invalid range value, expected time, got %v", values[1])
 		return nil, nil, false
 	}
 
@@ -123,13 +123,13 @@ func parseTimeRange(values []string) (any, any, bool) {
 func parseDateTimeRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.DateTime, values[0], time.Local)
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected datetime, got %v", values[0])
+		logger.Warnf("Invalid range value, expected datetime, got %v", values[0])
 		return nil, nil, false
 	}
 
 	end, err := time.ParseInLocation(time.DateTime, values[1], time.Local)
 	if err != nil {
-		logger.Warnf("[filter] Invalid range value, expected datetime, got %v", values[1])
+		logger.Warnf("Invalid range value, expected datetime, got %v", values[1])
 		return nil, nil, false
 	}
 

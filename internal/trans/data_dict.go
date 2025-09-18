@@ -16,7 +16,7 @@ type dataDictTransformer struct {
 }
 
 // Tag returns the transformer tag name "dict"
-func (t *dataDictTransformer) Tag() string {
+func (*dataDictTransformer) Tag() string {
 	return "dict"
 }
 

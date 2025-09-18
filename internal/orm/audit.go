@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	autoColumns = []orm.AutoColumn{ // autoColumns contains all auto column generators
-		new(idGenerator),   // idGenerator for auto-generating IDs
-		new(autoCreatedAt), // autoCreatedAt for auto-generating created_at timestamps
-		new(autoUpdatedAt), // autoUpdatedAt for auto-generating updated_at timestamps
-		new(autoCreatedBy), // autoCreatedBy for auto-generating created_by values
-		new(autoUpdatedBy), // autoUpdatedBy for auto-generating updated_by values
+	autoColumns = []orm.AutoColumn{
+		new(idGenerator),
+		new(autoCreatedAt),
+		new(autoUpdatedAt),
+		new(autoCreatedBy),
+		new(autoUpdatedBy),
 	}
 )
 

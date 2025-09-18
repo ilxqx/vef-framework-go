@@ -48,6 +48,9 @@ type FindTreeOptionsAPI[TModel, TSearch any] struct {
 	defaultConfig *TreeOptionsConfig
 }
 
+// WithDefaultConfig sets the default configuration for tree options queries.
+// This configuration provides fallback values for field mapping when not explicitly specified in queries.
+// Returns the API instance for method chaining.
 func (a *FindTreeOptionsAPI[TModel, TSearch]) WithDefaultConfig(config *TreeOptionsConfig) *FindTreeOptionsAPI[TModel, TSearch] {
 	a.defaultConfig = config
 	return a
@@ -114,10 +117,8 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 				query.OrderBy(config.SortField)
 			}
 
-			if a.queryApplier == nil {
-				if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
-					query.OrderBy(orm.ColumnCreatedAt)
-				}
+			if a.sortApplier == nil && config.SortField == constants.Empty && schema.HasField(orm.ColumnCreatedAt) {
+				query.OrderBy(orm.ColumnCreatedAt)
 			}
 
 			query = query.Limit(maxOptionsLimit)
@@ -131,16 +132,16 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 					query.OrderBy(config.SortField)
 				}
 
-				if a.queryApplier == nil {
-					if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
+				if a.sortApplier == nil {
+					if config.SortField == constants.Empty && schema.HasField(orm.ColumnCreatedAt) {
 						query.OrderBy(orm.ColumnCreatedAt)
 					}
 				} else {
-					query.Apply(a.queryApplier(search, ctx))
+					applySort(ctx, query, a.sortApplier)
 				}
 
-				query.JoinTableAs("tmp_tree", "t", func(cb orm.ConditionBuilder) {
-					cb.EqualsExpr(config.IdField, "?.?", orm.Name("t"), orm.Name(config.ParentIdField))
+				query.JoinTableAs("tmp_tree", "tt", func(cb orm.ConditionBuilder) {
+					cb.EqualsExpr(config.IdField, "?.?", orm.Name("tt"), orm.Name(config.ParentIdField))
 				})
 			})
 		}).
@@ -173,7 +174,16 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 
 // NewFindTreeOptionsAPI creates a new FindTreeOptionsAPI with the specified options.
 func NewFindTreeOptionsAPI[TModel, TSearch any]() *FindTreeOptionsAPI[TModel, TSearch] {
-	api := new(FindTreeOptionsAPI[TModel, TSearch])
+	api := &FindTreeOptionsAPI[TModel, TSearch]{
+		defaultConfig: &TreeOptionsConfig{
+			OptionsConfig: OptionsConfig{
+				LabelField: defaultLabelField,
+				ValueField: defaultValueField,
+			},
+			IdField:       idField,
+			ParentIdField: parentIdField,
+		},
+	}
 	api.findAPI = newFindAPI[TModel, TSearch, PostFindProcessor[[]TreeOption, []TreeOption]](api)
 
 	return api

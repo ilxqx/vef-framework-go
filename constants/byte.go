@@ -1,6 +1,8 @@
 package constants
 
 const (
+	// ByteSpace is the space character.
+	ByteSpace = ' '
 	// ByteColon is the colon character.
 	ByteColon = ':'
 	// ByteSemicolon is the semicolon character.

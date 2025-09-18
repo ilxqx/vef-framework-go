@@ -15,11 +15,17 @@ type FindTreeAPI[TModel, TSearch any] struct {
 	treeBuilder   func(flatModels []TModel) []TModel
 }
 
+// WithIdField sets the field name used as the node ID in tree structures.
+// This field is used to identify individual nodes and establish parent-child relationships.
+// Returns the API instance for method chaining.
 func (a *FindTreeAPI[TModel, TSearch]) WithIdField(name string) *FindTreeAPI[TModel, TSearch] {
 	a.idField = name
 	return a
 }
 
+// WithParentIdField sets the field name used to reference parent nodes in tree structures.
+// This field establishes the hierarchical relationship between parent and child nodes.
+// Returns the API instance for method chaining.
 func (a *FindTreeAPI[TModel, TSearch]) WithParentIdField(name string) *FindTreeAPI[TModel, TSearch] {
 	a.parentIdField = name
 	return a
@@ -38,10 +44,8 @@ func (a *FindTreeAPI[TModel, TSearch]) FindTree(ctx fiber.Ctx, db orm.Db, search
 			// Base query: fetch root nodes and apply filters
 			query = a.configQuery(ctx, query, (*TModel)(nil), search)
 
-			if a.queryApplier == nil {
-				if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
-					query.OrderByDesc(orm.ColumnCreatedAt)
-				}
+			if a.sortApplier == nil && schema.HasField(orm.ColumnCreatedAt) {
+				query.OrderByDesc(orm.ColumnCreatedAt)
 			}
 
 			query = query.Limit(maxQueryLimit)
@@ -50,17 +54,17 @@ func (a *FindTreeAPI[TModel, TSearch]) FindTree(ctx fiber.Ctx, db orm.Db, search
 			query.Union(func(query orm.Query) {
 				query.Model((*TModel)(nil))
 
-				if a.queryApplier == nil {
+				if a.sortApplier == nil {
 					// Apply default sorting for recursive part
-					if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
+					if schema.HasField(orm.ColumnCreatedAt) {
 						query.OrderByDesc(orm.ColumnCreatedAt)
 					}
 				} else {
-					query.Apply(a.queryApplier(search, ctx))
+					applySort(ctx, query, a.sortApplier)
 				}
 
-				query.JoinTableAs("tmp_tree", "t", func(cb orm.ConditionBuilder) {
-					cb.EqualsExpr(a.idField, "?.?", orm.Name("t"), orm.Name(a.parentIdField))
+				query.JoinTableAs("tmp_tree", "tt", func(cb orm.ConditionBuilder) {
+					cb.EqualsExpr(a.idField, "?.?", orm.Name("tt"), orm.Name(a.parentIdField))
 				})
 			})
 		}).

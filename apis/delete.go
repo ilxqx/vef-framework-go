@@ -69,7 +69,7 @@ func (d *DeleteAPI[TModel]) Delete(ctx fiber.Ctx, db orm.Db) error {
 		)
 
 		if !ok {
-			return result.Errf("主键参数 %s 必须", pkName)
+			return result.Errf("primary key parameter %s is required", pkName)
 		}
 
 		switch kind {

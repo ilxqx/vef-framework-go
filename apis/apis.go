@@ -29,11 +29,14 @@ type presetApisParams struct {
 // QueryApplier is a function that applies additional query conditions.
 type QueryApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.Query]
 
-// SearchApplier is a function that applies filter conditions to the query builder.
+// SearchApplier is a function that applies search conditions to the query builder.
 type SearchApplier[TSearch any] func(search TSearch) orm.ApplyFunc[orm.ConditionBuilder]
 
 // FilterApplier is a function that applies filter conditions to the query builder.
 type FilterApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder]
+
+// SortApplier is a function that applies orders to the query builder.
+type SortApplier func(ctx fiber.Ctx) orm.ApplyFunc[Sorter]
 
 // PostFindProcessor is a function that processes the result after query execution.
 type PostFindProcessor[T, R any] func(T, fiber.Ctx) R

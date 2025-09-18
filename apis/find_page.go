@@ -39,10 +39,8 @@ func (a *FindPageAPI[TModel, TSearch]) FindPage(ctx fiber.Ctx, db orm.Db, pageab
 	pageable.Normalize()
 
 	// Add default ordering by created_at if no custom query applier is set and no sort specified
-	if a.queryApplier == nil && pageable.Sort == constants.Empty {
-		if schema.HasField(orm.ColumnCreatedAt) {
-			query.OrderByDesc(orm.ColumnCreatedAt)
-		}
+	if a.sortApplier == nil && pageable.Sort == constants.Empty && schema.HasField(orm.ColumnCreatedAt) {
+		query.OrderByDesc(orm.ColumnCreatedAt)
 	}
 
 	// Execute paginated query and get total count

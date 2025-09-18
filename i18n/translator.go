@@ -2,46 +2,9 @@ package i18n
 
 import (
 	"fmt"
-	"runtime"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"go.uber.org/fx"
 )
-
-// translator is a global singleton instance that holds the translator dependencies.
-// It's automatically populated by fx.Populate during application startup.
-// This design allows for convenient global access to translation functions.
-var translator = new(translatorParams)
-
-// translatorParams defines the dependency injection structure for the global translator.
-// It uses fx.In to enable automatic dependency injection of the Translator instance.
-type translatorParams struct {
-	fx.In
-	T Translator // The translator instance injected by the fx framework
-}
-
-// Translator returns the injected translator instance with safety checks.
-// It panics with detailed information if the translator is not properly initialized,
-// which indicates a serious application startup issue.
-func (tp *translatorParams) Translator() Translator {
-	if tp.T == nil {
-		// Get caller information for better debugging
-		_, file, line, ok := runtime.Caller(1)
-		callerInfo := "unknown"
-		if ok {
-			callerInfo = fmt.Sprintf("%s:%d", file, line)
-		}
-
-		panic(fmt.Sprintf(
-			"i18n translator is not initialized - this indicates a serious startup issue. "+
-				"Ensure the i18n.Module is properly included in your fx application and that "+
-				"all dependencies are satisfied. Called from: %s",
-			callerInfo,
-		))
-	}
-
-	return tp.T
-}
 
 // Translator defines the interface for message translation services.
 // It provides methods to translate message IDs to localized strings with optional template data,
@@ -94,7 +57,7 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 	if err != nil {
 		// Log the warning but don't fail - return the original messageId as fallback
 		// This ensures the application continues to work even with missing translations
-		logger.Warnf("translation failed for messageId '%s': %v", messageId, err)
+		logger.Warnf("Translation failed for messageId '%s': %v", messageId, err)
 		return messageId
 	}
 
@@ -104,6 +67,11 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 // TE implements the Translator interface with explicit error reporting.
 // It attempts to localize the message using the underlying go-i18n library.
 func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (string, error) {
+	// Validate messageId is not empty
+	if messageId == "" {
+		return "", fmt.Errorf("messageId cannot be empty")
+	}
+
 	// Extract template data if provided (only use the first map)
 	var data map[string]any
 	if len(templateData) > 0 {
@@ -111,37 +79,33 @@ func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (s
 	}
 
 	// Attempt to localize the message using go-i18n
-	return t.localizer.Localize(&i18n.LocalizeConfig{
+	result, err := t.localizer.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageId,
 		TemplateData: data,
 	})
+
+	if err != nil {
+		return "", fmt.Errorf("translation failed for messageId '%s': %w", messageId, err)
+	}
+
+	return result, nil
 }
 
-// newTranslator creates a new translator instance with the provided localizer.
-// This function is used by the fx dependency injection system.
-func newTranslator(localizer *i18n.Localizer) Translator {
-	return &i18nTranslator{localizer: localizer}
-}
+// New creates a new translator instance with the provided configuration.
+// This constructor initializes the localizer from embedded locales and environment variables.
+// It returns an error if the localizer cannot be created, allowing for graceful error handling.
+//
+// Parameters:
+//   - config: I18nConfig containing embedded locale files
+//
+// Returns:
+//   - Translator: A fully configured translator instance
+//   - error: Error if initialization fails (e.g., missing locale files, invalid configuration)
+func New(config I18nConfig) (Translator, error) {
+	localizer, err := newLocalizer(config)
+	if err != nil {
+		return nil, err
+	}
 
-// T is a convenient global function that translates a message ID using the global translator instance.
-// It provides graceful error handling - returns the messageId as fallback if translation fails.
-// This is the most commonly used function for user-facing translations.
-//
-// Example:
-//
-//	welcomeMsg := i18n.T("user_welcome", map[string]any{"name": user.Name})
-func T(messageId string, templateData ...map[string]any) string {
-	return translator.Translator().T(messageId, templateData...)
-}
-
-// TE is a convenient global function that translates a message ID with explicit error handling.
-// Use this when you need to handle translation errors programmatically.
-//
-// Example:
-//
-//	if msg, err := i18n.TE("critical_error"); err != nil {
-//	    // Handle translation failure
-//	}
-func TE(messageId string, templateData ...map[string]any) (string, error) {
-	return translator.Translator().TE(messageId, templateData...)
+	return &i18nTranslator{localizer: localizer}, nil
 }

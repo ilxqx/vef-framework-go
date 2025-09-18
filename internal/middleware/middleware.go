@@ -7,14 +7,10 @@ import (
 
 // SimpleMiddleware is middleware for the app.
 type SimpleMiddleware struct {
-	// Path is the path of the middleware.
-	path string
-	// Handler is the handler for the middleware.
-	handler fiber.Handler
-	// Name is the name of the middleware.
-	name string
-	// Order is the order of the middleware.
-	order int
+	path    string        // Path is the path of the middleware.
+	handler fiber.Handler // Handler is the handler for the middleware.
+	name    string        // Name is the name of the middleware.
+	order   int           // Order is the order of the middleware.
 }
 
 // Name returns the name of the middleware.

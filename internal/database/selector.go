@@ -19,7 +19,7 @@ import (
 func selectDbDriver(dbConfig *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
 	switch dbConfig.Type {
 	case "sqlite":
-		// db opens SQLite database connection
+		// Open SQLite database connection
 		db, err := sql.Open(sqliteshim.ShimName, dbConfig.Path)
 		if err != nil {
 			logger.Panicf("failed to open sqlite database: %s", err)
@@ -27,7 +27,7 @@ func selectDbDriver(dbConfig *config.DatasourceConfig) (*sql.DB, schema.Dialect,
 
 		return db, sqlitedialect.New(), nil
 	case "postgres":
-		// connector creates PostgreSQL connection configuration
+		// Create PostgreSQL connection configuration
 		connector := pgdriver.NewConnector(
 			pgdriver.WithNetwork("tcp"),
 			pgdriver.WithAddr(
@@ -47,7 +47,7 @@ func selectDbDriver(dbConfig *config.DatasourceConfig) (*sql.DB, schema.Dialect,
 			// pgdriver.WithReadTimeout(5*time.Second),
 			// pgdriver.WithWriteTimeout(5*time.Second),
 			pgdriver.WithConnParams(map[string]any{
-				"search_path": lo.Ternary(dbConfig.Schema != constants.Empty, dbConfig.Schema, "public"), // Uses configured schema or defaults to public
+				"search_path": lo.Ternary(dbConfig.Schema != constants.Empty, dbConfig.Schema, "public"),
 			}),
 		)
 

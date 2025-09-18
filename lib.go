@@ -11,7 +11,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/cron"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/event"
-	"github.com/ilxqx/vef-framework-go/internal/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/internal/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
@@ -19,12 +18,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/trans"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/result"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 )
 
-const defaultTimeout = 30 * time.Second // Default timeout for framework startup and shutdown
+// Default timeout for framework startup and shutdown
+const defaultTimeout = 30 * time.Second
 
 func newFxLogger() fxevent.Logger {
 	return &fxevent.SlogLogger{
@@ -49,8 +48,6 @@ func Run(options ...fx.Option) {
 		cron.Module,
 		redis.Module,
 		trans.Module,
-		i18n.Module,
-		result.Module,
 		apis.Module,
 		app.Module,
 	}

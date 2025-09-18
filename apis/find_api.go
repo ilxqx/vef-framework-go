@@ -19,6 +19,7 @@ type findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI any] struct {
 	searchApplier SearchApplier[TSearch] // Function to apply search conditions
 	filterApplier FilterApplier[TSearch] // Function to apply filter conditions
 	queryApplier  QueryApplier[TSearch]  // Function to apply additional query modifications
+	sortApplier   SortApplier            // Function to apply orders to the query builder
 	relations     []orm.ModelRelation    // Model relations to include in queries
 	processor     TPostFindProcessor     // Post-processing function for results
 }
@@ -34,6 +35,13 @@ func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithFilterAppli
 // Returns the concrete API instance for method chaining.
 func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithQueryApplier(applier QueryApplier[TSearch]) *TFindAPI {
 	a.queryApplier = applier
+	return a.api
+}
+
+// WithSortApplier sets a custom sort applier function for additional order modifications.
+// Returns the concrete API instance for method chaining.
+func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithSortApplier(applier SortApplier) *TFindAPI {
+	a.sortApplier = applier
 	return a.api
 }
 
@@ -79,7 +87,22 @@ func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) configQuery(ctx
 		query.Apply(a.queryApplier(search, ctx))
 	}
 
+	// Apply additional order modifications if configured
+	if a.sortApplier != nil {
+		applySort(ctx, query, a.sortApplier)
+	}
+
 	return query
+}
+
+// applySort applies the sort applier to the query.
+func applySort(ctx fiber.Ctx, query orm.Query, sortApplier SortApplier) {
+	if sortApplier != nil {
+		query.Apply(func(query orm.Query) orm.Query {
+			sortApplier(ctx)(newSorter(query))
+			return query
+		})
+	}
 }
 
 // newFindAPI creates a new findAPI instance with default search applier.
