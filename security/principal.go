@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/utils"
 	"github.com/samber/lo"
 )
 
@@ -140,7 +140,7 @@ func (p *Principal) AttemptUnmarshalDetails(details any) {
 	}
 
 	value := reflect.New(detailsType).Interface()
-	decoder, err := utils.NewMapDecoder(value)
+	decoder, err := mapx.NewDecoder(value)
 	if err != nil {
 		p.Details = details
 		return

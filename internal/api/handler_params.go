@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	paramsType = reflect.TypeFor[api.Params]()
-	loggerType = reflect.TypeFor[log.Logger]()
+	paramsType        = reflect.TypeFor[api.Params]()
+	loggerType        = reflect.TypeFor[log.Logger]()
+	withLoaggerMethod = "WithLogger"
 )
 
 // paramResolverFn resolves a value from the current request context.
@@ -156,13 +157,13 @@ func buildFieldResolver(field reflect.Value) paramResolverFn {
 // hasWithLoggerMethod checks if the given type has a WithLogger method
 func hasWithLoggerMethod(t reflect.Type) bool {
 	// First try to find method on the type itself
-	method, found := t.MethodByName("WithLogger")
+	method, found := t.MethodByName(withLoaggerMethod)
 	if !found {
 		// If not found, and it's not already a pointer, try pointer type
 		// because WithLogger might be defined on pointer receiver
 		if t.Kind() != reflect.Pointer {
 			ptrType := reflect.PointerTo(t)
-			method, found = ptrType.MethodByName("WithLogger")
+			method, found = ptrType.MethodByName(withLoaggerMethod)
 		}
 	}
 
@@ -183,7 +184,7 @@ func hasWithLoggerMethod(t reflect.Type) bool {
 
 // callWithLogger calls the WithLogger method on the value with the given logger
 func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
-	method := reflectx.FindMethod(field, "WithLogger")
+	method := reflectx.FindMethod(field, withLoaggerMethod)
 	if method.IsValid() {
 		// Call WithLogger method with the logger
 		results := method.Call([]reflect.Value{reflect.ValueOf(logger)})

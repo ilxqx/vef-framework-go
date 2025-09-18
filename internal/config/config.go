@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/spf13/viper"
 )
 
@@ -18,8 +18,10 @@ var (
 	decodeUsingJsonTagOption viper.DecoderConfigOption = func(c *mapstructure.DecoderConfig) {
 		c.TagName = "config"
 		c.IgnoreUntaggedFields = true
-		c.DecodeHook = utils.MapDecoderHook
+		c.DecodeHook = mapx.DecoderHook
 	}
+	configName = "application"
+	configDir  = "configs"
 )
 
 type viperConfig struct {
@@ -40,12 +42,12 @@ func newConfig() (config.Config, error) {
 	v.AllowEmptyEnv(true)
 	v.AutomaticEnv()
 
-	v.SetConfigName("application")
+	v.SetConfigName(configName)
 	v.SetConfigType("toml")
-	v.AddConfigPath("./configs")
-	v.AddConfigPath("$VEF_CONFIG_PATH")
+	v.AddConfigPath("./" + configDir)
+	v.AddConfigPath(constants.Dollar + constants.EnvConfigPath)
 	v.AddConfigPath(".")
-	v.AddConfigPath("../configs")
+	v.AddConfigPath("../" + configDir)
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)

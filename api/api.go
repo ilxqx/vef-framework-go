@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/mapx"
 )
 
 const (
@@ -113,7 +113,7 @@ func (r *Request) UnmarshalParams(out any) error {
 		return fmt.Errorf("the parameter of UnmarshalParams function must be a pointer to a struct, but got %s", t.Kind().String())
 	}
 
-	decoder, err := utils.NewMapDecoder(out)
+	decoder, err := mapx.NewDecoder(out)
 	if err != nil {
 		return err
 	}
