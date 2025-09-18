@@ -104,7 +104,6 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 	}
 
 	query := db.NewQuery().
-		Model((*TModel)(nil)).
 		WithRecursive("tmp_tree", func(query orm.Query) {
 			// Base query: fetch root nodes and apply filters
 			query = a.configQuery(ctx, query, (*TModel)(nil), search)
@@ -148,7 +147,7 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 		Table("tmp_tree")
 
 	// Execute recursive CTE query
-	if err := query.Limit(maxOptionsLimit).Scan(ctx, &flatOptions); err != nil {
+	if err := query.Scan(ctx, &flatOptions); err != nil {
 		return err
 	}
 
