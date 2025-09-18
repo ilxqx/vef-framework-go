@@ -75,7 +75,7 @@ func (c *bunCreate) TableExpr(expr string, args ...any) orm.Create {
 }
 
 func (c *bunCreate) TableExprAs(expr string, alias string, args ...any) orm.Create {
-	c.query.TableExpr("? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	c.query.TableExpr("? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	return c
 }
 
@@ -149,7 +149,7 @@ func (c *bunCreate) Set(name string, value ...any) orm.Create {
 }
 
 func (c *bunCreate) SetExpr(name, expr string, args ...any) orm.Create {
-	c.query.Set("? = ?", bun.Name(name), bun.SafeQuery(expr, args))
+	c.query.Set("? = ?", bun.Name(name), bun.SafeQuery(expr, args...))
 	return c
 }
 

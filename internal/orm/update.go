@@ -83,7 +83,7 @@ func (u *bunUpdate) TableExpr(expr string, args ...any) orm.Update {
 }
 
 func (u *bunUpdate) TableExprAs(expr string, alias string, args ...any) orm.Update {
-	u.query.TableExpr("? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	u.query.TableExpr("? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	return u
 }
 
@@ -136,13 +136,13 @@ func (u *bunUpdate) JoinSubQueryAs(builder func(query orm.Query), alias string, 
 }
 
 func (u *bunUpdate) JoinExpr(expr string, builder func(cb orm.ConditionBuilder), args ...any) orm.Update {
-	u.query.Join("JOIN ?", bun.SafeQuery(expr, args))
+	u.query.Join("JOIN ?", bun.SafeQuery(expr, args...))
 	u.query.JoinOn("?", u.buildCondition(builder))
 	return u
 }
 
 func (u *bunUpdate) JoinExprAs(expr string, alias string, builder func(cb orm.ConditionBuilder), args ...any) orm.Update {
-	u.query.Join("JOIN ? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	u.query.Join("JOIN ? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	u.query.JoinOn("?", u.buildCondition(builder))
 	return u
 }
@@ -213,9 +213,9 @@ func (u *bunUpdate) Set(name string, value any) orm.Update {
 
 func (u *bunUpdate) SetExpr(name, expr string, args ...any) orm.Update {
 	if u.query.DB().HasFeature(feature.UpdateMultiTable) {
-		u.query.Set("?TableAlias.? = ?", bun.Ident(name), bun.SafeQuery(expr, args))
+		u.query.Set("?TableAlias.? = ?", bun.Ident(name), bun.SafeQuery(expr, args...))
 	} else {
-		u.query.Set("? = ?", bun.Ident(name), bun.SafeQuery(expr, args))
+		u.query.Set("? = ?", bun.Ident(name), bun.SafeQuery(expr, args...))
 	}
 	u.query.Returning("?", bun.Ident(name))
 	u.hasSet = true

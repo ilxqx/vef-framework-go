@@ -17,7 +17,7 @@ type TreeAdapter[T any] struct {
 // Time complexity: O(n), Space complexity: O(n)
 func BuildTree[T any](nodes []T, adapter TreeAdapter[T]) []T {
 	if len(nodes) == 0 {
-		return nil
+		return make([]T, 0)
 	}
 
 	// Build lookup maps - use pointers for modification

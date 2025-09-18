@@ -13,7 +13,7 @@ import (
 
 const (
 	idField       = orm.ColumnId
-	parentIdField = "parentId"
+	parentIdField = "parent_id"
 )
 
 // TreeOptionsConfig defines the mapping between database fields and tree option fields.
@@ -125,18 +125,23 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 
 			// Recursive part: fetch child nodes by joining with parent results
 			query.Union(func(query orm.Query) {
-				query = applyFieldSelections(query)
+				query = applyFieldSelections(query.Model((*TModel)(nil)))
 
 				// Apply sorting
 				if config.SortField != constants.Empty {
 					query.OrderBy(config.SortField)
 				}
-				if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
-					query.OrderBy(orm.ColumnCreatedAt)
+
+				if a.queryApplier == nil {
+					if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
+						query.OrderBy(orm.ColumnCreatedAt)
+					}
+				} else {
+					query.Apply(a.queryApplier(search, ctx))
 				}
 
 				query.JoinTableAs("tmp_tree", "t", func(cb orm.ConditionBuilder) {
-					cb.EqualsExpr(config.IdField, "t.?", orm.Name(config.ParentIdField))
+					cb.EqualsExpr(config.IdField, "?.?", orm.Name("t"), orm.Name(config.ParentIdField))
 				})
 			})
 		}).
@@ -154,9 +159,6 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 		},
 		GetParentId: func(t TreeOption) string {
 			return t.ParentId.ValueOr(constants.Empty)
-		},
-		GetChildren: func(t TreeOption) []TreeOption {
-			return t.Children
 		},
 		SetChildren: func(t *TreeOption, children []TreeOption) {
 			t.Children = children

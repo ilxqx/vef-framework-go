@@ -49,13 +49,19 @@ func (a *FindTreeAPI[TModel, TSearch]) FindTree(ctx fiber.Ctx, db orm.Db, search
 
 			// Recursive part: fetch child nodes by joining with parent results
 			query.Union(func(query orm.Query) {
-				// Apply default sorting for recursive part
-				if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
-					query.OrderByDesc(orm.ColumnCreatedAt)
+				query.Model((*TModel)(nil))
+
+				if a.queryApplier == nil {
+					// Apply default sorting for recursive part
+					if field, _ := schema.Field(orm.ColumnCreatedAt); field != nil {
+						query.OrderByDesc(orm.ColumnCreatedAt)
+					}
+				} else {
+					query.Apply(a.queryApplier(search, ctx))
 				}
 
 				query.JoinTableAs("tmp_tree", "t", func(cb orm.ConditionBuilder) {
-					cb.EqualsExpr(a.idField, "t.?", orm.Name(a.parentIdField))
+					cb.EqualsExpr(a.idField, "?.?", orm.Name("t"), orm.Name(a.parentIdField))
 				})
 			})
 		}).

@@ -99,7 +99,7 @@ func (q *bunQuery) SelectModelPKs() orm.Query {
 }
 
 func (q *bunQuery) SelectExprAs(expr string, alias string, args ...any) orm.Query {
-	q.query.ColumnExpr("? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	q.query.ColumnExpr("? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	return q
 }
 
@@ -144,7 +144,7 @@ func (q *bunQuery) TableExpr(expr string, args ...any) orm.Query {
 }
 
 func (q *bunQuery) TableExprAs(expr string, alias string, args ...any) orm.Query {
-	q.query.TableExpr("? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	q.query.TableExpr("? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	return q
 }
 
@@ -197,13 +197,13 @@ func (q *bunQuery) JoinSubQueryAs(builder func(query orm.Query), alias string, c
 }
 
 func (q *bunQuery) JoinExpr(expr string, builder func(cb orm.ConditionBuilder), args ...any) orm.Query {
-	q.query.Join("JOIN ?", bun.SafeQuery(expr, args))
+	q.query.Join("JOIN ?", bun.SafeQuery(expr, args...))
 	q.query.JoinOn("?", q.buildCondition(builder))
 	return q
 }
 
 func (q *bunQuery) JoinExprAs(expr, alias string, builder func(cb orm.ConditionBuilder), args ...any) orm.Query {
-	q.query.Join("JOIN ? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	q.query.Join("JOIN ? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	q.query.JoinOn("?", q.buildCondition(builder))
 	return q
 }
@@ -247,13 +247,13 @@ func (q *bunQuery) LeftJoinSubQueryAs(builder func(query orm.Query), alias strin
 }
 
 func (q *bunQuery) LeftJoinExpr(expr string, builder func(cb orm.ConditionBuilder), args ...any) orm.Query {
-	q.query.Join("LEFT JOIN ?", bun.SafeQuery(expr, args))
+	q.query.Join("LEFT JOIN ?", bun.SafeQuery(expr, args...))
 	q.query.JoinOn("?", q.buildCondition(builder))
 	return q
 }
 
 func (q *bunQuery) LeftJoinExprAs(expr, alias string, builder func(cb orm.ConditionBuilder), args ...any) orm.Query {
-	q.query.Join("LEFT JOIN ? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	q.query.Join("LEFT JOIN ? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	q.query.JoinOn("?", q.buildCondition(builder))
 	return q
 }
@@ -297,13 +297,13 @@ func (q *bunQuery) RightJoinSubQueryAs(builder func(query orm.Query), alias stri
 }
 
 func (q *bunQuery) RightJoinExpr(expr string, builder func(cb orm.ConditionBuilder), args ...any) orm.Query {
-	q.query.Join("RIGHT JOIN ?", bun.SafeQuery(expr, args))
+	q.query.Join("RIGHT JOIN ?", bun.SafeQuery(expr, args...))
 	q.query.JoinOn("?", q.buildCondition(builder))
 	return q
 }
 
 func (q *bunQuery) RightJoinExprAs(expr, alias string, builder func(cb orm.ConditionBuilder), args ...any) orm.Query {
-	q.query.Join("RIGHT JOIN ? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	q.query.Join("RIGHT JOIN ? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	q.query.JoinOn("?", q.buildCondition(builder))
 	return q
 }

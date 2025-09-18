@@ -74,7 +74,7 @@ func (d *bunDelete) TableExpr(expr string, args ...any) orm.Delete {
 }
 
 func (d *bunDelete) TableExprAs(expr string, alias string, args ...any) orm.Delete {
-	d.query.TableExpr("? AS ?", bun.SafeQuery(expr, args), bun.Name(alias))
+	d.query.TableExpr("? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
 	return d
 }
 

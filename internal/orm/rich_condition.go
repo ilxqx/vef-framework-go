@@ -63,12 +63,12 @@ func (cb *richConditionBuilder) OrEqualsSubQuery(column string, builder func(que
 }
 
 func (cb *richConditionBuilder) EqualsExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? = ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? = ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrEqualsExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? = ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? = ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -103,12 +103,12 @@ func (cb *richConditionBuilder) OrNotEqualsSubQuery(column string, builder func(
 }
 
 func (cb *richConditionBuilder) NotEqualsExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? <> ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? <> ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrNotEqualsExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? <> ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? <> ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -143,12 +143,12 @@ func (cb *richConditionBuilder) OrGreaterThanSubQuery(column string, builder fun
 }
 
 func (cb *richConditionBuilder) GreaterThanExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? > ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? > ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrGreaterThanExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? > ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? > ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -183,12 +183,12 @@ func (cb *richConditionBuilder) OrGreaterThanOrEqualSubQuery(column string, buil
 }
 
 func (cb *richConditionBuilder) GreaterThanOrEqualExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? >= ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? >= ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrGreaterThanOrEqualExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? >= ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? >= ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -223,12 +223,12 @@ func (cb *richConditionBuilder) OrLessThanSubQuery(column string, builder func(q
 }
 
 func (cb *richConditionBuilder) LessThanExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? < ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? < ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrLessThanExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? < ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? < ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -263,12 +263,12 @@ func (cb *richConditionBuilder) OrLessThanOrEqualSubQuery(column string, builder
 }
 
 func (cb *richConditionBuilder) LessThanOrEqualExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? <= ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? <= ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrLessThanOrEqualExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? <= ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? <= ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -283,12 +283,12 @@ func (cb *richConditionBuilder) OrBetween(column string, start any, end any) orm
 }
 
 func (cb *richConditionBuilder) BetweenExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrBetweenExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -303,12 +303,12 @@ func (cb *richConditionBuilder) OrNotBetween(column string, start any, end any) 
 }
 
 func (cb *richConditionBuilder) NotBetweenExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? NOT BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? NOT BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrNotBetweenExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? NOT BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? NOT BETWEEN ?", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -333,12 +333,12 @@ func (cb *richConditionBuilder) OrInSubQuery(column string, builder func(query o
 }
 
 func (cb *richConditionBuilder) InExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrInExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -363,12 +363,12 @@ func (cb *richConditionBuilder) OrNotInSubQuery(column string, builder func(quer
 }
 
 func (cb *richConditionBuilder) NotInExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? NOT IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.and("? NOT IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrNotInExpr(column string, expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? NOT IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args))
+	cb.or("? NOT IN (?)", parseColumnExpr(column), bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -393,12 +393,12 @@ func (cb *richConditionBuilder) OrIsNullSubQuery(builder func(query orm.Query)) 
 }
 
 func (cb *richConditionBuilder) IsNullExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? IS NULL", bun.SafeQuery(expr, args))
+	cb.and("? IS NULL", bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrIsNullExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? IS NULL", bun.SafeQuery(expr, args))
+	cb.or("? IS NULL", bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -423,12 +423,12 @@ func (cb *richConditionBuilder) OrIsNotNullSubQuery(builder func(query orm.Query
 }
 
 func (cb *richConditionBuilder) IsNotNullExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? IS NOT NULL", bun.SafeQuery(expr, args))
+	cb.and("? IS NOT NULL", bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrIsNotNullExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? IS NOT NULL", bun.SafeQuery(expr, args))
+	cb.or("? IS NOT NULL", bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -453,12 +453,12 @@ func (cb *richConditionBuilder) OrIsTrueSubQuery(builder func(query orm.Query)) 
 }
 
 func (cb *richConditionBuilder) IsTrueExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? IS TRUE", bun.SafeQuery(expr, args))
+	cb.and("? IS TRUE", bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrIsTrueExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? IS TRUE", bun.SafeQuery(expr, args))
+	cb.or("? IS TRUE", bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -483,12 +483,12 @@ func (cb *richConditionBuilder) OrIsFalseSubQuery(builder func(query orm.Query))
 }
 
 func (cb *richConditionBuilder) IsFalseExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.and("? IS FALSE", bun.SafeQuery(expr, args))
+	cb.and("? IS FALSE", bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrIsFalseExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.or("? IS FALSE", bun.SafeQuery(expr, args))
+	cb.or("? IS FALSE", bun.SafeQuery(expr, args...))
 	return cb
 }
 
@@ -829,12 +829,12 @@ func (cb *richConditionBuilder) OrNotEndsWithAnyIgnoreCase(column string, values
 }
 
 func (cb *richConditionBuilder) Expr(expr string, args ...any) orm.ConditionBuilder {
-	cb.and("?", bun.SafeQuery(expr, args))
+	cb.and("?", bun.SafeQuery(expr, args...))
 	return cb
 }
 
 func (cb *richConditionBuilder) OrExpr(expr string, args ...any) orm.ConditionBuilder {
-	cb.or("?", bun.SafeQuery(expr, args))
+	cb.or("?", bun.SafeQuery(expr, args...))
 	return cb
 }
 
