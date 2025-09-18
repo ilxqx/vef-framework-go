@@ -2,10 +2,10 @@ package null
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mo"
 )
 
@@ -13,15 +13,6 @@ import (
 // It will marshal to null if null.
 type DateTime struct {
 	sql.Null[mo.DateTime]
-}
-
-// Value implements the driver Valuer interface.
-func (dt DateTime) Value() (driver.Value, error) {
-	if !dt.Valid {
-		return nil, nil
-	}
-
-	return dt.V, nil
 }
 
 // NewDateTime creates a new DateTime.
@@ -108,7 +99,7 @@ func (dt DateTime) MarshalText() ([]byte, error) {
 func (dt *DateTime) UnmarshalText(text []byte) error {
 	str := string(text)
 	// allowing "null" is for backwards compatibility with v3
-	if str == "" || str == "null" {
+	if str == constants.Empty || str == mo.JSONNull {
 		dt.Valid = false
 		return nil
 	}
@@ -130,6 +121,7 @@ func (dt DateTime) Ptr() *mo.DateTime {
 	if !dt.Valid {
 		return nil
 	}
+
 	return &dt.V
 }
 

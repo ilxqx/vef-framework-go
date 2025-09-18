@@ -142,6 +142,7 @@ func (b Bool) Ptr() *bool {
 	if !b.Valid {
 		return nil
 	}
+
 	return &b.Bool
 }
 

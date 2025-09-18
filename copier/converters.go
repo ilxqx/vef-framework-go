@@ -6,7 +6,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/samber/lo"
 )
 
 var (
@@ -197,8 +196,7 @@ var (
 		SrcType: nullDecimalType,
 		DstType: decimalType,
 		Fn: func(src any) (any, error) {
-			dec := src.(null.Decimal)
-			return lo.Ternary(dec.Valid, dec.Decimal, decimal.Zero), nil
+			return src.(null.Decimal).ValueOrZero(), nil
 		},
 	}
 	nullDecimalConverter = TypeConverter{
