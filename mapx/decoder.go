@@ -18,6 +18,8 @@ var (
 	// DecoderHook composes multiple decode hooks for comprehensive type conversion.
 	// It includes hooks for text unmarshalling, time parsing, URL parsing, IP parsing, and basic type conversion.
 	DecoderHook = mapstructure.ComposeDecodeHookFunc(
+		decodeNullBool,
+		decodeNullValue,
 		mapstructure.TextUnmarshallerHookFunc(),
 		mapstructure.StringToTimeHookFunc(time.DateTime),
 		mapstructure.StringToTimeLocationHookFunc(),

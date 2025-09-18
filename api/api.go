@@ -1,13 +1,11 @@
 package api
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/mapx"
 )
 
 const (
@@ -104,25 +102,6 @@ func (r *Request) GetParam(key string) (any, bool) {
 
 	value, exists := r.Params[key]
 	return value, exists
-}
-
-// UnmarshalParams unmarshals the request params into the given struct.
-func (r *Request) UnmarshalParams(out any) error {
-	t := reflect.TypeOf(out)
-	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("the parameter of UnmarshalParams function must be a pointer to a struct, but got %s", t.Kind().String())
-	}
-
-	decoder, err := mapx.NewDecoder(out)
-	if err != nil {
-		return err
-	}
-
-	if err = decoder.Decode(r.Params); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // GetMeta retrieves a value from the request metadata by key.

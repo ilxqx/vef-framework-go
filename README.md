@@ -140,7 +140,7 @@ type UserSearch struct {
 // UserParams 用户新增/修改参数
 type UserParams struct {
 	api.Params
-	orm.ModelPK `json:",squash"`
+	orm.ModelPK `json:",inline"`
 
 	Username    string      `json:"username" validate:"required,alphanum,max=32" label:"用户账号"`    // 用户账号
 	Password    string      `json:"password" validate:"required,min=6,max=128" label:"用户密码"`      // 用户密码

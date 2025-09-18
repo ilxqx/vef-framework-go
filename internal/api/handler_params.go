@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/validator"
 	"github.com/samber/lo"
@@ -123,7 +124,7 @@ func buildParamsResolver(paramType reflect.Type) paramResolverFn {
 		request := contextx.APIRequest(ctx)
 		// Create a new instance of the param type
 		paramValue := reflect.New(t)
-		if err := request.UnmarshalParams(paramValue.Interface()); err != nil {
+		if err := unmarshalParams(request.Params, paramValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err
 		}
 		if err := validator.Validate(paramValue.Interface()); err != nil {
@@ -194,4 +195,23 @@ func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
 	}
 
 	return field
+}
+
+// unmarshalParams unmarshals the request params into the given struct.
+func unmarshalParams(params map[string]any, out any) error {
+	t := reflect.TypeOf(out)
+	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("the parameter of UnmarshalParams function must be a pointer to a struct, but got %s", t.Kind().String())
+	}
+
+	decoder, err := mapx.NewDecoder(out)
+	if err != nil {
+		return err
+	}
+
+	if err = decoder.Decode(params); err != nil {
+		return err
+	}
+
+	return nil
 }

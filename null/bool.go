@@ -6,6 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/mo"
+)
+
+var (
+	trueBytes  = []byte("true")
+	falseBytes = []byte("false")
 )
 
 // Bool is a nullable bool.
@@ -85,7 +93,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 func (b *Bool) UnmarshalText(text []byte) error {
 	str := string(text)
 	switch str {
-	case "", "null":
+	case constants.Empty, mo.JSONNull:
 		b.Valid = false
 		return nil
 	case "true":
@@ -103,12 +111,12 @@ func (b *Bool) UnmarshalText(text []byte) error {
 // It will encode null if this Bool is null.
 func (b Bool) MarshalJSON() ([]byte, error) {
 	if !b.Valid {
-		return []byte("null"), nil
+		return mo.JSONNullBytes, nil
 	}
 	if !b.Bool {
-		return []byte("false"), nil
+		return falseBytes, nil
 	}
-	return []byte("true"), nil
+	return trueBytes, nil
 }
 
 // MarshalText implements encoding.TextMarshaler.
@@ -118,9 +126,9 @@ func (b Bool) MarshalText() ([]byte, error) {
 		return []byte{}, nil
 	}
 	if !b.Bool {
-		return []byte("false"), nil
+		return falseBytes, nil
 	}
-	return []byte("true"), nil
+	return trueBytes, nil
 }
 
 // SetValid changes this Bool's value and also sets it to be non-null.

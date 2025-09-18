@@ -40,7 +40,7 @@ func parseStruct(t reflect.Type) []Condition {
 				if fieldType.Kind() == reflect.Struct {
 					conditions = append(conditions, parseStruct(fieldType)...)
 				} else {
-					logger.Warnf("[filter] invalid dive field type, expected struct, got %s", fieldType.Name())
+					logger.Warnf("invalid dive field type, expected struct, got %s", fieldType.Name())
 				}
 				continue
 			}
