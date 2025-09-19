@@ -18,7 +18,7 @@ const (
 
 // TreeOptionsConfig defines the mapping between database fields and tree option fields.
 type TreeOptionsConfig struct {
-	api.Params
+	api.In
 	OptionsConfig
 	IdField       string `json:"idField"`       // Field name for ID (default: "id")
 	ParentIdField string `json:"parentIdField"` // Field name for parent ID (default: "parentId")
@@ -56,104 +56,22 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) WithDefaultConfig(config *TreeOpti
 	return a
 }
 
-// FindTreeOptions executes the query and returns hierarchical options with customizable configuration.
+// FindTreeOptions creates a handler that executes the query and returns hierarchical options with customizable configuration.
 // Uses recursive CTE to efficiently fetch all nodes in the tree structure.
-func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
-	var (
-		flatOptions []TreeOption
-		schema      = db.Schema((*TModel)(nil))
-	)
+//
+// Parameters:
+//   - db: The database connection for schema introspection
+//
+// Returns a handler function that processes find-tree-options requests.
+func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
+	// Pre-compute schema information
+	schema := db.Schema((*TModel)(nil))
 
-	config.applyDefaults(a.defaultConfig)
-	if err := config.validateFields(schema); err != nil {
-		return err
-	}
+	// Pre-compute whether default created_at ordering should be applied
+	hasCreatedAt := schema.HasField(orm.ColumnCreatedAt)
 
-	// Helper function to apply field selections with proper aliasing
-	applyFieldSelections := func(query orm.Query) orm.Query {
-		if config.ValueField == valueField {
-			query.Select(config.ValueField)
-		} else {
-			query.SelectAs(config.ValueField, valueField)
-		}
-
-		if config.LabelField == labelField {
-			query.Select(config.LabelField)
-		} else {
-			query.SelectAs(config.LabelField, labelField)
-		}
-
-		if config.IdField == idField {
-			query.Select(config.IdField)
-		} else {
-			query.SelectAs(config.IdField, idField)
-		}
-
-		if config.ParentIdField == parentIdField {
-			query.Select(config.ParentIdField)
-		} else {
-			query.SelectAs(config.ParentIdField, parentIdField)
-		}
-
-		if config.DescriptionField != constants.Empty {
-			if config.DescriptionField == descriptionField {
-				query.Select(config.DescriptionField)
-			} else {
-				query.SelectAs(config.DescriptionField, descriptionField)
-			}
-		}
-
-		return query
-	}
-
-	query := db.NewQuery().
-		WithRecursive("tmp_tree", func(query orm.Query) {
-			// Base query: fetch root nodes and apply filters
-			query = a.configQuery(ctx, query, (*TModel)(nil), search)
-			query = applyFieldSelections(query)
-
-			// Apply sorting
-			if config.SortField != constants.Empty {
-				query.OrderBy(config.SortField)
-			}
-
-			if a.sortApplier == nil && config.SortField == constants.Empty && schema.HasField(orm.ColumnCreatedAt) {
-				query.OrderBy(orm.ColumnCreatedAt)
-			}
-
-			query = query.Limit(maxOptionsLimit)
-
-			// Recursive part: fetch child nodes by joining with parent results
-			query.Union(func(query orm.Query) {
-				query = applyFieldSelections(query.Model((*TModel)(nil)))
-
-				// Apply sorting
-				if config.SortField != constants.Empty {
-					query.OrderBy(config.SortField)
-				}
-
-				if a.sortApplier == nil {
-					if config.SortField == constants.Empty && schema.HasField(orm.ColumnCreatedAt) {
-						query.OrderBy(orm.ColumnCreatedAt)
-					}
-				} else {
-					applySort(ctx, query, a.sortApplier)
-				}
-
-				query.JoinTableAs("tmp_tree", "tt", func(cb orm.ConditionBuilder) {
-					cb.EqualsExpr(config.IdField, "?.?", orm.Name("tt"), orm.Name(config.ParentIdField))
-				})
-			})
-		}).
-		Table("tmp_tree")
-
-	// Execute recursive CTE query
-	if err := query.Scan(ctx, &flatOptions); err != nil {
-		return err
-	}
-
-	// Build hierarchical tree structure from flat results
-	treeOptions := utils.BuildTree(flatOptions, utils.TreeAdapter[TreeOption]{
+	// Pre-compute tree adapter for building hierarchical structure
+	treeAdapter := utils.TreeAdapter[TreeOption]{
 		GetId: func(t TreeOption) string {
 			return t.Id
 		},
@@ -163,13 +81,102 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(ctx fiber.Ctx, db 
 		SetChildren: func(t *TreeOption, children []TreeOption) {
 			t.Children = children
 		},
-	})
-
-	if a.processor != nil {
-		treeOptions = a.processor(treeOptions, ctx)
 	}
 
-	return result.Ok(treeOptions).Response(ctx)
+	return func(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
+		var flatOptions []TreeOption
+
+		config.applyDefaults(a.defaultConfig)
+		if err := config.validateFields(schema); err != nil {
+			return err
+		}
+
+		// Helper function to apply field selections with proper aliasing
+		applyFieldSelections := func(query orm.Query) orm.Query {
+			if config.ValueField == valueField {
+				query.Select(config.ValueField)
+			} else {
+				query.SelectAs(config.ValueField, valueField)
+			}
+
+			if config.LabelField == labelField {
+				query.Select(config.LabelField)
+			} else {
+				query.SelectAs(config.LabelField, labelField)
+			}
+
+			if config.IdField == idField {
+				query.Select(config.IdField)
+			} else {
+				query.SelectAs(config.IdField, idField)
+			}
+
+			if config.ParentIdField == parentIdField {
+				query.Select(config.ParentIdField)
+			} else {
+				query.SelectAs(config.ParentIdField, parentIdField)
+			}
+
+			if config.DescriptionField != constants.Empty {
+				if config.DescriptionField == descriptionField {
+					query.Select(config.DescriptionField)
+				} else {
+					query.SelectAs(config.DescriptionField, descriptionField)
+				}
+			}
+
+			return query
+		}
+
+		query := db.NewQuery().
+			WithRecursive("tmp_tree", func(query orm.Query) {
+				// Base query: fetch root nodes and apply filters
+				query = a.configQuery(ctx, query, (*TModel)(nil), search)
+				query = applyFieldSelections(query)
+
+				// Apply sorting
+				if config.SortField != constants.Empty {
+					query.OrderBy(config.SortField)
+				} else if a.sortApplier == nil && hasCreatedAt {
+					query.OrderBy(orm.ColumnCreatedAt)
+				}
+
+				query = query.Limit(maxOptionsLimit)
+
+				// Recursive part: fetch child nodes by joining with parent results
+				query.Union(func(query orm.Query) {
+					query = applyFieldSelections(query.Model((*TModel)(nil)))
+
+					// Apply sorting
+					if config.SortField != constants.Empty {
+						query.OrderBy(config.SortField)
+					} else if a.sortApplier == nil && hasCreatedAt {
+						query.OrderBy(orm.ColumnCreatedAt)
+					} else if a.sortApplier != nil {
+						applySort(ctx, query, a.sortApplier)
+					}
+
+					query.JoinTableAs("tmp_tree", "tt", func(cb orm.ConditionBuilder) {
+						cb.EqualsExpr(config.IdField, "?.?", orm.Name("tt"), orm.Name(config.ParentIdField))
+					})
+				})
+			}).
+			Table("tmp_tree")
+
+		// Execute recursive CTE query
+		if err := query.Scan(ctx, &flatOptions); err != nil {
+			return err
+		}
+
+		// Build hierarchical tree structure from flat results using pre-computed adapter
+		treeOptions := utils.BuildTree(flatOptions, treeAdapter)
+
+		if a.processor != nil {
+			treeOptions = a.processor(treeOptions, ctx)
+		}
+
+		return result.Ok(treeOptions).Response(ctx)
+	}
 }
 
 // NewFindTreeOptionsAPI creates a new FindTreeOptionsAPI with the specified options.

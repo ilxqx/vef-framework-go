@@ -12,7 +12,7 @@ import (
 )
 
 // getTableSchema get table schema from struct pointer
-func getTableSchema(model any, db *bun.DB) *schema.Table {
+func getTableSchema(model any, db *bun.DB) *orm.Table {
 	modelType := reflect.TypeOf(model)
 	if modelType.Kind() == reflect.Pointer {
 		modelType = modelType.Elem()
@@ -27,7 +27,7 @@ func getTableSchema(model any, db *bun.DB) *schema.Table {
 }
 
 // getTableSchemaFromQuery get table schema from query
-func getTableSchemaFromQuery(query bun.Query) *schema.Table {
+func getTableSchemaFromQuery(query bun.Query) *orm.Table {
 	if model := query.GetModel(); model != nil {
 		if tm, ok := model.(bun.TableModel); ok {
 			return tm.Table()

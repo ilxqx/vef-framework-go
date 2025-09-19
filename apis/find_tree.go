@@ -31,69 +31,77 @@ func (a *FindTreeAPI[TModel, TSearch]) WithParentIdField(name string) *FindTreeA
 	return a
 }
 
-// FindTree executes the query and returns hierarchical tree structure.
+// FindTree creates a handler that executes the query and returns hierarchical tree structure.
 // Uses recursive CTE to efficiently fetch all nodes, then delegates tree building to the configured TreeBuilder function.
-func (a *FindTreeAPI[TModel, TSearch]) FindTree(ctx fiber.Ctx, db orm.Db, search TSearch) error {
-	var (
-		flatModels []TModel
-		schema     = db.Schema((*TModel)(nil))
-	)
+//
+// Parameters:
+//   - db: The database connection for schema introspection
+//
+// Returns a handler function that processes find-tree requests.
+func (a *FindTreeAPI[TModel, TSearch]) FindTree(db orm.Db) func(ctx fiber.Ctx, db orm.Db, search TSearch) error {
+	// Pre-compute schema information
+	schema := db.Schema((*TModel)(nil))
 
-	query := db.NewQuery().
-		WithRecursive("tmp_tree", func(query orm.Query) {
-			// Base query: fetch root nodes and apply filters
-			query = a.configQuery(ctx, query, (*TModel)(nil), search)
+	// Pre-compute whether default created_at ordering should be applied
+	hasCreatedAt := schema.HasField(orm.ColumnCreatedAt)
 
-			if a.sortApplier == nil && schema.HasField(orm.ColumnCreatedAt) {
-				query.OrderByDesc(orm.ColumnCreatedAt)
-			}
+	return func(ctx fiber.Ctx, db orm.Db, search TSearch) error {
+		var flatModels []TModel
 
-			query = query.Limit(maxQueryLimit)
+		query := db.NewQuery().
+			WithRecursive("tmp_tree", func(query orm.Query) {
+				// Base query: fetch root nodes and apply filters
+				query = a.configQuery(ctx, query, (*TModel)(nil), search)
 
-			// Recursive part: fetch child nodes by joining with parent results
-			query.Union(func(query orm.Query) {
-				query.Model((*TModel)(nil))
-
-				if a.sortApplier == nil {
-					// Apply default sorting for recursive part
-					if schema.HasField(orm.ColumnCreatedAt) {
-						query.OrderByDesc(orm.ColumnCreatedAt)
-					}
-				} else {
-					applySort(ctx, query, a.sortApplier)
+				if a.sortApplier == nil && hasCreatedAt {
+					query.OrderByDesc(orm.ColumnCreatedAt)
 				}
 
-				query.JoinTableAs("tmp_tree", "tt", func(cb orm.ConditionBuilder) {
-					cb.EqualsExpr(a.idField, "?.?", orm.Name("tt"), orm.Name(a.parentIdField))
+				query = query.Limit(maxQueryLimit)
+
+				// Recursive part: fetch child nodes by joining with parent results
+				query.Union(func(query orm.Query) {
+					query.Model((*TModel)(nil))
+
+					if a.sortApplier == nil && hasCreatedAt {
+						// Apply default sorting for recursive part
+						query.OrderByDesc(orm.ColumnCreatedAt)
+					} else if a.sortApplier != nil {
+						applySort(ctx, query, a.sortApplier)
+					}
+
+					query.JoinTableAs("tmp_tree", "tt", func(cb orm.ConditionBuilder) {
+						cb.EqualsExpr(a.idField, "?.?", orm.Name("tt"), orm.Name(a.parentIdField))
+					})
 				})
-			})
-		}).
-		Table("tmp_tree")
+			}).
+			Table("tmp_tree")
 
-	// Execute recursive CTE query
-	if err := query.Scan(ctx, &flatModels); err != nil {
-		return err
-	}
-
-	// Transform models if there are any results
-	if len(flatModels) > 0 {
-		for _, model := range flatModels {
-			if err := apisParams.Transformer.Struct(ctx, &model); err != nil {
-				return err
-			}
+		// Execute recursive CTE query
+		if err := query.Scan(ctx, &flatModels); err != nil {
+			return err
 		}
-	} else {
-		flatModels = make([]TModel, 0)
-	}
 
-	// Build tree structure using the configured TreeBuilder function
-	models := a.treeBuilder(flatModels)
-	if a.processor != nil {
-		processed := a.processor(models, ctx)
-		return result.Ok(processed).Response(ctx)
-	}
+		// Transform models if there are any results
+		if len(flatModels) > 0 {
+			for _, model := range flatModels {
+				if err := apisParams.Transformer.Struct(ctx, &model); err != nil {
+					return err
+				}
+			}
+		} else {
+			flatModels = make([]TModel, 0)
+		}
 
-	return result.Ok(models).Response(ctx)
+		// Build tree structure using the configured TreeBuilder function
+		models := a.treeBuilder(flatModels)
+		if a.processor != nil {
+			processed := a.processor(models, ctx)
+			return result.Ok(processed).Response(ctx)
+		}
+
+		return result.Ok(models).Response(ctx)
+	}
 }
 
 // NewFindTreeAPI creates a new FindTreeAPI with the specified options.

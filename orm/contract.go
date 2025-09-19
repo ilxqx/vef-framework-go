@@ -779,7 +779,7 @@ type Db interface {
 	// ModelPKs returns the primary keys of a model.
 	ModelPKs(model any) map[string]any
 	// Schema returns the schema of a table.
-	Schema(model any) *schema.Table
+	Schema(model any) *Table
 }
 
 // AutoColumn is an interface that can be implemented by a struct to automatically create or update a column.

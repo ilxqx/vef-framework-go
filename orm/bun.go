@@ -1,6 +1,9 @@
 package orm
 
-import "github.com/uptrace/bun"
+import (
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/schema"
+)
 
 type (
 	BaseModel         = bun.BaseModel
@@ -21,4 +24,8 @@ type (
 	Ident             = bun.Ident
 	Name              = bun.Name
 	Safe              = bun.Safe
+	Table             = schema.Table
+	Field             = schema.Field
+	Relation          = schema.Relation
+	Dialect           = schema.Dialect
 )

@@ -18,8 +18,8 @@ import (
 //   - TModel: The database model type
 //   - TParams: The input parameters type
 type CreateAPI[TModel, TParams any] struct {
-	preCreate  PreCreateProcessor[TModel, TParams]  // Function to execute before creating the model
-	postCreate PostCreateProcessor[TModel, TParams] // Function to execute after creating the model
+	preCreate  PreCreateProcessor[TModel, TParams]
+	postCreate PostCreateProcessor[TModel, TParams]
 }
 
 // WithPreCreate sets the pre-create processor for the CreateAPI.

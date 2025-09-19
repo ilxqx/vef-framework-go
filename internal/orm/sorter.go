@@ -12,14 +12,14 @@ import (
 
 // Sorter is a struct that contains the orders of the query.
 type Sorter struct {
-	orders []Order // orders contains the list of order specifications
+	orders []Order
 }
 
 // Order is a struct that contains the column and the direction of the order.
 type Order struct {
-	Alias  string // Alias is the alias of the table
-	Column string // Column is the column to order by
-	Desc   bool   // Desc is true if the order is descending
+	Alias  string
+	Column string
+	Desc   bool
 }
 
 // Apply applies the orders to the database.

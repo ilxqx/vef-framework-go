@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	paramsType        = reflect.TypeFor[api.Params]()
+	paramsType        = reflect.TypeFor[api.In]()
 	loggerType        = reflect.TypeFor[log.Logger]()
 	withLoaggerMethod = "WithLogger"
 )

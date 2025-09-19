@@ -3,16 +3,15 @@ package orm
 import (
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/schema"
 )
 
 // queryConditionBuilder is a builder for building query conditions.
 type queryConditionBuilder struct {
-	*richConditionBuilder // richConditionBuilder provides rich condition building capabilities
+	*richConditionBuilder
 }
 
 // newQueryConditionBuilder creates a new query builder.
-func newQueryConditionBuilder(table *schema.Table, builder bun.QueryBuilder, subQueryBuilder func(builder func(query orm.Query)) *bun.SelectQuery) *queryConditionBuilder {
+func newQueryConditionBuilder(table *orm.Table, builder bun.QueryBuilder, subQueryBuilder func(builder func(query orm.Query)) *bun.SelectQuery) *queryConditionBuilder {
 	return &queryConditionBuilder{
 		richConditionBuilder: &richConditionBuilder{
 			table:           table,

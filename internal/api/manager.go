@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3/middleware/timeout"
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/orm"
 )
 
 // apiManager implements the Manager interface using sync.Map for thread-safe operations.
@@ -59,9 +60,9 @@ func wrapHandler(api *apiPkg.Definition) *apiPkg.Definition {
 }
 
 // newManager creates a new API manager and registers all provided resources.
-func newManager(resources []apiPkg.Resource, paramResolver *handlerParamResolverManager) (apiPkg.Manager, error) {
+func newManager(resources []apiPkg.Resource, db orm.Db, paramResolver *handlerParamResolverManager) (apiPkg.Manager, error) {
 	manager := new(apiManager)
-	definition, err := parse(resources, paramResolver)
+	definition, err := parse(resources, db, paramResolver)
 	if err != nil {
 		return nil, err
 	}

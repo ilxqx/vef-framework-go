@@ -8,7 +8,7 @@ import (
 )
 
 type bunRawQuery struct {
-	query *bun.RawQuery // query is the underlying bun raw query
+	query *bun.RawQuery
 }
 
 func newBunRawQuery(db bun.IDB, query string, args ...any) *bunRawQuery {

@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
@@ -19,8 +20,8 @@ import (
 // Type parameters:
 //   - TModel: The database model type
 type DeleteAPI[TModel any] struct {
-	preDelete  PreDeleteProcessor[TModel]  // Function to execute before deleting the model
-	postDelete PostDeleteProcessor[TModel] // Function to execute after deleting the model
+	preDelete  PreDeleteProcessor[TModel]
+	postDelete PostDeleteProcessor[TModel]
 }
 
 // WithPreDelete sets the pre-delete processor for the DeleteAPI.
@@ -44,74 +45,95 @@ func (d *DeleteAPI[TModel]) WithPostDelete(processor PostDeleteProcessor[TModel]
 // The operation is executed within a database transaction for data consistency.
 //
 // Parameters:
-//   - ctx: The Fiber context containing the primary key parameters
-//   - db: The database connection
+//   - db: The database connection for schema introspection
 //
-// Returns an error if the operation fails, otherwise returns success via HTTP response.
-func (d *DeleteAPI[TModel]) Delete(ctx fiber.Ctx, db orm.Db) error {
-	var (
-		model      TModel
-		modelValue = reflect.ValueOf(&model).Elem()
-		schema     = db.Schema(&model)
-		req        = contextx.APIRequest(ctx)
-	)
+// Returns a handler function that processes delete requests.
+func (d *DeleteAPI[TModel]) Delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) error, error) {
+	// Pre-compute schema information
+	schema := db.Schema((*TModel)(nil))
 
+	// Validate schema has primary keys
 	if len(schema.PKs) == 0 {
-		return result.Errf("model %s has no primary key", schema.Name)
+		return nil, fmt.Errorf("model '%s' has no primary key", schema.Name)
 	}
 
-	for _, pk := range schema.PKs {
+	// Pre-compute primary key metadata
+	type pkInfo struct {
+		field     *orm.Field
+		paramName string
+		kind      reflect.Kind
+	}
+
+	pkInfos := make([]pkInfo, len(schema.PKs))
+	for i, pk := range schema.PKs {
+		pkInfos[i] = pkInfo{
+			field:     pk,
+			paramName: lo.CamelCase(pk.GoName),
+			kind:      pk.IndirectType.Kind(),
+		}
+	}
+
+	return func(ctx fiber.Ctx, db orm.Db) error {
 		var (
-			pkName    = lo.CamelCase(pk.GoName)
-			value, ok = req.Params[pkName]
-			pkValue   = pk.Value(modelValue)
-			kind      = pk.IndirectType.Kind()
+			model      TModel
+			modelValue = reflect.ValueOf(&model).Elem()
+			req        = contextx.APIRequest(ctx)
 		)
 
-		if !ok {
-			return result.Errf("primary key parameter %s is required", pkName)
-		}
-
-		switch kind {
-		case reflect.String:
-			if pk.IsPtr {
-				pkValue.Set(reflect.ValueOf(&value))
-			} else {
-				pkValue.SetString(cast.ToString(value))
+		// Extract and set primary key values using pre-computed metadata
+		for _, info := range pkInfos {
+			value, ok := req.Params[info.paramName]
+			if !ok {
+				return result.Errf("primary key parameter '%s' is required", info.paramName)
 			}
-		case reflect.Int, reflect.Int64:
-			intValue := cast.ToInt64(value)
-			if pk.IsPtr {
-				pkValue.Set(reflect.ValueOf(&intValue))
-			} else {
-				pkValue.SetInt(intValue)
+
+			pkValue := info.field.Value(modelValue)
+
+			switch info.kind {
+			case reflect.String:
+				if info.field.IsPtr {
+					pkValue.Set(reflect.ValueOf(&value))
+				} else {
+					pkValue.SetString(cast.ToString(value))
+				}
+			case reflect.Int, reflect.Int64:
+				intValue := cast.ToInt64(value)
+				if info.field.IsPtr {
+					pkValue.Set(reflect.ValueOf(&intValue))
+				} else {
+					pkValue.SetInt(intValue)
+				}
 			}
 		}
-	}
 
-	if err := db.NewQuery().Model(&model).WherePK().Scan(ctx, &model); err != nil {
-		return err
-	}
-
-	if d.preDelete != nil {
-		if err := d.preDelete(&model, ctx); err != nil {
-			return err
-		}
-	}
-
-	return db.RunInTx(ctx, func(txCtx context.Context, tx orm.Db) error {
-		if _, err := tx.NewDelete().Model(&model).WherePK().Exec(txCtx); err != nil {
+		// Load the existing model
+		if err := db.NewQuery().Model(&model).WherePK().Scan(ctx, &model); err != nil {
 			return err
 		}
 
-		if d.postDelete != nil {
-			if err := d.postDelete(&model, ctx, tx); err != nil {
+		// Execute pre-delete hook if configured
+		if d.preDelete != nil {
+			if err := d.preDelete(&model, ctx); err != nil {
 				return err
 			}
 		}
 
-		return result.Ok().Response(ctx)
-	})
+		// Execute delete operation within transaction
+		return db.RunInTx(ctx, func(txCtx context.Context, tx orm.Db) error {
+			if _, err := tx.NewDelete().Model(&model).WherePK().Exec(txCtx); err != nil {
+				return err
+			}
+
+			// Execute post-delete hook if configured
+			if d.postDelete != nil {
+				if err := d.postDelete(&model, ctx, tx); err != nil {
+					return err
+				}
+			}
+
+			return result.Ok().Response(ctx)
+		})
+	}, nil
 }
 
 // NewDeleteAPI creates a new DeleteAPI instance.

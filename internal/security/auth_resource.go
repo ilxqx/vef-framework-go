@@ -45,7 +45,7 @@ type authResource struct {
 
 // loginParams represents the request parameters for user login.
 type loginParams struct {
-	api.Params
+	api.In
 	security.Authentication // Authentication contains user credentials
 }
 
@@ -70,7 +70,7 @@ func (a *authResource) Login(ctx fiber.Ctx, params loginParams) error {
 
 // refreshParams represents the request parameters for token refresh operation.
 type refreshParams struct {
-	api.Params
+	api.In
 	RefreshToken string `json:"refreshToken"` // RefreshToken is the JWT refresh token used to generate new access tokens
 }
 

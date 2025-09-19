@@ -18,8 +18,8 @@ func NewUpdate(db bun.IDB) orm.Update {
 }
 
 type bunUpdate struct {
-	query  *bun.UpdateQuery // query is the underlying bun update query
-	hasSet bool             // hasSet indicates if any columns have been explicitly set
+	query  *bun.UpdateQuery
+	hasSet bool
 }
 
 func (u *bunUpdate) subQuery(subQuery *bun.SelectQuery) orm.Query {

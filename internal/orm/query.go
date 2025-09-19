@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	errSubQuery = errors.New("cannot execute a sub-query directly, sub-queries must be used as part of a parent query") // errSubQuery is returned when attempting to execute a sub-query directly
+	// errSubQuery is returned when attempting to execute a sub-query directly
+	errSubQuery = errors.New("cannot execute a sub-query directly, sub-queries must be used as part of a parent query")
 )
 
 // NewQuery returns a new Query instance.
@@ -24,8 +25,8 @@ func NewQuery(db bun.IDB) orm.Query {
 }
 
 type bunQuery struct {
-	query      *bun.SelectQuery // query is the underlying bun select query
-	isSubQuery bool             // isSubQuery indicates if this is a sub-query
+	query      *bun.SelectQuery
+	isSubQuery bool
 }
 
 func (q *bunQuery) subQuery(subQuery *bun.SelectQuery) orm.Query {

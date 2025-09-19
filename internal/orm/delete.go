@@ -16,7 +16,7 @@ func NewDelete(db bun.IDB) orm.Delete {
 }
 
 type bunDelete struct {
-	query *bun.DeleteQuery // query is the underlying bun delete query
+	query *bun.DeleteQuery
 }
 
 func (*bunDelete) subQuery(subQuery *bun.SelectQuery) orm.Query {

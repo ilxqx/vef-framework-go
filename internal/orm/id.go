@@ -9,19 +9,22 @@ import (
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/spf13/cast"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/schema"
 )
 
-var node *snowflake.Node // node is the snowflake node for generating unique IDs
+// node is the snowflake node for generating unique IDs
+var node *snowflake.Node
 
 func init() {
-	snowflake.Epoch = 1754582400000 // Set custom epoch for ID generation
-	snowflake.NodeBits = 6          // Set node bits for distributed ID generation
-	snowflake.StepBits = 12         // Set step bits for sequence generation
+	// Set custom epoch for ID generation
+	snowflake.Epoch = 1754582400000
+	// Set node bits for distributed ID generation
+	snowflake.NodeBits = 6
+	// Set step bits for sequence generation
+	snowflake.StepBits = 12
 
 	var (
-		nodeId int64 // nodeId is the node ID from environment variable
-		err    error // err stores any initialization error
+		nodeId int64
+		err    error
 	)
 
 	nodeIdStr := os.Getenv(constants.EnvNodeId)
@@ -47,7 +50,7 @@ func GenerateId() string {
 type idGenerator struct {
 }
 
-func (*idGenerator) OnCreate(_ *bun.InsertQuery, _ *schema.Table, field *schema.Field, _ any, value reflect.Value) {
+func (*idGenerator) OnCreate(_ *bun.InsertQuery, _ *orm.Table, field *orm.Field, _ any, value reflect.Value) {
 	if field.IsPK && field.IndirectType.Kind() == reflect.String && value.IsZero() {
 		value.SetString(GenerateId())
 	}

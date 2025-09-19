@@ -17,7 +17,7 @@ func NewCreate(db bun.IDB) orm.Create {
 }
 
 type bunCreate struct {
-	query *bun.InsertQuery // query is the underlying bun insert query
+	query *bun.InsertQuery
 }
 
 func (c *bunCreate) subQuery(subQuery *bun.SelectQuery) orm.Query {

@@ -598,7 +598,7 @@ func TestNullTypesIntegration(t *testing.T) {
 			Age           null.Value[int]     `json:"age"`
 			Active        null.Bool           `json:"active"`
 			Score         null.Value[float64] `json:"score"`
-			OptionalField null.Value[string]  `json:"optional_field,omitempty"`
+			OptionalField null.Value[string]  `json:"optional_field"`
 		}
 
 		input := map[string]any{

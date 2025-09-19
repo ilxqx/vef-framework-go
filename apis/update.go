@@ -18,8 +18,8 @@ import (
 //   - TModel: The database model type
 //   - TParams: The input parameters type
 type UpdateAPI[TModel, TParams any] struct {
-	preUpdate  PreUpdateProcessor[TModel, TParams]  // Function to execute before updating the model
-	postUpdate PostUpdateProcessor[TModel, TParams] // Function to execute after updating the model
+	preUpdate  PreUpdateProcessor[TModel, TParams]
+	postUpdate PostUpdateProcessor[TModel, TParams]
 }
 
 // WithPreUpdate sets the pre-update processor for the UpdateAPI.

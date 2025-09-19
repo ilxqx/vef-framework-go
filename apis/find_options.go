@@ -31,7 +31,7 @@ type Option struct {
 
 // OptionsConfig defines the mapping between database fields and option fields.
 type OptionsConfig struct {
-	api.Params
+	api.In
 	LabelField       string `json:"labelField"`       // Field name for label (default: "name")
 	ValueField       string `json:"valueField"`       // Field name for value (default: "id")
 	DescriptionField string `json:"descriptionField"` // Field name for description
@@ -62,59 +62,68 @@ func (a *FindOptionsAPI[TModel, TSearch]) WithDefaultConfig(config *OptionsConfi
 	return a
 }
 
-// FindOptions executes the query and returns options with customizable configuration.
-func (a *FindOptionsAPI[TModel, TSearch]) FindOptions(ctx fiber.Ctx, db orm.Db, config OptionsConfig, search TSearch) error {
-	var (
-		options []Option
-		schema  = db.Schema((*TModel)(nil))
-		query   = a.buildQuery(ctx, db, (*TModel)(nil), search)
-	)
+// FindOptions creates a handler that executes the query and returns options with customizable configuration.
+//
+// Parameters:
+//   - db: The database connection for schema introspection
+//
+// Returns a handler function that processes find-options requests.
+func (a *FindOptionsAPI[TModel, TSearch]) FindOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config OptionsConfig, search TSearch) error {
+	// Pre-compute schema information
+	schema := db.Schema((*TModel)(nil))
 
-	config.applyDefaults(a.defaultConfig)
-	if err := config.validateFields(schema); err != nil {
-		return err
-	}
+	// Pre-compute whether default created_at ordering should be applied
+	hasCreatedAt := schema.HasField(orm.ColumnCreatedAt)
 
-	// Select only required fields
-	if config.ValueField == valueField {
-		query.Select(config.ValueField)
-	} else {
-		query.SelectAs(config.ValueField, valueField)
-	}
+	return func(ctx fiber.Ctx, db orm.Db, config OptionsConfig, search TSearch) error {
+		var options []Option
+		query := a.buildQuery(ctx, db, (*TModel)(nil), search)
 
-	if config.LabelField == labelField {
-		query.Select(config.LabelField)
-	} else {
-		query.SelectAs(config.LabelField, labelField)
-	}
-
-	if config.DescriptionField != constants.Empty {
-		if config.DescriptionField == descriptionField {
-			query.Select(config.DescriptionField)
-		} else {
-			query.SelectAs(config.DescriptionField, descriptionField)
+		// Apply defaults and validate configuration
+		config.applyDefaults(a.defaultConfig)
+		if err := config.validateFields(schema); err != nil {
+			return err
 		}
-	}
 
-	// Apply sorting
-	if config.SortField != constants.Empty {
-		query.OrderBy(config.SortField)
-	}
+		// Select only required fields
+		if config.ValueField == valueField {
+			query.Select(config.ValueField)
+		} else {
+			query.SelectAs(config.ValueField, valueField)
+		}
 
-	if a.sortApplier == nil && config.SortField == constants.Empty && schema.HasField(orm.ColumnCreatedAt) {
-		query.OrderBy(orm.ColumnCreatedAt)
-	}
+		if config.LabelField == labelField {
+			query.Select(config.LabelField)
+		} else {
+			query.SelectAs(config.LabelField, labelField)
+		}
 
-	// Execute query with limit
-	if err := query.Limit(maxOptionsLimit).Scan(ctx, &options); err != nil {
-		return err
-	}
+		if config.DescriptionField != constants.Empty {
+			if config.DescriptionField == descriptionField {
+				query.Select(config.DescriptionField)
+			} else {
+				query.SelectAs(config.DescriptionField, descriptionField)
+			}
+		}
 
-	if a.processor != nil {
-		options = a.processor(options, ctx)
-	}
+		// Apply sorting
+		if config.SortField != constants.Empty {
+			query.OrderBy(config.SortField)
+		} else if a.sortApplier == nil && hasCreatedAt {
+			query.OrderBy(orm.ColumnCreatedAt)
+		}
 
-	return result.Ok(options).Response(ctx)
+		// Execute query with limit
+		if err := query.Limit(maxOptionsLimit).Scan(ctx, &options); err != nil {
+			return err
+		}
+
+		if a.processor != nil {
+			options = a.processor(options, ctx)
+		}
+
+		return result.Ok(options).Response(ctx)
+	}
 }
 
 // NewFindOptionsAPI creates a new FindOptionsAPI with the specified options.

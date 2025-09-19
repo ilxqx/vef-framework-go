@@ -5,13 +5,14 @@ import (
 	"reflect"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
 )
 
 // parsePKColumnsAndValues parses the primary key columns and values from the given table and primary key value.
-func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias ...string) (*pkColumns, *pkValues) {
+func parsePKColumnsAndValues(method string, table *orm.Table, pk any, alias ...string) (*pkColumns, *pkValues) {
 	if table == nil {
 		panic(
 			fmt.Sprintf("method %s must be called after Model method", method),
@@ -50,8 +51,8 @@ func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias .
 }
 
 type pkColumns struct {
-	alias   bun.Safe   // alias is the table alias for the primary key columns
-	columns []bun.Safe // columns contains the primary key column names
+	alias   bun.Safe
+	columns []bun.Safe
 }
 
 func (p *pkColumns) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
@@ -61,7 +62,7 @@ func (p *pkColumns) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err
 	}
 
 	if cLen > 1 {
-		b = append(b, '(')
+		b = append(b, constants.ByteLeftParenthesis)
 	}
 
 	for i, column := range p.columns {
@@ -74,7 +75,7 @@ func (p *pkColumns) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err
 			return nil, err
 		}
 
-		b = append(b, '.')
+		b = append(b, constants.ByteDot)
 
 		b, err = column.AppendQuery(fmter, b)
 		if err != nil {
@@ -83,14 +84,14 @@ func (p *pkColumns) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err
 	}
 
 	if cLen > 1 {
-		b = append(b, ')')
+		b = append(b, constants.ByteRightParenthesis)
 	}
 
 	return b, nil
 }
 
 type pkValues struct {
-	values []any // values contains the primary key values
+	values []any
 }
 
 func (p *pkValues) AppendQuery(formatter schema.Formatter, b []byte) ([]byte, error) {

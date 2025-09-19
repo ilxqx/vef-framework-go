@@ -14,12 +14,12 @@ var Module = fx.Module(
 	fx.Provide(
 		fx.Annotate(
 			newManager,
-			fx.ParamTags(`group:"vef:api:resources"`),
+			fx.ParamTags(`group:"vef:api:resources"`, `optional:"true"`),
 			fx.ResultTags(`name:"vef:api:manager"`),
 		),
 		fx.Annotate(
 			newManager,
-			fx.ParamTags(`group:"vef:openapi:resources"`),
+			fx.ParamTags(`group:"vef:openapi:resources"`, `optional:"true"`),
 			fx.ResultTags(`name:"vef:openapi:manager"`),
 		),
 		// provide policies

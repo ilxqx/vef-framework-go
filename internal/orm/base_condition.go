@@ -9,12 +9,12 @@ import (
 
 // baseConditionBuilder is a builder for building base conditions.
 type baseConditionBuilder struct {
-	*richConditionBuilder                       // richConditionBuilder provides rich condition building capabilities
-	condition             []schema.QueryWithSep // condition stores the built conditions
+	*richConditionBuilder
+	condition []schema.QueryWithSep
 }
 
 // newCommonConditionBuilder creates a new baseConditionBuilder.
-func newCommonConditionBuilder(table *schema.Table, subQueryBuilder func(builder func(query orm.Query)) *bun.SelectQuery) *baseConditionBuilder {
+func newCommonConditionBuilder(table *orm.Table, subQueryBuilder func(builder func(query orm.Query)) *bun.SelectQuery) *baseConditionBuilder {
 	richCb := &richConditionBuilder{
 		table:           table,
 		subQueryBuilder: subQueryBuilder,

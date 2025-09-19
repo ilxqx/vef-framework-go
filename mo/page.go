@@ -4,7 +4,7 @@ import "github.com/ilxqx/vef-framework-go/api"
 
 // Pageable represents pagination parameters for querying data.
 type Pageable struct {
-	api.Params
+	api.In
 	Page int    `json:"page" query:"page,default:1"`  // Page is the page number (1-based)
 	Size int    `json:"size" query:"size,default:15"` // Size is the number of items per page
 	Sort string `json:"sort" query:"sort"`            // Sort is the sort field name

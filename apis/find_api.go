@@ -15,13 +15,20 @@ import (
 //   - TPostFindProcessor: The post-processing function type
 //   - TFindAPI: The concrete API type that embeds this struct
 type findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI any] struct {
-	api           *TFindAPI              // Reference to the concrete API instance
-	searchApplier SearchApplier[TSearch] // Function to apply search conditions
-	filterApplier FilterApplier[TSearch] // Function to apply filter conditions
-	queryApplier  QueryApplier[TSearch]  // Function to apply additional query modifications
-	sortApplier   SortApplier            // Function to apply orders to the query builder
-	relations     []orm.ModelRelation    // Model relations to include in queries
-	processor     TPostFindProcessor     // Post-processing function for results
+	// Reference to the concrete API instance
+	api *TFindAPI
+	// Function to apply search conditions
+	searchApplier SearchApplier[TSearch]
+	// Function to apply filter conditions
+	filterApplier FilterApplier[TSearch]
+	// Function to apply additional query modifications
+	queryApplier QueryApplier[TSearch]
+	// Function to apply orders to the query builder
+	sortApplier SortApplier
+	// Model relations to include in queries
+	relations []orm.ModelRelation
+	// Post-processing function for results
+	processor TPostFindProcessor
 }
 
 // WithFilterApplier sets a custom filter applier function for additional filtering logic.

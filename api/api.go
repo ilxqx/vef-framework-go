@@ -169,7 +169,7 @@ func (d *Definition) GetTimeout() time.Duration {
 
 type paramsSentinel struct{}
 
-// Params is a struct that can be used to inject parameters into an API handler.
-type Params struct {
+// In is a struct that can be used to inject parameters into an API handler.
+type In struct {
 	_ paramsSentinel
 }

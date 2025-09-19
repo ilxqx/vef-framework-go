@@ -8,24 +8,26 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/schema"
 )
 
 var (
-	logger    = log.Named("orm") // logger is the ORM module logger
-	txOptions = &sql.TxOptions{  // txOptions defines transaction options for read-write transactions
-		Isolation: sql.LevelReadCommitted, // Isolation level for transactions
-		ReadOnly:  false,                  // ReadOnly is false for read-write transactions
+	logger = log.Named("orm")
+
+	// txOptions defines transaction options for read-write transactions
+	txOptions = &sql.TxOptions{
+		Isolation: sql.LevelReadCommitted,
+		ReadOnly:  false,
 	}
-	readOnlyTxOptions = &sql.TxOptions{ // readOnlyTxOptions defines transaction options for read-only transactions
-		Isolation: sql.LevelReadCommitted, // Isolation level for transactions
-		ReadOnly:  true,                   // ReadOnly is true for read-only transactions
+	// readOnlyTxOptions defines transaction options for read-only transactions
+	readOnlyTxOptions = &sql.TxOptions{
+		Isolation: sql.LevelReadCommitted,
+		ReadOnly:  true,
 	}
 )
 
 // bunDb is a wrapper around the bun.DB type.
 type bunDb struct {
-	db bun.IDB // db is the underlying bun database interface
+	db bun.IDB
 }
 
 func (d *bunDb) NewQuery() orm.Query {
@@ -95,7 +97,7 @@ func (d *bunDb) ModelPKs(model any) map[string]any {
 	return pks
 }
 
-func (d *bunDb) Schema(model any) *schema.Table {
+func (d *bunDb) Schema(model any) *orm.Table {
 	var db *bun.DB
 	if bd, ok := d.db.(*bun.DB); ok {
 		db = bd
