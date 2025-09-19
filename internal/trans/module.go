@@ -20,7 +20,11 @@ var Module = fx.Module(
 			fx.ParamTags(`group:"vef:trans:field_modifiers"`, `group:"vef:trans:struct_modifiers"`, `group:"vef:trans:interceptors"`),
 		),
 		// Built-in data dictionary transformer
-		newDataDictTransformer,
+		fx.Annotate(
+			newDataDictTransformer,
+			fx.ParamTags(`optional:"true"`),
+			fx.ResultTags(`group:"vef:trans:field_modifiers"`),
+		),
 	),
 	// Initialize the transformer module
 	fx.Invoke(func() {

@@ -4,12 +4,69 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/ilxqx/vef-framework-go/decimal"
+	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/samber/lo"
 )
 
 var (
-	nullBoolType           = reflect.TypeFor[null.Bool]()
-	boolType               = reflect.TypeFor[bool]()
+	// null.Bool
+	nullBoolType = reflect.TypeFor[null.Bool]()
+	boolType     = reflect.TypeFor[bool]()
+	boolPtrType  = reflect.TypeFor[*bool]()
+
+	// null.String
+	nullStringType = reflect.TypeFor[null.String]()
+	stringType     = reflect.TypeFor[string]()
+	stringPtrType  = reflect.TypeFor[*string]()
+
+	// null.Int
+	nullIntType = reflect.TypeFor[null.Int]()
+	intType     = reflect.TypeFor[int64]()
+	intPtrType  = reflect.TypeFor[*int64]()
+
+	// null.Int16
+	nullInt16Type = reflect.TypeFor[null.Int16]()
+	int16Type     = reflect.TypeFor[int16]()
+	int16PtrType  = reflect.TypeFor[*int16]()
+
+	// null.Int32
+	nullInt32Type = reflect.TypeFor[null.Int32]()
+	int32Type     = reflect.TypeFor[int32]()
+	int32PtrType  = reflect.TypeFor[*int32]()
+
+	// null.Float
+	nullFloatType = reflect.TypeFor[null.Float]()
+	floatType     = reflect.TypeFor[float64]()
+	floatPtrType  = reflect.TypeFor[*float64]()
+
+	// null.Byte
+	nullByteType = reflect.TypeFor[null.Byte]()
+	byteType     = reflect.TypeFor[byte]()
+	bytePtrType  = reflect.TypeFor[*byte]()
+
+	// null.DateTime
+	nullDateTimeType = reflect.TypeFor[null.DateTime]()
+	dateTimeType     = reflect.TypeFor[mo.DateTime]()
+	dateTimePtrType  = reflect.TypeFor[*mo.DateTime]()
+
+	// null.Date
+	nullDateType = reflect.TypeFor[null.Date]()
+	dateType     = reflect.TypeFor[mo.Date]()
+	datePtrType  = reflect.TypeFor[*mo.Date]()
+
+	// null.Time
+	nullTimeType = reflect.TypeFor[null.Time]()
+	timeType     = reflect.TypeFor[mo.Time]()
+	timePtrType  = reflect.TypeFor[*mo.Time]()
+
+	// null.Decimal
+	nullDecimalType = reflect.TypeFor[null.Decimal]()
+	decimalType     = reflect.TypeFor[decimal.Decimal]()
+	decimalPtrType  = reflect.TypeFor[*decimal.Decimal]()
+
+	// null.Value
 	valueOrZeroMethodIndex int
 )
 
@@ -20,11 +77,263 @@ func init() {
 
 // decodeNullBool decodes a null.Bool from a reflect.Type to a reflect.Type.
 func decodeNullBool(from reflect.Type, to reflect.Type, value any) (any, error) {
-	if from == boolType && to == nullBoolType {
-		return null.BoolFrom(value.(bool)), nil
+	if (from == boolType || from == boolPtrType) && to == nullBoolType {
+		return lo.TernaryF(
+			from == boolType,
+			func() null.Bool {
+				return null.BoolFrom(value.(bool))
+			},
+			func() null.Bool {
+				return null.BoolFromPtr(value.(*bool))
+			},
+		), nil
 	}
-	if from == nullBoolType && to == boolType {
-		return value.(null.Bool).ValueOrZero(), nil
+	if from == nullBoolType && (to == boolType || to == boolPtrType) {
+		if to == boolType {
+			return value.(null.Bool).ValueOrZero(), nil
+		}
+
+		return value.(null.Bool).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullString decodes a null.String from a reflect.Type to a reflect.Type.
+func decodeNullString(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == stringType || from == stringPtrType) && to == nullStringType {
+		return lo.TernaryF(
+			from == stringType,
+			func() null.String {
+				return null.StringFrom(value.(string))
+			},
+			func() null.String {
+				return null.StringFromPtr(value.(*string))
+			},
+		), nil
+	}
+	if from == nullStringType && (to == stringType || to == stringPtrType) {
+		if to == stringType {
+			return value.(null.String).ValueOrZero(), nil
+		}
+
+		return value.(null.String).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullInt decodes a null.Int from a reflect.Type to a reflect.Type.
+func decodeNullInt(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == intType || from == intPtrType) && to == nullIntType {
+		return lo.TernaryF(
+			from == intType,
+			func() null.Int {
+				return null.IntFrom(value.(int64))
+			},
+			func() null.Int {
+				return null.IntFromPtr(value.(*int64))
+			},
+		), nil
+	}
+	if from == nullIntType && (to == intType || to == intPtrType) {
+		if to == intType {
+			return value.(null.Int).ValueOrZero(), nil
+		}
+
+		return value.(null.Int).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullInt16 decodes a null.Int16 from a reflect.Type to a reflect.Type.
+func decodeNullInt16(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == int16Type || from == int16PtrType) && to == nullInt16Type {
+		return lo.TernaryF(
+			from == int16Type,
+			func() null.Int16 {
+				return null.Int16From(value.(int16))
+			},
+			func() null.Int16 {
+				return null.Int16FromPtr(value.(*int16))
+			},
+		), nil
+	}
+	if from == nullInt16Type && (to == int16Type || to == int16PtrType) {
+		if to == int16Type {
+			return value.(null.Int16).ValueOrZero(), nil
+		}
+
+		return value.(null.Int16).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullInt32 decodes a null.Int32 from a reflect.Type to a reflect.Type.
+func decodeNullInt32(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == int32Type || from == int32PtrType) && to == nullInt32Type {
+		return lo.TernaryF(
+			from == int32Type,
+			func() null.Int32 {
+				return null.Int32From(value.(int32))
+			},
+			func() null.Int32 {
+				return null.Int32FromPtr(value.(*int32))
+			},
+		), nil
+	}
+	if from == nullInt32Type && (to == int32Type || to == int32PtrType) {
+		if to == int32Type {
+			return value.(null.Int32).ValueOrZero(), nil
+		}
+
+		return value.(null.Int32).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullFloat decodes a null.Float from a reflect.Type to a reflect.Type.
+func decodeNullFloat(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == floatType || from == floatPtrType) && to == nullFloatType {
+		return lo.TernaryF(
+			from == floatType,
+			func() null.Float {
+				return null.FloatFrom(value.(float64))
+			},
+			func() null.Float {
+				return null.FloatFromPtr(value.(*float64))
+			},
+		), nil
+	}
+	if from == nullFloatType && (to == floatType || to == floatPtrType) {
+		if to == floatType {
+			return value.(null.Float).ValueOrZero(), nil
+		}
+
+		return value.(null.Float).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullByte decodes a null.Byte from a reflect.Type to a reflect.Type.
+func decodeNullByte(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == byteType || from == bytePtrType) && to == nullByteType {
+		return lo.TernaryF(
+			from == byteType,
+			func() null.Byte {
+				return null.ByteFrom(value.(byte))
+			},
+			func() null.Byte {
+				return null.ByteFromPtr(value.(*byte))
+			},
+		), nil
+	}
+	if from == nullByteType && (to == byteType || to == bytePtrType) {
+		if to == byteType {
+			return value.(null.Byte).ValueOrZero(), nil
+		}
+
+		return value.(null.Byte).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullDateTime decodes a null.DateTime from a reflect.Type to a reflect.Type.
+func decodeNullDateTime(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == dateTimeType || from == dateTimePtrType) && to == nullDateTimeType {
+		return lo.TernaryF(
+			from == dateTimeType,
+			func() null.DateTime {
+				return null.DateTimeFrom(value.(mo.DateTime))
+			},
+			func() null.DateTime {
+				return null.DateTimeFromPtr(value.(*mo.DateTime))
+			},
+		), nil
+	}
+	if from == nullDateTimeType && (to == dateTimeType || to == dateTimePtrType) {
+		if to == dateTimeType {
+			return value.(null.DateTime).ValueOrZero(), nil
+		}
+
+		return value.(null.DateTime).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullDate decodes a null.Date from a reflect.Type to a reflect.Type.
+func decodeNullDate(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == dateType || from == datePtrType) && to == nullDateType {
+		return lo.TernaryF(
+			from == dateType,
+			func() null.Date {
+				return null.DateFrom(value.(mo.Date))
+			},
+			func() null.Date {
+				return null.DateFromPtr(value.(*mo.Date))
+			},
+		), nil
+	}
+	if from == nullDateType && (to == dateType || to == datePtrType) {
+		if to == dateType {
+			return value.(null.Date).ValueOrZero(), nil
+		}
+
+		return value.(null.Date).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullTime decodes a null.Time from a reflect.Type to a reflect.Type.
+func decodeNullTime(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == timeType || from == timePtrType) && to == nullTimeType {
+		return lo.TernaryF(
+			from == timeType,
+			func() null.Time {
+				return null.TimeFrom(value.(mo.Time))
+			},
+			func() null.Time {
+				return null.TimeFromPtr(value.(*mo.Time))
+			},
+		), nil
+	}
+	if from == nullTimeType && (to == timeType || to == timePtrType) {
+		if to == timeType {
+			return value.(null.Time).ValueOrZero(), nil
+		}
+
+		return value.(null.Time).Ptr(), nil
+	}
+
+	return value, nil
+}
+
+// decodeNullDecimal decodes a null.Decimal from a reflect.Type to a reflect.Type.
+func decodeNullDecimal(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if (from == decimalType || from == decimalPtrType) && to == nullDecimalType {
+		return lo.TernaryF(
+			from == decimalType,
+			func() null.Decimal {
+				return null.DecimalFrom(value.(decimal.Decimal))
+			},
+			func() null.Decimal {
+				return null.DecimalFromPtr(value.(*decimal.Decimal))
+			},
+		), nil
+	}
+	if from == nullDecimalType && (to == decimalType || to == decimalPtrType) {
+		if to == decimalType {
+			return value.(null.Decimal).ValueOrZero(), nil
+		}
+
+		return value.(null.Decimal).Ptr(), nil
 	}
 
 	return value, nil

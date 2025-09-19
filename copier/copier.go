@@ -4,28 +4,71 @@ import "github.com/jinzhu/copier"
 
 // converters is the default converters for copier
 var converters = []TypeConverter{
-	nullStringConverter,
-	stringConverter,
-	nullIntConverter,
-	intConverter,
-	nullInt16Converter,
-	int16Converter,
-	nullInt32Converter,
-	int32Converter,
-	nullFloatConverter,
-	floatConverter,
-	nullByteConverter,
-	byteConverter,
-	nullBoolConverter,
-	boolConverter,
-	nullDateTimeConverter,
-	dateTimeConverter,
-	nullDateConverter,
-	dateConverter,
-	nullTimeConverter,
-	timeConverter,
-	nullDecimalConverter,
-	decimalConverter,
+	// null.String converters
+	stringToNullStringConverter,
+	stringPtrToNullStringConverter,
+	nullStringToStringConverter,
+	nullStringToStringPtrConverter,
+
+	// null.Int converters
+	intToNullIntConverter,
+	intPtrToNullIntConverter,
+	nullIntToIntConverter,
+	nullIntToIntPtrConverter,
+
+	// null.Int16 converters
+	int16ToNullInt16Converter,
+	int16PtrToNullInt16Converter,
+	nullInt16ToInt16Converter,
+	nullInt16ToInt16PtrConverter,
+
+	// null.Int32 converters
+	int32ToNullInt32Converter,
+	int32PtrToNullInt32Converter,
+	nullInt32ToInt32Converter,
+	nullInt32ToInt32PtrConverter,
+
+	// null.Float converters
+	floatToNullFloatConverter,
+	floatPtrToNullFloatConverter,
+	nullFloatToFloatConverter,
+	nullFloatToFloatPtrConverter,
+
+	// null.Byte converters
+	byteToNullByteConverter,
+	bytePtrToNullByteConverter,
+	nullByteToByteConverter,
+	nullByteToBytePtrConverter,
+
+	// null.Bool converters
+	boolToNullBoolConverter,
+	boolPtrToNullBoolConverter,
+	nullBoolToBoolConverter,
+	nullBoolToBoolPtrConverter,
+
+	// null.DateTime converters
+	dateTimeToNullDateTimeConverter,
+	dateTimePtrToNullDateTimeConverter,
+	nullDateTimeToDateTimeConverter,
+	nullDateTimeToDateTimePtrConverter,
+
+	// null.Date converters
+	dateToNullDateConverter,
+	datePtrToNullDateConverter,
+	nullDateToDateConverter,
+	nullDateToDatePtrConverter,
+
+	// null.Time converters
+	timeToNullTimeConverter,
+	timePtrToNullTimeConverter,
+	nullTimeToTimeConverter,
+	nullTimeToTimePtrConverter,
+
+	// null.Decimal converters
+	decimalToNullDecimalConverter,
+	decimalPtrToNullDecimalConverter,
+	nullDecimalToDecimalConverter,
+	nullDecimalToDecimalPtrConverter,
 }
 
 type (

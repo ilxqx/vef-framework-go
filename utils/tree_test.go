@@ -193,7 +193,9 @@ func TestBuildTree(t *testing.T) {
 
 		result := BuildTree(nodes, adapter)
 
-		assert.Nil(t, result)
+		assert.NotNil(t, result)
+		assert.Empty(t, result)
+		assert.IsType(t, []TestNode{}, result)
 	})
 
 	t.Run("handles single node", func(t *testing.T) {

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ilxqx/vef-framework-go/decimal"
+	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -796,5 +798,500 @@ func TestNullValueBasicOperations(t *testing.T) {
 		assert.True(t, boolVal.Valid)
 		assert.True(t, boolVal.V)
 		assert.True(t, boolVal.ValueOrZero())
+	})
+}
+
+func TestNullSpecificTypesDecodeHook(t *testing.T) {
+	t.Run("null.String decode hook", func(t *testing.T) {
+		// Test string to null.String conversion
+		type StructWithNullString struct {
+			Name null.String `json:"name"`
+		}
+
+		input := map[string]any{
+			"name": "John Doe",
+		}
+
+		result, err := FromMap[StructWithNullString](input)
+		require.NoError(t, err)
+		assert.True(t, result.Name.Valid)
+		assert.Equal(t, "John Doe", result.Name.String)
+
+		// Test null.String to string conversion
+		type StructWithString struct {
+			Name string `json:"name"`
+		}
+
+		input2 := map[string]any{
+			"name": null.StringFrom("Jane Doe"),
+		}
+
+		result2, err := FromMap[StructWithString](input2)
+		require.NoError(t, err)
+		assert.Equal(t, "Jane Doe", result2.Name)
+
+		// Test invalid null.String to string
+		input3 := map[string]any{
+			"name": null.NewString("", false),
+		}
+
+		result3, err := FromMap[StructWithString](input3)
+		require.NoError(t, err)
+		assert.Equal(t, "", result3.Name) // Should be zero value for invalid
+	})
+
+	t.Run("null.Int decode hook", func(t *testing.T) {
+		// Test int64 to null.Int conversion
+		type StructWithNullInt struct {
+			Age null.Int `json:"age"`
+		}
+
+		input := map[string]any{
+			"age": int64(30),
+		}
+
+		result, err := FromMap[StructWithNullInt](input)
+		require.NoError(t, err)
+		assert.True(t, result.Age.Valid)
+		assert.Equal(t, int64(30), result.Age.Int64)
+
+		// Test null.Int to int64 conversion
+		type StructWithInt struct {
+			Age int64 `json:"age"`
+		}
+
+		input2 := map[string]any{
+			"age": null.IntFrom(25),
+		}
+
+		result2, err := FromMap[StructWithInt](input2)
+		require.NoError(t, err)
+		assert.Equal(t, int64(25), result2.Age)
+	})
+
+	t.Run("null.Int16 decode hook", func(t *testing.T) {
+		// Test int16 to null.Int16 conversion
+		type StructWithNullInt16 struct {
+			Count null.Int16 `json:"count"`
+		}
+
+		input := map[string]any{
+			"count": int16(100),
+		}
+
+		result, err := FromMap[StructWithNullInt16](input)
+		require.NoError(t, err)
+		assert.True(t, result.Count.Valid)
+		assert.Equal(t, int16(100), result.Count.Int16)
+
+		// Test null.Int16 to int16 conversion
+		type StructWithInt16 struct {
+			Count int16 `json:"count"`
+		}
+
+		input2 := map[string]any{
+			"count": null.Int16From(200),
+		}
+
+		result2, err := FromMap[StructWithInt16](input2)
+		require.NoError(t, err)
+		assert.Equal(t, int16(200), result2.Count)
+	})
+
+	t.Run("null.Int32 decode hook", func(t *testing.T) {
+		// Test int32 to null.Int32 conversion
+		type StructWithNullInt32 struct {
+			ID null.Int32 `json:"id"`
+		}
+
+		input := map[string]any{
+			"id": int32(12345),
+		}
+
+		result, err := FromMap[StructWithNullInt32](input)
+		require.NoError(t, err)
+		assert.True(t, result.ID.Valid)
+		assert.Equal(t, int32(12345), result.ID.Int32)
+
+		// Test null.Int32 to int32 conversion
+		type StructWithInt32 struct {
+			ID int32 `json:"id"`
+		}
+
+		input2 := map[string]any{
+			"id": null.Int32From(54321),
+		}
+
+		result2, err := FromMap[StructWithInt32](input2)
+		require.NoError(t, err)
+		assert.Equal(t, int32(54321), result2.ID)
+	})
+
+	t.Run("null.Float decode hook", func(t *testing.T) {
+		// Test float64 to null.Float conversion
+		type StructWithNullFloat struct {
+			Score null.Float `json:"score"`
+		}
+
+		input := map[string]any{
+			"score": float64(95.5),
+		}
+
+		result, err := FromMap[StructWithNullFloat](input)
+		require.NoError(t, err)
+		assert.True(t, result.Score.Valid)
+		assert.Equal(t, 95.5, result.Score.Float64)
+
+		// Test null.Float to float64 conversion
+		type StructWithFloat struct {
+			Score float64 `json:"score"`
+		}
+
+		input2 := map[string]any{
+			"score": null.FloatFrom(87.3),
+		}
+
+		result2, err := FromMap[StructWithFloat](input2)
+		require.NoError(t, err)
+		assert.Equal(t, 87.3, result2.Score)
+	})
+
+	t.Run("null.Byte decode hook", func(t *testing.T) {
+		// Test byte to null.Byte conversion
+		type StructWithNullByte struct {
+			Flag null.Byte `json:"flag"`
+		}
+
+		input := map[string]any{
+			"flag": byte(255),
+		}
+
+		result, err := FromMap[StructWithNullByte](input)
+		require.NoError(t, err)
+		assert.True(t, result.Flag.Valid)
+		assert.Equal(t, byte(255), result.Flag.Byte)
+
+		// Test null.Byte to byte conversion
+		type StructWithByte struct {
+			Flag byte `json:"flag"`
+		}
+
+		input2 := map[string]any{
+			"flag": null.ByteFrom(128),
+		}
+
+		result2, err := FromMap[StructWithByte](input2)
+		require.NoError(t, err)
+		assert.Equal(t, byte(128), result2.Flag)
+	})
+
+	t.Run("null.DateTime decode hook", func(t *testing.T) {
+		testDateTime := mo.DateTimeOf(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+
+		// Test mo.DateTime to null.DateTime conversion
+		type StructWithNullDateTime struct {
+			Created null.DateTime `json:"created"`
+		}
+
+		input := map[string]any{
+			"created": testDateTime,
+		}
+
+		result, err := FromMap[StructWithNullDateTime](input)
+		require.NoError(t, err)
+		assert.True(t, result.Created.Valid)
+		assert.Equal(t, testDateTime, result.Created.V)
+
+		// Test null.DateTime to mo.DateTime conversion
+		type StructWithDateTime struct {
+			Created mo.DateTime `json:"created"`
+		}
+
+		input2 := map[string]any{
+			"created": null.DateTimeFrom(testDateTime),
+		}
+
+		result2, err := FromMap[StructWithDateTime](input2)
+		require.NoError(t, err)
+		assert.Equal(t, testDateTime, result2.Created)
+	})
+
+	t.Run("null.Date decode hook", func(t *testing.T) {
+		testDate := mo.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
+
+		// Test mo.Date to null.Date conversion
+		type StructWithNullDate struct {
+			Birthday null.Date `json:"birthday"`
+		}
+
+		input := map[string]any{
+			"birthday": testDate,
+		}
+
+		result, err := FromMap[StructWithNullDate](input)
+		require.NoError(t, err)
+		assert.True(t, result.Birthday.Valid)
+		assert.Equal(t, testDate, result.Birthday.V)
+
+		// Test null.Date to mo.Date conversion
+		type StructWithDate struct {
+			Birthday mo.Date `json:"birthday"`
+		}
+
+		input2 := map[string]any{
+			"birthday": null.DateFrom(testDate),
+		}
+
+		result2, err := FromMap[StructWithDate](input2)
+		require.NoError(t, err)
+		assert.Equal(t, testDate, result2.Birthday)
+	})
+
+	t.Run("null.Time decode hook", func(t *testing.T) {
+		testTime := mo.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
+
+		// Test mo.Time to null.Time conversion
+		type StructWithNullTime struct {
+			MeetingTime null.Time `json:"meeting_time"`
+		}
+
+		input := map[string]any{
+			"meeting_time": testTime,
+		}
+
+		result, err := FromMap[StructWithNullTime](input)
+		require.NoError(t, err)
+		assert.True(t, result.MeetingTime.Valid)
+		assert.Equal(t, testTime, result.MeetingTime.V)
+
+		// Test null.Time to mo.Time conversion
+		type StructWithTime struct {
+			MeetingTime mo.Time `json:"meeting_time"`
+		}
+
+		input2 := map[string]any{
+			"meeting_time": null.TimeFrom(testTime),
+		}
+
+		result2, err := FromMap[StructWithTime](input2)
+		require.NoError(t, err)
+		assert.Equal(t, testTime, result2.MeetingTime)
+	})
+
+	t.Run("null.Decimal decode hook", func(t *testing.T) {
+		testDecimal := decimal.NewFromFloat(123.456)
+
+		// Test decimal.Decimal to null.Decimal conversion
+		type StructWithNullDecimal struct {
+			Price null.Decimal `json:"price"`
+		}
+
+		input := map[string]any{
+			"price": testDecimal,
+		}
+
+		result, err := FromMap[StructWithNullDecimal](input)
+		require.NoError(t, err)
+		assert.True(t, result.Price.Valid)
+		assert.True(t, testDecimal.Equal(result.Price.Decimal))
+
+		// Test null.Decimal to decimal.Decimal conversion
+		type StructWithDecimal struct {
+			Price decimal.Decimal `json:"price"`
+		}
+
+		input2 := map[string]any{
+			"price": null.DecimalFrom(testDecimal),
+		}
+
+		result2, err := FromMap[StructWithDecimal](input2)
+		require.NoError(t, err)
+		assert.True(t, testDecimal.Equal(result2.Price))
+	})
+}
+
+func TestNullTypesWithPointersDecodeHook(t *testing.T) {
+	t.Run("pointer types conversion", func(t *testing.T) {
+		// Test *string to null.String
+		type StructWithNullString struct {
+			Name null.String `json:"name"`
+		}
+
+		stringVal := "John Doe"
+		input := map[string]any{
+			"name": &stringVal,
+		}
+
+		result, err := FromMap[StructWithNullString](input)
+		require.NoError(t, err)
+		assert.True(t, result.Name.Valid)
+		assert.Equal(t, "John Doe", result.Name.String)
+
+		// Test null.String to *string
+		type StructWithStringPtr struct {
+			Name *string `json:"name"`
+		}
+
+		input2 := map[string]any{
+			"name": null.StringFrom("Jane Doe"),
+		}
+
+		result2, err := FromMap[StructWithStringPtr](input2)
+		require.NoError(t, err)
+		require.NotNil(t, result2.Name)
+		assert.Equal(t, "Jane Doe", *result2.Name)
+
+		// Test nil pointer to null.String
+		var nilString *string
+		input3 := map[string]any{
+			"name": nilString,
+		}
+
+		result3, err := FromMap[StructWithNullString](input3)
+		require.NoError(t, err)
+		assert.False(t, result3.Name.Valid)
+
+		// Test invalid null.String to *string
+		input4 := map[string]any{
+			"name": null.NewString("test", false),
+		}
+
+		result4, err := FromMap[StructWithStringPtr](input4)
+		require.NoError(t, err)
+		assert.Nil(t, result4.Name)
+	})
+
+	t.Run("integer pointer types", func(t *testing.T) {
+		// Test *int64 to null.Int
+		type StructWithNullInt struct {
+			Age null.Int `json:"age"`
+		}
+
+		intVal := int64(30)
+		input := map[string]any{
+			"age": &intVal,
+		}
+
+		result, err := FromMap[StructWithNullInt](input)
+		require.NoError(t, err)
+		assert.True(t, result.Age.Valid)
+		assert.Equal(t, int64(30), result.Age.Int64)
+
+		// Test null.Int to *int64
+		type StructWithIntPtr struct {
+			Age *int64 `json:"age"`
+		}
+
+		input2 := map[string]any{
+			"age": null.IntFrom(25),
+		}
+
+		result2, err := FromMap[StructWithIntPtr](input2)
+		require.NoError(t, err)
+		require.NotNil(t, result2.Age)
+		assert.Equal(t, int64(25), *result2.Age)
+	})
+}
+
+func TestNullTypesIntegrationAdvanced(t *testing.T) {
+	t.Run("comprehensive struct with all null types", func(t *testing.T) {
+		type ComprehensiveStruct struct {
+			Name        null.String   `json:"name"`
+			Age         null.Int      `json:"age"`
+			ShortCount  null.Int16    `json:"short_count"`
+			ID          null.Int32    `json:"id"`
+			Score       null.Float    `json:"score"`
+			Flag        null.Byte     `json:"flag"`
+			Created     null.DateTime `json:"created"`
+			Birthday    null.Date     `json:"birthday"`
+			MeetingTime null.Time     `json:"meeting_time"`
+			Price       null.Decimal  `json:"price"`
+			Active      null.Bool     `json:"active"`
+		}
+
+		testDateTime := mo.DateTimeOf(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+		testDate := mo.DateOf(time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC))
+		testTime := mo.TimeOf(time.Date(0, 1, 1, 14, 30, 0, 0, time.UTC))
+		testDecimal := decimal.NewFromFloat(99.99)
+
+		input := map[string]any{
+			"name":         "John Doe",
+			"age":          int64(30),
+			"short_count":  int16(100),
+			"id":           int32(12345),
+			"score":        95.5,
+			"flag":         byte(255),
+			"created":      testDateTime,
+			"birthday":     testDate,
+			"meeting_time": testTime,
+			"price":        testDecimal,
+			"active":       true,
+		}
+
+		result, err := FromMap[ComprehensiveStruct](input)
+		require.NoError(t, err)
+
+		// Verify all fields are valid and have correct values
+		assert.True(t, result.Name.Valid)
+		assert.Equal(t, "John Doe", result.Name.String)
+
+		assert.True(t, result.Age.Valid)
+		assert.Equal(t, int64(30), result.Age.Int64)
+
+		assert.True(t, result.ShortCount.Valid)
+		assert.Equal(t, int16(100), result.ShortCount.Int16)
+
+		assert.True(t, result.ID.Valid)
+		assert.Equal(t, int32(12345), result.ID.Int32)
+
+		assert.True(t, result.Score.Valid)
+		assert.Equal(t, 95.5, result.Score.Float64)
+
+		assert.True(t, result.Flag.Valid)
+		assert.Equal(t, byte(255), result.Flag.Byte)
+
+		assert.True(t, result.Created.Valid)
+		assert.Equal(t, testDateTime, result.Created.V)
+
+		assert.True(t, result.Birthday.Valid)
+		assert.Equal(t, testDate, result.Birthday.V)
+
+		assert.True(t, result.MeetingTime.Valid)
+		assert.Equal(t, testTime, result.MeetingTime.V)
+
+		assert.True(t, result.Price.Valid)
+		assert.True(t, testDecimal.Equal(result.Price.Decimal))
+
+		assert.True(t, result.Active.Valid)
+		assert.True(t, result.Active.Bool)
+	})
+
+	t.Run("partial input with some null fields", func(t *testing.T) {
+		type PartialStruct struct {
+			Name   null.String `json:"name"`
+			Age    null.Int    `json:"age"`
+			Score  null.Float  `json:"score"`
+			Active null.Bool   `json:"active"`
+		}
+
+		// Only provide name and age, leave score and active unset
+		input := map[string]any{
+			"name": "Jane Doe",
+			"age":  int64(25),
+		}
+
+		result, err := FromMap[PartialStruct](input)
+		require.NoError(t, err)
+
+		// Provided fields should be valid
+		assert.True(t, result.Name.Valid)
+		assert.Equal(t, "Jane Doe", result.Name.String)
+
+		assert.True(t, result.Age.Valid)
+		assert.Equal(t, int64(25), result.Age.Int64)
+
+		// Unprovided fields should be invalid
+		assert.False(t, result.Score.Valid)
+		assert.False(t, result.Active.Valid)
 	})
 }

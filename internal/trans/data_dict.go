@@ -26,6 +26,12 @@ func (t *dataDictTransformer) Transform(ctx context.Context, fl trans.FieldLevel
 	field := fl.Field()
 	value := field.String()
 
+	// Skip if resolver is nil
+	if t.resolver == nil {
+		t.logger.Warnf("Ignore dict transformation for code '%s' because DataDictNameResolver is nil, please provide one in the container", value)
+		return nil
+	}
+
 	// Skip empty value processing
 	if value == constants.Empty {
 		return nil
@@ -34,7 +40,7 @@ func (t *dataDictTransformer) Transform(ctx context.Context, fl trans.FieldLevel
 	// Get dictionary key to distinguish different types of data dictionaries
 	dictKey := fl.Param()
 	if dictKey == constants.Empty {
-		t.logger.Warnf("ignore dict transformation for code '%s' because dict key is empty", value)
+		t.logger.Warnf("Ignore dict transformation for code '%s' because dict key is empty", value)
 		return nil
 	}
 
