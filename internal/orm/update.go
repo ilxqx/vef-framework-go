@@ -67,6 +67,11 @@ func (u *bunUpdate) Model(model any) orm.Update {
 	return u
 }
 
+func (u *bunUpdate) ModelTable(table string) orm.Update {
+	u.query.ModelTableExpr("? AS ?TableAlias", bun.Name(table))
+	return u
+}
+
 func (u *bunUpdate) Table(name string) orm.Update {
 	u.query.Table(name)
 	return u

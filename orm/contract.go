@@ -497,6 +497,8 @@ type Selectable[T Executor] interface {
 type Source[T Executor] interface {
 	// Model selects a model.
 	Model(model any) T
+	// ModelTable selects a table.
+	ModelTable(table string) T
 	// Table selects a table.
 	Table(name string) T
 	// TableAs selects a table with an alias.

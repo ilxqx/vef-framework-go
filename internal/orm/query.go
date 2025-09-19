@@ -131,6 +131,11 @@ func (q *bunQuery) Model(model any) orm.Query {
 	return q
 }
 
+func (q *bunQuery) ModelTable(table string) orm.Query {
+	q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(table))
+	return q
+}
+
 func (q *bunQuery) Table(name string) orm.Query {
 	q.query.Table(name)
 	return q

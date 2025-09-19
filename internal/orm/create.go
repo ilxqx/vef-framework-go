@@ -59,6 +59,11 @@ func (c *bunCreate) Model(model any) orm.Create {
 	return c
 }
 
+func (c *bunCreate) ModelTable(table string) orm.Create {
+	c.query.ModelTableExpr("?", bun.Name(table))
+	return c
+}
+
 func (c *bunCreate) Table(name string) orm.Create {
 	c.query.Table(name)
 	return c

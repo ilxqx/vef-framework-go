@@ -58,6 +58,11 @@ func (d *bunDelete) Model(model any) orm.Delete {
 	return d
 }
 
+func (d *bunDelete) ModelTable(table string) orm.Delete {
+	d.query.ModelTableExpr("? AS ?TableAlias", bun.Name(table))
+	return d
+}
+
 func (d *bunDelete) Table(name string) orm.Delete {
 	d.query.Table(name)
 	return d

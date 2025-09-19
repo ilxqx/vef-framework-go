@@ -28,10 +28,10 @@ func newDb(lc fx.Lifecycle, config *config.DatasourceConfig) (*bun.DB, error) {
 	db = db.WithNamedArg(orm.PlaceholderKeyOperator, orm.OperatorSystem)
 
 	// Setup database connection pool
-	sqlDb.SetMaxIdleConns(max(runtime.GOMAXPROCS(0)*4, 10))
-	sqlDb.SetMaxOpenConns(max(runtime.GOMAXPROCS(0)*8, 50))
+	sqlDb.SetMaxIdleConns(max(runtime.GOMAXPROCS(0)*4, 25))
+	sqlDb.SetMaxOpenConns(max(runtime.GOMAXPROCS(0)*16, 100))
 	sqlDb.SetConnMaxIdleTime(5 * time.Minute)
-	sqlDb.SetConnMaxLifetime(12 * time.Hour)
+	sqlDb.SetConnMaxLifetime(30 * time.Minute)
 
 	if err := sqlDb.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %v", err)
