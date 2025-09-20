@@ -63,7 +63,7 @@ func (u *UpdateAPI[TModel, TParams]) Update(ctx fiber.Ctx, db orm.Db, logger log
 	}
 
 	if u.preUpdate != nil {
-		if err := u.preUpdate(&oldModel, &model, &params, ctx); err != nil {
+		if err := u.preUpdate(&oldModel, &model, &params, ctx, db); err != nil {
 			return err
 		}
 	}

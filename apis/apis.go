@@ -39,22 +39,22 @@ type FilterApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFun
 type SortApplier func(ctx fiber.Ctx) orm.ApplyFunc[Sorter]
 
 // PostFindProcessor is a function that processes the result after query execution.
-type PostFindProcessor[T, R any] func(T, fiber.Ctx) R
+type PostFindProcessor[T, R any] func(model T, ctx fiber.Ctx) R
 
 // PreCreateProcessor is a function that pre-processes the model before creating it.
-type PreCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, ctx fiber.Ctx) error
+type PreCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, ctx fiber.Ctx, db orm.Db) error
 
 // PostCreateProcessor is a function that post-processes the model after creating it.
 type PostCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, ctx fiber.Ctx, tx orm.Db) error
 
 // PreUpdateProcessor is a function that pre-processes the model before updating it.
-type PreUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, ctx fiber.Ctx) error
+type PreUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, ctx fiber.Ctx, db orm.Db) error
 
 // PostUpdateProcessor is a function that post-processes the model after updating it.
 type PostUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, ctx fiber.Ctx, tx orm.Db) error
 
 // PreDeleteProcessor is a function that pre-processes the model before deleting it.
-type PreDeleteProcessor[TModel any] func(model *TModel, ctx fiber.Ctx) error
+type PreDeleteProcessor[TModel any] func(model *TModel, ctx fiber.Ctx, db orm.Db) error
 
 // PostDeleteProcessor is a function that post-processes the model after deleting it.
 type PostDeleteProcessor[TModel any] func(model *TModel, ctx fiber.Ctx, tx orm.Db) error

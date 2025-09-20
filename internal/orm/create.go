@@ -181,17 +181,20 @@ func (c *bunCreate) ReturningNull() orm.Create {
 }
 
 func (c *bunCreate) Apply(fns ...orm.ApplyFunc[orm.Create]) orm.Create {
-	var crt orm.Create = c
 	for _, fn := range fns {
 		if fn != nil {
-			r := fn(crt)
-			if r != nil {
-				crt = r
-			}
+			fn(c)
 		}
 	}
 
-	return crt
+	return c
+}
+
+func (c *bunCreate) ApplyIf(condition bool, fns ...orm.ApplyFunc[orm.Create]) orm.Create {
+	if condition {
+		return c.Apply(fns...)
+	}
+	return c
 }
 
 func (c *bunCreate) beforeCreate() {

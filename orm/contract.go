@@ -588,12 +588,14 @@ type Returnable[T Executor] interface {
 }
 
 // ApplyFunc is a function that applies a shared operation.
-type ApplyFunc[T any] func(T) T
+type ApplyFunc[T any] func(T)
 
 // Applier is an interface that defines the methods for applying shared operations.
 type Applier[T any] interface {
 	// Apply applies shared operations.
 	Apply(fns ...ApplyFunc[T]) T
+	// ApplyIf applies shared operations if the condition is true.
+	ApplyIf(condition bool, fns ...ApplyFunc[T]) T
 }
 
 // Query is an interface that defines the methods for querying a database.

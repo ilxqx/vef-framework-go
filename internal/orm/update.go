@@ -308,17 +308,20 @@ func (u *bunUpdate) Bulk() orm.Update {
 }
 
 func (u *bunUpdate) Apply(fns ...orm.ApplyFunc[orm.Update]) orm.Update {
-	var up orm.Update = u
 	for _, fn := range fns {
 		if fn != nil {
-			r := fn(up)
-			if r != nil {
-				up = r
-			}
+			fn(u)
 		}
 	}
 
-	return up
+	return u
+}
+
+func (u *bunUpdate) ApplyIf(condition bool, fns ...orm.ApplyFunc[orm.Update]) orm.Update {
+	if condition {
+		return u.Apply(fns...)
+	}
+	return u
 }
 
 func (u *bunUpdate) beforeUpdate() {

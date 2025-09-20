@@ -190,17 +190,20 @@ func (d *bunDelete) ReturningNull() orm.Delete {
 }
 
 func (d *bunDelete) Apply(fns ...orm.ApplyFunc[orm.Delete]) orm.Delete {
-	var del orm.Delete = d
 	for _, fn := range fns {
 		if fn != nil {
-			r := fn(del)
-			if r != nil {
-				del = r
-			}
+			fn(d)
 		}
 	}
 
-	return del
+	return d
+}
+
+func (d *bunDelete) ApplyIf(condition bool, fns ...orm.ApplyFunc[orm.Delete]) orm.Delete {
+	if condition {
+		return d.Apply(fns...)
+	}
+	return d
 }
 
 func (d *bunDelete) Exec(ctx context.Context, dest ...any) (sql.Result, error) {

@@ -11,25 +11,28 @@ import (
 
 // richConditionBuilder is a builder for building rich conditions.
 type richConditionBuilder struct {
-	table           *schema.Table                                        // table is the schema table for condition building
-	subQueryBuilder func(builder func(query orm.Query)) *bun.SelectQuery // subQueryBuilder creates sub-queries for conditions
-	and             func(query string, args ...any)                      // and adds AND conditions
-	or              func(query string, args ...any)                      // or adds OR conditions
-	group           func(sep string, builder func(orm.ConditionBuilder)) // group creates grouped conditions
+	table           *schema.Table
+	subQueryBuilder func(builder func(query orm.Query)) *bun.SelectQuery
+	and             func(query string, args ...any)
+	or              func(query string, args ...any)
+	group           func(sep string, builder func(orm.ConditionBuilder))
 }
 
 func (cb *richConditionBuilder) Apply(fns ...orm.ApplyFunc[orm.ConditionBuilder]) orm.ConditionBuilder {
-	var currentCb orm.ConditionBuilder = cb
 	for _, fn := range fns {
 		if fn != nil {
-			r := fn(currentCb)
-			if r != nil {
-				currentCb = r
-			}
+			fn(cb)
 		}
 	}
 
-	return currentCb
+	return cb
+}
+
+func (cb *richConditionBuilder) ApplyIf(condition bool, fns ...orm.ApplyFunc[orm.ConditionBuilder]) orm.ConditionBuilder {
+	if condition {
+		return cb.Apply(fns...)
+	}
+	return cb
 }
 
 func (cb *richConditionBuilder) Equals(column string, value any) orm.ConditionBuilder {

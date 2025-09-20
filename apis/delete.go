@@ -113,7 +113,7 @@ func (d *DeleteAPI[TModel]) Delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 
 		// Execute pre-delete hook if configured
 		if d.preDelete != nil {
-			if err := d.preDelete(&model, ctx); err != nil {
+			if err := d.preDelete(&model, ctx, db); err != nil {
 				return err
 			}
 		}

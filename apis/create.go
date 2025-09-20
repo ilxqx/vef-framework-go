@@ -55,7 +55,7 @@ func (c *CreateAPI[TModel, TParams]) Create(ctx fiber.Ctx, db orm.Db, logger log
 	}
 
 	if c.preCreate != nil {
-		if err := c.preCreate(&model, &params, ctx); err != nil {
+		if err := c.preCreate(&model, &params, ctx, db); err != nil {
 			return err
 		}
 	}

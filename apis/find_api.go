@@ -95,21 +95,16 @@ func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) configQuery(ctx
 	}
 
 	// Apply additional order modifications if configured
-	if a.sortApplier != nil {
-		applySort(ctx, query, a.sortApplier)
-	}
+	applySort(ctx, query, a.sortApplier)
 
 	return query
 }
 
 // applySort applies the sort applier to the query.
 func applySort(ctx fiber.Ctx, query orm.Query, sortApplier SortApplier) {
-	if sortApplier != nil {
-		query.Apply(func(query orm.Query) orm.Query {
-			sortApplier(ctx)(newSorter(query))
-			return query
-		})
-	}
+	query.ApplyIf(sortApplier != nil, func(query orm.Query) {
+		sortApplier(ctx)(newSorter(query))
+	})
 }
 
 // newFindAPI creates a new findAPI instance with default search applier.

@@ -544,17 +544,20 @@ func (q *bunQuery) ExceptAll(builder func(query orm.Query)) orm.Query {
 }
 
 func (q *bunQuery) Apply(fns ...orm.ApplyFunc[orm.Query]) orm.Query {
-	var qry orm.Query = q
 	for _, fn := range fns {
 		if fn != nil {
-			r := fn(qry)
-			if r != nil {
-				qry = r
-			}
+			fn(q)
 		}
 	}
 
-	return qry
+	return q
+}
+
+func (q *bunQuery) ApplyIf(condition bool, fns ...orm.ApplyFunc[orm.Query]) orm.Query {
+	if condition {
+		return q.Apply(fns...)
+	}
+	return q
 }
 
 func (q *bunQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {

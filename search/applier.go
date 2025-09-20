@@ -9,10 +9,8 @@ func Applier[T any]() func(T) orm.ApplyFunc[orm.ConditionBuilder] {
 	f := New[T]()
 
 	return func(value T) orm.ApplyFunc[orm.ConditionBuilder] {
-		return func(cb orm.ConditionBuilder) orm.ConditionBuilder {
+		return func(cb orm.ConditionBuilder) {
 			f.Apply(cb, value)
-
-			return cb
 		}
 	}
 }
