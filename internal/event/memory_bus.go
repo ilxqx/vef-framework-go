@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/id"
 	"go.uber.org/fx"
 )
 
@@ -134,7 +134,7 @@ func (b *memoryEventBus) Publish(event event.Event) {
 
 // Subscribe registers a handler for specific event types
 func (b *memoryEventBus) Subscribe(eventType string, handler event.HandlerFunc) event.UnsubscribeFunc {
-	id := utils.GenerateId()
+	id := id.GenerateUuid()
 	sub := &subscription{
 		id:        id,
 		eventType: eventType,

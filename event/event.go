@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/id"
 )
 
 // Event represents the base interface for all events in the system.
@@ -141,5 +141,5 @@ func NewBaseEvent(eventType string, opts ...baseEventOption) BaseEvent {
 
 // generateEventId creates a unique identifier for events.
 func generateEventId() string {
-	return utils.GenerateId()
+	return id.GenerateUuid()
 }

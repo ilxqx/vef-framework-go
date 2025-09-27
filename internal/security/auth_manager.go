@@ -7,22 +7,22 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// defaultAuthManager implements the AuthManager interface.
+// AuthenticatorAuthManager implements the AuthManager interface.
 // It manages multiple authenticators and delegates authentication requests to the appropriate one.
-type defaultAuthManager struct {
+type AuthenticatorAuthManager struct {
 	authenticators []security.Authenticator
 }
 
-// newAuthManager creates a new authentication manager with the provided authenticators.
-func newAuthManager(authenticators []security.Authenticator) security.AuthManager {
-	return &defaultAuthManager{
+// NewAuthManager creates a new authentication manager with the provided authenticators.
+func NewAuthManager(authenticators []security.Authenticator) security.AuthManager {
+	return &AuthenticatorAuthManager{
 		authenticators: authenticators,
 	}
 }
 
 // Authenticate attempts to authenticate the provided authentication information.
 // It finds the appropriate authenticator and delegates the authentication request.
-func (am *defaultAuthManager) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (am *AuthenticatorAuthManager) Authenticate(authentication security.Authentication) (*security.Principal, error) {
 	// Find the appropriate authenticator
 	authenticator := am.findAuthenticator(authentication.Type)
 	if authenticator == nil {
@@ -47,7 +47,7 @@ func (am *defaultAuthManager) Authenticate(authentication security.Authenticatio
 }
 
 // findAuthenticator finds the first authenticator that supports the given authentication type.
-func (am *defaultAuthManager) findAuthenticator(authType string) security.Authenticator {
+func (am *AuthenticatorAuthManager) findAuthenticator(authType string) security.Authenticator {
 	for _, authenticator := range am.authenticators {
 		if authenticator.Supports(authType) {
 			return authenticator

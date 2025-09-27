@@ -4,74 +4,43 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/utils"
-	"github.com/uptrace/bun/schema"
+	"github.com/ilxqx/vef-framework-go/treebuilder"
 )
 
-const (
-	idField       = orm.ColumnId
-	parentIdField = "parent_id"
-)
+type findTreeOptionsAPI[TModel, TSearch any] struct {
+	FindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]]
 
-// TreeOptionsConfig defines the mapping between database fields and tree option fields.
-type TreeOptionsConfig struct {
-	api.In
-	OptionsConfig
-	IdField       string `json:"idField"`       // Field name for ID (default: "id")
-	ParentIdField string `json:"parentIdField"` // Field name for parent ID (default: "parentId")
-}
-
-// applyDefaults applies default values to tree options configuration.
-func (c *TreeOptionsConfig) applyDefaults(defaultConfig *TreeOptionsConfig) {
-	applyTreeOptionsDefaults(c, defaultConfig)
-}
-
-// validateFields validates that the specified fields exist in the model.
-func (c *TreeOptionsConfig) validateFields(schema *schema.Table) error {
-	return validateTreeOptionsFields(schema, c)
-}
-
-// TreeOption represents a hierarchical option with children.
-type TreeOption struct {
-	Option
-	Id       string       `json:"id"`                 // Unique identifier
-	ParentId null.String  `json:"parentId,omitzero"`  // Parent identifier
-	Children []TreeOption `json:"children,omitempty"` // Child options
-}
-
-// FindTreeOptionsAPI provides hierarchical option query functionality.
-type FindTreeOptionsAPI[TModel, TSearch any] struct {
-	*findAPI[TModel, TSearch, PostFindProcessor[[]TreeOption, []TreeOption], FindTreeOptionsAPI[TModel, TSearch]]
 	defaultConfig *TreeOptionsConfig
 }
 
-// WithDefaultConfig sets the default configuration for tree options queries.
-// This configuration provides fallback values for field mapping when not explicitly specified in queries.
-// Returns the API instance for method chaining.
-func (a *FindTreeOptionsAPI[TModel, TSearch]) WithDefaultConfig(config *TreeOptionsConfig) *FindTreeOptionsAPI[TModel, TSearch] {
+func (a *findTreeOptionsAPI[TModel, TSearch]) Provide() api.Spec {
+	return a.FindAPI.Build(a.findTreeOptions)
+}
+
+// Build should not be called directly on concrete API types.
+// Use Provide() to generate api.Spec with the correct handler instead.
+func (a *findTreeOptionsAPI[TModel, TSearch]) Build(handler any) api.Spec {
+	panic("apis: do not call FindAPI.Build on findTreeOptionsAPI; call Provide() instead")
+}
+
+func (a *findTreeOptionsAPI[TModel, TSearch]) DefaultConfig(config *TreeOptionsConfig) FindTreeOptionsAPI[TModel, TSearch] {
 	a.defaultConfig = config
 	return a
 }
 
-// FindTreeOptions creates a handler that executes the query and returns hierarchical options with customizable configuration.
-// Uses recursive CTE to efficiently fetch all nodes in the tree structure.
-//
-// Parameters:
-//   - db: The database connection for schema introspection
-//
-// Returns a handler function that processes find-tree-options requests.
-func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
+func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
 	// Pre-compute schema information
 	schema := db.Schema((*TModel)(nil))
 
 	// Pre-compute whether default created_at ordering should be applied
-	hasCreatedAt := schema.HasField(orm.ColumnCreatedAt)
+	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
+	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
 
 	// Pre-compute tree adapter for building hierarchical structure
-	treeAdapter := utils.TreeAdapter[TreeOption]{
+	treeAdapter := treebuilder.Adapter[TreeOption]{
 		GetId: func(t TreeOption) string {
 			return t.Id
 		},
@@ -92,7 +61,7 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(db orm.Db) func(ct
 		}
 
 		// Helper function to apply field selections with proper aliasing
-		applyFieldSelections := func(query orm.Query) orm.Query {
+		applyFieldSelections := func(query orm.SelectQuery) orm.SelectQuery {
 			if config.ValueField == valueField {
 				query.Select(config.ValueField)
 			} else {
@@ -128,37 +97,37 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(db orm.Db) func(ct
 			return query
 		}
 
-		query := db.NewQuery().
-			WithRecursive("tmp_tree", func(query orm.Query) {
+		query := db.NewSelect().
+			WithRecursive("tmp_tree", func(query orm.SelectQuery) {
 				// Base query: fetch root nodes and apply filters
-				query = a.configQuery(ctx, query, (*TModel)(nil), search)
+				a.ConfigureQuery(query, (*TModel)(nil), search, ctx)
 				query = applyFieldSelections(query)
 
 				// Apply sorting
 				if config.SortField != constants.Empty {
 					query.OrderBy(config.SortField)
-				} else if a.sortApplier == nil && hasCreatedAt {
-					query.OrderBy(orm.ColumnCreatedAt)
+				} else if shouldApplyDefaultSort {
+					query.OrderBy(constants.ColumnCreatedAt)
 				}
 
 				query = query.Limit(maxOptionsLimit)
 
 				// Recursive part: fetch child nodes by joining with parent results
-				query.Union(func(query orm.Query) {
+				query.Union(func(query orm.SelectQuery) {
 					query = applyFieldSelections(query.Model((*TModel)(nil)))
 
 					// Apply sorting
 					if config.SortField != constants.Empty {
 						query.OrderBy(config.SortField)
-					} else if a.sortApplier == nil && hasCreatedAt {
-						query.OrderBy(orm.ColumnCreatedAt)
-					} else if a.sortApplier != nil {
-						applySort(ctx, query, a.sortApplier)
+					} else if shouldApplyDefaultSort {
+						query.OrderBy(constants.ColumnCreatedAt)
+					} else if a.HasSortApplier() {
+						a.ApplySort(query, search, ctx)
 					}
 
-					query.JoinTableAs("tmp_tree", "tt", func(cb orm.ConditionBuilder) {
-						cb.EqualsExpr(config.IdField, "?.?", orm.Name("tt"), orm.Name(config.ParentIdField))
-					})
+					query.JoinTable("tmp_tree", func(cb orm.ConditionBuilder) {
+						cb.EqualsColumn(config.IdField, dbhelpers.ColumnWithAlias(config.ParentIdField, "tt"))
+					}, "tt")
 				})
 			}).
 			Table("tmp_tree")
@@ -168,30 +137,8 @@ func (a *FindTreeOptionsAPI[TModel, TSearch]) FindTreeOptions(db orm.Db) func(ct
 			return err
 		}
 
-		// Build hierarchical tree structure from flat results using pre-computed adapter
-		treeOptions := utils.BuildTree(flatOptions, treeAdapter)
-
-		if a.processor != nil {
-			treeOptions = a.processor(treeOptions, ctx)
-		}
-
-		return result.Ok(treeOptions).Response(ctx)
+		// Build hierarchical tree structure from flat results using tree adapter
+		treeOptions := treebuilder.Build(flatOptions, treeAdapter)
+		return result.Ok(a.Process(treeOptions, search, ctx)).Response(ctx)
 	}
-}
-
-// NewFindTreeOptionsAPI creates a new FindTreeOptionsAPI with the specified options.
-func NewFindTreeOptionsAPI[TModel, TSearch any]() *FindTreeOptionsAPI[TModel, TSearch] {
-	api := &FindTreeOptionsAPI[TModel, TSearch]{
-		defaultConfig: &TreeOptionsConfig{
-			OptionsConfig: OptionsConfig{
-				LabelField: defaultLabelField,
-				ValueField: defaultValueField,
-			},
-			IdField:       idField,
-			ParentIdField: parentIdField,
-		},
-	}
-	api.findAPI = newFindAPI[TModel, TSearch, PostFindProcessor[[]TreeOption, []TreeOption]](api)
-
-	return api
 }

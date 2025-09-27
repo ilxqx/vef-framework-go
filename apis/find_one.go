@@ -2,34 +2,30 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/trans"
 )
 
-// FindOneAPI provides single record query functionality with filtering and post-processing.
-// It returns the first matching record based on the search criteria.
-//
-// Type parameters:
-//   - TModel: The database model type
-//   - TSearch: The search criteria type
-type FindOneAPI[TModel, TSearch any] struct {
-	*findAPI[TModel, TSearch, PostFindProcessor[TModel, any], FindOneAPI[TModel, TSearch]]
+type findOneAPI[TModel, TSearch any] struct {
+	FindAPI[TModel, TSearch, TModel, FindOneAPI[TModel, TSearch]]
 }
 
-// FindOne executes the query and returns a single record.
-// It applies the configured search criteria, filters, and transformations.
-//
-// Parameters:
-//   - ctx: The Fiber context
-//   - db: The database connection
-//   - search: The search criteria
-//
-// Returns an error if the query fails, otherwise returns the first matching record via HTTP response.
-// If no record is found, returns the zero value of the model type.
-func (a *FindOneAPI[TModel, TSearch]) FindOne(ctx fiber.Ctx, db orm.Db, search TSearch) error {
+func (a *findOneAPI[TModel, TSearch]) Provide() api.Spec {
+	return a.FindAPI.Build(a.findOne)
+}
+
+// Build should not be called directly on concrete API types.
+// Use Provide() to generate api.Spec with the correct handler instead.
+func (a *findOneAPI[TModel, TSearch]) Build(handler any) api.Spec {
+	panic("apis: do not call FindAPI.Build on findOneAPI; call Provide() instead")
+}
+
+func (a *findOneAPI[TModel, TSearch]) findOne(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, search TSearch) error {
 	var (
 		model TModel
-		query = a.buildQuery(ctx, db, &model, search)
+		query = a.BuildQuery(db, &model, search, ctx)
 	)
 
 	// Limit to 1 record for efficiency
@@ -38,30 +34,9 @@ func (a *FindOneAPI[TModel, TSearch]) FindOne(ctx fiber.Ctx, db orm.Db, search T
 	}
 
 	// Apply transformation to the model
-	if err := apisParams.Transformer.Struct(ctx, &model); err != nil {
+	if err := transformer.Struct(ctx, &model); err != nil {
 		return err
 	}
 
-	// Apply post-processing if configured
-	if a.processor != nil {
-		return result.Ok(a.processor(model, ctx)).Response(ctx)
-	}
-
-	return result.Ok(model).Response(ctx)
-}
-
-// NewFindOneAPI creates a new FindOneAPI instance.
-// Use method chaining to configure filters, relations, and post-processing.
-//
-// Example:
-//
-//	api := NewFindOneAPI[User, UserSearch]().
-//	  WithFilterApplier(myFilter).
-//	  WithRelations("profile").
-//	  WithPostFind(myProcessor)
-func NewFindOneAPI[TModel, TSearch any]() *FindOneAPI[TModel, TSearch] {
-	api := new(FindOneAPI[TModel, TSearch])
-	api.findAPI = newFindAPI[TModel, TSearch, PostFindProcessor[TModel, any]](api)
-
-	return api
+	return result.Ok(a.Process(model, search, ctx)).Response(ctx)
 }

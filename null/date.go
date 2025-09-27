@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/mo"
+	"github.com/ilxqx/vef-framework-go/datetime"
 )
 
-// Date is a nullable mo.Date. It supports SQL and JSON serialization.
+// Date is a nullable datetime.Date. It supports SQL and JSON serialization.
 // It will marshal to null if null.
 type Date struct {
-	sql.Null[mo.Date]
+	sql.Null[datetime.Date]
 }
 
 // NewDate creates a new Date.
-func NewDate(d mo.Date, valid bool) Date {
+func NewDate(d datetime.Date, valid bool) Date {
 	return Date{
-		Null: sql.Null[mo.Date]{
+		Null: sql.Null[datetime.Date]{
 			V:     d,
 			Valid: valid,
 		},
@@ -26,30 +26,30 @@ func NewDate(d mo.Date, valid bool) Date {
 }
 
 // DateFrom creates a new Date that will always be valid.
-func DateFrom(d mo.Date) Date {
+func DateFrom(d datetime.Date) Date {
 	return NewDate(d, true)
 }
 
 // DateFromPtr creates a new Date that will be null if d is nil.
-func DateFromPtr(d *mo.Date) Date {
+func DateFromPtr(d *datetime.Date) Date {
 	if d == nil {
-		return NewDate(mo.Date{}, false)
+		return NewDate(datetime.Date{}, false)
 	}
 
 	return NewDate(*d, true)
 }
 
 // ValueOrZero returns the inner value if valid, otherwise zero.
-func (d Date) ValueOrZero() mo.Date {
+func (d Date) ValueOrZero() datetime.Date {
 	if !d.Valid {
-		return mo.Date{}
+		return datetime.Date{}
 	}
 
 	return d.V
 }
 
 // ValueOr returns the inner value if valid, otherwise v.
-func (d Date) ValueOr(v mo.Date) mo.Date {
+func (d Date) ValueOr(v datetime.Date) datetime.Date {
 	if !d.Valid {
 		return v
 	}
@@ -61,7 +61,7 @@ func (d Date) ValueOr(v mo.Date) mo.Date {
 // It will encode null if this date is null.
 func (d Date) MarshalJSON() ([]byte, error) {
 	if !d.Valid {
-		return mo.JSONNullBytes, nil
+		return constants.JSONNullBytes, nil
 	}
 
 	return d.V.MarshalJSON()
@@ -84,7 +84,7 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It returns an empty string if invalid, otherwise mo.Date's MarshalText.
+// It returns an empty string if invalid, otherwise datetime.Date's MarshalText.
 func (d Date) MarshalText() ([]byte, error) {
 	if !d.Valid {
 		return []byte{}, nil
@@ -99,7 +99,7 @@ func (d Date) MarshalText() ([]byte, error) {
 func (d *Date) UnmarshalText(text []byte) error {
 	str := string(text)
 	// allowing "null" is for backwards compatibility with v3
-	if str == constants.Empty || str == mo.JSONNull {
+	if str == constants.Empty || str == constants.JSONNull {
 		d.Valid = false
 		return nil
 	}
@@ -111,13 +111,13 @@ func (d *Date) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this Date's value and sets it to be non-null.
-func (d *Date) SetValid(v mo.Date) {
+func (d *Date) SetValid(v datetime.Date) {
 	d.V = v
 	d.Valid = true
 }
 
 // Ptr returns a pointer to this Date's value, or a nil pointer if this Date is null.
-func (d Date) Ptr() *mo.Date {
+func (d Date) Ptr() *datetime.Date {
 	if !d.Valid {
 		return nil
 	}

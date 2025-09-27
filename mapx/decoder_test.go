@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -986,9 +986,9 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 	})
 
 	t.Run("null.DateTime decode hook", func(t *testing.T) {
-		testDateTime := mo.DateTimeOf(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 
-		// Test mo.DateTime to null.DateTime conversion
+		// Test datetime.DateTime to null.DateTime conversion
 		type StructWithNullDateTime struct {
 			Created null.DateTime `json:"created"`
 		}
@@ -1002,9 +1002,9 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.True(t, result.Created.Valid)
 		assert.Equal(t, testDateTime, result.Created.V)
 
-		// Test null.DateTime to mo.DateTime conversion
+		// Test null.DateTime to datetime.DateTime conversion
 		type StructWithDateTime struct {
-			Created mo.DateTime `json:"created"`
+			Created datetime.DateTime `json:"created"`
 		}
 
 		input2 := map[string]any{
@@ -1017,9 +1017,9 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 	})
 
 	t.Run("null.Date decode hook", func(t *testing.T) {
-		testDate := mo.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
+		testDate := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 
-		// Test mo.Date to null.Date conversion
+		// Test datetime.Date to null.Date conversion
 		type StructWithNullDate struct {
 			Birthday null.Date `json:"birthday"`
 		}
@@ -1033,9 +1033,9 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.True(t, result.Birthday.Valid)
 		assert.Equal(t, testDate, result.Birthday.V)
 
-		// Test null.Date to mo.Date conversion
+		// Test null.Date to datetime.Date conversion
 		type StructWithDate struct {
-			Birthday mo.Date `json:"birthday"`
+			Birthday datetime.Date `json:"birthday"`
 		}
 
 		input2 := map[string]any{
@@ -1048,9 +1048,9 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 	})
 
 	t.Run("null.Time decode hook", func(t *testing.T) {
-		testTime := mo.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
+		testTime := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 
-		// Test mo.Time to null.Time conversion
+		// Test datetime.Time to null.Time conversion
 		type StructWithNullTime struct {
 			MeetingTime null.Time `json:"meeting_time"`
 		}
@@ -1064,9 +1064,9 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.True(t, result.MeetingTime.Valid)
 		assert.Equal(t, testTime, result.MeetingTime.V)
 
-		// Test null.Time to mo.Time conversion
+		// Test null.Time to datetime.Time conversion
 		type StructWithTime struct {
-			MeetingTime mo.Time `json:"meeting_time"`
+			MeetingTime datetime.Time `json:"meeting_time"`
 		}
 
 		input2 := map[string]any{
@@ -1209,9 +1209,9 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 			Active      null.Bool     `json:"active"`
 		}
 
-		testDateTime := mo.DateTimeOf(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
-		testDate := mo.DateOf(time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC))
-		testTime := mo.TimeOf(time.Date(0, 1, 1, 14, 30, 0, 0, time.UTC))
+		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+		testDate := datetime.DateOf(time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC))
+		testTime := datetime.TimeOf(time.Date(0, 1, 1, 14, 30, 0, 0, time.UTC))
 		testDecimal := decimal.NewFromFloat(99.99)
 
 		input := map[string]any{

@@ -9,53 +9,65 @@ import (
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 // presetParamResolvers defines the built-in parameter resolvers available by default.
 // Additional resolvers can be supplied via DI and will override these when type overlaps.
 var presetParamResolvers = []api.HandlerParamResolver{
-	new(ctxParamResolver),
-	new(dbParamResolver),
-	new(loggerParamResolver),
-	new(principalParamResolver),
+	new(CtxParamResolver),
+	new(DbParamResolver),
+	new(LoggerParamResolver),
+	new(PrincipalParamResolver),
+	new(TransformerParamResolver),
 }
 
-type ctxParamResolver struct{}
+type CtxParamResolver struct{}
 
-func (*ctxParamResolver) Type() reflect.Type {
+func (*CtxParamResolver) Type() reflect.Type {
 	return reflect.TypeFor[fiber.Ctx]()
 }
 
-func (*ctxParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
+func (*CtxParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(ctx), nil
 }
 
-type dbParamResolver struct{}
+type DbParamResolver struct{}
 
-func (*dbParamResolver) Type() reflect.Type {
+func (*DbParamResolver) Type() reflect.Type {
 	return reflect.TypeFor[orm.Db]()
 }
 
-func (*dbParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
+func (*DbParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(contextx.Db(ctx)), nil
 }
 
-type loggerParamResolver struct{}
+type LoggerParamResolver struct{}
 
-func (*loggerParamResolver) Type() reflect.Type {
+func (*LoggerParamResolver) Type() reflect.Type {
 	return reflect.TypeFor[log.Logger]()
 }
 
-func (*loggerParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
+func (*LoggerParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(contextx.Logger(ctx)), nil
 }
 
-type principalParamResolver struct{}
+type PrincipalParamResolver struct{}
 
-func (*principalParamResolver) Type() reflect.Type {
+func (*PrincipalParamResolver) Type() reflect.Type {
 	return reflect.TypeFor[*security.Principal]()
 }
 
-func (*principalParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
+func (*PrincipalParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(contextx.Principal(ctx)), nil
+}
+
+type TransformerParamResolver struct{}
+
+func (*TransformerParamResolver) Type() reflect.Type {
+	return reflect.TypeFor[trans.Transformer]()
+}
+
+func (*TransformerParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
+	return reflect.ValueOf(contextx.Transformer(ctx)), nil
 }

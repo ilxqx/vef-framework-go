@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/mo"
 )
 
 var (
@@ -93,7 +92,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 func (b *Bool) UnmarshalText(text []byte) error {
 	str := string(text)
 	switch str {
-	case constants.Empty, mo.JSONNull:
+	case constants.Empty, constants.JSONNull:
 		b.Valid = false
 		return nil
 	case "true":
@@ -111,7 +110,7 @@ func (b *Bool) UnmarshalText(text []byte) error {
 // It will encode null if this Bool is null.
 func (b Bool) MarshalJSON() ([]byte, error) {
 	if !b.Valid {
-		return mo.JSONNullBytes, nil
+		return constants.JSONNullBytes, nil
 	}
 	if !b.Bool {
 		return falseBytes, nil

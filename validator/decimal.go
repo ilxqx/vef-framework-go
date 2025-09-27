@@ -5,14 +5,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// newDecimalMinRule creates a new validation rule for decimal minimum value.
+// newDecimalMinRule creates a validation rule that ensures decimal values meet minimum threshold.
 func newDecimalMinRule() ValidationRule {
 	return newDecimalComparisonRule("dec_min", "{0}最小只能为{1}", func(dec, threshold decimal.Decimal) bool {
 		return dec.GreaterThanOrEqual(threshold)
 	})
 }
 
-// newDecimalMaxRule creates a new validation rule for decimal maximum value.
+// newDecimalMaxRule creates a validation rule that ensures decimal values don't exceed maximum threshold.
 func newDecimalMaxRule() ValidationRule {
 	return newDecimalComparisonRule("dec_max", "{0}必须小于或等于{1}", func(dec, threshold decimal.Decimal) bool {
 		return dec.LessThanOrEqual(threshold)
@@ -20,7 +20,7 @@ func newDecimalMaxRule() ValidationRule {
 }
 
 // newDecimalComparisonRule creates a validation rule for decimal comparison operations.
-func newDecimalComparisonRule(ruleTag, errMessageTemplate string, compare func(decimal.Decimal, decimal.Decimal) bool) ValidationRule {
+func newDecimalComparisonRule(ruleTag, errMessageTemplate string, compareFn func(decimal.Decimal, decimal.Decimal) bool) ValidationRule {
 	return ValidationRule{
 		RuleTag:                  ruleTag,
 		ErrMessageTemplate:       errMessageTemplate,
@@ -38,7 +38,7 @@ func newDecimalComparisonRule(ruleTag, errMessageTemplate string, compare func(d
 				return false
 			}
 
-			return compare(dec, threshold)
+			return compareFn(dec, threshold)
 		},
 		ParseParam: func(fe v.FieldError) []string {
 			return []string{fe.Field(), fe.Param()}

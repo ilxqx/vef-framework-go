@@ -4,212 +4,176 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/schema"
 )
 
-// NewDelete creates a new Delete instance.
-func NewDelete(db bun.IDB) orm.Delete {
-	return &bunDelete{
-		query: db.NewDelete(),
+// NewDeleteQuery creates a new DeleteQuery instance with the provided database connection.
+// It initializes the query builders and sets up the table schema context for proper query building.
+func NewDeleteQuery(db bun.IDB) DeleteQuery {
+	eb := &QueryExprBuilder{}
+	dq := db.NewDelete()
+	dialect := db.Dialect()
+	query := &BunDeleteQuery{
+		QueryBuilder: newQueryBuilder(dialect, dq, eb),
+
+		dialect: dialect,
+		query:   dq,
+		eb:      eb,
 	}
+	eb.qb = query
+	return query
 }
 
-type bunDelete struct {
-	query *bun.DeleteQuery
+// BunDeleteQuery is the concrete implementation of DeleteQuery interface.
+// It wraps bun.DeleteQuery and provides additional functionality for expression building.
+type BunDeleteQuery struct {
+	QueryBuilder
+
+	dialect schema.Dialect
+	eb      ExprBuilder
+	query   *bun.DeleteQuery
 }
 
-func (*bunDelete) subQuery(subQuery *bun.SelectQuery) orm.Query {
-	return &bunQuery{
-		query:      subQuery,
-		isSubQuery: true,
-	}
+func (q *BunDeleteQuery) With(name string, builder func(SelectQuery)) DeleteQuery {
+	q.query.With(name, q.BuildSubQuery(builder))
+	return q
 }
 
-func (d *bunDelete) buildSubQuery(builder func(query orm.Query)) *bun.SelectQuery {
-	subQuery := d.query.NewSelect()
-	builder(d.subQuery(subQuery))
-
-	return subQuery
-}
-
-func (d *bunDelete) With(name string, builder func(orm.Query)) orm.Delete {
-	d.query.With(name, d.buildSubQuery(builder))
-	return d
-}
-
-func (d *bunDelete) WithValues(name string, model any, withOrder ...bool) orm.Delete {
-	values := d.query.NewValues(model)
+func (q *BunDeleteQuery) WithValues(name string, model any, withOrder ...bool) DeleteQuery {
+	values := q.query.NewValues(model)
 	if len(withOrder) > 0 && withOrder[0] {
 		values.WithOrder()
 	}
 
-	d.query.With(name, values)
-	return d
+	q.query.With(name, values)
+	return q
 }
 
-func (d *bunDelete) WithRecursive(name string, builder func(orm.Query)) orm.Delete {
-	d.query.WithRecursive(name, d.buildSubQuery(builder))
-	return d
+func (q *BunDeleteQuery) WithRecursive(name string, builder func(SelectQuery)) DeleteQuery {
+	q.query.WithRecursive(name, q.BuildSubQuery(builder))
+	return q
 }
 
-func (d *bunDelete) Model(model any) orm.Delete {
-	d.query.Model(model)
-	return d
+func (q *BunDeleteQuery) Model(model any) DeleteQuery {
+	q.query.Model(model)
+	return q
 }
 
-func (d *bunDelete) ModelTable(table string) orm.Delete {
-	d.query.ModelTableExpr("? AS ?TableAlias", bun.Name(table))
-	return d
+func (q *BunDeleteQuery) ModelTable(name string, alias ...string) DeleteQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.ModelTableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
+	} else {
+		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
+	}
+	return q
 }
 
-func (d *bunDelete) Table(name string) orm.Delete {
-	d.query.Table(name)
-	return d
+func (q *BunDeleteQuery) Table(name string, alias ...string) DeleteQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.TableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
+	} else {
+		q.query.Table(name)
+	}
+	return q
 }
 
-func (d *bunDelete) TableAs(name string, alias string) orm.Delete {
-	d.query.TableExpr("? AS ?", bun.Name(name), bun.Name(alias))
-	return d
+func (q *BunDeleteQuery) TableExpr(alias string, builder func(ExprBuilder) any) DeleteQuery {
+	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
+	return q
 }
 
-func (d *bunDelete) TableExpr(expr string, args ...any) orm.Delete {
-	d.query.TableExpr(expr, args...)
-	return d
+func (q *BunDeleteQuery) TableSubQuery(alias string, builder func(SelectQuery)) DeleteQuery {
+	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
+	return q
 }
 
-func (d *bunDelete) TableExprAs(expr string, alias string, args ...any) orm.Delete {
-	d.query.TableExpr("? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
-	return d
-}
-
-func (d *bunDelete) TableSubQuery(builder func(orm.Query)) orm.Delete {
-	d.query.TableExpr("(?)", d.buildSubQuery(builder))
-	return d
-}
-
-func (d *bunDelete) TableSubQueryAs(builder func(orm.Query), alias string) orm.Delete {
-	d.query.TableExpr("(?) AS ?", d.buildSubQuery(builder), bun.Name(alias))
-	return d
-}
-
-func (d *bunDelete) Where(builder func(orm.ConditionBuilder)) orm.Delete {
-	cb := newQueryConditionBuilder(getTableSchemaFromQuery(d.query), d.query.QueryBuilder(), d.buildSubQuery)
+func (q *BunDeleteQuery) Where(builder func(ConditionBuilder)) DeleteQuery {
+	cb := newQueryConditionBuilder(q.query.QueryBuilder(), q)
 	builder(cb)
-	return d
+	return q
 }
 
-func (d *bunDelete) WherePK(columns ...string) orm.Delete {
-	d.query.WherePK(columns...)
-	return d
+func (q *BunDeleteQuery) WherePK(columns ...string) DeleteQuery {
+	q.query.WherePK(columns...)
+	return q
 }
 
-func (d *bunDelete) WhereDeleted() orm.Delete {
-	d.query.WhereDeleted()
-	return d
+func (q *BunDeleteQuery) WhereDeleted() DeleteQuery {
+	q.query.WhereDeleted()
+	return q
 }
 
-func (d *bunDelete) WhereAllWithDeleted() orm.Delete {
-	d.query.WhereAllWithDeleted()
-	return d
+func (q *BunDeleteQuery) IncludeDeleted() DeleteQuery {
+	q.query.WhereAllWithDeleted()
+	return q
 }
 
-func (d *bunDelete) OrderBy(columns ...string) orm.Delete {
-	d.query.Order(columns...)
-	return d
+func (q *BunDeleteQuery) OrderBy(columns ...string) DeleteQuery {
+	q.query.Order(columns...)
+	return q
 }
 
-func (d *bunDelete) OrderByNullsFirst(columns ...string) orm.Delete {
+func (q *BunDeleteQuery) OrderByDesc(columns ...string) DeleteQuery {
 	for _, column := range columns {
-		d.query.OrderExpr("? NULLS FIRST", bun.Ident(column))
+		q.query.OrderExpr("? DESC", bun.Ident(column))
 	}
 
-	return d
+	return q
 }
 
-func (d *bunDelete) OrderByNullsLast(columns ...string) orm.Delete {
-	for _, column := range columns {
-		d.query.OrderExpr("? NULLS LAST", bun.Ident(column))
-	}
-
-	return d
+func (q *BunDeleteQuery) OrderByExpr(builder func(ExprBuilder) any) DeleteQuery {
+	q.query.OrderExpr("?", builder(q.eb))
+	return q
 }
 
-func (d *bunDelete) OrderByDesc(columns ...string) orm.Delete {
-	for _, column := range columns {
-		d.query.OrderExpr("? DESC", bun.Ident(column))
-	}
-
-	return d
+func (q *BunDeleteQuery) ForceDelete() DeleteQuery {
+	q.query.ForceDelete()
+	return q
 }
 
-func (d *bunDelete) OrderByDescNullsFirst(columns ...string) orm.Delete {
-	for _, column := range columns {
-		d.query.OrderExpr("? DESC NULLS FIRST", bun.Ident(column))
-	}
-
-	return d
+func (q *BunDeleteQuery) Limit(limit int) DeleteQuery {
+	q.query.Limit(limit)
+	return q
 }
 
-func (d *bunDelete) OrderByDescNullsLast(columns ...string) orm.Delete {
-	for _, column := range columns {
-		d.query.OrderExpr("? DESC NULLS LAST", bun.Ident(column))
-	}
-
-	return d
+func (q *BunDeleteQuery) Returning(columns ...string) DeleteQuery {
+	q.query.Returning("?", Names(columns...))
+	return q
 }
 
-func (d *bunDelete) OrderByExpr(expr string, args ...any) orm.Delete {
-	d.query.OrderExpr(expr, args...)
-	return d
+func (q *BunDeleteQuery) ReturningAll() DeleteQuery {
+	q.query.Returning(columnAll)
+	return q
 }
 
-func (d *bunDelete) ForceDelete() orm.Delete {
-	d.query.ForceDelete()
-	return d
+func (q *BunDeleteQuery) ReturningNone() DeleteQuery {
+	q.query.Returning(sqlNull)
+	return q
 }
 
-func (d *bunDelete) Limit(limit int) orm.Delete {
-	d.query.Limit(limit)
-	return d
-}
-
-func (d *bunDelete) Returning(columns ...string) orm.Delete {
-	d.query.Returning("?", Names(columns...))
-	return d
-}
-
-func (d *bunDelete) ReturningAll() orm.Delete {
-	d.query.Returning(orm.ColumnAll)
-	return d
-}
-
-func (d *bunDelete) ReturningNull() orm.Delete {
-	d.query.Returning(orm.Null)
-	return d
-}
-
-func (d *bunDelete) Apply(fns ...orm.ApplyFunc[orm.Delete]) orm.Delete {
+func (q *BunDeleteQuery) Apply(fns ...ApplyFunc[DeleteQuery]) DeleteQuery {
 	for _, fn := range fns {
 		if fn != nil {
-			fn(d)
+			fn(q)
 		}
 	}
 
-	return d
+	return q
 }
 
-func (d *bunDelete) ApplyIf(condition bool, fns ...orm.ApplyFunc[orm.Delete]) orm.Delete {
+func (q *BunDeleteQuery) ApplyIf(condition bool, fns ...ApplyFunc[DeleteQuery]) DeleteQuery {
 	if condition {
-		return d.Apply(fns...)
+		return q.Apply(fns...)
 	}
-	return d
+	return q
 }
 
-func (d *bunDelete) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
-	return d.query.Exec(ctx, dest...)
+func (q *BunDeleteQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
+	return q.query.Exec(ctx, dest...)
 }
 
-func (d *bunDelete) Scan(ctx context.Context, dest ...any) error {
-	return d.query.Scan(ctx, dest...)
+func (q *BunDeleteQuery) Scan(ctx context.Context, dest ...any) error {
+	return q.query.Scan(ctx, dest...)
 }

@@ -6,39 +6,39 @@ var Module = fx.Module(
 	"vef:middleware",
 	fx.Provide(
 		fx.Annotate(
-			newRequestIdMiddleware,
+			NewRequestIdMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newLoggerMiddleware,
+			NewLoggerMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newRecoveryMiddleware,
+			NewRecoveryMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newRequestRecordMiddleware,
+			NewRequestRecordMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newCorsMiddleware,
+			NewCorsMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newContentTypeMiddleware,
+			NewContentTypeMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newCompressionMiddleware,
+			NewCompressionMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newHeadersMiddleware,
+			NewHeadersMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			newSPAMiddleware,
+			NewSPAMiddleware,
 			fx.ParamTags(`group:"vef:spa"`),
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),

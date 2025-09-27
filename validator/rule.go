@@ -10,19 +10,19 @@ import (
 var (
 	// presetValidationRules contains all custom validation rules
 	presetValidationRules = []ValidationRule{
-		newMobilePhoneRule(), // Mobile phone validation rule
+		newPhoneNumberRule(), // Phone number validation rule
 		newDecimalMinRule(),  // Decimal minimum value validation rule
 		newDecimalMaxRule(),  // Decimal maximum value validation rule
 	}
 )
 
-// ValidationRule is the rule for validation.
+// ValidationRule defines a custom validation rule with translation support.
 type ValidationRule struct {
-	RuleTag                  string                         // RuleTag is the tag of the validation rule
-	ErrMessageTemplate       string                         // ErrMessageTemplate is the template of the error message
-	Validate                 func(fl v.FieldLevel) bool     // Validate is the function to validate the value
-	ParseParam               func(fe v.FieldError) []string // ParseParam is the function to parse the param
-	CallValidationEvenIfNull bool                           // CallValidationEvenIfNull is the flag to call the validation function even if the value is nil
+	RuleTag                  string                         // RuleTag is the unique identifier for the validation rule (used in struct tags)
+	ErrMessageTemplate       string                         // ErrMessageTemplate is the error message template with placeholders like {0}, {1}
+	Validate                 func(fl v.FieldLevel) bool     // Validate performs the actual validation logic and returns true if valid
+	ParseParam               func(fe v.FieldError) []string // ParseParam extracts parameters from FieldError for error message formatting
+	CallValidationEvenIfNull bool                           // CallValidationEvenIfNull determines whether to validate nil/zero values
 }
 
 // register registers the validation rule to the validator.

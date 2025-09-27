@@ -25,5 +25,6 @@
   "signature_invalid": "Invalid signature",
   "access_denied": "Access denied",
   "unsupported_media_type": "Unsupported media type. Only JSON and file data are supported",
-  "request_timeout": "Request timeout"
+  "request_timeout": "Request timeout",
+  "primary_key_required": "Primary key parameter '{{.field}}' is required"
 }

@@ -6,7 +6,7 @@ import "github.com/ilxqx/vef-framework-go/orm"
 // and returns an orm.ApplyFunc function. This ApplyFunc can be applied to an orm.ConditionBuilder
 // to build query conditions.
 func Applier[T any]() func(T) orm.ApplyFunc[orm.ConditionBuilder] {
-	f := New[T]()
+	f := NewFor[T]()
 
 	return func(value T) orm.ApplyFunc[orm.ConditionBuilder] {
 		return func(cb orm.ConditionBuilder) {

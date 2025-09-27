@@ -6,7 +6,7 @@ import (
 
 var Module = fx.Module(
 	"vef:app",
-	fx.Provide(newApp),
+	fx.Provide(New),
 	fx.Invoke(func() {
 		logger.Info("App module initialized")
 	}),

@@ -9,24 +9,25 @@ import (
 )
 
 const (
-	AuthTypeJWTRefresh = "jwt_refresh" // JWT refresh authentication type
+	// JWT refresh authentication type
+	AuthTypeJWTRefresh = "jwt_refresh"
 )
 
-type jwtRefreshAuthenticator struct {
+type JWTRefreshAuthenticator struct {
 	jwt *security.JWT
 }
 
-func newJWTRefreshAuthenticator(jwt *security.JWT) security.Authenticator {
-	return &jwtRefreshAuthenticator{
+func NewJWTRefreshAuthenticator(jwt *security.JWT) security.Authenticator {
+	return &JWTRefreshAuthenticator{
 		jwt: jwt,
 	}
 }
 
-func (j *jwtRefreshAuthenticator) Supports(authType string) bool {
+func (j *JWTRefreshAuthenticator) Supports(authType string) bool {
 	return authType == AuthTypeJWTRefresh
 }
 
-func (j *jwtRefreshAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (j *JWTRefreshAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
 	token := authentication.Principal
 	if token == constants.Empty {
 		return nil, result.ErrWithCode(

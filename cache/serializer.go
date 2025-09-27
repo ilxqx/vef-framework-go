@@ -7,12 +7,6 @@ import (
 	"github.com/goccy/go-json"
 )
 
-// Serializer handles serialization/deserialization of cache values.
-type Serializer[T any] interface {
-	Serialize(value T) ([]byte, error)
-	Deserialize(data []byte) (T, error)
-}
-
 // gobSerializer implements Serializer using gob encoding.
 type gobSerializer[T any] struct{}
 

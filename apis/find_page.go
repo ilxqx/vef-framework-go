@@ -2,46 +2,47 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/page"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/trans"
+	"github.com/spf13/cast"
 )
 
-// FindPageAPI provides paginated query functionality with filtering and post-processing.
-// It returns results in pages with metadata about total count and pagination state.
-//
-// Type parameters:
-//   - TModel: The database model type
-//   - TSearch: The search criteria type
-type FindPageAPI[TModel, TSearch any] struct {
-	*findAPI[TModel, TSearch, PostFindProcessor[[]TModel, []any], FindPageAPI[TModel, TSearch]]
+type findPageAPI[TModel, TSearch any] struct {
+	FindAPI[TModel, TSearch, []TModel, FindPageAPI[TModel, TSearch]]
 }
 
-// FindPage creates a handler that executes the paginated query and returns the results with pagination metadata.
-// It applies the configured search criteria, filters, and transformations.
-//
-// Parameters:
-//   - db: The database connection for schema introspection
-//
-// Returns a handler function that processes find-page requests.
-func (a *FindPageAPI[TModel, TSearch]) FindPage(db orm.Db) func(ctx fiber.Ctx, db orm.Db, pageable mo.Pageable, search TSearch) error {
+func (a *findPageAPI[TModel, TSearch]) Provide() api.Spec {
+	return a.FindAPI.Build(a.findPage)
+}
+
+// Build should not be called directly on concrete API types.
+// Use Provide() to generate api.Spec with the correct handler instead.
+func (a *findPageAPI[TModel, TSearch]) Build(handler any) api.Spec {
+	panic("apis: do not call FindAPI.Build on findPageAPI; call Provide() instead")
+}
+
+func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, pageable page.Pageable, search TSearch) error {
 	// Pre-compute schema information
 	schema := db.Schema((*TModel)(nil))
 
 	// Pre-compute whether default created_at ordering should be applied
-	hasCreatedAt := schema.HasField(orm.ColumnCreatedAt)
+	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
+	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
 
-	return func(ctx fiber.Ctx, db orm.Db, pageable mo.Pageable, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, pageable page.Pageable, search TSearch) error {
 		var models []TModel
-		query := a.buildQuery(ctx, db, &models, search)
+		query := a.BuildQuery(db, &models, search, ctx)
 
 		// Normalize pagination parameters
 		pageable.Normalize()
 
-		// Add default ordering by created_at if pre-computed condition is true and no sort specified
-		if a.sortApplier == nil && pageable.Sort == constants.Empty && hasCreatedAt {
-			query.OrderByDesc(orm.ColumnCreatedAt)
+		if shouldApplyDefaultSort && len(pageable.Sort) == 0 {
+			// Add default ordering by created_at
+			query.OrderByDesc(constants.ColumnCreatedAt)
 		}
 
 		// Execute paginated query and get total count
@@ -50,41 +51,22 @@ func (a *FindPageAPI[TModel, TSearch]) FindPage(db orm.Db) func(ctx fiber.Ctx, d
 			return err
 		}
 
-		// Transform models and apply post-processing if results exist
 		if total > 0 {
 			// Apply transformation to each model
 			for _, model := range models {
-				if err := apisParams.Transformer.Struct(ctx, &model); err != nil {
+				if err := transformer.Struct(ctx, &model); err != nil {
 					return err
 				}
 			}
 
-			// Apply post-processing if configured
-			if a.processor != nil {
-				processed := a.processor(models, ctx)
-				return result.Ok(mo.NewPage(pageable, total, processed)).Response(ctx)
-			}
+			// Apply post-processing if configured and convert to interface slice for JSON serialization
+			processedData := a.Process(models, search, ctx)
+			return result.Ok(page.New(pageable, total, cast.ToSlice(processedData))).Response(ctx)
 		} else {
 			// Ensure empty slice instead of nil for consistent JSON response
 			models = make([]TModel, 0)
 		}
 
-		return result.Ok(mo.NewPage(pageable, total, models)).Response(ctx)
+		return result.Ok(page.New(pageable, total, models)).Response(ctx)
 	}
-}
-
-// NewFindPageAPI creates a new FindPageAPI instance.
-// Use method chaining to configure filters, relations, and post-processing.
-//
-// Example:
-//
-//	api := NewFindPageAPI[User, UserSearch]().
-//	  WithFilterApplier(myFilter).
-//	  WithRelations("profile", "roles").
-//	  WithPostFind(myProcessor)
-func NewFindPageAPI[TModel, TSearch any]() *FindPageAPI[TModel, TSearch] {
-	api := new(FindPageAPI[TModel, TSearch])
-	api.findAPI = newFindAPI[TModel, TSearch, PostFindProcessor[[]TModel, []any]](api)
-
-	return api
 }

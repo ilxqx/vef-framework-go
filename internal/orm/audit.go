@@ -3,105 +3,57 @@ package orm
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/mo"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/internal/orm/audit"
 	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
 )
 
+// autoColumns is the list of auto column handlers that are applied to all models.
+// These handlers automatically manage audit fields like ID generation, timestamps, and user tracking.
 var (
-	autoColumns = []orm.AutoColumn{
-		new(idGenerator),
-		new(autoCreatedAt),
-		new(autoUpdatedAt),
-		new(autoCreatedBy),
-		new(autoUpdatedBy),
-	}
+	autoColumns = audit.DefaultHandlers()
 )
 
-// autoCreatedAt is a struct that implements the CreateAutoColumn interface for auto-generating a created_at column.
-type autoCreatedAt struct {
-}
-
-func (*autoCreatedAt) OnCreate(query *bun.InsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
-	if value.IsZero() {
-		value.Set(reflect.ValueOf(mo.DateTimeNow()))
+// processAutoColumns applies auto column handlers to a model before insert/update operations.
+// It processes audit.Handler interfaces to automatically manage fields like IDs, timestamps, and user tracking.
+func processAutoColumns(handlers []audit.Handler, query any, hasSet bool, table *schema.Table, modelValue any, mv reflect.Value) {
+	// Check if the value is valid and not nil
+	if !mv.IsValid() || (mv.Kind() == reflect.Ptr && mv.IsNil()) {
+		// For nil model values (like (*User)(nil) in update queries), skip audit processing
+		// This is common in update queries where we only set specific fields
+		return
 	}
-}
 
-func (*autoCreatedAt) Name() string {
-	return orm.ColumnCreatedAt
-}
-
-// autoUpdatedAt is a struct that implements the UpdateAutoColumn interface for auto-generating an updated_at column.
-type autoUpdatedAt struct {
-}
-
-func (ua *autoUpdatedAt) OnUpdate(query *bun.UpdateQuery, hasSet bool, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
-	if hasSet {
-		name := ua.Name()
-		if query.DB().HasFeature(feature.UpdateMultiTable) {
-			query.Set("?TableAlias.? = ?", bun.Ident(name), mo.DateTimeNow())
-		} else {
-			query.Set("? = ?", bun.Ident(name), mo.DateTimeNow())
+	// Handle slice values (batch operations) by processing each element
+	if mv.Kind() == reflect.Slice {
+		for i := 0; i < mv.Len(); i++ {
+			elem := mv.Index(i)
+			if elem.Kind() == reflect.Ptr {
+				elem = elem.Elem()
+			}
+			processAutoColumns(handlers, query, hasSet, table, elem.Interface(), elem)
 		}
-
-		query.Returning("?", bun.Name(name))
-	} else {
-		value.Set(reflect.ValueOf(mo.DateTimeNow()))
+		return
 	}
-}
 
-func (*autoUpdatedAt) OnCreate(query *bun.InsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
-	if value.IsZero() {
-		value.Set(reflect.ValueOf(mo.DateTimeNow()))
-	}
-}
+	for _, handler := range handlers {
+		if field, ok := table.FieldMap[handler.Name()]; ok {
+			value := field.Value(mv)
 
-func (*autoUpdatedAt) Name() string {
-	return orm.ColumnUpdatedAt
-}
-
-// autoCreatedBy is a struct that implements the CreateAutoColumn interface for auto-generating a created_by column.
-type autoCreatedBy struct {
-}
-
-func (cb *autoCreatedBy) OnCreate(query *bun.InsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
-	if value.IsZero() {
-		query.Value(cb.Name(), orm.ExprOperator)
-	}
-}
-
-func (*autoCreatedBy) Name() string {
-	return orm.ColumnCreatedBy
-}
-
-// autoUpdatedBy is a struct that implements the UpdateAutoColumn interface for auto-generating an updated_by column.
-type autoUpdatedBy struct {
-}
-
-func (ub *autoUpdatedBy) OnUpdate(query *bun.UpdateQuery, hasSet bool, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
-	name := ub.Name()
-	if hasSet {
-		if query.DB().HasFeature(feature.UpdateMultiTable) {
-			query.Set("?TableAlias.? = "+orm.ExprOperator, bun.Ident(name))
-		} else {
-			query.Set("? = "+orm.ExprOperator, bun.Ident(name))
+			// Handle different query types and handler interfaces
+			switch q := query.(type) {
+			case *bun.InsertQuery:
+				if insertHandler, ok := handler.(audit.InsertHandler); ok {
+					insertHandler.OnInsert(q, table, field, modelValue, value)
+				}
+			case *bun.UpdateQuery:
+				if updateHandler, ok := handler.(audit.UpdateHandler); ok {
+					updateHandler.OnUpdate(q, hasSet, table, field, modelValue, value)
+				} else if _, ok := handler.(audit.InsertHandler); ok {
+					// Exclude insert-only handlers from update operations
+					q.ExcludeColumn(field.Name)
+				}
+			}
 		}
-	} else {
-		query.Value(name, orm.ExprOperator)
 	}
-
-	query.Returning("?", bun.Name(name))
-}
-
-func (ub *autoUpdatedBy) OnCreate(query *bun.InsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
-	if value.IsZero() {
-		query.Value(ub.Name(), orm.ExprOperator)
-	}
-}
-
-func (*autoUpdatedBy) Name() string {
-	return orm.ColumnUpdatedBy
 }

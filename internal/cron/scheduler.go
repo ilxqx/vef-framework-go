@@ -32,14 +32,14 @@ func newScheduler(lc fx.Lifecycle) (gocron.Scheduler, error) {
 		fx.StartStopHook(
 			func() {
 				scheduler.Start()
-				logger.Info("cron scheduler started")
+				logger.Info("Cron scheduler started")
 			},
 			func() error {
 				if err := scheduler.Shutdown(); err != nil {
 					return fmt.Errorf("failed to stop scheduler: %w", err)
 				}
 
-				logger.Info("cron scheduler stopped")
+				logger.Info("Cron scheduler stopped")
 				return nil
 			},
 		),

@@ -5,18 +5,132 @@ import (
 	"reflect"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/samber/lo"
+	"github.com/spf13/cast"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
 )
 
+// PKField describes a model's primary key field with common aliases.
+// It provides helpers to get/set the PK value on a concrete model instance.
+type PKField struct {
+	// Field is the Go struct field name, e.g. "UserId".
+	Field string
+	// Column is the database column name as defined in schema, e.g. "user_id".
+	Column string
+	// Name is the lower camel-case alias, usually used in params or API payloads, e.g. "userId".
+	Name string
+
+	f *schema.Field
+}
+
+// Value returns the primary key value from the given model instance.
+// The model must be a pointer to struct; otherwise an error is returned.
+// It leverages bun's schema.Field to read the concrete field value safely.
+func (p *PKField) Value(model any) (any, error) {
+	value, err := p.validateModel(model)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.f.Value(value).Interface(), nil
+}
+
+// Set writes the provided value into the model's primary key field.
+// The model must be a pointer to struct. Basic kinds supported:
+// - string (and *string)
+// - int/int32/int64 (and their pointer forms)
+// For unsupported kinds, an error is returned.
+func (p *PKField) Set(model any, value any) error {
+	modelValue, err := p.validateModel(model)
+	if err != nil {
+		return err
+	}
+
+	pkValue := p.f.Value(modelValue)
+	switch kind := p.f.IndirectType.Kind(); kind {
+	case reflect.String:
+		v, err := cast.ToStringE(value)
+		if err != nil {
+			return err
+		}
+		if p.f.IsPtr {
+			pkValue.Set(reflect.ValueOf(&v))
+		} else {
+			pkValue.SetString(v)
+		}
+
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		v, err := cast.ToInt64E(value)
+		if err != nil {
+			return err
+		}
+		if p.f.IsPtr {
+			pkValue.Set(reflect.ValueOf(&v))
+		} else {
+			pkValue.SetInt(v)
+		}
+
+	default:
+		return fmt.Errorf("%w: %s", ErrPrimaryKeyUnsupportedType, kind)
+	}
+	return nil
+}
+
+func (p *PKField) validateModel(model any) (reflect.Value, error) {
+	if value, ok := model.(reflect.Value); ok {
+		if value.Kind() == reflect.Pointer {
+			value = value.Elem()
+			if value.Kind() != reflect.Struct {
+				return reflect.Value{}, ErrModelMustBePointerToStruct
+			}
+		} else {
+			if value.Kind() != reflect.Struct || !value.CanAddr() {
+				return reflect.Value{}, ErrModelMustBePointerToStruct
+			}
+		}
+
+		return value, nil
+	}
+
+	value := reflect.ValueOf(model)
+	if value.Kind() != reflect.Pointer {
+		return reflect.Value{}, ErrModelMustBePointerToStruct
+	}
+
+	value = value.Elem()
+	if value.Kind() != reflect.Struct {
+		return reflect.Value{}, ErrModelMustBePointerToStruct
+	}
+
+	return value, nil
+}
+
+// NewPKField constructs a PKField helper from a bun schema.Field.
+// Field is the Go struct field name; Column is the DB column name;
+// Name is a lower-camel alias commonly used in params or API payloads.
+func NewPKField(field *schema.Field) *PKField {
+	return &PKField{
+		Field:  field.GoName,
+		Column: field.Name,
+		Name:   lo.CamelCase(field.Name),
+		f:      field,
+	}
+}
+
 // parsePKColumnsAndValues parses the primary key columns and values from the given table and primary key value.
-func parsePKColumnsAndValues(method string, table *orm.Table, pk any, alias ...string) (*pkColumns, *pkValues) {
+func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias ...string) (*pkColumns, *pkValues) {
 	if table == nil {
-		panic(
-			fmt.Sprintf("method %s must be called after Model method", method),
-		)
+		panic(fmt.Sprintf(
+			"method %s failed: table schema is nil. "+
+				"This usually happens when: "+
+				"1) Model() method was not called before %s, "+
+				"2) Model() was called with plain nil or a value that is not a struct pointer (or slice pointer of struct), "+
+				"3) Table()/TableExpr() was used without binding a model via Model(). "+
+				"Please ensure you call Model() with a valid struct pointer (or slice pointer of struct) before using %s.",
+			method, method, method,
+		))
 	}
 
 	pks := table.PKs
@@ -70,16 +184,14 @@ func (p *pkColumns) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err
 			b = append(b, constants.CommaSpace...)
 		}
 
-		b, err = p.alias.AppendQuery(fmter, b)
-		if err != nil {
-			return nil, err
+		if b, err = p.alias.AppendQuery(fmter, b); err != nil {
+			return
 		}
 
 		b = append(b, constants.ByteDot)
 
-		b, err = column.AppendQuery(fmter, b)
-		if err != nil {
-			return nil, err
+		if b, err = column.AppendQuery(fmter, b); err != nil {
+			return
 		}
 	}
 

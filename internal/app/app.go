@@ -7,8 +7,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/muesli/termenv"
 	"github.com/samber/lo"
 	"go.uber.org/fx"
 )
@@ -21,6 +23,10 @@ type App struct {
 	middlewares   []Middleware
 	apiEngine     api.Engine
 	openApiEngine api.Engine
+}
+
+func (a *App) Unwrap() *fiber.App {
+	return a.app
 }
 
 func (a *App) Use(middlewares ...Middleware) {
@@ -45,6 +51,16 @@ func (a *App) Start() <-chan error {
 				ShutdownTimeout:   30 * time.Second,
 				BeforeServeFunc: func(*fiber.App) error {
 					errChan <- nil
+
+					output := termenv.DefaultOutput()
+					fmt.Printf(` _    ______________
+| |  / / ____/ ____/
+| | / / __/ / /_    
+| |/ / /___/ __/    
+|___/_____/_/                   %s
+--------------------------------------------------
+`, output.String(constants.VEFVersion).Foreground(termenv.ANSIBrightGreen).String())
+
 					logger.Infof("VEF application started successfully on port %d", a.port)
 					return nil
 				},
@@ -103,14 +119,14 @@ func (a *App) Stop() error {
 	return a.app.ShutdownWithTimeout(time.Second * 30)
 }
 
-type appParams struct {
+type AppParams struct {
 	fx.In
 	Config        *config.AppConfig
 	ApiEngine     api.Engine `name:"vef:api:engine"`
 	OpenApiEngine api.Engine `name:"vef:openapi:engine"`
 }
 
-func newApp(params appParams) *App {
+func New(params AppParams) *App {
 	logger.Info("Initializing VEF application...")
 	return &App{
 		app:           createFiberApp(params.Config),

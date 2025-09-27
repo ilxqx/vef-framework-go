@@ -6,22 +6,22 @@ import (
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/webhelpers"
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
 )
 
-// newRequestRecordMiddleware returns a middleware that records request metrics.
+// NewRequestRecordMiddleware returns a middleware that records request metrics.
 // It logs IP, latency (ms/μs), and status code and reports structured errors if present.
-func newRequestRecordMiddleware() app.Middleware {
+func NewRequestRecordMiddleware() app.Middleware {
 	handler := loggerMiddleware.New(loggerMiddleware.Config{
 		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, config loggerMiddleware.Config) error {
-			ip := utils.GetIP(ctx)
+			ip := webhelpers.GetIP(ctx)
 			latency := data.Stop.Sub(data.Start)
 
 			logger := contextx.Logger(ctx)
 			logger.Infof(
-				"request completed | ip: %s | latency: %s | status: %d",
+				"Request completed | ip: %s | latency: %s | status: %d",
 				ip,
 				lo.TernaryF(latency.Milliseconds() > 0, func() string {
 					return cast.ToString(latency.Milliseconds()) + "ms"
@@ -32,9 +32,9 @@ func newRequestRecordMiddleware() app.Middleware {
 			)
 			if data.ChainErr != nil {
 				if err, ok := result.AsErr(data.ChainErr); ok {
-					logger.Warnf("request failed with error: %v [%d]", err.Message, err.Code)
+					logger.Warnf("Request failed with error: %v [%d]", err.Message, err.Code)
 				} else {
-					logger.Errorf("request failed with error: %v", data.ChainErr)
+					logger.Errorf("Request failed with error: %v", data.ChainErr)
 				}
 			}
 			return nil

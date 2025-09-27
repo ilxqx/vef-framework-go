@@ -7,9 +7,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
-// newContentTypeMiddleware ensures JSON or multipart content types for state-changing requests.
+// NewContentTypeMiddleware ensures JSON or multipart content types for state-changing requests.
 // It bypasses checks for GET/HEAD and allows application/json and multipart/form-data.
-func newContentTypeMiddleware() app.Middleware {
+func NewContentTypeMiddleware() app.Middleware {
 	return &SimpleMiddleware{
 		handler: func(ctx fiber.Ctx) error {
 			method := ctx.Method()

@@ -5,7 +5,6 @@ import (
 	"go.uber.org/fx"
 )
 
-// logger is the shared logger instance for the transformer module
 var logger = log.Named("transformer")
 
 // Module defines the fx module for the transformer package
@@ -16,12 +15,12 @@ var Module = fx.Module(
 		// newTransformer constructor with grouped dependencies
 		// Collects all field transformers, struct transformers, and interceptors
 		fx.Annotate(
-			newTransformer,
+			New,
 			fx.ParamTags(`group:"vef:trans:field_modifiers"`, `group:"vef:trans:struct_modifiers"`, `group:"vef:trans:interceptors"`),
 		),
 		// Built-in data dictionary transformer
 		fx.Annotate(
-			newDataDictTransformer,
+			NewDataDictTransformer,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:trans:field_modifiers"`),
 		),

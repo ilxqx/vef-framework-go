@@ -1,16 +1,15 @@
 package api
 
 import (
-	"sync"
-
 	"github.com/gofiber/fiber/v3/middleware/timeout"
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/puzpuzpuz/xsync/v4"
 )
 
-// apiManager implements the Manager interface using sync.Map for thread-safe operations.
+// apiManager implements the Manager interface using xsync.Map for thread-safe operations.
 type apiManager struct {
-	apis sync.Map // map[Identifier]*Definition
+	apis *xsync.Map[apiPkg.Identifier, *apiPkg.Definition]
 }
 
 // Register adds a new API definition to the manager.
@@ -28,7 +27,7 @@ func (m *apiManager) Remove(id apiPkg.Identifier) {
 // Returns nil if the definition is not found.
 func (m *apiManager) Lookup(id apiPkg.Identifier) *apiPkg.Definition {
 	if api, ok := m.apis.Load(id); ok {
-		return api.(*apiPkg.Definition)
+		return api
 	}
 
 	return nil
@@ -37,8 +36,8 @@ func (m *apiManager) Lookup(id apiPkg.Identifier) *apiPkg.Definition {
 // List returns all registered API definitions.
 func (m *apiManager) List() []*apiPkg.Definition {
 	var definitions []*apiPkg.Definition
-	m.apis.Range(func(key, value any) bool {
-		definitions = append(definitions, value.(*apiPkg.Definition))
+	m.apis.Range(func(key apiPkg.Identifier, value *apiPkg.Definition) bool {
+		definitions = append(definitions, value)
 		return true
 	})
 	return definitions
@@ -59,9 +58,11 @@ func wrapHandler(api *apiPkg.Definition) *apiPkg.Definition {
 	return api
 }
 
-// newManager creates a new API manager and registers all provided resources.
-func newManager(resources []apiPkg.Resource, db orm.Db, paramResolver *handlerParamResolverManager) (apiPkg.Manager, error) {
-	manager := new(apiManager)
+// NewManager creates a new API manager and registers all provided resources.
+func NewManager(resources []apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (apiPkg.Manager, error) {
+	manager := &apiManager{
+		apis: xsync.NewMap[apiPkg.Identifier, *apiPkg.Definition](),
+	}
 	definition, err := parse(resources, db, paramResolver)
 	if err != nil {
 		return nil, err

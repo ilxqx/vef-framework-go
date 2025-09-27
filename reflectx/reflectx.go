@@ -1,6 +1,7 @@
 package reflectx
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -98,4 +99,92 @@ func FindMethod(target reflect.Value, name string) reflect.Value {
 	}
 
 	return reflect.Value{}
+}
+
+// IsTypeCompatible checks if sourceType is compatible with targetType.
+// It considers exact matches, assignability, interface implementation, and pointer compatibility.
+func IsTypeCompatible(sourceType, targetType reflect.Type) bool {
+	// Exact type match
+	if sourceType == targetType {
+		return true
+	}
+
+	// Assignability check
+	if sourceType.AssignableTo(targetType) {
+		return true
+	}
+
+	// Interface implementation check
+	if targetType.Kind() == reflect.Interface {
+		return sourceType.Implements(targetType)
+	}
+
+	// Pointer compatibility: *T is compatible with *U if T is assignable to U
+	if targetType.Kind() == reflect.Pointer && sourceType.Kind() == reflect.Pointer {
+		return IsTypeCompatible(sourceType.Elem(), targetType.Elem())
+	}
+
+	// Value to pointer compatibility: T is compatible with *T if T is assignable to the pointed type
+	if targetType.Kind() == reflect.Pointer && sourceType.Kind() != reflect.Pointer {
+		return sourceType.AssignableTo(targetType.Elem())
+	}
+
+	// Pointer to value compatibility: *T is compatible with T if T is assignable from T
+	if sourceType.Kind() == reflect.Pointer && targetType.Kind() != reflect.Pointer {
+		return sourceType.Elem().AssignableTo(targetType)
+	}
+
+	return false
+}
+
+// ConvertValue converts a source value to the target type,
+// handling pointer dereferencing and referencing as needed.
+func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.Value, error) {
+	sourceType := sourceValue.Type()
+
+	// If types are exactly the same, no conversion needed
+	if sourceType == targetType {
+		return sourceValue, nil
+	}
+
+	// Handle pointer to value conversion: *T -> T
+	if sourceType.Kind() == reflect.Pointer && targetType.Kind() != reflect.Pointer {
+		if sourceValue.IsNil() {
+			return reflect.Zero(targetType), nil
+		}
+		elemValue := sourceValue.Elem()
+		if elemValue.Type().AssignableTo(targetType) {
+			return elemValue, nil
+		}
+	}
+
+	// Handle value to pointer conversion: T -> *T
+	if sourceType.Kind() != reflect.Pointer && targetType.Kind() == reflect.Pointer {
+		if sourceType.AssignableTo(targetType.Elem()) {
+			// Create a new pointer to the source value
+			ptrValue := reflect.New(targetType.Elem())
+			ptrValue.Elem().Set(sourceValue)
+			return ptrValue, nil
+		}
+	}
+
+	// Handle pointer to pointer conversion: *T -> *U
+	if sourceType.Kind() == reflect.Pointer && targetType.Kind() == reflect.Pointer {
+		if sourceValue.IsNil() {
+			return reflect.Zero(targetType), nil
+		}
+		elemValue := sourceValue.Elem()
+		if elemValue.Type().AssignableTo(targetType.Elem()) {
+			ptrValue := reflect.New(targetType.Elem())
+			ptrValue.Elem().Set(elemValue)
+			return ptrValue, nil
+		}
+	}
+
+	// Handle direct assignability (including interface implementation)
+	if sourceType.AssignableTo(targetType) {
+		return sourceValue, nil
+	}
+
+	return reflect.Value{}, fmt.Errorf("cannot convert source type %s to target type %s", sourceType, targetType)
 }

@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/mo"
+	"github.com/ilxqx/vef-framework-go/datetime"
 )
 
-// Time is a nullable mo.Time. It supports SQL and JSON serialization.
+// Time is a nullable datetime.Time. It supports SQL and JSON serialization.
 // It will marshal to null if null.
 type Time struct {
-	sql.Null[mo.Time]
+	sql.Null[datetime.Time]
 }
 
 // NewTime creates a new Time.
-func NewTime(t mo.Time, valid bool) Time {
+func NewTime(t datetime.Time, valid bool) Time {
 	return Time{
-		Null: sql.Null[mo.Time]{
+		Null: sql.Null[datetime.Time]{
 			V:     t,
 			Valid: valid,
 		},
@@ -26,30 +26,30 @@ func NewTime(t mo.Time, valid bool) Time {
 }
 
 // TimeFrom creates a new Time that will always be valid.
-func TimeFrom(t mo.Time) Time {
+func TimeFrom(t datetime.Time) Time {
 	return NewTime(t, true)
 }
 
 // TimeFromPtr creates a new Time that will be null if t is nil.
-func TimeFromPtr(t *mo.Time) Time {
+func TimeFromPtr(t *datetime.Time) Time {
 	if t == nil {
-		return NewTime(mo.Time{}, false)
+		return NewTime(datetime.Time{}, false)
 	}
 
 	return NewTime(*t, true)
 }
 
 // ValueOrZero returns the inner value if valid, otherwise zero.
-func (t Time) ValueOrZero() mo.Time {
+func (t Time) ValueOrZero() datetime.Time {
 	if !t.Valid {
-		return mo.Time{}
+		return datetime.Time{}
 	}
 
 	return t.V
 }
 
 // ValueOr returns the inner value if valid, otherwise v.
-func (t Time) ValueOr(v mo.Time) mo.Time {
+func (t Time) ValueOr(v datetime.Time) datetime.Time {
 	if !t.Valid {
 		return v
 	}
@@ -61,7 +61,7 @@ func (t Time) ValueOr(v mo.Time) mo.Time {
 // It will encode null if this time is null.
 func (t Time) MarshalJSON() ([]byte, error) {
 	if !t.Valid {
-		return mo.JSONNullBytes, nil
+		return constants.JSONNullBytes, nil
 	}
 
 	return t.V.MarshalJSON()
@@ -84,7 +84,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It returns an empty string if invalid, otherwise mo.Time's MarshalText.
+// It returns an empty string if invalid, otherwise datetime.Time's MarshalText.
 func (t Time) MarshalText() ([]byte, error) {
 	if !t.Valid {
 		return []byte{}, nil
@@ -99,7 +99,7 @@ func (t Time) MarshalText() ([]byte, error) {
 func (t *Time) UnmarshalText(text []byte) error {
 	str := string(text)
 	// allowing "null" is for backwards compatibility with v3
-	if str == constants.Empty || str == mo.JSONNull {
+	if str == constants.Empty || str == constants.JSONNull {
 		t.Valid = false
 		return nil
 	}
@@ -111,13 +111,13 @@ func (t *Time) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this Time's value and sets it to be non-null.
-func (t *Time) SetValid(v mo.Time) {
+func (t *Time) SetValid(v datetime.Time) {
 	t.V = v
 	t.Valid = true
 }
 
 // Ptr returns a pointer to this Time's value, or a nil pointer if this Time is null.
-func (t Time) Ptr() *mo.Time {
+func (t Time) Ptr() *datetime.Time {
 	if !t.Valid {
 		return nil
 	}

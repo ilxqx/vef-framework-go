@@ -8,10 +8,10 @@ import (
 
 // buildHandler creates a Fiber handler from a reflected method.
 // It supports parameter injection via handlerParamResolverManager and a single optional error return.
-func buildHandler(target reflect.Value, handler reflect.Value, paramResolver *handlerParamResolverManager) (fiber.Handler, error) {
+func buildHandler(target reflect.Value, handler reflect.Value, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
 	t := handler.Type()
 	numIn := t.NumIn()
-	handlerParamResolvers := make([]paramResolverFn, numIn)
+	handlerParamResolvers := make([]ParamResolverFunc, numIn)
 	for i := range numIn {
 		paramType := t.In(i)
 		// Resolve parameter value via resolver

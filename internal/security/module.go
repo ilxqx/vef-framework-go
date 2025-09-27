@@ -16,7 +16,7 @@ var Module = fx.Module(
 	fx.Provide(
 		// Provide JWT instance
 		fx.Annotate(
-			func(config *config.AppConfig) *security.JWT {
+			func(config *config.AppConfig) (*security.JWT, error) {
 				return security.NewJWT(&security.JWTConfig{
 					Audience: lo.SnakeCase(config.Name),
 				})
@@ -24,36 +24,36 @@ var Module = fx.Module(
 		),
 		// Provide JWT authenticator
 		fx.Annotate(
-			newJWTAuthenticator,
+			NewJWTAuthenticator,
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		// Provide JWT refresh authenticator
 		fx.Annotate(
-			newJWTRefreshAuthenticator,
+			NewJWTRefreshAuthenticator,
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		// Provide JWT token generator
-		newJWTTokenGenerator,
+		NewJWTTokenGenerator,
 		// Provide OpenAPI authenticator (requires ExternalAppLoader implementation from user)
 		fx.Annotate(
-			newOpenAPIAuthenticator,
+			NewOpenAPIAuthenticator,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		// Provide Password authenticator (requires UserLoader implementation from user)
 		fx.Annotate(
-			newPasswordAuthenticator,
+			NewPasswordAuthenticator,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		// Provide authentication manager
 		fx.Annotate(
-			newAuthManager,
+			NewAuthManager,
 			fx.ParamTags(`group:"vef:security:authenticators"`),
 		),
 		// Provide auth resource
 		fx.Annotate(
-			newAuthResource,
+			NewAuthResource,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),

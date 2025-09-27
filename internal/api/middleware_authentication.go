@@ -14,7 +14,7 @@ import (
 	security2 "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
 // buildAuthenticationMiddleware creates a keyauth middleware for API authentication.
@@ -90,7 +90,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth security.Aut
 					return result.ErrExternalAppDisabled
 				}
 				if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
-					if !ipAllowed(utils.GetIP(ctx), cfg.IpWhitelist) {
+					if !ipAllowed(webhelpers.GetIP(ctx), cfg.IpWhitelist) {
 						return result.ErrIpNotAllowed
 					}
 				}
@@ -100,7 +100,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth security.Aut
 						return result.ErrExternalAppDisabled
 					}
 					if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
-						if !ipAllowed(utils.GetIP(ctx), cfg.IpWhitelist) {
+						if !ipAllowed(webhelpers.GetIP(ctx), cfg.IpWhitelist) {
 							return result.ErrIpNotAllowed
 						}
 					}

@@ -1,0 +1,90 @@
+package orm
+
+import (
+	"fmt"
+
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/schema"
+)
+
+// BaseQueryBuilder provides a common implementation for QueryBuilder interface.
+// It can be embedded in concrete query types to reduce code duplication.
+type BaseQueryBuilder struct {
+	dialect schema.Dialect
+	query   interface {
+		bun.Query
+		fmt.Stringer
+
+		NewSelect() *bun.SelectQuery
+	}
+	eb ExprBuilder
+}
+
+// Dialect returns the dialect of the current database connection.
+func (b *BaseQueryBuilder) Dialect() schema.Dialect {
+	return b.dialect
+}
+
+// Query returns the query of the current query instance.
+func (b *BaseQueryBuilder) Query() bun.Query {
+	return b.query
+}
+
+// ExprBuilder returns the expression builder for this query.
+func (b *BaseQueryBuilder) ExprBuilder() ExprBuilder {
+	return b.eb
+}
+
+// CreateSubQuery creates a new subquery from the given bun.SelectQuery.
+func (b *BaseQueryBuilder) CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery {
+	eb := &QueryExprBuilder{
+		qb: b,
+	}
+	queryBuilder := newQueryBuilder(b.dialect, subQuery, eb)
+	query := &BunSelectQuery{
+		QueryBuilder: queryBuilder,
+
+		dialect:    b.dialect,
+		query:      subQuery,
+		eb:         eb,
+		isSubQuery: true,
+	}
+	eb.qb = query
+	return query
+}
+
+// BuildSubQuery constructs a subquery using a builder function.
+func (b *BaseQueryBuilder) BuildSubQuery(builder func(query SelectQuery)) *bun.SelectQuery {
+	subQuery := b.query.NewSelect()
+	builder(b.CreateSubQuery(subQuery))
+	return subQuery
+}
+
+// BuildCondition creates a condition builder for WHERE clauses.
+func (b *BaseQueryBuilder) BuildCondition(builder func(ConditionBuilder)) interface {
+	schema.QueryAppender
+	ConditionBuilder
+} {
+	cb := newConditionBuilder(b)
+	builder(cb)
+	return cb
+}
+
+// String returns the SQL query string.
+func (b *BaseQueryBuilder) String() string {
+	return b.query.String()
+}
+
+// newQueryBuilder creates a new query builder.
+func newQueryBuilder(dialect schema.Dialect, query interface {
+	bun.Query
+	fmt.Stringer
+
+	NewSelect() *bun.SelectQuery
+}, eb ExprBuilder) *BaseQueryBuilder {
+	return &BaseQueryBuilder{
+		dialect: dialect,
+		query:   query,
+		eb:      eb,
+	}
+}
