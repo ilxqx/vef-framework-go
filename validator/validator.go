@@ -21,25 +21,20 @@ import (
 )
 
 const (
-	tagLabel = "label" // tagLabel is the struct tag name for field labels
+	// tagLabel is the struct tag name for field labels
+	tagLabel = "label"
 )
 
 var (
-	logger     = log.Named("validator") // logger is the validator module logger
-	translator ut.Translator            // translator handles error message translations
-	validator  *v.Validate              // validator is the main validation instance
+	logger = log.Named("validator")
+	// translator handles error message translations
+	translator ut.Translator
+	// validator is the main validation instance
+	validator *v.Validate
 )
 
 func init() {
-	// TODO: Consider refactoring this initialization logic for better extensibility
-	// Current implementation has several areas for improvement:
-	// 1. Language detection is hardcoded to two languages (zh-CN, en)
-	// 2. Direct environment variable access could be abstracted
-	// 3. Translator initialization could support more locales dynamically
-	// 4. Error handling during initialization could be more graceful
-	// 5. Consider moving to a factory pattern or configuration-based initialization
-	// This would allow for better testing, configuration management, and extensibility
-
+	// Initialize validator with i18n support based on environment configuration
 	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
 	localeTranslator := lo.TernaryF(
 		preferredLanguage == constants.DefaultI18NLanguage,
@@ -96,11 +91,11 @@ func RegisterValidationRules(rules ...ValidationRule) error {
 	return nil
 }
 
-// TypeFunc defines a custom type function for validation.
-type TypeFunc = func(field reflect.Value) any
+// CustomTypeFunc defines a custom type function for validation that extracts values from custom types.
+type CustomTypeFunc = func(field reflect.Value) any
 
 // RegisterTypeFunc registers a custom type function for specified types.
-func RegisterTypeFunc(fn TypeFunc, types ...any) {
+func RegisterTypeFunc(fn CustomTypeFunc, types ...any) {
 	validator.RegisterCustomTypeFunc(fn, types...)
 }
 
@@ -115,20 +110,6 @@ func RegisterNullValueTypeFunc[T any]() {
 			return nil
 		},
 		null.Value[T]{},
-	)
-}
-
-// RegisterNullJSONTypeFunc registers a type function for null.JSON[T] types.
-func RegisterNullJSONTypeFunc[T any]() {
-	validator.RegisterCustomTypeFunc(
-		func(field reflect.Value) any {
-			if nv, ok := field.Interface().(null.JSON[T]); ok && nv.Valid {
-				return nv.V.Unwrap()
-			}
-
-			return nil
-		},
-		null.JSON[T]{},
 	)
 }
 

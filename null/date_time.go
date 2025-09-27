@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/mo"
+	"github.com/ilxqx/vef-framework-go/datetime"
 )
 
-// DateTime is a nullable mo.DateTime. It supports SQL and JSON serialization.
+// DateTime is a nullable datetime.DateTime. It supports SQL and JSON serialization.
 // It will marshal to null if null.
 type DateTime struct {
-	sql.Null[mo.DateTime]
+	sql.Null[datetime.DateTime]
 }
 
 // NewDateTime creates a new DateTime.
-func NewDateTime(dt mo.DateTime, valid bool) DateTime {
+func NewDateTime(dt datetime.DateTime, valid bool) DateTime {
 	return DateTime{
-		Null: sql.Null[mo.DateTime]{
+		Null: sql.Null[datetime.DateTime]{
 			V:     dt,
 			Valid: valid,
 		},
@@ -26,30 +26,30 @@ func NewDateTime(dt mo.DateTime, valid bool) DateTime {
 }
 
 // DateTimeFrom creates a new DateTime that will always be valid.
-func DateTimeFrom(dt mo.DateTime) DateTime {
+func DateTimeFrom(dt datetime.DateTime) DateTime {
 	return NewDateTime(dt, true)
 }
 
 // DateTimeFromPtr creates a new DateTime that will be null if dt is nil.
-func DateTimeFromPtr(dt *mo.DateTime) DateTime {
+func DateTimeFromPtr(dt *datetime.DateTime) DateTime {
 	if dt == nil {
-		return NewDateTime(mo.DateTime{}, false)
+		return NewDateTime(datetime.DateTime{}, false)
 	}
 
 	return NewDateTime(*dt, true)
 }
 
 // ValueOrZero returns the inner value if valid, otherwise zero.
-func (dt DateTime) ValueOrZero() mo.DateTime {
+func (dt DateTime) ValueOrZero() datetime.DateTime {
 	if !dt.Valid {
-		return mo.DateTime{}
+		return datetime.DateTime{}
 	}
 
 	return dt.V
 }
 
 // ValueOr returns the inner value if valid, otherwise v.
-func (dt DateTime) ValueOr(v mo.DateTime) mo.DateTime {
+func (dt DateTime) ValueOr(v datetime.DateTime) datetime.DateTime {
 	if !dt.Valid {
 		return v
 	}
@@ -61,7 +61,7 @@ func (dt DateTime) ValueOr(v mo.DateTime) mo.DateTime {
 // It will encode null if this datetime is null.
 func (dt DateTime) MarshalJSON() ([]byte, error) {
 	if !dt.Valid {
-		return mo.JSONNullBytes, nil
+		return constants.JSONNullBytes, nil
 	}
 
 	return dt.V.MarshalJSON()
@@ -84,7 +84,7 @@ func (dt *DateTime) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalText implements encoding.TextMarshaler.
-// It returns an empty string if invalid, otherwise mo.DateTime's MarshalText.
+// It returns an empty string if invalid, otherwise datetime.DateTime's MarshalText.
 func (dt DateTime) MarshalText() ([]byte, error) {
 	if !dt.Valid {
 		return []byte{}, nil
@@ -99,7 +99,7 @@ func (dt DateTime) MarshalText() ([]byte, error) {
 func (dt *DateTime) UnmarshalText(text []byte) error {
 	str := string(text)
 	// allowing "null" is for backwards compatibility with v3
-	if str == constants.Empty || str == mo.JSONNull {
+	if str == constants.Empty || str == constants.JSONNull {
 		dt.Valid = false
 		return nil
 	}
@@ -111,13 +111,13 @@ func (dt *DateTime) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this DateTime's value and sets it to be non-null.
-func (dt *DateTime) SetValid(v mo.DateTime) {
+func (dt *DateTime) SetValid(v datetime.DateTime) {
 	dt.V = v
 	dt.Valid = true
 }
 
 // Ptr returns a pointer to this DateTime's value, or a nil pointer if this DateTime is null.
-func (dt DateTime) Ptr() *mo.DateTime {
+func (dt DateTime) Ptr() *datetime.DateTime {
 	if !dt.Valid {
 		return nil
 	}

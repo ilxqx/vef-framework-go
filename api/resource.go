@@ -3,7 +3,7 @@ package api
 type baseResource struct {
 	version string
 	name    string
-	apis    []Config
+	apis    []Spec
 }
 
 func (b *baseResource) Version() string {
@@ -14,7 +14,7 @@ func (b *baseResource) Name() string {
 	return b.name
 }
 
-func (b *baseResource) APIs() []Config {
+func (b *baseResource) APIs() []Spec {
 	return b.apis
 }
 
@@ -44,8 +44,8 @@ func WithVersion(version string) resourceOption {
 }
 
 // WithAPIs configures the API endpoints for the resource.
-// It accepts a variadic list of Config objects that define the available APIs.
-func WithAPIs(apis ...Config) resourceOption {
+// It accepts a variadic list of Spec objects that define the available APIs.
+func WithAPIs(apis ...Spec) resourceOption {
 	return func(r *baseResource) {
 		r.apis = apis
 	}

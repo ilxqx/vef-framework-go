@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/samber/lo"
 )
@@ -38,29 +37,21 @@ type JWT struct {
 // NewJWT creates a new JWT instance with the given configuration.
 // Secret expects a hex-encoded string; invalid hex will cause a panic during initialization.
 // Audience will be defaulted when empty.
-func NewJWT(config *JWTConfig) *JWT {
-	config.Audience = lo.Ternary(config.Audience != constants.Empty, config.Audience, defaultJwtAudience)
+func NewJWT(config *JWTConfig) (*JWT, error) {
+	var (
+		secret []byte
+		err    error
+	)
+
+	if secret, err = hex.DecodeString(lo.CoalesceOrEmpty(config.Secret, defaultJwtSecret)); err != nil {
+		return nil, fmt.Errorf("failed to decode jwt secret: %w", err)
+	}
+	config.Audience = lo.CoalesceOrEmpty(config.Audience, defaultJwtAudience)
 
 	return &JWT{
 		config: config,
-		secret: lo.TernaryF(
-			config.Secret != constants.Empty,
-			func() []byte {
-				secret, err := hex.DecodeString(config.Secret)
-				if err != nil {
-					panic(fmt.Errorf("failed to decode jwt secret: %w", err))
-				}
-				return secret
-			},
-			func() []byte {
-				secret, err := hex.DecodeString(defaultJwtSecret)
-				if err != nil {
-					panic(fmt.Errorf("failed to decode jwt secret: %w", err))
-				}
-				return secret
-			},
-		),
-	}
+		secret: secret,
+	}, nil
 }
 
 // Generate creates a JWT token with the given claims and expires.

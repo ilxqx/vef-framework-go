@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/shopspring/decimal"
 )
 
 // setup initializes preset validation rules and type functions.
@@ -78,13 +77,4 @@ func setup() {
 		null.Time{},
 		null.Decimal{},
 	)
-
-	// Register commonly used JSON types
-	RegisterNullJSONTypeFunc[map[string]any]()
-	RegisterNullJSONTypeFunc[map[string]string]()
-	RegisterNullJSONTypeFunc[[]string]()
-	RegisterNullJSONTypeFunc[[]int]()
-	RegisterNullJSONTypeFunc[[]float64]()
-	RegisterNullJSONTypeFunc[[]decimal.Decimal]()
-	RegisterNullJSONTypeFunc[any]()
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 // Engine defines the interface for API engines that can connect to a router.
@@ -14,19 +15,21 @@ type Engine interface {
 	Connect(router fiber.Router)
 }
 
-// newEngine creates an Engine with the given policy.
-func newEngine(manager api.Manager, policy Policy, db orm.Db) Engine {
+// NewEngine creates an Engine with the given policy.
+func NewEngine(manager api.Manager, policy Policy, db orm.Db, transformer trans.Transformer) Engine {
 	return &apiEngine{
-		manager: manager,
-		policy:  policy,
-		db:      db,
+		manager:     manager,
+		policy:      policy,
+		db:          db,
+		transformer: transformer,
 	}
 }
 
 type apiEngine struct {
-	manager api.Manager
-	db      orm.Db
-	policy  Policy
+	manager     api.Manager
+	policy      Policy
+	db          orm.Db
+	transformer trans.Transformer
 }
 
 // Connect registers the API engine with the given router.
@@ -57,7 +60,7 @@ func (e *apiEngine) buildMiddlewares() []fiber.Handler {
 	return []fiber.Handler{
 		requestMiddleware(e.manager),
 		e.policy.BuildAuthenticationMiddleware(e.manager),
-		buildContextMiddleware(e.db),
+		buildContextMiddleware(e.db, e.transformer),
 		buildAuthorizationMiddleware(e.manager),
 		buildRateLimiterMiddleware(e.manager),
 	}

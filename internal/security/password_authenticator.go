@@ -4,29 +4,29 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/utils"
 )
 
 const (
-	AuthTypePassword = "password" // Password authentication type
+	// Password authentication type
+	AuthTypePassword = "password"
 )
 
-// passwordAuthenticator implements the Authenticator interface using username/password verification.
+// PasswordAuthenticator implements the Authenticator interface using username/password verification.
 // It relies on an externally provided security.UserLoader to load user info and password hash.
-type passwordAuthenticator struct {
+type PasswordAuthenticator struct {
 	loader security.UserLoader // loader loads user principal and hashed password by username
 }
 
-// newPasswordAuthenticator creates a new password authenticator with the given user loader.
-func newPasswordAuthenticator(loader security.UserLoader) security.Authenticator {
-	return &passwordAuthenticator{loader: loader}
+// NewPasswordAuthenticator creates a new password authenticator with the given user loader.
+func NewPasswordAuthenticator(loader security.UserLoader) security.Authenticator {
+	return &PasswordAuthenticator{loader: loader}
 }
 
 // Supports checks if this authenticator can handle password authentication.
-func (*passwordAuthenticator) Supports(authType string) bool { return authType == AuthTypePassword }
+func (*PasswordAuthenticator) Supports(authType string) bool { return authType == AuthTypePassword }
 
 // Authenticate validates credentials which should be a plaintext password for the given principal (username).
-func (a *passwordAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (a *PasswordAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
 	if a.loader == nil {
 		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, "请提供一个用户加载器实现")
 	}
@@ -51,7 +51,7 @@ func (a *passwordAuthenticator) Authenticate(authentication security.Authenticat
 	}
 
 	// Compare password with stored hash
-	if utils.VerifyPassword(password, passwordHash) {
+	if security.VerifyPassword(password, passwordHash) {
 		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, "账号或密码错误")
 	}
 

@@ -3,41 +3,55 @@ package search
 type Operator string
 
 const (
-	Equals                  Operator = "eq"             // Equals is the equal operator
-	NotEquals               Operator = "neq"            // NotEquals is the not equal operator
-	GreaterThan             Operator = "gt"             // GreaterThan is the greater than operator
-	GreaterThanOrEqual      Operator = "gte"            // GreaterThanOrEqual is the greater than or equal operator
-	LessThan                Operator = "lt"             // LessThan is the less than operator
-	LessThanOrEqual         Operator = "lte"            // LessThanOrEqual is the less than or equal operator
-	Between                 Operator = "between"        // Between is the between operator
-	NotBetween              Operator = "notBetween"     // NotBetween is the not between operator
-	In                      Operator = "in"             // In is the in operator
-	NotIn                   Operator = "notIn"          // NotIn is the not in operator
-	IsNull                  Operator = "isNull"         // IsNull is the is null operator
-	IsNotNull               Operator = "isNotNull"      // IsNotNull is the is not null operator
-	Contains                Operator = "contains"       // Contains is the contains operator
-	NotContains             Operator = "notContains"    // NotContains is the not contains operator
-	StartsWith              Operator = "startsWith"     // StartsWith is the starts with operator
-	NotStartsWith           Operator = "notStartsWith"  // NotStartsWith is the not starts with operator
-	EndsWith                Operator = "endsWith"       // EndsWith is the ends with operator
-	NotEndsWith             Operator = "notEndsWith"    // NotEndsWith is the not ends with operator
-	ContainsIgnoreCase      Operator = "iContains"      // ContainsIgnoreCase is the contains ignore case operator
-	NotContainsIgnoreCase   Operator = "iNotContains"   // NotContainsIgnoreCase is the not contains ignore case operator
-	StartsWithIgnoreCase    Operator = "iStartsWith"    // StartsWithIgnoreCase is the starts with ignore case operator
-	NotStartsWithIgnoreCase Operator = "iNotStartsWith" // NotStartsWithIgnoreCase is the not starts with ignore case operator
-	EndsWithIgnoreCase      Operator = "iEndsWith"      // EndsWithIgnoreCase is the ends with ignore case operator
-	NotEndsWithIgnoreCase   Operator = "iNotEndsWith"   // NotEndsWithIgnoreCase is the not ends with ignore case operator
+	// Comparison operators
+	Equals             Operator = "eq"
+	NotEquals          Operator = "neq"
+	GreaterThan        Operator = "gt"
+	GreaterThanOrEqual Operator = "gte"
+	LessThan           Operator = "lt"
+	LessThanOrEqual    Operator = "lte"
 
-	TagSearch = "search" // TagSearch is the tag name for search
+	// Range operators
+	Between    Operator = "between"
+	NotBetween Operator = "notBetween"
 
-	AttrDive     = "dive"     // AttrDive is the dive attribute
-	AttrAlias    = "alias"    // AttrAlias is the alias attribute
-	AttrColumn   = "column"   // AttrColumn is the column attribute
-	AttrOperator = "operator" // AttrOperator is the operator attribute
-	AttrArgs     = "args"     // AttrArgs is the args attribute
-	AttrDefault  = "default"  // AttrDefault is the default attribute
+	// Collection operators
+	In    Operator = "in"
+	NotIn Operator = "notIn"
 
-	ArgDelimiter = "delimiter" // ArgDelimiter is the delimiter for the range
-	ArgType      = "type"      // ArgType is the type for the value
-	ArgDefault   = "default"   // ArgDefault is the default argument
+	// Null check operators
+	IsNull    Operator = "isNull"
+	IsNotNull Operator = "isNotNull"
+
+	// String matching operators (case sensitive)
+	Contains      Operator = "contains"
+	NotContains   Operator = "notContains"
+	StartsWith    Operator = "startsWith"
+	NotStartsWith Operator = "notStartsWith"
+	EndsWith      Operator = "endsWith"
+	NotEndsWith   Operator = "notEndsWith"
+
+	// String matching operators (case insensitive)
+	ContainsIgnoreCase      Operator = "iContains"
+	NotContainsIgnoreCase   Operator = "iNotContains"
+	StartsWithIgnoreCase    Operator = "iStartsWith"
+	NotStartsWithIgnoreCase Operator = "iNotStartsWith"
+	EndsWithIgnoreCase      Operator = "iEndsWith"
+	NotEndsWithIgnoreCase   Operator = "iNotEndsWith"
+
+	// Struct tag configuration
+	TagSearch = "search"
+
+	// Tag attributes for field configuration
+	AttrDive     = "dive"
+	AttrAlias    = "alias"
+	AttrColumn   = "column"
+	AttrOperator = "operator"
+	AttrParams   = "params"
+	AttrDefault  = "default"
+
+	// Parameters for value processing
+	ParamDelimiter = "delimiter"
+	ParamType      = "type"
+	ParamDefault   = "default"
 )

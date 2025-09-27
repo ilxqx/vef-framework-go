@@ -5,33 +5,38 @@ import (
 	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/mo"
+	"github.com/ilxqx/vef-framework-go/monad"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/utils"
 	"github.com/spf13/cast"
 
 	"github.com/samber/lo"
 )
 
 var (
-	logger    = log.Named("search")              // logger is the logger for the search package
-	rangeType = reflect.TypeFor[mo.Range[int]]() // rangeType is the type for range values
+	logger    = log.Named("search")
+	rangeType = reflect.TypeFor[monad.Range[int]]()
 )
 
 // Search contains multiple conditions.
 type Search struct {
-	conditions []Condition // conditions contains all search conditions
+	conditions []Condition
 }
 
 // Condition is a condition item.
 type Condition struct {
-	Index    []int             // Index is the field index in the struct
-	Alias    string            // Alias is the table alias for the condition
-	Columns  []string          // Columns are the column names for the condition
-	Operator Operator          // Operator is the comparison operator
-	Args     map[string]string // Args contains additional arguments for the condition
+	// Index is the field index in the struct
+	Index []int
+	// Alias is the table alias for the condition
+	Alias string
+	// Columns are the column names for the condition
+	Columns []string
+	// Operator is the comparison operator
+	Operator Operator
+	// Params contains additional parameters for the condition
+	Params map[string]string
 }
 
 // Apply applies the search to the condition builder.
@@ -44,15 +49,16 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 
 	for _, c := range f.conditions {
 		field := value.FieldByIndex(c.Index)
-		if field.IsZero() && (!field.CanInt() && !field.CanUint() && !field.CanFloat() && field.Kind() != reflect.Bool) {
-			// Skip non-numeric and non-boolean zero value.
+		if field.IsZero() && !isValidZeroValue(field) {
+			// Skip fields with zero values unless they are numeric or boolean types
+			// which may have meaningful zero values for query conditions
 			continue
 		}
 
 		alias := getColumnAlias(c.Alias, defaultAlias...)
-		columns := make([]string, 0, len(c.Columns))
-		for _, column := range c.Columns {
-			columns = append(columns, utils.ColumnWithAlias(column, alias))
+		columns := make([]string, len(c.Columns))
+		for i, column := range c.Columns {
+			columns[i] = dbhelpers.ColumnWithAlias(column, alias)
 		}
 		applyCondition(cb, c, columns, field)
 	}
@@ -78,9 +84,9 @@ func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, valu
 	case Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual:
 		applyComparisonCondition(cb, columns[0], c.Operator, value)
 	case Between, NotBetween:
-		applyBetweenCondition(cb, columns[0], c.Operator, value, c.Args)
+		applyBetweenCondition(cb, columns[0], c.Operator, value, c.Params)
 	case In, NotIn:
-		applyInCondition(cb, columns[0], value, c.Operator, c.Args)
+		applyInCondition(cb, columns[0], value, c.Operator, c.Params)
 	case IsNull, IsNotNull:
 		applyNullCondition(cb, columns[0], value, c.Operator)
 	case Contains, NotContains, StartsWith, NotStartsWith, EndsWith, NotEndsWith,
@@ -109,8 +115,8 @@ func applyComparisonCondition(cb orm.ConditionBuilder, column string, operator O
 }
 
 // applyBetweenCondition applies the between operator to the condition builder.
-func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Operator, value reflect.Value, conditionArgs map[string]string) {
-	start, end, ok := getRangeValue(value, conditionArgs)
+func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Operator, value reflect.Value, conditionParams map[string]string) {
+	start, end, ok := getRangeValue(value, conditionParams)
 	if !ok {
 		return
 	}
@@ -124,14 +130,14 @@ func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Oper
 }
 
 // applyInCondition applies the in operator to the condition builder.
-func applyInCondition(cb orm.ConditionBuilder, column string, value reflect.Value, operator Operator, conditionArgs map[string]string) {
+func applyInCondition(cb orm.ConditionBuilder, column string, value reflect.Value, operator Operator, conditionParams map[string]string) {
 	values := reflectx.ApplyIfString(
 		value,
 		func(s string) []any {
 			var values []any
-			delimiter := lo.CoalesceOrEmpty(conditionArgs[ArgDelimiter], constants.Comma)
+			delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
 
-			switch conditionArgs[ArgType] {
+			switch conditionParams[ParamType] {
 			case constants.TypeInt:
 				for value := range strings.SplitSeq(s, delimiter) {
 					values = append(values, cast.ToInt(value))
@@ -198,6 +204,12 @@ func applyMultiColumnLikeCondition(cb orm.ConditionBuilder, columns []string, va
 // applySingleColumnLikeCondition applies like condition for a single column.
 func applySingleColumnLikeCondition(cb orm.ConditionBuilder, column, val string, operator Operator) {
 	applyLikeOperation(cb, column, val, operator, false)
+}
+
+// isValidZeroValue determines if a zero value should be included in query conditions.
+// Returns true for numeric and boolean types where zero values are meaningful.
+func isValidZeroValue(field reflect.Value) bool {
+	return field.CanInt() || field.CanUint() || field.CanFloat() || field.Kind() == reflect.Bool
 }
 
 // applyLikeOperation applies the specific like operation on a column.

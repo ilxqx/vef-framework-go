@@ -25,7 +25,7 @@ func (p *defaultApiPolicy) BuildAuthenticationMiddleware(manager api.Manager) fi
 	return buildAuthenticationMiddleware(manager, p.auth)
 }
 
-func newDefaultApiPolicy(auth security.AuthManager) Policy {
+func NewDefaultApiPolicy(auth security.AuthManager) Policy {
 	return &defaultApiPolicy{auth: auth}
 }
 
@@ -39,6 +39,6 @@ func (p *openApiPolicy) BuildAuthenticationMiddleware(manager api.Manager) fiber
 	return buildOpenAPIAuthenticationMiddleware(manager, p.auth)
 }
 
-func newOpenApiPolicy(auth security.AuthManager) Policy {
+func NewOpenApiPolicy(auth security.AuthManager) Policy {
 	return &openApiPolicy{auth: auth}
 }

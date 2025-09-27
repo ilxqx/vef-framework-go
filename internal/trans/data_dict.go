@@ -51,8 +51,8 @@ func (t *dataDictTransformer) Transform(ctx context.Context, fl trans.FieldLevel
 	return nil
 }
 
-// newDataDictTransformer creates a data dictionary transformer instance
-func newDataDictTransformer(resolver trans.DataDictNameResolver) trans.FieldTransformer {
+// NewDataDictTransformer creates a data dictionary transformer instance
+func NewDataDictTransformer(resolver trans.DataDictNameResolver) trans.FieldTransformer {
 	return &dataDictTransformer{
 		logger:   logger.Named("data_dict"),
 		resolver: resolver,

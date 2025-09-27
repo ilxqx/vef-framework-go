@@ -8,6 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 type contextKey int
@@ -17,6 +18,7 @@ const (
 	KeyPrincipal
 	KeyLogger
 	KeyDb
+	KeyTransformer
 )
 
 // APIRequest returns the api.APIRequest from fiber context.
@@ -84,5 +86,22 @@ func SetDb(ctx context.Context, db orm.Db) context.Context {
 		return c
 	default:
 		return context.WithValue(ctx, KeyDb, db)
+	}
+}
+
+// Transformer returns the trans.Transformer from fiber context.
+func Transformer(ctx context.Context) trans.Transformer {
+	transformer, _ := ctx.Value(KeyTransformer).(trans.Transformer)
+	return transformer
+}
+
+// SetTransformer stores the trans.Transformer into fiber context.
+func SetTransformer(ctx context.Context, transformer trans.Transformer) context.Context {
+	switch c := ctx.(type) {
+	case fiber.Ctx:
+		c.Locals(KeyTransformer, transformer)
+		return c
+	default:
+		return context.WithValue(ctx, KeyTransformer, transformer)
 	}
 }

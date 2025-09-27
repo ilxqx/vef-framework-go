@@ -1,60 +1,102 @@
-// Package apis provides preset API implementations for common CRUD operations
-// with support for method chaining, filtering, and post-processing.
 package apis
 
-import (
-	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/trans"
-	"go.uber.org/fx"
-)
+import "github.com/ilxqx/vef-framework-go/search"
 
-var (
-	// apisParams holds the dependency injection parameters for the APIs package
-	apisParams = new(presetApisParams)
-
-	// Module is the fx module for dependency injection
-	Module = fx.Module(
-		"vef:apis",
-		fx.Populate(apisParams),
-	)
-)
-
-// presetApisParams defines the dependency injection parameters
-type presetApisParams struct {
-	fx.In
-	Transformer trans.Transformer
+// NewAPIBuilder creates a new base API builder instance.
+// This is the foundation for all CRUD API builders providing common configuration options.
+func NewAPIBuilder[T any](self T) APIBuilder[T] {
+	return &baseAPIBuilder[T]{
+		self: self,
+	}
 }
 
-// QueryApplier is a function that applies additional query conditions.
-type QueryApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.Query]
+// NewCreateAPI creates a new CreateAPI instance.
+func NewCreateAPI[TModel, TParams any]() CreateAPI[TModel, TParams] {
+	api := new(createAPI[TModel, TParams])
+	api.APIBuilder = NewAPIBuilder(api).Action(ActionCreate)
+	return api
+}
 
-// SearchApplier is a function that applies search conditions to the query builder.
-type SearchApplier[TSearch any] func(search TSearch) orm.ApplyFunc[orm.ConditionBuilder]
+// NewUpdateAPI creates a new updateAPI instance.
+func NewUpdateAPI[TModel, TParams any]() UpdateAPI[TModel, TParams] {
+	api := new(updateAPI[TModel, TParams])
+	api.APIBuilder = NewAPIBuilder(api).Action(ActionUpdate)
+	return api
+}
 
-// FilterApplier is a function that applies filter conditions to the query builder.
-type FilterApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder]
+// NewDeleteAPI creates a new deleteAPI instance.
+func NewDeleteAPI[TModel any]() DeleteAPI[TModel] {
+	api := new(deleteAPI[TModel])
+	api.APIBuilder = NewAPIBuilder(api).Action(ActionDelete)
+	return api
+}
 
-// SortApplier is a function that applies orders to the query builder.
-type SortApplier func(ctx fiber.Ctx) orm.ApplyFunc[Sorter]
+func NewFindAPI[TModel, TSearch, TProcessor, TAPI any](self TAPI) FindAPI[TModel, TSearch, TProcessor, TAPI] {
+	return &baseFindAPI[TModel, TSearch, TProcessor, TAPI]{
+		APIBuilder:    NewAPIBuilder(self),
+		searchApplier: search.Applier[TSearch](),
+		self:          self,
+	}
+}
 
-// PostFindProcessor is a function that processes the result after query execution.
-type PostFindProcessor[T, R any] func(model T, ctx fiber.Ctx) R
+// NewFindOneAPI creates a new FindOneAPI instance.
+func NewFindOneAPI[TModel, TSearch any]() FindOneAPI[TModel, TSearch] {
+	api := new(findOneAPI[TModel, TSearch])
+	api.FindAPI = NewFindAPI[TModel, TSearch, TModel, FindOneAPI[TModel, TSearch]](api).Action(ActionFindOne)
+	return api
+}
 
-// PreCreateProcessor is a function that pre-processes the model before creating it.
-type PreCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, ctx fiber.Ctx, db orm.Db) error
+// NewFindAllAPI creates a new FindAllAPI instance.
+func NewFindAllAPI[TModel, TSearch any]() FindAllAPI[TModel, TSearch] {
+	api := new(findAllAPI[TModel, TSearch])
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindAllAPI[TModel, TSearch]](api).Action(ActionFindAll)
+	return api
+}
 
-// PostCreateProcessor is a function that post-processes the model after creating it.
-type PostCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, ctx fiber.Ctx, tx orm.Db) error
+// NewFindPageAPI creates a new FindPageAPI instance.
+func NewFindPageAPI[TModel, TSearch any]() FindPageAPI[TModel, TSearch] {
+	api := new(findPageAPI[TModel, TSearch])
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindPageAPI[TModel, TSearch]](api).Action(ActionFindPage)
+	return api
+}
 
-// PreUpdateProcessor is a function that pre-processes the model before updating it.
-type PreUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, ctx fiber.Ctx, db orm.Db) error
+// NewFindOptionsAPI creates a new FindOptionsAPI with the specified options.
+func NewFindOptionsAPI[TModel, TSearch any]() FindOptionsAPI[TModel, TSearch] {
+	api := &findOptionsAPI[TModel, TSearch]{
+		defaultConfig: &OptionsConfig{
+			LabelField: defaultLabelField,
+			ValueField: defaultValueField,
+		},
+	}
+	api.FindAPI = NewFindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]](api).Action(ActionFindOptions)
+	return api
+}
 
-// PostUpdateProcessor is a function that post-processes the model after updating it.
-type PostUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, ctx fiber.Ctx, tx orm.Db) error
+// NewFindTreeAPI creates a new FindTreeAPI for hierarchical data retrieval.
+// The treeBuilder function converts flat database records into nested tree structures.
+// Requires models to have id and parent_id fields for parent-child relationships.
+func NewFindTreeAPI[TModel, TSearch any](treeBuilder func(flatModels []TModel) []TModel) FindTreeAPI[TModel, TSearch] {
+	api := &findTreeAPI[TModel, TSearch]{
+		idField:       idField,
+		parentIdField: parentIdField,
+		treeBuilder:   treeBuilder,
+	}
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]](api).Action(ActionFindTree)
+	return api
+}
 
-// PreDeleteProcessor is a function that pre-processes the model before deleting it.
-type PreDeleteProcessor[TModel any] func(model *TModel, ctx fiber.Ctx, db orm.Db) error
-
-// PostDeleteProcessor is a function that post-processes the model after deleting it.
-type PostDeleteProcessor[TModel any] func(model *TModel, ctx fiber.Ctx, tx orm.Db) error
+// NewFindTreeOptionsAPI creates a new FindTreeOptionsAPI with the specified options.
+func NewFindTreeOptionsAPI[TModel, TSearch any]() FindTreeOptionsAPI[TModel, TSearch] {
+	api := &findTreeOptionsAPI[TModel, TSearch]{
+		defaultConfig: &TreeOptionsConfig{
+			OptionsConfig: OptionsConfig{
+				LabelField: defaultLabelField,
+				ValueField: defaultValueField,
+			},
+			IdField:       idField,
+			ParentIdField: parentIdField,
+		},
+	}
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]](api).Action(ActionFindTreeOptions)
+	return api
+}

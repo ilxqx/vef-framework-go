@@ -7,8 +7,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// newAuthResource creates a new authentication resource with the provided auth manager, token generator, and user loader.
-func newAuthResource(userLoader security.UserLoader, authManager security.AuthManager, tokenGenerator security.TokenGenerator) api.Resource {
+// NewAuthResource creates a new authentication resource with the provided auth manager, token generator, and user loader.
+func NewAuthResource(userLoader security.UserLoader, authManager security.AuthManager, tokenGenerator security.TokenGenerator) api.Resource {
 	return &authResource{
 		authManager:    authManager,
 		tokenGenerator: tokenGenerator,
@@ -16,18 +16,18 @@ func newAuthResource(userLoader security.UserLoader, authManager security.AuthMa
 		Resource: api.NewResource(
 			"security/auth",
 			api.WithAPIs(
-				api.Config{
+				api.Spec{
 					Action: "login",
 					Public: true,
 				},
-				api.Config{
+				api.Spec{
 					Action: "refresh",
 					Public: true,
 					Limit: api.RateLimit{
 						Max: 1,
 					},
 				},
-				api.Config{
+				api.Spec{
 					Action: "logout",
 				},
 			),

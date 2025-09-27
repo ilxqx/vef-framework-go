@@ -9,30 +9,31 @@ import (
 )
 
 const (
-	AuthTypeJWT = "jwt" // JWT authentication type
+	// JWT authentication type
+	AuthTypeJWT = "jwt"
 )
 
-// jwtAuthenticator implements the Authenticator interface for JWT token authentication.
+// JWTAuthenticator implements the Authenticator interface for JWT token authentication.
 // It validates JWT tokens and extracts principal information from them.
-type jwtAuthenticator struct {
+type JWTAuthenticator struct {
 	jwt *security.JWT
 }
 
-// newJWTAuthenticator creates a new JWT authenticator.
-func newJWTAuthenticator(jwt *security.JWT) security.Authenticator {
-	return &jwtAuthenticator{
+// NewJWTAuthenticator creates a new JWT authenticator.
+func NewJWTAuthenticator(jwt *security.JWT) security.Authenticator {
+	return &JWTAuthenticator{
 		jwt: jwt,
 	}
 }
 
 // Supports checks if this authenticator can handle JWT authentication.
-func (*jwtAuthenticator) Supports(authType string) bool {
+func (*JWTAuthenticator) Supports(authType string) bool {
 	return authType == AuthTypeJWT
 }
 
 // Authenticate validates the JWT token and returns the principal.
 // The credentials field should contain the JWT access token.
-func (ja *jwtAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (ja *JWTAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
 	// Extract the token from credentials
 	token := authentication.Principal
 	if token == constants.Empty {

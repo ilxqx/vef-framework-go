@@ -65,13 +65,3 @@ func newCacheConfig(config configPkg.Config) (*configPkg.CacheConfig, error) {
 
 	return &cacheConfig, nil
 }
-
-func newI18nConfig(config configPkg.Config) (*configPkg.I18nConfig, error) {
-	var i18nConfig configPkg.I18nConfig
-	// Unmarshal extracts i18n config from "vef.i18n" section
-	if err := config.Unmarshal("vef.i18n", &i18nConfig); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal i18n config: %w", err)
-	}
-
-	return &i18nConfig, nil
-}

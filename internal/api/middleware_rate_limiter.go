@@ -12,7 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/webhelpers"
 	"github.com/samber/lo"
 )
 
@@ -43,7 +43,7 @@ func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
 			_ = sb.WriteByte(constants.ByteColon)
 			_, _ = sb.WriteString(request.Action)
 			_ = sb.WriteByte(constants.ByteColon)
-			_, _ = sb.WriteString(utils.GetIP(ctx))
+			_, _ = sb.WriteString(webhelpers.GetIP(ctx))
 			_ = sb.WriteByte(constants.ByteColon)
 
 			principal := contextx.Principal(ctx)

@@ -3,8 +3,8 @@ package copier
 import (
 	"reflect"
 
+	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
@@ -242,8 +242,8 @@ var (
 
 	// null.DateTime
 	nullDateTimeType                = reflect.TypeFor[null.DateTime]()
-	dateTimeType                    = reflect.TypeFor[mo.DateTime]()
-	dateTimePtrType                 = reflect.TypeFor[*mo.DateTime]()
+	dateTimeType                    = reflect.TypeFor[datetime.DateTime]()
+	dateTimePtrType                 = reflect.TypeFor[*datetime.DateTime]()
 	nullDateTimeToDateTimeConverter = TypeConverter{
 		SrcType: nullDateTimeType,
 		DstType: dateTimeType,
@@ -262,21 +262,21 @@ var (
 		SrcType: dateTimeType,
 		DstType: nullDateTimeType,
 		Fn: func(src any) (any, error) {
-			return null.DateTimeFrom(src.(mo.DateTime)), nil
+			return null.DateTimeFrom(src.(datetime.DateTime)), nil
 		},
 	}
 	dateTimePtrToNullDateTimeConverter = TypeConverter{
 		SrcType: dateTimePtrType,
 		DstType: nullDateTimeType,
 		Fn: func(src any) (any, error) {
-			return null.DateTimeFromPtr(src.(*mo.DateTime)), nil
+			return null.DateTimeFromPtr(src.(*datetime.DateTime)), nil
 		},
 	}
 
 	// null.Date
 	nullDateType            = reflect.TypeFor[null.Date]()
-	dateType                = reflect.TypeFor[mo.Date]()
-	datePtrType             = reflect.TypeFor[*mo.Date]()
+	dateType                = reflect.TypeFor[datetime.Date]()
+	datePtrType             = reflect.TypeFor[*datetime.Date]()
 	nullDateToDateConverter = TypeConverter{
 		SrcType: nullDateType,
 		DstType: dateType,
@@ -295,21 +295,21 @@ var (
 		SrcType: dateType,
 		DstType: nullDateType,
 		Fn: func(src any) (any, error) {
-			return null.DateFrom(src.(mo.Date)), nil
+			return null.DateFrom(src.(datetime.Date)), nil
 		},
 	}
 	datePtrToNullDateConverter = TypeConverter{
 		SrcType: datePtrType,
 		DstType: nullDateType,
 		Fn: func(src any) (any, error) {
-			return null.DateFromPtr(src.(*mo.Date)), nil
+			return null.DateFromPtr(src.(*datetime.Date)), nil
 		},
 	}
 
 	// null.Time
 	nullTimeType            = reflect.TypeFor[null.Time]()
-	timeType                = reflect.TypeFor[mo.Time]()
-	timePtrType             = reflect.TypeFor[*mo.Time]()
+	timeType                = reflect.TypeFor[datetime.Time]()
+	timePtrType             = reflect.TypeFor[*datetime.Time]()
 	nullTimeToTimeConverter = TypeConverter{
 		SrcType: nullTimeType,
 		DstType: timeType,
@@ -328,14 +328,14 @@ var (
 		SrcType: timeType,
 		DstType: nullTimeType,
 		Fn: func(src any) (any, error) {
-			return null.TimeFrom(src.(mo.Time)), nil
+			return null.TimeFrom(src.(datetime.Time)), nil
 		},
 	}
 	timePtrToNullTimeConverter = TypeConverter{
 		SrcType: timePtrType,
 		DstType: nullTimeType,
 		Fn: func(src any) (any, error) {
-			return null.TimeFromPtr(src.(*mo.Time)), nil
+			return null.TimeFromPtr(src.(*datetime.Time)), nil
 		},
 	}
 

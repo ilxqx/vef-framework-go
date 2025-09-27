@@ -3,7 +3,6 @@ package vef
 import (
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/cache"
@@ -48,7 +47,6 @@ func Run(options ...fx.Option) {
 		cron.Module,
 		redis.Module,
 		trans.Module,
-		apis.Module,
 		app.Module,
 	}
 

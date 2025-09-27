@@ -6,49 +6,54 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/utils"
+	"github.com/ilxqx/vef-framework-go/strhelpers"
 	"github.com/samber/lo"
 )
 
-// NewFromType creates a new search from a type.
-func NewFromType(t reflect.Type) Search {
-	t = reflectx.Indirect(t)
-	if t.Kind() != reflect.Struct {
-		logger.Warnf("Invalid value type, expected struct, got %s", t.Name())
+// New creates a Search instance by parsing struct fields with search tags from the given reflect.Type.
+// Returns an empty Search if the type is not a struct.
+func New(typ reflect.Type) Search {
+	typ = reflectx.Indirect(typ)
+	if typ.Kind() != reflect.Struct {
+		logger.Warnf("Invalid value type, expected struct, got %s", typ.Name())
 		return Search{}
 	}
 
-	return Search{conditions: parseStruct(t)}
+	return Search{conditions: parseStruct(typ)}
 }
 
-// New creates a new search from a struct.
-func New[T any]() Search {
-	return NewFromType(reflect.TypeFor[T]())
+// NewFor creates a Search instance by parsing struct fields with search tags from type T.
+// This is a generic convenience function that calls New with reflect.TypeFor[T]().
+func NewFor[T any]() Search {
+	return New(reflect.TypeFor[T]())
 }
 
-// parseStruct parses the search conditions from a struct.
+// parseStruct parses the search conditions from a struct using visitor pattern.
 func parseStruct(t reflect.Type) []Condition {
 	conditions := make([]Condition, 0)
-	for i := range t.NumField() {
-		field := t.Field(i)
-		fieldType := reflectx.Indirect(field.Type)
 
-		if tag, ok := field.Tag.Lookup(TagSearch); ok {
-			attrs := utils.ParseTagAttrs(tag)
-			// Handle dive field.
-			if _, ok := attrs[AttrDive]; ok {
-				if fieldType.Kind() == reflect.Struct {
-					conditions = append(conditions, parseStruct(fieldType)...)
-				} else {
-					logger.Warnf("Invalid dive field type, expected struct, got %s", fieldType.Name())
+	visitor := reflectx.TypeVisitor{
+		VisitFieldType: func(field reflect.StructField, depth int) reflectx.VisitAction {
+			if tag, ok := field.Tag.Lookup(TagSearch); ok {
+				// Skip dive fields - visitor will handle recursion automatically
+				if tag == AttrDive {
+					return reflectx.Continue
 				}
-				continue
+
+				attrs := strhelpers.ParseTagAttrs(tag)
+				// Handle regular search fields
+				conditions = append(conditions, buildCondition(field, attrs))
 			}
 
-			// Handle filter field.
-			conditions = append(conditions, buildCondition(field, attrs))
-		}
+			return reflectx.SkipChildren
+		},
 	}
+
+	reflectx.VisitType(
+		t, visitor,
+		reflectx.WithDiveTag(TagSearch, AttrDive),
+		reflectx.WithTraversalMode(reflectx.DepthFirst),
+	)
 
 	return conditions
 }
@@ -65,20 +70,27 @@ func buildCondition(field reflect.StructField, attrs map[string]string) Conditio
 		columns = strings.Split(column, constants.Pipe)
 	}
 
-	operator := lo.ValueOr(attrs, AttrOperator, lo.ValueOr(attrs, AttrDefault, string(Equals)))
+	operator := attrs[AttrOperator]
+	if operator == constants.Empty {
+		if defaultOp := attrs[AttrDefault]; defaultOp != constants.Empty {
+			operator = defaultOp
+		} else {
+			operator = string(Equals)
+		}
+	}
 
 	return Condition{
 		Index:    field.Index,
 		Alias:    attrs[AttrAlias],
 		Columns:  columns,
 		Operator: Operator(operator),
-		Args: lo.TernaryF(
-			attrs[AttrArgs] == constants.Empty,
+		Params: lo.TernaryF(
+			attrs[AttrParams] == constants.Empty,
 			func() map[string]string {
 				return make(map[string]string)
 			},
 			func() map[string]string {
-				return utils.ParseQueryString(attrs[AttrArgs])
+				return strhelpers.ParseTagArgs(attrs[AttrParams])
 			},
 		),
 	}

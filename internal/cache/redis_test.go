@@ -3,174 +3,172 @@ package cache
 import (
 	"context"
 	"fmt"
-	"os"
 	"sort"
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/ilxqx/vef-framework-go/internal/redis"
+	"github.com/ilxqx/vef-framework-go/testhelpers"
+	goredis "github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/suite"
 )
 
-// setupRedisClient sets up a Redis client for testing
-// This assumes Redis is running on localhost:6379 for testing
-func setupRedisClient(t *testing.T) *redis.Client {
-	// Skip Redis tests if REDIS_URL is not provided
-	redisURL := os.Getenv("REDIS_URL")
-	if redisURL == "" {
-		t.Skip("REDIS_URL not set, skipping Redis tests")
-	}
-
-	opt, err := redis.ParseURL(redisURL)
-	if err != nil {
-		t.Skipf("Failed to parse REDIS_URL: %v", err)
-	}
-
-	client := redis.NewClient(opt)
-
-	// Test connection
-	ctx := context.Background()
-	_, err = client.Ping(ctx).Result()
-	if err != nil {
-		t.Skipf("Redis server not available: %v", err)
-	}
-
-	// Clean up any existing test keys
-	testPattern := "test:*"
-	keys, _ := client.Keys(ctx, testPattern).Result()
-	if len(keys) > 0 {
-		client.Del(ctx, keys...)
-	}
-
-	return client
+// RedisStoreTestSuite is the test suite for Redis store functionality
+type RedisStoreTestSuite struct {
+	suite.Suite
+	ctx            context.Context
+	redisContainer *testhelpers.RedisContainer
+	client         *goredis.Client
 }
 
-func TestRedisStoreBasicOperations(t *testing.T) {
-	client := setupRedisClient(t)
-	defer client.Close()
+// SetupSuite runs before all tests in the suite
+func (suite *RedisStoreTestSuite) SetupSuite() {
+	suite.ctx = context.Background()
 
-	store := createRedisStore(client, redisOptions{
+	// Start Redis container
+	redisContainer := testhelpers.NewRedisContainer(suite.ctx, &suite.Suite)
+	suite.redisContainer = redisContainer
+
+	// Create Redis client
+	suite.client = redis.NewClient("test-app", redisContainer.RdsConfig)
+
+	// Test connection
+	err := suite.client.Ping(suite.ctx).Err()
+	suite.Require().NoError(err, "Failed to ping redis client")
+}
+
+// TearDownSuite runs after all tests in the suite
+func (suite *RedisStoreTestSuite) TearDownSuite() {
+	if suite.client != nil {
+		if err := suite.client.Close(); err != nil {
+			suite.T().Logf("Failed to close redis client: %v", err)
+		}
+	}
+	if suite.redisContainer != nil {
+		suite.redisContainer.Terminate(suite.ctx, &suite.Suite)
+	}
+}
+
+// SetupTest runs before each individual test method (not sub-tests)
+func (suite *RedisStoreTestSuite) SetupTest() {
+	// Clean up any existing test keys before each test method
+	keys, _ := suite.client.Keys(suite.ctx, "*").Result()
+	if len(keys) > 0 {
+		suite.client.Del(suite.ctx, keys...)
+	}
+}
+
+func (suite *RedisStoreTestSuite) TestRedisStoreBasicOperations() {
+	store := createRedisStore(suite.client, redisOptions{
 		DefaultTTL: 0, // No default TTL
 	})
 
-	ctx := context.Background()
-
-	// Cleanup function to run after all subtests
-	defer func() {
-		_ = store.Clear(ctx, "")
-	}()
-
-	t.Run("Set and Get", func(t *testing.T) {
+	suite.Run("Set and Get", func() {
 		testData := []byte(`{"name":"test","value":42}`)
 
-		err := store.Set(ctx, "test-key", testData)
-		require.NoError(t, err)
+		err := store.Set(suite.ctx, "test-key", testData)
+		suite.Require().NoError(err)
 
-		result, found := store.Get(ctx, "test-key")
-		assert.True(t, found)
-		assert.Equal(t, testData, result)
+		result, found := store.Get(suite.ctx, "test-key")
+		suite.True(found)
+		suite.Equal(testData, result)
 	})
 
-	t.Run("Contains", func(t *testing.T) {
+	suite.Run("Contains", func() {
 		testData := []byte(`{"name":"exists","value":1}`)
 
-		err := store.Set(ctx, "exists-key", testData)
-		require.NoError(t, err)
+		err := store.Set(suite.ctx, "exists-key", testData)
+		suite.Require().NoError(err)
 
-		assert.True(t, store.Contains(ctx, "exists-key"))
-		assert.False(t, store.Contains(ctx, "not-exists-key"))
+		suite.True(store.Contains(suite.ctx, "exists-key"))
+		suite.False(store.Contains(suite.ctx, "not-exists-key"))
 	})
 
-	t.Run("Delete", func(t *testing.T) {
+	suite.Run("Delete", func() {
 		testData := []byte(`{"name":"delete","value":2}`)
 
-		err := store.Set(ctx, "delete-key", testData)
-		require.NoError(t, err)
+		err := store.Set(suite.ctx, "delete-key", testData)
+		suite.Require().NoError(err)
 
-		assert.True(t, store.Contains(ctx, "delete-key"))
+		suite.True(store.Contains(suite.ctx, "delete-key"))
 
-		err = store.Delete(ctx, "delete-key")
-		require.NoError(t, err)
+		err = store.Delete(suite.ctx, "delete-key")
+		suite.Require().NoError(err)
 
-		assert.False(t, store.Contains(ctx, "delete-key"))
+		suite.False(store.Contains(suite.ctx, "delete-key"))
 	})
 
-	t.Run("Update existing key", func(t *testing.T) {
+	suite.Run("Update existing key", func() {
 		originalData := []byte(`{"name":"original","value":1}`)
 		updatedData := []byte(`{"name":"updated","value":2}`)
 
-		err := store.Set(ctx, "update-key", originalData)
-		require.NoError(t, err)
+		err := store.Set(suite.ctx, "update-key", originalData)
+		suite.Require().NoError(err)
 
-		result, found := store.Get(ctx, "update-key")
-		assert.True(t, found)
-		assert.Equal(t, originalData, result)
+		result, found := store.Get(suite.ctx, "update-key")
+		suite.True(found)
+		suite.Equal(originalData, result)
 
-		err = store.Set(ctx, "update-key", updatedData)
-		require.NoError(t, err)
+		err = store.Set(suite.ctx, "update-key", updatedData)
+		suite.Require().NoError(err)
 
-		result, found = store.Get(ctx, "update-key")
-		assert.True(t, found)
-		assert.Equal(t, updatedData, result)
+		result, found = store.Get(suite.ctx, "update-key")
+		suite.True(found)
+		suite.Equal(updatedData, result)
 	})
 }
 
-func TestRedisStoreTTL(t *testing.T) {
-	client := setupRedisClient(t)
-	defer client.Close()
+func (suite *RedisStoreTestSuite) TestRedisStoreTTL() {
+	suite.Run("TTL expiration", func() {
+		store := createRedisStore(suite.client, redisOptions{})
 
-	t.Run("TTL expiration", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
-
-		ctx := context.Background()
-		err := store.Set(ctx, "ttl-key", []byte("ttl-value"), 100*time.Millisecond)
-		require.NoError(t, err)
+		err := store.Set(suite.ctx, "ttl-key", []byte("ttl-value"), 100*time.Millisecond)
+		suite.Require().NoError(err)
 
 		// Should exist immediately
-		value, found := store.Get(ctx, "ttl-key")
-		assert.True(t, found)
-		assert.Equal(t, []byte("ttl-value"), value)
+		value, found := store.Get(suite.ctx, "ttl-key")
+		suite.True(found)
+		suite.Equal([]byte("ttl-value"), value)
 
 		// Wait for expiration
 		time.Sleep(150 * time.Millisecond)
 
 		// Should be expired
-		_, found = store.Get(ctx, "ttl-key")
-		assert.False(t, found)
+		_, found = store.Get(suite.ctx, "ttl-key")
+		suite.False(found)
 	})
 
-	t.Run("Default TTL", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{
+	suite.Run("Default TTL", func() {
+		store := createRedisStore(suite.client, redisOptions{
 			DefaultTTL: 100 * time.Millisecond,
 		})
 
-		ctx := context.Background()
-		err := store.Set(ctx, "default-ttl-key", []byte("default-ttl-value"))
-		require.NoError(t, err)
+		err := store.Set(suite.ctx, "default-ttl-key", []byte("default-ttl-value"))
+		suite.Require().NoError(err)
 
 		// Should exist immediately
-		value, found := store.Get(ctx, "default-ttl-key")
-		assert.True(t, found)
-		assert.Equal(t, []byte("default-ttl-value"), value)
+		value, found := store.Get(suite.ctx, "default-ttl-key")
+		suite.True(found)
+		suite.Equal([]byte("default-ttl-value"), value)
 
 		// Wait for expiration
 		time.Sleep(150 * time.Millisecond)
 
 		// Should be expired
-		_, found = store.Get(ctx, "default-ttl-key")
-		assert.False(t, found)
+		_, found = store.Get(suite.ctx, "default-ttl-key")
+		suite.False(found)
 	})
 }
 
-func TestRedisStoreIteration(t *testing.T) {
-	client := setupRedisClient(t)
-	defer client.Close()
+func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
+	suite.Run("Keys without prefix", func() {
+		// Clean up before this sub-test
+		keys, _ := suite.client.Keys(suite.ctx, "*").Result()
+		if len(keys) > 0 {
+			suite.client.Del(suite.ctx, keys...)
+		}
 
-	ctx := context.Background()
-
-	t.Run("Keys without prefix", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -183,23 +181,26 @@ func TestRedisStoreIteration(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
-		keys, err := store.Keys(ctx, "")
-		require.NoError(t, err)
+		keys, err := store.Keys(suite.ctx, "")
+		suite.Require().NoError(err)
 
 		sort.Strings(keys)
 		expectedKeys := []string{"config:x", "product:a", "product:b", "user:1", "user:2", "user:3"}
-		assert.Equal(t, expectedKeys, keys)
-
-		// Cleanup
-		_ = store.Clear(ctx, "")
+		suite.Equal(expectedKeys, keys)
 	})
 
-	t.Run("Keys with prefix", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+	suite.Run("Keys with prefix", func() {
+		// Clean up before this sub-test
+		keys, _ := suite.client.Keys(suite.ctx, "*").Result()
+		if len(keys) > 0 {
+			suite.client.Del(suite.ctx, keys...)
+		}
+
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -211,30 +212,33 @@ func TestRedisStoreIteration(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
-		userKeys, err := store.Keys(ctx, "user:")
-		require.NoError(t, err)
+		userKeys, err := store.Keys(suite.ctx, "user:")
+		suite.Require().NoError(err)
 
 		sort.Strings(userKeys)
 		expectedUserKeys := []string{"user:1", "user:2", "user:3"}
-		assert.Equal(t, expectedUserKeys, userKeys)
+		suite.Equal(expectedUserKeys, userKeys)
 
-		productKeys, err := store.Keys(ctx, "product:")
-		require.NoError(t, err)
+		productKeys, err := store.Keys(suite.ctx, "product:")
+		suite.Require().NoError(err)
 
 		sort.Strings(productKeys)
 		expectedProductKeys := []string{"product:a", "product:b"}
-		assert.Equal(t, expectedProductKeys, productKeys)
-
-		// Cleanup
-		_ = store.Clear(ctx, "")
+		suite.Equal(expectedProductKeys, productKeys)
 	})
 
-	t.Run("ForEach without prefix", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+	suite.Run("ForEach without prefix", func() {
+		// Clean up before this sub-test
+		keys, _ := suite.client.Keys(suite.ctx, "*").Result()
+		if len(keys) > 0 {
+			suite.client.Del(suite.ctx, keys...)
+		}
+
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -247,26 +251,29 @@ func TestRedisStoreIteration(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
 		collected := make(map[string][]byte)
 
-		err := store.ForEach(ctx, "", func(key string, value []byte) bool {
+		err := store.ForEach(suite.ctx, "", func(key string, value []byte) bool {
 			collected[key] = value
 			return true
 		})
-		require.NoError(t, err)
+		suite.Require().NoError(err)
 
-		assert.Equal(t, testData, collected)
-
-		// Cleanup
-		_ = store.Clear(ctx, "")
+		suite.Equal(testData, collected)
 	})
 
-	t.Run("ForEach with prefix", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+	suite.Run("ForEach with prefix", func() {
+		// Clean up before this sub-test
+		keys, _ := suite.client.Keys(suite.ctx, "*").Result()
+		if len(keys) > 0 {
+			suite.client.Del(suite.ctx, keys...)
+		}
+
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -278,31 +285,34 @@ func TestRedisStoreIteration(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
 		userCollected := make(map[string][]byte)
 
-		err := store.ForEach(ctx, "user:", func(key string, value []byte) bool {
+		err := store.ForEach(suite.ctx, "user:", func(key string, value []byte) bool {
 			userCollected[key] = value
 			return true
 		})
-		require.NoError(t, err)
+		suite.Require().NoError(err)
 
 		expectedUserData := map[string][]byte{
 			"user:1": []byte("1"),
 			"user:2": []byte("2"),
 			"user:3": []byte("3"),
 		}
-		assert.Equal(t, expectedUserData, userCollected)
-
-		// Cleanup
-		_ = store.Clear(ctx, "")
+		suite.Equal(expectedUserData, userCollected)
 	})
 
-	t.Run("ForEach early termination", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+	suite.Run("ForEach early termination", func() {
+		// Clean up before this sub-test
+		keys, _ := suite.client.Keys(suite.ctx, "*").Result()
+		if len(keys) > 0 {
+			suite.client.Del(suite.ctx, keys...)
+		}
+
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -314,29 +324,32 @@ func TestRedisStoreIteration(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
 		collected := make(map[string][]byte)
 		count := 0
 
-		err := store.ForEach(ctx, "", func(key string, value []byte) bool {
+		err := store.ForEach(suite.ctx, "", func(key string, value []byte) bool {
 			collected[key] = value
 			count++
 			return count < 3 // Stop after 3 items
 		})
-		require.NoError(t, err)
+		suite.Require().NoError(err)
 
-		assert.Equal(t, 3, count)
-		assert.Len(t, collected, 3)
-
-		// Cleanup
-		_ = store.Clear(ctx, "")
+		suite.Equal(3, count)
+		suite.Len(collected, 3)
 	})
 
-	t.Run("Size", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+	suite.Run("Size", func() {
+		// Clean up before this sub-test
+		keys, _ := suite.client.Keys(suite.ctx, "*").Result()
+		if len(keys) > 0 {
+			suite.client.Del(suite.ctx, keys...)
+		}
+
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -349,53 +362,45 @@ func TestRedisStoreIteration(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
-		size, err := store.Size(ctx, "")
-		require.NoError(t, err)
-		assert.Equal(t, int64(6), size)
-
-		// Cleanup
-		_ = store.Clear(ctx, "")
+		size, err := store.Size(suite.ctx, "")
+		suite.Require().NoError(err)
+		suite.Equal(int64(6), size)
 	})
 }
 
-func TestRedisStoreClear(t *testing.T) {
-	client := setupRedisClient(t)
-	defer client.Close()
-
-	ctx := context.Background()
-
-	t.Run("Clear all keys", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+func (suite *RedisStoreTestSuite) TestRedisStoreClear() {
+	suite.Run("Clear all keys", func() {
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Add some test data
 		for i := range 10 {
 			key := fmt.Sprintf("clear-test-key-%d", i)
 			value := fmt.Appendf(nil, "value-%d", i)
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
 		// Verify data exists
-		size, err := store.Size(ctx, "")
-		require.NoError(t, err)
-		assert.Equal(t, int64(10), size)
+		size, err := store.Size(suite.ctx, "")
+		suite.Require().NoError(err)
+		suite.Equal(int64(10), size)
 
 		// Clear cache
-		err = store.Clear(ctx, "")
-		require.NoError(t, err)
+		err = store.Clear(suite.ctx, "")
+		suite.Require().NoError(err)
 
 		// Verify cache is empty
-		size, err = store.Size(ctx, "")
-		require.NoError(t, err)
-		assert.Equal(t, int64(0), size)
+		size, err = store.Size(suite.ctx, "")
+		suite.Require().NoError(err)
+		suite.Equal(int64(0), size)
 	})
 
-	t.Run("Clear with prefix", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+	suite.Run("Clear with prefix", func() {
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Add test data with different prefixes
 		testData := map[string][]byte{
@@ -408,46 +413,38 @@ func TestRedisStoreClear(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
 		// Verify all data exists
-		size, err := store.Size(ctx, "")
-		require.NoError(t, err)
-		assert.Equal(t, int64(6), size)
+		size, err := store.Size(suite.ctx, "")
+		suite.Require().NoError(err)
+		suite.Equal(int64(6), size)
 
 		// Clear only user: prefixed keys
-		err = store.Clear(ctx, "user:")
-		require.NoError(t, err)
+		err = store.Clear(suite.ctx, "user:")
+		suite.Require().NoError(err)
 
 		// Verify user keys are gone
-		userKeys, err := store.Keys(ctx, "user:")
-		require.NoError(t, err)
-		assert.Empty(t, userKeys)
+		userKeys, err := store.Keys(suite.ctx, "user:")
+		suite.Require().NoError(err)
+		suite.Empty(userKeys)
 
 		// Verify other keys still exist
-		productKeys, err := store.Keys(ctx, "product:")
-		require.NoError(t, err)
-		assert.Len(t, productKeys, 2)
+		productKeys, err := store.Keys(suite.ctx, "product:")
+		suite.Require().NoError(err)
+		suite.Len(productKeys, 2)
 
-		configKeys, err := store.Keys(ctx, "config:")
-		require.NoError(t, err)
-		assert.Len(t, configKeys, 1)
-
-		// Cleanup remaining keys
-		_ = store.Clear(ctx, "")
+		configKeys, err := store.Keys(suite.ctx, "config:")
+		suite.Require().NoError(err)
+		suite.Len(configKeys, 1)
 	})
 }
 
-func TestRedisStorePrefixFiltering(t *testing.T) {
-	client := setupRedisClient(t)
-	defer client.Close()
-
-	ctx := context.Background()
-
-	t.Run("Prefix filtering in operations", func(t *testing.T) {
-		store := createRedisStore(client, redisOptions{})
+func (suite *RedisStoreTestSuite) TestRedisStorePrefixFiltering() {
+	suite.Run("Prefix filtering in operations", func() {
+		store := createRedisStore(suite.client, redisOptions{})
 
 		// Add test data with different prefixes
 		testData := map[string][]byte{
@@ -459,78 +456,82 @@ func TestRedisStorePrefixFiltering(t *testing.T) {
 		}
 
 		for key, value := range testData {
-			err := store.Set(ctx, key, value)
-			require.NoError(t, err)
+			err := store.Set(suite.ctx, key, value)
+			suite.Require().NoError(err)
 		}
 
 		// Test Keys with different prefixes
-		appUserKeys, err := store.Keys(ctx, "app:user:")
-		require.NoError(t, err)
+		appUserKeys, err := store.Keys(suite.ctx, "app:user:")
+		suite.Require().NoError(err)
 		sort.Strings(appUserKeys)
-		assert.Equal(t, []string{"app:user:1", "app:user:2"}, appUserKeys)
+		suite.Equal([]string{"app:user:1", "app:user:2"}, appUserKeys)
 
-		appProductKeys, err := store.Keys(ctx, "app:product:")
-		require.NoError(t, err)
+		appProductKeys, err := store.Keys(suite.ctx, "app:product:")
+		suite.Require().NoError(err)
 		sort.Strings(appProductKeys)
-		assert.Equal(t, []string{"app:product:1", "app:product:2"}, appProductKeys)
+		suite.Equal([]string{"app:product:1", "app:product:2"}, appProductKeys)
 
-		allAppKeys, err := store.Keys(ctx, "app:")
-		require.NoError(t, err)
+		allAppKeys, err := store.Keys(suite.ctx, "app:")
+		suite.Require().NoError(err)
 		sort.Strings(allAppKeys)
-		assert.Equal(t, []string{"app:product:1", "app:product:2", "app:user:1", "app:user:2"}, allAppKeys)
+		suite.Equal([]string{"app:product:1", "app:product:2", "app:user:1", "app:user:2"}, allAppKeys)
 
-		otherKeys, err := store.Keys(ctx, "other:")
-		require.NoError(t, err)
-		assert.Equal(t, []string{"other:key"}, otherKeys)
+		otherKeys, err := store.Keys(suite.ctx, "other:")
+		suite.Require().NoError(err)
+		suite.Equal([]string{"other:key"}, otherKeys)
 
 		// Test Size with prefix filtering
-		appUserSize, err := store.Size(ctx, "app:user:")
-		require.NoError(t, err)
-		assert.Equal(t, int64(2), appUserSize)
+		appUserSize, err := store.Size(suite.ctx, "app:user:")
+		suite.Require().NoError(err)
+		suite.Equal(int64(2), appUserSize)
 
-		appSize, err := store.Size(ctx, "app:")
-		require.NoError(t, err)
-		assert.Equal(t, int64(4), appSize)
+		appSize, err := store.Size(suite.ctx, "app:")
+		suite.Require().NoError(err)
+		suite.Equal(int64(4), appSize)
 
 		// Test Clear with prefix
-		err = store.Clear(ctx, "app:user:")
-		require.NoError(t, err)
+		err = store.Clear(suite.ctx, "app:user:")
+		suite.Require().NoError(err)
 
 		// Verify app:user: keys are gone
-		remainingAppUserKeys, err := store.Keys(ctx, "app:user:")
-		require.NoError(t, err)
-		assert.Empty(t, remainingAppUserKeys)
+		remainingAppUserKeys, err := store.Keys(suite.ctx, "app:user:")
+		suite.Require().NoError(err)
+		suite.Empty(remainingAppUserKeys)
 
 		// Verify other app: keys still exist
-		remainingAppKeys, err := store.Keys(ctx, "app:")
-		require.NoError(t, err)
-		assert.Len(t, remainingAppKeys, 2) // product keys should remain
-
-		// Cleanup all remaining keys
-		_ = store.Clear(ctx, "")
+		remainingAppKeys, err := store.Keys(suite.ctx, "app:")
+		suite.Require().NoError(err)
+		suite.Len(remainingAppKeys, 2) // product keys should remain
 	})
 }
 
-func TestRedisStoreClose(t *testing.T) {
-	client := setupRedisClient(t)
-	defer client.Close()
-
-	store := createRedisStore(client, redisOptions{})
-
-	ctx := context.Background()
+func (suite *RedisStoreTestSuite) TestRedisStoreClose() {
+	store := createRedisStore(suite.client, redisOptions{})
 
 	// Set some data
-	err := store.Set(ctx, "test-key", []byte("test-value"))
-	require.NoError(t, err)
+	err := store.Set(suite.ctx, "test-key", []byte("test-value"))
+	suite.Require().NoError(err)
 
 	// Close should not error and should not close the underlying Redis client
-	err = store.Close(ctx)
-	assert.NoError(t, err)
+	err = store.Close(suite.ctx)
+	suite.NoError(err)
 
 	// Redis client should still be functional
-	_, err = client.Ping(ctx).Result()
-	assert.NoError(t, err)
+	_, err = suite.client.Ping(suite.ctx).Result()
+	suite.NoError(err)
 
 	// Cleanup
-	client.Del(ctx, "test-key")
+	suite.client.Del(suite.ctx, "test-key")
+}
+
+func (st *RedisStoreTestSuite) TestRedisCacheSuite() {
+	suite.Run(st.T(), &RedisCacheTestSuite{
+		ctx:    st.ctx,
+		client: st.client,
+	})
+}
+
+// TestRedisStoreSuite runs the test suite
+func TestRedisStoreSuite(t *testing.T) {
+	suite.Run(t, new(RedisStoreTestSuite))
 }

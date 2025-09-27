@@ -13,30 +13,31 @@ import (
 )
 
 const (
-	AuthTypeOpenAPI = "openapi" // OpenAPI authentication type
+	// OpenAPI authentication type
+	AuthTypeOpenAPI = "openapi"
 )
 
-// openapiAuthenticator implements Authenticator for simple HMAC based OpenAPI authentication.
+// OpenapiAuthenticator implements Authenticator for simple HMAC based OpenAPI authentication.
 // Contract in this framework:
 //   - Authentication.Principal: appId
 //   - Authentication.Credentials: "<signatureHex>@<timestamp>@<bodySha256Base64>"
 //   - SignatureHex is computed as hex(HMAC-SHA256(secret, appId + "\n" + timestamp + "\n" + bodySha256Base64))
 //     where bodySha256Base64 is the Base64(SHA256(raw request body)), timestamp is unix seconds string.
 //   - We only consider appId, timestamp and body hash because the framework uses unified POST with Request body.
-type openapiAuthenticator struct {
+type OpenapiAuthenticator struct {
 	loader security.ExternalAppLoader // loader loads external app principal and secret by appId
 }
 
-// newOpenAPIAuthenticator creates a new OpenAPI authenticator with the given loader.
-func newOpenAPIAuthenticator(loader security.ExternalAppLoader) security.Authenticator {
-	return &openapiAuthenticator{loader: loader}
+// NewOpenAPIAuthenticator creates a new OpenAPI authenticator with the given loader.
+func NewOpenAPIAuthenticator(loader security.ExternalAppLoader) security.Authenticator {
+	return &OpenapiAuthenticator{loader: loader}
 }
 
 // Supports checks if this authenticator can handle OpenAPI authentication.
-func (*openapiAuthenticator) Supports(authType string) bool { return authType == AuthTypeOpenAPI }
+func (*OpenapiAuthenticator) Supports(authType string) bool { return authType == AuthTypeOpenAPI }
 
 // Authenticate validates the provided OpenAPI authentication information.
-func (a *openapiAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (a *OpenapiAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
 	if a.loader == nil {
 		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, "请提供一个 ExternalAppLoader 的实现")
 	}

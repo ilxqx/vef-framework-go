@@ -6,8 +6,8 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/utils"
 )
 
 const (
@@ -16,16 +16,16 @@ const (
 	accessTokenExpires = time.Hour // Access token expires
 )
 
-// jwtTokenGenerator implements the TokenGenerator interface for JWT tokens.
+// JWTTokenGenerator implements the TokenGenerator interface for JWT tokens.
 // It generates both access and refresh tokens using the JWT helper.
-type jwtTokenGenerator struct {
+type JWTTokenGenerator struct {
 	jwt          *security.JWT
 	tokenExpires time.Duration
 }
 
-// newJWTTokenGenerator creates a new JWT token generator.
-func newJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConfig) security.TokenGenerator {
-	return &jwtTokenGenerator{
+// NewJWTTokenGenerator creates a new JWT token generator.
+func NewJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConfig) security.TokenGenerator {
+	return &JWTTokenGenerator{
 		jwt:          jwt,
 		tokenExpires: securityConfig.TokenExpires,
 	}
@@ -33,8 +33,8 @@ func newJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConf
 
 // Generate creates authentication tokens for the given principal.
 // It generates both access and refresh tokens.
-func (g *jwtTokenGenerator) Generate(principal *security.Principal) (*security.TokenCredentials, error) {
-	jwtId := utils.GenerateId()
+func (g *JWTTokenGenerator) Generate(principal *security.Principal) (*security.TokenCredentials, error) {
+	jwtId := id.GenerateUuid()
 	// Generate access token
 	accessToken, err := g.generateAccessToken(jwtId, principal)
 	if err != nil {
@@ -56,7 +56,7 @@ func (g *jwtTokenGenerator) Generate(principal *security.Principal) (*security.T
 	}, nil
 }
 
-func (g *jwtTokenGenerator) generateAccessToken(jwtId string, principal *security.Principal) (string, error) {
+func (g *JWTTokenGenerator) generateAccessToken(jwtId string, principal *security.Principal) (string, error) {
 	// Subject format: id@name for quick identity recovery in authenticator
 	claimsBuilder := security.NewJWTClaimsBuilder().
 		WithId(jwtId).
@@ -73,7 +73,7 @@ func (g *jwtTokenGenerator) generateAccessToken(jwtId string, principal *securit
 	return accessToken, nil
 }
 
-func (g *jwtTokenGenerator) generateRefreshToken(jwtId string, principal *security.Principal) (string, error) {
+func (g *JWTTokenGenerator) generateRefreshToken(jwtId string, principal *security.Principal) (string, error) {
 	claimsBuilder := security.NewJWTClaimsBuilder().
 		WithId(jwtId).
 		WithSubject(fmt.Sprintf("%s@%s", principal.Id, principal.Name)).

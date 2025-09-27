@@ -9,13 +9,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
-// newRecoveryMiddleware is a middleware that recovers from panics.
-func newRecoveryMiddleware() app.Middleware {
+// NewRecoveryMiddleware is a middleware that recovers from panics.
+func NewRecoveryMiddleware() app.Middleware {
 	handler := recover.New(recover.Config{
 		EnableStackTrace: true,
 		StackTraceHandler: func(ctx fiber.Ctx, err any) {
 			logger := contextx.Logger(ctx)
-			logger.Errorf("panic: %v\n%s", err, debug.Stack())
+			logger.Errorf("Panic: %v\n%s", err, debug.Stack())
 		},
 	})
 

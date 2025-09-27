@@ -7,4 +7,5 @@ type RedisConfig struct {
 	User     string `config:"user"`     // User for Redis authentication (optional)
 	Password string `config:"password"` // Password for Redis authentication (optional)
 	Database uint8  `config:"database"` // Database is the Redis database number (0-15)
+	Network  string `config:"network"`  // Network type: "tcp", "unix" (default: "tcp")
 }

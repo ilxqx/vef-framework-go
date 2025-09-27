@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -194,15 +194,15 @@ func TestCopy_Converters(t *testing.T) {
 
 	// DateTime converters
 	t.Run("null.DateTime converter function", func(t *testing.T) {
-		testDateTime := mo.DateTimeOf(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 		nullDateTime := null.DateTimeFrom(testDateTime)
 		result, err := nullDateTimeToDateTimeConverter.Fn(nullDateTime)
 		require.NoError(t, err)
-		assert.Equal(t, testDateTime, result.(mo.DateTime))
+		assert.Equal(t, testDateTime, result.(datetime.DateTime))
 	})
 
-	t.Run("mo.DateTime to null.DateTime converter function", func(t *testing.T) {
-		testDateTime := mo.DateTimeOf(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
+	t.Run("datetime.DateTime to null.DateTime converter function", func(t *testing.T) {
+		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 		result, err := dateTimeToNullDateTimeConverter.Fn(testDateTime)
 		require.NoError(t, err)
 		nullDateTime := result.(null.DateTime)
@@ -212,15 +212,15 @@ func TestCopy_Converters(t *testing.T) {
 
 	// Date converters
 	t.Run("null.Date converter function", func(t *testing.T) {
-		testDate := mo.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
+		testDate := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 		nullDate := null.DateFrom(testDate)
 		result, err := nullDateToDateConverter.Fn(nullDate)
 		require.NoError(t, err)
-		assert.Equal(t, testDate, result.(mo.Date))
+		assert.Equal(t, testDate, result.(datetime.Date))
 	})
 
-	t.Run("mo.Date to null.Date converter function", func(t *testing.T) {
-		testDate := mo.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
+	t.Run("datetime.Date to null.Date converter function", func(t *testing.T) {
+		testDate := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 		result, err := dateToNullDateConverter.Fn(testDate)
 		require.NoError(t, err)
 		nullDate := result.(null.Date)
@@ -230,15 +230,15 @@ func TestCopy_Converters(t *testing.T) {
 
 	// Time converters
 	t.Run("null.Time converter function", func(t *testing.T) {
-		testTime := mo.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
+		testTime := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 		nullTime := null.TimeFrom(testTime)
 		result, err := nullTimeToTimeConverter.Fn(nullTime)
 		require.NoError(t, err)
-		assert.Equal(t, testTime, result.(mo.Time))
+		assert.Equal(t, testTime, result.(datetime.Time))
 	})
 
-	t.Run("mo.Time to null.Time converter function", func(t *testing.T) {
-		testTime := mo.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
+	t.Run("datetime.Time to null.Time converter function", func(t *testing.T) {
+		testTime := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 		result, err := timeToNullTimeConverter.Fn(testTime)
 		require.NoError(t, err)
 		nullTime := result.(null.Time)

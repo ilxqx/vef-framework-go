@@ -5,357 +5,321 @@ import (
 	"database/sql"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/feature"
+	"github.com/uptrace/bun/schema"
 )
 
-// NewUpdate creates a new Update instance.
-func NewUpdate(db bun.IDB) orm.Update {
-	return &bunUpdate{
-		query: db.NewUpdate(),
+// NewUpdateQuery creates a new UpdateQuery instance with the provided database connection.
+// It initializes the query builders and sets up the table schema context for proper query building.
+func NewUpdateQuery(db bun.IDB) UpdateQuery {
+	eb := &QueryExprBuilder{}
+	uq := db.NewUpdate()
+	dialect := db.Dialect()
+	query := &BunUpdateQuery{
+		QueryBuilder: newQueryBuilder(dialect, uq, eb),
+
+		dialect: dialect,
+		eb:      eb,
+		query:   uq,
 	}
+	eb.qb = query
+	return query
 }
 
-type bunUpdate struct {
-	query  *bun.UpdateQuery
-	hasSet bool
+// BunUpdateQuery is the concrete implementation of UpdateQuery interface.
+// It wraps bun.UpdateQuery and provides additional functionality for expression building.
+type BunUpdateQuery struct {
+	QueryBuilder
+
+	dialect schema.Dialect
+	eb      ExprBuilder
+	query   *bun.UpdateQuery
+	hasSet  bool
 }
 
-func (u *bunUpdate) subQuery(subQuery *bun.SelectQuery) orm.Query {
-	return &bunQuery{
-		query:      subQuery,
-		isSubQuery: true,
-	}
+func (q *BunUpdateQuery) With(name string, builder func(SelectQuery)) UpdateQuery {
+	q.query.With(name, q.BuildSubQuery(builder))
+	return q
 }
 
-func (u *bunUpdate) buildSubQuery(builder func(query orm.Query)) *bun.SelectQuery {
-	subQuery := u.query.NewSelect()
-	builder(u.subQuery(subQuery))
-
-	return subQuery
-}
-
-func (u *bunUpdate) buildCondition(builder func(orm.ConditionBuilder)) orm.ConditionBuilder {
-	cb := newCommonConditionBuilder(getTableSchemaFromQuery(u.query), u.buildSubQuery)
-	builder(cb)
-	return cb
-}
-
-func (u *bunUpdate) With(name string, builder func(orm.Query)) orm.Update {
-	u.query.With(name, u.buildSubQuery(builder))
-	return u
-}
-
-func (u *bunUpdate) WithValues(name string, model any, withOrder ...bool) orm.Update {
-	values := u.query.NewValues(model)
+func (q *BunUpdateQuery) WithValues(name string, model any, withOrder ...bool) UpdateQuery {
+	values := q.query.NewValues(model)
 	if len(withOrder) > 0 && withOrder[0] {
 		values.WithOrder()
 	}
 
-	u.query.With(name, values)
-	return u
+	q.query.With(name, values)
+	return q
 }
 
-func (u *bunUpdate) WithRecursive(name string, builder func(orm.Query)) orm.Update {
-	u.query.WithRecursive(name, u.buildSubQuery(builder))
-	return u
+func (q *BunUpdateQuery) WithRecursive(name string, builder func(SelectQuery)) UpdateQuery {
+	q.query.WithRecursive(name, q.BuildSubQuery(builder))
+	return q
 }
 
-func (u *bunUpdate) Model(model any) orm.Update {
-	u.query.Model(model)
-	return u
+func (q *BunUpdateQuery) Model(model any) UpdateQuery {
+	q.query.Model(model)
+	return q
 }
 
-func (u *bunUpdate) ModelTable(table string) orm.Update {
-	u.query.ModelTableExpr("? AS ?TableAlias", bun.Name(table))
-	return u
+func (q *BunUpdateQuery) ModelTable(name string, alias ...string) UpdateQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.ModelTableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
+	} else {
+		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
+	}
+	return q
 }
 
-func (u *bunUpdate) Table(name string) orm.Update {
-	u.query.Table(name)
-	return u
+func (q *BunUpdateQuery) Table(name string, alias ...string) UpdateQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.TableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
+	} else {
+		q.query.Table(name)
+	}
+	return q
 }
 
-func (u *bunUpdate) TableAs(name string, alias string) orm.Update {
-	u.query.TableExpr("? AS ?", bun.Name(name), bun.Name(alias))
-	return u
+func (q *BunUpdateQuery) TableExpr(alias string, builder func(ExprBuilder) any) UpdateQuery {
+	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
+	return q
 }
 
-func (u *bunUpdate) TableExpr(expr string, args ...any) orm.Update {
-	u.query.TableExpr(expr, args...)
-	return u
+func (q *BunUpdateQuery) TableSubQuery(alias string, builder func(SelectQuery)) UpdateQuery {
+	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
+	return q
 }
 
-func (u *bunUpdate) TableExprAs(expr string, alias string, args ...any) orm.Update {
-	u.query.TableExpr("? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
-	return u
+func (q *BunUpdateQuery) Join(model any, builder func(ConditionBuilder), alias ...string) UpdateQuery {
+	table := getTableSchema(model, q.query.DB())
+	aliasToUse := table.Alias
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		aliasToUse = alias[0]
+	}
+
+	q.query.Join(
+		"JOIN ? AS ?",
+		bun.Name(table.Name),
+		bun.Name(aliasToUse),
+	)
+	q.query.JoinOn("?", q.BuildCondition(builder))
+	return q
 }
 
-func (u *bunUpdate) TableSubQuery(builder func(orm.Query)) orm.Update {
-	u.query.TableExpr("(?)", u.buildSubQuery(builder))
-	return u
+func (q *BunUpdateQuery) JoinTable(name string, builder func(ConditionBuilder), alias ...string) UpdateQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.Join("JOIN ? AS ?", bun.Name(name), bun.Name(alias[0]))
+	} else {
+		q.query.Join("JOIN ?", bun.Name(name))
+	}
+	q.query.JoinOn("?", q.BuildCondition(builder))
+	return q
 }
 
-func (u *bunUpdate) TableSubQueryAs(builder func(orm.Query), alias string) orm.Update {
-	u.query.TableExpr("(?) AS ?", u.buildSubQuery(builder), bun.Name(alias))
-	return u
+func (q *BunUpdateQuery) JoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) UpdateQuery {
+	q.query.Join("JOIN (?) AS ?", q.BuildSubQuery(sqBuilder), bun.Name(alias))
+	q.query.JoinOn("?", q.BuildCondition(cBuilder))
+	return q
 }
 
-func (u *bunUpdate) Join(model any, builder func(orm.ConditionBuilder)) orm.Update {
-	table := getTableSchema(model, u.query.DB())
-	u.query.Join("JOIN ? AS ?", bun.Name(table.Name), bun.Name(table.Alias))
-	u.query.JoinOn("?", u.buildCondition(builder))
-	return u
+func (q *BunUpdateQuery) JoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) UpdateQuery {
+	q.query.Join("JOIN (?) AS ?", eBuilder(q.eb), bun.Name(alias))
+	q.query.JoinOn("?", q.BuildCondition(cBuilder))
+	return q
 }
 
-func (u *bunUpdate) JoinAs(model any, alias string, builder func(orm.ConditionBuilder)) orm.Update {
-	table := getTableSchema(model, u.query.DB())
-	u.query.Join("JOIN ? AS ?", bun.Name(table.Name), bun.Name(alias))
-	u.query.JoinOn("?", u.buildCondition(builder))
-	return u
-}
-
-func (u *bunUpdate) JoinTable(name string, builder func(orm.ConditionBuilder)) orm.Update {
-	u.query.Join("JOIN ?", bun.Name(name))
-	u.query.JoinOn("?", u.buildCondition(builder))
-	return u
-}
-
-func (u *bunUpdate) JoinTableAs(name string, alias string, builder func(orm.ConditionBuilder)) orm.Update {
-	u.query.Join("JOIN ? AS ?", bun.Name(name), bun.Name(alias))
-	u.query.JoinOn("?", u.buildCondition(builder))
-	return u
-}
-
-func (u *bunUpdate) JoinSubQuery(builder func(query orm.Query), conditionBuilder func(orm.ConditionBuilder)) orm.Update {
-	u.query.Join("JOIN (?)", u.buildSubQuery(builder))
-	u.query.JoinOn("?", u.buildCondition(conditionBuilder))
-	return u
-}
-
-func (u *bunUpdate) JoinSubQueryAs(builder func(query orm.Query), alias string, conditionBuilder func(orm.ConditionBuilder)) orm.Update {
-	u.query.Join("JOIN (?) AS ?", u.buildSubQuery(builder), bun.Name(alias))
-	u.query.JoinOn("?", u.buildCondition(conditionBuilder))
-	return u
-}
-
-func (u *bunUpdate) JoinExpr(expr string, builder func(cb orm.ConditionBuilder), args ...any) orm.Update {
-	u.query.Join("JOIN ?", bun.SafeQuery(expr, args...))
-	u.query.JoinOn("?", u.buildCondition(builder))
-	return u
-}
-
-func (u *bunUpdate) JoinExprAs(expr string, alias string, builder func(cb orm.ConditionBuilder), args ...any) orm.Update {
-	u.query.Join("JOIN ? AS ?", bun.SafeQuery(expr, args...), bun.Name(alias))
-	u.query.JoinOn("?", u.buildCondition(builder))
-	return u
-}
-
-func (u *bunUpdate) Where(builder func(cb orm.ConditionBuilder)) orm.Update {
-	cb := newQueryConditionBuilder(getTableSchemaFromQuery(u.query), u.query.QueryBuilder(), u.buildSubQuery)
+func (q *BunUpdateQuery) Where(builder func(ConditionBuilder)) UpdateQuery {
+	cb := newQueryConditionBuilder(q.query.QueryBuilder(), q)
 	builder(cb)
-	return u
+	return q
 }
 
-func (u *bunUpdate) WherePK(columns ...string) orm.Update {
-	u.query.WherePK(columns...)
-	return u
+func (q *BunUpdateQuery) WherePK(columns ...string) UpdateQuery {
+	q.query.WherePK(columns...)
+	return q
 }
 
-func (u *bunUpdate) WhereDeleted() orm.Update {
-	u.query.WhereDeleted()
-	return u
+func (q *BunUpdateQuery) WhereDeleted() UpdateQuery {
+	q.query.WhereDeleted()
+	return q
 }
 
-func (u *bunUpdate) WhereAllWithDeleted() orm.Update {
-	u.query.WhereAllWithDeleted()
-	return u
+func (q *BunUpdateQuery) IncludeDeleted() UpdateQuery {
+	q.query.WhereAllWithDeleted()
+	return q
 }
 
-func (u *bunUpdate) SelectAll() orm.Update {
-	u.query.Column(orm.ColumnAll)
-	return u
+func (q *BunUpdateQuery) SelectAll() UpdateQuery {
+	q.query.Column(columnAll)
+	return q
 }
 
-func (u *bunUpdate) Select(columns ...string) orm.Update {
-	u.query.Column(columns...)
-	return u
+func (q *BunUpdateQuery) Select(columns ...string) UpdateQuery {
+	q.query.Column(columns...)
+	return q
 }
 
-func (u *bunUpdate) Exclude(columns ...string) orm.Update {
-	u.query.ExcludeColumn(columns...)
-	return u
+func (q *BunUpdateQuery) Exclude(columns ...string) UpdateQuery {
+	q.query.ExcludeColumn(columns...)
+	return q
 }
 
-func (u *bunUpdate) ExcludeAll() orm.Update {
-	u.query.ExcludeColumn(orm.ColumnAll)
-	return u
+func (q *BunUpdateQuery) ExcludeAll() UpdateQuery {
+	q.query.ExcludeColumn(columnAll)
+	return q
 }
 
-func (u *bunUpdate) Column(name string, value any) orm.Update {
-	u.query.Value(name, "?", value)
-	u.query.Returning("?", bun.Ident(name))
-	return u
+func (q *BunUpdateQuery) Column(name string, value any) UpdateQuery {
+	q.query.Value(name, "?", value)
+	q.query.Returning("?", bun.Ident(name))
+	return q
 }
 
-func (u *bunUpdate) ColumnExpr(name, expr string, args ...any) orm.Update {
-	u.query.Value(name, expr, args...)
-	u.query.Returning("?", bun.Ident(name))
-	return u
+func (q *BunUpdateQuery) ColumnExpr(name string, builder func(ExprBuilder) any) UpdateQuery {
+	q.query.Value(name, "?", builder(q.eb))
+	q.query.Returning("?", bun.Ident(name))
+	return q
 }
 
-func (u *bunUpdate) Set(name string, value any) orm.Update {
-	if u.query.DB().HasFeature(feature.UpdateMultiTable) {
-		u.query.Set("?TableAlias.? = ?", bun.Ident(name), value)
+func (q *BunUpdateQuery) Set(name string, value any) UpdateQuery {
+	if q.query.DB().HasFeature(feature.UpdateMultiTable) {
+		q.query.Set("?TableAlias.? = ?", bun.Ident(name), value)
 	} else {
-		u.query.Set("? = ?", bun.Ident(name), value)
+		q.query.Set("? = ?", bun.Ident(name), value)
 	}
-	u.query.Returning("?", bun.Ident(name))
-	u.hasSet = true
-	return u
+
+	if lo.IsNotNil(q.query.GetModel().Value()) {
+		q.query.Returning("?", bun.Ident(name))
+	}
+
+	q.hasSet = true
+	return q
 }
 
-func (u *bunUpdate) SetExpr(name, expr string, args ...any) orm.Update {
-	if u.query.DB().HasFeature(feature.UpdateMultiTable) {
-		u.query.Set("?TableAlias.? = ?", bun.Ident(name), bun.SafeQuery(expr, args...))
+func (q *BunUpdateQuery) SetExpr(name string, builder func(ExprBuilder) any) UpdateQuery {
+	if q.query.DB().HasFeature(feature.UpdateMultiTable) {
+		q.query.Set("?TableAlias.? = ?", bun.Ident(name), builder(q.eb))
 	} else {
-		u.query.Set("? = ?", bun.Ident(name), bun.SafeQuery(expr, args...))
+		q.query.Set("? = ?", bun.Ident(name), builder(q.eb))
 	}
-	u.query.Returning("?", bun.Ident(name))
-	u.hasSet = true
-	return u
+
+	if lo.IsNotNil(q.query.GetModel().Value()) {
+		q.query.Returning("?", bun.Ident(name))
+	}
+
+	q.hasSet = true
+	return q
 }
 
-func (u *bunUpdate) OmitZero() orm.Update {
-	u.query.OmitZero()
-	return u
+func (q *BunUpdateQuery) OmitZero() UpdateQuery {
+	q.query.OmitZero()
+	return q
 }
 
-func (u *bunUpdate) OrderBy(columns ...string) orm.Update {
-	u.query.Order(columns...)
-	return u
+func (q *BunUpdateQuery) OrderBy(columns ...string) UpdateQuery {
+	q.query.Order(columns...)
+	return q
 }
 
-func (u *bunUpdate) OrderByNullsFirst(columns ...string) orm.Update {
+func (q *BunUpdateQuery) OrderByDesc(columns ...string) UpdateQuery {
 	for _, column := range columns {
-		u.query.OrderExpr("? NULLS FIRST", bun.Ident(column))
+		q.query.OrderExpr("? DESC", bun.Ident(column))
 	}
 
-	return u
+	return q
 }
 
-func (u *bunUpdate) OrderByNullsLast(columns ...string) orm.Update {
-	for _, column := range columns {
-		u.query.OrderExpr("? NULLS LAST", bun.Ident(column))
-	}
-
-	return u
+func (q *BunUpdateQuery) OrderByExpr(builder func(ExprBuilder) any) UpdateQuery {
+	q.query.OrderExpr("?", builder(q.eb))
+	return q
 }
 
-func (u *bunUpdate) OrderByDesc(columns ...string) orm.Update {
-	for _, column := range columns {
-		u.query.OrderExpr("? DESC", bun.Ident(column))
-	}
-
-	return u
+func (q *BunUpdateQuery) Limit(limit int) UpdateQuery {
+	q.query.Limit(limit)
+	return q
 }
 
-func (u *bunUpdate) OrderByDescNullsFirst(columns ...string) orm.Update {
-	for _, column := range columns {
-		u.query.OrderExpr("? DESC NULLS FIRST", bun.Ident(column))
-	}
-
-	return u
+func (q *BunUpdateQuery) Returning(columns ...string) UpdateQuery {
+	q.query.Returning("?", Names(columns...))
+	return q
 }
 
-func (u *bunUpdate) OrderByDescNullsLast(columns ...string) orm.Update {
-	for _, column := range columns {
-		u.query.OrderExpr("? DESC NULLS LAST", bun.Ident(column))
-	}
-
-	return u
+func (q *BunUpdateQuery) ReturningAll() UpdateQuery {
+	q.query.Returning(columnAll)
+	return q
 }
 
-func (u *bunUpdate) OrderByExpr(expr string, args ...any) orm.Update {
-	u.query.OrderExpr(expr, args...)
-	return u
+func (q *BunUpdateQuery) ReturningNone() UpdateQuery {
+	q.query.Returning(sqlNull)
+	return q
 }
 
-func (u *bunUpdate) Limit(limit int) orm.Update {
-	u.query.Limit(limit)
-	return u
+func (q *BunUpdateQuery) Bulk() UpdateQuery {
+	q.query.Bulk()
+	return q
 }
 
-func (u *bunUpdate) Returning(columns ...string) orm.Update {
-	u.query.Returning("?", Names(columns...))
-	return u
-}
-
-func (u *bunUpdate) ReturningAll() orm.Update {
-	u.query.Returning(orm.ColumnAll)
-	return u
-}
-
-func (u *bunUpdate) ReturningNull() orm.Update {
-	u.query.Returning(orm.Null)
-	return u
-}
-
-func (u *bunUpdate) Bulk() orm.Update {
-	u.query.Bulk()
-	return u
-}
-
-func (u *bunUpdate) Apply(fns ...orm.ApplyFunc[orm.Update]) orm.Update {
+func (q *BunUpdateQuery) Apply(fns ...ApplyFunc[UpdateQuery]) UpdateQuery {
 	for _, fn := range fns {
 		if fn != nil {
-			fn(u)
+			fn(q)
 		}
 	}
 
-	return u
+	return q
 }
 
-func (u *bunUpdate) ApplyIf(condition bool, fns ...orm.ApplyFunc[orm.Update]) orm.Update {
+func (q *BunUpdateQuery) ApplyIf(condition bool, fns ...ApplyFunc[UpdateQuery]) UpdateQuery {
 	if condition {
-		return u.Apply(fns...)
+		return q.Apply(fns...)
 	}
-	return u
+	return q
 }
 
-func (u *bunUpdate) beforeUpdate() {
-	model := u.query.GetModel()
+// beforeUpdate applies auto column handlers before executing the update operation.
+// It processes UpdateHandler for fields like updated_at and updated_by,
+// and excludes InsertHandler-only fields from being updated.
+func (q *BunUpdateQuery) beforeUpdate() {
+	model := q.query.GetModel()
 	if model != nil {
 		if tm, ok := model.(bun.TableModel); ok {
 			table := tm.Table()
 			modelValue := model.Value()
 			mv := reflect.Indirect(reflect.ValueOf(modelValue))
 
-			for _, autoColumn := range autoColumns {
-				if ac, ok := autoColumn.(orm.UpdateAutoColumn); ok {
-					if field, ok := table.FieldMap[ac.Name()]; ok {
-						value := field.Value(mv)
-						ac.OnUpdate(u.query, u.hasSet, table, field, modelValue, value)
-					}
-				} else {
-					if ac, ok := autoColumn.(orm.CreateAutoColumn); ok {
-						if field, ok := table.FieldMap[ac.Name()]; ok {
-							u.query.ExcludeColumn(field.Name)
-						}
-					}
-				}
-			}
+			processAutoColumns(autoColumns, q.query, q.hasSet, table, modelValue, mv)
 		}
 	}
 }
 
-func (u *bunUpdate) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
-	u.beforeUpdate()
-	return u.query.Exec(ctx, dest...)
+func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
+	q.beforeUpdate()
+	res, err := q.query.Exec(ctx, dest...)
+	if err != nil {
+		if dbhelpers.IsDuplicateKeyError(err) {
+			logger.Warnf("Record already exists: %v", err)
+			return nil, result.ErrRecordAlreadyExists
+		}
+		return nil, err
+	}
+
+	return res, nil
 }
 
-func (u *bunUpdate) Scan(ctx context.Context, dest ...any) error {
-	u.beforeUpdate()
-	return u.query.Scan(ctx, dest...)
+func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) error {
+	q.beforeUpdate()
+	if err := q.query.Scan(ctx, dest...); err != nil {
+		if dbhelpers.IsDuplicateKeyError(err) {
+			logger.Warnf("Record already exists: %v", err)
+			return result.ErrRecordAlreadyExists
+		}
+		return err
+	}
+
+	return nil
 }

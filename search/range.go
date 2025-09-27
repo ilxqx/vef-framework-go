@@ -1,3 +1,7 @@
+// Package search provides range value parsing functionality for search conditions.
+// This file handles the extraction and parsing of range values from various data types
+// including structs, strings, and slices, with support for multiple data formats
+// like integers, decimals, dates, times, and datetimes.
 package search
 
 import (
@@ -6,32 +10,57 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/monad"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
 )
 
+var (
+	rangeStartFieldIndex []int
+	rangeEndFieldIndex   []int
+)
+
+func init() {
+	field, ok := reflect.TypeFor[monad.Range[int]]().FieldByName("Start")
+	if !ok {
+		panic("mo.Range[int] struct must have a 'Start' field for range operations to work properly")
+	}
+
+	rangeStartFieldIndex = field.Index
+
+	field, ok = reflect.TypeFor[monad.Range[int]]().FieldByName("End")
+	if !ok {
+		panic("mo.Range[int] struct must have an 'End' field for range operations to work properly")
+	}
+
+	rangeEndFieldIndex = field.Index
+}
+
 // getRangeValue gets the start and end values of the value.
-func getRangeValue(value reflect.Value, conditionArgs map[string]string) (any, any, bool) {
+func getRangeValue(value reflect.Value, conditionParams map[string]string) (any, any, bool) {
 	value = reflect.Indirect(value)
 	valueType := value.Type()
 	kind := valueType.Kind()
+
 	if kind == reflect.Struct && reflectx.IsSimilarType(valueType, rangeType) {
-		return value.FieldByName("Start").Interface(), value.FieldByName("End").Interface(), true
+		return value.FieldByIndex(rangeStartFieldIndex).Interface(), value.FieldByIndex(rangeEndFieldIndex).Interface(), true
 	} else if kind == reflect.String {
-		return parseStringRange(value.String(), conditionArgs)
+		return parseStringRange(value.String(), conditionParams)
+	} else if kind == reflect.Slice {
+		return parseSliceRange(value)
 	}
 
 	return nil, nil, false
 }
 
 // parseStringRange parses the string range.
-func parseStringRange(value string, conditionArgs map[string]string) (any, any, bool) {
-	delimiter := lo.CoalesceOrEmpty(conditionArgs[ArgDelimiter], constants.Comma)
+func parseStringRange(value string, conditionParams map[string]string) (any, any, bool) {
+	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
 	values := strings.SplitN(value, delimiter, 2)
 	if len(values) != 2 {
-		logger.Warnf("[filter] Invalid range value, expected value delimited by %s, got %v", delimiter, value)
+		logger.Warnf("Invalid range value, expected value delimited by %s, got %v", delimiter, value)
 		return nil, nil, false
 	}
 
@@ -44,11 +73,21 @@ func parseStringRange(value string, conditionArgs map[string]string) (any, any, 
 		constants.TypeDateTime: parseDateTimeRange,
 	}
 
-	if parser, exists := parserMap[conditionArgs[ArgType]]; exists {
+	if parser, exists := parserMap[conditionParams[ParamType]]; exists {
 		return parser(values)
 	}
 
 	return nil, nil, false
+}
+
+// parseSliceRange parses slice range values.
+func parseSliceRange(value reflect.Value) (any, any, bool) {
+	if value.Len() != 2 {
+		logger.Warnf("Invalid range value, expected slice of length 2, got %v", value.Interface())
+		return nil, nil, false
+	}
+
+	return value.Index(0).Interface(), value.Index(1).Interface(), true
 }
 
 // parseIntRange parses integer range values.

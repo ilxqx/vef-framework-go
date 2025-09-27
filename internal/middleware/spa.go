@@ -87,8 +87,8 @@ func applySPA(router fiber.Router, config *middleware.SPAConfig) {
 	}))
 }
 
-// newSPAMiddleware creates a new SPA middleware.
-func newSPAMiddleware(configs []*middleware.SPAConfig) app.Middleware {
+// NewSPAMiddleware creates a new SPA middleware.
+func NewSPAMiddleware(configs []*middleware.SPAConfig) app.Middleware {
 	if len(configs) == 0 {
 		return nil
 	}

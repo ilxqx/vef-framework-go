@@ -3,114 +3,110 @@ package apis
 import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/search"
 )
 
-// findAPI is the base struct for all find operations, providing common functionality
-// for search, filter, query application, relations, and post-processing.
-//
-// Type parameters:
-//   - TModel: The database model type
-//   - TSearch: The search criteria type
-//   - TPostFindProcessor: The post-processing function type
-//   - TFindAPI: The concrete API type that embeds this struct
-type findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI any] struct {
-	// Reference to the concrete API instance
-	api *TFindAPI
-	// Function to apply search conditions
+type baseFindAPI[TModel, TSearch, TProcessorIn, TAPI any] struct {
+	APIBuilder[TAPI]
+
 	searchApplier SearchApplier[TSearch]
-	// Function to apply filter conditions
 	filterApplier FilterApplier[TSearch]
-	// Function to apply additional query modifications
-	queryApplier QueryApplier[TSearch]
-	// Function to apply orders to the query builder
-	sortApplier SortApplier
-	// Model relations to include in queries
-	relations []orm.ModelRelation
-	// Post-processing function for results
-	processor TPostFindProcessor
+	queryApplier  QueryApplier[TSearch]
+	sortApplier   SortApplier[TSearch]
+	relations     []orm.ModelRelation
+	processor     Processor[TProcessorIn, TSearch]
+
+	self TAPI
 }
 
-// WithFilterApplier sets a custom filter applier function for additional filtering logic.
-// Returns the concrete API instance for method chaining.
-func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithFilterApplier(applier FilterApplier[TSearch]) *TFindAPI {
-	a.filterApplier = applier
-	return a.api
-}
-
-// WithQueryApplier sets a custom query applier function for additional query modifications.
-// Returns the concrete API instance for method chaining.
-func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithQueryApplier(applier QueryApplier[TSearch]) *TFindAPI {
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) QueryApplier(applier QueryApplier[TSearch]) TAPI {
 	a.queryApplier = applier
-	return a.api
+	return a.self
 }
 
-// WithSortApplier sets a custom sort applier function for additional order modifications.
-// Returns the concrete API instance for method chaining.
-func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithSortApplier(applier SortApplier) *TFindAPI {
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) FilterApplier(applier FilterApplier[TSearch]) TAPI {
+	a.filterApplier = applier
+	return a.self
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) SortApplier(applier SortApplier[TSearch]) TAPI {
 	a.sortApplier = applier
-	return a.api
+	return a.self
 }
 
-// WithRelations adds model relations to be included in the query.
-// Returns the concrete API instance for method chaining.
-func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithRelations(relations ...orm.ModelRelation) *TFindAPI {
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) Relations(relations ...orm.ModelRelation) TAPI {
 	a.relations = append(a.relations, relations...)
-	return a.api
+	return a.self
 }
 
-// WithPostFind sets a post-processing function to transform query results.
-// Returns the concrete API instance for method chaining.
-func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) WithPostFind(processor TPostFindProcessor) *TFindAPI {
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) Processor(processor Processor[TProcessorIn, TSearch]) TAPI {
 	a.processor = processor
-	return a.api
+	return a.self
 }
 
-// buildQuery creates a new query with the configured model and search criteria.
-func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) buildQuery(ctx fiber.Ctx, db orm.Db, model any, search TSearch) orm.Query {
-	return a.configQuery(ctx, db.NewQuery(), model, search)
-}
-
-// configQuery applies all configured search, filter, query, and relation settings to the given query.
-func (a *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]) configQuery(ctx fiber.Ctx, query orm.Query, model any, search TSearch) orm.Query {
-	query = query.
-		Model(model).
-		Where(func(cb orm.ConditionBuilder) {
-			// Apply basic search conditions
-			cb.Apply(a.searchApplier(search))
-			// Apply additional filter conditions if configured
-			if a.filterApplier != nil {
-				cb.Apply(a.filterApplier(search, ctx))
-			}
-		})
-
-	// Include model relations if specified
-	if len(a.relations) > 0 {
-		query.ModelRelation(a.relations...)
-	}
-
-	// Apply additional query modifications if configured
-	if a.queryApplier != nil {
-		query.Apply(a.queryApplier(search, ctx))
-	}
-
-	// Apply additional order modifications if configured
-	applySort(ctx, query, a.sortApplier)
-
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) BuildQuery(db orm.Db, model any, search TSearch, ctx fiber.Ctx) orm.SelectQuery {
+	query := db.NewSelect()
+	a.ConfigureQuery(query, model, search, ctx)
 	return query
 }
 
-// applySort applies the sort applier to the query.
-func applySort(ctx fiber.Ctx, query orm.Query, sortApplier SortApplier) {
-	query.ApplyIf(sortApplier != nil, func(query orm.Query) {
-		sortApplier(ctx)(newSorter(query))
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ConfigureQuery(query orm.SelectQuery, model any, search TSearch, ctx fiber.Ctx) {
+	a.ApplyConditions(query.Model(model), search, ctx)
+	a.ApplyRelations(query, search, ctx)
+	a.ApplyQuery(query, search, ctx)
+	a.ApplySort(query, search, ctx)
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) Process(input TProcessorIn, search TSearch, ctx fiber.Ctx) any {
+	if a.processor == nil {
+		return input
+	}
+
+	return a.processor(input, search, ctx)
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) HasSortApplier() bool {
+	return a.sortApplier != nil
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplySort(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) {
+	applySort(query, a.sortApplier, search, ctx)
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplySearch(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) {
+	query.Where(func(cb orm.ConditionBuilder) {
+		cb.Apply(a.searchApplier(search))
 	})
 }
 
-// newFindAPI creates a new findAPI instance with default search applier.
-func newFindAPI[TModel, TSearch, TPostFindProcessor, TFindAPI any](api *TFindAPI) *findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI] {
-	return &findAPI[TModel, TSearch, TPostFindProcessor, TFindAPI]{
-		api:           api,
-		searchApplier: search.Applier[TSearch](),
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplyFilter(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) {
+	query.Where(func(cb orm.ConditionBuilder) {
+		cb.Apply(a.filterApplier(search, ctx))
+	})
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplyConditions(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) {
+	query.Where(func(cb orm.ConditionBuilder) {
+		cb.Apply(a.searchApplier(search))
+		if a.filterApplier != nil {
+			cb.Apply(a.filterApplier(search, ctx))
+		}
+	})
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplyQuery(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) {
+	if a.queryApplier != nil {
+		query.Apply(a.queryApplier(search, ctx))
 	}
+}
+
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplyRelations(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) {
+	if len(a.relations) > 0 {
+		query.ModelRelations(a.relations...)
+	}
+}
+
+func applySort[TSearch any](query orm.SelectQuery, sortApplier SortApplier[TSearch], search TSearch, ctx fiber.Ctx) {
+	query.ApplyIf(sortApplier != nil, func(query orm.SelectQuery) {
+		sortApplier(search, ctx)(newSorter(query))
+	})
 }

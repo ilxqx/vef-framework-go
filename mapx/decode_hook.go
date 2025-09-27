@@ -4,8 +4,8 @@ import (
 	"errors"
 	"reflect"
 
+	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
-	"github.com/ilxqx/vef-framework-go/mo"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/samber/lo"
 )
@@ -48,18 +48,18 @@ var (
 
 	// null.DateTime
 	nullDateTimeType = reflect.TypeFor[null.DateTime]()
-	dateTimeType     = reflect.TypeFor[mo.DateTime]()
-	dateTimePtrType  = reflect.TypeFor[*mo.DateTime]()
+	dateTimeType     = reflect.TypeFor[datetime.DateTime]()
+	dateTimePtrType  = reflect.TypeFor[*datetime.DateTime]()
 
 	// null.Date
 	nullDateType = reflect.TypeFor[null.Date]()
-	dateType     = reflect.TypeFor[mo.Date]()
-	datePtrType  = reflect.TypeFor[*mo.Date]()
+	dateType     = reflect.TypeFor[datetime.Date]()
+	datePtrType  = reflect.TypeFor[*datetime.Date]()
 
 	// null.Time
 	nullTimeType = reflect.TypeFor[null.Time]()
-	timeType     = reflect.TypeFor[mo.Time]()
-	timePtrType  = reflect.TypeFor[*mo.Time]()
+	timeType     = reflect.TypeFor[datetime.Time]()
+	timePtrType  = reflect.TypeFor[*datetime.Time]()
 
 	// null.Decimal
 	nullDecimalType = reflect.TypeFor[null.Decimal]()
@@ -249,10 +249,10 @@ func decodeNullDateTime(from reflect.Type, to reflect.Type, value any) (any, err
 		return lo.TernaryF(
 			from == dateTimeType,
 			func() null.DateTime {
-				return null.DateTimeFrom(value.(mo.DateTime))
+				return null.DateTimeFrom(value.(datetime.DateTime))
 			},
 			func() null.DateTime {
-				return null.DateTimeFromPtr(value.(*mo.DateTime))
+				return null.DateTimeFromPtr(value.(*datetime.DateTime))
 			},
 		), nil
 	}
@@ -273,10 +273,10 @@ func decodeNullDate(from reflect.Type, to reflect.Type, value any) (any, error) 
 		return lo.TernaryF(
 			from == dateType,
 			func() null.Date {
-				return null.DateFrom(value.(mo.Date))
+				return null.DateFrom(value.(datetime.Date))
 			},
 			func() null.Date {
-				return null.DateFromPtr(value.(*mo.Date))
+				return null.DateFromPtr(value.(*datetime.Date))
 			},
 		), nil
 	}
@@ -297,10 +297,10 @@ func decodeNullTime(from reflect.Type, to reflect.Type, value any) (any, error) 
 		return lo.TernaryF(
 			from == timeType,
 			func() null.Time {
-				return null.TimeFrom(value.(mo.Time))
+				return null.TimeFrom(value.(datetime.Time))
 			},
 			func() null.Time {
-				return null.TimeFromPtr(value.(*mo.Time))
+				return null.TimeFromPtr(value.(*datetime.Time))
 			},
 		), nil
 	}
@@ -362,7 +362,7 @@ func decodeNullValue(from reflect.Type, to reflect.Type, value any) (any, error)
 
 // isNullValue checks if a reflect.Type is a null.Value.
 func isNullValue(t reflect.Type) bool {
-	// Check both our package and the underlying guregu package
+	// Check both our package and the underlying null package
 	pkgPath := t.PkgPath()
 	if pkgPath != "github.com/ilxqx/vef-framework-go/null" && pkgPath != "github.com/guregu/null/v6" {
 		return false

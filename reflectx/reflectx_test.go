@@ -337,3 +337,195 @@ func BenchmarkIndirect(b *testing.B) {
 		Indirect(ptrType)
 	}
 }
+
+// Test types and interfaces for compatibility tests
+type TestInterface interface {
+	TestMethod() string
+}
+
+type TestStruct struct {
+	Value string
+}
+
+func (t TestStruct) TestMethod() string {
+	return t.Value
+}
+
+type AnotherStruct struct {
+	Data int
+}
+
+func TestIsTypeCompatible(t *testing.T) {
+	t.Run("exact type match", func(t *testing.T) {
+		stringType := reflect.TypeOf("")
+		assert.True(t, IsTypeCompatible(stringType, stringType))
+	})
+
+	t.Run("assignable types", func(t *testing.T) {
+		intType := reflect.TypeOf(int(0))
+		int32Type := reflect.TypeOf(int32(0))
+
+		// int is not assignable to int32
+		assert.False(t, IsTypeCompatible(intType, int32Type))
+
+		// Same types should be assignable
+		assert.True(t, IsTypeCompatible(intType, intType))
+	})
+
+	t.Run("interface implementation", func(t *testing.T) {
+		testStructType := reflect.TypeOf(TestStruct{})
+		testInterfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
+
+		// TestStruct implements TestInterface
+		assert.True(t, IsTypeCompatible(testStructType, testInterfaceType))
+
+		// AnotherStruct does not implement TestInterface
+		anotherStructType := reflect.TypeOf(AnotherStruct{})
+		assert.False(t, IsTypeCompatible(anotherStructType, testInterfaceType))
+	})
+
+	t.Run("pointer to pointer compatibility", func(t *testing.T) {
+		stringPtrType := reflect.TypeOf((*string)(nil))
+		stringPtrType2 := reflect.TypeOf((*string)(nil))
+		intPtrType := reflect.TypeOf((*int)(nil))
+
+		// Same pointer types
+		assert.True(t, IsTypeCompatible(stringPtrType, stringPtrType2))
+
+		// Different pointer types
+		assert.False(t, IsTypeCompatible(stringPtrType, intPtrType))
+	})
+
+	t.Run("value to pointer compatibility", func(t *testing.T) {
+		stringType := reflect.TypeOf("")
+		stringPtrType := reflect.TypeOf((*string)(nil))
+		intType := reflect.TypeOf(int(0))
+
+		// string -> *string
+		assert.True(t, IsTypeCompatible(stringType, stringPtrType))
+
+		// int -> *string (not compatible)
+		assert.False(t, IsTypeCompatible(intType, stringPtrType))
+	})
+
+	t.Run("pointer to value compatibility", func(t *testing.T) {
+		stringType := reflect.TypeOf("")
+		stringPtrType := reflect.TypeOf((*string)(nil))
+		intPtrType := reflect.TypeOf((*int)(nil))
+
+		// *string -> string
+		assert.True(t, IsTypeCompatible(stringPtrType, stringType))
+
+		// *int -> string (not compatible)
+		assert.False(t, IsTypeCompatible(intPtrType, stringType))
+	})
+
+	t.Run("interface pointer compatibility", func(t *testing.T) {
+		testStructPtrType := reflect.TypeOf((*TestStruct)(nil))
+		testInterfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
+
+		// *TestStruct implements TestInterface
+		assert.True(t, IsTypeCompatible(testStructPtrType, testInterfaceType))
+	})
+}
+
+func TestConvertValue(t *testing.T) {
+	t.Run("same types - no conversion needed", func(t *testing.T) {
+		original := reflect.ValueOf("hello")
+		result, err := ConvertValue(original, reflect.TypeOf(""))
+
+		require.NoError(t, err)
+		assert.Equal(t, "hello", result.String())
+	})
+
+	t.Run("pointer to value conversion", func(t *testing.T) {
+		str := "test"
+		ptrValue := reflect.ValueOf(&str)
+		stringType := reflect.TypeOf("")
+
+		result, err := ConvertValue(ptrValue, stringType)
+
+		require.NoError(t, err)
+		assert.Equal(t, "test", result.String())
+	})
+
+	t.Run("nil pointer to value conversion", func(t *testing.T) {
+		var str *string
+		ptrValue := reflect.ValueOf(str)
+		stringType := reflect.TypeOf("")
+
+		result, err := ConvertValue(ptrValue, stringType)
+
+		require.NoError(t, err)
+		assert.Equal(t, "", result.String()) // zero value
+	})
+
+	t.Run("value to pointer conversion", func(t *testing.T) {
+		original := reflect.ValueOf("hello")
+		stringPtrType := reflect.TypeOf((*string)(nil))
+
+		result, err := ConvertValue(original, stringPtrType)
+
+		require.NoError(t, err)
+		assert.True(t, result.Kind() == reflect.Pointer)
+		assert.Equal(t, "hello", result.Elem().String())
+	})
+
+	t.Run("pointer to pointer conversion", func(t *testing.T) {
+		str := "test"
+		ptrValue := reflect.ValueOf(&str)
+		stringPtrType := reflect.TypeOf((*string)(nil))
+
+		result, err := ConvertValue(ptrValue, stringPtrType)
+
+		require.NoError(t, err)
+		assert.True(t, result.Kind() == reflect.Pointer)
+		assert.Equal(t, "test", result.Elem().String())
+	})
+
+	t.Run("nil pointer to pointer conversion", func(t *testing.T) {
+		var str *string
+		ptrValue := reflect.ValueOf(str)
+		stringPtrType := reflect.TypeOf((*string)(nil))
+
+		result, err := ConvertValue(ptrValue, stringPtrType)
+
+		require.NoError(t, err)
+		assert.True(t, result.IsZero()) // nil pointer
+	})
+
+	t.Run("interface implementation conversion", func(t *testing.T) {
+		testStruct := TestStruct{Value: "interface test"}
+		original := reflect.ValueOf(testStruct)
+		interfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
+
+		result, err := ConvertValue(original, interfaceType)
+
+		require.NoError(t, err)
+		// Call the interface method to verify conversion worked
+		testInterface := result.Interface().(TestInterface)
+		assert.Equal(t, "interface test", testInterface.TestMethod())
+	})
+
+	t.Run("incompatible type conversion", func(t *testing.T) {
+		intValue := reflect.ValueOf(42)
+		stringType := reflect.TypeOf("")
+
+		_, err := ConvertValue(intValue, stringType)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot convert source type")
+	})
+
+	t.Run("struct conversion", func(t *testing.T) {
+		testStruct := TestStruct{Value: "test"}
+		original := reflect.ValueOf(testStruct)
+		testStructType := reflect.TypeOf(TestStruct{})
+
+		result, err := ConvertValue(original, testStructType)
+
+		require.NoError(t, err)
+		convertedStruct := result.Interface().(TestStruct)
+		assert.Equal(t, "test", convertedStruct.Value)
+	})
+}

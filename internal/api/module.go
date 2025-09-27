@@ -6,39 +6,42 @@ var Module = fx.Module(
 	"vef:api",
 	fx.Provide(
 		fx.Annotate(
-			newParamResolver,
+			NewHandlerParamResolverManager,
 			fx.ParamTags(`group:"vef:api:param_resolvers"`),
 		),
 		fx.Private,
 	),
 	fx.Provide(
+		// provide managers
 		fx.Annotate(
-			newManager,
+			NewManager,
 			fx.ParamTags(`group:"vef:api:resources"`, `optional:"true"`),
 			fx.ResultTags(`name:"vef:api:manager"`),
 		),
 		fx.Annotate(
-			newManager,
+			NewManager,
 			fx.ParamTags(`group:"vef:openapi:resources"`, `optional:"true"`),
 			fx.ResultTags(`name:"vef:openapi:manager"`),
 		),
+
 		// provide policies
 		fx.Annotate(
-			newDefaultApiPolicy,
+			NewDefaultApiPolicy,
 			fx.ResultTags(`name:"vef:api:policy"`),
 		),
 		fx.Annotate(
-			newOpenApiPolicy,
+			NewOpenApiPolicy,
 			fx.ResultTags(`name:"vef:openapi:policy"`),
 		),
-		// provide engines using the same constructor with different named params
+
+		// provide engines
 		fx.Annotate(
-			newEngine,
+			NewEngine,
 			fx.ParamTags(`name:"vef:api:manager"`, `name:"vef:api:policy"`),
 			fx.ResultTags(`name:"vef:api:engine"`),
 		),
 		fx.Annotate(
-			newEngine,
+			NewEngine,
 			fx.ParamTags(`name:"vef:openapi:manager"`, `name:"vef:openapi:policy"`),
 			fx.ResultTags(`name:"vef:openapi:engine"`),
 		),

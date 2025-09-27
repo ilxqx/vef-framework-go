@@ -5,9 +5,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/trans"
 )
 
-// newTransformer creates a new transformer instance, integrating all registered transformers and interceptors
+// New creates a new transformer instance, integrating all registered transformers and interceptors
 // Uses dependency injection to collect all extension components and build a complete transformer
-func newTransformer(fieldTransformers []trans.FieldTransformer, structTransformers []trans.StructTransformer, interceptors []trans.Interceptor) trans.Transformer {
+func New(fieldTransformers []trans.FieldTransformer, structTransformers []trans.StructTransformer, interceptors []trans.Interceptor) trans.Transformer {
 	// Create mold transformer instance and set tag name to "trans"
 	transformer := mold.New()
 	transformer.SetTagName("trans")
