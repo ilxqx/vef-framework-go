@@ -42,7 +42,7 @@ func (u *updateAPI[TModel, TParams]) PostUpdate(processor PostUpdateProcessor[TM
 	return u
 }
 
-func (u *updateAPI[TModel, TParams]) update(ctx fiber.Ctx, db orm.Db, params TParams) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
+func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
 	// Pre-compute schema information
 	schema := db.Schema((*TModel)(nil))
 	// Pre-compute primary key fields

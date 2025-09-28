@@ -1190,7 +1190,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonArray(eb.Column("id"), eb.Column("title"), eb.Column("status"))
+			return eb.JSONArray(eb.Column("id"), eb.Column("title"), eb.Column("status"))
 		}, "simple_array").
 		Limit(1).
 		Scan(suite.ctx, &jsonResult)
@@ -1294,7 +1294,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*User)(nil)).
 		Select("id", "name").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("user_id", eb.Column("id"), "user_name", eb.Column("name"), "user_age", eb.Column("age"), "is_active", eb.Column("is_active"))
+			return eb.JSONObject("user_id", eb.Column("id"), "user_name", eb.Column("name"), "user_age", eb.Column("age"), "is_active", eb.Column("is_active"))
 		}, "user_object").
 		OrderBy("name").
 		Scan(suite.ctx, &jsonObjectResults)
@@ -1319,7 +1319,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("id").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count"))
+			return eb.JSONArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count"))
 		}, "json_array").
 		OrderBy("title").
 		Limit(3).
@@ -1344,10 +1344,10 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("title").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("post_id", eb.Column("id"), "title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
+			return eb.JSONObject("post_id", eb.Column("id"), "title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
 		}, "meta_json").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonExtract(eb.JsonObject("id", eb.Column("id")), "$.id")
+			return eb.JSONExtract(eb.JSONObject("id", eb.Column("id")), "$.id")
 		}, "extracted_id").
 		OrderBy("title").
 		Limit(3).
@@ -1373,10 +1373,10 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("title").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
+			return eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
 		}, "json_data").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonValid(eb.JsonObject("test", eb.Column("title")))
+			return eb.JSONValid(eb.JSONObject("test", eb.Column("title")))
 		}, "is_valid").
 		OrderBy("title").
 		Limit(2).
@@ -1404,13 +1404,13 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("title").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"))
+			return eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count"))
 		}, "original").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonInsert(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.status", eb.Column("status"))
+			return eb.JSONInsert(eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.status", eb.Column("status"))
 		}, "with_insert").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonReplace(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.views", 9999)
+			return eb.JSONReplace(eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.views", 9999)
 		}, "with_replace").
 		OrderBy("title").
 		Limit(2).

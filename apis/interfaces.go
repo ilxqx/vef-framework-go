@@ -13,8 +13,6 @@ import (
 type APIBuilder[T any] interface {
 	// Action sets the action name for the API endpoint.
 	Action(action string) T
-	// Version sets the version of the API endpoint.
-	Version(version string) T
 	// EnableAudit enables audit logging for this endpoint.
 	EnableAudit() T
 	// Timeout sets the request timeout duration.
@@ -30,6 +28,7 @@ type APIBuilder[T any] interface {
 }
 
 type CreateAPI[TModel, TParams any] interface {
+	api.Provider
 	APIBuilder[CreateAPI[TModel, TParams]]
 
 	// PreCreate sets the pre-create processor for the CreateAPI.
@@ -41,6 +40,7 @@ type CreateAPI[TModel, TParams any] interface {
 }
 
 type UpdateAPI[TModel, TParams any] interface {
+	api.Provider
 	APIBuilder[UpdateAPI[TModel, TParams]]
 
 	// PreUpdate sets the pre-update processor for the UpdateAPI.
@@ -52,6 +52,7 @@ type UpdateAPI[TModel, TParams any] interface {
 }
 
 type DeleteAPI[TModel any] interface {
+	api.Provider
 	APIBuilder[DeleteAPI[TModel]]
 
 	// PreDelete sets the pre-delete processor for the DeleteAPI.
@@ -89,18 +90,22 @@ type FindAPI[TModel, TSearch, TProcessorIn, TAPI any] interface {
 }
 
 type FindOneAPI[TModel, TSearch any] interface {
+	api.Provider
 	FindAPI[TModel, TSearch, TModel, FindOneAPI[TModel, TSearch]]
 }
 
 type FindAllAPI[TModel, TSearch any] interface {
+	api.Provider
 	FindAPI[TModel, TSearch, []TModel, FindAllAPI[TModel, TSearch]]
 }
 
 type FindPageAPI[TModel, TSearch any] interface {
+	api.Provider
 	FindAPI[TModel, TSearch, []TModel, FindPageAPI[TModel, TSearch]]
 }
 
 type FindTreeAPI[TModel, TSearch any] interface {
+	api.Provider
 	FindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]]
 
 	// IdField sets the field name used as the node Id in tree structures.
@@ -112,6 +117,7 @@ type FindTreeAPI[TModel, TSearch any] interface {
 }
 
 type FindOptionsAPI[TModel, TSearch any] interface {
+	api.Provider
 	FindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]]
 
 	// DefaultConfig sets the default configuration for options queries.
@@ -120,6 +126,7 @@ type FindOptionsAPI[TModel, TSearch any] interface {
 }
 
 type FindTreeOptionsAPI[TModel, TSearch any] interface {
+	api.Provider
 	FindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]]
 
 	// DefaultConfig sets the default configuration for tree options queries.

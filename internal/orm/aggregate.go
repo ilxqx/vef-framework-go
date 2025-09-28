@@ -111,23 +111,23 @@ type VarianceBuilder interface {
 	StatisticalAggregate[VarianceBuilder]
 }
 
-// JsonObjectAggBuilder defines the JSON_OBJECT_AGG aggregate function builder.
-type JsonObjectAggBuilder interface {
-	BaseAggregate[JsonObjectAggBuilder]
-	DistinctableAggregate[JsonObjectAggBuilder]
-	OrderableAggregate[JsonObjectAggBuilder]
+// JSONObjectAggBuilder defines the JSON_OBJECT_AGG aggregate function builder.
+type JSONObjectAggBuilder interface {
+	BaseAggregate[JSONObjectAggBuilder]
+	DistinctableAggregate[JSONObjectAggBuilder]
+	OrderableAggregate[JSONObjectAggBuilder]
 
 	// KeyColumn sets the key using a column reference.
-	KeyColumn(column string) JsonObjectAggBuilder
+	KeyColumn(column string) JSONObjectAggBuilder
 	// KeyExpr sets the key using a raw expression.
-	KeyExpr(expr any) JsonObjectAggBuilder
+	KeyExpr(expr any) JSONObjectAggBuilder
 }
 
-// JsonArrayAggBuilder defines the JSON_ARRAY_AGG aggregate function builder.
-type JsonArrayAggBuilder interface {
-	BaseAggregate[JsonArrayAggBuilder]
-	DistinctableAggregate[JsonArrayAggBuilder]
-	OrderableAggregate[JsonArrayAggBuilder]
+// JSONArrayAggBuilder defines the JSON_ARRAY_AGG aggregate function builder.
+type JSONArrayAggBuilder interface {
+	BaseAggregate[JSONArrayAggBuilder]
+	DistinctableAggregate[JSONArrayAggBuilder]
+	OrderableAggregate[JSONArrayAggBuilder]
 }
 
 // BitOrBuilder defines the BIT_OR aggregate function builder.
@@ -1429,22 +1429,22 @@ func newGenericJsonObjectAggExpr[T any](self T, qb QueryBuilder) *jsonObjectAggE
 }
 
 // newJsonObjectAggExpr creates a new JSON_OBJECT_AGG expression
-func newJsonObjectAggExpr(qb QueryBuilder) *jsonObjectAggExpr[JsonObjectAggBuilder] {
+func newJsonObjectAggExpr(qb QueryBuilder) *jsonObjectAggExpr[JSONObjectAggBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
 		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
 	}
-	baseBuilder := &baseAggregateBuilder[JsonObjectAggBuilder]{
+	baseBuilder := &baseAggregateBuilder[JSONObjectAggBuilder]{
 		baseAggregateExpr: baseExpr,
 	}
-	expr := &jsonObjectAggExpr[JsonObjectAggBuilder]{
+	expr := &jsonObjectAggExpr[JSONObjectAggBuilder]{
 		baseAggregateExpr:    baseExpr,
 		baseAggregateBuilder: baseBuilder,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[JsonObjectAggBuilder]{
+		distinctableAggregateBuilder: &distinctableAggregateBuilder[JSONObjectAggBuilder]{
 			baseAggregateBuilder: baseBuilder,
 		},
-		orderableAggregateBuilder: &orderableAggregateBuilder[JsonObjectAggBuilder]{
+		orderableAggregateBuilder: &orderableAggregateBuilder[JSONObjectAggBuilder]{
 			baseAggregateBuilder: baseBuilder,
 		},
 	}
@@ -1479,22 +1479,22 @@ func newGenericJsonArrayAggExpr[T any](self T, qb QueryBuilder) *jsonArrayAggExp
 }
 
 // newJsonArrayAggExpr creates a new JSON_ARRAY_AGG expression
-func newJsonArrayAggExpr(qb QueryBuilder) *jsonArrayAggExpr[JsonArrayAggBuilder] {
+func newJsonArrayAggExpr(qb QueryBuilder) *jsonArrayAggExpr[JSONArrayAggBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
 		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
 	}
-	baseBuilder := &baseAggregateBuilder[JsonArrayAggBuilder]{
+	baseBuilder := &baseAggregateBuilder[JSONArrayAggBuilder]{
 		baseAggregateExpr: baseExpr,
 	}
-	expr := &jsonArrayAggExpr[JsonArrayAggBuilder]{
+	expr := &jsonArrayAggExpr[JSONArrayAggBuilder]{
 		baseAggregateExpr:    baseExpr,
 		baseAggregateBuilder: baseBuilder,
-		distinctableAggregateBuilder: &distinctableAggregateBuilder[JsonArrayAggBuilder]{
+		distinctableAggregateBuilder: &distinctableAggregateBuilder[JSONArrayAggBuilder]{
 			baseAggregateBuilder: baseBuilder,
 		},
-		orderableAggregateBuilder: &orderableAggregateBuilder[JsonArrayAggBuilder]{
+		orderableAggregateBuilder: &orderableAggregateBuilder[JSONArrayAggBuilder]{
 			baseAggregateBuilder: baseBuilder,
 		},
 	}

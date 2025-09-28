@@ -14,7 +14,7 @@ type Sorter interface {
 
 	// OrderByExpr orders the query using a custom SQL expression.
 	// This provides maximum flexibility for complex sorting scenarios.
-	OrderByExpr(func(orm.ExpressionBuilders) any) Sorter
+	OrderByExpr(func(orm.ExprBuilder) any) Sorter
 }
 
 // querySorter is the concrete implementation of the Sorter interface.
@@ -32,7 +32,7 @@ func (s *querySorter) OrderByDesc(columns ...string) Sorter {
 	return s
 }
 
-func (s *querySorter) OrderByExpr(builder func(orm.ExpressionBuilders) any) Sorter {
+func (s *querySorter) OrderByExpr(builder func(orm.ExprBuilder) any) Sorter {
 	s.query.OrderByExpr(builder)
 	return s
 }

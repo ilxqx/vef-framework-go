@@ -346,14 +346,14 @@ func (b *QueryExprBuilder) Variance(builder func(VarianceBuilder)) schema.QueryA
 	return cb
 }
 
-func (b *QueryExprBuilder) JsonObjectAgg(builder func(JsonObjectAggBuilder)) schema.QueryAppender {
+func (b *QueryExprBuilder) JSONObjectAgg(builder func(JSONObjectAggBuilder)) schema.QueryAppender {
 	cb := newJsonObjectAggExpr(b.qb)
 	builder(cb)
 
 	return cb
 }
 
-func (b *QueryExprBuilder) JsonArrayAgg(builder func(JsonArrayAggBuilder)) schema.QueryAppender {
+func (b *QueryExprBuilder) JSONArrayAgg(builder func(JSONArrayAggBuilder)) schema.QueryAppender {
 	cb := newJsonArrayAggExpr(b.qb)
 	builder(cb)
 
@@ -530,14 +530,14 @@ func (b *QueryExprBuilder) WVariance(builder func(WindowVarianceBuilder)) schema
 	return cb
 }
 
-func (b *QueryExprBuilder) WJsonObjectAgg(builder func(WindowJsonObjectAggBuilder)) schema.QueryAppender {
+func (b *QueryExprBuilder) WJSONObjectAgg(builder func(WindowJSONObjectAggBuilder)) schema.QueryAppender {
 	cb := newWindowJsonObjectAggExpr(b.qb)
 	builder(cb)
 
 	return cb
 }
 
-func (b *QueryExprBuilder) WJsonArrayAgg(builder func(WindowJsonArrayAggBuilder)) schema.QueryAppender {
+func (b *QueryExprBuilder) WJSONArrayAgg(builder func(WindowJSONArrayAggBuilder)) schema.QueryAppender {
 	cb := newWindowJsonArrayAggExpr(b.qb)
 	builder(cb)
 
@@ -1366,8 +1366,8 @@ func (b *QueryExprBuilder) ToTimestamp(expr any, format ...string) schema.QueryA
 	})
 }
 
-// ToJson converts expression to JSON.
-func (b *QueryExprBuilder) ToJson(expr any) schema.QueryAppender {
+// ToJSON converts expression to JSON.
+func (b *QueryExprBuilder) ToJSON(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses ::JSON or ::JSONB
@@ -1389,8 +1389,8 @@ func (b *QueryExprBuilder) ToJson(expr any) schema.QueryAppender {
 
 // ========== JSON Functions ==========
 
-// JsonExtract extracts value from JSON at specified path.
-func (b *QueryExprBuilder) JsonExtract(json any, path string) schema.QueryAppender {
+// JSONExtract extracts value from JSON at specified path.
+func (b *QueryExprBuilder) JSONExtract(json any, path string) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses -> or ->> operators
@@ -1415,8 +1415,8 @@ func (b *QueryExprBuilder) JsonExtract(json any, path string) schema.QueryAppend
 	})
 }
 
-// JsonUnquote removes quotes from JSON string.
-func (b *QueryExprBuilder) JsonUnquote(expr any) schema.QueryAppender {
+// JSONUnquote removes quotes from JSON string.
+func (b *QueryExprBuilder) JSONUnquote(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL doesn't have JSON_UNQUOTE, use ->> with '$'
@@ -1436,8 +1436,8 @@ func (b *QueryExprBuilder) JsonUnquote(expr any) schema.QueryAppender {
 	})
 }
 
-// JsonArray creates a JSON array from arguments.
-func (b *QueryExprBuilder) JsonArray(args ...any) schema.QueryAppender {
+// JSONArray creates a JSON array from arguments.
+func (b *QueryExprBuilder) JSONArray(args ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses json_build_array
@@ -1469,8 +1469,8 @@ func (b *QueryExprBuilder) JsonArray(args ...any) schema.QueryAppender {
 	})
 }
 
-// JsonObject creates a JSON object from key-value pairs.
-func (b *QueryExprBuilder) JsonObject(keyValues ...any) schema.QueryAppender {
+// JSONObject creates a JSON object from key-value pairs.
+func (b *QueryExprBuilder) JSONObject(keyValues ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses json_build_object
@@ -1502,8 +1502,8 @@ func (b *QueryExprBuilder) JsonObject(keyValues ...any) schema.QueryAppender {
 	})
 }
 
-// JsonContains checks if JSON contains a value.
-func (b *QueryExprBuilder) JsonContains(json, value any) schema.QueryAppender {
+// JSONContains checks if JSON contains a value.
+func (b *QueryExprBuilder) JSONContains(json, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses @> operator for containment
@@ -1523,8 +1523,8 @@ func (b *QueryExprBuilder) JsonContains(json, value any) schema.QueryAppender {
 	})
 }
 
-// JsonContainsPath checks if JSON contains a path.
-func (b *QueryExprBuilder) JsonContainsPath(json any, path string) schema.QueryAppender {
+// JSONContainsPath checks if JSON contains a path.
+func (b *QueryExprBuilder) JSONContainsPath(json any, path string) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_path_exists
@@ -1544,8 +1544,8 @@ func (b *QueryExprBuilder) JsonContainsPath(json any, path string) schema.QueryA
 	})
 }
 
-// JsonKeys returns the keys of a JSON object.
-func (b *QueryExprBuilder) JsonKeys(json any, path ...string) schema.QueryAppender {
+// JSONKeys returns the keys of a JSON object.
+func (b *QueryExprBuilder) JSONKeys(json any, path ...string) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_object_keys
@@ -1577,8 +1577,8 @@ func (b *QueryExprBuilder) JsonKeys(json any, path ...string) schema.QueryAppend
 	})
 }
 
-// JsonLength returns the length of a JSON array or object.
-func (b *QueryExprBuilder) JsonLength(json any, path ...string) schema.QueryAppender {
+// JSONLength returns the length of a JSON array or object.
+func (b *QueryExprBuilder) JSONLength(json any, path ...string) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_array_length for arrays, jsonb_object_keys for objects
@@ -1610,8 +1610,8 @@ func (b *QueryExprBuilder) JsonLength(json any, path ...string) schema.QueryAppe
 	})
 }
 
-// JsonType returns the type of JSON value.
-func (b *QueryExprBuilder) JsonType(json any, path ...string) schema.QueryAppender {
+// JSONType returns the type of JSON value.
+func (b *QueryExprBuilder) JSONType(json any, path ...string) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_typeof
@@ -1643,8 +1643,8 @@ func (b *QueryExprBuilder) JsonType(json any, path ...string) schema.QueryAppend
 	})
 }
 
-// JsonValid checks if a string is valid JSON.
-func (b *QueryExprBuilder) JsonValid(expr any) schema.QueryAppender {
+// JSONValid checks if a string is valid JSON.
+func (b *QueryExprBuilder) JSONValid(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL doesn't have JSON_VALID, try to cast and catch exceptions
@@ -1664,8 +1664,8 @@ func (b *QueryExprBuilder) JsonValid(expr any) schema.QueryAppender {
 	})
 }
 
-// JsonSet sets value at path, creates if not exists, replaces if exists.
-func (b *QueryExprBuilder) JsonSet(json any, path string, value any) schema.QueryAppender {
+// JSONSet sets value at path, creates if not exists, replaces if exists.
+func (b *QueryExprBuilder) JSONSet(json any, path string, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_set
@@ -1685,8 +1685,8 @@ func (b *QueryExprBuilder) JsonSet(json any, path string, value any) schema.Quer
 	})
 }
 
-// JsonInsert inserts value at path only if path doesn't exist.
-func (b *QueryExprBuilder) JsonInsert(json any, path string, value any) schema.QueryAppender {
+// JSONInsert inserts value at path only if path doesn't exist.
+func (b *QueryExprBuilder) JSONInsert(json any, path string, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_insert with path array format
@@ -1712,8 +1712,8 @@ func (b *QueryExprBuilder) JsonInsert(json any, path string, value any) schema.Q
 	})
 }
 
-// JsonReplace replaces value at path only if path exists.
-func (b *QueryExprBuilder) JsonReplace(json any, path string, value any) schema.QueryAppender {
+// JSONReplace replaces value at path only if path exists.
+func (b *QueryExprBuilder) JSONReplace(json any, path string, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_set with create_missing = false
@@ -1739,19 +1739,19 @@ func (b *QueryExprBuilder) JsonReplace(json any, path string, value any) schema.
 	})
 }
 
-// JsonArrayAppend appends value to JSON array at specified path.
-func (b *QueryExprBuilder) JsonArrayAppend(json any, path string, value any) schema.QueryAppender {
+// JSONArrayAppend appends value to JSON array at specified path.
+func (b *QueryExprBuilder) JSONArrayAppend(json any, path string, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExpr{
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses || operator to append to array
 			if path == constants.Dollar {
 				// Root level array
-				return b.Expr("(?::JSONB || ?::JSONB)", json, b.JsonArray(value))
+				return b.Expr("(?::JSONB || ?::JSONB)", json, b.JSONArray(value))
 			}
 			// Nested array - use jsonb_set with concatenation
 			return b.Expr(
 				"JSONB_SET(?::JSONB, ?::TEXT[], (COALESCE(?::JSONB #> ?::TEXT[], '[]'::JSONB) || ?::JSONB))",
-				json, path, json, path, b.JsonArray(value),
+				json, path, json, path, b.JSONArray(value),
 			)
 		},
 		MySQL: func() schema.QueryAppender {

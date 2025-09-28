@@ -301,10 +301,10 @@ type ExprBuilder interface {
 	StringAgg(func(StringAggBuilder)) schema.QueryAppender
 	// ArrayAgg builds an ARRAY_AGG aggregate expression using a builder callback.
 	ArrayAgg(func(ArrayAggBuilder)) schema.QueryAppender
-	// JsonObjectAgg builds a JSON_OBJECT_AGG aggregate expression using a builder callback.
-	JsonObjectAgg(func(JsonObjectAggBuilder)) schema.QueryAppender
-	// JsonArrayAgg builds a JSON_ARRAY_AGG aggregate expression using a builder callback.
-	JsonArrayAgg(func(JsonArrayAggBuilder)) schema.QueryAppender
+	// JSONObjectAgg builds a JSON_OBJECT_AGG aggregate expression using a builder callback.
+	JSONObjectAgg(func(JSONObjectAggBuilder)) schema.QueryAppender
+	// JSONArrayAgg builds a JSON_ARRAY_AGG aggregate expression using a builder callback.
+	JSONArrayAgg(func(JSONArrayAggBuilder)) schema.QueryAppender
 	// BitOr builds a BIT_OR aggregate expression using a builder callback.
 	BitOr(func(BitOrBuilder)) schema.QueryAppender
 	// BitAnd builds a BIT_AND aggregate expression using a builder callback.
@@ -360,10 +360,10 @@ type ExprBuilder interface {
 	WStdDev(func(WindowStdDevBuilder)) schema.QueryAppender
 	// WVariance builds a VARIANCE window function expression.
 	WVariance(func(WindowVarianceBuilder)) schema.QueryAppender
-	// WJsonObjectAgg builds a JSON_OBJECT_AGG window function expression.
-	WJsonObjectAgg(func(WindowJsonObjectAggBuilder)) schema.QueryAppender
-	// WJsonArrayAgg builds a JSON_ARRAY_AGG window function expression.
-	WJsonArrayAgg(func(WindowJsonArrayAggBuilder)) schema.QueryAppender
+	// WJSONObjectAgg builds a JSON_OBJECT_AGG window function expression.
+	WJSONObjectAgg(func(WindowJSONObjectAggBuilder)) schema.QueryAppender
+	// WJSONArrayAgg builds a JSON_ARRAY_AGG window function expression.
+	WJSONArrayAgg(func(WindowJSONArrayAggBuilder)) schema.QueryAppender
 	// WBitOr builds a BIT_OR window function expression.
 	WBitOr(func(WindowBitOrBuilder)) schema.QueryAppender
 	// WBitAnd builds a BIT_AND window function expression.
@@ -520,39 +520,39 @@ type ExprBuilder interface {
 	ToTime(expr any, format ...string) schema.QueryAppender
 	// ToTimestamp converts expression to timestamp.
 	ToTimestamp(expr any, format ...string) schema.QueryAppender
-	// ToJson converts expression to JSON.
-	ToJson(expr any) schema.QueryAppender
+	// ToJSON converts expression to JSON.
+	ToJSON(expr any) schema.QueryAppender
 
 	// ========== JSON Functions ==========
 
-	// JsonExtract extracts value from JSON at specified path.
-	JsonExtract(json any, path string) schema.QueryAppender
-	// JsonUnquote removes quotes from JSON string.
-	JsonUnquote(expr any) schema.QueryAppender
-	// JsonArray creates a JSON array from arguments.
-	JsonArray(args ...any) schema.QueryAppender
-	// JsonObject creates a JSON object from key-value pairs.
-	JsonObject(keyValues ...any) schema.QueryAppender
-	// JsonContains checks if JSON contains a value.
-	JsonContains(json, value any) schema.QueryAppender
-	// JsonContainsPath checks if JSON contains a path.
-	JsonContainsPath(json any, path string) schema.QueryAppender
-	// JsonKeys returns the keys of a JSON object.
-	JsonKeys(json any, path ...string) schema.QueryAppender
-	// JsonLength returns the length of a JSON array or object.
-	JsonLength(json any, path ...string) schema.QueryAppender
-	// JsonType returns the type of JSON value.
-	JsonType(json any, path ...string) schema.QueryAppender
-	// JsonValid checks if a string is valid JSON.
-	JsonValid(expr any) schema.QueryAppender
-	// JsonSet sets value at path, creates if not exists, replaces if exists.
-	JsonSet(json any, path string, value any) schema.QueryAppender
-	// JsonInsert inserts value at path only if path doesn't exist.
-	JsonInsert(json any, path string, value any) schema.QueryAppender
-	// JsonReplace replaces value at path only if path exists.
-	JsonReplace(json any, path string, value any) schema.QueryAppender
-	// JsonArrayAppend appends value to JSON array at specified path.
-	JsonArrayAppend(json any, path string, value any) schema.QueryAppender
+	// JSONExtract extracts value from JSON at specified path.
+	JSONExtract(json any, path string) schema.QueryAppender
+	// JSONUnquote removes quotes from JSON string.
+	JSONUnquote(expr any) schema.QueryAppender
+	// JSONArray creates a JSON array from arguments.
+	JSONArray(args ...any) schema.QueryAppender
+	// JSONObject creates a JSON object from key-value pairs.
+	JSONObject(keyValues ...any) schema.QueryAppender
+	// JSONContains checks if JSON contains a value.
+	JSONContains(json, value any) schema.QueryAppender
+	// JSONContainsPath checks if JSON contains a path.
+	JSONContainsPath(json any, path string) schema.QueryAppender
+	// JSONKeys returns the keys of a JSON object.
+	JSONKeys(json any, path ...string) schema.QueryAppender
+	// JSONLength returns the length of a JSON array or object.
+	JSONLength(json any, path ...string) schema.QueryAppender
+	// JSONType returns the type of JSON value.
+	JSONType(json any, path ...string) schema.QueryAppender
+	// JSONValid checks if a string is valid JSON.
+	JSONValid(expr any) schema.QueryAppender
+	// JSONSet sets value at path, creates if not exists, replaces if exists.
+	JSONSet(json any, path string, value any) schema.QueryAppender
+	// JSONInsert inserts value at path only if path doesn't exist.
+	JSONInsert(json any, path string, value any) schema.QueryAppender
+	// JSONReplace replaces value at path only if path exists.
+	JSONReplace(json any, path string, value any) schema.QueryAppender
+	// JSONArrayAppend appends value to JSON array at specified path.
+	JSONArrayAppend(json any, path string, value any) schema.QueryAppender
 
 	// ========== Utility Functions ==========
 

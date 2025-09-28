@@ -1,92 +1,102 @@
 package apis
 
-import "github.com/ilxqx/vef-framework-go/search"
+import (
+	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/search"
+	"github.com/samber/lo"
+)
 
 // NewAPIBuilder creates a new base API builder instance.
 // This is the foundation for all CRUD API builders providing common configuration options.
-func NewAPIBuilder[T any](self T) APIBuilder[T] {
+func NewAPIBuilder[T any](self T, version ...string) APIBuilder[T] {
 	return &baseAPIBuilder[T]{
 		self: self,
+		version: lo.TernaryF(
+			len(version) > 0,
+			func() string { return version[0] },
+			func() string { return api.VersionV1 },
+		),
 	}
 }
 
 // NewCreateAPI creates a new CreateAPI instance.
-func NewCreateAPI[TModel, TParams any]() CreateAPI[TModel, TParams] {
+func NewCreateAPI[TModel, TParams any](version ...string) CreateAPI[TModel, TParams] {
 	api := new(createAPI[TModel, TParams])
-	api.APIBuilder = NewAPIBuilder(api).Action(ActionCreate)
-	return api
+	api.APIBuilder = NewAPIBuilder[CreateAPI[TModel, TParams]](api, version...)
+	return api.Action(ActionCreate)
 }
 
 // NewUpdateAPI creates a new updateAPI instance.
-func NewUpdateAPI[TModel, TParams any]() UpdateAPI[TModel, TParams] {
+func NewUpdateAPI[TModel, TParams any](version ...string) UpdateAPI[TModel, TParams] {
 	api := new(updateAPI[TModel, TParams])
-	api.APIBuilder = NewAPIBuilder(api).Action(ActionUpdate)
-	return api
+	api.APIBuilder = NewAPIBuilder[UpdateAPI[TModel, TParams]](api, version...)
+	return api.Action(ActionUpdate)
 }
 
 // NewDeleteAPI creates a new deleteAPI instance.
-func NewDeleteAPI[TModel any]() DeleteAPI[TModel] {
+func NewDeleteAPI[TModel any](version ...string) DeleteAPI[TModel] {
 	api := new(deleteAPI[TModel])
-	api.APIBuilder = NewAPIBuilder(api).Action(ActionDelete)
-	return api
+	api.APIBuilder = NewAPIBuilder[DeleteAPI[TModel]](api, version...)
+	return api.Action(ActionDelete)
 }
 
-func NewFindAPI[TModel, TSearch, TProcessor, TAPI any](self TAPI) FindAPI[TModel, TSearch, TProcessor, TAPI] {
+func NewFindAPI[TModel, TSearch, TProcessor, TAPI any](self TAPI, version ...string) FindAPI[TModel, TSearch, TProcessor, TAPI] {
 	return &baseFindAPI[TModel, TSearch, TProcessor, TAPI]{
-		APIBuilder:    NewAPIBuilder(self),
+		APIBuilder: NewAPIBuilder(self, version...),
+
 		searchApplier: search.Applier[TSearch](),
 		self:          self,
 	}
 }
 
 // NewFindOneAPI creates a new FindOneAPI instance.
-func NewFindOneAPI[TModel, TSearch any]() FindOneAPI[TModel, TSearch] {
+func NewFindOneAPI[TModel, TSearch any](version ...string) FindOneAPI[TModel, TSearch] {
 	api := new(findOneAPI[TModel, TSearch])
-	api.FindAPI = NewFindAPI[TModel, TSearch, TModel, FindOneAPI[TModel, TSearch]](api).Action(ActionFindOne)
-	return api
+	api.FindAPI = NewFindAPI[TModel, TSearch, TModel, FindOneAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionFindOne)
 }
 
 // NewFindAllAPI creates a new FindAllAPI instance.
-func NewFindAllAPI[TModel, TSearch any]() FindAllAPI[TModel, TSearch] {
+func NewFindAllAPI[TModel, TSearch any](version ...string) FindAllAPI[TModel, TSearch] {
 	api := new(findAllAPI[TModel, TSearch])
-	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindAllAPI[TModel, TSearch]](api).Action(ActionFindAll)
-	return api
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindAllAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionFindAll)
 }
 
 // NewFindPageAPI creates a new FindPageAPI instance.
-func NewFindPageAPI[TModel, TSearch any]() FindPageAPI[TModel, TSearch] {
+func NewFindPageAPI[TModel, TSearch any](version ...string) FindPageAPI[TModel, TSearch] {
 	api := new(findPageAPI[TModel, TSearch])
-	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindPageAPI[TModel, TSearch]](api).Action(ActionFindPage)
-	return api
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindPageAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionFindPage)
 }
 
 // NewFindOptionsAPI creates a new FindOptionsAPI with the specified options.
-func NewFindOptionsAPI[TModel, TSearch any]() FindOptionsAPI[TModel, TSearch] {
+func NewFindOptionsAPI[TModel, TSearch any](version ...string) FindOptionsAPI[TModel, TSearch] {
 	api := &findOptionsAPI[TModel, TSearch]{
 		defaultConfig: &OptionsConfig{
 			LabelField: defaultLabelField,
 			ValueField: defaultValueField,
 		},
 	}
-	api.FindAPI = NewFindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]](api).Action(ActionFindOptions)
-	return api
+	api.FindAPI = NewFindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionFindOptions)
 }
 
 // NewFindTreeAPI creates a new FindTreeAPI for hierarchical data retrieval.
 // The treeBuilder function converts flat database records into nested tree structures.
 // Requires models to have id and parent_id fields for parent-child relationships.
-func NewFindTreeAPI[TModel, TSearch any](treeBuilder func(flatModels []TModel) []TModel) FindTreeAPI[TModel, TSearch] {
+func NewFindTreeAPI[TModel, TSearch any](treeBuilder func(flatModels []TModel) []TModel, version ...string) FindTreeAPI[TModel, TSearch] {
 	api := &findTreeAPI[TModel, TSearch]{
 		idField:       idField,
 		parentIdField: parentIdField,
 		treeBuilder:   treeBuilder,
 	}
-	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]](api).Action(ActionFindTree)
-	return api
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionFindTree)
 }
 
 // NewFindTreeOptionsAPI creates a new FindTreeOptionsAPI with the specified options.
-func NewFindTreeOptionsAPI[TModel, TSearch any]() FindTreeOptionsAPI[TModel, TSearch] {
+func NewFindTreeOptionsAPI[TModel, TSearch any](version ...string) FindTreeOptionsAPI[TModel, TSearch] {
 	api := &findTreeOptionsAPI[TModel, TSearch]{
 		defaultConfig: &TreeOptionsConfig{
 			OptionsConfig: OptionsConfig{
@@ -97,6 +107,6 @@ func NewFindTreeOptionsAPI[TModel, TSearch any]() FindTreeOptionsAPI[TModel, TSe
 			ParentIdField: parentIdField,
 		},
 	}
-	api.FindAPI = NewFindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]](api).Action(ActionFindTreeOptions)
-	return api
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionFindTreeOptions)
 }

@@ -23,11 +23,6 @@ func (b *baseAPIBuilder[T]) Action(action string) T {
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) Version(version string) T {
-	b.version = version
-	return b.self
-}
-
 func (b *baseAPIBuilder[T]) EnableAudit() T {
 	b.enableAudit = true
 	return b.self

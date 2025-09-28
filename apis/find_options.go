@@ -18,12 +18,6 @@ func (a *findOptionsAPI[TModel, TSearch]) Provide() api.Spec {
 	return a.FindAPI.Build(a.findOptions)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (a *findOptionsAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call FindAPI.Build on findOptionsAPI; call Provide() instead")
-}
-
 func (a *findOptionsAPI[TModel, TSearch]) DefaultConfig(config *OptionsConfig) FindOptionsAPI[TModel, TSearch] {
 	a.defaultConfig = config
 	return a
