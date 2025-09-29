@@ -16,13 +16,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/middleware"
+	"github.com/ilxqx/vef-framework-go/internal/mold"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/security"
-	"github.com/ilxqx/vef-framework-go/internal/trans"
 	"github.com/ilxqx/vef-framework-go/log"
+	moldPkg "github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/result"
 	securityPkg "github.com/ilxqx/vef-framework-go/security"
-	transPkg "github.com/ilxqx/vef-framework-go/trans"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -77,7 +77,7 @@ func (*TestResource) WithDb(ctx fiber.Ctx, db orm.Db) error {
 	return result.Ok("database injected").Response(ctx)
 }
 
-func (*TestResource) WithTransformer(ctx fiber.Ctx, transformer transPkg.Transformer) error {
+func (*TestResource) WithTransformer(ctx fiber.Ctx, transformer moldPkg.Transformer) error {
 	return result.Ok("transformer injected").Response(ctx)
 }
 
@@ -144,7 +144,7 @@ func (suite *ApiTestSuite) SetupSuite() {
 	)
 	suite.Require().NoError(err, "failed to create database")
 	db := orm.New(bunDb)
-	transformer := trans.New([]transPkg.FieldTransformer{}, []transPkg.StructTransformer{}, []transPkg.Interceptor{})
+	transformer := mold.NewTransformer([]moldPkg.FieldTransformer{}, []moldPkg.StructTransformer{}, []moldPkg.Interceptor{})
 	authManager := security.NewAuthManager([]securityPkg.Authenticator{
 		&MockAuthenticator{},
 	})

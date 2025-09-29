@@ -12,10 +12,10 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/event"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/internal/middleware"
+	"github.com/ilxqx/vef-framework-go/internal/mold"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
 	"github.com/ilxqx/vef-framework-go/internal/security"
-	"github.com/ilxqx/vef-framework-go/internal/trans"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -46,7 +46,7 @@ func Run(options ...fx.Option) {
 		event.Module,
 		cron.Module,
 		redis.Module,
-		trans.Module,
+		mold.Module,
 		app.Module,
 	}
 

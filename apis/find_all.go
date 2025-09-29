@@ -4,9 +4,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 type findAllAPI[TModel, TSearch any] struct {
@@ -23,7 +23,7 @@ func (a *findAllAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findAllAPI; call Provide() instead")
 }
 
-func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, search TSearch) error {
+func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 	// Pre-compute schema information
 	schema := db.Schema((*TModel)(nil))
 
@@ -31,7 +31,7 @@ func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) func(ctx fiber.Ctx, db 
 	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
 	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 		var models []TModel
 		query := a.BuildQuery(db, &models, search, ctx)
 

@@ -38,15 +38,18 @@ func NewAuthResource(userLoader security.UserLoader, authManager security.AuthMa
 // authResource handles authentication-related API endpoints.
 type authResource struct {
 	api.Resource
-	authManager    security.AuthManager    // authManager handles user authentication operations
-	tokenGenerator security.TokenGenerator // tokenGenerator creates JWT tokens for authenticated users
-	userLoader     security.UserLoader     // userLoader loads user principal by id
+
+	authManager    security.AuthManager
+	tokenGenerator security.TokenGenerator
+	userLoader     security.UserLoader
 }
 
 // loginParams represents the request parameters for user login.
 type loginParams struct {
 	api.In
-	security.Authentication // Authentication contains user credentials
+
+	// Authentication contains user credentials
+	security.Authentication
 }
 
 // Login authenticates a user and returns token credentials.
@@ -71,7 +74,9 @@ func (a *authResource) Login(ctx fiber.Ctx, params loginParams) error {
 // refreshParams represents the request parameters for token refresh operation.
 type refreshParams struct {
 	api.In
-	RefreshToken string `json:"refreshToken"` // RefreshToken is the JWT refresh token used to generate new access tokens
+
+	// RefreshToken is the JWT refresh token used to generate new access tokens
+	RefreshToken string `json:"refreshToken"`
 }
 
 // Refresh refreshes the access token using a valid refresh token.

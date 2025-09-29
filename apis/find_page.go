@@ -4,10 +4,10 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/page"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/trans"
 	"github.com/spf13/cast"
 )
 
@@ -25,7 +25,7 @@ func (a *findPageAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findPageAPI; call Provide() instead")
 }
 
-func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, pageable page.Pageable, search TSearch) error {
+func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
 	// Pre-compute schema information
 	schema := db.Schema((*TModel)(nil))
 
@@ -33,7 +33,7 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
 	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, pageable page.Pageable, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
 		var models []TModel
 		query := a.BuildQuery(db, &models, search, ctx)
 

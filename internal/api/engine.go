@@ -4,8 +4,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 // Engine defines the interface for API engines that can connect to a router.
@@ -16,7 +16,7 @@ type Engine interface {
 }
 
 // NewEngine creates an Engine with the given policy.
-func NewEngine(manager api.Manager, policy Policy, db orm.Db, transformer trans.Transformer) Engine {
+func NewEngine(manager api.Manager, policy Policy, db orm.Db, transformer mold.Transformer) Engine {
 	return &apiEngine{
 		manager:     manager,
 		policy:      policy,
@@ -29,7 +29,7 @@ type apiEngine struct {
 	manager     api.Manager
 	policy      Policy
 	db          orm.Db
-	transformer trans.Transformer
+	transformer mold.Transformer
 }
 
 // Connect registers the API engine with the given router.

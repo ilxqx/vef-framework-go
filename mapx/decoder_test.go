@@ -28,7 +28,7 @@ type TestStruct struct {
 }
 
 type EmbeddedStruct struct {
-	ID   int    `json:"id"`
+	Id   int    `json:"id"`
 	Type string `json:"type"`
 }
 
@@ -100,7 +100,7 @@ func TestToMap(t *testing.T) {
 		input := StructWithEmbedding{
 			Name: "Test",
 			Embedded: EmbeddedStruct{
-				ID:   123,
+				Id:   123,
 				Type: "example",
 			},
 		}
@@ -216,7 +216,7 @@ func TestFromMap(t *testing.T) {
 		require.NotNil(t, result)
 
 		assert.Equal(t, "Test", result.Name)
-		assert.Equal(t, 123, result.Embedded.ID)
+		assert.Equal(t, 123, result.Embedded.Id)
 		assert.Equal(t, "example", result.Embedded.Type)
 	})
 

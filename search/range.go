@@ -39,8 +39,8 @@ func init() {
 }
 
 // getRangeValue gets the start and end values of the value.
-func getRangeValue(value reflect.Value, conditionParams map[string]string) (any, any, bool) {
-	value = reflect.Indirect(value)
+func getRangeValue(fieldValue any, conditionParams map[string]string) (any, any, bool) {
+	value := reflect.Indirect(reflect.ValueOf(fieldValue))
 	valueType := value.Type()
 	kind := valueType.Kind()
 

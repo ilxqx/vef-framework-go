@@ -7,9 +7,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 // presetParamResolvers defines the built-in parameter resolvers available by default.
@@ -65,7 +65,7 @@ func (*PrincipalParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
 type TransformerParamResolver struct{}
 
 func (*TransformerParamResolver) Type() reflect.Type {
-	return reflect.TypeFor[trans.Transformer]()
+	return reflect.TypeFor[mold.Transformer]()
 }
 
 func (*TransformerParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {

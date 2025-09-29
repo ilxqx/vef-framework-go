@@ -3,9 +3,9 @@ package apis
 import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 type findOneAPI[TModel, TSearch any] struct {
@@ -22,7 +22,7 @@ func (a *findOneAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findOneAPI; call Provide() instead")
 }
 
-func (a *findOneAPI[TModel, TSearch]) findOne(ctx fiber.Ctx, db orm.Db, transformer trans.Transformer, search TSearch) error {
+func (a *findOneAPI[TModel, TSearch]) findOne(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 	var (
 		model TModel
 		query = a.BuildQuery(db, &model, search, ctx)

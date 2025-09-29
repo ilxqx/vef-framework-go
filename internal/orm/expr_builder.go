@@ -1396,8 +1396,8 @@ func (b *QueryExprBuilder) JSONExtract(json any, path string) schema.QueryAppend
 			// PostgreSQL uses -> or ->> operators
 			// Convert MySQL-style "$.key" path to PostgreSQL key
 			pgPath := path
-			if strings.HasPrefix(path, "$.") {
-				pgPath = strings.TrimPrefix(path, "$.")
+			if path, ok := strings.CutPrefix(path, "$."); ok {
+				pgPath = path
 			}
 			return b.Expr("(?->>?)", json, pgPath)
 		},
@@ -1692,9 +1692,8 @@ func (b *QueryExprBuilder) JSONInsert(json any, path string, value any) schema.Q
 			// PostgreSQL uses jsonb_insert with path array format
 			// Convert MySQL-style "$.key" path to PostgreSQL "{key}" format
 			pgPath := path
-			if strings.HasPrefix(path, "$.") {
-				key := strings.TrimPrefix(path, "$.")
-				pgPath = "{" + key + "}"
+			if key, ok := strings.CutPrefix(path, "$."); ok {
+				pgPath = constants.LeftBrace + key + constants.RightBrace
 			}
 			return b.Expr("JSONB_INSERT(?::JSONB, ?::TEXT[], TO_JSONB(?), FALSE)", json, pgPath, value)
 		},
@@ -1719,9 +1718,8 @@ func (b *QueryExprBuilder) JSONReplace(json any, path string, value any) schema.
 			// PostgreSQL uses jsonb_set with create_missing = false
 			// Convert MySQL-style "$.key" path to PostgreSQL "{key}" format
 			pgPath := path
-			if strings.HasPrefix(path, "$.") {
-				key := strings.TrimPrefix(path, "$.")
-				pgPath = "{" + key + "}"
+			if key, ok := strings.CutPrefix(path, "$."); ok {
+				pgPath = constants.LeftBrace + key + constants.RightBrace
 			}
 			return b.Expr("JSONB_SET(?::JSONB, ?::TEXT[], TO_JSONB(?), FALSE)", json, pgPath, value)
 		},

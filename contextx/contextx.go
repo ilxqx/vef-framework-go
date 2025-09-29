@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/trans"
 )
 
 type contextKey int
@@ -89,14 +89,14 @@ func SetDb(ctx context.Context, db orm.Db) context.Context {
 	}
 }
 
-// Transformer returns the trans.Transformer from fiber context.
-func Transformer(ctx context.Context) trans.Transformer {
-	transformer, _ := ctx.Value(KeyTransformer).(trans.Transformer)
+// Transformer returns the mold.Transformer from fiber context.
+func Transformer(ctx context.Context) mold.Transformer {
+	transformer, _ := ctx.Value(KeyTransformer).(mold.Transformer)
 	return transformer
 }
 
-// SetTransformer stores the trans.Transformer into fiber context.
-func SetTransformer(ctx context.Context, transformer trans.Transformer) context.Context {
+// SetTransformer stores the mold.Transformer into fiber context.
+func SetTransformer(ctx context.Context, transformer mold.Transformer) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyTransformer, transformer)

@@ -8,8 +8,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/monad"
+	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/spf13/cast"
 
 	"github.com/samber/lo"
@@ -49,10 +49,67 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 
 	for _, c := range f.conditions {
 		field := value.FieldByIndex(c.Index)
-		if field.IsZero() && !isValidZeroValue(field) {
-			// Skip fields with zero values unless they are numeric or boolean types
-			// which may have meaningful zero values for query conditions
+		if field.Kind() == reflect.Pointer && field.IsNil() {
 			continue
+		}
+
+		fieldValue := field.Interface()
+		switch nv := fieldValue.(type) {
+		case null.String:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Int:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Int16:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Int32:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Float:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Bool:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Byte:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.DateTime:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Date:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Time:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
+		case null.Decimal:
+			if !nv.Valid {
+				continue
+			}
+			fieldValue = nv.ValueOrZero()
 		}
 
 		alias := getColumnAlias(c.Alias, defaultAlias...)
@@ -60,7 +117,7 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 		for i, column := range c.Columns {
 			columns[i] = dbhelpers.ColumnWithAlias(column, alias)
 		}
-		applyCondition(cb, c, columns, field)
+		applyCondition(cb, c, columns, fieldValue)
 	}
 }
 
@@ -78,7 +135,7 @@ func getColumnAlias(alias string, defaultAlias ...string) string {
 }
 
 // applyCondition applies the condition to the query.
-func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, value reflect.Value) {
+func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, value any) {
 	// Handle different conditions based on the operator.
 	switch c.Operator {
 	case Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual:
@@ -97,25 +154,25 @@ func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, valu
 }
 
 // applyComparisonCondition applies the comparison operator to the condition builder.
-func applyComparisonCondition(cb orm.ConditionBuilder, column string, operator Operator, value reflect.Value) {
+func applyComparisonCondition(cb orm.ConditionBuilder, column string, operator Operator, value any) {
 	switch operator {
 	case Equals:
-		cb.Equals(column, value.Interface())
+		cb.Equals(column, value)
 	case NotEquals:
-		cb.NotEquals(column, value.Interface())
+		cb.NotEquals(column, value)
 	case GreaterThan:
-		cb.GreaterThan(column, value.Interface())
+		cb.GreaterThan(column, value)
 	case GreaterThanOrEqual:
-		cb.GreaterThanOrEqual(column, value.Interface())
+		cb.GreaterThanOrEqual(column, value)
 	case LessThan:
-		cb.LessThan(column, value.Interface())
+		cb.LessThan(column, value)
 	case LessThanOrEqual:
-		cb.LessThanOrEqual(column, value.Interface())
+		cb.LessThanOrEqual(column, value)
 	}
 }
 
 // applyBetweenCondition applies the between operator to the condition builder.
-func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Operator, value reflect.Value, conditionParams map[string]string) {
+func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Operator, value any, conditionParams map[string]string) {
 	start, end, ok := getRangeValue(value, conditionParams)
 	if !ok {
 		return
@@ -130,27 +187,21 @@ func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Oper
 }
 
 // applyInCondition applies the in operator to the condition builder.
-func applyInCondition(cb orm.ConditionBuilder, column string, value reflect.Value, operator Operator, conditionParams map[string]string) {
-	values := reflectx.ApplyIfString(
-		value,
-		func(s string) []any {
-			var values []any
-			delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
+func applyInCondition(cb orm.ConditionBuilder, column string, fieldValue any, operator Operator, conditionParams map[string]string) {
+	var values []any
+	switch value := fieldValue.(type) {
+	case string:
+		values = parseStringInCondition(value, conditionParams)
+	case *string:
+		values = parseStringInCondition(*value, conditionParams)
+	}
 
-			switch conditionParams[ParamType] {
-			case constants.TypeInt:
-				for value := range strings.SplitSeq(s, delimiter) {
-					values = append(values, cast.ToInt(value))
-				}
-			default:
-				for value := range strings.SplitSeq(s, delimiter) {
-					values = append(values, value)
-				}
-			}
-
-			return values
-		},
-	)
+	value := reflect.Indirect(reflect.ValueOf(fieldValue))
+	if value.Kind() == reflect.Slice {
+		for i := range value.Len() {
+			values = append(values, value.Index(i).Interface())
+		}
+	}
 
 	if len(values) == 0 {
 		return
@@ -164,128 +215,157 @@ func applyInCondition(cb orm.ConditionBuilder, column string, value reflect.Valu
 	}
 }
 
+// parseStringInCondition parses the string in condition.
+func parseStringInCondition(slice string, conditionParams map[string]string) []any {
+	var values []any
+	if slice == constants.Empty {
+		return values
+	}
+
+	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
+	for value := range strings.SplitSeq(slice, delimiter) {
+		switch conditionParams[ParamType] {
+		case constants.TypeInt:
+			values = append(values, cast.ToInt(value))
+		default:
+			values = append(values, value)
+		}
+	}
+	return values
+}
+
 // applyNullCondition applies the null operator to the condition builder.
 // It checks if the value is a boolean and true, then applies IsNull or IsNotNull condition.
-func applyNullCondition(cb orm.ConditionBuilder, column string, value reflect.Value, operator Operator) {
-	value = reflect.Indirect(value)
-	if value.Kind() != reflect.Bool || !value.Bool() {
-		return
+func applyNullCondition(cb orm.ConditionBuilder, column string, fieldValue any, operator Operator) {
+	var shouldApply bool
+	switch value := fieldValue.(type) {
+	case bool:
+		shouldApply = value
+	case *bool:
+		shouldApply = *value
 	}
 
 	switch operator {
 	case IsNull:
-		cb.IsNull(column)
+		cb.ApplyIf(shouldApply, func(cb orm.ConditionBuilder) {
+			cb.IsNull(column)
+		})
 	case IsNotNull:
-		cb.IsNotNull(column)
+		cb.ApplyIf(shouldApply, func(cb orm.ConditionBuilder) {
+			cb.IsNotNull(column)
+		})
 	}
 }
 
 // applyLikeCondition applies the like operator to the condition builder.
-func applyLikeCondition(cb orm.ConditionBuilder, columns []string, value reflect.Value, operator Operator) {
-	val := reflectx.ApplyIfString(value, func(s string) string { return s })
+func applyLikeCondition(cb orm.ConditionBuilder, columns []string, fieldValue any, operator Operator) {
+	var content string
+	switch value := fieldValue.(type) {
+	case string:
+		content = value
+	case *string:
+		content = *value
+	}
 
-	if len(columns) > 1 {
-		applyMultiColumnLikeCondition(cb, columns, val, operator)
+	if content == constants.Empty {
 		return
 	}
 
-	applySingleColumnLikeCondition(cb, columns[0], val, operator)
+	if len(columns) > 1 {
+		applyMultiColumnLikeCondition(cb, columns, content, operator)
+		return
+	}
+	applySingleColumnLikeCondition(cb, columns[0], content, operator)
 }
 
 // applyMultiColumnLikeCondition applies like condition for multiple columns with OR logic.
-func applyMultiColumnLikeCondition(cb orm.ConditionBuilder, columns []string, val string, operator Operator) {
+func applyMultiColumnLikeCondition(cb orm.ConditionBuilder, columns []string, content string, operator Operator) {
 	cb.Group(func(cb orm.ConditionBuilder) {
 		for _, col := range columns {
-			applyLikeOperation(cb, col, val, operator, true)
+			applyLikeOperation(cb, col, content, operator, true)
 		}
 	})
 }
 
 // applySingleColumnLikeCondition applies like condition for a single column.
-func applySingleColumnLikeCondition(cb orm.ConditionBuilder, column, val string, operator Operator) {
-	applyLikeOperation(cb, column, val, operator, false)
-}
-
-// isValidZeroValue determines if a zero value should be included in query conditions.
-// Returns true for numeric and boolean types where zero values are meaningful.
-func isValidZeroValue(field reflect.Value) bool {
-	return field.CanInt() || field.CanUint() || field.CanFloat() || field.Kind() == reflect.Bool
+func applySingleColumnLikeCondition(cb orm.ConditionBuilder, column, content string, operator Operator) {
+	applyLikeOperation(cb, column, content, operator, false)
 }
 
 // applyLikeOperation applies the specific like operation on a column.
-func applyLikeOperation(cb orm.ConditionBuilder, column, val string, operator Operator, useOr bool) {
+func applyLikeOperation(cb orm.ConditionBuilder, column, content string, operator Operator, useOr bool) {
 	switch operator {
 	case Contains:
 		if useOr {
-			cb.OrContains(column, val)
+			cb.OrContains(column, content)
 		} else {
-			cb.Contains(column, val)
+			cb.Contains(column, content)
 		}
 	case ContainsIgnoreCase:
 		if useOr {
-			cb.OrContainsIgnoreCase(column, val)
+			cb.OrContainsIgnoreCase(column, content)
 		} else {
-			cb.ContainsIgnoreCase(column, val)
+			cb.ContainsIgnoreCase(column, content)
 		}
 	case NotContains:
 		if useOr {
-			cb.OrNotContains(column, val)
+			cb.OrNotContains(column, content)
 		} else {
-			cb.NotContains(column, val)
+			cb.NotContains(column, content)
 		}
 	case NotContainsIgnoreCase:
 		if useOr {
-			cb.OrNotContainsIgnoreCase(column, val)
+			cb.OrNotContainsIgnoreCase(column, content)
 		} else {
-			cb.NotContainsIgnoreCase(column, val)
+			cb.NotContainsIgnoreCase(column, content)
 		}
 	case StartsWith:
 		if useOr {
-			cb.OrStartsWith(column, val)
+			cb.OrStartsWith(column, content)
 		} else {
-			cb.StartsWith(column, val)
+			cb.StartsWith(column, content)
 		}
 	case StartsWithIgnoreCase:
 		if useOr {
-			cb.OrStartsWithIgnoreCase(column, val)
+			cb.OrStartsWithIgnoreCase(column, content)
 		} else {
-			cb.StartsWithIgnoreCase(column, val)
+			cb.StartsWithIgnoreCase(column, content)
 		}
 	case NotStartsWith:
 		if useOr {
-			cb.OrNotStartsWith(column, val)
+			cb.OrNotStartsWith(column, content)
 		} else {
-			cb.NotStartsWith(column, val)
+			cb.NotStartsWith(column, content)
 		}
 	case NotStartsWithIgnoreCase:
 		if useOr {
-			cb.OrNotStartsWithIgnoreCase(column, val)
+			cb.OrNotStartsWithIgnoreCase(column, content)
 		} else {
-			cb.NotStartsWithIgnoreCase(column, val)
+			cb.NotStartsWithIgnoreCase(column, content)
 		}
 	case EndsWith:
 		if useOr {
-			cb.OrEndsWith(column, val)
+			cb.OrEndsWith(column, content)
 		} else {
-			cb.EndsWith(column, val)
+			cb.EndsWith(column, content)
 		}
 	case EndsWithIgnoreCase:
 		if useOr {
-			cb.OrEndsWithIgnoreCase(column, val)
+			cb.OrEndsWithIgnoreCase(column, content)
 		} else {
-			cb.EndsWithIgnoreCase(column, val)
+			cb.EndsWithIgnoreCase(column, content)
 		}
 	case NotEndsWith:
 		if useOr {
-			cb.OrNotEndsWith(column, val)
+			cb.OrNotEndsWith(column, content)
 		} else {
-			cb.NotEndsWith(column, val)
+			cb.NotEndsWith(column, content)
 		}
 	case NotEndsWithIgnoreCase:
 		if useOr {
-			cb.OrNotEndsWithIgnoreCase(column, val)
+			cb.OrNotEndsWithIgnoreCase(column, content)
 		} else {
-			cb.NotEndsWithIgnoreCase(column, val)
+			cb.NotEndsWithIgnoreCase(column, content)
 		}
 	}
 }

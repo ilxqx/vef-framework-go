@@ -330,7 +330,7 @@ func (suite *MergeTestSuite) TestMergePerformance() {
 	}
 
 	var sourceData []PerfTestData
-	for i := 0; i < batchSize; i++ {
+	for i := range batchSize {
 		sourceData = append(sourceData, PerfTestData{
 			Id:    fmt.Sprintf("perf_%d", i),
 			Value: int64(i * 10),
