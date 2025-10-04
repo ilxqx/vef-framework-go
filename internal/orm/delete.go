@@ -177,3 +177,7 @@ func (q *BunDeleteQuery) Exec(ctx context.Context, dest ...any) (sql.Result, err
 func (q *BunDeleteQuery) Scan(ctx context.Context, dest ...any) error {
 	return q.query.Scan(ctx, dest...)
 }
+
+func (q *BunDeleteQuery) Unwrap() *bun.DeleteQuery {
+	return q.query
+}

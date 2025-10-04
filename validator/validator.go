@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -23,6 +24,8 @@ import (
 const (
 	// tagLabel is the struct tag name for field labels
 	tagLabel = "label"
+	// tagLabelI18n is the struct tag name for internationalized field labels
+	tagLabelI18n = "label_i18n"
 )
 
 var (
@@ -70,11 +73,16 @@ func init() {
 	// Register field name function
 	validator.RegisterTagNameFunc(func(field reflect.StructField) string {
 		label := field.Tag.Get(tagLabel)
-		if lo.IsEmpty(label) {
-			return field.Name
+		if label != constants.Empty {
+			return label
 		}
 
-		return label
+		label = field.Tag.Get(tagLabelI18n)
+		if label != constants.Empty {
+			return lo.CoalesceOrEmpty(i18n.T(label), field.Name)
+		}
+
+		return field.Name
 	})
 
 	setup()

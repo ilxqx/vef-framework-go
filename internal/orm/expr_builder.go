@@ -27,8 +27,10 @@ func (b *QueryExprBuilder) Column(column string) schema.QueryAppender {
 		} else {
 			return b.Expr("?.?", bun.Name(alias), bun.Name(name))
 		}
-	} else {
+	} else if b.qb.GetTable() != nil {
 		return b.Expr("?TableAlias.?", bun.Name(column))
+	} else {
+		return b.Expr("?", bun.Name(column))
 	}
 }
 

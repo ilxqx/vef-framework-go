@@ -100,7 +100,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 	suite.True(specificRetrieved.IsActive)
 
 	// Test 4: Insert with RETURNING clause (skip for MySQL)
-	if suite.dbType != constants.DbTypeMySQL {
+	if suite.dbType != constants.DbMySQL {
 		returningUser := &User{
 			Name:     "Returning User",
 			Email:    "returning@example.com",
@@ -244,7 +244,7 @@ func (suite *InsertTestSuite) TestInsertComplexModel() {
 	}
 
 	// Only test array field for PostgreSQL
-	if suite.dbType == constants.DbTypePostgres {
+	if suite.dbType == constants.DbPostgres {
 		complexModel.ArrayField = []string{"item1", "item2", "item3"}
 	}
 

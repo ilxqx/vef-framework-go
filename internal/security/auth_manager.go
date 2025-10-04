@@ -1,8 +1,6 @@
 package security
 
 import (
-	"fmt"
-
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -27,9 +25,10 @@ func (am *AuthenticatorAuthManager) Authenticate(authentication security.Authent
 	authenticator := am.findAuthenticator(authentication.Type)
 	if authenticator == nil {
 		logger.Warnf("No authenticator found for authentication type: %s", authentication.Type)
-		return nil, result.ErrWithCode(
+		return nil, result.ErrWithCodef(
 			result.ErrCodeUnsupportedAuthenticationType,
-			fmt.Sprintf("Authentication type '%s' is not supported", authentication.Type),
+			"Authentication type '%s' is not supported",
+			authentication.Type,
 		)
 	}
 

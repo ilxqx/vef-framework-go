@@ -379,7 +379,7 @@ func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 	suite.T().Logf("Testing DELETE with RETURNING for %s", suite.dbType)
 
 	// Skip if database doesn't support RETURNING
-	if suite.dbType == constants.DbTypeMySQL {
+	if suite.dbType == constants.DbMySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 	}
 

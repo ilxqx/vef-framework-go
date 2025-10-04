@@ -4,42 +4,43 @@ import (
 	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
 const (
-	// JWT authentication type
-	AuthTypeJWT = "jwt"
+	// Token authentication type
+	AuthTypeToken = "token"
 )
 
-// JWTAuthenticator implements the Authenticator interface for JWT token authentication.
+// JWTTokenAuthenticator implements the Authenticator interface for JWT token authentication.
 // It validates JWT tokens and extracts principal information from them.
-type JWTAuthenticator struct {
+type JWTTokenAuthenticator struct {
 	jwt *security.JWT
 }
 
 // NewJWTAuthenticator creates a new JWT authenticator.
 func NewJWTAuthenticator(jwt *security.JWT) security.Authenticator {
-	return &JWTAuthenticator{
+	return &JWTTokenAuthenticator{
 		jwt: jwt,
 	}
 }
 
 // Supports checks if this authenticator can handle JWT authentication.
-func (*JWTAuthenticator) Supports(authType string) bool {
-	return authType == AuthTypeJWT
+func (*JWTTokenAuthenticator) Supports(authType string) bool {
+	return authType == AuthTypeToken
 }
 
 // Authenticate validates the JWT token and returns the principal.
 // The credentials field should contain the JWT access token.
-func (ja *JWTAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (ja *JWTTokenAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
 	// Extract the token from credentials
 	token := authentication.Principal
 	if token == constants.Empty {
 		return nil, result.ErrWithCode(
 			result.ErrCodePrincipalInvalid,
-			"令牌不能为空",
+			i18n.T("token_invalid"),
 		)
 	}
 
@@ -53,7 +54,7 @@ func (ja *JWTAuthenticator) Authenticate(authentication security.Authentication)
 	if claimsAccessor.Type() != tokenTypeAccess {
 		return nil, result.ErrWithCode(
 			result.ErrCodeTokenInvalid,
-			"非法令牌类型",
+			i18n.T("token_invalid"),
 		)
 	}
 

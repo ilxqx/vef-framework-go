@@ -11,5 +11,5 @@ var logger = log.Named("orm")
 // New creates a new Db instance that wraps the provided bun.IDB.
 // This function is used by the dependency injection system to provide Db instances.
 func New(db bun.IDB) Db {
-	return &bunDb{db: db}
+	return &BunDb{db: db}
 }

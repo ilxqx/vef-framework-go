@@ -23,11 +23,11 @@ const (
 // It consists of version, resource name, and action name.
 type Identifier struct {
 	// The version of the API endpoint
-	Version string `json:"version" validate:"required,alphanum"`
+	Version string `json:"version" form:"version" validate:"required,alphanum" label_i18n:"api_request_version"`
 	// The resource name of the API endpoint
-	Resource string `json:"resource" validate:"required,ascii"`
+	Resource string `json:"resource" form:"resource" validate:"required,ascii" label_i18n:"api_request_resource"`
 	// The action name of the API endpoint
-	Action string `json:"action" validate:"required,alphanum"`
+	Action string `json:"action" form:"action" validate:"required,alphanum" label_i18n:"api_request_action"`
 }
 
 // String returns a string representation of the identifier.
@@ -49,13 +49,17 @@ func (id Identifier) Equals(other Identifier) bool {
 		id.Version == other.Version
 }
 
+type Params map[string]any
+
+type Meta map[string]any
+
 // Request represents an API request with identifier, params, and metadata.
 type Request struct {
 	Identifier
 	// The params of the request
-	Params map[string]any `json:"params"`
+	Params Params `json:"params"`
 	// The meta of the request
-	Meta map[string]any `json:"meta"`
+	Meta Meta `json:"meta"`
 }
 
 // GetParam retrieves a value from the request param by key.
@@ -156,5 +160,5 @@ type paramsSentinel struct{}
 
 // In is a struct that can be used to inject parameters into an API handler.
 type In struct {
-	_ paramsSentinel
+	_ paramsSentinel `bun:"-"`
 }

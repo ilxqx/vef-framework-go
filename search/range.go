@@ -1,7 +1,3 @@
-// Package search provides range value parsing functionality for search conditions.
-// This file handles the extraction and parsing of range values from various data types
-// including structs, strings, and slices, with support for multiple data formats
-// like integers, decimals, dates, times, and datetimes.
 package search
 
 import (
@@ -57,10 +53,15 @@ func getRangeValue(fieldValue any, conditionParams map[string]string) (any, any,
 
 // parseStringRange parses the string range.
 func parseStringRange(value string, conditionParams map[string]string) (any, any, bool) {
+	// Skip empty strings silently
+	if value == constants.Empty {
+		return nil, nil, false
+	}
+
 	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
 	values := strings.SplitN(value, delimiter, 2)
 	if len(values) != 2 {
-		logger.Warnf("Invalid range value, expected value delimited by %s, got %v", delimiter, value)
+		logger.Warnf("Invalid range value, expected value delimited by '%s', got '%v'", delimiter, value)
 		return nil, nil, false
 	}
 
@@ -82,6 +83,10 @@ func parseStringRange(value string, conditionParams map[string]string) (any, any
 
 // parseSliceRange parses slice range values.
 func parseSliceRange(value reflect.Value) (any, any, bool) {
+	// Skip empty or nil slices silently
+	if value.Len() == 0 {
+		return nil, nil, false
+	}
 	if value.Len() != 2 {
 		logger.Warnf("Invalid range value, expected slice of length 2, got %v", value.Interface())
 		return nil, nil, false

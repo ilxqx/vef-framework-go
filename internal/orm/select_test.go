@@ -1174,7 +1174,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	suite.True(len(arrayAggResult.UniqueStatuses) > 0, "Should have unique statuses")
 
 	// Verify ordering (skip for MySQL and SQLite due to database limitations)
-	if suite.dbType != constants.DbTypeMySQL && suite.dbType != constants.DbTypeSQLite {
+	if suite.dbType != constants.DbMySQL && suite.dbType != constants.DbSQLite {
 		for i := 1; i < len(arrayAggResult.ViewCountArray); i++ {
 			suite.True(arrayAggResult.ViewCountArray[i-1] >= arrayAggResult.ViewCountArray[i],
 				"View counts should be in descending order")

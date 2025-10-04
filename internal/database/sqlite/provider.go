@@ -20,7 +20,7 @@ type provider struct {
 // NewProvider creates a new SQLite provider
 func NewProvider() *provider {
 	return &provider{
-		dbType: constants.DbTypeSQLite,
+		dbType: constants.DbSQLite,
 	}
 }
 
@@ -61,11 +61,13 @@ func (p *provider) QueryVersion(db *bun.DB) (string, error) {
 
 // buildDSN constructs SQLite Data Source Name
 func (p *provider) buildDSN(config *config.DatasourceConfig) string {
-	// If no path is specified or path is empty, use in-memory SQLite
+	// If no path is specified or path is empty, use in-memory SQLite with shared cache
+	// Using file::memory: syntax with mode=memory&cache=shared ensures the same
+	// in-memory database is accessible across multiple connections within the same process
 	if config.Path == constants.Empty {
-		return ":memory:?cache=shared&mode=memory"
+		return "file::memory:?mode=memory&cache=shared"
 	}
 
-	// Use the specified file path
-	return config.Path + "?cache=shared&mode=memory"
+	// Use the specified file path (file mode, not memory mode)
+	return "file:" + config.Path
 }

@@ -40,6 +40,27 @@ func NewDeleteAPI[TModel any](version ...string) DeleteAPI[TModel] {
 	return api.Action(ActionDelete)
 }
 
+// NewCreateManyAPI creates a new CreateManyAPI instance for batch creation.
+func NewCreateManyAPI[TModel, TParams any](version ...string) CreateManyAPI[TModel, TParams] {
+	api := new(createManyAPI[TModel, TParams])
+	api.APIBuilder = NewAPIBuilder[CreateManyAPI[TModel, TParams]](api, version...)
+	return api.Action(ActionCreateMany)
+}
+
+// NewUpdateManyAPI creates a new UpdateManyAPI instance for batch update.
+func NewUpdateManyAPI[TModel, TParams any](version ...string) UpdateManyAPI[TModel, TParams] {
+	api := new(updateManyAPI[TModel, TParams])
+	api.APIBuilder = NewAPIBuilder[UpdateManyAPI[TModel, TParams]](api, version...)
+	return api.Action(ActionUpdateMany)
+}
+
+// NewDeleteManyAPI creates a new DeleteManyAPI instance for batch deletion.
+func NewDeleteManyAPI[TModel any](version ...string) DeleteManyAPI[TModel] {
+	api := new(deleteManyAPI[TModel])
+	api.APIBuilder = NewAPIBuilder[DeleteManyAPI[TModel]](api, version...)
+	return api.Action(ActionDeleteMany)
+}
+
 func NewFindAPI[TModel, TSearch, TProcessor, TAPI any](self TAPI, version ...string) FindAPI[TModel, TSearch, TProcessor, TAPI] {
 	return &baseFindAPI[TModel, TSearch, TProcessor, TAPI]{
 		APIBuilder: NewAPIBuilder(self, version...),
@@ -109,4 +130,18 @@ func NewFindTreeOptionsAPI[TModel, TSearch any](version ...string) FindTreeOptio
 	}
 	api.FindAPI = NewFindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]](api, version...)
 	return api.Action(ActionFindTreeOptions)
+}
+
+// NewExportAPI creates a new ExportAPI instance.
+func NewExportAPI[TModel, TSearch any](version ...string) ExportAPI[TModel, TSearch] {
+	api := new(exportAPI[TModel, TSearch])
+	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, ExportAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionExport)
+}
+
+// NewImportAPI creates a new ImportAPI instance.
+func NewImportAPI[TModel, TSearch any](version ...string) ImportAPI[TModel, TSearch] {
+	api := new(importAPI[TModel, TSearch])
+	api.APIBuilder = NewAPIBuilder[ImportAPI[TModel, TSearch]](api, version...)
+	return api.Action(ActionImport)
 }

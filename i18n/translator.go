@@ -3,6 +3,7 @@ package i18n
 import (
 	"fmt"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
@@ -68,8 +69,8 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 // It attempts to localize the message using the underlying go-i18n library.
 func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (string, error) {
 	// Validate messageId is not empty
-	if messageId == "" {
-		return "", fmt.Errorf("messageId cannot be empty")
+	if messageId == constants.Empty {
+		return constants.Empty, fmt.Errorf("messageId cannot be empty")
 	}
 
 	// Extract template data if provided (only use the first map)
@@ -85,7 +86,7 @@ func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (s
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("translation failed for messageId '%s': %w", messageId, err)
+		return constants.Empty, fmt.Errorf("translation failed for messageId '%s': %w", messageId, err)
 	}
 
 	return result, nil

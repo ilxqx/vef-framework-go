@@ -7,23 +7,24 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/extractors"
 	"github.com/gofiber/fiber/v3/middleware/keyauth"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	security2 "github.com/ilxqx/vef-framework-go/internal/security"
+	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/security"
+	securityPkg "github.com/ilxqx/vef-framework-go/security"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
 // buildAuthenticationMiddleware creates a keyauth middleware for API authentication.
 // It extracts tokens from Authorization header or query parameter and validates them.
-func buildAuthenticationMiddleware(manager api.Manager, auth security.AuthManager) fiber.Handler {
+func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthManager) fiber.Handler {
 	return keyauth.New(keyauth.Config{
-		Extractor: keyauth.Chain(
-			keyauth.FromAuthHeader(fiber.HeaderAuthorization, "Bearer"),
-			keyauth.FromQuery("__accessToken"),
+		Extractor: extractors.Chain(
+			extractors.FromAuthHeader(constants.AuthSchemeBearer),
+			extractors.FromQuery(constants.QueryKeyAccessToken),
 		),
 		Next: func(ctx fiber.Ctx) bool {
 			request := contextx.APIRequest(ctx)
@@ -35,8 +36,8 @@ func buildAuthenticationMiddleware(manager api.Manager, auth security.AuthManage
 			return fiber.ErrUnauthorized
 		},
 		Validator: func(ctx fiber.Ctx, accessToken string) (bool, error) {
-			principal, err := auth.Authenticate(security.Authentication{
-				Type:      security2.AuthTypeJWT,
+			principal, err := auth.Authenticate(securityPkg.Authentication{
+				Type:      security.AuthTypeToken,
 				Principal: accessToken,
 			})
 			if err != nil {
@@ -44,6 +45,9 @@ func buildAuthenticationMiddleware(manager api.Manager, auth security.AuthManage
 			}
 
 			contextx.SetPrincipal(ctx, principal)
+			ctx.SetContext(
+				contextx.SetPrincipal(ctx.Context(), principal),
+			)
 			return true, nil
 		},
 	})
@@ -51,7 +55,7 @@ func buildAuthenticationMiddleware(manager api.Manager, auth security.AuthManage
 
 // buildOpenAPIAuthenticationMiddleware creates middleware for OpenAPI authentication.
 // It allows public endpoints to pass through and validates OpenAPI tokens for protected endpoints.
-func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth security.AuthManager) fiber.Handler {
+func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthManager) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		request := contextx.APIRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
@@ -73,8 +77,8 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth security.Aut
 		// Build credentials: "<signatureHex>@<timestamp>@<bodySha256Base64>"
 		credentials := signatureHex + constants.At + timestamp + constants.At + bodySha256Base64
 
-		principal, err := auth.Authenticate(security.Authentication{
-			Type:        security2.AuthTypeOpenAPI,
+		principal, err := auth.Authenticate(securityPkg.Authentication{
+			Type:        security.AuthTypeOpenAPI,
 			Principal:   appId,
 			Credentials: credentials,
 		})
@@ -85,7 +89,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth security.Aut
 		// Optional external app config enforcement
 		if principal != nil && principal.Details != nil {
 			switch cfg := principal.Details.(type) {
-			case security.ExternalAppConfig:
+			case securityPkg.ExternalAppConfig:
 				if !cfg.Enabled {
 					return result.ErrExternalAppDisabled
 				}
@@ -94,7 +98,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth security.Aut
 						return result.ErrIpNotAllowed
 					}
 				}
-			case *security.ExternalAppConfig:
+			case *securityPkg.ExternalAppConfig:
 				if cfg != nil {
 					if !cfg.Enabled {
 						return result.ErrExternalAppDisabled

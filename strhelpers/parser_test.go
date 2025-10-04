@@ -13,7 +13,7 @@ func TestParseTagAttrs(t *testing.T) {
 		result := ParseTagAttrs(tag)
 
 		assert.Len(t, result, 1)
-		assert.Equal(t, "required", result["default"])
+		assert.Equal(t, "required", result[TagAttrDefaultKey])
 	})
 
 	t.Run("single attribute with key", func(t *testing.T) {
@@ -31,7 +31,7 @@ func TestParseTagAttrs(t *testing.T) {
 		result := ParseTagAttrs(tag)
 
 		assert.Len(t, result, 3)
-		assert.Equal(t, "required", result["default"])
+		assert.Equal(t, "required", result[TagAttrDefaultKey])
 		assert.Equal(t, "5", result["min"])
 		assert.Equal(t, "100", result["max"])
 	})
@@ -42,7 +42,7 @@ func TestParseTagAttrs(t *testing.T) {
 		result := ParseTagAttrs(tag)
 
 		assert.Len(t, result, 3)
-		assert.Equal(t, "required", result["default"])
+		assert.Equal(t, "required", result[TagAttrDefaultKey])
 		assert.Equal(t, "5", result["min"])
 		assert.Equal(t, "100", result["max"])
 	})
@@ -61,7 +61,7 @@ func TestParseTagAttrs(t *testing.T) {
 		result := ParseTagAttrs(tag)
 
 		assert.Len(t, result, 2)
-		assert.Equal(t, "required", result["default"])
+		assert.Equal(t, "required", result[TagAttrDefaultKey])
 		assert.Equal(t, "5", result["min"])
 	})
 
@@ -72,7 +72,7 @@ func TestParseTagAttrs(t *testing.T) {
 
 		// Should only keep the first default attribute
 		assert.Len(t, result, 1)
-		assert.Equal(t, "required", result["default"])
+		assert.Equal(t, "required", result[TagAttrDefaultKey])
 	})
 
 	t.Run("attribute with empty value", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestParseTagAttrs(t *testing.T) {
 		result := ParseTagAttrs(tag)
 
 		assert.Len(t, result, 4)
-		assert.Equal(t, "required", result["default"])
+		assert.Equal(t, "required", result[TagAttrDefaultKey])
 		assert.Equal(t, "1", result["min"])
 		assert.Equal(t, "255", result["max"])
 		assert.Equal(t, "^[a-zA-Z0-9]+$", result["pattern"])
@@ -105,7 +105,7 @@ func TestParseTagArgs(t *testing.T) {
 		result := ParseTagArgs(args)
 
 		assert.Len(t, result, 1)
-		assert.Equal(t, "search", result["default"])
+		assert.Equal(t, "search", result[TagAttrDefaultKey])
 	})
 
 	t.Run("single argument with key", func(t *testing.T) {
@@ -164,7 +164,7 @@ func TestParseTagArgs(t *testing.T) {
 
 		// Should only keep the first default argument
 		assert.Len(t, result, 1)
-		assert.Equal(t, "search", result["default"])
+		assert.Equal(t, "search", result[TagAttrDefaultKey])
 	})
 
 	t.Run("args with empty value", func(t *testing.T) {

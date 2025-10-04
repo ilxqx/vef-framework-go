@@ -29,12 +29,12 @@ func (a *findOneAPI[TModel, TSearch]) findOne(ctx fiber.Ctx, db orm.Db, transfor
 	)
 
 	// Limit to 1 record for efficiency
-	if err := query.Limit(1).Scan(ctx); err != nil {
+	if err := query.Limit(1).Scan(ctx.Context()); err != nil {
 		return err
 	}
 
 	// Apply transformation to the model
-	if err := transformer.Struct(ctx, &model); err != nil {
+	if err := transformer.Struct(ctx.Context(), &model); err != nil {
 		return err
 	}
 

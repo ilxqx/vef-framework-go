@@ -55,7 +55,7 @@ func (suite *MultiDatabaseORMTestSuite) TestMySQL() {
 func (suite *MultiDatabaseORMTestSuite) TestSQLite() {
 	// Create SQLite in-memory database config
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.DbTypeSQLite,
+		Type: constants.DbSQLite,
 	}
 
 	suite.runORMTests(dsConfig)

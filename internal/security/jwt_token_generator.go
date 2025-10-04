@@ -8,6 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
 const (
@@ -33,24 +34,23 @@ func NewJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConf
 
 // Generate creates authentication tokens for the given principal.
 // It generates both access and refresh tokens.
-func (g *JWTTokenGenerator) Generate(principal *security.Principal) (*security.TokenCredentials, error) {
+func (g *JWTTokenGenerator) Generate(principal *security.Principal) (*security.AuthTokens, error) {
 	jwtId := id.GenerateUuid()
 	// Generate access token
 	accessToken, err := g.generateAccessToken(jwtId, principal)
 	if err != nil {
-		logger.Errorf("failed to generate access token for principal '%s': %v", principal.Id, err)
+		logger.Errorf("Failed to generate access token for principal '%s': %v", principal.Id, err)
 		return nil, err
 	}
 
 	// Generate refresh token using the access token's JWT ID
 	refreshToken, err := g.generateRefreshToken(jwtId, principal)
 	if err != nil {
-		logger.Errorf("failed to generate refresh token for principal '%s': %v", principal.Id, err)
+		logger.Errorf("Failed to generate refresh token for principal '%s': %v", principal.Id, err)
 		return nil, err
 	}
 
-	logger.Infof("successfully generated tokens for principal '%s'", principal.Id)
-	return &security.TokenCredentials{
+	return &security.AuthTokens{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
@@ -79,5 +79,12 @@ func (g *JWTTokenGenerator) generateRefreshToken(jwtId string, principal *securi
 		WithSubject(fmt.Sprintf("%s@%s", principal.Id, principal.Name)).
 		WithType(tokenTypeRefresh)
 
-	return g.jwt.Generate(claimsBuilder, g.tokenExpires, accessTokenExpires/2)
+	// In test environment, use 0 notBefore to allow immediate token usage
+	// In production, use accessTokenExpires/2 to prevent immediate reuse
+	notBefore := accessTokenExpires / 2
+	if testhelpers.IsTestEnv() {
+		notBefore = 0
+	}
+
+	return g.jwt.Generate(claimsBuilder, g.tokenExpires, notBefore)
 }

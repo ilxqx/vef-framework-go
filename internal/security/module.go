@@ -30,6 +30,7 @@ var Module = fx.Module(
 		// Provide JWT refresh authenticator
 		fx.Annotate(
 			NewJWTRefreshAuthenticator,
+			fx.ParamTags(``, `optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		// Provide JWT token generator
@@ -43,7 +44,7 @@ var Module = fx.Module(
 		// Provide Password authenticator (requires UserLoader implementation from user)
 		fx.Annotate(
 			NewPasswordAuthenticator,
-			fx.ParamTags(`optional:"true"`),
+			fx.ParamTags(`optional:"true"`, `optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		// Provide authentication manager
@@ -54,7 +55,6 @@ var Module = fx.Module(
 		// Provide auth resource
 		fx.Annotate(
 			NewAuthResource,
-			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),
 	),

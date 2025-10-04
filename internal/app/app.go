@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"slices"
+	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -11,39 +11,28 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/muesli/termenv"
-	"github.com/samber/lo"
 	"go.uber.org/fx"
 )
 
 var logger = log.Named("app")
 
+// App represents the VEF application server.
+// It wraps a Fiber application and manages the HTTP server lifecycle.
 type App struct {
-	app           *fiber.App
-	port          uint16
-	middlewares   []Middleware
-	apiEngine     api.Engine
-	openApiEngine api.Engine
+	app  *fiber.App
+	port uint16
 }
 
-func (a *App) Unwrap() *fiber.App {
-	return a.app
-}
-
-func (a *App) Use(middlewares ...Middleware) {
-	a.middlewares = append(a.middlewares, middlewares...)
-}
-
+// Start starts the VEF application HTTP server.
+// It returns a channel that will receive nil when the server is ready,
+// or an error if the server fails to start.
+// The server runs in a goroutine and can be stopped using the Stop method.
 func (a *App) Start() <-chan error {
 	logger.Info("Starting VEF application...")
 
 	// errChan is a buffered channel for error communication
 	errChan := make(chan error, 1)
 	go func() {
-		if err := a.configure(); err != nil {
-			errChan <- err
-			return
-		}
-
 		if err := a.app.Listen(
 			fmt.Sprintf(":%d", a.port),
 			fiber.ListenConfig{
@@ -74,64 +63,54 @@ func (a *App) Start() <-chan error {
 	return errChan
 }
 
-func (a *App) configure() error {
-	beforeMiddlewares := lo.Filter(a.middlewares, func(mid Middleware, _ int) bool { // beforeMiddlewares filters middlewares with negative order
-		return mid != nil && mid.Order() < 0
-	})
-	afterMiddlewares := lo.Filter(a.middlewares, func(mid Middleware, _ int) bool { // afterMiddlewares filters middlewares with positive order
-		return mid != nil && mid.Order() > 0
-	})
-	// SortFunc sorts before middlewares by order
-	slices.SortFunc(
-		beforeMiddlewares,
-		func(a, b Middleware) int {
-			// Sort by order ascending
-			return a.Order() - b.Order()
-		},
-	)
-	// SortFunc sorts after middlewares by order
-	slices.SortFunc(
-		afterMiddlewares,
-		func(a, b Middleware) int {
-			// Sort by order ascending
-			return a.Order() - b.Order()
-		},
-	)
-
-	for _, mid := range beforeMiddlewares {
-		logger.Infof("Applying before middleware '%s'", mid.Name())
-		mid.Apply(a.app)
-	}
-
-	a.apiEngine.Connect(a.app)
-	a.openApiEngine.Connect(a.app)
-
-	for _, mid := range afterMiddlewares {
-		logger.Infof("Applying after middleware '%s'", mid.Name())
-		mid.Apply(a.app)
-	}
-
-	return nil
-}
-
+// Stop gracefully shuts down the VEF application server.
+// It waits up to 30 seconds for active connections to close.
 func (a *App) Stop() error {
 	logger.Info("Stopping VEF application...")
 	return a.app.ShutdownWithTimeout(time.Second * 30)
 }
 
+// Test sends an HTTP request to the application for testing purposes.
+// This method is designed for unit and integration tests.
+// The optional timeout parameter specifies the maximum duration to wait for a response.
+// If no timeout is provided or timeout is zero, the default timeout is used.
+func (a *App) Test(req *http.Request, timeout ...time.Duration) (*http.Response, error) {
+	if len(timeout) > 0 && timeout[0] > 0 {
+		return a.app.Test(req, fiber.TestConfig{
+			Timeout: timeout[0],
+		})
+	}
+	return a.app.Test(req)
+}
+
+// AppParams contains all dependencies required to create a VEF application.
+// It is used with Uber FX dependency injection.
 type AppParams struct {
 	fx.In
 	Config        *config.AppConfig
-	ApiEngine     api.Engine `name:"vef:api:engine"`
-	OpenApiEngine api.Engine `name:"vef:openapi:engine"`
+	Middlewares   []Middleware `group:"vef:app:middlewares"`
+	ApiEngine     api.Engine   `name:"vef:api:engine"`
+	OpenApiEngine api.Engine   `name:"vef:openapi:engine"`
 }
 
-func New(params AppParams) *App {
+// New creates a new VEF application instance with the provided dependencies.
+// It initializes the Fiber application, applies middlewares, and registers API routes.
+// Returns an error if the application cannot be configured properly.
+func New(params AppParams) (*App, error) {
 	logger.Info("Initializing VEF application...")
-	return &App{
-		app:           createFiberApp(params.Config),
-		port:          params.Config.Port,
-		apiEngine:     params.ApiEngine,
-		openApiEngine: params.OpenApiEngine,
+
+	fiberApp, err := createFiberApp(params.Config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fiber app: %w", err)
 	}
+
+	// Configure Fiber app with middlewares and routes
+	if err := configureFiberApp(fiberApp, params.Middlewares, params.ApiEngine, params.OpenApiEngine); err != nil {
+		return nil, fmt.Errorf("failed to configure fiber app: %w", err)
+	}
+
+	return &App{
+		app:  fiberApp,
+		port: params.Config.Port,
+	}, nil
 }

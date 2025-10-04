@@ -21,10 +21,12 @@ import (
 func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
 	handler := limiter.New(limiter.Config{
 		LimiterMiddleware: limiter.SlidingWindow{},
+		// TODO: There seem to be some bugs here.
+		Max: 20,
 		MaxFunc: func(ctx fiber.Ctx) int {
 			request := contextx.APIRequest(ctx)
 			definition := manager.Lookup(request.Identifier)
-			return lo.Ternary(definition.HasRateLimit(), definition.Limit.Max, 10)
+			return lo.Ternary(definition.HasRateLimit(), definition.Limit.Max, 20)
 		},
 		Expiration: 2 * time.Minute,
 		// ExpirationFunc: func(ctx fiber.Ctx) time.Duration {

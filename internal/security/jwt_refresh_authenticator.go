@@ -4,35 +4,42 @@ import (
 	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
 const (
-	// JWT refresh authentication type
-	AuthTypeJWTRefresh = "jwt_refresh"
+	// Refresh authentication type
+	AuthTypeRefresh = "refresh"
 )
 
 type JWTRefreshAuthenticator struct {
-	jwt *security.JWT
+	jwt        *security.JWT
+	userLoader security.UserLoader
 }
 
-func NewJWTRefreshAuthenticator(jwt *security.JWT) security.Authenticator {
+func NewJWTRefreshAuthenticator(jwt *security.JWT, userLoader security.UserLoader) security.Authenticator {
 	return &JWTRefreshAuthenticator{
-		jwt: jwt,
+		jwt:        jwt,
+		userLoader: userLoader,
 	}
 }
 
 func (j *JWTRefreshAuthenticator) Supports(authType string) bool {
-	return authType == AuthTypeJWTRefresh
+	return authType == AuthTypeRefresh
 }
 
 func (j *JWTRefreshAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+	if j.userLoader == nil {
+		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("user_loader_not_implemented"))
+	}
+
 	token := authentication.Principal
 	if token == constants.Empty {
 		return nil, result.ErrWithCode(
 			result.ErrCodePrincipalInvalid,
-			"令牌不能为空",
+			i18n.T("token_invalid"),
 		)
 	}
 
@@ -46,12 +53,24 @@ func (j *JWTRefreshAuthenticator) Authenticate(authentication security.Authentic
 	if claimsAccessor.Type() != tokenTypeRefresh {
 		return nil, result.ErrWithCode(
 			result.ErrCodeTokenInvalid,
-			"非法令牌类型",
+			i18n.T("token_invalid"),
 		)
 	}
 
 	// Subject format: id@name, where '@' is defined by constants.At
 	subjectParts := strings.SplitN(claimsAccessor.Subject(), constants.At, 2)
-	principal := security.NewUser(subjectParts[0], subjectParts[1])
+	userId := subjectParts[0]
+
+	// Reload the latest user data by ID to ensure current user state (permissions, status, etc.)
+	principal, err := j.userLoader.LoadById(userId)
+	if err != nil {
+		logger.Warnf("Failed to reload user by Id '%s': %v", userId, err)
+		return nil, err
+	}
+	if principal == nil {
+		logger.Warnf("User not found by Id '%s'", userId)
+		return nil, result.ErrWithCode(result.ErrCodeRecordNotFound, i18n.T("record_not_found"))
+	}
+
 	return principal, nil
 }

@@ -51,7 +51,7 @@ func (c *createAPI[TModel, TParams]) create(ctx fiber.Ctx, db orm.Db, params TPa
 		}
 	}
 
-	return db.RunInTx(ctx, func(txCtx context.Context, tx orm.Db) error {
+	return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 		if _, err := tx.NewInsert().Model(&model).Exec(txCtx); err != nil {
 			return err
 		}

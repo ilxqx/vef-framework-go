@@ -323,3 +323,7 @@ func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) error {
 
 	return nil
 }
+
+func (q *BunUpdateQuery) Unwrap() *bun.UpdateQuery {
+	return q.query
+}

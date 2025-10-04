@@ -1,10 +1,9 @@
 package middleware
 
 import (
-	"strings"
-
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/internal/app"
+	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
 // NewContentTypeMiddleware ensures JSON or multipart content types for state-changing requests.
@@ -14,8 +13,8 @@ func NewContentTypeMiddleware() app.Middleware {
 		handler: func(ctx fiber.Ctx) error {
 			method := ctx.Method()
 			if method != fiber.MethodPost && method != fiber.MethodPut ||
-				ctx.Is("json") ||
-				strings.HasPrefix(ctx.Get(fiber.HeaderContentType), fiber.MIMEMultipartForm) {
+				webhelpers.IsJSON(ctx) ||
+				webhelpers.IsMultipart(ctx) {
 				return ctx.Next()
 			}
 

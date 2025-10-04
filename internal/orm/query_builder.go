@@ -25,6 +25,11 @@ func (b *BaseQueryBuilder) Dialect() schema.Dialect {
 	return b.dialect
 }
 
+// GetTable returns the table information for the current query.
+func (b *BaseQueryBuilder) GetTable() *schema.Table {
+	return getTableSchemaFromQuery(b.query)
+}
+
 // Query returns the query of the current query instance.
 func (b *BaseQueryBuilder) Query() bun.Query {
 	return b.query

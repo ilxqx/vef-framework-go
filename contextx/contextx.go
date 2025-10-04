@@ -15,6 +15,7 @@ type contextKey int
 
 const (
 	KeyRequest contextKey = iota
+	KeyRequestId
 	KeyPrincipal
 	KeyLogger
 	KeyDb
@@ -35,6 +36,22 @@ func SetAPIRequest(ctx context.Context, request *api.Request) context.Context {
 		return c
 	default:
 		return context.WithValue(ctx, KeyRequest, request)
+	}
+}
+
+// RequestId returns the request id from fiber context.
+func RequestId(ctx context.Context) string {
+	return ctx.Value(KeyRequestId).(string)
+}
+
+// SetRequestId stores the request id into fiber context.
+func SetRequestId(ctx context.Context, requestId string) context.Context {
+	switch c := ctx.(type) {
+	case fiber.Ctx:
+		c.Locals(KeyRequestId, requestId)
+		return c
+	default:
+		return context.WithValue(ctx, KeyRequestId, requestId)
 	}
 }
 

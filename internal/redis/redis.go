@@ -46,8 +46,8 @@ func getConnectionConfig(poolSize int) (poolTimeout, idleTimeout time.Duration, 
 
 // newRedisClient creates and configures a Redis client with lifecycle management.
 // It establishes connection, validates server info, and registers proper cleanup hooks.
-func newRedisClient(lc fx.Lifecycle, ctx context.Context, appConfig *config.AppConfig, redisConfig *config.RedisConfig) (*redis.Client, error) {
-	client := NewClient(appConfig.Name, redisConfig)
+func newRedisClient(lc fx.Lifecycle, ctx context.Context, cfg *config.RedisConfig, appCfg *config.AppConfig) (*redis.Client, error) {
+	client := NewClient(lo.CoalesceOrEmpty(appCfg.Name, constants.VEFName+"-app"), cfg)
 
 	// Register lifecycle hooks for proper startup and shutdown
 	lc.Append(
@@ -99,7 +99,7 @@ func logRedisServerInfo(ctx context.Context, client *redis.Client) error {
 // NewClient creates a new Redis client with optimized configuration.
 // It applies sensible defaults for connection pooling based on runtime environment,
 // while allowing customization through the config structure.
-func NewClient(name string, redisConfig *config.RedisConfig) *redis.Client {
+func NewClient(name string, cfg *config.RedisConfig) *redis.Client {
 	// Calculate optimal connection pool settings
 	poolSize := getPoolSize()
 	poolTimeout, idleTimeout, maxRetries := getConnectionConfig(poolSize)
@@ -108,14 +108,14 @@ func NewClient(name string, redisConfig *config.RedisConfig) *redis.Client {
 	options := &redis.Options{
 		// Basic connection settings
 		ClientName:            name,
-		IdentitySuffix:        "vef",
+		IdentitySuffix:        constants.VEFName,
 		Protocol:              3,
 		ContextTimeoutEnabled: true,
-		Network:               lo.Ternary(redisConfig.Network != constants.Empty, redisConfig.Network, "tcp"),
-		Addr:                  buildRedisAddr(redisConfig),
-		Username:              redisConfig.User,
-		Password:              redisConfig.Password,
-		DB:                    int(redisConfig.Database),
+		Network:               lo.Ternary(cfg.Network != constants.Empty, cfg.Network, "tcp"),
+		Addr:                  buildRedisAddr(cfg),
+		Username:              cfg.User,
+		Password:              cfg.Password,
+		DB:                    int(cfg.Database),
 
 		// Optimized connection pool settings
 		PoolSize:    poolSize,
@@ -145,9 +145,9 @@ func NewClient(name string, redisConfig *config.RedisConfig) *redis.Client {
 }
 
 // buildRedisAddr constructs the Redis server address from configuration.
-func buildRedisAddr(redisConfig *config.RedisConfig) string {
-	host := lo.Ternary(redisConfig.Host != constants.Empty, redisConfig.Host, "127.0.0.1")
-	port := lo.Ternary(redisConfig.Port != 0, redisConfig.Port, 6379)
+func buildRedisAddr(cfg *config.RedisConfig) string {
+	host := lo.Ternary(cfg.Host != constants.Empty, cfg.Host, "127.0.0.1")
+	port := lo.Ternary(cfg.Port != 0, cfg.Port, 6379)
 	return fmt.Sprintf("%s:%d", host, port)
 }
 

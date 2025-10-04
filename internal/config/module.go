@@ -17,6 +17,7 @@ var (
 			newSecurityConfig,
 			newRedisConfig,
 			newCacheConfig,
+			newStorageConfig,
 		),
 		fx.Invoke(func() {
 			logger.Info("Config module initialized")

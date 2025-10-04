@@ -20,6 +20,9 @@ func buildContextMiddleware(db orm.Db, transformer mold.Transformer) fiber.Handl
 
 		contextualDb := db.WithNamedArg(constants.PlaceholderKeyOperator, principal.Id)
 		contextx.SetDb(ctx, contextualDb)
+		ctx.SetContext(
+			contextx.SetDb(ctx.Context(), contextualDb),
+		)
 
 		request := contextx.APIRequest(ctx)
 		logger := contextx.Logger(ctx)
@@ -28,8 +31,18 @@ func buildContextMiddleware(db orm.Db, transformer mold.Transformer) fiber.Handl
 			logger.Named(request.Resource+constants.Colon+request.Action+constants.At+request.Version).
 				Named(string(principal.Type)+constants.Colon+principal.Id+constants.At+principal.Name),
 		)
+		ctx.SetContext(
+			contextx.SetLogger(
+				ctx.Context(),
+				logger.Named(request.Resource+constants.Colon+request.Action+constants.At+request.Version).
+					Named(string(principal.Type)+constants.Colon+principal.Id+constants.At+principal.Name),
+			),
+		)
 
 		contextx.SetTransformer(ctx, transformer)
+		ctx.SetContext(
+			contextx.SetTransformer(ctx.Context(), transformer),
+		)
 
 		return ctx.Next()
 	}

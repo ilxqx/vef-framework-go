@@ -23,7 +23,7 @@ func (r Result) ResponseWithStatus(ctx fiber.Ctx, status int) error {
 }
 
 // IsOk checks if the result is ok.
-func (r Result) IsOk(data any) bool {
+func (r Result) IsOk() bool {
 	return r.Code == OkCode
 }
 

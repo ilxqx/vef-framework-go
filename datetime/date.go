@@ -18,6 +18,11 @@ func (d Date) Unwrap() time.Time {
 	return time.Time(d)
 }
 
+// Format returns the string representation using the provided layout.
+func (d Date) Format(layout string) string {
+	return time.Time(d).Format(layout)
+}
+
 // Scan implements the sql.Scanner interface for database compatibility.
 func (d *Date) Scan(src any) error {
 	return scanTimeValue(

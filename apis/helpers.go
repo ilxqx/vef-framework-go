@@ -1,9 +1,9 @@
 package apis
 
 import (
-	"fmt"
-
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun/schema"
 )
@@ -17,7 +17,11 @@ func validateConfigFields(schema *schema.Table, fields ...struct {
 	for _, f := range fields {
 		if f.field != constants.Empty {
 			if field, _ := schema.Field(f.field); field == nil {
-				return fmt.Errorf("field '%s' specified in %s does not exist in model", f.field, f.name)
+				return result.Err(i18n.T("field_not_exist_in_model", map[string]any{
+					"field": f.field,
+					"name":  f.name,
+					"model": schema.TypeName,
+				}))
 			}
 		}
 	}

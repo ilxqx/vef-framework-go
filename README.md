@@ -468,7 +468,7 @@ func (r *userResource) SearchUsers(ctx fiber.Ctx, db orm.Db, params UserSearchPa
 
 ```go
 func (r *userResource) TransferUser(ctx fiber.Ctx, db orm.Db, params TransferParams) error {
-	return db.RunInTx(ctx, func(txCtx context.Context, tx orm.Db) error {
+	return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 		// 查询源用户
 		var fromUser models.User
 		err := tx.NewSelect().Model(&fromUser).

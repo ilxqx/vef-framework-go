@@ -22,7 +22,7 @@ type provider struct {
 // NewProvider creates a new MySQL provider
 func NewProvider() *provider {
 	return &provider{
-		dbType: constants.DbTypeMySQL,
+		dbType: constants.DbMySQL,
 	}
 }
 

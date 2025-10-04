@@ -77,8 +77,11 @@ type CategorySearch struct {
 }
 
 type EdgeCaseSearch struct {
-	// Field without search tag (should be ignored)
-	IgnoredField string
+	// Field without search tag (will use default eq)
+	NoTagField string
+
+	// Field explicitly ignored
+	IgnoredField string `search:"-"`
 
 	// Field with empty tag
 	EmptyTag string `search:""`
@@ -92,8 +95,8 @@ type EdgeCaseSearch struct {
 	// Field with params
 	WithArgs string `search:"operator=in,params=delimiter:;,type:int"`
 
-	// Field with default fallback
-	WithDefault string `search:"default=startsWith"`
+	// Field with default fallback (startsWith as default operator, no operator= specified)
+	WithDefault string `search:"startsWith"`
 
 	// Invalid dive field (should log warning)
 	InvalidDive string `search:"dive"`
@@ -102,19 +105,19 @@ type EdgeCaseSearch struct {
 func TestNew(t *testing.T) {
 	search := NewFor[SimpleSearch]()
 	assert.NotNil(t, search.conditions)
-	assert.Len(t, search.conditions, 3) // Name, Age, Active (Salary has no search tag)
+	assert.Len(t, search.conditions, 4) // Name, Age, Active, Salary (all included now)
 }
 
 func TestNewFromType(t *testing.T) {
 	search := New(reflect.TypeOf(SimpleSearch{}))
 	assert.NotNil(t, search.conditions)
-	assert.Len(t, search.conditions, 3)
+	assert.Len(t, search.conditions, 4) // All fields included now
 }
 
 func TestSimpleSearch(t *testing.T) {
 	search := NewFor[SimpleSearch]()
 
-	assert.Len(t, search.conditions, 3)
+	assert.Len(t, search.conditions, 4) // All fields included now
 
 	// Create expected conditions
 	expectedByColumn := map[string]struct {
@@ -134,6 +137,11 @@ func TestSimpleSearch(t *testing.T) {
 		},
 		"is_active": {
 			operator: Equals,
+			alias:    "",
+			params:   map[string]string{},
+		},
+		"salary": {
+			operator: Equals, // Default operator for no-tag field
 			alias:    "",
 			params:   map[string]string{},
 		},
@@ -216,15 +224,18 @@ func TestNestedSearch(t *testing.T) {
 func TestEdgeCases(t *testing.T) {
 	search := NewFor[EdgeCaseSearch]()
 
-	// Should ignore IgnoredField (no search tag) and InvalidDive (not a struct)
-	// Should process: EmptyTag, OnlyOperator, CustomAlias, WithParams, WithDefault
-	assert.Len(t, search.conditions, 5, "Should have exactly 5 conditions")
+	// Should ignore: IgnoredField (search:"-") and InvalidDive (dive on non-struct)
+	// Should process: NoTagField, EmptyTag, OnlyOperator, CustomAlias, WithParams, WithDefault
+	assert.Len(t, search.conditions, 6, "Should have exactly 6 conditions")
 
 	foundWithAlias := false
 	foundWithParams := false
 	foundDefault := false
 
-	for _, condition := range search.conditions {
+	for i, condition := range search.conditions {
+		t.Logf("Condition %d: Columns=%v, Operator=%s, Alias=%s, Params=%v",
+			i, condition.Columns, condition.Operator, condition.Alias, condition.Params)
+
 		// Check for alias
 		if condition.Alias == "t1" {
 			foundWithAlias = true
@@ -236,8 +247,9 @@ func TestEdgeCases(t *testing.T) {
 			foundWithParams = true
 		}
 
-		// Check for default operator
-		if condition.Operator == StartsWith {
+		// Check for default operator fallback
+		// WithDefault field has `search:"default=startsWith"` which means startsWith is used as default operator
+		if condition.Operator == "startsWith" {
 			foundDefault = true
 		}
 	}
@@ -352,7 +364,13 @@ func TestStructWithoutSearchTags(t *testing.T) {
 	}
 
 	search := NewFor[NoSearchTags]()
-	assert.Empty(t, search.conditions)
+	// Should have 3 conditions with default settings (eq operator, snake_case column)
+	assert.Len(t, search.conditions, 3)
+
+	// Verify all fields use default operator
+	for _, condition := range search.conditions {
+		assert.Equal(t, Equals, condition.Operator)
+	}
 }
 
 func TestDeepNestedStruct(t *testing.T) {
@@ -385,4 +403,29 @@ func TestDeepNestedStruct(t *testing.T) {
 		}
 		assert.True(t, found, "Expected column not found: %s", expectedCol)
 	}
+}
+
+// TestNoTagStruct tests struct fields without search tags
+type TestNoTagStruct struct {
+	Name   string
+	Age    int
+	Email  string
+	Status int `search:"-"` // Explicitly ignored
+}
+
+func TestSearch_NoTags(t *testing.T) {
+	search := NewFor[TestNoTagStruct]()
+
+	// Should have 3 conditions (Status is ignored)
+	assert.Len(t, search.conditions, 3)
+
+	// Verify default operator (eq) and snake_case column names
+	assert.Equal(t, Equals, search.conditions[0].Operator)
+	assert.Equal(t, []string{"name"}, search.conditions[0].Columns)
+
+	assert.Equal(t, Equals, search.conditions[1].Operator)
+	assert.Equal(t, []string{"age"}, search.conditions[1].Columns)
+
+	assert.Equal(t, Equals, search.conditions[2].Operator)
+	assert.Equal(t, []string{"email"}, search.conditions[2].Columns)
 }

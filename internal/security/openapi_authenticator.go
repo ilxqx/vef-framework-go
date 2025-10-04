@@ -2,12 +2,13 @@ package security
 
 import (
 	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/encoding"
+	"github.com/ilxqx/vef-framework-go/hash"
+	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -39,7 +40,7 @@ func (*OpenapiAuthenticator) Supports(authType string) bool { return authType ==
 // Authenticate validates the provided OpenAPI authentication information.
 func (a *OpenapiAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
 	if a.loader == nil {
-		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, "请提供一个 ExternalAppLoader 的实现")
+		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("external_app_loader_not_implemented"))
 	}
 
 	appId := authentication.Principal
@@ -55,13 +56,13 @@ func (a *OpenapiAuthenticator) Authenticate(authentication security.Authenticati
 	// credentials format: "<signatureHex>@<timestamp>@<bodySha256Base64>"
 	parts := strings.SplitN(cred, constants.At, 3)
 	if len(parts) != 3 {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, "签名格式不正确")
+		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("credentials_format_invalid"))
 	}
 	signatureHex := parts[0]
 	timestamp := parts[1]
 	bodyHash := parts[2]
 	if signatureHex == constants.Empty || timestamp == constants.Empty || bodyHash == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, "签名、时间戳或摘要不能为空")
+		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("credentials_fields_required"))
 	}
 
 	principal, secret, err := a.loader.LoadById(appId)
@@ -80,22 +81,27 @@ func (a *OpenapiAuthenticator) Authenticate(authentication security.Authenticati
 	_ = sb.WriteByte(constants.ByteNewline)
 	_, _ = sb.WriteString(bodyHash)
 
-	secretBytes, err := hex.DecodeString(secret)
+	secretBytes, err := encoding.FromHex(secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode app secret: %w", err)
 	}
 
-	mac := hmac.New(sha256.New, secretBytes)
-	_, _ = mac.Write([]byte(sb.String()))
-	expectedMac := mac.Sum(nil)
-	providedMac, err := hex.DecodeString(signatureHex)
+	// Use hash package's HMAC-SHA256 function
+	expectedSignatureHex := hash.SHA256Hmac(secretBytes, []byte(sb.String()))
+
+	// Compare signatures using constant-time comparison
+	providedMac, err := encoding.FromHex(signatureHex)
 	if err != nil {
-		return nil, result.ErrWithCode(result.ErrCodeSignatureInvalid, "签名解码失败")
+		return nil, result.ErrWithCode(result.ErrCodeSignatureInvalid, i18n.T("signature_decode_failed"))
+	}
+	expectedMac, err := encoding.FromHex(expectedSignatureHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode expected signature: %w", err)
 	}
 	if !hmac.Equal(expectedMac, providedMac) {
 		return nil, result.ErrSignatureInvalid
 	}
 
-	logger.Infof("openapi authentication successful for principal '%s'", principal.Id)
+	logger.Infof("Openapi authentication successful for principal '%s'", principal.Id)
 	return principal, nil
 }

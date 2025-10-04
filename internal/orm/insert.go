@@ -204,3 +204,7 @@ func (q *BunInsertQuery) Scan(ctx context.Context, dest ...any) error {
 
 	return nil
 }
+
+func (q *BunInsertQuery) Unwrap() *bun.InsertQuery {
+	return q.query
+}

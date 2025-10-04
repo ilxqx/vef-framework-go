@@ -177,3 +177,7 @@ func (q *BunMergeQuery) Exec(ctx context.Context, dest ...any) (sql.Result, erro
 func (q *BunMergeQuery) Scan(ctx context.Context, dest ...any) error {
 	return q.query.Scan(ctx, dest...)
 }
+
+func (q *BunMergeQuery) Unwrap() *bun.MergeQuery {
+	return q.query
+}

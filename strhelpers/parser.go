@@ -10,8 +10,8 @@ import (
 var logger = log.Named("strhelpers")
 
 const (
-	// defaultKey is the default key for tag attributes
-	defaultKey = "default"
+	// TagAttrDefaultKey is the default key for tag attributes
+	TagAttrDefaultKey = "__default"
 )
 
 // ParseTagAttrs parses the tag attributes.
@@ -25,12 +25,12 @@ func ParseTagAttrs(tag string) map[string]string {
 
 		idx := strings.IndexByte(attr, constants.ByteEquals)
 		if idx == -1 {
-			if _, ok := attrs[defaultKey]; ok {
+			if _, ok := attrs[TagAttrDefaultKey]; ok {
 				logger.Warnf("Ignoring duplicate default attribute [%s] of tag: %s", attr, tag)
 				continue
 			}
 
-			attrs[defaultKey] = attr
+			attrs[TagAttrDefaultKey] = attr
 			continue
 		}
 
@@ -51,12 +51,12 @@ func ParseTagArgs(args string) map[string]string {
 
 		idx := strings.IndexByte(kv, constants.ByteColon)
 		if idx == -1 {
-			if _, ok := kvs[defaultKey]; ok {
+			if _, ok := kvs[TagAttrDefaultKey]; ok {
 				logger.Warnf("Ignoring duplicate default key [%s] of arg: %s", kv, args)
 				continue
 			}
 
-			kvs[defaultKey] = kv
+			kvs[TagAttrDefaultKey] = kv
 			continue
 		}
 

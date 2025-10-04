@@ -229,6 +229,6 @@ type Db interface {
 	ModelPKs(model any) (map[string]any, error)
 	// ModelPKFields returns the primary key fields of a model.
 	ModelPKFields(model any) []*PKField
-	// Schema returns the schema of a table.
-	Schema(model any) *schema.Table
+	// TableOf returns the table information for a model.
+	TableOf(model any) *schema.Table
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/suite"
@@ -47,7 +48,7 @@ func (suite *RedisTestSuite) TestNewClient() {
 	// Verify client options
 	options := client.Options()
 	suite.Equal("test-app", options.ClientName)
-	suite.Equal("vef", options.IdentitySuffix)
+	suite.Equal(constants.VEFName, options.IdentitySuffix)
 	suite.Equal(3, options.Protocol)
 	suite.Equal("127.0.0.1:6379", options.Addr)
 	suite.Equal(0, options.DB)

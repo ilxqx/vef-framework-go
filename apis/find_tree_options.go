@@ -33,7 +33,7 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) DefaultConfig(config *TreeOptionsC
 
 func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
 	// Pre-compute schema information
-	schema := db.Schema((*TModel)(nil))
+	schema := db.TableOf((*TModel)(nil))
 
 	// Pre-compute whether default created_at ordering should be applied
 	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
@@ -61,7 +61,7 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 		}
 
 		// Helper function to apply field selections with proper aliasing
-		applyFieldSelections := func(query orm.SelectQuery) orm.SelectQuery {
+		applyFieldSelections := func(query orm.SelectQuery) {
 			if config.ValueField == valueField {
 				query.Select(config.ValueField)
 			} else {
@@ -94,46 +94,50 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 				}
 			}
 
-			return query
+			if config.SortField != constants.Empty {
+				query.Select(config.SortField)
+			} else if shouldApplyDefaultSort {
+				query.Select(constants.ColumnCreatedAt)
+			}
 		}
 
 		query := db.NewSelect().
 			WithRecursive("tmp_tree", func(query orm.SelectQuery) {
-				// Base query: fetch root nodes and apply filters
-				a.ConfigureQuery(query, (*TModel)(nil), search, ctx)
-				query = applyFieldSelections(query)
+				// Base query
+				a.ApplyConditions(query.Model((*TModel)(nil)), search, ctx)
+				a.ApplyRelations(query, search, ctx)
+				a.ApplyQuery(query, search, ctx)
+				applyFieldSelections(query)
 
-				// Apply sorting
-				if config.SortField != constants.Empty {
-					query.OrderBy(config.SortField)
-				} else if shouldApplyDefaultSort {
-					query.OrderBy(constants.ColumnCreatedAt)
-				}
-
-				query = query.Limit(maxOptionsLimit)
-
-				// Recursive part: fetch child nodes by joining with parent results
-				query.Union(func(query orm.SelectQuery) {
-					query = applyFieldSelections(query.Model((*TModel)(nil)))
-
-					// Apply sorting
-					if config.SortField != constants.Empty {
-						query.OrderBy(config.SortField)
-					} else if shouldApplyDefaultSort {
-						query.OrderBy(constants.ColumnCreatedAt)
-					} else if a.HasSortApplier() {
-						a.ApplySort(query, search, ctx)
-					}
-
-					query.JoinTable("tmp_tree", func(cb orm.ConditionBuilder) {
-						cb.EqualsColumn(config.IdField, dbhelpers.ColumnWithAlias(config.ParentIdField, "tt"))
-					}, "tt")
+				// Recursive part: find all ancestor nodes
+				query.UnionAll(func(query orm.SelectQuery) {
+					a.ApplyRelations(query, search, ctx)
+					a.ApplyQuery(query, search, ctx)
+					applyFieldSelections(query.Model((*TModel)(nil)))
+					query.JoinTable(
+						"tmp_tree",
+						func(cb orm.ConditionBuilder) {
+							cb.EqualsColumn(config.IdField, dbhelpers.ColumnWithAlias(config.ParentIdField, "tt"))
+						},
+						"tt",
+					)
 				})
 			}).
-			Table("tmp_tree")
+			Table("tmp_tree").
+			Distinct()
+
+		// Apply sorting
+		if config.SortField != constants.Empty {
+			query.OrderBy(config.SortField)
+		} else {
+			a.ApplySort(query, search, ctx)
+			if shouldApplyDefaultSort {
+				query.OrderBy(constants.ColumnCreatedAt)
+			}
+		}
 
 		// Execute recursive CTE query
-		if err := query.Scan(ctx, &flatOptions); err != nil {
+		if err := query.Limit(maxOptionsLimit).Scan(ctx.Context(), &flatOptions); err != nil {
 			return err
 		}
 

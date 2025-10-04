@@ -435,7 +435,7 @@ func (suite *UpdateTestSuite) TestUpdateReturning() {
 	suite.T().Logf("Testing UPDATE with RETURNING for %s", suite.dbType)
 
 	// Skip if database doesn't support RETURNING
-	if suite.dbType == constants.DbTypeMySQL {
+	if suite.dbType == constants.DbMySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 	}
 

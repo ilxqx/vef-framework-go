@@ -2,6 +2,7 @@ package mapx
 
 import (
 	"errors"
+	"mime/multipart"
 	"reflect"
 
 	"github.com/ilxqx/vef-framework-go/datetime"
@@ -68,6 +69,10 @@ var (
 
 	// null.Value
 	valueOrZeroMethodIndex int
+
+	// multipart.FileHeader
+	fileHeaderPtrType      = reflect.TypeFor[*multipart.FileHeader]()
+	fileHeaderPtrSliceType = reflect.TypeFor[[]*multipart.FileHeader]()
 )
 
 func init() {
@@ -75,8 +80,9 @@ func init() {
 	valueOrZeroMethodIndex = method.Index
 }
 
-// decodeNullBool decodes a null.Bool from a reflect.Type to a reflect.Type.
-func decodeNullBool(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullBool handles bidirectional conversion between bool types and null.Bool.
+// Supported conversions: bool -> null.Bool, *bool -> null.Bool, null.Bool -> bool, null.Bool -> *bool
+func convertNullBool(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == boolType || from == boolPtrType) && to == nullBoolType {
 		return lo.TernaryF(
 			from == boolType,
@@ -99,8 +105,9 @@ func decodeNullBool(from reflect.Type, to reflect.Type, value any) (any, error) 
 	return value, nil
 }
 
-// decodeNullString decodes a null.String from a reflect.Type to a reflect.Type.
-func decodeNullString(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullString handles bidirectional conversion between string types and null.String.
+// Supported conversions: string -> null.String, *string -> null.String, null.String -> string, null.String -> *string
+func convertNullString(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == stringType || from == stringPtrType) && to == nullStringType {
 		return lo.TernaryF(
 			from == stringType,
@@ -123,8 +130,9 @@ func decodeNullString(from reflect.Type, to reflect.Type, value any) (any, error
 	return value, nil
 }
 
-// decodeNullInt decodes a null.Int from a reflect.Type to a reflect.Type.
-func decodeNullInt(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullInt handles bidirectional conversion between int64 types and null.Int.
+// Supported conversions: int64 -> null.Int, *int64 -> null.Int, null.Int -> int64, null.Int -> *int64
+func convertNullInt(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == intType || from == intPtrType) && to == nullIntType {
 		return lo.TernaryF(
 			from == intType,
@@ -147,8 +155,9 @@ func decodeNullInt(from reflect.Type, to reflect.Type, value any) (any, error) {
 	return value, nil
 }
 
-// decodeNullInt16 decodes a null.Int16 from a reflect.Type to a reflect.Type.
-func decodeNullInt16(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullInt16 handles bidirectional conversion between int16 types and null.Int16.
+// Supported conversions: int16 -> null.Int16, *int16 -> null.Int16, null.Int16 -> int16, null.Int16 -> *int16
+func convertNullInt16(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == int16Type || from == int16PtrType) && to == nullInt16Type {
 		return lo.TernaryF(
 			from == int16Type,
@@ -171,8 +180,9 @@ func decodeNullInt16(from reflect.Type, to reflect.Type, value any) (any, error)
 	return value, nil
 }
 
-// decodeNullInt32 decodes a null.Int32 from a reflect.Type to a reflect.Type.
-func decodeNullInt32(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullInt32 handles bidirectional conversion between int32 types and null.Int32.
+// Supported conversions: int32 -> null.Int32, *int32 -> null.Int32, null.Int32 -> int32, null.Int32 -> *int32
+func convertNullInt32(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == int32Type || from == int32PtrType) && to == nullInt32Type {
 		return lo.TernaryF(
 			from == int32Type,
@@ -195,8 +205,9 @@ func decodeNullInt32(from reflect.Type, to reflect.Type, value any) (any, error)
 	return value, nil
 }
 
-// decodeNullFloat decodes a null.Float from a reflect.Type to a reflect.Type.
-func decodeNullFloat(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullFloat handles bidirectional conversion between float64 types and null.Float.
+// Supported conversions: float64 -> null.Float, *float64 -> null.Float, null.Float -> float64, null.Float -> *float64
+func convertNullFloat(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == floatType || from == floatPtrType) && to == nullFloatType {
 		return lo.TernaryF(
 			from == floatType,
@@ -219,8 +230,9 @@ func decodeNullFloat(from reflect.Type, to reflect.Type, value any) (any, error)
 	return value, nil
 }
 
-// decodeNullByte decodes a null.Byte from a reflect.Type to a reflect.Type.
-func decodeNullByte(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullByte handles bidirectional conversion between byte types and null.Byte.
+// Supported conversions: byte -> null.Byte, *byte -> null.Byte, null.Byte -> byte, null.Byte -> *byte
+func convertNullByte(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == byteType || from == bytePtrType) && to == nullByteType {
 		return lo.TernaryF(
 			from == byteType,
@@ -243,8 +255,9 @@ func decodeNullByte(from reflect.Type, to reflect.Type, value any) (any, error) 
 	return value, nil
 }
 
-// decodeNullDateTime decodes a null.DateTime from a reflect.Type to a reflect.Type.
-func decodeNullDateTime(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullDateTime handles bidirectional conversion between datetime.DateTime types and null.DateTime.
+// Supported conversions: datetime.DateTime -> null.DateTime, *datetime.DateTime -> null.DateTime, null.DateTime -> datetime.DateTime, null.DateTime -> *datetime.DateTime
+func convertNullDateTime(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == dateTimeType || from == dateTimePtrType) && to == nullDateTimeType {
 		return lo.TernaryF(
 			from == dateTimeType,
@@ -267,8 +280,9 @@ func decodeNullDateTime(from reflect.Type, to reflect.Type, value any) (any, err
 	return value, nil
 }
 
-// decodeNullDate decodes a null.Date from a reflect.Type to a reflect.Type.
-func decodeNullDate(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullDate handles bidirectional conversion between datetime.Date types and null.Date.
+// Supported conversions: datetime.Date -> null.Date, *datetime.Date -> null.Date, null.Date -> datetime.Date, null.Date -> *datetime.Date
+func convertNullDate(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == dateType || from == datePtrType) && to == nullDateType {
 		return lo.TernaryF(
 			from == dateType,
@@ -291,8 +305,9 @@ func decodeNullDate(from reflect.Type, to reflect.Type, value any) (any, error) 
 	return value, nil
 }
 
-// decodeNullTime decodes a null.Time from a reflect.Type to a reflect.Type.
-func decodeNullTime(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullTime handles bidirectional conversion between datetime.Time types and null.Time.
+// Supported conversions: datetime.Time -> null.Time, *datetime.Time -> null.Time, null.Time -> datetime.Time, null.Time -> *datetime.Time
+func convertNullTime(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == timeType || from == timePtrType) && to == nullTimeType {
 		return lo.TernaryF(
 			from == timeType,
@@ -315,8 +330,9 @@ func decodeNullTime(from reflect.Type, to reflect.Type, value any) (any, error) 
 	return value, nil
 }
 
-// decodeNullDecimal decodes a null.Decimal from a reflect.Type to a reflect.Type.
-func decodeNullDecimal(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullDecimal handles bidirectional conversion between decimal.Decimal types and null.Decimal.
+// Supported conversions: decimal.Decimal -> null.Decimal, *decimal.Decimal -> null.Decimal, null.Decimal -> decimal.Decimal, null.Decimal -> *decimal.Decimal
+func convertNullDecimal(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if (from == decimalType || from == decimalPtrType) && to == nullDecimalType {
 		return lo.TernaryF(
 			from == decimalType,
@@ -339,8 +355,9 @@ func decodeNullDecimal(from reflect.Type, to reflect.Type, value any) (any, erro
 	return value, nil
 }
 
-// decodeNullValue decodes a null.Value from a reflect.Type to a reflect.Type.
-func decodeNullValue(from reflect.Type, to reflect.Type, value any) (any, error) {
+// convertNullValue handles bidirectional conversion between any type and null.Value[T].
+// Supports converting from null.Value[T] to T using ValueOrZero(), and from T to null.Value[T] using ValueFrom().
+func convertNullValue(from reflect.Type, to reflect.Type, value any) (any, error) {
 	if isNullValue(from) {
 		// Use reflection to call ValueOrZero method on the actual value
 		method := reflect.ValueOf(value).Method(valueOrZeroMethodIndex)
@@ -372,4 +389,17 @@ func isNullValue(t reflect.Type) bool {
 	// We need to check if it starts with "Value"
 	name := t.Name()
 	return len(name) >= 5 && name[:5] == "Value"
+}
+
+// convertFileHeader handles conversion from []*multipart.FileHeader to *multipart.FileHeader.
+// Extracts the first file from a slice when converting to a single file pointer.
+func convertFileHeader(from reflect.Type, to reflect.Type, value any) (any, error) {
+	if from == fileHeaderPtrSliceType && to == fileHeaderPtrType {
+		files := value.([]*multipart.FileHeader)
+		if len(files) == 1 {
+			return files[0], nil
+		}
+	}
+
+	return value, nil
 }

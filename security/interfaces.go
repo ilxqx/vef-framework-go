@@ -1,20 +1,5 @@
 package security
 
-// TokenCredentials represents the authentication tokens for a user.
-// It contains both access token and refresh token for token-based authentication.
-type TokenCredentials struct {
-	AccessToken  string `json:"accessToken"`  // AccessToken is the short-lived access token for API requests
-	RefreshToken string `json:"refreshToken"` // RefreshToken is the long-lived token used to refresh access tokens
-}
-
-// Authentication represents the authentication information provided by a client.
-// It contains the authentication type, principal identifier, and credentials.
-type Authentication struct {
-	Type        string `json:"type"`        // Type specifies the authentication method (e.g., "password", "jwt", "oauth")
-	Principal   string `json:"principal"`   // Principal is the identifier of the entity being authenticated (e.g., username, email)
-	Credentials any    `json:"credentials"` // Credentials contains the authentication data (e.g., password, token)
-}
-
 // Authenticator defines the interface for authentication providers.
 // Each authenticator supports specific authentication types and validates credentials.
 type Authenticator interface {
@@ -30,7 +15,7 @@ type Authenticator interface {
 type TokenGenerator interface {
 	// Generate creates authentication tokens for the given principal.
 	// Returns both access and refresh tokens, or an error if generation fails.
-	Generate(principal *Principal) (*TokenCredentials, error)
+	Generate(principal *Principal) (*AuthTokens, error)
 }
 
 // AuthManager is the main entry point for authentication operations.
@@ -66,9 +51,13 @@ type ExternalAppLoader interface {
 	LoadById(id string) (*Principal, string, error)
 }
 
-// ExternalAppConfig is an optional details payload for openapi principals.
-// Users can place this config into Principal.Details for extra runtime checks.
-type ExternalAppConfig struct {
-	Enabled     bool   `json:"enabled"`     // Enabled indicates whether the external app is enabled
-	IpWhitelist string `json:"ipWhitelist"` // IpWhitelist is a comma-separated whitelist (supports IP or CIDR)
+// PasswordDecryptor defines the interface for decrypting passwords received from clients.
+// Different implementations can support various encryption algorithms (AES, RSA, SM2, SM4, etc.).
+// If no decryptor is provided, passwords are assumed to be plaintext.
+// Users should implement this interface based on their specific encryption requirements.
+type PasswordDecryptor interface {
+	// Decrypt decrypts the encrypted password string and returns the plaintext password.
+	// The encryptedPassword parameter is typically a base64-encoded or hex-encoded string.
+	// Returns an error if decryption fails (e.g., invalid format, wrong key, corrupted data).
+	Decrypt(encryptedPassword string) (string, error)
 }

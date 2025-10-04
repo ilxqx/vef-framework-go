@@ -3,6 +3,7 @@ package vef
 import (
 	"time"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/cache"
@@ -16,6 +17,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
 	"github.com/ilxqx/vef-framework-go/internal/security"
+	"github.com/ilxqx/vef-framework-go/internal/storage"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -26,7 +28,7 @@ const defaultTimeout = 30 * time.Second
 
 func newFxLogger() fxevent.Logger {
 	return &fxevent.SlogLogger{
-		Logger: log.NewSLogger("vef", 5, logPkg.LevelWarn),
+		Logger: log.NewSLogger(constants.VEFName, 5, logPkg.LevelWarn),
 	}
 }
 
@@ -34,7 +36,7 @@ func newFxLogger() fxevent.Logger {
 // It initializes all core modules and runs the application.
 func Run(options ...fx.Option) {
 	// Core framework modules in dependency order
-	frameworkOptions := []fx.Option{
+	opts := []fx.Option{
 		fx.WithLogger(newFxLogger),
 		config.Module,
 		database.Module,
@@ -47,17 +49,18 @@ func Run(options ...fx.Option) {
 		cron.Module,
 		redis.Module,
 		mold.Module,
+		storage.Module,
 		app.Module,
 	}
 
-	frameworkOptions = append(frameworkOptions, options...)
-	frameworkOptions = append(
-		frameworkOptions,
-		fx.Invoke(start),
+	opts = append(opts, options...)
+	opts = append(
+		opts,
+		fx.Invoke(startApp),
 		fx.StartTimeout(defaultTimeout),
 		fx.StopTimeout(defaultTimeout*2),
 	)
 
-	app := fx.New(frameworkOptions...)
+	app := fx.New(opts...)
 	app.Run()
 }

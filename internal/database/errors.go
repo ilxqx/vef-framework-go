@@ -54,6 +54,6 @@ func wrapVersionQueryError(dbType constants.DbType, err error) error {
 
 func newUnsupportedDbTypeError(dbType constants.DbType) error {
 	return newDatabaseError(dbType, "validation", ErrUnsupportedDBType, map[string]any{
-		"supported_types": []constants.DbType{constants.DbTypeSQLite, constants.DbTypePostgres, constants.DbTypeMySQL},
+		"supported_types": []constants.DbType{constants.DbSQLite, constants.DbPostgres, constants.DbMySQL},
 	})
 }

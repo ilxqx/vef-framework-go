@@ -1,6 +1,8 @@
 package apis
 
 import (
+	"reflect"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -8,7 +10,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/page"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/spf13/cast"
 )
 
 type findPageAPI[TModel, TSearch any] struct {
@@ -27,7 +28,7 @@ func (a *findPageAPI[TModel, TSearch]) Build(handler any) api.Spec {
 
 func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
 	// Pre-compute schema information
-	schema := db.Schema((*TModel)(nil))
+	schema := db.TableOf((*TModel)(nil))
 
 	// Pre-compute whether default created_at ordering should be applied
 	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
@@ -35,7 +36,7 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
 		var models []TModel
-		query := a.BuildQuery(db, &models, search, ctx)
+		query := a.BuildQuery(db, (*TModel)(nil), search, ctx)
 
 		// Normalize pagination parameters
 		pageable.Normalize()
@@ -46,7 +47,7 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 		}
 
 		// Execute paginated query and get total count
-		total, err := query.Paginate(pageable).ScanAndCount(ctx)
+		total, err := query.Paginate(pageable).ScanAndCount(ctx.Context(), &models)
 		if err != nil {
 			return err
 		}
@@ -54,19 +55,32 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 		if total > 0 {
 			// Apply transformation to each model
 			for _, model := range models {
-				if err := transformer.Struct(ctx, &model); err != nil {
+				if err := transformer.Struct(ctx.Context(), &model); err != nil {
 					return err
 				}
 			}
 
-			// Apply post-processing if configured and convert to interface slice for JSON serialization
-			processedData := a.Process(models, search, ctx)
-			return result.Ok(page.New(pageable, total, cast.ToSlice(processedData))).Response(ctx)
-		} else {
-			// Ensure empty slice instead of nil for consistent JSON response
-			models = make([]TModel, 0)
+			// Apply post-processing if configured
+			processedModels := a.Process(models, search, ctx)
+			if models, ok := processedModels.([]TModel); ok {
+				return result.Ok(page.New(pageable, total, models)).Response(ctx)
+			}
+
+			// Check if processor returned a slice
+			modelsValue := reflect.Indirect(reflect.ValueOf(processedModels))
+			if modelsValue.Kind() != reflect.Slice {
+				return result.Errf("processor must return a slice, got %T", processedModels)
+			}
+
+			// Convert slice to []any for page.New
+			items := make([]any, modelsValue.Len())
+			for i := range modelsValue.Len() {
+				items[i] = modelsValue.Index(i).Interface()
+			}
+			return result.Ok(page.New(pageable, total, items)).Response(ctx)
 		}
 
-		return result.Ok(page.New(pageable, total, models)).Response(ctx)
+		// Ensure empty slice instead of nil for consistent JSON response
+		return result.Ok(page.New(pageable, total, []any{})).Response(ctx)
 	}
 }

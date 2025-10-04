@@ -189,17 +189,20 @@ func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Oper
 // applyInCondition applies the in operator to the condition builder.
 func applyInCondition(cb orm.ConditionBuilder, column string, fieldValue any, operator Operator, conditionParams map[string]string) {
 	var values []any
-	switch value := fieldValue.(type) {
+
+	// Handle string types first
+	switch v := fieldValue.(type) {
 	case string:
-		values = parseStringInCondition(value, conditionParams)
+		values = parseStringInCondition(v, conditionParams)
 	case *string:
-		values = parseStringInCondition(*value, conditionParams)
+		values = parseStringInCondition(*v, conditionParams)
 	}
 
-	value := reflect.Indirect(reflect.ValueOf(fieldValue))
-	if value.Kind() == reflect.Slice {
-		for i := range value.Len() {
-			values = append(values, value.Index(i).Interface())
+	// Handle slice types
+	rv := reflect.Indirect(reflect.ValueOf(fieldValue))
+	if rv.Kind() == reflect.Slice {
+		for i := range rv.Len() {
+			values = append(values, rv.Index(i).Interface())
 		}
 	}
 

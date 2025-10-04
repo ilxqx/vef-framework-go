@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -27,6 +28,8 @@ type APIBuilder[T any] interface {
 	Build(handler any) api.Spec
 }
 
+// CreateAPI provides a fluent interface for building create endpoints.
+// Supports pre/post processing hooks and transaction-based model creation.
 type CreateAPI[TModel, TParams any] interface {
 	api.Provider
 	APIBuilder[CreateAPI[TModel, TParams]]
@@ -39,6 +42,8 @@ type CreateAPI[TModel, TParams any] interface {
 	PostCreate(processor PostCreateProcessor[TModel, TParams]) CreateAPI[TModel, TParams]
 }
 
+// UpdateAPI provides a fluent interface for building update endpoints.
+// Loads existing model, merges changes, and supports pre/post processing hooks.
 type UpdateAPI[TModel, TParams any] interface {
 	api.Provider
 	APIBuilder[UpdateAPI[TModel, TParams]]
@@ -51,6 +56,8 @@ type UpdateAPI[TModel, TParams any] interface {
 	PostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateAPI[TModel, TParams]
 }
 
+// DeleteAPI provides a fluent interface for building delete endpoints.
+// Validates primary key, loads model, and supports pre/post processing hooks.
 type DeleteAPI[TModel any] interface {
 	api.Provider
 	APIBuilder[DeleteAPI[TModel]]
@@ -63,6 +70,50 @@ type DeleteAPI[TModel any] interface {
 	PostDelete(processor PostDeleteProcessor[TModel]) DeleteAPI[TModel]
 }
 
+// CreateManyAPI provides a fluent interface for building batch create endpoints.
+// Creates multiple models atomically in a single transaction with pre/post hooks.
+type CreateManyAPI[TModel, TParams any] interface {
+	api.Provider
+	APIBuilder[CreateManyAPI[TModel, TParams]]
+
+	// PreCreateMany sets the pre-create processor for batch creation.
+	// This processor is called before the models are saved to the database.
+	PreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyAPI[TModel, TParams]
+	// PostCreateMany sets the post-create processor for batch creation.
+	// This processor is called after the models are successfully saved within the same transaction.
+	PostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyAPI[TModel, TParams]
+}
+
+// UpdateManyAPI provides a fluent interface for building batch update endpoints.
+// Updates multiple models atomically with validation, merge, and pre/post hooks.
+type UpdateManyAPI[TModel, TParams any] interface {
+	api.Provider
+	APIBuilder[UpdateManyAPI[TModel, TParams]]
+
+	// PreUpdateMany sets the pre-update processor for batch update.
+	// This processor is called before the models are updated in the database.
+	PreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyAPI[TModel, TParams]
+	// PostUpdateMany sets the post-update processor for batch update.
+	// This processor is called after the models are successfully updated within the same transaction.
+	PostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyAPI[TModel, TParams]
+}
+
+// DeleteManyAPI provides a fluent interface for building batch delete endpoints.
+// Deletes multiple models atomically with validation and pre/post hooks.
+type DeleteManyAPI[TModel any] interface {
+	api.Provider
+	APIBuilder[DeleteManyAPI[TModel]]
+
+	// PreDeleteMany sets the pre-delete processor for batch deletion.
+	// This processor is called before the models are deleted from the database.
+	PreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyAPI[TModel]
+	// PostDeleteMany sets the post-delete processor for batch deletion.
+	// This processor is called after the models are successfully deleted within the same transaction.
+	PostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyAPI[TModel]
+}
+
+// FindAPI provides a fluent interface for building find endpoints.
+// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
 type FindAPI[TModel, TSearch, TProcessorIn, TAPI any] interface {
 	APIBuilder[TAPI]
 
@@ -89,21 +140,29 @@ type FindAPI[TModel, TSearch, TProcessorIn, TAPI any] interface {
 	HasSortApplier() bool
 }
 
+// FindOneAPI provides a fluent interface for building find one endpoints.
+// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
 type FindOneAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, TModel, FindOneAPI[TModel, TSearch]]
 }
 
+// FindAllAPI provides a fluent interface for building find all endpoints.
+// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
 type FindAllAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []TModel, FindAllAPI[TModel, TSearch]]
 }
 
+// FindPageAPI provides a fluent interface for building find page endpoints.
+// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
 type FindPageAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []TModel, FindPageAPI[TModel, TSearch]]
 }
 
+// FindTreeAPI provides a fluent interface for building find tree endpoints.
+// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
 type FindTreeAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]]
@@ -116,6 +175,9 @@ type FindTreeAPI[TModel, TSearch any] interface {
 	ParentIdField(name string) FindTreeAPI[TModel, TSearch]
 }
 
+// FindOptionsAPI provides a fluent interface for building find options endpoints.
+// Supports custom query modifications, search conditions, filtering, and post-processing.
+// Note: sorting is controlled by OptionsConfig.SortField, not by SortApplier.
 type FindOptionsAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]]
@@ -125,6 +187,9 @@ type FindOptionsAPI[TModel, TSearch any] interface {
 	DefaultConfig(config *OptionsConfig) FindOptionsAPI[TModel, TSearch]
 }
 
+// FindTreeOptionsAPI provides a fluent interface for building find tree options endpoints.
+// Supports custom query modifications, search conditions, filtering, and post-processing.
+// Note: sorting is primarily controlled by TreeOptionsConfig.SortField; SortApplier is used only when SortField is empty.
 type FindTreeOptionsAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]]
@@ -132,4 +197,32 @@ type FindTreeOptionsAPI[TModel, TSearch any] interface {
 	// DefaultConfig sets the default configuration for tree options queries.
 	// This configuration provides fallback values for field mapping when not explicitly specified in queries.
 	DefaultConfig(config *TreeOptionsConfig) FindTreeOptionsAPI[TModel, TSearch]
+}
+
+// ExportAPI provides a fluent interface for building export endpoints.
+// Queries data based on search conditions and exports to Excel file.
+type ExportAPI[TModel, TSearch any] interface {
+	api.Provider
+	FindAPI[TModel, TSearch, []TModel, ExportAPI[TModel, TSearch]]
+
+	// ExportOptions sets Excel exporter configuration options.
+	ExportOptions(opts ...excel.ExportOption) ExportAPI[TModel, TSearch]
+	// PreExport sets a processor to modify data before exporting.
+	PreExport(processor PreExportProcessor[TModel, TSearch]) ExportAPI[TModel, TSearch]
+	// FilenameBuilder sets a function to generate the export filename dynamically.
+	FilenameBuilder(builder FilenameBuilder[TSearch]) ExportAPI[TModel, TSearch]
+}
+
+// ImportAPI provides a fluent interface for building import endpoints.
+// Parses uploaded Excel file and creates records in database.
+type ImportAPI[TModel, TSearch any] interface {
+	api.Provider
+	APIBuilder[ImportAPI[TModel, TSearch]]
+
+	// ImportOptions sets Excel importer configuration options.
+	ImportOptions(opts ...excel.ImportOption) ImportAPI[TModel, TSearch]
+	// PreImport sets a processor to validate or modify data before saving.
+	PreImport(processor PreImportProcessor[TModel, TSearch]) ImportAPI[TModel, TSearch]
+	// PostImport sets a processor to perform additional actions after import.
+	PostImport(processor PostImportProcessor[TModel, TSearch]) ImportAPI[TModel, TSearch]
 }

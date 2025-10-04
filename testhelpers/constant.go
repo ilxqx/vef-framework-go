@@ -10,6 +10,8 @@ const (
 	MySQLImage = "mysql:lts"
 	// RedisImage is the default Redis test container image
 	RedisImage = "redis:8-alpine"
+	// MinIOImage is the default MinIO test container image
+	MinIOImage = "minio/minio:latest"
 )
 
 // Test database configuration constants
@@ -20,6 +22,16 @@ const (
 	TestUsername = "testuser"
 	// TestPassword is the default test database password
 	TestPassword = "testpass"
+)
+
+// Test MinIO configuration constants
+const (
+	// TestMinIOAccessKey is the default MinIO access key
+	TestMinIOAccessKey = "testadmin"
+	// TestMinIOSecretKey is the default MinIO secret key
+	TestMinIOSecretKey = "testadmin"
+	// TestMinioBucket is the default test bucket name
+	TestMinioBucket = "testbucket"
 )
 
 // Test timeout constants

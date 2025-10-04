@@ -29,6 +29,7 @@ go.work.sum
 
 .claude/
 .mcp.json
+CLAUDE.md
 
 # shell scripts
 *.sh

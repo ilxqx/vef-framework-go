@@ -4,11 +4,14 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/strhelpers"
 	"github.com/samber/lo"
 )
+
+var apiInType = reflect.TypeFor[api.In]()
 
 // New creates a Search instance by parsing struct fields with search tags from the given reflect.Type.
 // Returns an empty Search if the type is not a struct.
@@ -34,7 +37,19 @@ func parseStruct(t reflect.Type) []Condition {
 
 	visitor := reflectx.TypeVisitor{
 		VisitFieldType: func(field reflect.StructField, depth int) reflectx.VisitAction {
-			if tag, ok := field.Tag.Lookup(TagSearch); ok {
+			if field.Anonymous && field.Type == apiInType {
+				return reflectx.SkipChildren
+			}
+
+			tag, hasTag := field.Tag.Lookup(TagSearch)
+
+			// If has tag, parse it
+			if hasTag {
+				// Skip ignored fields (search:"-")
+				if tag == IgnoreField {
+					return reflectx.SkipChildren
+				}
+
 				// Skip dive fields - visitor will handle recursion automatically
 				if tag == AttrDive {
 					return reflectx.Continue
@@ -43,6 +58,9 @@ func parseStruct(t reflect.Type) []Condition {
 				attrs := strhelpers.ParseTagAttrs(tag)
 				// Handle regular search fields
 				conditions = append(conditions, buildCondition(field, attrs))
+			} else {
+				// No tag: use default configuration (eq operator with snake_case column name)
+				conditions = append(conditions, buildCondition(field, make(map[string]string)))
 			}
 
 			return reflectx.SkipChildren
@@ -72,11 +90,7 @@ func buildCondition(field reflect.StructField, attrs map[string]string) Conditio
 
 	operator := attrs[AttrOperator]
 	if operator == constants.Empty {
-		if defaultOp := attrs[AttrDefault]; defaultOp != constants.Empty {
-			operator = defaultOp
-		} else {
-			operator = string(Equals)
-		}
+		operator = lo.CoalesceOrEmpty(attrs[strhelpers.TagAttrDefaultKey], string(Equals))
 	}
 
 	return Condition{

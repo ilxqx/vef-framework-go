@@ -25,7 +25,7 @@ func (a *findOptionsAPI[TModel, TSearch]) DefaultConfig(config *OptionsConfig) F
 
 func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config OptionsConfig, search TSearch) error {
 	// Pre-compute schema information
-	schema := db.Schema((*TModel)(nil))
+	schema := db.TableOf((*TModel)(nil))
 
 	// Pre-compute whether default created_at ordering should be applied
 	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
@@ -70,8 +70,13 @@ func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) func(ctx fiber.
 		}
 
 		// Execute query with limit
-		if err := query.Limit(maxOptionsLimit).Scan(ctx, &options); err != nil {
+		if err := query.Limit(maxOptionsLimit).Scan(ctx.Context(), &options); err != nil {
 			return err
+		}
+
+		// Ensure empty slice instead of nil for consistent JSON response
+		if options == nil {
+			options = []Option{}
 		}
 
 		return result.Ok(a.Process(options, search, ctx)).Response(ctx)

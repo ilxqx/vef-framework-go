@@ -14,7 +14,7 @@ type MergeTestSuite struct {
 
 // TestBasicMerge tests basic MERGE functionality
 func (suite *MergeTestSuite) TestBasicMerge() {
-	if suite.dbType != constants.DbTypePostgres {
+	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 	suite.T().Logf("Testing basic MERGE for %s", suite.dbType)
@@ -74,7 +74,7 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 
 // TestMergeWithConditions tests MERGE with conditional operations
 func (suite *MergeTestSuite) TestMergeWithConditions() {
-	if suite.dbType != constants.DbTypePostgres {
+	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 	suite.T().Logf("Testing MERGE with conditions for %s", suite.dbType)
@@ -127,7 +127,7 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 
 // TestMergeWithDelete tests MERGE operations that include DELETE
 func (suite *MergeTestSuite) TestMergeWithDelete() {
-	if suite.dbType != constants.DbTypePostgres {
+	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 	suite.T().Logf("Testing MERGE with DELETE for %s", suite.dbType)
@@ -210,7 +210,7 @@ func (suite *MergeTestSuite) TestMergeWithDelete() {
 
 // TestMergeWithSubquerySource tests MERGE using subquery as source
 func (suite *MergeTestSuite) TestMergeWithSubquerySource() {
-	if suite.dbType != constants.DbTypePostgres {
+	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 	suite.T().Logf("Testing MERGE with subquery source for %s", suite.dbType)
@@ -268,7 +268,7 @@ func (suite *MergeTestSuite) TestMergeWithSubquerySource() {
 
 // TestMergeWithExpressions tests MERGE with complex expressions
 func (suite *MergeTestSuite) TestMergeWithExpressions() {
-	if suite.dbType != constants.DbTypePostgres {
+	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 	suite.T().Logf("Testing MERGE with expressions for %s", suite.dbType)
@@ -311,7 +311,7 @@ func (suite *MergeTestSuite) TestMergeWithExpressions() {
 
 // TestMergePerformance tests MERGE performance with datasets
 func (suite *MergeTestSuite) TestMergePerformance() {
-	if suite.dbType != constants.DbTypePostgres {
+	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 	suite.T().Logf("Testing MERGE performance for %s", suite.dbType)
@@ -379,7 +379,7 @@ func (suite *MergeTestSuite) TestMergePerformance() {
 
 // TestMergeWithReturning tests MERGE with RETURNING clause
 func (suite *MergeTestSuite) TestMergeWithReturning() {
-	if suite.dbType != constants.DbTypePostgres {
+	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 	suite.T().Logf("Testing MERGE with RETURNING for %s", suite.dbType)

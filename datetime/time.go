@@ -18,6 +18,11 @@ func (t Time) Unwrap() time.Time {
 	return time.Time(t)
 }
 
+// Format returns the string representation using the provided layout.
+func (t Time) Format(layout string) string {
+	return time.Time(t).Format(layout)
+}
+
 // Scan implements the sql.Scanner interface for database compatibility.
 func (t *Time) Scan(src any) error {
 	return scanTimeValue(src, func(s string) (any, error) {

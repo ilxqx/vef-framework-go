@@ -25,7 +25,7 @@ func (a *findAllAPI[TModel, TSearch]) Build(handler any) api.Spec {
 
 func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 	// Pre-compute schema information
-	schema := db.Schema((*TModel)(nil))
+	schema := db.TableOf((*TModel)(nil))
 
 	// Pre-compute whether default ordering should be applied
 	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
@@ -41,14 +41,14 @@ func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) func(ctx fiber.Ctx, db 
 		}
 
 		// Execute query with safety limit
-		if err := query.Limit(maxQueryLimit).Scan(ctx); err != nil {
+		if err := query.Limit(maxQueryLimit).Scan(ctx.Context()); err != nil {
 			return err
 		}
 
 		if len(models) > 0 {
 			// Apply transformation to each model
 			for _, model := range models {
-				if err := transformer.Struct(ctx, &model); err != nil {
+				if err := transformer.Struct(ctx.Context(), &model); err != nil {
 					return err
 				}
 			}

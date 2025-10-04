@@ -4,7 +4,7 @@ import "github.com/ilxqx/vef-framework-go/datetime"
 
 // ModelPK is the primary key of the model.
 type ModelPK struct {
-	Id string `json:"id" bun:",pk"` // Id is the id of the model
+	Id string `json:"id" bun:",pk"`
 }
 
 // Model is the base model for all models.

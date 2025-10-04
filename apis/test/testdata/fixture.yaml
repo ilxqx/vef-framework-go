@@ -1,0 +1,341 @@
+- model: TestUser
+  rows:
+    - id: user001
+      name: Alice Johnson
+      email: alice@example.com
+      age: 25
+      status: active
+      description: Software Engineer
+      created_at: '2025-01-01 10:00:00'
+      created_by: test
+      updated_at: '2025-01-01 10:00:00'
+      updated_by: test
+
+    - id: user002
+      name: Bob Smith
+      email: bob@example.com
+      age: 30
+      status: active
+      description: Product Manager
+      created_at: '2025-01-01 10:01:00'
+      created_by: test
+      updated_at: '2025-01-01 10:01:00'
+      updated_by: test
+
+    - id: user003
+      name: Charlie Brown
+      email: charlie@example.com
+      age: 28
+      status: inactive
+      description: Designer
+      created_at: '2025-01-01 10:02:00'
+      created_by: test
+      updated_at: '2025-01-01 10:02:00'
+      updated_by: test
+
+    - id: user004
+      name: Diana Prince
+      email: diana@example.com
+      age: 32
+      status: active
+      description: Marketing Specialist
+      created_at: '2025-01-01 10:03:00'
+      created_by: test
+      updated_at: '2025-01-01 10:03:00'
+      updated_by: test
+
+    - id: user005
+      name: Eve Wilson
+      email: eve@example.com
+      age: 27
+      status: active
+      description: Data Analyst
+      created_at: '2025-01-01 10:04:00'
+      created_by: test
+      updated_at: '2025-01-01 10:04:00'
+      updated_by: test
+
+    - id: user006
+      name: Frank Miller
+      email: frank@example.com
+      age: 35
+      status: inactive
+      description: Sales Manager
+      created_at: '2025-01-01 10:05:00'
+      created_by: test
+      updated_at: '2025-01-01 10:05:00'
+      updated_by: test
+
+    - id: user007
+      name: Grace Lee
+      email: grace@example.com
+      age: 29
+      status: active
+      description: UX Researcher
+      created_at: '2025-01-01 10:06:00'
+      created_by: test
+      updated_at: '2025-01-01 10:06:00'
+      updated_by: test
+
+    - id: user008
+      name: Henry Davis
+      email: henry@example.com
+      age: 31
+      status: active
+      description: DevOps Engineer
+      created_at: '2025-01-01 10:07:00'
+      created_by: test
+      updated_at: '2025-01-01 10:07:00'
+      updated_by: test
+
+    - id: user009
+      name: Ivy Chen
+      email: ivy@example.com
+      age: 26
+      status: inactive
+      description: QA Engineer
+      created_at: '2025-01-01 10:08:00'
+      created_by: test
+      updated_at: '2025-01-01 10:08:00'
+      updated_by: test
+
+    - id: user010
+      name: Jack Taylor
+      email: jack@example.com
+      age: 33
+      status: active
+      description: Team Lead
+      created_at: '2025-01-01 10:09:00'
+      created_by: test
+      updated_at: '2025-01-01 10:09:00'
+      updated_by: test
+
+- model: TestCategory
+  rows:
+    # Root categories (created first, so earliest timestamps)
+    - id: cat001
+      name: Electronics
+      code: electronics
+      description: Electronic products
+      sort: 1
+      created_at: '2025-01-01 09:00:00'
+      created_by: test
+      updated_at: '2025-01-01 09:00:00'
+      updated_by: test
+
+    - id: cat002
+      name: Books
+      code: books
+      description: Books and publications
+      sort: 2
+      created_at: '2025-01-01 09:01:00'
+      created_by: test
+      updated_at: '2025-01-01 09:01:00'
+      updated_by: test
+
+    - id: cat003
+      name: Clothing
+      code: clothing
+      description: Clothing and apparel
+      sort: 3
+      created_at: '2025-01-01 09:02:00'
+      created_by: test
+      updated_at: '2025-01-01 09:02:00'
+      updated_by: test
+
+    # Electronics children
+    - id: cat004
+      name: Computers
+      code: computers
+      description: Computers and accessories
+      parent_id: cat001
+      sort: 1
+      created_at: '2025-01-01 09:03:00'
+      created_by: test
+      updated_at: '2025-01-01 09:03:00'
+      updated_by: test
+
+    - id: cat005
+      name: Phones
+      code: phones
+      description: Mobile phones
+      parent_id: cat001
+      sort: 2
+      created_at: '2025-01-01 09:04:00'
+      created_by: test
+      updated_at: '2025-01-01 09:04:00'
+      updated_by: test
+
+    # Computers children
+    - id: cat006
+      name: Laptops
+      code: laptops
+      description: Laptop computers
+      parent_id: cat004
+      sort: 1
+      created_at: '2025-01-01 09:05:00'
+      created_by: test
+      updated_at: '2025-01-01 09:05:00'
+      updated_by: test
+
+    - id: cat007
+      name: Desktops
+      code: desktops
+      description: Desktop computers
+      parent_id: cat004
+      sort: 2
+      created_at: '2025-01-01 09:06:00'
+      created_by: test
+      updated_at: '2025-01-01 09:06:00'
+      updated_by: test
+
+    # Books children
+    - id: cat008
+      name: Fiction
+      code: fiction
+      description: Fiction books
+      parent_id: cat002
+      sort: 1
+      created_at: '2025-01-01 09:07:00'
+      created_by: test
+      updated_at: '2025-01-01 09:07:00'
+      updated_by: test
+
+    - id: cat009
+      name: Non-Fiction
+      code: nonfiction
+      description: Non-fiction books
+      parent_id: cat002
+      sort: 2
+      created_at: '2025-01-01 09:08:00'
+      created_by: test
+      updated_at: '2025-01-01 09:08:00'
+      updated_by: test
+
+    # Clothing children
+    - id: cat010
+      name: Men
+      code: men
+      description: Men's clothing
+      parent_id: cat003
+      sort: 1
+      created_at: '2025-01-01 09:09:00'
+      created_by: test
+      updated_at: '2025-01-01 09:09:00'
+      updated_by: test
+
+    - id: cat011
+      name: Women
+      code: women
+      description: Women's clothing
+      parent_id: cat003
+      sort: 2
+      created_at: '2025-01-01 09:10:00'
+      created_by: test
+      updated_at: '2025-01-01 09:10:00'
+      updated_by: test
+
+- model: TestCompositePKItem
+  rows:
+    - tenant_id: tenant001
+      item_code: item001
+      name: Item A
+      quantity: 10
+      status: active
+      created_at: '2025-01-01 10:00:00'
+      created_by: test
+
+    - tenant_id: tenant001
+      item_code: item002
+      name: Item B
+      quantity: 20
+      status: active
+      created_at: '2025-01-01 10:01:00'
+      created_by: test
+
+    - tenant_id: tenant002
+      item_code: item001
+      name: Item C
+      quantity: 15
+      status: active
+      created_at: '2025-01-01 10:02:00'
+      created_by: test
+
+    - tenant_id: tenant002
+      item_code: item002
+      name: Item D
+      quantity: 25
+      status: inactive
+      created_at: '2025-01-01 10:03:00'
+      created_by: test
+
+    - tenant_id: tenant003
+      item_code: item001
+      name: Item E
+      quantity: 30
+      status: active
+      created_at: '2025-01-01 10:04:00'
+      created_by: test
+
+- model: ExportUser
+  rows:
+    - id: export001
+      name: Export Alice
+      email: export_alice@example.com
+      age: 28
+      status: active
+      created_at: '2025-01-01 11:00:00'
+      created_by: test
+      updated_at: '2025-01-01 11:00:00'
+      updated_by: test
+
+    - id: export002
+      name: Export Bob
+      email: export_bob@example.com
+      age: 35
+      status: active
+      created_at: '2025-01-01 11:01:00'
+      created_by: test
+      updated_at: '2025-01-01 11:01:00'
+      updated_by: test
+
+    - id: export003
+      name: Export Charlie
+      email: export_charlie@example.com
+      age: 30
+      status: inactive
+      created_at: '2025-01-01 11:02:00'
+      created_by: test
+      updated_at: '2025-01-01 11:02:00'
+      updated_by: test
+
+    - id: export004
+      name: Export Diana
+      email: export_diana@example.com
+      age: 27
+      status: active
+      created_at: '2025-01-01 11:03:00'
+      created_by: test
+      updated_at: '2025-01-01 11:03:00'
+      updated_by: test
+
+    - id: export005
+      name: Export Eve
+      email: export_eve@example.com
+      age: 32
+      status: active
+      created_at: '2025-01-01 11:04:00'
+      created_by: test
+      updated_at: '2025-01-01 11:04:00'
+      updated_by: test
+
+- model: ImportUser
+  rows:
+    - name: Import Alice
+      email: import_alice@example.com
+      age: 28
+      status: active
+      created_at: '2025-01-01 12:00:00'
+      created_by: test
+      updated_at: '2025-01-01 12:00:00'
+      updated_by: test

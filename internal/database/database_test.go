@@ -47,7 +47,7 @@ func (suite *DatabaseTestSuite) TearDownSuite() {
 func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 	// Use in-memory SQLite (no path specified)
 	config := &config.DatasourceConfig{
-		Type: constants.DbTypeSQLite,
+		Type: constants.DbSQLite,
 	}
 
 	// Test basic connection
@@ -66,7 +66,7 @@ func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 	// Use in-memory SQLite with custom options
 	config := &config.DatasourceConfig{
-		Type: constants.DbTypeSQLite,
+		Type: constants.DbSQLite,
 	}
 
 	// Test with custom options
@@ -133,7 +133,7 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 // TestSQLiteInMemoryMode tests SQLite in-memory mode
 func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 	config := &config.DatasourceConfig{
-		Type: constants.DbTypeSQLite,
+		Type: constants.DbSQLite,
 		// No Path specified - should use in-memory mode
 	}
 
@@ -162,7 +162,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 	}
 
 	config := &config.DatasourceConfig{
-		Type: constants.DbTypeSQLite,
+		Type: constants.DbSQLite,
 		Path: tempFile.Name(),
 	}
 
@@ -179,7 +179,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 // TestMySQLValidation tests MySQL configuration validation
 func (suite *DatabaseTestSuite) TestMySQLValidation() {
 	config := &config.DatasourceConfig{
-		Type: constants.DbTypeMySQL,
+		Type: constants.DbMySQL,
 		Host: "localhost",
 		Port: 3306,
 		User: "root",
@@ -196,7 +196,7 @@ func (suite *DatabaseTestSuite) TestMySQLValidation() {
 func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	// Use in-memory SQLite for connection pool testing
 	config := &config.DatasourceConfig{
-		Type: constants.DbTypeSQLite,
+		Type: constants.DbSQLite,
 		// Path is empty, so it will use in-memory mode
 	}
 

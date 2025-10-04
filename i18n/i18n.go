@@ -1,32 +1,3 @@
-// Package i18n provides internationalization (i18n) support for the VEF framework.
-// This package has been refactored to remove container dependency injection and instead
-// relies on environment variables for configuration, making it more lightweight and portable.
-//
-// Key Features:
-//   - Embedded locale files for distribution as a single binary
-//   - Environment variable-based configuration (no DI container required)
-//   - Support for multiple languages with fallback behavior
-//   - Graceful error handling with fallback to message IDs
-//   - Global convenience functions for easy usage
-//
-// Usage:
-//
-//	import "github.com/ilxqx/vef-framework-go/i18n"
-//
-//	// Simple translation
-//	msg := i18n.T("user_welcome")
-//
-//	// Translation with template data
-//	msg := i18n.T("user_greeting", map[string]any{"name": "John"})
-//
-//	// Translation with error handling
-//	msg, err := i18n.TE("critical_message")
-//	if err != nil { /* handle error */ }
-//
-// Configuration:
-//
-//	The preferred language is configured via the VEF_I18N_LANGUAGE environment variable.
-//	If not set, defaults to "zh-CN" (Simplified Chinese).
 package i18n
 
 import (

@@ -44,7 +44,7 @@ func (d *deleteAPI[TModel]) PostDelete(processor PostDeleteProcessor[TModel]) De
 
 func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) error, error) {
 	// Pre-compute schema information
-	schema := db.Schema((*TModel)(nil))
+	schema := db.TableOf((*TModel)(nil))
 	// Pre-compute primary key fields
 	pks := db.ModelPKFields((*TModel)(nil))
 
@@ -73,7 +73,7 @@ func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 		}
 
 		// Load the existing model
-		if err := db.NewSelect().Model(&model).WherePK().Scan(ctx, &model); err != nil {
+		if err := db.NewSelect().Model(&model).WherePK().Scan(ctx.Context(), &model); err != nil {
 			return err
 		}
 
@@ -85,7 +85,7 @@ func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 		}
 
 		// Execute delete operation within transaction
-		return db.RunInTx(ctx, func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 			if _, err := tx.NewDelete().Model(&model).WherePK().Exec(txCtx); err != nil {
 				return err
 			}

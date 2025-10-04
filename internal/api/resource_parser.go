@@ -251,19 +251,22 @@ func checkHandlerMethod(method reflect.Type) error {
 
 // isHandlerFactory checks if a method is a handler factory function.
 // A handler factory has one of these signatures:
-//   - func(orm.Db) func(...) [error]       // returns handler
-//   - func(orm.Db) (func(...) [error], error)  // returns handler and error
+//   - func() func(...) [error]                 // returns handler (no parameters)
+//   - func() (func(...) [error], error)        // returns handler and error (no parameters)
+//   - func(orm.Db) func(...) [error]           // returns handler (with db parameter)
+//   - func(orm.Db) (func(...) [error], error)  // returns handler and error (with db parameter)
 //
 // The returned function can have any number of parameters (resolved by handlerParamResolverManager)
 // but must have either no return value or a single error return value.
 func isHandlerFactory(method reflect.Type) bool {
-	// Must have exactly 1 input parameter (orm.Db) and 1 or 2 output parameters
-	if method.NumIn() != 1 || (method.NumOut() != 1 && method.NumOut() != 2) {
+	// Must have 0 or 1 input parameter and 1 or 2 output parameters
+	numIn := method.NumIn()
+	if numIn > 1 || (method.NumOut() != 1 && method.NumOut() != 2) {
 		return false
 	}
 
-	// Check if input parameter is orm.Db
-	if method.In(0) != dbType {
+	// If there's an input parameter, it must be orm.Db
+	if numIn == 1 && method.In(0) != dbType {
 		return false
 	}
 
@@ -287,17 +290,25 @@ func isHandlerFactory(method reflect.Type) bool {
 
 // createHandler invokes a handler factory function with the provided database connection
 // and returns the created handler function. Supports both single return value (handler)
-// and dual return values (handler, error) patterns.
+// and dual return values (handler, error) patterns. Also supports factories with no parameters.
 func createHandler(method reflect.Value, db orm.Db) (reflect.Value, error) {
-	results := method.Call([]reflect.Value{reflect.ValueOf(db)})
+	// Determine if factory needs db parameter
+	var results []reflect.Value
+	if method.Type().NumIn() == 0 {
+		// func() func(...) [error] or func() (func(...) [error], error)
+		results = method.Call([]reflect.Value{})
+	} else {
+		// func(orm.Db) func(...) [error] or func(orm.Db) (func(...) [error], error)
+		results = method.Call([]reflect.Value{reflect.ValueOf(db)})
+	}
 
 	switch len(results) {
 	case 1:
-		// func(orm.Db) func(...) [error] pattern
+		// func([orm.Db]) func(...) [error] pattern
 		return results[0], nil
 
 	case 2:
-		// func(orm.Db) (func(...) [error], error) pattern
+		// func([orm.Db]) (func(...) [error], error) pattern
 		handler := results[0]
 		err := results[1]
 

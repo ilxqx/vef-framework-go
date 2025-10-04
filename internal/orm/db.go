@@ -21,36 +21,36 @@ var (
 	}
 )
 
-// bunDb is a wrapper around the bun.DB type.
-type bunDb struct {
+// BunDb is a wrapper around the bun.DB type.
+type BunDb struct {
 	db bun.IDB
 }
 
-func (d *bunDb) NewSelect() SelectQuery {
+func (d *BunDb) NewSelect() SelectQuery {
 	return NewSelectQuery(d.db)
 }
 
-func (d *bunDb) NewInsert() InsertQuery {
+func (d *BunDb) NewInsert() InsertQuery {
 	return NewInsertQuery(d.db)
 }
 
-func (d *bunDb) NewUpdate() UpdateQuery {
+func (d *BunDb) NewUpdate() UpdateQuery {
 	return NewUpdateQuery(d.db)
 }
 
-func (d *bunDb) NewDelete() DeleteQuery {
+func (d *BunDb) NewDelete() DeleteQuery {
 	return NewDeleteQuery(d.db)
 }
 
-func (d *bunDb) NewMerge() MergeQuery {
+func (d *BunDb) NewMerge() MergeQuery {
 	return NewMergeQuery(d.db)
 }
 
-func (d *bunDb) NewRaw(query string, args ...any) RawQuery {
+func (d *BunDb) NewRaw(query string, args ...any) RawQuery {
 	return newRawQuery(d.db, query, args...)
 }
 
-func (d *bunDb) RunInTx(ctx context.Context, fn func(context.Context, Db) error) error {
+func (d *BunDb) RunInTx(ctx context.Context, fn func(context.Context, Db) error) error {
 	return d.db.RunInTx(
 		ctx,
 		txOptions,
@@ -60,7 +60,7 @@ func (d *bunDb) RunInTx(ctx context.Context, fn func(context.Context, Db) error)
 	)
 }
 
-func (d *bunDb) RunInReadOnlyTx(ctx context.Context, fn func(context.Context, Db) error) error {
+func (d *BunDb) RunInReadOnlyTx(ctx context.Context, fn func(context.Context, Db) error) error {
 	return d.db.RunInTx(
 		ctx,
 		readOnlyTxOptions,
@@ -70,15 +70,15 @@ func (d *bunDb) RunInReadOnlyTx(ctx context.Context, fn func(context.Context, Db
 	)
 }
 
-func (d *bunDb) WithNamedArg(name string, value any) Db {
+func (d *BunDb) WithNamedArg(name string, value any) Db {
 	if db, ok := d.db.(*bun.DB); ok {
 		return New(db.WithNamedArg(name, value))
 	}
 
-	panic("method WithNamedArg can not be called in transaction")
+	panic("'WithNamedArg' is not supported within a transaction context")
 }
 
-func (d *bunDb) ModelPKs(model any) (map[string]any, error) {
+func (d *BunDb) ModelPKs(model any) (map[string]any, error) {
 	pks := d.ModelPKFields(model)
 	pkValues := make(map[string]any, len(pks))
 
@@ -93,7 +93,7 @@ func (d *bunDb) ModelPKs(model any) (map[string]any, error) {
 	return pkValues, nil
 }
 
-func (d *bunDb) ModelPKFields(model any) []*PKField {
+func (d *BunDb) ModelPKFields(model any) []*PKField {
 	var db *bun.DB
 	if bd, ok := d.db.(*bun.DB); ok {
 		db = bd
@@ -111,7 +111,7 @@ func (d *bunDb) ModelPKFields(model any) []*PKField {
 	return pks
 }
 
-func (d *bunDb) Schema(model any) *schema.Table {
+func (d *BunDb) TableOf(model any) *schema.Table {
 	var db *bun.DB
 	if bd, ok := d.db.(*bun.DB); ok {
 		db = bd
@@ -120,4 +120,8 @@ func (d *bunDb) Schema(model any) *schema.Table {
 	}
 
 	return getTableSchema(model, db)
+}
+
+func (d *BunDb) Unwrap() bun.IDB {
+	return d.db
 }

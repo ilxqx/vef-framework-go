@@ -552,3 +552,7 @@ func (q *BunSelectQuery) Exists(ctx context.Context) (bool, error) {
 
 	return q.query.Exists(ctx)
 }
+
+func (q *BunSelectQuery) Unwrap() *bun.SelectQuery {
+	return q.query
+}

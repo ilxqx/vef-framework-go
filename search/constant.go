@@ -48,10 +48,11 @@ const (
 	AttrColumn   = "column"
 	AttrOperator = "operator"
 	AttrParams   = "params"
-	AttrDefault  = "default"
 
 	// Parameters for value processing
 	ParamDelimiter = "delimiter"
 	ParamType      = "type"
-	ParamDefault   = "default"
+
+	// Special tag value
+	IgnoreField = "-" // Ignore this field
 )

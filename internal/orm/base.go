@@ -121,6 +121,13 @@ type Returnable[T QueryExecutor] interface {
 	ReturningNone() T
 }
 
+// Unwrapper is an interface that defines the method for unwrapping the underlying query object.
+// It provides access to the original wrapped query implementation for advanced use cases.
+type Unwrapper[T any] interface {
+	// Unwrap returns the underlying query object.
+	Unwrap() T
+}
+
 // ApplyFunc is a function type that applies a shared operation to a query.
 // It enables reusable query modifications that can be applied to different query types.
 type ApplyFunc[T any] func(T)
@@ -220,6 +227,8 @@ type QueryBuilder interface {
 
 	// Dialect returns the database dialect for cross-database compatibility.
 	Dialect() schema.Dialect
+	// GetTable returns the table information for the current query.
+	GetTable() *schema.Table
 	// Query returns the underlying bun query instance.
 	Query() bun.Query
 	// ExprBuilder returns the expression builder for this query.

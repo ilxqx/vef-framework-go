@@ -21,7 +21,7 @@ type provider struct {
 // NewProvider creates a new PostgreSQL provider
 func NewProvider() *provider {
 	return &provider{
-		dbType: constants.DbTypePostgres,
+		dbType: constants.DbPostgres,
 	}
 }
 
@@ -49,7 +49,7 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 		pgdriver.WithUser(lo.Ternary(config.User != constants.Empty, config.User, "postgres")),
 		pgdriver.WithPassword(lo.Ternary(config.Password != constants.Empty, config.Password, "postgres")),
 		pgdriver.WithDatabase(lo.Ternary(config.Database != constants.Empty, config.Database, "postgres")),
-		pgdriver.WithApplicationName("vef"),
+		pgdriver.WithApplicationName(constants.VEFName),
 		pgdriver.WithConnParams(map[string]any{
 			"search_path": lo.Ternary(config.Schema != constants.Empty, config.Schema, "public"),
 		}),

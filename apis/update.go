@@ -44,7 +44,7 @@ func (u *updateAPI[TModel, TParams]) PostUpdate(processor PostUpdateProcessor[TM
 
 func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
 	// Pre-compute schema information
-	schema := db.Schema((*TModel)(nil))
+	schema := db.TableOf((*TModel)(nil))
 	// Pre-compute primary key fields
 	pks := db.ModelPKFields((*TModel)(nil))
 
@@ -76,7 +76,7 @@ func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 			}
 		}
 
-		if err := db.NewSelect().Model(&model).WherePK().Scan(ctx, &oldModel); err != nil {
+		if err := db.NewSelect().Model(&model).WherePK().Scan(ctx.Context(), &oldModel); err != nil {
 			return err
 		}
 
@@ -90,7 +90,7 @@ func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 			return err
 		}
 
-		return db.RunInTx(ctx, func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 			if _, err := tx.NewUpdate().Model(&oldModel).WherePK().Exec(txCtx); err != nil {
 				return err
 			}

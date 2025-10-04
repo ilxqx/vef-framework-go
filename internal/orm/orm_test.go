@@ -164,7 +164,7 @@ func (suite *ORMTestSuite) SetupSuite() {
 
 // getBunDb extracts the underlying bun.DB from orm.Db interface
 func (suite *ORMTestSuite) getBunDb() *bun.DB {
-	if db, ok := suite.db.(*bunDb); ok {
+	if db, ok := suite.db.(*BunDb); ok {
 		if bunDB, ok := db.db.(*bun.DB); ok {
 			return bunDB
 		}

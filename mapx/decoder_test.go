@@ -1,6 +1,7 @@
 package mapx
 
 import (
+	"mime/multipart"
 	"net"
 	"net/url"
 	"testing"
@@ -1190,6 +1191,100 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result2.Age)
 		assert.Equal(t, int64(25), *result2.Age)
+	})
+}
+
+func TestFileHeaderConversion(t *testing.T) {
+	t.Run("slice with single file to single file pointer", func(t *testing.T) {
+		type StructWithSingleFile struct {
+			Avatar *multipart.FileHeader `json:"avatar"`
+		}
+
+		fileHeader := &multipart.FileHeader{
+			Filename: "avatar.jpg",
+			Size:     1024,
+		}
+
+		input := map[string]any{
+			"avatar": []*multipart.FileHeader{fileHeader},
+		}
+
+		result, err := FromMap[StructWithSingleFile](input)
+		require.NoError(t, err)
+		require.NotNil(t, result.Avatar)
+		assert.Equal(t, "avatar.jpg", result.Avatar.Filename)
+		assert.Equal(t, int64(1024), result.Avatar.Size)
+	})
+
+	t.Run("slice with multiple files remains slice", func(t *testing.T) {
+		type StructWithMultipleFiles struct {
+			Attachments []*multipart.FileHeader `json:"attachments"`
+		}
+
+		fileHeaders := []*multipart.FileHeader{
+			{Filename: "file1.pdf", Size: 2048},
+			{Filename: "file2.pdf", Size: 3072},
+		}
+
+		input := map[string]any{
+			"attachments": fileHeaders,
+		}
+
+		result, err := FromMap[StructWithMultipleFiles](input)
+		require.NoError(t, err)
+		require.Len(t, result.Attachments, 2)
+		assert.Equal(t, "file1.pdf", result.Attachments[0].Filename)
+		assert.Equal(t, "file2.pdf", result.Attachments[1].Filename)
+	})
+
+	t.Run("empty slice to single file pointer", func(t *testing.T) {
+		type StructWithSingleFile struct {
+			Avatar *multipart.FileHeader `json:"avatar"`
+		}
+
+		input := map[string]any{
+			"avatar": []*multipart.FileHeader{},
+		}
+
+		_, err := FromMap[StructWithSingleFile](input)
+		// Empty slice cannot be converted to single pointer, should error
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "expected a map or struct")
+	})
+
+	t.Run("slice to slice remains unchanged", func(t *testing.T) {
+		type StructWithFileSlice struct {
+			Files []*multipart.FileHeader `json:"files"`
+		}
+
+		fileHeader := &multipart.FileHeader{
+			Filename: "document.pdf",
+			Size:     4096,
+		}
+
+		input := map[string]any{
+			"files": []*multipart.FileHeader{fileHeader},
+		}
+
+		result, err := FromMap[StructWithFileSlice](input)
+		require.NoError(t, err)
+		require.Len(t, result.Files, 1)
+		assert.Equal(t, "document.pdf", result.Files[0].Filename)
+		assert.Equal(t, int64(4096), result.Files[0].Size)
+	})
+
+	t.Run("nil slice to single file pointer", func(t *testing.T) {
+		type StructWithSingleFile struct {
+			Avatar *multipart.FileHeader `json:"avatar"`
+		}
+
+		input := map[string]any{
+			"avatar": []*multipart.FileHeader(nil),
+		}
+
+		result, err := FromMap[StructWithSingleFile](input)
+		require.NoError(t, err)
+		assert.Nil(t, result.Avatar)
 	})
 }
 

@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/samber/lo"
 )
 
 const (
-	jwtIssuer          = "vef"                                                              // Issuer
-	defaultJwtAudience = "vef_app"                                                          // Audience
+	jwtIssuer          = constants.VEFName                                                  // Issuer
+	defaultJwtAudience = constants.VEFName + "-app"                                         // Audience
 	defaultJwtSecret   = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2" // Secret
 )
 

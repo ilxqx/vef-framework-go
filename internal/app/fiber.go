@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -9,11 +11,15 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/samber/lo"
 )
 
-func createFiberApp(config *config.AppConfig) *fiber.App {
-	specifiedLimit := strings.TrimSpace(config.BodyLimit)
+// createFiberApp creates a new Fiber application with the given configuration.
+// It parses the body limit, sets up custom context, and configures various Fiber settings
+// including timeouts, encoders, validators, and error handlers.
+func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
+	specifiedLimit := strings.TrimSpace(cfg.BodyLimit)
 	bodyLimit, err := humanize.ParseBytes(
 		lo.Ternary(
 			specifiedLimit != constants.Empty,
@@ -22,7 +28,7 @@ func createFiberApp(config *config.AppConfig) *fiber.App {
 		),
 	)
 	if err != nil {
-		logger.Errorf("Failed to parse body limit: %v", err)
+		return nil, fmt.Errorf("failed to parse body limit: %w", err)
 	}
 
 	return fiber.NewWithCustomCtx(
@@ -32,7 +38,7 @@ func createFiberApp(config *config.AppConfig) *fiber.App {
 			}
 		},
 		fiber.Config{
-			AppName:         config.Name,
+			AppName:         lo.CoalesceOrEmpty(cfg.Name, constants.VEFName+"-app"),
 			BodyLimit:       int(bodyLimit),
 			CaseSensitive:   true,
 			IdleTimeout:     30 * time.Second,
@@ -41,7 +47,7 @@ func createFiberApp(config *config.AppConfig) *fiber.App {
 			JSONDecoder:     json.Unmarshal,
 			StrictRouting:   false,
 			StructValidator: newStructValidator(),
-			ServerHeader:    "vef",
+			ServerHeader:    constants.VEFName,
 			Concurrency:     1024 * 1024,
 			ReadBufferSize:  8192,
 			WriteBufferSize: 8192,
@@ -49,5 +55,50 @@ func createFiberApp(config *config.AppConfig) *fiber.App {
 			ReadTimeout:     30 * time.Second,
 			WriteTimeout:    120 * time.Second,
 		},
-	)
+	), nil
+}
+
+// configureFiberApp configures the Fiber application with middlewares and routes.
+// Middlewares are separated into before (order < 0) and after (order > 0) groups,
+// sorted by order, and applied around the API engine registration.
+// This ensures proper middleware execution order relative to route handlers.
+func configureFiberApp(
+	app *fiber.App,
+	middlewares []Middleware,
+	apiEngine api.Engine,
+	openApiEngine api.Engine,
+) error {
+	// Separate middlewares into before and after groups based on order
+	beforeMiddlewares := lo.Filter(middlewares, func(mid Middleware, _ int) bool {
+		return mid != nil && mid.Order() < 0
+	})
+	afterMiddlewares := lo.Filter(middlewares, func(mid Middleware, _ int) bool {
+		return mid != nil && mid.Order() > 0
+	})
+
+	// Sort middlewares by order ascending
+	slices.SortFunc(beforeMiddlewares, func(a, b Middleware) int {
+		return a.Order() - b.Order()
+	})
+	slices.SortFunc(afterMiddlewares, func(a, b Middleware) int {
+		return a.Order() - b.Order()
+	})
+
+	// Apply before middlewares
+	for _, mid := range beforeMiddlewares {
+		logger.Infof("Applying before middleware '%s'", mid.Name())
+		mid.Apply(app)
+	}
+
+	// Connect API engines
+	apiEngine.Connect(app)
+	openApiEngine.Connect(app)
+
+	// Apply after middlewares
+	for _, mid := range afterMiddlewares {
+		logger.Infof("Applying after middleware '%s'", mid.Name())
+		mid.Apply(app)
+	}
+
+	return nil
 }
