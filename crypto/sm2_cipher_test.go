@@ -61,6 +61,7 @@ func TestSM2Cipher_FromPEM(t *testing.T) {
 		NamedCurveOID asn1.ObjectIdentifier `asn1:"optional,explicit,tag:0"`
 		PublicKey     asn1.BitString        `asn1:"optional,explicit,tag:1"`
 	}
+
 	derPriv, err := asn1.Marshal(sm2Priv{Version: 1, PrivateKey: priv.D.Bytes()})
 	require.NoError(t, err, "failed to marshal raw SM2 private key")
 	// For public key, use library helper to ensure correct DER
@@ -95,6 +96,7 @@ func TestSM2Cipher_FromHex(t *testing.T) {
 		NamedCurveOID asn1.ObjectIdentifier `asn1:"optional,explicit,tag:0"`
 		PublicKey     asn1.BitString        `asn1:"optional,explicit,tag:1"`
 	}
+
 	derPriv, err := asn1.Marshal(sm2Priv{Version: 1, PrivateKey: priv.D.Bytes()})
 	require.NoError(t, err, "failed to marshal raw SM2 private key")
 	derPub, err := x509.MarshalSm2PublicKey(&priv.PublicKey)

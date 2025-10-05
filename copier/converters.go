@@ -1,10 +1,11 @@
 package copier
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/samber/lo"
 )
 
 var (

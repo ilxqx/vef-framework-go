@@ -256,10 +256,10 @@ func TestFromMap(t *testing.T) {
 func TestDecoderOptions(t *testing.T) {
 	t.Run("WithTagName", func(t *testing.T) {
 		type TestStruct struct {
-			Name string `yaml:"full_name"`
+			Name string `yaml:"fullName"`
 		}
 
-		input := map[string]any{"full_name": "John"}
+		input := map[string]any{"fullName": "John"}
 		result, err := FromMap[TestStruct](input, WithTagName("yaml"))
 		require.NoError(t, err)
 		assert.Equal(t, "John", result.Name)
@@ -607,7 +607,7 @@ func TestNullTypesIntegration(t *testing.T) {
 			Age           null.Value[int]     `json:"age"`
 			Active        null.Bool           `json:"active"`
 			Score         null.Value[float64] `json:"score"`
-			OptionalField null.Value[string]  `json:"optional_field"`
+			OptionalField null.Value[string]  `json:"optionalField"`
 		}
 
 		input := map[string]any{
@@ -678,21 +678,21 @@ func TestNullTypesIntegration(t *testing.T) {
 
 	t.Run("mixed null and regular types", func(t *testing.T) {
 		type MixedStruct struct {
-			RegularName string             `json:"regular_name"`
-			NullName    null.Value[string] `json:"null_name"`
-			RegularAge  int                `json:"regular_age"`
-			NullAge     null.Value[int]    `json:"null_age"`
-			RegularFlag bool               `json:"regular_flag"`
-			NullFlag    null.Bool          `json:"null_flag"`
+			RegularName string             `json:"regularName"`
+			NullName    null.Value[string] `json:"nullName"`
+			RegularAge  int                `json:"regularAge"`
+			NullAge     null.Value[int]    `json:"nullAge"`
+			RegularFlag bool               `json:"regularFlag"`
+			NullFlag    null.Bool          `json:"nullFlag"`
 		}
 
 		input := map[string]any{
-			"regular_name": "John",
-			"null_name":    "Jane",
-			"regular_age":  30,
-			"null_age":     25,
-			"regular_flag": true,
-			"null_flag":    false,
+			"regularName": "John",
+			"nullName":    "Jane",
+			"regularAge":  30,
+			"nullAge":     25,
+			"regularFlag": true,
+			"nullFlag":    false,
 		}
 
 		result, err := FromMap[MixedStruct](input)
@@ -1059,11 +1059,11 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 
 		// Test datetime.Time to null.Time conversion
 		type StructWithNullTime struct {
-			MeetingTime null.Time `json:"meeting_time"`
+			MeetingTime null.Time `json:"meetingTime"`
 		}
 
 		input := map[string]any{
-			"meeting_time": testTime,
+			"meetingTime": testTime,
 		}
 
 		result, err := FromMap[StructWithNullTime](input)
@@ -1073,11 +1073,11 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 
 		// Test null.Time to datetime.Time conversion
 		type StructWithTime struct {
-			MeetingTime datetime.Time `json:"meeting_time"`
+			MeetingTime datetime.Time `json:"meetingTime"`
 		}
 
 		input2 := map[string]any{
-			"meeting_time": null.TimeFrom(testTime),
+			"meetingTime": null.TimeFrom(testTime),
 		}
 
 		result2, err := FromMap[StructWithTime](input2)
@@ -1300,13 +1300,13 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 		type ComprehensiveStruct struct {
 			Name        null.String   `json:"name"`
 			Age         null.Int      `json:"age"`
-			ShortCount  null.Int16    `json:"short_count"`
+			ShortCount  null.Int16    `json:"shortCount"`
 			ID          null.Int32    `json:"id"`
 			Score       null.Float    `json:"score"`
 			Flag        null.Byte     `json:"flag"`
 			Created     null.DateTime `json:"created"`
 			Birthday    null.Date     `json:"birthday"`
-			MeetingTime null.Time     `json:"meeting_time"`
+			MeetingTime null.Time     `json:"meetingTime"`
 			Price       null.Decimal  `json:"price"`
 			Active      null.Bool     `json:"active"`
 		}
@@ -1317,17 +1317,17 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 		testDecimal := decimal.NewFromFloat(99.99)
 
 		input := map[string]any{
-			"name":         "John Doe",
-			"age":          int64(30),
-			"short_count":  int16(100),
-			"id":           int32(12345),
-			"score":        95.5,
-			"flag":         byte(255),
-			"created":      testDateTime,
-			"birthday":     testDate,
-			"meeting_time": testTime,
-			"price":        testDecimal,
-			"active":       true,
+			"name":        "John Doe",
+			"age":         int64(30),
+			"shortCount":  int16(100),
+			"id":          int32(12345),
+			"score":       95.5,
+			"flag":        byte(255),
+			"created":     testDateTime,
+			"birthday":    testDate,
+			"meetingTime": testTime,
+			"price":       testDecimal,
+			"active":      true,
 		}
 
 		result, err := FromMap[ComprehensiveStruct](input)

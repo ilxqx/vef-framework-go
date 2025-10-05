@@ -45,11 +45,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.String
 				}
+
 				type Dest struct {
 					Value string
 				}
 
 				src := Source{Value: null.StringFrom("test")}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -62,11 +64,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value string
 				}
+
 				type Dest struct {
 					Value null.String
 				}
 
 				src := Source{Value: "test"}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -80,11 +84,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Int
 				}
+
 				type Dest struct {
 					Value int64
 				}
 
 				src := Source{Value: null.IntFrom(42)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -97,11 +103,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value int64
 				}
+
 				type Dest struct {
 					Value null.Int
 				}
 
 				src := Source{Value: 42}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -115,11 +123,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Int16
 				}
+
 				type Dest struct {
 					Value int16
 				}
 
 				src := Source{Value: null.Int16From(100)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -132,11 +142,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value int16
 				}
+
 				type Dest struct {
 					Value null.Int16
 				}
 
 				src := Source{Value: 200}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -150,11 +162,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Int32
 				}
+
 				type Dest struct {
 					Value int32
 				}
 
 				src := Source{Value: null.Int32From(12345)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -167,11 +181,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value int32
 				}
+
 				type Dest struct {
 					Value null.Int32
 				}
 
 				src := Source{Value: 54321}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -185,11 +201,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Float
 				}
+
 				type Dest struct {
 					Value float64
 				}
 
 				src := Source{Value: null.FloatFrom(3.14)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -202,11 +220,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value float64
 				}
+
 				type Dest struct {
 					Value null.Float
 				}
 
 				src := Source{Value: 3.14}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -220,11 +240,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Byte
 				}
+
 				type Dest struct {
 					Value byte
 				}
 
 				src := Source{Value: null.ByteFrom(255)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -237,11 +259,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value byte
 				}
+
 				type Dest struct {
 					Value null.Byte
 				}
 
 				src := Source{Value: 128}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -255,11 +279,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Bool
 				}
+
 				type Dest struct {
 					Value bool
 				}
 
 				src := Source{Value: null.BoolFrom(true)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -272,11 +298,13 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value bool
 				}
+
 				type Dest struct {
 					Value null.Bool
 				}
 
 				src := Source{Value: true}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -290,12 +318,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.DateTime
 				}
+
 				type Dest struct {
 					Value datetime.DateTime
 				}
 
 				testValue := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 				src := Source{Value: null.DateTimeFrom(testValue)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -308,12 +338,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value datetime.DateTime
 				}
+
 				type Dest struct {
 					Value null.DateTime
 				}
 
 				testValue := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 				src := Source{Value: testValue}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -327,12 +359,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Date
 				}
+
 				type Dest struct {
 					Value datetime.Date
 				}
 
 				testValue := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: null.DateFrom(testValue)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -345,12 +379,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value datetime.Date
 				}
+
 				type Dest struct {
 					Value null.Date
 				}
 
 				testValue := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: testValue}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -364,12 +400,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Time
 				}
+
 				type Dest struct {
 					Value datetime.Time
 				}
 
 				testValue := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 				src := Source{Value: null.TimeFrom(testValue)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -382,12 +420,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value datetime.Time
 				}
+
 				type Dest struct {
 					Value null.Time
 				}
 
 				testValue := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 				src := Source{Value: testValue}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -401,12 +441,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value null.Decimal
 				}
+
 				type Dest struct {
 					Value decimal.Decimal
 				}
 
 				testDecimal := decimal.NewFromFloat(123.45)
 				src := Source{Value: null.DecimalFrom(testDecimal)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -419,12 +461,14 @@ func TestCopyConverters(t *testing.T) {
 				type Source struct {
 					Value decimal.Decimal
 				}
+
 				type Dest struct {
 					Value null.Decimal
 				}
 
 				testDecimal := decimal.NewFromFloat(123.45)
 				src := Source{Value: testDecimal}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -450,11 +494,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.String
 				}
+
 				type Dest struct {
 					Value *string
 				}
 
 				src := Source{Value: null.StringFrom("pointer")}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -468,12 +514,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *string
 				}
+
 				type Dest struct {
 					Value null.String
 				}
 
 				value := "pointer"
 				src := Source{Value: &value}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -487,12 +535,15 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *string
 				}
+
 				type Dest struct {
 					Value null.String
 				}
 
-				var src Source
-				var dst Dest
+				var (
+					src Source
+					dst Dest
+				)
 
 				require.NoError(t, Copy(src, &dst))
 				assert.False(t, dst.Value.Valid)
@@ -504,11 +555,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.String
 				}
+
 				type Dest struct {
 					Value *string
 				}
 
 				src := Source{Value: null.NewString("", false)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -521,11 +574,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Int
 				}
+
 				type Dest struct {
 					Value *int64
 				}
 
 				src := Source{Value: null.IntFrom(42)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -539,12 +594,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *int64
 				}
+
 				type Dest struct {
 					Value null.Int
 				}
 
 				value := int64(42)
 				src := Source{Value: &value}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -558,11 +615,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Bool
 				}
+
 				type Dest struct {
 					Value *bool
 				}
 
 				src := Source{Value: null.BoolFrom(true)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -576,12 +635,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *bool
 				}
+
 				type Dest struct {
 					Value null.Bool
 				}
 
 				value := false
 				src := Source{Value: &value}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -595,11 +656,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Int16
 				}
+
 				type Dest struct {
 					Value *int16
 				}
 
 				src := Source{Value: null.Int16From(123)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -613,12 +676,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *int16
 				}
+
 				type Dest struct {
 					Value null.Int16
 				}
 
 				value := int16(321)
 				src := Source{Value: &value}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -632,11 +697,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Int32
 				}
+
 				type Dest struct {
 					Value *int32
 				}
 
 				src := Source{Value: null.Int32From(111)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -650,12 +717,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *int32
 				}
+
 				type Dest struct {
 					Value null.Int32
 				}
 
 				value := int32(222)
 				src := Source{Value: &value}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -669,11 +738,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Float
 				}
+
 				type Dest struct {
 					Value *float64
 				}
 
 				src := Source{Value: null.FloatFrom(9.87)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -687,12 +758,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *float64
 				}
+
 				type Dest struct {
 					Value null.Float
 				}
 
 				value := 6.54
 				src := Source{Value: &value}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -706,11 +779,13 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Byte
 				}
+
 				type Dest struct {
 					Value *byte
 				}
 
 				src := Source{Value: null.ByteFrom(77)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -724,12 +799,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *byte
 				}
+
 				type Dest struct {
 					Value null.Byte
 				}
 
 				value := byte(88)
 				src := Source{Value: &value}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -743,12 +820,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.DateTime
 				}
+
 				type Dest struct {
 					Value *datetime.DateTime
 				}
 
 				testValue := datetime.Of(time.Date(2024, 1, 1, 8, 0, 0, 0, time.UTC))
 				src := Source{Value: null.DateTimeFrom(testValue)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -762,12 +841,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *datetime.DateTime
 				}
+
 				type Dest struct {
 					Value null.DateTime
 				}
 
 				testValue := datetime.Of(time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC))
 				src := Source{Value: &testValue}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -781,12 +862,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Date
 				}
+
 				type Dest struct {
 					Value *datetime.Date
 				}
 
 				testValue := datetime.DateOf(time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: null.DateFrom(testValue)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -800,12 +883,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *datetime.Date
 				}
+
 				type Dest struct {
 					Value null.Date
 				}
 
 				testValue := datetime.DateOf(time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC))
 				src := Source{Value: &testValue}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -819,12 +904,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Time
 				}
+
 				type Dest struct {
 					Value *datetime.Time
 				}
 
 				testValue := datetime.TimeOf(time.Date(0, 1, 1, 10, 20, 30, 0, time.UTC))
 				src := Source{Value: null.TimeFrom(testValue)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -838,12 +925,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *datetime.Time
 				}
+
 				type Dest struct {
 					Value null.Time
 				}
 
 				testValue := datetime.TimeOf(time.Date(0, 1, 1, 5, 10, 15, 0, time.UTC))
 				src := Source{Value: &testValue}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -857,12 +946,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value null.Decimal
 				}
+
 				type Dest struct {
 					Value *decimal.Decimal
 				}
 
 				testValue := decimal.NewFromFloat(456.78)
 				src := Source{Value: null.DecimalFrom(testValue)}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -876,12 +967,14 @@ func TestCopyPointerConverters(t *testing.T) {
 				type Source struct {
 					Value *decimal.Decimal
 				}
+
 				type Dest struct {
 					Value null.Decimal
 				}
 
 				testValue := decimal.NewFromFloat(654.32)
 				src := Source{Value: &testValue}
+
 				var dst Dest
 
 				require.NoError(t, Copy(src, &dst))
@@ -903,6 +996,7 @@ func TestCopyIntegration(t *testing.T) {
 			Age    null.Int
 			Active null.Bool
 		}
+
 		type Dest struct {
 			Name   string
 			Age    int64
@@ -929,6 +1023,7 @@ func TestCopyIntegration(t *testing.T) {
 			Age    int64
 			Active bool
 		}
+
 		type Dest struct {
 			Name   null.String
 			Age    null.Int

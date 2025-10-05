@@ -13,14 +13,14 @@ import (
 // Test user details struct.
 type TestUserDetails struct {
 	Email       string `json:"email"`
-	PhoneNumber string `json:"phone_number"`
+	PhoneNumber string `json:"phoneNumber"`
 	Age         int    `json:"age"`
 }
 
 // Test external app details struct.
 type TestExternalAppDetails struct {
-	AppID     string   `json:"app_id"`
-	AppSecret string   `json:"app_secret"`
+	AppID     string   `json:"appId"`
+	AppSecret string   `json:"appSecret"`
 	Scopes    []string `json:"scopes"`
 }
 
