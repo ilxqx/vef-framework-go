@@ -3,10 +3,11 @@ package audit
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/id"
 )
 
 // idGenerator implements InsertHandler for automatically generating unique primary key IDs.

@@ -1,4 +1,4 @@
-package excel
+package tabular
 
 import (
 	"reflect"
@@ -7,20 +7,20 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
-var logger = log.Named("excel")
+var logger = log.Named("tabular")
 
-// Schema contains the pre-parsed Excel metadata for a struct type.
+// Schema contains the pre-parsed tabular metadata for a struct type.
 type Schema struct {
 	columns []*Column
 }
 
-// Column represents metadata for a single Excel column.
+// Column represents metadata for a single column in tabular data.
 type Column struct {
 	// Index is the field index path in the struct
 	Index []int
-	// Name is the Excel column name (header)
+	// Name is the column name (header)
 	Name string
-	// Width is the column width
+	// Width is the column width hint (for display/export)
 	Width float64
 	// Order is the column order (for sorting)
 	Order int
@@ -34,7 +34,7 @@ type Column struct {
 	Parser string
 }
 
-// NewSchema creates a Schema instance by parsing struct fields with excel tags from the given reflect.Type.
+// NewSchema creates a Schema instance by parsing struct fields with tabular tags from the given reflect.Type.
 // Returns an empty Schema if the type is not a struct.
 func NewSchema(typ reflect.Type) *Schema {
 	columns := parseStruct(typ)
@@ -47,7 +47,7 @@ func NewSchema(typ reflect.Type) *Schema {
 	return &Schema{columns: columns}
 }
 
-// NewSchemaFor creates a Schema instance by parsing struct fields with excel tags from type T.
+// NewSchemaFor creates a Schema instance by parsing struct fields with tabular tags from type T.
 // This is a generic convenience function that calls NewSchema with reflect.TypeFor[T]().
 func NewSchemaFor[T any]() *Schema {
 	return NewSchema(reflect.TypeFor[T]())
@@ -69,5 +69,6 @@ func (s *Schema) ColumnNames() []string {
 	for i, col := range s.columns {
 		names[i] = col.Name
 	}
+
 	return names
 }

@@ -56,27 +56,28 @@ func (e BaseEvent) Meta() map[string]string {
 	// Return a copy to prevent external modification
 	result := make(map[string]string, len(e.meta))
 	maps.Copy(result, e.meta)
+
 	return result
 }
 
-// baseEventOption defines an option for configuring BaseEvent creation
+// baseEventOption defines an option for configuring BaseEvent creation.
 type baseEventOption func(*BaseEvent)
 
-// WithSource sets the event source
+// WithSource sets the event source.
 func WithSource(source string) baseEventOption {
 	return func(e *BaseEvent) {
 		e.source = source
 	}
 }
 
-// WithMeta adds a metadata key-value pair
+// WithMeta adds a metadata key-value pair.
 func WithMeta(key, value string) baseEventOption {
 	return func(e *BaseEvent) {
 		e.meta[key] = value
 	}
 }
 
-// MarshalJSON implements custom JSON marshaling for BaseEvent
+// MarshalJSON implements custom JSON marshaling for BaseEvent.
 func (e BaseEvent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Type     string            `json:"type"`
@@ -93,7 +94,7 @@ func (e BaseEvent) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// UnmarshalJSON implements custom JSON unmarshaling for BaseEvent
+// UnmarshalJSON implements custom JSON unmarshaling for BaseEvent.
 func (e *BaseEvent) UnmarshalJSON(data []byte) error {
 	var temp struct {
 		Type     string            `json:"type"`
@@ -111,6 +112,7 @@ func (e *BaseEvent) UnmarshalJSON(data []byte) error {
 	e.id = temp.Id
 	e.source = temp.Source
 	e.time = temp.Time
+
 	e.meta = temp.Metadata
 	if e.meta == nil {
 		e.meta = make(map[string]string)

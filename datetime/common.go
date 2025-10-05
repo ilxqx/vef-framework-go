@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/spf13/cast"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 var (
-	// Layout constants for different time formats
+	// Layout constants for different time formats.
 	dateTimeLayout = time.DateTime // "2006-01-02 15:04:05"
 	dateLayout     = time.DateOnly // "2006-01-02"
 	timeLayout     = time.TimeOnly // "15:04:05"
 
-	// Pattern length constants for efficient JSON processing
+	// Pattern length constants for efficient JSON processing.
 	dateTimePatternLength = len(time.DateTime)
 	datePatternLength     = len(time.DateOnly)
 	timePatternLength     = len(time.TimeOnly)
@@ -29,40 +30,54 @@ func scanTimeValue(src any, parseString func(string) (any, error), convertTime f
 		if err != nil {
 			return err
 		}
+
 		return assignValue(dest, parsed)
+
 	case *[]byte:
 		if value == nil {
 			return nil
 		}
+
 		parsed, err := parseString(string(*value))
 		if err != nil {
 			return err
 		}
+
 		return assignValue(dest, parsed)
+
 	case string:
 		parsed, err := parseString(value)
 		if err != nil {
 			return err
 		}
+
 		return assignValue(dest, parsed)
+
 	case *string:
 		if value == nil {
 			return nil
 		}
+
 		parsed, err := parseString(*value)
 		if err != nil {
 			return err
 		}
+
 		return assignValue(dest, parsed)
+
 	case time.Time:
 		converted := convertTime(value)
+
 		return assignValue(dest, converted)
 	case *time.Time:
 		if value == nil {
 			return nil
 		}
+
 		converted := convertTime(*value)
+
 		return assignValue(dest, converted)
+
 	default:
 		// Try using cast library as fallback for other types
 		if str, err := cast.ToStringE(src); err == nil {
@@ -70,9 +85,11 @@ func scanTimeValue(src any, parseString func(string) (any, error), convertTime f
 			if err != nil {
 				return err
 			}
+
 			return assignValue(dest, parsed)
 		}
-		return fmt.Errorf("failed to scan %s value: %v", typeName, src)
+
+		return fmt.Errorf("%w: %s value: %v", ErrFailedScan, typeName, src)
 	}
 }
 
@@ -86,8 +103,9 @@ func assignValue(dest, value any) error {
 	case *Time:
 		*d = value.(Time)
 	default:
-		return fmt.Errorf("unsupported destination type: %T", dest)
+		return fmt.Errorf("%w: %T", ErrUnsupportedDestType, dest)
 	}
+
 	return nil
 }
 
@@ -112,7 +130,8 @@ func parseTimeWithFallback(value, layout string) (time.Time, error) {
 // validateJSONFormat checks if the JSON bytes have the expected format for time types.
 func validateJSONFormat(bs []byte, expectedLength int) error {
 	if len(bs) != expectedLength+2 || bs[0] != constants.JSONQuote || bs[len(bs)-1] != constants.JSONQuote {
-		return fmt.Errorf("invalid JSON format: expected length %d with quotes", expectedLength)
+		return fmt.Errorf("%w: expected length %d with quotes", ErrInvalidJSONFormat, expectedLength)
 	}
+
 	return nil
 }

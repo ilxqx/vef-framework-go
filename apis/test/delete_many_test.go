@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -11,7 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserDeleteManyResource struct {
 	api.Resource
 	apis.DeleteManyAPI[TestUser]
@@ -24,7 +25,7 @@ func NewTestUserDeleteManyResource() api.Resource {
 	}
 }
 
-// Resource for composite PK testing
+// Resource for composite PK testing.
 type TestCompositePKDeleteManyResource struct {
 	api.Resource
 	apis.DeleteManyAPI[TestCompositePKItem]
@@ -37,7 +38,7 @@ func NewTestCompositePKDeleteManyResource() api.Resource {
 	}
 }
 
-// Resource with PreDeleteMany hook
+// Resource with PreDeleteMany hook.
 type TestUserDeleteManyWithPreHookResource struct {
 	api.Resource
 	apis.DeleteManyAPI[TestUser]
@@ -51,20 +52,23 @@ func NewTestUserDeleteManyWithPreHookResource() api.Resource {
 			PreDeleteMany(func(models []TestUser, ctx fiber.Ctx, db orm.Db) error {
 				// Check if any active users in batch
 				activeCount := 0
+
 				for _, model := range models {
 					if model.Status == "active" {
 						activeCount++
 					}
 				}
+
 				if activeCount > 0 {
 					ctx.Set("X-Delete-Active-Count", strconv.Itoa(activeCount))
 				}
+
 				return nil
 			}),
 	}
 }
 
-// Resource with PostDeleteMany hook
+// Resource with PostDeleteMany hook.
 type TestUserDeleteManyWithPostHookResource struct {
 	api.Resource
 	apis.DeleteManyAPI[TestUser]
@@ -78,17 +82,18 @@ func NewTestUserDeleteManyWithPostHookResource() api.Resource {
 			PostDeleteMany(func(models []TestUser, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header with count
 				ctx.Set("X-Deleted-Count", strconv.Itoa(len(models)))
+
 				return nil
 			}),
 	}
 }
 
-// DeleteManyTestSuite is the test suite for DeleteMany API tests
+// DeleteManyTestSuite is the test suite for DeleteMany API tests.
 type DeleteManyTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *DeleteManyTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserDeleteManyResource,
@@ -128,12 +133,12 @@ func (suite *DeleteManyTestSuite) SetupSuite() {
 	suite.Require().NoError(err, "Failed to insert additional test users for delete tests")
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *DeleteManyTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestDeleteManyBasic tests basic DeleteMany functionality
+// TestDeleteManyBasic tests basic DeleteMany functionality.
 func (suite *DeleteManyTestSuite) TestDeleteManyBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -152,7 +157,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyBasic() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestDeleteManyWithPreHook tests DeleteMany with PreDeleteMany hook
+// TestDeleteManyWithPreHook tests DeleteMany with PreDeleteMany hook.
 func (suite *DeleteManyTestSuite) TestDeleteManyWithPreHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -173,7 +178,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyWithPreHook() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestDeleteManyWithPostHook tests DeleteMany with PostDeleteMany hook
+// TestDeleteManyWithPostHook tests DeleteMany with PostDeleteMany hook.
 func (suite *DeleteManyTestSuite) TestDeleteManyWithPostHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -194,7 +199,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyWithPostHook() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestDeleteManyNegativeCases tests negative scenarios
+// TestDeleteManyNegativeCases tests negative scenarios.
 func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -339,7 +344,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyNegativeCases() {
 	})
 }
 
-// TestDeleteManyTransactionRollback tests that the entire batch rolls back on error
+// TestDeleteManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *DeleteManyTestSuite) TestDeleteManyTransactionRollback() {
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to delete a batch where the second item doesn't exist
@@ -367,7 +372,7 @@ func (suite *DeleteManyTestSuite) TestDeleteManyTransactionRollback() {
 	})
 }
 
-// TestDeleteManyPrimaryKeyFormats tests different primary key format support
+// TestDeleteManyPrimaryKeyFormats tests different primary key format support.
 func (suite *DeleteManyTestSuite) TestDeleteManyPrimaryKeyFormats() {
 	suite.Run("SinglePK_DirectValues", func() {
 		// Single PK with direct value array: ["id1", "id2"]

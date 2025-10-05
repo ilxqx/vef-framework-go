@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
@@ -27,6 +28,7 @@ func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
 			EncodeLevel:   zapcore.CapitalColorLevelEncoder,
 			EncodeTime: func() zapcore.TimeEncoder {
 				layout := time.DateOnly + "T" + time.TimeOnly + ".000"
+
 				return func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 					enc.AppendString(
 						color.CyanString(t.Format(layout)),

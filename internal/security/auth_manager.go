@@ -25,6 +25,7 @@ func (am *AuthenticatorAuthManager) Authenticate(authentication security.Authent
 	authenticator := am.findAuthenticator(authentication.Type)
 	if authenticator == nil {
 		logger.Warnf("No authenticator found for authentication type: %s", authentication.Type)
+
 		return nil, result.ErrWithCodef(
 			result.ErrCodeUnsupportedAuthenticationType,
 			"Authentication type '%s' is not supported",
@@ -37,11 +38,13 @@ func (am *AuthenticatorAuthManager) Authenticate(authentication security.Authent
 	if err != nil {
 		logger.Warnf("Authentication failed for principal '%s' with type '%s': %v",
 			authentication.Principal, authentication.Type, err)
+
 		return nil, err
 	}
 
 	logger.Infof("Authentication successful for principal '%s' with type '%s'",
 		authentication.Principal, authentication.Type)
+
 	return principal, nil
 }
 

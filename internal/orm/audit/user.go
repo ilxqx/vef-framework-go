@@ -3,10 +3,11 @@ package audit
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // CreatedByHandler implements InsertHandler for automatically setting created_by user information.
@@ -33,6 +34,7 @@ type UpdatedByHandler struct{}
 // If hasSet is true, it adds a SET clause to the query; otherwise, it adds a value to the query.
 func (ub *UpdatedByHandler) OnUpdate(query *bun.UpdateQuery, hasSet bool, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
 	name := ub.Name()
+
 	if hasSet {
 		if query.DB().HasFeature(feature.UpdateMultiTable) {
 			query.Set("?TableAlias.? = "+constants.ExprOperator, bun.Ident(name))

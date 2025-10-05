@@ -1,8 +1,9 @@
 package log
 
 import (
-	logPkg "github.com/ilxqx/vef-framework-go/log"
 	"go.uber.org/zap"
+
+	logPkg "github.com/ilxqx/vef-framework-go/log"
 )
 
 type zapLogger struct {

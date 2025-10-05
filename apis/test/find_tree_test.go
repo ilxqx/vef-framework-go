@@ -2,6 +2,8 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -9,10 +11,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/treebuilder"
-	"github.com/samber/lo"
 )
 
-// Tree builder for TestCategory
+// Tree builder for TestCategory.
 func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 	adapter := treebuilder.Adapter[TestCategory]{
 		GetId: func(c TestCategory) string {
@@ -25,10 +26,11 @@ func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 			c.Children = children
 		},
 	}
+
 	return treebuilder.Build(flatCategories, adapter)
 }
 
-// Test Resources
+// Test Resources.
 type TestCategoryFindTreeResource struct {
 	api.Resource
 	apis.FindTreeAPI[TestCategory, TestCategorySearch]
@@ -44,7 +46,7 @@ func NewTestCategoryFindTreeResource() api.Resource {
 	}
 }
 
-// Filtered Tree Resource
+// Filtered Tree Resource.
 type FilteredCategoryFindTreeResource struct {
 	api.Resource
 	apis.FindTreeAPI[TestCategory, TestCategorySearch]
@@ -69,7 +71,7 @@ func NewFilteredCategoryFindTreeResource() api.Resource {
 	}
 }
 
-// Ordered Tree Resource
+// Ordered Tree Resource.
 type OrderedCategoryFindTreeResource struct {
 	api.Resource
 	apis.FindTreeAPI[TestCategory, TestCategorySearch]
@@ -90,12 +92,12 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 	}
 }
 
-// FindTreeTestSuite is the test suite for FindTree API tests
+// FindTreeTestSuite is the test suite for FindTree API tests.
 type FindTreeTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *FindTreeTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestCategoryFindTreeResource,
@@ -104,12 +106,12 @@ func (suite *FindTreeTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *FindTreeTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestFindTreeBasic tests basic FindTree functionality
+// TestFindTreeBasic tests basic FindTree functionality.
 func (suite *FindTreeTestSuite) TestFindTreeBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -145,7 +147,7 @@ func (suite *FindTreeTestSuite) TestFindTreeBasic() {
 	suite.Len(children, 2) // Computers and Phones
 }
 
-// TestFindTreeWithSearch tests FindTree with search conditions
+// TestFindTreeWithSearch tests FindTree with search conditions.
 func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	suite.Run("SearchByCode", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -219,7 +221,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	})
 }
 
-// TestFindTreeWithFilterApplier tests FindTree with filter applier
+// TestFindTreeWithFilterApplier tests FindTree with filter applier.
 func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -244,7 +246,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
 	suite.Len(children, 2) // Computers and Phones
 }
 
-// TestFindTreeWithSortApplier tests FindTree with sort applier
+// TestFindTreeWithSortApplier tests FindTree with sort applier.
 func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -272,7 +274,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
 	suite.Equal("Clothing", third["name"]) // sort = 3
 }
 
-// TestFindTreeNegativeCases tests negative scenarios
+// TestFindTreeNegativeCases tests negative scenarios.
 func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 	suite.Run("NoMatchingRecords", func() {
 		resp := suite.makeAPIRequest(api.Request{

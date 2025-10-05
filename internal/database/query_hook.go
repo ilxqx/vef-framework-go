@@ -8,10 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
 	"github.com/muesli/termenv"
 	"github.com/uptrace/bun"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	logPkg "github.com/ilxqx/vef-framework-go/log"
 )
 
 type queryHook struct {
@@ -43,6 +44,7 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 	}
 
 	operationStyle := qh.output.String(fmt.Sprintf(" %-8s ", event.Operation())).Bold().Foreground(termenv.ANSIBrightBlack)
+
 	queryStyle := qh.output.String(event.Query)
 	switch event.Operation() {
 	case "SELECT":
@@ -92,11 +94,13 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 		_, _ = message.WriteString(errorMessageStyle.String())
 
 		qh.logger.Error(message.String())
+
 		return
 	}
 
 	// message builds the final log message string
 	var message strings.Builder
+
 	_, _ = message.WriteString(operationStyle.String())
 	_, _ = message.WriteString(elapsedStyle.String())
 	_ = message.WriteByte(constants.ByteSpace)

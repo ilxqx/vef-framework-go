@@ -5,8 +5,9 @@ import (
 	"os"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/spf13/cast"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // DefaultSnowflakeIdGenerator is the default Snowflake ID generator instance.

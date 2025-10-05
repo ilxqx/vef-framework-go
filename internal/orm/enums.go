@@ -7,11 +7,11 @@ import "github.com/ilxqx/vef-framework-go/constants"
 type FuzzyKind uint8
 
 const (
-	// FuzzyStarts builds a pattern for starts-with (value%)
+	// FuzzyStarts builds a pattern for starts-with (value%).
 	FuzzyStarts FuzzyKind = 0
-	// FuzzyEnds builds a pattern for ends-with (%value)
+	// FuzzyEnds builds a pattern for ends-with (%value).
 	FuzzyEnds FuzzyKind = 1
-	// FuzzyContains builds a pattern for contains (%value%)
+	// FuzzyContains builds a pattern for contains (%value%).
 	FuzzyContains FuzzyKind = 2
 )
 
@@ -19,11 +19,11 @@ const (
 type NullsMode int
 
 const (
-	// NullsDefault leaves NULL handling to the database default behavior
+	// NullsDefault leaves NULL handling to the database default behavior.
 	NullsDefault NullsMode = iota
-	// NullsRespect uses RESPECT NULLS
+	// NullsRespect uses RESPECT NULLS.
 	NullsRespect
-	// NullsIgnore uses IGNORE NULLS
+	// NullsIgnore uses IGNORE NULLS.
 	NullsIgnore
 )
 
@@ -43,11 +43,11 @@ func (n NullsMode) String() string {
 type FromDirection int
 
 const (
-	// FromDefault leaves direction unspecified
+	// FromDefault leaves direction unspecified.
 	FromDefault FromDirection = iota
-	// FromFirst emits FROM FIRST
+	// FromFirst emits FROM FIRST.
 	FromFirst
-	// FromLast emits FROM LAST
+	// FromLast emits FROM LAST.
 	FromLast
 )
 
@@ -67,13 +67,13 @@ func (f FromDirection) String() string {
 type FrameType int
 
 const (
-	// FrameDefault uses database default frame type
+	// FrameDefault uses database default frame type.
 	FrameDefault FrameType = iota
-	// FrameRows emits ROWS
+	// FrameRows emits ROWS.
 	FrameRows
-	// FrameRange emits RANGE
+	// FrameRange emits RANGE.
 	FrameRange
-	// FrameGroups emits GROUPS
+	// FrameGroups emits GROUPS.
 	FrameGroups
 )
 
@@ -95,17 +95,17 @@ func (f FrameType) String() string {
 type FrameBoundKind int
 
 const (
-	// FrameBoundNone indicates no bound
+	// FrameBoundNone indicates no bound.
 	FrameBoundNone FrameBoundKind = iota
-	// FrameBoundUnboundedPreceding emits UNBOUNDED PRECEDING
+	// FrameBoundUnboundedPreceding emits UNBOUNDED PRECEDING.
 	FrameBoundUnboundedPreceding
-	// FrameBoundUnboundedFollowing emits UNBOUNDED FOLLOWING
+	// FrameBoundUnboundedFollowing emits UNBOUNDED FOLLOWING.
 	FrameBoundUnboundedFollowing
-	// FrameBoundCurrentRow emits CURRENT ROW
+	// FrameBoundCurrentRow emits CURRENT ROW.
 	FrameBoundCurrentRow
-	// FrameBoundPreceding emits PRECEDING
+	// FrameBoundPreceding emits PRECEDING.
 	FrameBoundPreceding
-	// FrameBoundFollowing emits FOLLOWING
+	// FrameBoundFollowing emits FOLLOWING.
 	FrameBoundFollowing
 )
 
@@ -131,11 +131,11 @@ func (f FrameBoundKind) String() string {
 type StatisticalMode int
 
 const (
-	// StatisticalDefault leaves mode unspecified
+	// StatisticalDefault leaves mode unspecified.
 	StatisticalDefault StatisticalMode = iota
-	// StatisticalPopulation emits POP (population)
+	// StatisticalPopulation emits POP (population).
 	StatisticalPopulation
-	// StatisticalSample emits SAMP (sample)
+	// StatisticalSample emits SAMP (sample).
 	StatisticalSample
 )
 
@@ -155,9 +155,9 @@ func (s StatisticalMode) String() string {
 type ConflictAction int
 
 const (
-	// ConflictDoNothing emits DO NOTHING
+	// ConflictDoNothing emits DO NOTHING.
 	ConflictDoNothing ConflictAction = iota
-	// ConflictDoUpdate emits DO UPDATE
+	// ConflictDoUpdate emits DO UPDATE.
 	ConflictDoUpdate
 )
 

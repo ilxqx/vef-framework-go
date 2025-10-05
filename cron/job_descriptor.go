@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
@@ -26,32 +27,39 @@ type jobInfo struct {
 
 func (i *jobInfo) buildJobOptions() ([]gocron.JobOption, error) {
 	var options []gocron.JobOption
+
 	if i.name == constants.Empty {
-		return nil, fmt.Errorf("job name is required")
+		return nil, fmt.Errorf("%w", ErrJobNameRequired)
 	}
 
 	uuid, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate uuid: %w", err)
 	}
+
 	options = append(options, gocron.WithIdentifier(uuid), gocron.WithName(i.name))
 	if len(i.tags) > 0 {
 		options = append(options, gocron.WithTags(i.tags...))
 	}
+
 	if !i.allowConcurrent {
 		options = append(options, gocron.WithSingletonMode(gocron.LimitModeWait))
 	}
+
 	if !i.startAt.IsZero() {
 		options = append(options, gocron.WithStartAt(gocron.WithStartDateTime(i.startAt)))
 	} else if i.startImmediately {
 		options = append(options, gocron.WithStartAt(gocron.WithStartImmediately()))
 	}
+
 	if !i.stopAt.IsZero() {
 		options = append(options, gocron.WithStopAt(gocron.WithStopDateTime(i.stopAt)))
 	}
+
 	if i.limitedRuns > 0 {
 		options = append(options, gocron.WithLimitedRuns(i.limitedRuns))
 	}
+
 	if i.ctx != nil {
 		options = append(options, gocron.WithContext(i.ctx))
 	}
@@ -68,10 +76,11 @@ type jobTask struct {
 
 func (t *jobTask) buildTask() (gocron.Task, error) {
 	if t.handler == nil {
-		return nil, fmt.Errorf("job task handler is required")
+		return nil, fmt.Errorf("%w", ErrJobTaskHandlerRequired)
 	}
+
 	if reflect.ValueOf(t.handler).Kind() != reflect.Func {
-		return nil, fmt.Errorf("job task handler must be a function")
+		return nil, fmt.Errorf("%w", ErrJobTaskHandlerMustFunc)
 	}
 
 	return gocron.NewTask(t.handler, t.params...), nil
@@ -85,11 +94,12 @@ type jobDescriptor struct {
 }
 
 func (d *jobDescriptor) buildDescriptor() (gocron.Task, []gocron.JobOption, error) {
-	task, err := d.jobTask.buildTask()
+	task, err := d.buildTask()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to build job task: %w", err)
 	}
-	options, err := d.jobInfo.buildJobOptions()
+
+	options, err := d.buildJobOptions()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to build job options: %w", err)
 	}

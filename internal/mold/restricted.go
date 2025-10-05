@@ -11,9 +11,7 @@ const (
 	endKeysTag         = "endkeys"
 )
 
-var (
-	restrictedTags = map[string]struct{}{
-		diveTag:   {},
-		ignoreTag: {},
-	}
-)
+var restrictedTags = map[string]struct{}{
+	diveTag:   {},
+	ignoreTag: {},
+}

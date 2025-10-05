@@ -5,11 +5,12 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
+
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/samber/lo"
 )
 
 var (
@@ -116,6 +117,7 @@ func collectEmbeddedProviderSpecs(resource apiPkg.Resource) []apiPkg.Spec {
 	}
 
 	reflectx.VisitOf(resource, visitor)
+
 	return specs
 }
 
@@ -145,16 +147,16 @@ func resolveAPIHandler(api apiPkg.Spec, resource apiPkg.Resource, db orm.Db, par
 // It supports both regular handler functions and handler factory functions.
 func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
 	if handlerValue == nil {
-		return nil, fmt.Errorf("provided handler cannot be nil")
+		return nil, fmt.Errorf("%w", ErrProvidedHandlerNil)
 	}
 
 	handlerReflect := reflect.ValueOf(handlerValue)
 	if handlerReflect.Kind() != reflect.Func {
-		return nil, fmt.Errorf("provided handler must be a function, got %s", handlerReflect.Kind())
+		return nil, fmt.Errorf("%w, got %s", ErrProvidedHandlerMustFunc, handlerReflect.Kind())
 	}
 
 	if handlerReflect.IsNil() {
-		return nil, fmt.Errorf("provided handler function cannot be nil")
+		return nil, fmt.Errorf("%w", ErrProvidedHandlerFuncNil)
 	}
 
 	target := reflect.ValueOf(resource)
@@ -162,7 +164,7 @@ func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db,
 	// Check if this is a handler factory function (takes db, returns handler)
 	if isHandlerFactory(handlerReflect.Type()) {
 		if db == nil {
-			return nil, fmt.Errorf("handler factory function requires database connection but none provided")
+			return nil, fmt.Errorf("%w", ErrHandlerFactoryRequireDB)
 		}
 
 		handler, err := createHandler(handlerReflect, db)
@@ -186,6 +188,7 @@ func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db,
 // Handler factory methods take orm.Db as input and return a handler function.
 func parseHandler(methodName string, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
 	target := reflect.ValueOf(resource)
+
 	method, err := findHandlerMethod(target, methodName)
 	if err != nil {
 		return nil, err
@@ -194,7 +197,7 @@ func parseHandler(methodName string, resource apiPkg.Resource, db orm.Db, paramR
 	// Check if this is a handler factory method (takes db, returns handler)
 	if isHandlerFactory(method.Type()) {
 		if db == nil {
-			return nil, fmt.Errorf("handler factory method '%s' requires database connection but none provided", methodName)
+			return nil, fmt.Errorf("%w: %s", ErrHandlerFactoryMethodRequireDB, methodName)
 		}
 
 		handler, err := createHandler(method, db)
@@ -221,7 +224,7 @@ func findHandlerMethod(target reflect.Value, methodName string) (reflect.Value, 
 		return method, nil
 	}
 
-	return method, fmt.Errorf("api action method '%s' not found in resource '%s'", methodName, target.Type().String())
+	return method, fmt.Errorf("%w '%s' in resource '%s'", ErrAPIMethodNotFound, methodName, target.Type().String())
 }
 
 // checkHandlerMethod validates that a method conforms to the framework's handler signature.
@@ -240,13 +243,14 @@ func checkHandlerMethod(method reflect.Type) error {
 		if method.Out(0) == errorType {
 			return nil
 		}
-		return fmt.Errorf("handler method '%s' has invalid return type '%s', must be 'error'",
-			method.String(), method.Out(0).String())
+
+		return fmt.Errorf("%w: '%s' -> '%s'",
+			ErrHandlerMethodInvalidReturn, method.String(), method.Out(0).String())
 	}
 
 	// Multiple return values are not allowed
-	return fmt.Errorf("handler method '%s' has %d return values, must have at most 1 (error) or none",
-		method.String(), numOut)
+	return fmt.Errorf("%w: '%s' has %d returns",
+		ErrHandlerMethodTooManyReturns, method.String(), numOut)
 }
 
 // isHandlerFactory checks if a method is a handler factory function.
@@ -320,7 +324,7 @@ func createHandler(method reflect.Value, db orm.Db) (reflect.Value, error) {
 		return handler, nil
 
 	default:
-		return reflect.Value{}, fmt.Errorf("handler factory method should return 1 or 2 values, got %d", len(results))
+		return reflect.Value{}, fmt.Errorf("%w, got %d", ErrHandlerFactoryInvalidReturn, len(results))
 	}
 }
 

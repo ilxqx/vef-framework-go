@@ -4,22 +4,23 @@ import (
 	"crypto/cipher"
 	"fmt"
 
+	"github.com/tjfoc/gmsm/sm4"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
-	"github.com/tjfoc/gmsm/sm4"
 )
 
-// SM4Mode defines the SM4 encryption mode
+// SM4Mode defines the SM4 encryption mode.
 type SM4Mode string
 
 const (
-	// SM4ModeCBC uses SM4-CBC mode with PKCS7 padding
+	// SM4ModeCBC uses SM4-CBC mode with PKCS7 padding.
 	SM4ModeCBC SM4Mode = "CBC"
-	// SM4ModeECB uses SM4-ECB mode with PKCS7 padding
+	// SM4ModeECB uses SM4-ECB mode with PKCS7 padding.
 	SM4ModeECB SM4Mode = "ECB"
 )
 
-// SM4Cipher implements Cipher interface using SM4 encryption (国密算法)
+// SM4Cipher implements Cipher interface using SM4 encryption (国密算法).
 type SM4Cipher struct {
 	key  []byte
 	iv   []byte // IV for CBC mode, not used in ECB mode
@@ -33,7 +34,7 @@ type SM4Cipher struct {
 // If mode is not specified, defaults to SM4ModeCBC.
 func NewSM4(key, iv []byte, mode ...SM4Mode) (Cipher, error) {
 	if len(key) != sm4.BlockSize {
-		return nil, fmt.Errorf("invalid SM4 key size: %d bytes (must be %d)", len(key), sm4.BlockSize)
+		return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidSM4KeySize, len(key), sm4.BlockSize)
 	}
 
 	// Default to CBC mode if not specified
@@ -44,7 +45,7 @@ func NewSM4(key, iv []byte, mode ...SM4Mode) (Cipher, error) {
 
 	if selectedMode == SM4ModeCBC {
 		if len(iv) != sm4.BlockSize {
-			return nil, fmt.Errorf("invalid IV size for CBC mode: %d bytes (must be %d)", len(iv), sm4.BlockSize)
+			return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidIVSizeCBC, len(iv), sm4.BlockSize)
 		}
 	}
 
@@ -110,6 +111,7 @@ func (s *SM4Cipher) Encrypt(plaintext string) (string, error) {
 	if s.mode == SM4ModeECB {
 		return s.encryptECB(plaintext)
 	}
+
 	return s.encryptCBC(plaintext)
 }
 
@@ -118,10 +120,11 @@ func (s *SM4Cipher) Decrypt(ciphertext string) (string, error) {
 	if s.mode == SM4ModeECB {
 		return s.decryptECB(ciphertext)
 	}
+
 	return s.decryptCBC(ciphertext)
 }
 
-// encryptECB encrypts plaintext using SM4-ECB mode with PKCS7 padding
+// encryptECB encrypts plaintext using SM4-ECB mode with PKCS7 padding.
 func (s *SM4Cipher) encryptECB(plaintext string) (string, error) {
 	// PKCS7 padding
 	paddedData := pkcs7Padding([]byte(plaintext), sm4.BlockSize)
@@ -134,7 +137,7 @@ func (s *SM4Cipher) encryptECB(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// decryptECB decrypts ciphertext using SM4-ECB mode and removes PKCS7 padding
+// decryptECB decrypts ciphertext using SM4-ECB mode and removes PKCS7 padding.
 func (s *SM4Cipher) decryptECB(ciphertext string) (string, error) {
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
@@ -155,7 +158,7 @@ func (s *SM4Cipher) decryptECB(ciphertext string) (string, error) {
 	return string(unpaddedData), nil
 }
 
-// encryptCBC encrypts plaintext using SM4-CBC mode with PKCS7 padding
+// encryptCBC encrypts plaintext using SM4-CBC mode with PKCS7 padding.
 func (s *SM4Cipher) encryptCBC(plaintext string) (string, error) {
 	block, err := sm4.NewCipher(s.key)
 	if err != nil {
@@ -172,7 +175,7 @@ func (s *SM4Cipher) encryptCBC(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// decryptCBC decrypts ciphertext using SM4-CBC mode and removes PKCS7 padding
+// decryptCBC decrypts ciphertext using SM4-CBC mode and removes PKCS7 padding.
 func (s *SM4Cipher) decryptCBC(ciphertext string) (string, error) {
 	block, err := sm4.NewCipher(s.key)
 	if err != nil {
@@ -185,7 +188,7 @@ func (s *SM4Cipher) decryptCBC(ciphertext string) (string, error) {
 	}
 
 	if len(encryptedData)%sm4.BlockSize != 0 {
-		return constants.Empty, fmt.Errorf("ciphertext is not a multiple of the block size")
+		return constants.Empty, fmt.Errorf("%w", ErrCiphertextNotMultipleOfBlock)
 	}
 
 	plaintext := make([]byte, len(encryptedData))

@@ -6,10 +6,11 @@ import (
 	"crypto/x509"
 	"testing"
 
-	"github.com/ilxqx/vef-framework-go/crypto"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/crypto"
+	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 func TestRSAPasswordDecryptor(t *testing.T) {

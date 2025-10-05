@@ -10,11 +10,13 @@ import (
 // It supports running immediately, at a single time, or at multiple specific times.
 type OneTimeJobDefinition struct {
 	jobDescriptor
+
 	times []time.Time
 }
 
 func (d *OneTimeJobDefinition) build() (gocron.JobDefinition, gocron.Task, []gocron.JobOption, error) {
 	var startAt gocron.OneTimeJobStartAtOption
+
 	switch len(d.times) {
 	case 0:
 		startAt = gocron.OneTimeJobStartImmediately()
@@ -25,6 +27,7 @@ func (d *OneTimeJobDefinition) build() (gocron.JobDefinition, gocron.Task, []goc
 	}
 
 	definition := gocron.OneTimeJob(startAt)
+
 	task, options, err := d.buildDescriptor()
 	if err != nil {
 		return nil, nil, nil, err
@@ -37,11 +40,13 @@ func (d *OneTimeJobDefinition) build() (gocron.JobDefinition, gocron.Task, []goc
 // The interval is specified as a time.Duration.
 type DurationJobDefinition struct {
 	jobDescriptor
+
 	interval time.Duration
 }
 
 func (d *DurationJobDefinition) build() (gocron.JobDefinition, gocron.Task, []gocron.JobOption, error) {
 	definition := gocron.DurationJob(d.interval)
+
 	task, options, err := d.buildDescriptor()
 	if err != nil {
 		return nil, nil, nil, err
@@ -54,12 +59,14 @@ func (d *DurationJobDefinition) build() (gocron.JobDefinition, gocron.Task, []go
 // The interval is randomly chosen between MinInterval and MaxInterval for each execution.
 type DurationRandomJobDefinition struct {
 	jobDescriptor
+
 	minInterval time.Duration
 	maxInterval time.Duration
 }
 
 func (d *DurationRandomJobDefinition) build() (gocron.JobDefinition, gocron.Task, []gocron.JobOption, error) {
 	definition := gocron.DurationRandomJob(d.minInterval, d.maxInterval)
+
 	task, options, err := d.buildDescriptor()
 	if err != nil {
 		return nil, nil, nil, err
@@ -72,12 +79,14 @@ func (d *DurationRandomJobDefinition) build() (gocron.JobDefinition, gocron.Task
 // It supports both standard 5-field and extended 6-field (with seconds) cron expressions.
 type CronJobDefinition struct {
 	jobDescriptor
+
 	expression  string
 	withSeconds bool
 }
 
 func (d *CronJobDefinition) build() (gocron.JobDefinition, gocron.Task, []gocron.JobOption, error) {
 	definition := gocron.CronJob(d.expression, d.withSeconds)
+
 	task, options, err := d.buildDescriptor()
 	if err != nil {
 		return nil, nil, nil, err
@@ -111,6 +120,7 @@ func NewDurationJob(interval time.Duration, options ...JobDescriptorOption) *Dur
 	for _, option := range options {
 		option(&definition.jobDescriptor)
 	}
+
 	return definition
 }
 
@@ -125,6 +135,7 @@ func NewDurationRandomJob(minInterval, maxInterval time.Duration, options ...Job
 	for _, option := range options {
 		option(&definition.jobDescriptor)
 	}
+
 	return definition
 }
 
@@ -139,5 +150,6 @@ func NewCronJob(expression string, withSeconds bool, options ...JobDescriptorOpt
 	for _, option := range options {
 		option(&definition.jobDescriptor)
 	}
+
 	return definition
 }

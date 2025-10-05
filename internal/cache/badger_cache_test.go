@@ -7,24 +7,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/cache"
 )
 
-// TestUser represents a test user struct for cache operations
+// TestUser represents a test user struct for cache operations.
 type TestUserBadger struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 	Age  int    `json:"age"`
 }
 
-// setupBadgerCache sets up a Badger-backed cache for testing
+// setupBadgerCache sets up a Badger-backed cache for testing.
 func setupBadgerCache[T any](t *testing.T, cacheName string) cache.Cache[T] {
 	store, err := createBadgerStore(badgerOptions{InMemory: true})
-	if err != nil {
-		t.Fatalf("Failed to create badger store: %v", err)
-	}
+	require.NoError(t, err, "Failed to create badger store")
 
 	// Create cache instance
 	testCache := cache.New[T](cacheName, store)
@@ -32,8 +31,13 @@ func setupBadgerCache[T any](t *testing.T, cacheName string) cache.Cache[T] {
 	// Add cleanup function
 	t.Cleanup(func() {
 		ctx := context.Background()
-		testCache.Clear(ctx)
-		store.Close(ctx)
+		if err := testCache.Clear(ctx); err != nil {
+			t.Errorf("Failed to clear cache: %v", err)
+		}
+
+		if err := store.Close(ctx); err != nil {
+			t.Errorf("Failed to close store: %v", err)
+		}
 	})
 
 	return testCache
@@ -107,24 +111,20 @@ func TestBadgerCacheTTL(t *testing.T) {
 	t.Run("TTL expiration", func(t *testing.T) {
 		user := TestUserBadger{ID: 5, Name: "Eve", Age: 28}
 
-		err := userCache.Set(ctx, "ttl-user", user, 100*time.Millisecond)
+		err := userCache.Set(ctx, "ttl-user", user, time.Second)
 		require.NoError(t, err)
 
 		// Should exist immediately
 		result, found := userCache.Get(ctx, "ttl-user")
-		if !found {
-			t.Skip("TTL test skipped - value not found immediately, might be a timing issue")
-		}
-		assert.True(t, found)
+		assert.True(t, found, "expected key 'ttl-user' to exist immediately after set with 1s TTL")
 		assert.Equal(t, user, result)
 
 		// Wait for expiration
-		time.Sleep(150 * time.Millisecond)
+		time.Sleep(time.Second)
 
-		// Should be expired (but may still exist due to Badger's lazy cleanup)
+		// Should be expired
 		_, found = userCache.Get(ctx, "ttl-user")
-		// Note: Badger uses lazy deletion, so we might still find expired keys
-		t.Logf("After TTL expiration, found: %v", found)
+		assert.False(t, found, "expected key 'ttl-user' to be expired after 1s TTL")
 	})
 }
 
@@ -191,6 +191,7 @@ func TestBadgerCacheIteration(t *testing.T) {
 
 		// Keys should include the full prefixed keys
 		sort.Strings(keys)
+
 		expectedKeys := []string{
 			"vef:test-iteration:admin:1",
 			"vef:test-iteration:admin:2",
@@ -206,6 +207,7 @@ func TestBadgerCacheIteration(t *testing.T) {
 		require.NoError(t, err)
 
 		sort.Strings(adminKeys)
+
 		expectedAdminKeys := []string{
 			"vef:test-iteration:admin:1",
 			"vef:test-iteration:admin:2",
@@ -216,6 +218,7 @@ func TestBadgerCacheIteration(t *testing.T) {
 		require.NoError(t, err)
 
 		sort.Strings(userKeys)
+
 		expectedUserKeys := []string{
 			"vef:test-iteration:user:1",
 			"vef:test-iteration:user:2",
@@ -228,6 +231,7 @@ func TestBadgerCacheIteration(t *testing.T) {
 
 		err := userCache.ForEach(ctx, func(key string, user TestUserBadger) bool {
 			collected[key] = user
+
 			return true
 		})
 		require.NoError(t, err)
@@ -248,6 +252,7 @@ func TestBadgerCacheIteration(t *testing.T) {
 
 		err := userCache.ForEach(ctx, func(key string, user TestUserBadger) bool {
 			adminCollected[key] = user
+
 			return true
 		}, "admin")
 		require.NoError(t, err)
@@ -266,6 +271,7 @@ func TestBadgerCacheIteration(t *testing.T) {
 		err := userCache.ForEach(ctx, func(key string, user TestUserBadger) bool {
 			collected[key] = user
 			count++
+
 			return count < 3 // Stop after 3 items
 		})
 		require.NoError(t, err)
@@ -404,6 +410,7 @@ func TestBadgerCacheSerializationEdgeCases(t *testing.T) {
 
 	t.Run("Empty struct", func(t *testing.T) {
 		type EmptyStruct struct{}
+
 		emptyCache := setupBadgerCache[EmptyStruct](t, "test-empty")
 
 		empty := EmptyStruct{}
@@ -434,10 +441,12 @@ func TestBadgerCacheSerializationEdgeCases(t *testing.T) {
 
 		// Use defer to catch panic from gob encoder
 		var panicCaught bool
+
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
 					panicCaught = true
+
 					t.Logf("Nil pointer correctly rejected by gob serializer (panicked): %v", r)
 					assert.Contains(t, fmt.Sprintf("%v", r), "cannot encode nil pointer")
 				}

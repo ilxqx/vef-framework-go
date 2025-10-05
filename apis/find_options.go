@@ -2,6 +2,7 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -11,19 +12,20 @@ import (
 type findOptionsAPI[TModel, TSearch any] struct {
 	FindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]]
 
-	defaultConfig *OptionsConfig
+	fieldMapping *OptionFieldMapping
 }
 
 func (a *findOptionsAPI[TModel, TSearch]) Provide() api.Spec {
-	return a.FindAPI.Build(a.findOptions)
+	return a.Build(a.findOptions)
 }
 
-func (a *findOptionsAPI[TModel, TSearch]) DefaultConfig(config *OptionsConfig) FindOptionsAPI[TModel, TSearch] {
-	a.defaultConfig = config
+func (a *findOptionsAPI[TModel, TSearch]) FieldMapping(mapping *OptionFieldMapping) FindOptionsAPI[TModel, TSearch] {
+	a.fieldMapping = mapping
+
 	return a
 }
 
-func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config OptionsConfig, search TSearch) error {
+func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, params OptionParams, search TSearch) error {
 	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
 
@@ -31,46 +33,48 @@ func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) func(ctx fiber.
 	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
 	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
 
-	return func(ctx fiber.Ctx, db orm.Db, config OptionsConfig, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.Db, params OptionParams, search TSearch) error {
 		var options []Option
-		query := a.BuildQuery(db, (*TModel)(nil), search, ctx)
 
-		// Apply defaults and validate configuration
-		config.applyDefaults(a.defaultConfig)
-		if err := config.validateFields(schema); err != nil {
+		selectQuery := a.BuildQuery(db, (*TModel)(nil), search, ctx)
+
+		// Merge field mapping with defaults and validate
+		mergeOptionFieldMapping(&params.OptionFieldMapping, a.fieldMapping)
+
+		if err := validateOptionFields(schema, &params.OptionFieldMapping); err != nil {
 			return err
 		}
 
 		// Select only required fields
-		if config.ValueField == valueField {
-			query.Select(config.ValueField)
+		if params.ValueField == valueField {
+			selectQuery.Select(params.ValueField)
 		} else {
-			query.SelectAs(config.ValueField, valueField)
+			selectQuery.SelectAs(params.ValueField, valueField)
 		}
 
-		if config.LabelField == labelField {
-			query.Select(config.LabelField)
+		if params.LabelField == labelField {
+			selectQuery.Select(params.LabelField)
 		} else {
-			query.SelectAs(config.LabelField, labelField)
+			selectQuery.SelectAs(params.LabelField, labelField)
 		}
 
-		if config.DescriptionField != constants.Empty {
-			if config.DescriptionField == descriptionField {
-				query.Select(config.DescriptionField)
+		if params.DescriptionField != constants.Empty {
+			if params.DescriptionField == descriptionField {
+				selectQuery.Select(params.DescriptionField)
 			} else {
-				query.SelectAs(config.DescriptionField, descriptionField)
+				selectQuery.SelectAs(params.DescriptionField, descriptionField)
 			}
 		}
 
 		// Apply sorting
-		if config.SortField != constants.Empty {
-			query.OrderBy(config.SortField)
+		if params.SortField != constants.Empty {
+			selectQuery.OrderBy(params.SortField)
 		} else if shouldApplyDefaultSort {
-			query.OrderBy(constants.ColumnCreatedAt)
+			selectQuery.OrderBy(constants.ColumnCreatedAt)
 		}
 
 		// Execute query with limit
-		if err := query.Limit(maxOptionsLimit).Scan(ctx.Context(), &options); err != nil {
+		if err := selectQuery.Limit(maxOptionsLimit).Scan(ctx.Context(), &options); err != nil {
 			return err
 		}
 

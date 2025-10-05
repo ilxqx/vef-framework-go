@@ -3,8 +3,9 @@ package security
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/crypto"
 	"github.com/tjfoc/gmsm/sm2"
+
+	"github.com/ilxqx/vef-framework-go/crypto"
 )
 
 // SM2PasswordDecryptor implements PasswordDecryptor using SM2 encryption (国密算法).
@@ -16,13 +17,13 @@ type SM2PasswordDecryptor struct {
 // NewSM2PasswordDecryptor creates a new SM2 password decryptor with the given private key.
 func NewSM2PasswordDecryptor(privateKey *sm2.PrivateKey) (PasswordDecryptor, error) {
 	if privateKey == nil {
-		return nil, fmt.Errorf("private key cannot be nil")
+		return nil, fmt.Errorf("%w", ErrPrivateKeyNil)
 	}
 
 	// Use crypto package's SM2 cipher
 	cipher, err := crypto.NewSM2(privateKey, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SM2 cipher: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateSM2CipherFailed, err)
 	}
 
 	return &SM2PasswordDecryptor{
@@ -35,7 +36,7 @@ func NewSM2PasswordDecryptorFromPEM(pemKey []byte) (PasswordDecryptor, error) {
 	// Use crypto package's SM2 cipher from PEM
 	cipher, err := crypto.NewSM2FromPEM(pemKey, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SM2 cipher from PEM: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateSM2CipherFromPEMFailed, err)
 	}
 
 	return &SM2PasswordDecryptor{
@@ -48,7 +49,7 @@ func NewSM2PasswordDecryptorFromHex(privateKeyHex string) (PasswordDecryptor, er
 	// Use crypto package's SM2 cipher from hex
 	cipher, err := crypto.NewSM2FromHex(privateKeyHex, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SM2 cipher from hex: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateSM2CipherFromHexFailed, err)
 	}
 
 	return &SM2PasswordDecryptor{
@@ -57,7 +58,7 @@ func NewSM2PasswordDecryptorFromHex(privateKeyHex string) (PasswordDecryptor, er
 }
 
 // Decrypt decrypts the base64-encoded SM2-encrypted password.
-// The encrypted password is expected to be in the format: base64(SM2(plaintext))
+// The encrypted password is expected to be in the format: base64(SM2(plaintext)).
 func (d *SM2PasswordDecryptor) Decrypt(encryptedPassword string) (string, error) {
 	return d.cipher.Decrypt(encryptedPassword)
 }

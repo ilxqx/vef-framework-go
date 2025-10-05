@@ -1,0 +1,188 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+  allow-serial-runners: true
+
+severity:
+  default: error
+
+linters:
+  enable:
+    - errcheck      
+    - govet        
+    - ineffassign  
+    - staticcheck  
+    - unused       
+
+    - inamedparam
+    - asciicheck
+    - gocyclo      
+    - misspell     
+    - unconvert    
+    - unparam      
+    - noctx
+    - mirror   
+    - bidichk 
+    - bodyclose    
+    - rowserrcheck 
+    - sqlclosecheck 
+    - whitespace   
+    - godot        
+    - wsl_v5
+    - gosec              
+    - errorlint
+    - err113  
+    - nilerr       
+    - nilnesserr
+    - nlreturn
+
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+
+    - tagliatelle
+    - tagalign
+
+  settings:
+    inamedparam:
+      skip-single-param: true
+ 
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+      verbose: true
+      exclude-functions:
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+        - (*strings.Builder).WriteString
+        - (*strings.Builder).Write
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment 
+        - shadow      
+
+    gocyclo:
+      min-complexity: 32
+
+    misspell:
+      locale: US
+
+    gosec:
+      severity: high
+      confidence: high
+
+    godot:
+      scope: declarations
+      exclude:
+        - "^@"
+      capital: true
+
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    
+    whitespace:
+      multi-if: true
+      multi-func: true
+    
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: true
+      branch-max-lines: 6
+      case-max-lines: 4
+
+    embeddedstructfieldcheck:
+      empty-line: true
+      forbid-mutex: true
+
+    dupl:
+      threshold: 200
+    
+    tagliatelle:
+      case:
+        rules:
+          json: camel
+          xml: camel
+          config: snake
+    
+    tagalign:
+      align: false
+      sort: true
+      order: [json, xml, yaml, yml, toml, query, form, config, tabular, search, bun, mold, validate, label, label_i18n]
+
+  exclusions:
+    rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - bodyclose
+          - errcheck
+          - err113
+          - dupl
+      - path: 'internal/orm/aggregate\.go'
+        linters:
+          - dupl
+      - path: 'null/(date|date_time|time)\.go'
+        linters:
+          - dupl
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/ilxqx/vef-framework-go)
+        - blank
+        - dot
+        - alias
+        - localmodule
+      no-inline-comments: false
+      no-prefix-comments: false
+      custom-order: false
+      no-lex-order: false
+    gofmt:
+      simplify: false
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+        - pattern: 'a[b:len(a)]'
+          replacement: 'a[b:]'
+    gofumpt:
+      module-path: github.com/ilxqx/vef-framework-go
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - github.com/ilxqx/vef-framework-go
+    golines:
+      max-len: 200
+      tab-len: 8
+      shorten-comments: false
+      reformat-tags: true
+      chain-split-dots: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  fix: true
+  whole-files: true
+
+output:
+  formats:
+    text:
+      print-linter-name: true
+      print-issued-lines: true
+      colors: true

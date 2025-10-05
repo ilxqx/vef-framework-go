@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/muesli/termenv"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/muesli/termenv"
-	"go.uber.org/fx"
 )
 
 var logger = log.Named("app")
@@ -32,6 +33,7 @@ func (a *App) Start() <-chan error {
 
 	// errChan is a buffered channel for error communication
 	errChan := make(chan error, 1)
+
 	go func() {
 		if err := a.app.Listen(
 			fmt.Sprintf(":%d", a.port),
@@ -51,11 +53,13 @@ func (a *App) Start() <-chan error {
 `, output.String(constants.VEFVersion).Foreground(termenv.ANSIBrightGreen).String())
 
 					logger.Infof("VEF application started successfully on port %d", a.port)
+
 					return nil
 				},
 			},
 		); err != nil {
 			logger.Errorf("Failed to start VEF application: %v", err)
+
 			errChan <- err
 		}
 	}()
@@ -67,6 +71,7 @@ func (a *App) Start() <-chan error {
 // It waits up to 30 seconds for active connections to close.
 func (a *App) Stop() error {
 	logger.Info("Stopping VEF application...")
+
 	return a.app.ShutdownWithTimeout(time.Second * 30)
 }
 
@@ -80,6 +85,7 @@ func (a *App) Test(req *http.Request, timeout ...time.Duration) (*http.Response,
 			Timeout: timeout[0],
 		})
 	}
+
 	return a.app.Test(req)
 }
 
@@ -87,6 +93,7 @@ func (a *App) Test(req *http.Request, timeout ...time.Duration) (*http.Response,
 // It is used with Uber FX dependency injection.
 type AppParams struct {
 	fx.In
+
 	Config        *config.AppConfig
 	Middlewares   []Middleware `group:"vef:app:middlewares"`
 	ApiEngine     api.Engine   `name:"vef:api:engine"`
@@ -105,9 +112,7 @@ func New(params AppParams) (*App, error) {
 	}
 
 	// Configure Fiber app with middlewares and routes
-	if err := configureFiberApp(fiberApp, params.Middlewares, params.ApiEngine, params.OpenApiEngine); err != nil {
-		return nil, fmt.Errorf("failed to configure fiber app: %w", err)
-	}
+	configureFiberApp(fiberApp, params.Middlewares, params.ApiEngine, params.OpenApiEngine)
 
 	return &App{
 		app:  fiberApp,

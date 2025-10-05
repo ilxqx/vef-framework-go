@@ -41,6 +41,8 @@
   "import_validation_failed": "Data validation failed during import",
   "import_requires_multipart": "Import request must use 'multipart/form-data' format",
   "import_requires_file": "Import file is required",
+  "unsupported_import_format": "Unsupported import format",
+  "unsupported_export_format": "Unsupported export format",
   "api_request_version": "Version",
   "api_request_resource": "Resource",
   "api_request_action": "Action",

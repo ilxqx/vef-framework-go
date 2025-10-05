@@ -12,15 +12,15 @@ type Model struct {
 	ModelPK `bun:"extend"`
 
 	// CreatedAt is the created at time of the model
-	CreatedAt datetime.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
+	CreatedAt datetime.DateTime `json:"createdAt"     bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
 	// CreatedBy is the created by of the model
-	CreatedBy string `json:"createdBy" bun:",notnull"`
+	CreatedBy string `json:"createdBy"     bun:",notnull"`
 	// CreatedByName is the created by name of the model
 	CreatedByName string `json:"createdByName" bun:",scanonly"`
 	// UpdatedAt is the updated at time of the model
-	UpdatedAt datetime.DateTime `json:"updatedAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
+	UpdatedAt datetime.DateTime `json:"updatedAt"     bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
 	// UpdatedBy is the updated by of the model
-	UpdatedBy string `json:"updatedBy" bun:",notnull"`
+	UpdatedBy string `json:"updatedBy"     bun:",notnull"`
 	// UpdatedByName is the updated by name of the model
 	UpdatedByName string `json:"updatedByName" bun:",scanonly"`
 }

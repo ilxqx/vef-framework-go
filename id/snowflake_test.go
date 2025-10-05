@@ -88,8 +88,10 @@ func TestSnowflakeEnvironmentVariables(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
-		const numGoroutines = 50
-		const idsPerGoroutine = 200
+		const (
+			numGoroutines   = 50
+			idsPerGoroutine = 200
+		)
 
 		idChan := make(chan string, numGoroutines*idsPerGoroutine)
 
@@ -104,6 +106,7 @@ func TestSnowflakeEnvironmentVariables(t *testing.T) {
 
 		// Collect all IDs
 		ids := make(map[string]bool)
+
 		for range numGoroutines * idsPerGoroutine {
 			id := <-idChan
 			assert.False(t, ids[id], "Concurrent generation should produce unique IDs")
@@ -134,12 +137,14 @@ func TestSnowflakeConfiguration(t *testing.T) {
 		// Test minimum valid node ID
 		gen0, err := NewSnowflakeIdGenerator(0)
 		require.NoError(t, err)
+
 		id0 := gen0.Generate()
 		assert.NotEmpty(t, id0, "Node ID 0 should work")
 
 		// Test maximum valid node ID (2^6 - 1 = 63)
 		gen63, err := NewSnowflakeIdGenerator(63)
 		require.NoError(t, err)
+
 		id63 := gen63.Generate()
 		assert.NotEmpty(t, id63, "Node ID 63 should work")
 

@@ -1,7 +1,7 @@
 package result
 
 const (
-	// Message IDs for i18n (used as keys in locale files)
+	// Message IDs for i18n (used as keys in locale files).
 	OkMessage                            = "ok"                       // OkMessage is the i18n key for ok response
 	OkCode                               = 0                          // OkCode is the code for ok response
 	ErrMessage                           = "error"                    // ErrMessage is the i18n key for error response

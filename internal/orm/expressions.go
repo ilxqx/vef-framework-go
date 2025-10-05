@@ -3,9 +3,10 @@ package orm
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 var (
@@ -20,6 +21,7 @@ type Expressions struct {
 
 func (e *Expressions) AppendQuery(fmter schema.Formatter, b []byte) ([]byte, error) {
 	var appendExprs func(b []byte, slice reflect.Value) ([]byte, error)
+
 	appendExprs = func(b []byte, slice reflect.Value) (_ []byte, err error) {
 		sliceLen := slice.Len()
 		if sliceLen == 0 {
@@ -44,6 +46,7 @@ func (e *Expressions) AppendQuery(fmter schema.Formatter, b []byte) ([]byte, err
 				if b, err = appendExprs(b, expr); err != nil {
 					return
 				}
+
 				b = append(b, constants.ByteRightParenthesis)
 			} else {
 				b = fmter.AppendValue(b, expr)

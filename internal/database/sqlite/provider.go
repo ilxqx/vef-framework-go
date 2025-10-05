@@ -4,32 +4,33 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
 	"github.com/uptrace/bun/driver/sqliteshim"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// provider implements databaseProvider for SQLite
+// provider implements databaseProvider for SQLite.
 type provider struct {
 	dbType constants.DbType
 }
 
-// NewProvider creates a new SQLite provider
+// NewProvider creates a new SQLite provider.
 func NewProvider() *provider {
 	return &provider{
 		dbType: constants.DbSQLite,
 	}
 }
 
-// Type returns the database type
+// Type returns the database type.
 func (p *provider) Type() constants.DbType {
 	return p.dbType
 }
 
-// Connect establishes a SQLite database connection
+// Connect establishes a SQLite database connection.
 func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(config); err != nil {
 		return nil, nil, err
@@ -47,19 +48,19 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 	return db, sqlitedialect.New(), nil
 }
 
-// ValidateConfig validates SQLite configuration
+// ValidateConfig validates SQLite configuration.
 func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
 	// SQLite is flexible - if no path is provided, we'll use in-memory mode
 	// No validation errors needed
 	return nil
 }
 
-// QueryVersion queries the SQLite version
+// QueryVersion queries the SQLite version.
 func (p *provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
-// buildDSN constructs SQLite Data Source Name
+// buildDSN constructs SQLite Data Source Name.
 func (p *provider) buildDSN(config *config.DatasourceConfig) string {
 	// If no path is specified or path is empty, use in-memory SQLite with shared cache
 	// Using file::memory: syntax with mode=memory&cache=shared ensures the same

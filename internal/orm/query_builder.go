@@ -55,6 +55,7 @@ func (b *BaseQueryBuilder) CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery
 		isSubQuery: true,
 	}
 	eb.qb = query
+
 	return query
 }
 
@@ -62,6 +63,7 @@ func (b *BaseQueryBuilder) CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery
 func (b *BaseQueryBuilder) BuildSubQuery(builder func(query SelectQuery)) *bun.SelectQuery {
 	subQuery := b.query.NewSelect()
 	builder(b.CreateSubQuery(subQuery))
+
 	return subQuery
 }
 
@@ -72,6 +74,7 @@ func (b *BaseQueryBuilder) BuildCondition(builder func(ConditionBuilder)) interf
 } {
 	cb := newConditionBuilder(b)
 	builder(cb)
+
 	return cb
 }
 
@@ -86,7 +89,8 @@ func newQueryBuilder(dialect schema.Dialect, query interface {
 	fmt.Stringer
 
 	NewSelect() *bun.SelectQuery
-}, eb ExprBuilder) *BaseQueryBuilder {
+}, eb ExprBuilder,
+) *BaseQueryBuilder {
 	return &BaseQueryBuilder{
 		dialect: dialect,
 		query:   query,

@@ -17,5 +17,6 @@ func ColumnWithAlias(column string, alias ...string) string {
 	_, _ = sb.WriteString(alias[0])
 	_ = sb.WriteByte(constants.ByteDot)
 	_, _ = sb.WriteString(column)
+
 	return sb.String()
 }

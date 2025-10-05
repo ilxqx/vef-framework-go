@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/storage"
-	"go.uber.org/fx"
 )
 
 var logger = log.Named("storage")
@@ -25,6 +26,7 @@ var Module = fx.Module("storage",
 			return fmt.Errorf("failed to setup storage provider: %w", err)
 		}
 		logger.Info("Storage module initialized")
+
 		return nil
 	}),
 )

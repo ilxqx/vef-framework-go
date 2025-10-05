@@ -38,7 +38,7 @@ func ErrWithCode(code int, message string) Error {
 }
 
 // ErrWithCodeAndStatus creates a new Error with a code and status.
-func ErrWithCodeAndStatus(code int, status int, message string) Error {
+func ErrWithCodeAndStatus(code, status int, message string) Error {
 	return Error{
 		Code:    code,
 		Message: message,
@@ -65,7 +65,7 @@ func ErrWithCodef(code int, messageFormat string, args ...any) Error {
 }
 
 // ErrWithCodeAndStatusf creates a new Error with a formatted message, code and status.
-func ErrWithCodeAndStatusf(code int, status int, messageFormat string, args ...any) *Error {
+func ErrWithCodeAndStatusf(code, status int, messageFormat string, args ...any) *Error {
 	return &Error{
 		Code:    code,
 		Message: fmt.Sprintf(messageFormat, args...),

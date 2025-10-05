@@ -3,9 +3,11 @@
 package null
 
 import (
-	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/samber/lo"
+
 	dec "github.com/shopspring/decimal"
+
+	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
 // Decimal represents a decimal.Decimal that may be null.

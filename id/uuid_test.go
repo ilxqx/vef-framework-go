@@ -53,8 +53,11 @@ func TestUuidIdGenerator(t *testing.T) {
 
 	t.Run("should be thread-safe", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
-		const numGoroutines = 100
-		const uuidsPerGoroutine = 100
+
+		const (
+			numGoroutines     = 100
+			uuidsPerGoroutine = 100
+		)
 
 		uuidChan := make(chan string, numGoroutines*uuidsPerGoroutine)
 
@@ -69,6 +72,7 @@ func TestUuidIdGenerator(t *testing.T) {
 
 		// Collect all UUIDs
 		uuids := make(map[string]bool)
+
 		for range numGoroutines * uuidsPerGoroutine {
 			uuid := <-uuidChan
 			assert.False(t, uuids[uuid], "Concurrent UUID generation should produce unique UUIDs")

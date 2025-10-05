@@ -7,22 +7,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+	"github.com/uptrace/bun"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
-	"github.com/stretchr/testify/suite"
-	"github.com/uptrace/bun"
 )
 
-// DatabaseTestSuite is the test suite for database package
+// DatabaseTestSuite is the test suite for database package.
 type DatabaseTestSuite struct {
 	suite.Suite
+
 	ctx               context.Context
 	postgresContainer *testhelpers.PostgresContainer
 	mysqlContainer    *testhelpers.MySQLContainer
 }
 
-// SetupSuite runs before all tests in the suite
+// SetupSuite runs before all tests in the suite.
 func (suite *DatabaseTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
@@ -33,17 +35,18 @@ func (suite *DatabaseTestSuite) SetupSuite() {
 	suite.mysqlContainer = testhelpers.NewMySQLContainer(suite.ctx, &suite.Suite)
 }
 
-// TearDownSuite runs after all tests in the suite
+// TearDownSuite runs after all tests in the suite.
 func (suite *DatabaseTestSuite) TearDownSuite() {
 	if suite.postgresContainer != nil {
 		suite.postgresContainer.Terminate(suite.ctx, &suite.Suite)
 	}
+
 	if suite.mysqlContainer != nil {
 		suite.mysqlContainer.Terminate(suite.ctx, &suite.Suite)
 	}
 }
 
-// TestSQLiteConnection tests SQLite database connection
+// TestSQLiteConnection tests SQLite database connection.
 func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 	// Use in-memory SQLite (no path specified)
 	config := &config.DatasourceConfig{
@@ -62,7 +65,7 @@ func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 	suite.Require().NoError(db.Close())
 }
 
-// TestSQLiteWithOptions tests SQLite with custom options
+// TestSQLiteWithOptions tests SQLite with custom options.
 func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 	// Use in-memory SQLite with custom options
 	config := &config.DatasourceConfig{
@@ -82,7 +85,7 @@ func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 	suite.Require().NoError(db.Close())
 }
 
-// TestPostgreSQLConnection tests PostgreSQL database connection
+// TestPostgreSQLConnection tests PostgreSQL database connection.
 func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 	// Use the pre-configured PostgreSQL container
 	config := suite.postgresContainer.DsConfig
@@ -100,7 +103,7 @@ func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 	suite.Require().NoError(db.Close())
 }
 
-// TestMySQLConnection tests MySQL database connection
+// TestMySQLConnection tests MySQL database connection.
 func (suite *DatabaseTestSuite) TestMySQLConnection() {
 	// Use the pre-configured MySQL container
 	config := suite.mysqlContainer.DsConfig
@@ -118,7 +121,7 @@ func (suite *DatabaseTestSuite) TestMySQLConnection() {
 	suite.Require().NoError(db.Close())
 }
 
-// TestUnsupportedDatabaseType tests error handling for unsupported database types
+// TestUnsupportedDatabaseType tests error handling for unsupported database types.
 func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 	config := &config.DatasourceConfig{
 		Type: "unsupported",
@@ -130,7 +133,7 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 	suite.Contains(err.Error(), "unsupported database type")
 }
 
-// TestSQLiteInMemoryMode tests SQLite in-memory mode
+// TestSQLiteInMemoryMode tests SQLite in-memory mode.
 func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 	config := &config.DatasourceConfig{
 		Type: constants.DbSQLite,
@@ -147,16 +150,18 @@ func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 	suite.Require().NoError(db.Close())
 }
 
-// TestSQLiteFileMode tests SQLite file mode
+// TestSQLiteFileMode tests SQLite file mode.
 func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 	// Create a temporary SQLite database file
 	tempFile, err := os.CreateTemp("", "test_file_*.db")
 	suite.Require().NoError(err)
+
 	defer func() {
 		if err := os.Remove(tempFile.Name()); err != nil {
 			suite.T().Logf("Failed to remove temp file: %v", err)
 		}
 	}()
+
 	if err := tempFile.Close(); err != nil {
 		suite.T().Logf("Failed to close temp file: %v", err)
 	}
@@ -176,7 +181,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 	suite.Require().NoError(db.Close())
 }
 
-// TestMySQLValidation tests MySQL configuration validation
+// TestMySQLValidation tests MySQL configuration validation.
 func (suite *DatabaseTestSuite) TestMySQLValidation() {
 	config := &config.DatasourceConfig{
 		Type: constants.DbMySQL,
@@ -192,7 +197,7 @@ func (suite *DatabaseTestSuite) TestMySQLValidation() {
 	suite.Contains(err.Error(), "database name is required")
 }
 
-// TestConnectionPoolConfiguration tests connection pool settings
+// TestConnectionPoolConfiguration tests connection pool settings.
 func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	// Use in-memory SQLite for connection pool testing
 	config := &config.DatasourceConfig{
@@ -220,6 +225,7 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 
 	// Test that we can use the connection pool
 	var result int
+
 	err = db.NewSelect().ColumnExpr("1").Scan(suite.ctx, &result)
 	suite.Require().NoError(err)
 	suite.Equal(1, result)
@@ -227,18 +233,20 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	suite.Require().NoError(db.Close())
 }
 
-// testBasicDbOperations performs basic database operations to verify functionality
+// testBasicDbOperations performs basic database operations to verify functionality.
 func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string) {
 	suite.T().Logf("Testing basic operations for %s", dbType)
 
 	// Test simple query
 	var result int
+
 	err := db.NewSelect().ColumnExpr("1 as test").Scan(suite.ctx, &result)
 	suite.Require().NoError(err)
 	suite.Equal(1, result)
 
 	// Test version query (this tests our version query implementation)
 	var version string
+
 	switch dbType {
 	case "SQLite", "SQLite In-Memory", "SQLite File":
 		err = db.NewSelect().ColumnExpr("sqlite_version()").Scan(suite.ctx, &version)
@@ -247,6 +255,7 @@ func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string)
 	case "MySQL":
 		err = db.NewSelect().ColumnExpr("version()").Scan(suite.ctx, &version)
 	}
+
 	suite.Require().NoError(err)
 	suite.NotEmpty(version)
 	suite.T().Logf("%s version: %s", dbType, version)
@@ -271,6 +280,7 @@ func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string)
 
 	// Read test data
 	var retrieved TestTable
+
 	err = db.NewSelect().
 		Model(&retrieved).
 		Where("name = ?", testData.Name).
@@ -287,14 +297,14 @@ func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string)
 	suite.Require().NoError(err)
 }
 
-// TestTable is a simple table for testing database operations
+// TestTable is a simple table for testing database operations.
 type TestTable struct {
 	ID    int64  `bun:"id,pk,autoincrement"`
 	Name  string `bun:"name,notnull"`
 	Value int    `bun:"value"`
 }
 
-// TestDatabaseSuite runs the test suite
+// TestDatabaseSuite runs the test suite.
 func TestDatabaseSuite(t *testing.T) {
 	suite.Run(t, new(DatabaseTestSuite))
 }

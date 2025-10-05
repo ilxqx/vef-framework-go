@@ -22,6 +22,7 @@ func (s *SafeSet[T]) Remove(item T) {
 
 func (s *SafeSet[T]) Contains(item T) bool {
 	_, ok := s.m.Load(item)
+
 	return ok
 }
 

@@ -1,11 +1,12 @@
 package security
 
 import (
+	"github.com/samber/lo"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/samber/lo"
-	"go.uber.org/fx"
 )
 
 var logger = log.Named("security")

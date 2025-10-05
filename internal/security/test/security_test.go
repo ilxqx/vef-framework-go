@@ -10,6 +10,10 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
@@ -21,12 +25,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/result"
 	securityPkg "github.com/ilxqx/vef-framework-go/security"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
-	"go.uber.org/fx"
 )
 
-// MockUserLoader is a mock implementation of security.UserLoader for testing
+// MockUserLoader is a mock implementation of security.UserLoader for testing.
 type MockUserLoader struct {
 	mock.Mock
 }
@@ -36,6 +37,7 @@ func (m *MockUserLoader) LoadByUsername(username string) (*securityPkg.Principal
 	if args.Get(0) == nil {
 		return nil, args.String(1), args.Error(2)
 	}
+
 	return args.Get(0).(*securityPkg.Principal), args.String(1), args.Error(2)
 }
 
@@ -44,12 +46,14 @@ func (m *MockUserLoader) LoadById(id string) (*securityPkg.Principal, error) {
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
+
 	return args.Get(0).(*securityPkg.Principal), args.Error(1)
 }
 
-// AuthResourceTestSuite is the test suite for AuthResource
+// AuthResourceTestSuite is the test suite for AuthResource.
 type AuthResourceTestSuite struct {
 	suite.Suite
+
 	ctx        context.Context
 	app        *app.App
 	stop       func()
@@ -58,7 +62,7 @@ type AuthResourceTestSuite struct {
 	testUser   *securityPkg.Principal
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *AuthResourceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -78,14 +82,14 @@ func (suite *AuthResourceTestSuite) SetupSuite() {
 	suite.setupTestApp()
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *AuthResourceTestSuite) TearDownSuite() {
 	if suite.stop != nil {
 		suite.stop()
 	}
 }
 
-// SetupTest runs before each test
+// SetupTest runs before each test.
 func (suite *AuthResourceTestSuite) SetupTest() {
 	// Clear only the calls history, keep the expectations
 	suite.userLoader.Calls = nil
@@ -155,6 +159,7 @@ func (suite *AuthResourceTestSuite) makeAPIRequest(body api.Request) *http.Respo
 
 	resp, err := suite.app.Test(req)
 	suite.Require().NoError(err)
+
 	return resp
 }
 
@@ -168,20 +173,25 @@ func (suite *AuthResourceTestSuite) makeAPIRequestWithToken(body api.Request, to
 
 	resp, err := suite.app.Test(req)
 	suite.Require().NoError(err)
+
 	return resp
 }
 
 func (suite *AuthResourceTestSuite) readBody(resp *http.Response) result.Result {
 	body, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
 	suite.Require().NoError(err)
 	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err)
+
 	return *res
 }
 
 func (suite *AuthResourceTestSuite) readDataAsMap(data any) map[string]any {
 	m, ok := data.(map[string]any)
 	suite.Require().True(ok, "Expected data to be a map")
+
 	return m
 }
 
@@ -480,22 +490,61 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 }
 
 func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
-	// Note: Due to the refresh token's notBefore time (set to accessTokenExpires/2),
-	// the refresh token won't be valid immediately after generation.
-	// This test verifies that when a user is deleted/not found during refresh,
-	// the appropriate error is returned.
+	// In test mode, refresh token's notBefore is disabled, so we can refresh immediately.
+	// This test verifies that when the user is not found during refresh, the API returns the expected error.
 
-	// However, testing this scenario properly would require either:
-	// 1. Waiting 30 minutes for the token to become valid (impractical)
-	// 2. Modifying the token generator to use a shorter notBefore for tests
-	// 3. Accepting that this edge case is covered by integration tests
+	// Step 1: Login to obtain tokens
+	loginResp := suite.makeAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "security/auth",
+			Action:   "login",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"type":        security.AuthTypePassword,
+			"principal":   "testuser",
+			"credentials": "password123",
+		},
+	})
 
-	// For now, we'll test that attempting to refresh with a non-existent user ID
-	// fails with the expected error, even though the token validation itself
-	// will fail first due to notBefore.
+	loginBody := suite.readBody(loginResp)
+	suite.True(loginBody.IsOk(), "expected login success before refresh test")
 
-	// This test is skipped as it requires time-dependent token validation
-	suite.T().Skip("Skipping TestRefreshUserNotFound - requires time-dependent token validation")
+	tokens := suite.readDataAsMap(loginBody.Data)
+	refreshToken := tokens["refreshToken"].(string)
+
+	// Step 2: Simulate user deletion/not found for any user id used in the refresh token
+	// Save current expectations and restore after this test to avoid side effects on other tests
+	prevExpected := append([]*mock.Call(nil), suite.userLoader.ExpectedCalls...)
+	defer func() { suite.userLoader.ExpectedCalls = prevExpected }()
+
+	// Add an override for the next LoadById call and move it to the front so it matches first
+	call := suite.userLoader.On("LoadById", mock.Anything).Return((*securityPkg.Principal)(nil), nil).Once()
+	// Reorder: move last added expectation to the front
+	if n := len(suite.userLoader.ExpectedCalls); n > 1 {
+		last := suite.userLoader.ExpectedCalls[n-1]
+		suite.userLoader.ExpectedCalls = append([]*mock.Call{last}, suite.userLoader.ExpectedCalls[:n-1]...)
+		// Ensure the pointer 'call' still refers to the correct entry (not strictly necessary for matching)
+		_ = call
+	}
+
+	// Step 3: Attempt refresh, expect record not found
+	resp := suite.makeAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "security/auth",
+			Action:   "refresh",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"refreshToken": refreshToken,
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode)
+
+	body := suite.readBody(resp)
+	suite.False(body.IsOk(), "expected refresh to fail when user not found")
+	suite.Equal(result.ErrCodeRecordNotFound, body.Code)
 }
 
 func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
@@ -645,7 +694,7 @@ func (suite *AuthResourceTestSuite) TestTokenDetails() {
 	suite.Equal(3, len(strings.Split(refreshToken, ".")))
 }
 
-// TestAuthResourceTestSuite runs the test suite
-func TestAuthResourceTestSuite(t *testing.T) {
+// TestAuthResourceSuite runs the test suite.
+func TestAuthResourceSuite(t *testing.T) {
 	suite.Run(t, new(AuthResourceTestSuite))
 }

@@ -4,34 +4,35 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/mysqldialect"
 	"github.com/uptrace/bun/schema"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// provider implements databaseProvider for MySQL
+// provider implements databaseProvider for MySQL.
 type provider struct {
 	dbType constants.DbType
 }
 
-// NewProvider creates a new MySQL provider
+// NewProvider creates a new MySQL provider.
 func NewProvider() *provider {
 	return &provider{
 		dbType: constants.DbMySQL,
 	}
 }
 
-// Type returns the database type
+// Type returns the database type.
 func (p *provider) Type() constants.DbType {
 	return p.dbType
 }
 
-// Connect establishes a MySQL database connection
+// Connect establishes a MySQL database connection.
 func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(config); err != nil {
 		return nil, nil, err
@@ -48,21 +49,22 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 	return db, mysqldialect.New(), nil
 }
 
-// ValidateConfig validates MySQL configuration
+// ValidateConfig validates MySQL configuration.
 func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
 	// MySQL requires at least database name
 	if config.Database == constants.Empty {
-		return fmt.Errorf("database name is required for MySQL")
+		return fmt.Errorf("%w", ErrMySQLDatabaseRequired)
 	}
+
 	return nil
 }
 
-// QueryVersion queries the MySQL version
+// QueryVersion queries the MySQL version.
 func (p *provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
-// buildDSN constructs MySQL Data Source Name
+// buildDSN constructs MySQL Data Source Name.
 func (p *provider) buildDSN(config *config.DatasourceConfig) string {
 	host := lo.Ternary(config.Host != constants.Empty, config.Host, "127.0.0.1")
 	port := lo.Ternary(config.Port != 0, config.Port, uint16(3306))

@@ -3,10 +3,12 @@ package cache
 import (
 	"context"
 	"time"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 const (
-	cacheKeyPrefix = "vef:"
+	cacheKeyPrefix = constants.VEFName + constants.Colon
 )
 
 // Cache defines the interface for a generic key-value cache.
@@ -59,6 +61,8 @@ type Store interface {
 
 // Serializer handles serialization/deserialization of cache values.
 type Serializer[T any] interface {
+	// Serialize converts a value of type T into a byte array for storage
 	Serialize(value T) ([]byte, error)
+	// Deserialize converts a byte array back into a value of type T
 	Deserialize(data []byte) (T, error)
 }

@@ -2,7 +2,7 @@ package copier
 
 import "github.com/jinzhu/copier"
 
-// converters is the default converters for copier
+// converters is the default converters for copier.
 var converters = []TypeConverter{
 	// null.String converters
 	stringToNullStringConverter,
@@ -76,43 +76,43 @@ type (
 	TypeConverter = copier.TypeConverter
 )
 
-// WithIgnoreEmpty ignore empty fields
+// WithIgnoreEmpty ignore empty fields.
 func WithIgnoreEmpty() copyOption {
 	return func(option *copier.Option) {
 		option.IgnoreEmpty = true
 	}
 }
 
-// WithDeepCopy deep copy fields
+// WithDeepCopy deep copy fields.
 func WithDeepCopy() copyOption {
 	return func(option *copier.Option) {
 		option.DeepCopy = true
 	}
 }
 
-// WithCaseInsensitive case-insensitive
+// WithCaseInsensitive case-insensitive.
 func WithCaseInsensitive() copyOption {
 	return func(option *copier.Option) {
 		option.CaseSensitive = false
 	}
 }
 
-// WithFieldNameMapping field name mapping
+// WithFieldNameMapping field name mapping.
 func WithFieldNameMapping(fieldMapping ...copier.FieldNameMapping) copyOption {
 	return func(option *copier.Option) {
 		option.FieldNameMapping = append(option.FieldNameMapping, fieldMapping...)
 	}
 }
 
-// WithTypeConverters sets the type converters
+// WithTypeConverters sets the type converters.
 func WithTypeConverters(converters ...TypeConverter) copyOption {
 	return func(option *copier.Option) {
 		option.Converters = append(option.Converters, converters...)
 	}
 }
 
-// Copy src to dst
-func Copy(src any, dst any, options ...copyOption) error {
+// Copy src to dst.
+func Copy(src, dst any, options ...copyOption) error {
 	option := copier.Option{
 		CaseSensitive: true,
 		Converters:    converters,

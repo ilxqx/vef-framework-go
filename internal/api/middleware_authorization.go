@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 )
@@ -15,6 +16,7 @@ func buildAuthorizationMiddleware(manager api.Manager) fiber.Handler {
 
 		if definition.RequiresPermission() {
 			// TODO check permission
+			logger.Infof("Authorization middleware: permission check: %v", definition.PermissionToken)
 		}
 
 		return ctx.Next()

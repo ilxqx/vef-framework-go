@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/samber/lo"
 )
 
 const (
@@ -18,15 +19,13 @@ const (
 	defaultJwtSecret   = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2" // Secret
 )
 
-var (
-	jwtParseOptions = []jwt.ParserOption{
-		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
-		jwt.WithIssuer(jwtIssuer),
-		jwt.WithLeeway(1 * time.Minute),
-		jwt.WithIssuedAt(),
-		jwt.WithExpirationRequired(),
-	}
-)
+var jwtParseOptions = []jwt.ParserOption{
+	jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
+	jwt.WithIssuer(jwtIssuer),
+	jwt.WithLeeway(1 * time.Minute),
+	jwt.WithIssuedAt(),
+	jwt.WithExpirationRequired(),
+}
 
 // JWT provides low-level JWT token operations.
 // It handles token generation, parsing, and validation without business logic.
@@ -43,10 +42,10 @@ func NewJWT(config *JWTConfig) (*JWT, error) {
 		secret []byte
 		err    error
 	)
-
 	if secret, err = hex.DecodeString(lo.CoalesceOrEmpty(config.Secret, defaultJwtSecret)); err != nil {
-		return nil, fmt.Errorf("failed to decode jwt secret: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrDecodeJWTSecretFailed, err)
 	}
+
 	config.Audience = lo.CoalesceOrEmpty(config.Audience, defaultJwtAudience)
 
 	return &JWT{
@@ -57,7 +56,7 @@ func NewJWT(config *JWTConfig) (*JWT, error) {
 
 // Generate creates a JWT token with the given claims and expires.
 // The expiration is computed as now + expires; iat and nbf are set to now.
-func (j *JWT) Generate(claimsBuilder *JWTClaimsBuilder, expires time.Duration, notBefore time.Duration) (string, error) {
+func (j *JWT) Generate(claimsBuilder *JWTClaimsBuilder, expires, notBefore time.Duration) (string, error) {
 	claims := claimsBuilder.build()
 	// Set standard claims
 	now := time.Now()
@@ -68,6 +67,7 @@ func (j *JWT) Generate(claimsBuilder *JWTClaimsBuilder, expires time.Duration, n
 	claims[claimExpiresAt] = now.Add(expires).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	return token.SignedString(j.secret)
 }
 
@@ -85,7 +85,6 @@ func (j *JWT) Parse(tokenString string) (*JWTClaimsAccessor, error) {
 				return j.secret, nil
 			},
 		)
-
 	if err != nil {
 		return nil, mapJWTError(err)
 	}

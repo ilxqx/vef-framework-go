@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
-	"github.com/ilxqx/vef-framework-go/internal/log"
 	"go.uber.org/fx"
+
+	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
 var logger = log.Named("cron")
@@ -40,6 +41,7 @@ func newScheduler(lc fx.Lifecycle) (gocron.Scheduler, error) {
 				}
 
 				logger.Info("Cron scheduler stopped")
+
 				return nil
 			},
 		),

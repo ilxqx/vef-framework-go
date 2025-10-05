@@ -4,15 +4,15 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/samber/lo"
+	"github.com/spf13/cast"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/monad"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/spf13/cast"
-
-	"github.com/samber/lo"
 )
 
 var (
@@ -44,6 +44,7 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 	value := reflect.Indirect(reflect.ValueOf(target))
 	if value.Kind() != reflect.Struct {
 		logger.Warnf("Invalid target type, expected struct, got %s", value.Type().Name())
+
 		return
 	}
 
@@ -59,64 +60,87 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Int:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Int16:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Int32:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Float:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Bool:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Byte:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.DateTime:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Date:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Time:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
+
 		case null.Decimal:
 			if !nv.Valid {
 				continue
 			}
+
 			fieldValue = nv.ValueOrZero()
 		}
 
 		alias := getColumnAlias(c.Alias, defaultAlias...)
+
 		columns := make([]string, len(c.Columns))
 		for i, column := range c.Columns {
 			columns[i] = dbhelpers.ColumnWithAlias(column, alias)
 		}
+
 		applyCondition(cb, c, columns, fieldValue)
 	}
 }
@@ -234,6 +258,7 @@ func parseStringInCondition(slice string, conditionParams map[string]string) []a
 			values = append(values, value)
 		}
 	}
+
 	return values
 }
 
@@ -276,8 +301,10 @@ func applyLikeCondition(cb orm.ConditionBuilder, columns []string, fieldValue an
 
 	if len(columns) > 1 {
 		applyMultiColumnLikeCondition(cb, columns, content, operator)
+
 		return
 	}
+
 	applySingleColumnLikeCondition(cb, columns[0], content, operator)
 }
 
@@ -304,66 +331,77 @@ func applyLikeOperation(cb orm.ConditionBuilder, column, content string, operato
 		} else {
 			cb.Contains(column, content)
 		}
+
 	case ContainsIgnoreCase:
 		if useOr {
 			cb.OrContainsIgnoreCase(column, content)
 		} else {
 			cb.ContainsIgnoreCase(column, content)
 		}
+
 	case NotContains:
 		if useOr {
 			cb.OrNotContains(column, content)
 		} else {
 			cb.NotContains(column, content)
 		}
+
 	case NotContainsIgnoreCase:
 		if useOr {
 			cb.OrNotContainsIgnoreCase(column, content)
 		} else {
 			cb.NotContainsIgnoreCase(column, content)
 		}
+
 	case StartsWith:
 		if useOr {
 			cb.OrStartsWith(column, content)
 		} else {
 			cb.StartsWith(column, content)
 		}
+
 	case StartsWithIgnoreCase:
 		if useOr {
 			cb.OrStartsWithIgnoreCase(column, content)
 		} else {
 			cb.StartsWithIgnoreCase(column, content)
 		}
+
 	case NotStartsWith:
 		if useOr {
 			cb.OrNotStartsWith(column, content)
 		} else {
 			cb.NotStartsWith(column, content)
 		}
+
 	case NotStartsWithIgnoreCase:
 		if useOr {
 			cb.OrNotStartsWithIgnoreCase(column, content)
 		} else {
 			cb.NotStartsWithIgnoreCase(column, content)
 		}
+
 	case EndsWith:
 		if useOr {
 			cb.OrEndsWith(column, content)
 		} else {
 			cb.EndsWith(column, content)
 		}
+
 	case EndsWithIgnoreCase:
 		if useOr {
 			cb.OrEndsWithIgnoreCase(column, content)
 		} else {
 			cb.EndsWithIgnoreCase(column, content)
 		}
+
 	case NotEndsWith:
 		if useOr {
 			cb.OrNotEndsWith(column, content)
 		} else {
 			cb.NotEndsWith(column, content)
 		}
+
 	case NotEndsWithIgnoreCase:
 		if useOr {
 			cb.OrNotEndsWithIgnoreCase(column, content)

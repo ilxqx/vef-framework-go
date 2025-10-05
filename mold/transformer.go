@@ -15,5 +15,5 @@ type Func func(ctx context.Context, fl FieldLevel) error
 type StructLevelFunc func(ctx context.Context, sl StructLevel) error
 
 // InterceptorFunc is a way to intercept custom types to redirect the functions to be applied to an inner typ/value.
-// eg. sql.NullString, the manipulation should be done on the inner string.
+// Eg. Sql.NullString, the manipulation should be done on the inner string.
 type InterceptorFunc func(current reflect.Value) (inner reflect.Value)

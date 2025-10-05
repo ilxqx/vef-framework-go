@@ -13,19 +13,19 @@ const (
 )
 
 // TranslateTransformer is a translator-based transformer that converts values to readable names
-// Supports multiple translators and delegates to the appropriate one based on translation kind (from tag parameters)
+// Supports multiple translators and delegates to the appropriate one based on translation kind (from tag parameters).
 type TranslateTransformer struct {
 	logger      log.Logger
 	translators []mold.Translator
 }
 
-// Tag returns the transformer tag name "translate"
+// Tag returns the transformer tag name "translate".
 func (*TranslateTransformer) Tag() string {
 	return "translate"
 }
 
 // Transform executes translation transformation logic
-// Gets translation kind from tag parameter and field value, then converts through appropriate translator
+// Gets translation kind from tag parameter and field value, then converts through appropriate translator.
 func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel) error {
 	name := fl.Name()
 	field := fl.Field()
@@ -39,12 +39,14 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 	descField, ok := fl.SiblingField(name + descFieldNameSuffix)
 	if !ok {
 		t.logger.Warnf("Ignore translation for field '%s' with value '%s' because target desc field '%s%s' is not found", name, value, name, descFieldNameSuffix)
+
 		return nil
 	}
 
 	kind := fl.Param()
 	if kind == constants.Empty {
 		t.logger.Warnf("Ignore translation for field '%s' with value '%s' because translation kind parameter is empty", name, value)
+
 		return nil
 	}
 
@@ -55,20 +57,23 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 			if err != nil {
 				return err
 			}
+
 			if descField.CanSet() {
 				descField.SetString(translated)
 			} else {
 				t.logger.Warnf("Ignore translation for field '%s' with value '%s' because target field '%s%s' is not settable", name, value, name, descFieldNameSuffix)
 			}
+
 			return nil
 		}
 	}
 
 	t.logger.Warnf("Ignore translation for field '%s' with value '%s' because no translator supports kind '%s'", name, value, kind)
+
 	return nil
 }
 
-// NewTranslateTransformer creates a translate transformer instance
+// NewTranslateTransformer creates a translate transformer instance.
 func NewTranslateTransformer(translators []mold.Translator) mold.FieldTransformer {
 	return &TranslateTransformer{
 		logger:      logger.Named("translate"),

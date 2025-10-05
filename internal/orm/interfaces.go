@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ilxqx/vef-framework-go/page"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/page"
 )
 
 // SelectQueryExecutor is an interface that defines the methods for executing SELECT queries.

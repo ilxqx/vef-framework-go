@@ -5,10 +5,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/sort"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/sort"
 )
 
 // getTableSchema extracts the table schema from a struct pointer model.
@@ -66,9 +67,11 @@ func applyModelRelation(relation ModelRelation, query SelectQuery) {
 	if len(table.PKs) > 0 {
 		pk = table.PKs[0].Name
 	}
+
 	if foreignColumn == constants.Empty {
 		foreignColumn = table.ModelName + constants.Underscore + pk
 	}
+
 	if referencedColumn == constants.Empty {
 		referencedColumn = pk
 	}
@@ -81,6 +84,7 @@ func applyModelRelation(relation ModelRelation, query SelectQuery) {
 					return eb.Expr(expr.String(), bun.Name(foreignColumn), bun.Name(table.Alias), bun.Name(referencedColumn))
 				})
 			}
+
 			if relation.On != nil {
 				relation.On(cb)
 			}
@@ -98,6 +102,7 @@ func applySort(orders []sort.OrderSpec, query SelectQuery) {
 		query.OrderByExpr(func(eb ExprBuilder) any {
 			return eb.Order(func(ob OrderBuilder) {
 				ob.Column(order.Column)
+
 				if order.Direction == sort.OrderDesc {
 					ob.Desc()
 				} else {

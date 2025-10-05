@@ -2,10 +2,10 @@ package datetime
 
 import (
 	"database/sql/driver"
-	"errors"
 	"time"
 
 	"github.com/gofiber/utils/v2"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
@@ -54,6 +54,7 @@ func (d Date) MarshalJSON() ([]byte, error) {
 	bs = append(bs, constants.JSONQuote)
 	bs = time.Time(d).AppendFormat(bs, time.DateOnly)
 	bs = append(bs, constants.JSONQuote)
+
 	return bs, nil
 }
 
@@ -65,7 +66,7 @@ func (d *Date) UnmarshalJSON(bs []byte) error {
 	}
 
 	if err := validateJSONFormat(bs, datePatternLength); err != nil {
-		return errors.New("invalid date format")
+		return ErrInvalidDateFormat
 	}
 
 	parsed, err := ParseDate(value[1 : datePatternLength+1])
@@ -74,6 +75,7 @@ func (d *Date) UnmarshalJSON(bs []byte) error {
 	}
 
 	*d = parsed
+
 	return nil
 }
 
@@ -167,6 +169,7 @@ func (d Date) EndOfDay() Date {
 func (d Date) BeginOfWeek() Date {
 	t := d.Unwrap()
 	weekday := int(t.Weekday())
+
 	return d.AddDays(-weekday)
 }
 
@@ -174,12 +177,14 @@ func (d Date) BeginOfWeek() Date {
 func (d Date) EndOfWeek() Date {
 	t := d.Unwrap()
 	weekday := int(t.Weekday())
+
 	return d.AddDays(6 - weekday)
 }
 
 // BeginOfMonth returns the beginning of the month for d.
 func (d Date) BeginOfMonth() Date {
 	t := d.Unwrap()
+
 	return DateOf(time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location()))
 }
 
@@ -188,6 +193,7 @@ func (d Date) EndOfMonth() Date {
 	t := d.Unwrap()
 	nextMonth := t.AddDate(0, 1, 0)
 	firstOfNextMonth := time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, t.Location())
+
 	return DateOf(firstOfNextMonth.AddDate(0, 0, -1))
 }
 
@@ -195,6 +201,7 @@ func (d Date) EndOfMonth() Date {
 func (d Date) BeginOfQuarter() Date {
 	t := d.Unwrap()
 	month := ((int(t.Month())-1)/3)*3 + 1
+
 	return DateOf(time.Date(t.Year(), time.Month(month), 1, 0, 0, 0, 0, t.Location()))
 }
 
@@ -203,18 +210,21 @@ func (d Date) EndOfQuarter() Date {
 	t := d.Unwrap()
 	month := ((int(t.Month())-1)/3)*3 + 3
 	lastDayOfQuarter := time.Date(t.Year(), time.Month(month+1), 1, 0, 0, 0, 0, t.Location()).AddDate(0, 0, -1)
+
 	return DateOf(lastDayOfQuarter)
 }
 
 // BeginOfYear returns the beginning of the year for d.
 func (d Date) BeginOfYear() Date {
 	t := d.Unwrap()
+
 	return DateOf(time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location()))
 }
 
 // EndOfYear returns the end of the year for d.
 func (d Date) EndOfYear() Date {
 	t := d.Unwrap()
+
 	return DateOf(time.Date(t.Year(), 12, 31, 0, 0, 0, 0, t.Location()))
 }
 
@@ -259,6 +269,7 @@ func (d Date) weekdayOffset(weekday time.Weekday) Date {
 	currentWeekday := int(t.Weekday())
 	targetWeekday := int(weekday)
 	offset := targetWeekday - currentWeekday
+
 	return d.AddDays(offset)
 }
 
@@ -273,7 +284,9 @@ func (d *Date) UnmarshalText(text []byte) error {
 	if err != nil {
 		return err
 	}
+
 	*d = parsed
+
 	return nil
 }
 

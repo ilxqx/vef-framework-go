@@ -5,9 +5,10 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/spf13/cast"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
-	"github.com/spf13/cast"
 )
 
 type sLogHandler struct {
@@ -39,6 +40,7 @@ func (s sLogHandler) Handle(ctx context.Context, record slog.Record) error {
 		if field := formatAttr(attr); field != constants.Empty {
 			fields = append(fields, field)
 		}
+
 		return true
 	})
 

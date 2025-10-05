@@ -2,6 +2,7 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -25,7 +26,7 @@ type UpdateManyParams[TParams any] struct {
 // DeleteManyParams is a wrapper type for batch delete parameters.
 // It contains a PKs field holding the slice of primary key values.
 // For single primary key models: PKs can be []any with direct values (e.g., ["id1", "id2"])
-// For composite primary key models: PKs should be []map[string]any with each map containing all PK fields
+// For composite primary key models: PKs should be []map[string]any with each map containing all PK fields.
 type DeleteManyParams struct {
 	api.In
 

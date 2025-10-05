@@ -6,12 +6,13 @@ type SelectTestSuite struct {
 	*ORMTestSuite
 }
 
-// TestBasicSelect tests basic SELECT functionality across all databases
+// TestBasicSelect tests basic SELECT functionality across all databases.
 func (suite *SelectTestSuite) TestBasicSelect() {
 	suite.T().Logf("Testing basic SELECT for %s", suite.dbType)
 
 	// Test 1: Select all users
 	var users []User
+
 	err := suite.db.NewSelect().
 		Model(&users).
 		Scan(suite.ctx)
@@ -41,6 +42,7 @@ func (suite *SelectTestSuite) TestBasicSelect() {
 
 	// Test 2: Select single user
 	var singleUser User
+
 	err = suite.db.NewSelect().
 		Model(&singleUser).
 		Where(func(cb ConditionBuilder) {
@@ -79,12 +81,13 @@ func (suite *SelectTestSuite) TestBasicSelect() {
 	suite.False(notExists)
 }
 
-// TestSelectWithConditions tests SELECT with various WHERE conditions
+// TestSelectWithConditions tests SELECT with various WHERE conditions.
 func (suite *SelectTestSuite) TestSelectWithConditions() {
 	suite.T().Logf("Testing SELECT with conditions for %s", suite.dbType)
 
 	// Test 1: Equals condition
 	var activeUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&activeUsers).
 		Where(func(cb ConditionBuilder) {
@@ -93,12 +96,14 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(activeUsers, 2, "Should have 2 active users")
+
 	for _, user := range activeUsers {
 		suite.True(user.IsActive)
 	}
 
 	// Test 2: Greater than condition
 	var olderUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&olderUsers).
 		Where(func(cb ConditionBuilder) {
@@ -107,12 +112,14 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(olderUsers, 2, "Should have 2 users older than 28")
+
 	for _, user := range olderUsers {
 		suite.True(user.Age > 28)
 	}
 
 	// Test 3: Between condition
 	var middleAgedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&middleAgedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -121,12 +128,14 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(middleAgedUsers, 2, "Should have 2 users between age 25-30")
+
 	for _, user := range middleAgedUsers {
 		suite.True(user.Age >= 25 && user.Age <= 30)
 	}
 
 	// Test 4: IN condition
 	var specificUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&specificUsers).
 		Where(func(cb ConditionBuilder) {
@@ -138,6 +147,7 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 
 	// Test 5: LIKE condition (Contains)
 	var johnsonUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&johnsonUsers).
 		Where(func(cb ConditionBuilder) {
@@ -150,6 +160,7 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 
 	// Test 6: StartsWith condition
 	var aliceUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&aliceUsers).
 		Where(func(cb ConditionBuilder) {
@@ -162,6 +173,7 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 
 	// Test 7: Complex AND conditions
 	var complexUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&complexUsers).
 		Where(func(cb ConditionBuilder) {
@@ -175,6 +187,7 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 
 	// Test 8: OR conditions
 	var orUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&orUsers).
 		Where(func(cb ConditionBuilder) {
@@ -185,12 +198,13 @@ func (suite *SelectTestSuite) TestSelectWithConditions() {
 	suite.Len(orUsers, 2, "Should have 2 users with age 25 or 35")
 }
 
-// TestSelectWithJoins tests SELECT with JOIN operations
+// TestSelectWithJoins tests SELECT with JOIN operations.
 func (suite *SelectTestSuite) TestSelectWithJoins() {
 	suite.T().Logf("Testing SELECT with JOINs for %s", suite.dbType)
 
 	// Test 1: Select posts with user information
 	var posts []Post
+
 	err := suite.db.NewSelect().
 		Model(&posts).
 		Join((*User)(nil), func(cb ConditionBuilder) {
@@ -205,6 +219,7 @@ func (suite *SelectTestSuite) TestSelectWithJoins() {
 
 	// Test 2: Select posts with category using relation
 	var postsWithRelation []Post
+
 	err = suite.db.NewSelect().
 		Model(&postsWithRelation).
 		Relation("User").
@@ -221,6 +236,7 @@ func (suite *SelectTestSuite) TestSelectWithJoins() {
 		if post.User != nil {
 			suite.NotEmpty(post.User.Name, "User relation should be loaded")
 		}
+
 		if post.Category != nil {
 			suite.NotEmpty(post.Category.Name, "Category relation should be loaded")
 		}
@@ -228,6 +244,7 @@ func (suite *SelectTestSuite) TestSelectWithJoins() {
 
 	// Test 3: Left join with posts and categories
 	var categoriesWithPosts []Category
+
 	err = suite.db.NewSelect().
 		Model(&categoriesWithPosts).
 		LeftJoin((*Post)(nil), func(cb ConditionBuilder) {
@@ -239,7 +256,7 @@ func (suite *SelectTestSuite) TestSelectWithJoins() {
 	suite.True(len(categoriesWithPosts) > 0, "Should have categories")
 }
 
-// TestSelectWithAggregation tests SELECT with aggregation functions
+// TestSelectWithAggregation tests SELECT with aggregation functions.
 func (suite *SelectTestSuite) TestSelectWithAggregation() {
 	suite.T().Logf("Testing SELECT with aggregation for %s", suite.dbType)
 
@@ -250,6 +267,7 @@ func (suite *SelectTestSuite) TestSelectWithAggregation() {
 	}
 
 	var statusCounts []StatusCount
+
 	err := suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("status").
@@ -264,6 +282,7 @@ func (suite *SelectTestSuite) TestSelectWithAggregation() {
 
 	// Verify counts make sense
 	totalCount := int64(0)
+
 	for _, sc := range statusCounts {
 		suite.True(sc.Count > 0, "Each status should have at least 1 post")
 		totalCount += sc.Count
@@ -282,6 +301,7 @@ func (suite *SelectTestSuite) TestSelectWithAggregation() {
 	}
 
 	var ageStats AgeStats
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
@@ -310,6 +330,7 @@ func (suite *SelectTestSuite) TestSelectWithAggregation() {
 	}
 
 	var viewStats ViewStats
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
@@ -324,12 +345,13 @@ func (suite *SelectTestSuite) TestSelectWithAggregation() {
 	suite.True(viewStats.AvgViews > 0, "Should have average views")
 }
 
-// TestSelectWithSubQueries tests SELECT with subquery conditions
+// TestSelectWithSubQueries tests SELECT with subquery conditions.
 func (suite *SelectTestSuite) TestSelectWithSubQueries() {
 	suite.T().Logf("Testing SELECT with subqueries for %s", suite.dbType)
 
 	// Test 1: Users who have published posts
 	var usersWithPublishedPosts []User
+
 	err := suite.db.NewSelect().
 		Model(&usersWithPublishedPosts).
 		Where(func(cb ConditionBuilder) {
@@ -348,6 +370,7 @@ func (suite *SelectTestSuite) TestSelectWithSubQueries() {
 
 	// Test 2: Posts with above average view count
 	var popularPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&popularPosts).
 		Where(func(cb ConditionBuilder) {
@@ -365,6 +388,7 @@ func (suite *SelectTestSuite) TestSelectWithSubQueries() {
 	if len(popularPosts) > 0 {
 		// Verify posts are actually above average
 		var avgViewCount float64
+
 		err = suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
@@ -381,6 +405,7 @@ func (suite *SelectTestSuite) TestSelectWithSubQueries() {
 
 	// Test 3: Categories with posts
 	var categoriesWithPosts []Category
+
 	err = suite.db.NewSelect().
 		Model(&categoriesWithPosts).
 		Where(func(cb ConditionBuilder) {
@@ -396,12 +421,13 @@ func (suite *SelectTestSuite) TestSelectWithSubQueries() {
 	suite.True(len(categoriesWithPosts) > 0, "Should have categories with posts")
 }
 
-// TestSelectWithOrderingAndLimits tests SELECT with ORDER BY and LIMIT clauses
+// TestSelectWithOrderingAndLimits tests SELECT with ORDER BY and LIMIT clauses.
 func (suite *SelectTestSuite) TestSelectWithOrderingAndLimits() {
 	suite.T().Logf("Testing SELECT with ordering and limits for %s", suite.dbType)
 
 	// Test 1: Order by age ascending
 	var usersByAge []User
+
 	err := suite.db.NewSelect().
 		Model(&usersByAge).
 		OrderBy("age").
@@ -413,6 +439,7 @@ func (suite *SelectTestSuite) TestSelectWithOrderingAndLimits() {
 
 	// Test 2: Order by age descending
 	var usersByAgeDesc []User
+
 	err = suite.db.NewSelect().
 		Model(&usersByAgeDesc).
 		OrderByDesc("age").
@@ -424,6 +451,7 @@ func (suite *SelectTestSuite) TestSelectWithOrderingAndLimits() {
 
 	// Test 3: Limit results
 	var limitedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&limitedUsers).
 		OrderBy("age").
@@ -434,6 +462,7 @@ func (suite *SelectTestSuite) TestSelectWithOrderingAndLimits() {
 
 	// Test 4: Order by multiple columns
 	var postsByStatusAndViews []Post
+
 	err = suite.db.NewSelect().
 		Model(&postsByStatusAndViews).
 		OrderBy("status").
@@ -444,6 +473,7 @@ func (suite *SelectTestSuite) TestSelectWithOrderingAndLimits() {
 
 	// Test 5: Offset and Limit (pagination)
 	var paginatedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&paginatedUsers).
 		OrderBy("age").
@@ -459,7 +489,7 @@ func (suite *SelectTestSuite) TestSelectWithOrderingAndLimits() {
 	}
 }
 
-// TestSelectSpecificColumns tests selecting specific columns
+// TestSelectSpecificColumns tests selecting specific columns.
 func (suite *SelectTestSuite) TestSelectSpecificColumns() {
 	suite.T().Logf("Testing SELECT with specific columns for %s", suite.dbType)
 
@@ -471,6 +501,7 @@ func (suite *SelectTestSuite) TestSelectSpecificColumns() {
 	}
 
 	var basicUsers []UserBasic
+
 	err := suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("id", "name", "email").
@@ -493,6 +524,7 @@ func (suite *SelectTestSuite) TestSelectSpecificColumns() {
 	}
 
 	var usersWithAgeDesc []UserWithAge
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name", "age").
@@ -511,6 +543,7 @@ func (suite *SelectTestSuite) TestSelectSpecificColumns() {
 
 	// Test 3: Select distinct values
 	var distinctStatuses []string
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Distinct().
@@ -528,12 +561,13 @@ func (suite *SelectTestSuite) TestSelectSpecificColumns() {
 	}
 }
 
-// TestSelectWithComplexConditions tests complex WHERE conditions
+// TestSelectWithComplexConditions tests complex WHERE conditions.
 func (suite *SelectTestSuite) TestSelectWithComplexConditions() {
 	suite.T().Logf("Testing SELECT with complex conditions for %s", suite.dbType)
 
 	// Test 1: Nested conditions with groups
 	var complexUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&complexUsers).
 		Where(func(cb ConditionBuilder) {
@@ -552,6 +586,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexConditions() {
 
 	// Test 2: NOT conditions
 	var notCharlie []User
+
 	err = suite.db.NewSelect().
 		Model(&notCharlie).
 		Where(func(cb ConditionBuilder) {
@@ -568,6 +603,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexConditions() {
 
 	// Test 3: NULL checks
 	var postsWithDescription []Post
+
 	err = suite.db.NewSelect().
 		Model(&postsWithDescription).
 		Where(func(cb ConditionBuilder) {
@@ -583,6 +619,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexConditions() {
 
 	// Test 4: Multiple NOT IN conditions
 	var filteredPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&filteredPosts).
 		Where(func(cb ConditionBuilder) {
@@ -598,7 +635,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexConditions() {
 	}
 }
 
-// TestSelectWithWindowFunctions tests SELECT with window functions
+// TestSelectWithWindowFunctions tests SELECT with window functions.
 func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	suite.T().Logf("Testing SELECT with window functions for %s", suite.dbType)
 
@@ -611,6 +648,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 
 	var usersWithRowNum []UserWithRowNumber
+
 	err := suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("id", "name", "age").
@@ -640,6 +678,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 
 	var postsWithRank []PostWithRank
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("id", "title", "status", "view_count").
@@ -683,6 +722,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 
 	var usersWithAggregates []UserWithAggregates
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name", "age").
@@ -722,6 +762,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 
 	var postsWithLagLead []PostWithLagLead
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title", "view_count").
@@ -759,6 +800,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 
 	var postsWithFirstLast []PostWithFirstLast
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title", "status", "view_count").
@@ -787,6 +829,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 		if len(posts) > 1 {
 			// All posts in same status should have same first_in_status value
 			firstValue := posts[0].FirstInStatus
+
 			lastValue := posts[0].LastInStatus
 			for _, post := range posts {
 				suite.Equal(firstValue, post.FirstInStatus, "All posts in %s should have same first value", status)
@@ -803,6 +846,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 
 	var usersWithQuartile []UserWithQuartile
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name", "age").
@@ -832,6 +876,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 
 	var postAnalytics []PostAnalytics
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title", "status", "view_count").
@@ -864,7 +909,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
 	}
 }
 
-// TestSelectWithWindowFunctionsAdvanced covers advanced window features
+// TestSelectWithWindowFunctionsAdvanced covers advanced window features.
 func (suite *SelectTestSuite) TestSelectWithWindowFunctionsAdvanced() {
 	suite.T().Logf("Testing advanced window functions for %s", suite.dbType)
 
@@ -878,6 +923,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsAdvanced() {
 	}
 
 	var advLagLead []PostWithLagLeadAdvanced
+
 	err := suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title", "view_count").
@@ -900,6 +946,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsAdvanced() {
 		Scan(suite.ctx, &advLagLead)
 	suite.NoError(err)
 	suite.True(len(advLagLead) > 0, "Should have posts for advanced lag/lead")
+
 	if len(advLagLead) >= 3 {
 		// The third row's Prev2 should equal the first row's view_count
 		if advLagLead[2].Prev2ViewCount != nil {
@@ -920,6 +967,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsAdvanced() {
 	}
 
 	var movingAvgRows []PostWithMovingAvg
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title", "view_count").
@@ -941,6 +989,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsAdvanced() {
 	}
 
 	var nthVals []PostWithNthValue
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("status", "view_count").
@@ -955,7 +1004,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsAdvanced() {
 	suite.True(len(nthVals) > 0, "Should compute NTH_VALUE from last")
 }
 
-// TestSelectWithWindowFunctionsFromClause validates FROM FIRST/LAST placement
+// TestSelectWithWindowFunctionsFromClause validates FROM FIRST/LAST placement.
 func (suite *SelectTestSuite) TestSelectWithWindowFunctionsFromClause() {
 	suite.T().Logf("Testing window functions FROM FIRST/LAST for %s", suite.dbType)
 
@@ -970,6 +1019,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsFromClause() {
 	}
 
 	var nthFirst []PostWithNthFromFirst
+
 	err := suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("status").
@@ -992,6 +1042,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsFromClause() {
 	}
 
 	var nthLast []PostWithNthFromLast
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("status").
@@ -1008,7 +1059,7 @@ func (suite *SelectTestSuite) TestSelectWithWindowFunctionsFromClause() {
 	suite.True(len(nthLast) > 0)
 }
 
-// TestSelectWithComplexAggregates tests complex aggregate function features
+// TestSelectWithComplexAggregates tests complex aggregate function features.
 func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	suite.T().Logf("Testing complex aggregate functions for %s", suite.dbType)
 
@@ -1025,6 +1076,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	}
 
 	var conditionalCounts ConditionalCounts
+
 	query := suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
@@ -1096,6 +1148,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	}
 
 	var distinctStats DistinctStats
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
@@ -1123,6 +1176,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	}
 
 	var stringAggResult StringAggResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
@@ -1150,6 +1204,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	}
 
 	var arrayAggResult ArrayAggResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
@@ -1187,6 +1242,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	}
 
 	var jsonResult JsonResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
@@ -1212,6 +1268,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	}
 
 	var categoryStats []CategoryStats
+
 	categoryQuery := suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Join((*Category)(nil), func(cb ConditionBuilder) {
@@ -1278,7 +1335,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	}
 }
 
-// TestSelectWithJsonFunctions tests JSON functions and operations
+// TestSelectWithJsonFunctions tests JSON functions and operations.
 func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 	suite.T().Logf("Testing JSON functions for %s", suite.dbType)
 
@@ -1290,6 +1347,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 	}
 
 	var jsonObjectResults []JsonObjectResult
+
 	err := suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("id", "name").
@@ -1315,6 +1373,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 	}
 
 	var jsonArrayResults []JsonArrayResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("id").
@@ -1340,6 +1399,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 	}
 
 	var jsonExtractResults []JsonExtractResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title").
@@ -1369,6 +1429,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 	}
 
 	var jsonValidResults []JsonValidationResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title").
@@ -1400,6 +1461,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 	}
 
 	var jsonModifyResults []JsonModifyResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title").
@@ -1429,7 +1491,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 	}
 }
 
-// TestSelectWithDecodeExpressions tests expr.Decode functionality for conditional expressions
+// TestSelectWithDecodeExpressions tests expr.Decode functionality for conditional expressions.
 func (suite *SelectTestSuite) TestSelectWithDecodeExpressions() {
 	suite.T().Logf("Testing Decode expressions for %s", suite.dbType)
 
@@ -1442,6 +1504,7 @@ func (suite *SelectTestSuite) TestSelectWithDecodeExpressions() {
 	}
 
 	var decodeStatusResults []DecodeStatusResult
+
 	err := suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title", "status").
@@ -1488,6 +1551,7 @@ func (suite *SelectTestSuite) TestSelectWithDecodeExpressions() {
 	}
 
 	var decodeSimpleResults []DecodeSimpleResult
+
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("title", "view_count").

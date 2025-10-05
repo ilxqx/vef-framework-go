@@ -3,6 +3,9 @@ package vef
 import (
 	"time"
 
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
@@ -19,11 +22,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/storage"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
-	"go.uber.org/fx"
-	"go.uber.org/fx/fxevent"
 )
 
-// Default timeout for framework startup and shutdown
+// Default timeout for framework startup and shutdown.
 const defaultTimeout = 30 * time.Second
 
 func newFxLogger() fxevent.Logger {

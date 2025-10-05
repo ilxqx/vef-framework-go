@@ -1,8 +1,9 @@
 package orm
 
 import (
-	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/uptrace/bun"
+
+	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
 // logger is the named logger instance for the ORM package.

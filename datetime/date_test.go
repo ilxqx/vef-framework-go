@@ -69,9 +69,10 @@ func TestParseDate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			date, err := ParseDate(tt.input, tt.pattern...)
 			if tt.shouldErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected ParseDate error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected ParseDate error")
+
 				if !tt.expected.IsZero() {
 					// Check that time components are zeroed
 					unwrapped := date.Unwrap()
@@ -266,11 +267,12 @@ func TestDateUnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var date Date
+
 			err := date.UnmarshalJSON([]byte(tt.input))
 			if tt.shouldErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected UnmarshalJSON error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected UnmarshalJSON error")
 			}
 		})
 	}
@@ -303,11 +305,12 @@ func TestDateScan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var date Date
+
 			err := date.Scan(tt.src)
 			if tt.hasErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected Scan error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected Scan error")
 			}
 		})
 	}
@@ -322,6 +325,7 @@ func TestDateJSONRoundTrip(t *testing.T) {
 
 	// Unmarshal
 	var result Date
+
 	err = json.Unmarshal(data, &result)
 	assertNoError(t, err, "Unmarshal")
 

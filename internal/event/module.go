@@ -1,8 +1,9 @@
 package event
 
 import (
-	"github.com/ilxqx/vef-framework-go/internal/log"
 	"go.uber.org/fx"
+
+	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
 var (

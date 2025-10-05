@@ -8,16 +8,17 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go"
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/fx"
 )
 
-// TestAppStartStop tests basic app lifecycle using fx
+// TestAppStartStop tests basic app lifecycle using fx.
 func TestAppStartStop(t *testing.T) {
 	testApp, stop := NewTestApp(
 		t,
@@ -42,7 +43,7 @@ func TestAppStartStop(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// TestResource is a simple test resource for API testing
+// TestResource is a simple test resource for API testing.
 type TestResource struct {
 	apiPkg.Resource
 }
@@ -65,7 +66,7 @@ func (r *TestResource) Ping(ctx fiber.Ctx) error {
 	return result.Ok("pong").Response(ctx)
 }
 
-// TestAppWithCustomResource tests app with custom API resource
+// TestAppWithCustomResource tests app with custom API resource.
 func TestAppWithCustomResource(t *testing.T) {
 	testApp, stop := NewTestApp(
 		t,

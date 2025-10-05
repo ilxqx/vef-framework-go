@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -11,7 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserCreateManyResource struct {
 	api.Resource
 	apis.CreateManyAPI[TestUser, TestUserCreateParams]
@@ -24,7 +25,7 @@ func NewTestUserCreateManyResource() api.Resource {
 	}
 }
 
-// Resource with PreCreateMany hook
+// Resource with PreCreateMany hook.
 type TestUserCreateManyWithPreHookResource struct {
 	api.Resource
 	apis.CreateManyAPI[TestUser, TestUserCreateParams]
@@ -40,12 +41,13 @@ func NewTestUserCreateManyWithPreHookResource() api.Resource {
 				for i := range models {
 					models[i].Name = "Mr. " + models[i].Name
 				}
+
 				return nil
 			}),
 	}
 }
 
-// Resource with PostCreateMany hook
+// Resource with PostCreateMany hook.
 type TestUserCreateManyWithPostHookResource struct {
 	api.Resource
 	apis.CreateManyAPI[TestUser, TestUserCreateParams]
@@ -59,17 +61,18 @@ func NewTestUserCreateManyWithPostHookResource() api.Resource {
 			PostCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header with count
 				ctx.Set("X-Created-Count", strconv.Itoa(len(models)))
+
 				return nil
 			}),
 	}
 }
 
-// CreateManyTestSuite is the test suite for CreateMany API tests
+// CreateManyTestSuite is the test suite for CreateMany API tests.
 type CreateManyTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *CreateManyTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserCreateManyResource,
@@ -78,12 +81,12 @@ func (suite *CreateManyTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *CreateManyTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestCreateManyBasic tests basic CreateMany functionality
+// TestCreateManyBasic tests basic CreateMany functionality.
 func (suite *CreateManyTestSuite) TestCreateManyBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -126,13 +129,14 @@ func (suite *CreateManyTestSuite) TestCreateManyBasic() {
 	// CreateManyAPI returns array of primary keys
 	pks := suite.readDataAsSlice(body.Data)
 	suite.Len(pks, 3)
+
 	for _, pk := range pks {
 		pkMap := suite.readDataAsMap(pk)
 		suite.NotEmpty(pkMap["id"])
 	}
 }
 
-// TestCreateManyWithPreHook tests CreateMany with PreCreateMany hook
+// TestCreateManyWithPreHook tests CreateMany with PreCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -167,7 +171,7 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
 	suite.Len(pks, 2)
 }
 
-// TestCreateManyWithPostHook tests CreateMany with PostCreateMany hook
+// TestCreateManyWithPostHook tests CreateMany with PostCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -203,7 +207,7 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
 	suite.Len(pks, 2)
 }
 
-// TestCreateManyNegativeCases tests negative scenarios
+// TestCreateManyNegativeCases tests negative scenarios.
 func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -393,7 +397,7 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 	})
 }
 
-// TestCreateManyTransactionRollback tests that the entire batch rolls back on error
+// TestCreateManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *CreateManyTestSuite) TestCreateManyTransactionRollback() {
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to create a batch where the second item will fail

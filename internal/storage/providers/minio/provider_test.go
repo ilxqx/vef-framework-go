@@ -8,16 +8,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
+	minioPkg "github.com/minio/minio-go/v7"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/storage"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
-	minioPkg "github.com/minio/minio-go/v7"
-	"github.com/stretchr/testify/suite"
 )
 
-// MinIOProviderTestSuite is the test suite for MinIO provider
+// MinIOProviderTestSuite is the test suite for MinIO provider.
 type MinIOProviderTestSuite struct {
 	suite.Suite
+
 	ctx            context.Context
 	minioContainer *testhelpers.MinIOContainer
 	provider       storage.Provider
@@ -29,7 +32,7 @@ type MinIOProviderTestSuite struct {
 	testContentType string
 }
 
-// SetupSuite runs before all tests in the suite
+// SetupSuite runs before all tests in the suite.
 func (suite *MinIOProviderTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.testBucketName = testhelpers.TestMinioBucket
@@ -54,7 +57,7 @@ func (suite *MinIOProviderTestSuite) SetupSuite() {
 	suite.T().Logf("Created test bucket: %s", suite.testBucketName)
 }
 
-// TearDownSuite runs after all tests in the suite
+// TearDownSuite runs after all tests in the suite.
 func (suite *MinIOProviderTestSuite) TearDownSuite() {
 	// Clean up test bucket (remove all objects first)
 	objectsCh := suite.minioClient.ListObjects(suite.ctx, suite.testBucketName, minioPkg.ListObjectsOptions{
@@ -65,6 +68,7 @@ func (suite *MinIOProviderTestSuite) TearDownSuite() {
 		if object.Err != nil {
 			continue
 		}
+
 		_ = suite.minioClient.RemoveObject(suite.ctx, suite.testBucketName, object.Key, minioPkg.RemoveObjectOptions{})
 	}
 
@@ -77,7 +81,7 @@ func (suite *MinIOProviderTestSuite) TearDownSuite() {
 	}
 }
 
-// SetupTest runs before each test
+// SetupTest runs before each test.
 func (suite *MinIOProviderTestSuite) SetupTest() {
 	// Clean up any objects from previous tests
 	objectsCh := suite.minioClient.ListObjects(suite.ctx, suite.testBucketName, minioPkg.ListObjectsOptions{
@@ -88,6 +92,7 @@ func (suite *MinIOProviderTestSuite) SetupTest() {
 		if object.Err != nil {
 			continue
 		}
+
 		_ = suite.minioClient.RemoveObject(suite.ctx, suite.testBucketName, object.Key, minioPkg.RemoveObjectOptions{})
 	}
 }
@@ -129,6 +134,7 @@ func (suite *MinIOProviderTestSuite) TestGetObjectSuccess() {
 	})
 
 	suite.Require().NoError(err)
+
 	suite.NotNil(reader)
 	defer reader.Close()
 
@@ -230,6 +236,7 @@ func (suite *MinIOProviderTestSuite) TestListObjectsSuccess() {
 
 		suite.NoError(err)
 		suite.Len(result, 2)
+
 		for _, obj := range result {
 			suite.Contains(obj.Key, "folder1/")
 		}
@@ -264,8 +271,12 @@ func (suite *MinIOProviderTestSuite) TestGetPresignedURLForGet() {
 	suite.Contains(url, suite.testObjectKey)
 
 	// Verify we can download using the presigned URL
-	resp, err := http.Get(url)
+	downloadReq, err := http.NewRequestWithContext(suite.ctx, http.MethodGet, url, nil)
 	suite.Require().NoError(err)
+
+	resp, err := http.DefaultClient.Do(downloadReq)
+	suite.Require().NoError(err)
+
 	defer resp.Body.Close()
 
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -288,11 +299,12 @@ func (suite *MinIOProviderTestSuite) TestGetPresignedURLForPut() {
 
 	// Upload using the presigned URL
 	uploadData := []byte("Uploaded via presigned URL")
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(uploadData))
+	req, err := http.NewRequestWithContext(suite.ctx, http.MethodPut, url, bytes.NewReader(uploadData))
 	suite.Require().NoError(err)
 
 	resp, err := http.DefaultClient.Do(req)
 	suite.Require().NoError(err)
+
 	defer resp.Body.Close()
 
 	suite.Equal(http.StatusOK, resp.StatusCode)
@@ -302,6 +314,7 @@ func (suite *MinIOProviderTestSuite) TestGetPresignedURLForPut() {
 		Key: "presigned-upload.txt",
 	})
 	suite.Require().NoError(err)
+
 	defer reader.Close()
 
 	data, err := io.ReadAll(reader)
@@ -331,6 +344,7 @@ func (suite *MinIOProviderTestSuite) TestCopyObjectSuccess() {
 		Key: destKey,
 	})
 	suite.Require().NoError(err)
+
 	defer reader.Close()
 
 	data, err := io.ReadAll(reader)
@@ -371,6 +385,7 @@ func (suite *MinIOProviderTestSuite) TestMoveObjectSuccess() {
 		Key: destKey,
 	})
 	suite.Require().NoError(err)
+
 	defer reader.Close()
 
 	data, err := io.ReadAll(reader)
@@ -484,7 +499,7 @@ func (suite *MinIOProviderTestSuite) uploadObject(key string, data []byte) {
 	suite.Require().NoError(err)
 }
 
-// TestMinIOProviderSuite runs the test suite
+// TestMinIOProviderSuite runs the test suite.
 func TestMinIOProviderSuite(t *testing.T) {
 	suite.Run(t, new(MinIOProviderTestSuite))
 }

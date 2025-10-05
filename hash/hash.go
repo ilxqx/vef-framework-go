@@ -23,6 +23,7 @@ func MD5(data string) string {
 // MD5Bytes computes the MD5 hash of the input bytes and returns a hex-encoded string.
 func MD5Bytes(data []byte) string {
 	hash := md5.Sum(data)
+
 	return hex.EncodeToString(hash[:])
 }
 
@@ -36,6 +37,7 @@ func SHA1(data string) string {
 // SHA1Bytes computes the SHA-1 hash of the input bytes and returns a hex-encoded string.
 func SHA1Bytes(data []byte) string {
 	hash := sha1.Sum(data)
+
 	return hex.EncodeToString(hash[:])
 }
 
@@ -48,6 +50,7 @@ func SHA256(data string) string {
 // SHA256Bytes computes the SHA-256 hash of the input bytes and returns a hex-encoded string.
 func SHA256Bytes(data []byte) string {
 	hash := sha256.Sum256(data)
+
 	return hex.EncodeToString(hash[:])
 }
 
@@ -59,6 +62,7 @@ func SHA512(data string) string {
 // SHA512Bytes computes the SHA-512 hash of the input bytes and returns a hex-encoded string.
 func SHA512Bytes(data []byte) string {
 	hash := sha512.Sum512(data)
+
 	return hex.EncodeToString(hash[:])
 }
 
@@ -71,6 +75,7 @@ func SM3(data string) string {
 // SM3Bytes computes the SM3 hash of the input bytes and returns a hex-encoded string.
 func SM3Bytes(data []byte) string {
 	hash := sm3.Sm3Sum(data)
+
 	return hex.EncodeToString(hash)
 }
 
@@ -83,6 +88,7 @@ func MD5Hmac(key, data []byte) string {
 			fmt.Errorf("hash: failed to write data to HMAC-MD5: %w", err),
 		)
 	}
+
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
@@ -95,6 +101,7 @@ func SHA1Hmac(key, data []byte) string {
 			fmt.Errorf("hash: failed to write data to HMAC-SHA1: %w", err),
 		)
 	}
+
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
@@ -107,6 +114,7 @@ func SHA256Hmac(key, data []byte) string {
 			fmt.Errorf("hash: failed to write data to HMAC-SHA256: %w", err),
 		)
 	}
+
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
@@ -118,6 +126,7 @@ func SHA512Hmac(key, data []byte) string {
 			fmt.Errorf("hash: failed to write data to HMAC-SHA512: %w", err),
 		)
 	}
+
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
@@ -129,5 +138,6 @@ func SM3Hmac(key, data []byte) string {
 			fmt.Errorf("hash: failed to write data to HMAC-SM3: %w", err),
 		)
 	}
+
 	return hex.EncodeToString(mac.Sum(nil))
 }

@@ -6,26 +6,28 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ilxqx/vef-framework-go/cache"
 )
 
-// TestUser represents a test user struct for cache operations
+// TestUser represents a test user struct for cache operations.
 type TestUser struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 	Age  int    `json:"age"`
 }
 
-// RedisCacheTestSuite is the test suite for Redis cache functionality
+// RedisCacheTestSuite is the test suite for Redis cache functionality.
 type RedisCacheTestSuite struct {
 	suite.Suite
+
 	ctx    context.Context
 	client *redis.Client
 }
 
-// SetupTest runs before each individual test
+// SetupTest runs before each individual test.
 func (suite *RedisCacheTestSuite) SetupTest() {
 	// Clean up any existing test keys before each test
 	keys, _ := suite.client.Keys(suite.ctx, "*").Result()
@@ -34,15 +36,17 @@ func (suite *RedisCacheTestSuite) SetupTest() {
 	}
 }
 
-// setupRedisCache creates a Redis-backed cache for testing
+// setupRedisCache creates a Redis-backed cache for testing.
 func (suite *RedisCacheTestSuite) setupRedisCache(cacheName string) cache.Cache[TestUser] {
 	store := createRedisStore(suite.client, redisOptions{})
+
 	return cache.New[TestUser](cacheName, store)
 }
 
-// setupStringCache creates a Redis-backed string cache for testing
+// setupStringCache creates a Redis-backed string cache for testing.
 func (suite *RedisCacheTestSuite) setupStringCache(cacheName string) cache.Cache[string] {
 	store := createRedisStore(suite.client, redisOptions{})
+
 	return cache.New[string](cacheName, store)
 }
 
@@ -190,6 +194,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 
 		// Keys should include the full prefixed keys
 		sort.Strings(keys)
+
 		expectedKeys := []string{
 			"vef:test-iteration:admin:1",
 			"vef:test-iteration:admin:2",
@@ -205,6 +210,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 		suite.Require().NoError(err)
 
 		sort.Strings(adminKeys)
+
 		expectedAdminKeys := []string{
 			"vef:test-iteration:admin:1",
 			"vef:test-iteration:admin:2",
@@ -215,6 +221,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 		suite.Require().NoError(err)
 
 		sort.Strings(userKeys)
+
 		expectedUserKeys := []string{
 			"vef:test-iteration:user:1",
 			"vef:test-iteration:user:2",
@@ -227,6 +234,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 
 		err := userCache.ForEach(suite.ctx, func(key string, user TestUser) bool {
 			collected[key] = user
+
 			return true
 		})
 		suite.Require().NoError(err)
@@ -247,6 +255,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 
 		err := userCache.ForEach(suite.ctx, func(key string, user TestUser) bool {
 			adminCollected[key] = user
+
 			return true
 		}, "admin")
 		suite.Require().NoError(err)
@@ -265,6 +274,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 		err := userCache.ForEach(suite.ctx, func(key string, user TestUser) bool {
 			collected[key] = user
 			count++
+
 			return count < 3 // Stop after 3 items
 		})
 		suite.Require().NoError(err)

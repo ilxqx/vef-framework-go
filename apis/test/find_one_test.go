@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserFindOneResource struct {
 	api.Resource
 	apis.FindOneAPI[TestUser, TestUserSearch]
@@ -22,7 +23,7 @@ func NewTestUserFindOneResource() api.Resource {
 	}
 }
 
-// Processed User Resource - with processor
+// Processed User Resource - with processor.
 type ProcessedUserFindOneResource struct {
 	api.Resource
 	apis.FindOneAPI[TestUser, TestUserSearch]
@@ -30,6 +31,7 @@ type ProcessedUserFindOneResource struct {
 
 type ProcessedUser struct {
 	TestUser
+
 	Processed bool `json:"processed"`
 }
 
@@ -47,7 +49,7 @@ func NewProcessedUserFindOneResource() api.Resource {
 	}
 }
 
-// Filtered User Resource - with filter applier
+// Filtered User Resource - with filter applier.
 type FilteredUserFineOneResource struct {
 	api.Resource
 	apis.FindOneAPI[TestUser, TestUserSearch]
@@ -66,7 +68,7 @@ func NewFilteredUserFineOneResource() api.Resource {
 	}
 }
 
-// Ordered User Resource - with order applier
+// Ordered User Resource - with order applier.
 type OrderedUserFindOneResource struct {
 	api.Resource
 	apis.FindOneAPI[TestUser, TestUserSearch]
@@ -85,12 +87,12 @@ func NewOrderedUserFindOneResource() api.Resource {
 	}
 }
 
-// FindOneTestSuite is the test suite for FindOne API tests
+// FindOneTestSuite is the test suite for FindOne API tests.
 type FindOneTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *FindOneTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserFindOneResource,
@@ -100,12 +102,12 @@ func (suite *FindOneTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *FindOneTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestFindOneBasic tests basic FindOne functionality
+// TestFindOneBasic tests basic FindOne functionality.
 func (suite *FindOneTestSuite) TestFindOneBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -133,7 +135,7 @@ func (suite *FindOneTestSuite) TestFindOneBasic() {
 	})
 }
 
-// TestFindOneNotFound tests FindOne when record doesn't exist
+// TestFindOneNotFound tests FindOne when record doesn't exist.
 func (suite *FindOneTestSuite) TestFindOneNotFound() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -153,7 +155,7 @@ func (suite *FindOneTestSuite) TestFindOneNotFound() {
 	suite.Nil(body.Data)
 }
 
-// TestFindOneWithSearchApplier tests FindOne with custom search conditions
+// TestFindOneWithSearchApplier tests FindOne with custom search conditions.
 func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 	suite.Run("SearchByKeyword", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -261,7 +263,7 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 	})
 }
 
-// TestFindOneWithProcessor tests FindOne with post-processing
+// TestFindOneWithProcessor tests FindOne with post-processing.
 func (suite *FindOneTestSuite) TestFindOneWithProcessor() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -289,7 +291,7 @@ func (suite *FindOneTestSuite) TestFindOneWithProcessor() {
 	})
 }
 
-// TestFindOneWithFilterApplier tests FindOne with filter applier
+// TestFindOneWithFilterApplier tests FindOne with filter applier.
 func (suite *FindOneTestSuite) TestFindOneWithFilterApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -313,7 +315,7 @@ func (suite *FindOneTestSuite) TestFindOneWithFilterApplier() {
 	})
 }
 
-// TestFindOneWithSortApplier tests FindOne with sort applier
+// TestFindOneWithSortApplier tests FindOne with sort applier.
 func (suite *FindOneTestSuite) TestFindOneWithSortApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -337,7 +339,7 @@ func (suite *FindOneTestSuite) TestFindOneWithSortApplier() {
 	})
 }
 
-// TestFindOneNegativeCases tests negative scenarios
+// TestFindOneNegativeCases tests negative scenarios.
 func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	suite.Run("InvalidResource", func() {
 		resp := suite.makeAPIRequest(api.Request{

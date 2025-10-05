@@ -3,9 +3,10 @@ package orm
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/internal/orm/audit"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/internal/orm/audit"
 )
 
 // autoColumns is the list of auto column handlers that are applied to all models.
@@ -31,8 +32,10 @@ func processAutoColumns(handlers []audit.Handler, query any, hasSet bool, table 
 			if elem.Kind() == reflect.Ptr {
 				elem = elem.Elem()
 			}
+
 			processAutoColumns(handlers, query, hasSet, table, elem.Interface(), elem)
 		}
+
 		return
 	}
 

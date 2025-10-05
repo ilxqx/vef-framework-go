@@ -2,6 +2,7 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
@@ -13,7 +14,7 @@ import (
 type findTreeOptionsAPI[TModel, TSearch any] struct {
 	FindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]]
 
-	defaultConfig *TreeOptionsConfig
+	fieldMapping *TreeOptionFieldMapping
 }
 
 func (a *findTreeOptionsAPI[TModel, TSearch]) Provide() api.Spec {
@@ -26,12 +27,13 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findTreeOptionsAPI; call Provide() instead")
 }
 
-func (a *findTreeOptionsAPI[TModel, TSearch]) DefaultConfig(config *TreeOptionsConfig) FindTreeOptionsAPI[TModel, TSearch] {
-	a.defaultConfig = config
+func (a *findTreeOptionsAPI[TModel, TSearch]) FieldMapping(mapping *TreeOptionFieldMapping) FindTreeOptionsAPI[TModel, TSearch] {
+	a.fieldMapping = mapping
+
 	return a
 }
 
-func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
+func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, params TreeOptionParams, search TSearch) error {
 	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
 
@@ -52,72 +54,73 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 		},
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, config TreeOptionsConfig, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.Db, params TreeOptionParams, search TSearch) error {
 		var flatOptions []TreeOption
 
-		config.applyDefaults(a.defaultConfig)
-		if err := config.validateFields(schema); err != nil {
+		mergeTreeOptionFieldMapping(&params.TreeOptionFieldMapping, a.fieldMapping)
+
+		if err := validateTreeOptionFields(schema, &params.TreeOptionFieldMapping); err != nil {
 			return err
 		}
 
 		// Helper function to apply field selections with proper aliasing
-		applyFieldSelections := func(query orm.SelectQuery) {
-			if config.ValueField == valueField {
-				query.Select(config.ValueField)
+		applyFieldSelections := func(selectQuery orm.SelectQuery) {
+			if params.ValueField == valueField {
+				selectQuery.Select(params.ValueField)
 			} else {
-				query.SelectAs(config.ValueField, valueField)
+				selectQuery.SelectAs(params.ValueField, valueField)
 			}
 
-			if config.LabelField == labelField {
-				query.Select(config.LabelField)
+			if params.LabelField == labelField {
+				selectQuery.Select(params.LabelField)
 			} else {
-				query.SelectAs(config.LabelField, labelField)
+				selectQuery.SelectAs(params.LabelField, labelField)
 			}
 
-			if config.IdField == idField {
-				query.Select(config.IdField)
+			if params.IdField == idField {
+				selectQuery.Select(params.IdField)
 			} else {
-				query.SelectAs(config.IdField, idField)
+				selectQuery.SelectAs(params.IdField, idField)
 			}
 
-			if config.ParentIdField == parentIdField {
-				query.Select(config.ParentIdField)
+			if params.ParentIdField == parentIdField {
+				selectQuery.Select(params.ParentIdField)
 			} else {
-				query.SelectAs(config.ParentIdField, parentIdField)
+				selectQuery.SelectAs(params.ParentIdField, parentIdField)
 			}
 
-			if config.DescriptionField != constants.Empty {
-				if config.DescriptionField == descriptionField {
-					query.Select(config.DescriptionField)
+			if params.DescriptionField != constants.Empty {
+				if params.DescriptionField == descriptionField {
+					selectQuery.Select(params.DescriptionField)
 				} else {
-					query.SelectAs(config.DescriptionField, descriptionField)
+					selectQuery.SelectAs(params.DescriptionField, descriptionField)
 				}
 			}
 
-			if config.SortField != constants.Empty {
-				query.Select(config.SortField)
+			if params.SortField != constants.Empty {
+				selectQuery.Select(params.SortField)
 			} else if shouldApplyDefaultSort {
-				query.Select(constants.ColumnCreatedAt)
+				selectQuery.Select(constants.ColumnCreatedAt)
 			}
 		}
 
-		query := db.NewSelect().
-			WithRecursive("tmp_tree", func(query orm.SelectQuery) {
+		cteQuery := db.NewSelect().
+			WithRecursive("tmp_tree", func(selectQuery orm.SelectQuery) {
 				// Base query
-				a.ApplyConditions(query.Model((*TModel)(nil)), search, ctx)
-				a.ApplyRelations(query, search, ctx)
-				a.ApplyQuery(query, search, ctx)
-				applyFieldSelections(query)
+				a.ApplyConditions(selectQuery.Model((*TModel)(nil)), search, ctx)
+				a.ApplyRelations(selectQuery, search, ctx)
+				a.ApplyQuery(selectQuery, search, ctx)
+				applyFieldSelections(selectQuery)
 
 				// Recursive part: find all ancestor nodes
-				query.UnionAll(func(query orm.SelectQuery) {
-					a.ApplyRelations(query, search, ctx)
-					a.ApplyQuery(query, search, ctx)
-					applyFieldSelections(query.Model((*TModel)(nil)))
-					query.JoinTable(
+				selectQuery.UnionAll(func(selectQuery orm.SelectQuery) {
+					a.ApplyRelations(selectQuery, search, ctx)
+					a.ApplyQuery(selectQuery, search, ctx)
+					applyFieldSelections(selectQuery.Model((*TModel)(nil)))
+					selectQuery.JoinTable(
 						"tmp_tree",
 						func(cb orm.ConditionBuilder) {
-							cb.EqualsColumn(config.IdField, dbhelpers.ColumnWithAlias(config.ParentIdField, "tt"))
+							cb.EqualsColumn(params.IdField, dbhelpers.ColumnWithAlias(params.ParentIdField, "tt"))
 						},
 						"tt",
 					)
@@ -127,22 +130,24 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 			Distinct()
 
 		// Apply sorting
-		if config.SortField != constants.Empty {
-			query.OrderBy(config.SortField)
+		if params.SortField != constants.Empty {
+			cteQuery.OrderBy(params.SortField)
 		} else {
-			a.ApplySort(query, search, ctx)
+			a.ApplySort(cteQuery, search, ctx)
+
 			if shouldApplyDefaultSort {
-				query.OrderBy(constants.ColumnCreatedAt)
+				cteQuery.OrderBy(constants.ColumnCreatedAt)
 			}
 		}
 
 		// Execute recursive CTE query
-		if err := query.Limit(maxOptionsLimit).Scan(ctx.Context(), &flatOptions); err != nil {
+		if err := cteQuery.Limit(maxOptionsLimit).Scan(ctx.Context(), &flatOptions); err != nil {
 			return err
 		}
 
 		// Build hierarchical tree structure from flat results using tree adapter
 		treeOptions := treebuilder.Build(flatOptions, treeAdapter)
+
 		return result.Ok(a.Process(treeOptions, search, ctx)).Response(ctx)
 	}
 }

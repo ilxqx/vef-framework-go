@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/samber/lo"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type InsertTestSuite struct {
 	*ORMTestSuite
 }
 
-// TestBasicInsert tests basic INSERT functionality across all databases
+// TestBasicInsert tests basic INSERT functionality across all databases.
 func (suite *InsertTestSuite) TestBasicInsert() {
 	suite.T().Logf("Testing basic INSERT for %s", suite.dbType)
 
@@ -32,6 +33,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 	// Verify the user was inserted
 	var insertedUser User
+
 	err = suite.db.NewSelect().
 		Model(&insertedUser).
 		Where(func(cb ConditionBuilder) {
@@ -62,6 +64,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 	// Verify users were inserted correctly
 	var retrievedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&retrievedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -88,6 +91,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 	// Verify the column override worked
 	var specificRetrieved User
+
 	err = suite.db.NewSelect().
 		Model(&specificRetrieved).
 		Where(func(cb ConditionBuilder) {
@@ -132,7 +136,7 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 	suite.NoError(err)
 }
 
-// TestInsertWithConflict tests INSERT with conflict resolution (UPSERT)
+// TestInsertWithConflict tests INSERT with conflict resolution (UPSERT).
 func (suite *InsertTestSuite) TestInsertWithConflict() {
 	suite.T().Logf("Testing INSERT with conflict resolution for %s", suite.dbType)
 
@@ -167,6 +171,7 @@ func (suite *InsertTestSuite) TestInsertWithConflict() {
 
 	// Verify original user is unchanged
 	var checkUser User
+
 	err = suite.db.NewSelect().
 		Model(&checkUser).
 		Where(func(cb ConditionBuilder) {
@@ -218,7 +223,7 @@ func (suite *InsertTestSuite) TestInsertWithConflict() {
 	suite.NoError(err)
 }
 
-// TestInsertComplexModel tests inserting models with various data types
+// TestInsertComplexModel tests inserting models with various data types.
 func (suite *InsertTestSuite) TestInsertComplexModel() {
 	suite.T().Logf("Testing INSERT with complex model for %s", suite.dbType)
 
@@ -251,7 +256,6 @@ func (suite *InsertTestSuite) TestInsertComplexModel() {
 	_, err := suite.db.NewInsert().
 		Model(complexModel).
 		Exec(suite.ctx)
-
 	if err != nil {
 		// Some fields might not be supported by all databases
 		suite.T().Logf("Complex model insert failed (expected for some databases): %v", err)
@@ -283,6 +287,7 @@ func (suite *InsertTestSuite) TestInsertComplexModel() {
 
 		// Verify the data was inserted correctly
 		var retrievedModel ComplexModel
+
 		err = suite.db.NewSelect().
 			Model(&retrievedModel).
 			Where(func(cb ConditionBuilder) {
@@ -305,12 +310,13 @@ func (suite *InsertTestSuite) TestInsertComplexModel() {
 	}
 }
 
-// TestInsertWithValues tests INSERT with bulk operations
+// TestInsertWithValues tests INSERT with bulk operations.
 func (suite *InsertTestSuite) TestInsertBulkOperations() {
 	suite.T().Logf("Testing INSERT bulk operations for %s", suite.dbType)
 
 	// Test 1: Large batch insert
 	batchSize := 10
+
 	batchUsers := make([]*User, batchSize)
 	for i := range batchSize {
 		batchUsers[i] = &User{
@@ -326,11 +332,13 @@ func (suite *InsertTestSuite) TestInsertBulkOperations() {
 		Model(&batchUsers).
 		Exec(suite.ctx)
 	duration := time.Since(start)
+
 	suite.NoError(err)
 	suite.T().Logf("Batch insert of %d users took %v", batchSize, duration)
 
 	// Verify all users were inserted
 	var retrievedBatchUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&retrievedBatchUsers).
 		Where(func(cb ConditionBuilder) {
@@ -375,6 +383,7 @@ func (suite *InsertTestSuite) TestInsertBulkOperations() {
 
 	// Verify posts were inserted
 	var insertedPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&insertedPosts).
 		Where(func(cb ConditionBuilder) {
@@ -402,7 +411,7 @@ func (suite *InsertTestSuite) TestInsertBulkOperations() {
 	suite.NoError(err)
 }
 
-// TestInsertErrorHandling tests error handling in insert operations
+// TestInsertErrorHandling tests error handling in insert operations.
 func (suite *InsertTestSuite) TestInsertErrorHandling() {
 	suite.T().Logf("Testing INSERT error handling for %s", suite.dbType)
 
@@ -457,7 +466,7 @@ func (suite *InsertTestSuite) TestInsertErrorHandling() {
 
 // Helper functions
 
-// getCategoryId returns the first available category Id from fixture data
+// getCategoryId returns the first available category Id from fixture data.
 func (suite *InsertTestSuite) getCategoryId() string {
 	var category Category
 	if err := suite.db.NewSelect().
@@ -466,5 +475,6 @@ func (suite *InsertTestSuite) getCategoryId() string {
 		Scan(suite.ctx); err != nil {
 		suite.T().Fatalf("Failed to get category Id: %v", err)
 	}
+
 	return category.Id
 }

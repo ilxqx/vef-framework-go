@@ -11,17 +11,17 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// AESMode defines the AES encryption mode
+// AESMode defines the AES encryption mode.
 type AESMode string
 
 const (
-	// AESModeCBC uses AES-CBC mode with PKCS7 padding
+	// AESModeCBC uses AES-CBC mode with PKCS7 padding.
 	AESModeCBC AESMode = "CBC"
-	// AESModeGCM uses AES-GCM mode (authenticated encryption)
+	// AESModeGCM uses AES-GCM mode (authenticated encryption).
 	AESModeGCM AESMode = "GCM"
 )
 
-// AESCipher implements Cipher interface using AES encryption
+// AESCipher implements Cipher interface using AES encryption.
 type AESCipher struct {
 	key  []byte
 	iv   []byte // IV for CBC mode, not used in GCM mode
@@ -34,7 +34,7 @@ type AESCipher struct {
 // If mode is not specified, defaults to AESModeGCM.
 func NewAES(key, iv []byte, mode ...AESMode) (Cipher, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil, fmt.Errorf("invalid AES key size: %d bytes (must be 16, 24, or 32)", len(key))
+		return nil, fmt.Errorf("%w: %d bytes (must be 16, 24, or 32)", ErrInvalidAESKeySize, len(key))
 	}
 
 	// Default to GCM mode if not specified
@@ -45,7 +45,7 @@ func NewAES(key, iv []byte, mode ...AESMode) (Cipher, error) {
 
 	if selectedMode == AESModeCBC {
 		if len(iv) != aes.BlockSize {
-			return nil, fmt.Errorf("invalid IV size for CBC mode: %d bytes (must be %d)", len(iv), aes.BlockSize)
+			return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidIVSizeCBC, len(iv), aes.BlockSize)
 		}
 	}
 
@@ -111,6 +111,7 @@ func (a *AESCipher) Encrypt(plaintext string) (string, error) {
 	if a.mode == AESModeGCM {
 		return a.encryptGCM(plaintext)
 	}
+
 	return a.encryptCBC(plaintext)
 }
 
@@ -119,10 +120,11 @@ func (a *AESCipher) Decrypt(ciphertext string) (string, error) {
 	if a.mode == AESModeGCM {
 		return a.decryptGCM(ciphertext)
 	}
+
 	return a.decryptCBC(ciphertext)
 }
 
-// encryptCBC encrypts plaintext using AES-CBC mode with PKCS7 padding
+// encryptCBC encrypts plaintext using AES-CBC mode with PKCS7 padding.
 func (a *AESCipher) encryptCBC(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
@@ -139,7 +141,7 @@ func (a *AESCipher) encryptCBC(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// decryptCBC decrypts ciphertext using AES-CBC mode and removes PKCS7 padding
+// decryptCBC decrypts ciphertext using AES-CBC mode and removes PKCS7 padding.
 func (a *AESCipher) decryptCBC(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
@@ -152,7 +154,7 @@ func (a *AESCipher) decryptCBC(ciphertext string) (string, error) {
 	}
 
 	if len(encryptedData)%aes.BlockSize != 0 {
-		return constants.Empty, fmt.Errorf("ciphertext is not a multiple of the block size")
+		return constants.Empty, fmt.Errorf("%w", ErrCiphertextNotMultipleOfBlock)
 	}
 
 	plaintext := make([]byte, len(encryptedData))
@@ -168,7 +170,7 @@ func (a *AESCipher) decryptCBC(ciphertext string) (string, error) {
 	return string(unpaddedData), nil
 }
 
-// encryptGCM encrypts plaintext using AES-GCM mode (authenticated encryption)
+// encryptGCM encrypts plaintext using AES-GCM mode (authenticated encryption).
 func (a *AESCipher) encryptGCM(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
@@ -192,7 +194,7 @@ func (a *AESCipher) encryptGCM(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// decryptGCM decrypts ciphertext using AES-GCM mode
+// decryptGCM decrypts ciphertext using AES-GCM mode.
 func (a *AESCipher) decryptGCM(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
@@ -211,10 +213,11 @@ func (a *AESCipher) decryptGCM(ciphertext string) (string, error) {
 
 	nonceSize := gcm.NonceSize()
 	if len(encryptedData) < nonceSize {
-		return constants.Empty, fmt.Errorf("ciphertext too short")
+		return constants.Empty, fmt.Errorf("%w", ErrCiphertextTooShort)
 	}
 
 	nonce, ciphertextBytes := encryptedData[:nonceSize], encryptedData[nonceSize:]
+
 	plaintext, err := gcm.Open(nil, nonce, ciphertextBytes, nil)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to decrypt and verify: %w", err)
@@ -223,32 +226,34 @@ func (a *AESCipher) decryptGCM(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// pkcs7Padding adds PKCS7 padding to the data
+// pkcs7Padding adds PKCS7 padding to the data.
 func pkcs7Padding(data []byte, blockSize int) []byte {
 	padding := blockSize - len(data)%blockSize
+
 	padtext := make([]byte, padding)
 	for i := range padtext {
 		padtext[i] = byte(padding)
 	}
+
 	return append(data, padtext...)
 }
 
-// pkcs7Unpadding removes PKCS7 padding from the data
+// pkcs7Unpadding removes PKCS7 padding from the data.
 func pkcs7Unpadding(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
-		return nil, fmt.Errorf("data is empty")
+		return nil, fmt.Errorf("%w", ErrDataEmpty)
 	}
 
 	padding := int(data[length-1])
 	if padding > length || padding > aes.BlockSize {
-		return nil, fmt.Errorf("invalid padding")
+		return nil, fmt.Errorf("%w", ErrInvalidPadding)
 	}
 
 	// Verify padding
 	for i := range padding {
 		if data[length-1-i] != byte(padding) {
-			return nil, fmt.Errorf("invalid padding")
+			return nil, fmt.Errorf("%w", ErrInvalidPadding)
 		}
 	}
 

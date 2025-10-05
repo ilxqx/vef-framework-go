@@ -26,12 +26,14 @@ func (c *cacheAdapter[T]) Get(ctx context.Context, key string) (T, bool) {
 	data, found := c.store.Get(ctx, c.keyBuilder.Build(key))
 	if !found {
 		var zero T
+
 		return zero, false
 	}
 
 	value, err := c.serializer.Deserialize(data)
 	if err != nil {
 		var zero T
+
 		return zero, false
 	}
 

@@ -1,8 +1,9 @@
 package orm
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // CaseBuilder is an interface for building CASE expressions.
@@ -67,16 +68,19 @@ type caseWhenExpr struct {
 
 func (c *caseExpr) Case(expr any) CaseBuilder {
 	c.caseExpr = c.eb.Expr("?", expr)
+
 	return c
 }
 
 func (c *caseExpr) CaseColumn(column string) CaseBuilder {
 	c.caseExpr = c.eb.Column(column)
+
 	return c
 }
 
 func (c *caseExpr) CaseSubQuery(builder func(query SelectQuery)) CaseBuilder {
 	c.caseExpr = c.eb.Expr("(?)", c.qb.BuildSubQuery(builder))
+
 	return c
 }
 
@@ -116,6 +120,7 @@ func (cw *caseWhenExpr) Then(expr any) CaseBuilder {
 		whenExpr: cw.whenExpr,
 		thenExpr: cw.parent.eb.Expr("?", expr),
 	})
+
 	return cw.parent
 }
 
@@ -124,6 +129,7 @@ func (cw *caseWhenExpr) ThenSubQuery(builder func(query SelectQuery)) CaseBuilde
 		whenExpr: cw.whenExpr,
 		thenExpr: cw.parent.eb.Expr("(?)", cw.parent.qb.BuildSubQuery(builder)),
 	})
+
 	return cw.parent
 }
 
@@ -161,5 +167,6 @@ func (c *caseExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err 
 	}
 
 	b = append(b, " END"...)
+
 	return b, nil
 }

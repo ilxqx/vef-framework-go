@@ -106,8 +106,10 @@ func TestRandomIdGenerator(t *testing.T) {
 		length := 16
 		generator := NewRandomIdGenerator(alphabet, length)
 
-		const numGoroutines = 100
-		const idsPerGoroutine = 100
+		const (
+			numGoroutines   = 100
+			idsPerGoroutine = 100
+		)
 
 		idChan := make(chan string, numGoroutines*idsPerGoroutine)
 
@@ -122,6 +124,7 @@ func TestRandomIdGenerator(t *testing.T) {
 
 		// Collect all IDs
 		ids := make(map[string]bool)
+
 		for range numGoroutines * idsPerGoroutine {
 			id := <-idChan
 			assert.Len(t, id, length, "Concurrent generation should produce correct length")

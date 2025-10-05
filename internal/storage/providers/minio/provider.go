@@ -2,17 +2,19 @@ package minio
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/storage"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/samber/lo"
+
+	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 // MinIOProvider implements the storage.Provider interface using MinIO.
@@ -106,6 +108,7 @@ func (p *MinIOProvider) GetObject(ctx context.Context, opts storage.GetObjectOpt
 	// Verify the object exists by calling Stat
 	if _, err = object.Stat(); err != nil {
 		_ = object.Close()
+
 		return nil, p.translateError(err)
 	}
 
@@ -118,6 +121,7 @@ func (p *MinIOProvider) DeleteObject(ctx context.Context, opts storage.DeleteObj
 	if err != nil {
 		return p.translateError(err)
 	}
+
 	return nil
 }
 
@@ -128,6 +132,7 @@ func (p *MinIOProvider) DeleteObjects(ctx context.Context, opts storage.DeleteOb
 	// Send object keys to delete
 	go func() {
 		defer close(objectsCh)
+
 		for _, key := range opts.Keys {
 			objectsCh <- minio.ObjectInfo{Key: key}
 		}
@@ -183,8 +188,10 @@ func (p *MinIOProvider) ListObjects(ctx context.Context, opts storage.ListObject
 
 // GetPresignedURL generates a presigned URL for temporary access.
 func (p *MinIOProvider) GetPresignedURL(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
-	var urlStr string
-	var err error
+	var (
+		urlStr string
+		err    error
+	)
 
 	switch opts.Method {
 	case http.MethodGet, constants.Empty:
@@ -192,15 +199,19 @@ func (p *MinIOProvider) GetPresignedURL(ctx context.Context, opts storage.Presig
 		if e == nil {
 			urlStr = u.String()
 		}
+
 		err = e
+
 	case http.MethodPut:
 		u, e := p.client.PresignedPutObject(ctx, p.bucket, opts.Key, opts.Expires)
 		if e == nil {
 			urlStr = u.String()
 		}
+
 		err = e
+
 	default:
-		return constants.Empty, fmt.Errorf("unsupported HTTP method: %s", opts.Method)
+		return constants.Empty, fmt.Errorf("%w: %s", ErrUnsupportedHTTPMethod, opts.Method)
 	}
 
 	if err != nil {
@@ -240,7 +251,7 @@ func (p *MinIOProvider) CopyObject(ctx context.Context, opts storage.CopyObjectO
 func (p *MinIOProvider) MoveObject(ctx context.Context, opts storage.MoveObjectOptions) (info *storage.ObjectInfo, err error) {
 	// Copy the object
 	if info, err = p.CopyObject(ctx, opts.CopyObjectOptions); err != nil {
-		return
+		return info, err
 	}
 
 	// Delete the source object
@@ -250,7 +261,7 @@ func (p *MinIOProvider) MoveObject(ctx context.Context, opts storage.MoveObjectO
 		return nil, fmt.Errorf("copied successfully but failed to delete source: %w", err)
 	}
 
-	return
+	return info, err
 }
 
 // StatObject retrieves metadata about an object.
@@ -297,7 +308,9 @@ func (p *MinIOProvider) translateError(err error) error {
 	}
 
 	// Convert minio-specific errors to storage errors
-	minioErr, ok := err.(minio.ErrorResponse)
+	var minioErr minio.ErrorResponse
+
+	ok := errors.As(err, &minioErr)
 	if !ok {
 		return err
 	}

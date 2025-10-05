@@ -1,8 +1,9 @@
 package treebuilder
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/samber/lo"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Adapter defines the adapter for building trees from arbitrary data.
@@ -14,7 +15,7 @@ type Adapter[T any] struct {
 }
 
 // Build converts a flat slice of nodes into a tree structure using the provided adapter.
-// Time complexity: O(n), Space complexity: O(n)
+// Time complexity: O(n), Space complexity: O(n).
 func Build[T any](nodes []T, adapter Adapter[T]) []T {
 	if len(nodes) == 0 {
 		return make([]T, 0)
@@ -42,7 +43,9 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 	// Third pass: recursively build tree structure with cycle detection
 	visited := make(map[string]bool)
+
 	var setChildrenRecursively func(*T)
+
 	setChildrenRecursively = func(nodePtr *T) {
 		id := adapter.GetId(*nodePtr)
 		if id == constants.Empty {
@@ -53,6 +56,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 		if visited[id] {
 			return
 		}
+
 		visited[id] = true
 
 		if childrenPtrs, exists := childrenMap[id]; exists {
@@ -81,6 +85,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 	// Fourth pass: collect roots
 	var roots []T
+
 	for i := range nodes {
 		node := &nodes[i]
 
@@ -129,6 +134,7 @@ func findNodeRecursive[T any](nodes []T, targetKey string, adapter Adapter[T]) (
 		if id := adapter.GetId(node); id == targetKey {
 			return node, true
 		}
+
 		if found, ok := findNodeRecursive(adapter.GetChildren(node), targetKey, adapter); ok {
 			return found, true
 		}

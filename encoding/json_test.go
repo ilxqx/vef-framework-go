@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test struct for encoding/decoding tests
+// Test struct for encoding/decoding tests.
 type TestStruct struct {
 	Name    string    `json:"name"`
 	Age     int       `json:"age"`

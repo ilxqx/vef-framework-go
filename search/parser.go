@@ -4,11 +4,12 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/strhelpers"
-	"github.com/samber/lo"
 )
 
 var apiInType = reflect.TypeFor[api.In]()
@@ -19,6 +20,7 @@ func New(typ reflect.Type) Search {
 	typ = reflectx.Indirect(typ)
 	if typ.Kind() != reflect.Struct {
 		logger.Warnf("Invalid value type, expected struct, got %s", typ.Name())
+
 		return Search{}
 	}
 

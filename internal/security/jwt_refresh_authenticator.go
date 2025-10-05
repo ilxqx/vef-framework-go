@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// Refresh authentication type
+	// Refresh authentication type.
 	AuthTypeRefresh = "refresh"
 )
 
@@ -47,6 +47,7 @@ func (j *JWTRefreshAuthenticator) Authenticate(authentication security.Authentic
 	claimsAccessor, err := j.jwt.Parse(token)
 	if err != nil {
 		logger.Warnf("JWT refresh token validation failed: %v", err)
+
 		return nil, err
 	}
 
@@ -65,10 +66,13 @@ func (j *JWTRefreshAuthenticator) Authenticate(authentication security.Authentic
 	principal, err := j.userLoader.LoadById(userId)
 	if err != nil {
 		logger.Warnf("Failed to reload user by Id '%s': %v", userId, err)
+
 		return nil, err
 	}
+
 	if principal == nil {
 		logger.Warnf("User not found by Id '%s'", userId)
+
 		return nil, result.ErrWithCode(result.ErrCodeRecordNotFound, i18n.T("record_not_found"))
 	}
 

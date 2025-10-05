@@ -3,10 +3,11 @@ package orm
 import (
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // QueryExprBuilder implements the ExprBuilder interface, providing methods to build various SQL expressions.
@@ -127,26 +128,35 @@ func (b *QueryExprBuilder) RunDialect(actions DialectActions) {
 	case dialect.Oracle:
 		if actions.Oracle != nil {
 			actions.Oracle()
+
 			return
 		}
+
 	case dialect.MSSQL:
 		if actions.SQLServer != nil {
 			actions.SQLServer()
+
 			return
 		}
+
 	case dialect.PG:
 		if actions.Postgres != nil {
 			actions.Postgres()
+
 			return
 		}
+
 	case dialect.MySQL:
 		if actions.MySQL != nil {
 			actions.MySQL()
+
 			return
 		}
+
 	case dialect.SQLite:
 		if actions.SQLite != nil {
 			actions.SQLite()
+
 			return
 		}
 	}
@@ -584,6 +594,7 @@ func (b *QueryExprBuilder) Concat(args ...any) schema.QueryAppender {
 			if len(args) == 0 {
 				return b.Expr("?", constants.Empty)
 			}
+
 			if len(args) == 1 {
 				return b.Expr("?", args[0])
 			}
@@ -605,16 +616,19 @@ func (b *QueryExprBuilder) ConcatWS(separator string, args ...any) schema.QueryA
 			if len(args) == 0 {
 				return b.Expr("?", constants.Empty)
 			}
+
 			if len(args) == 1 {
 				return b.Expr("?", args[0])
 			}
 
 			// Use group_concat or manual concatenation
 			var parts []any
+
 			for i, arg := range args {
 				if i > 0 {
 					parts = append(parts, separator)
 				}
+
 				parts = append(parts, arg)
 			}
 
@@ -635,6 +649,7 @@ func (b *QueryExprBuilder) SubString(expr any, start int, length ...int) schema.
 			if len(length) > 0 {
 				return b.Expr("SUBSTR(?, ?, ?)", expr, start, length[0])
 			}
+
 			return b.Expr("SUBSTR(?, ?)", expr, start)
 		},
 		Default: func() schema.QueryAppender {
@@ -642,6 +657,7 @@ func (b *QueryExprBuilder) SubString(expr any, start int, length ...int) schema.
 			if len(length) > 0 {
 				return b.Expr("SUBSTRING(?, ?, ?)", expr, start, length[0])
 			}
+
 			return b.Expr("SUBSTRING(?, ?)", expr, start)
 		},
 	})
@@ -882,6 +898,7 @@ func (b *QueryExprBuilder) DateAdd(expr any, interval int, unit string) schema.Q
 		SQLite: func() schema.QueryAppender {
 			// SQLite uses datetime with modifiers
 			var modifier string
+
 			switch unit {
 			case "year", "years":
 				modifier = "years"
@@ -898,6 +915,7 @@ func (b *QueryExprBuilder) DateAdd(expr any, interval int, unit string) schema.Q
 			default:
 				modifier = "days"
 			}
+
 			return b.Expr("DATETIME(?, '+? ?')", expr, interval, bun.Safe(modifier))
 		},
 		Default: func() schema.QueryAppender {
@@ -920,6 +938,7 @@ func (b *QueryExprBuilder) DateSubtract(expr any, interval int, unit string) sch
 		SQLite: func() schema.QueryAppender {
 			// SQLite uses datetime with negative modifiers
 			var modifier string
+
 			switch unit {
 			case "year", "years":
 				modifier = "years"
@@ -936,6 +955,7 @@ func (b *QueryExprBuilder) DateSubtract(expr any, interval int, unit string) sch
 			default:
 				modifier = "days"
 			}
+
 			return b.Expr("DATETIME(?, '-? ?')", expr, interval, bun.Safe(modifier))
 		},
 		Default: func() schema.QueryAppender {
@@ -1031,6 +1051,7 @@ func (b *QueryExprBuilder) Round(expr any, precision ...int) schema.QueryAppende
 	if len(precision) > 0 {
 		return b.Expr("ROUND(?, ?)", expr, precision[0])
 	}
+
 	return b.Expr("ROUND(?)", expr)
 }
 
@@ -1039,6 +1060,7 @@ func (b *QueryExprBuilder) Trunc(expr any, precision ...int) schema.QueryAppende
 	if len(precision) > 0 {
 		return b.Expr("TRUNC(?, ?)", expr, precision[0])
 	}
+
 	return b.Expr("TRUNC(?)", expr)
 }
 
@@ -1067,6 +1089,7 @@ func (b *QueryExprBuilder) Log(expr any, base ...any) schema.QueryAppender {
 	if len(base) > 0 {
 		return b.Expr("LOG(?, ?)", base[0], expr)
 	}
+
 	return b.Expr("LOG(?)", expr)
 }
 
@@ -1201,6 +1224,7 @@ func (b *QueryExprBuilder) ToDecimal(expr any, precision ...int) schema.QueryApp
 			} else if len(precision) == 1 {
 				return b.Expr("?::NUMERIC(?)", expr, precision[0])
 			}
+
 			return b.Expr("?::NUMERIC", expr)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1210,6 +1234,7 @@ func (b *QueryExprBuilder) ToDecimal(expr any, precision ...int) schema.QueryApp
 			} else if len(precision) == 1 {
 				return b.Expr("CAST(? AS DECIMAL(?))", expr, precision[0])
 			}
+
 			return b.Expr("CAST(? AS DECIMAL)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1222,6 +1247,7 @@ func (b *QueryExprBuilder) ToDecimal(expr any, precision ...int) schema.QueryApp
 			} else if len(precision) == 1 {
 				return b.Expr("CAST(? AS DECIMAL(?))", expr, precision[0])
 			}
+
 			return b.Expr("CAST(? AS DECIMAL)", expr)
 		},
 	})
@@ -1277,6 +1303,7 @@ func (b *QueryExprBuilder) ToDate(expr any, format ...string) schema.QueryAppend
 			if len(format) > 0 {
 				return b.Expr("TO_DATE(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("?::DATE", expr)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1284,6 +1311,7 @@ func (b *QueryExprBuilder) ToDate(expr any, format ...string) schema.QueryAppend
 			if len(format) > 0 {
 				return b.Expr("STR_TO_DATE(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("CAST(? AS DATE)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1291,12 +1319,14 @@ func (b *QueryExprBuilder) ToDate(expr any, format ...string) schema.QueryAppend
 			if len(format) > 0 {
 				return b.Expr("DATE(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("DATE(?)", expr)
 		},
 		Default: func() schema.QueryAppender {
 			if len(format) > 0 {
 				return b.Expr("TO_DATE(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("CAST(? AS DATE)", expr)
 		},
 	})
@@ -1310,6 +1340,7 @@ func (b *QueryExprBuilder) ToTime(expr any, format ...string) schema.QueryAppend
 			if len(format) > 0 {
 				return b.Expr("TO_TIMESTAMP(?, ?)::TIME", expr, format[0])
 			}
+
 			return b.Expr("?::TIME", expr)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1317,6 +1348,7 @@ func (b *QueryExprBuilder) ToTime(expr any, format ...string) schema.QueryAppend
 			if len(format) > 0 {
 				return b.Expr("TIME(STR_TO_DATE(?, ?))", expr, format[0])
 			}
+
 			return b.Expr("CAST(? AS TIME)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1324,12 +1356,14 @@ func (b *QueryExprBuilder) ToTime(expr any, format ...string) schema.QueryAppend
 			if len(format) > 0 {
 				return b.Expr("TIME(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("TIME(?)", expr)
 		},
 		Default: func() schema.QueryAppender {
 			if len(format) > 0 {
 				return b.Expr("TO_TIME(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("CAST(? AS TIME)", expr)
 		},
 	})
@@ -1343,6 +1377,7 @@ func (b *QueryExprBuilder) ToTimestamp(expr any, format ...string) schema.QueryA
 			if len(format) > 0 {
 				return b.Expr("TO_TIMESTAMP(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("?::TIMESTAMP", expr)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1350,6 +1385,7 @@ func (b *QueryExprBuilder) ToTimestamp(expr any, format ...string) schema.QueryA
 			if len(format) > 0 {
 				return b.Expr("STR_TO_DATE(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("CAST(? AS DATETIME)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1357,12 +1393,14 @@ func (b *QueryExprBuilder) ToTimestamp(expr any, format ...string) schema.QueryA
 			if len(format) > 0 {
 				return b.Expr("DATETIME(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("DATETIME(?)", expr)
 		},
 		Default: func() schema.QueryAppender {
 			if len(format) > 0 {
 				return b.Expr("TO_TIMESTAMP(?, ?)", expr, format[0])
 			}
+
 			return b.Expr("CAST(? AS TIMESTAMP)", expr)
 		},
 	})
@@ -1401,6 +1439,7 @@ func (b *QueryExprBuilder) JSONExtract(json any, path string) schema.QueryAppend
 			if path, ok := strings.CutPrefix(path, "$."); ok {
 				pgPath = path
 			}
+
 			return b.Expr("(?->>?)", json, pgPath)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1446,6 +1485,7 @@ func (b *QueryExprBuilder) JSONArray(args ...any) schema.QueryAppender {
 			if len(args) == 0 {
 				return bun.Safe("'[]'::JSON")
 			}
+
 			return b.Expr("JSON_BUILD_ARRAY(?)", newExpressions(constants.CommaSpace, args...))
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1453,6 +1493,7 @@ func (b *QueryExprBuilder) JSONArray(args ...any) schema.QueryAppender {
 			if len(args) == 0 {
 				return bun.Safe("JSON_ARRAY()")
 			}
+
 			return b.Expr("JSON_ARRAY(?)", newExpressions(constants.CommaSpace, args...))
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1460,12 +1501,14 @@ func (b *QueryExprBuilder) JSONArray(args ...any) schema.QueryAppender {
 			if len(args) == 0 {
 				return bun.Safe("JSON_ARRAY()")
 			}
+
 			return b.Expr("JSON_ARRAY(?)", newExpressions(constants.CommaSpace, args...))
 		},
 		Default: func() schema.QueryAppender {
 			if len(args) == 0 {
 				return bun.Safe("JSON_ARRAY()")
 			}
+
 			return b.Expr("JSON_ARRAY(?)", newExpressions(constants.CommaSpace, args...))
 		},
 	})
@@ -1479,6 +1522,7 @@ func (b *QueryExprBuilder) JSONObject(keyValues ...any) schema.QueryAppender {
 			if len(keyValues) == 0 {
 				return bun.Safe("'{}'::JSON")
 			}
+
 			return b.Expr("JSON_BUILD_OBJECT(?)", newExpressions(constants.CommaSpace, keyValues...))
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1486,6 +1530,7 @@ func (b *QueryExprBuilder) JSONObject(keyValues ...any) schema.QueryAppender {
 			if len(keyValues) == 0 {
 				return bun.Safe("JSON_OBJECT()")
 			}
+
 			return b.Expr("JSON_OBJECT(?)", newExpressions(constants.CommaSpace, keyValues...))
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1493,12 +1538,14 @@ func (b *QueryExprBuilder) JSONObject(keyValues ...any) schema.QueryAppender {
 			if len(keyValues) == 0 {
 				return bun.Safe("JSON_OBJECT()")
 			}
+
 			return b.Expr("JSON_OBJECT(?)", newExpressions(constants.CommaSpace, keyValues...))
 		},
 		Default: func() schema.QueryAppender {
 			if len(keyValues) == 0 {
 				return bun.Safe("JSON_OBJECT()")
 			}
+
 			return b.Expr("JSON_OBJECT(?)", newExpressions(constants.CommaSpace, keyValues...))
 		},
 	})
@@ -1554,6 +1601,7 @@ func (b *QueryExprBuilder) JSONKeys(json any, path ...string) schema.QueryAppend
 			if len(path) > 0 {
 				return b.Expr("JSONB_OBJECT_KEYS((?::JSONB)->?)", json, path[0])
 			}
+
 			return b.Expr("JSONB_OBJECT_KEYS(?::JSONB)", json)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1561,6 +1609,7 @@ func (b *QueryExprBuilder) JSONKeys(json any, path ...string) schema.QueryAppend
 			if len(path) > 0 {
 				return b.Expr("JSON_KEYS(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_KEYS(?)", json)
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1568,12 +1617,14 @@ func (b *QueryExprBuilder) JSONKeys(json any, path ...string) schema.QueryAppend
 			if len(path) > 0 {
 				return b.Expr("(SELECT JSON_GROUP_ARRAY(key) FROM JSON_EACH(JSON_EXTRACT(?, ?)))", json, path[0])
 			}
+
 			return b.Expr("(SELECT JSON_GROUP_ARRAY(key) FROM JSON_EACH(?))", json)
 		},
 		Default: func() schema.QueryAppender {
 			if len(path) > 0 {
 				return b.Expr("JSON_KEYS(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_KEYS(?)", json)
 		},
 	})
@@ -1587,6 +1638,7 @@ func (b *QueryExprBuilder) JSONLength(json any, path ...string) schema.QueryAppe
 			if len(path) > 0 {
 				return b.Expr("JSONB_ARRAY_LENGTH((?::JSONB)->?)", json, path[0])
 			}
+
 			return b.Expr("JSONB_ARRAY_LENGTH(?::JSONB)", json)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1594,6 +1646,7 @@ func (b *QueryExprBuilder) JSONLength(json any, path ...string) schema.QueryAppe
 			if len(path) > 0 {
 				return b.Expr("JSON_LENGTH(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_LENGTH(?)", json)
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1601,12 +1654,14 @@ func (b *QueryExprBuilder) JSONLength(json any, path ...string) schema.QueryAppe
 			if len(path) > 0 {
 				return b.Expr("JSON_ARRAY_LENGTH(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_ARRAY_LENGTH(?)", json)
 		},
 		Default: func() schema.QueryAppender {
 			if len(path) > 0 {
 				return b.Expr("JSON_LENGTH(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_LENGTH(?)", json)
 		},
 	})
@@ -1620,6 +1675,7 @@ func (b *QueryExprBuilder) JSONType(json any, path ...string) schema.QueryAppend
 			if len(path) > 0 {
 				return b.Expr("JSONB_TYPEOF((?::JSONB)->?)", json, path[0])
 			}
+
 			return b.Expr("JSONB_TYPEOF(?::JSONB)", json)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1627,6 +1683,7 @@ func (b *QueryExprBuilder) JSONType(json any, path ...string) schema.QueryAppend
 			if len(path) > 0 {
 				return b.Expr("JSON_TYPE(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_TYPE(?)", json)
 		},
 		SQLite: func() schema.QueryAppender {
@@ -1634,12 +1691,14 @@ func (b *QueryExprBuilder) JSONType(json any, path ...string) schema.QueryAppend
 			if len(path) > 0 {
 				return b.Expr("JSON_TYPE(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_TYPE(?)", json)
 		},
 		Default: func() schema.QueryAppender {
 			if len(path) > 0 {
 				return b.Expr("JSON_TYPE(?, ?)", json, path[0])
 			}
+
 			return b.Expr("JSON_TYPE(?)", json)
 		},
 	})
@@ -1697,6 +1756,7 @@ func (b *QueryExprBuilder) JSONInsert(json any, path string, value any) schema.Q
 			if key, ok := strings.CutPrefix(path, "$."); ok {
 				pgPath = constants.LeftBrace + key + constants.RightBrace
 			}
+
 			return b.Expr("JSONB_INSERT(?::JSONB, ?::TEXT[], TO_JSONB(?), FALSE)", json, pgPath, value)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1723,6 +1783,7 @@ func (b *QueryExprBuilder) JSONReplace(json any, path string, value any) schema.
 			if key, ok := strings.CutPrefix(path, "$."); ok {
 				pgPath = constants.LeftBrace + key + constants.RightBrace
 			}
+
 			return b.Expr("JSONB_SET(?::JSONB, ?::TEXT[], TO_JSONB(?), FALSE)", json, pgPath, value)
 		},
 		MySQL: func() schema.QueryAppender {
@@ -1802,7 +1863,7 @@ func (b *QueryExprBuilder) Decode(args ...any) schema.QueryAppender {
 
 // convertDecodeToCase converts DECODE syntax to CASE WHEN expression using the existing Case builder
 // DECODE(expr, search1, result1, search2, result2, ..., defaultResult)
-// becomes CASE expr WHEN search1 THEN result1 WHEN search2 THEN result2 ... ELSE defaultResult END
+// becomes CASE expr WHEN search1 THEN result1 WHEN search2 THEN result2 ... ELSE defaultResult END.
 func (b *QueryExprBuilder) convertDecodeToCase(args ...any) schema.QueryAppender {
 	if len(args) < 3 {
 		return b.Null()
@@ -1818,6 +1879,7 @@ func (b *QueryExprBuilder) convertDecodeToCase(args ...any) schema.QueryAppender
 			search := args[i]
 			result := args[i+1]
 			cb.WhenExpr(search).Then(result)
+
 			i += 2
 		}
 

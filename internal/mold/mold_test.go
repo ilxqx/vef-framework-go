@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/mold"
 )
 
 func TestBadValues(t *testing.T) {
@@ -24,6 +25,7 @@ func TestBadValues(t *testing.T) {
 
 	t.Run("invalid tag format", func(t *testing.T) {
 		var tt InvalidTagStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		assert.Error(t, err)
 		assert.Equal(t, "invalid tag '' found on field String", err.Error())
@@ -31,6 +33,7 @@ func TestBadValues(t *testing.T) {
 
 	t.Run("non-pointer struct", func(t *testing.T) {
 		var tt InvalidTagStruct
+
 		err := transformer.Struct(context.Background(), tt)
 		assert.Error(t, err)
 		assert.Equal(t, "mold: Struct(non-pointer mold.InvalidTagStruct)", err.Error())
@@ -44,6 +47,7 @@ func TestBadValues(t *testing.T) {
 
 	t.Run("invalid type - int", func(t *testing.T) {
 		var i int
+
 		err := transformer.Struct(context.Background(), &i)
 		assert.Error(t, err)
 		assert.Equal(t, "mold: (nil *int)", err.Error())
@@ -51,6 +55,7 @@ func TestBadValues(t *testing.T) {
 
 	t.Run("interface nil", func(t *testing.T) {
 		var iface any
+
 		err := transformer.Struct(context.Background(), iface)
 		assert.Error(t, err)
 		assert.Equal(t, "mold: Struct(nil)", err.Error())
@@ -58,6 +63,7 @@ func TestBadValues(t *testing.T) {
 
 	t.Run("interface pointer to nil", func(t *testing.T) {
 		var iface any = nil
+
 		err := transformer.Struct(context.Background(), &iface)
 		assert.Error(t, err)
 		assert.Equal(t, "mold: (nil *interface {})", err.Error())
@@ -65,6 +71,7 @@ func TestBadValues(t *testing.T) {
 
 	t.Run("nil pointer to struct", func(t *testing.T) {
 		var tst *InvalidTagStruct
+
 		err := transformer.Struct(context.Background(), tst)
 		assert.Error(t, err)
 		assert.Equal(t, "mold: Struct(nil *mold.InvalidTagStruct)", err.Error())
@@ -72,6 +79,7 @@ func TestBadValues(t *testing.T) {
 
 	t.Run("nil pointer field", func(t *testing.T) {
 		var tm *time.Time
+
 		err := transformer.Field(context.Background(), tm, "blah")
 		assert.Error(t, err)
 		assert.Equal(t, "mold: Field(nil *time.Time)", err.Error())
@@ -110,6 +118,7 @@ func TestBasicTransform(t *testing.T) {
 	transformer := New()
 	transformer.Register("repl", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString("test")
+
 		return nil
 	})
 
@@ -122,6 +131,7 @@ func TestBasicTransform(t *testing.T) {
 			_, err := transformer.extractStructCache(val)
 			require.NoError(t, err)
 		}
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.Equal(t, "test", tt.String)
@@ -134,6 +144,7 @@ func TestBasicTransform(t *testing.T) {
 		}
 
 		var tt2 NestedStruct
+
 		err := transformer.Struct(context.Background(), &tt2)
 		require.NoError(t, err)
 		assert.Equal(t, "test", tt2.Basic.String)
@@ -143,10 +154,12 @@ func TestBasicTransform(t *testing.T) {
 	t.Run("embedded struct transformation", func(t *testing.T) {
 		type EmbeddedStruct struct {
 			BasicStruct
+
 			String string `mold:"repl"`
 		}
 
 		var tt3 EmbeddedStruct
+
 		err := transformer.Struct(context.Background(), &tt3)
 		require.NoError(t, err)
 		assert.Equal(t, "test", tt3.BasicStruct.String)
@@ -160,6 +173,7 @@ func TestBasicTransform(t *testing.T) {
 		}
 
 		var tt4 NilPointerStruct
+
 		err := transformer.Struct(context.Background(), &tt4)
 		require.NoError(t, err)
 		assert.Nil(t, tt4.Basic)
@@ -186,8 +200,10 @@ func TestBasicTransform(t *testing.T) {
 		}
 
 		var tt6 DefaultPointerStruct
+
 		transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
 			fl.Field().Set(reflect.New(fl.Field().Type().Elem()))
+
 			return nil
 		})
 		err := transformer.Struct(context.Background(), &tt6)
@@ -205,6 +221,7 @@ func TestBasicTransform(t *testing.T) {
 
 		tt6 := FieldTransformStruct{}
 		tt6.String = "BAD"
+
 		var tString string
 
 		// wil invoke one processing and one waiting
@@ -212,6 +229,7 @@ func TestBasicTransform(t *testing.T) {
 			err := transformer.Field(context.Background(), &tString, "repl")
 			assert.NoError(t, err)
 		}()
+
 		err := transformer.Field(context.Background(), &tt6.String, "repl")
 		require.NoError(t, err)
 		assert.Equal(t, "test", tt6.String)
@@ -245,6 +263,7 @@ func TestBasicTransform(t *testing.T) {
 		assert.Equal(t, "mold: Field(nil)", err.Error())
 
 		var iface any
+
 		err = transformer.Field(context.Background(), iface, "test")
 		assert.Error(t, err)
 		assert.Equal(t, "mold: Field(nil)", err.Error())
@@ -256,8 +275,11 @@ func TestBasicTransform(t *testing.T) {
 		}
 
 		tt6 := NonexistentTransformStruct{}
+
 		var tString string
+
 		done := make(chan struct{})
+
 		go func() {
 			err := transformer.Field(context.Background(), &tString, "nonexistant")
 			assert.Error(t, err)
@@ -279,10 +301,12 @@ func TestAlias(t *testing.T) {
 	transformer := New()
 	transformer.Register("repl", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString("test")
+
 		return nil
 	})
 	transformer.Register("repl2", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString("test2")
+
 		return nil
 	})
 
@@ -292,6 +316,7 @@ func TestAlias(t *testing.T) {
 		}
 
 		var tt MultipleTransformStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.Equal(t, "test2", tt.String)
@@ -306,6 +331,7 @@ func TestAlias(t *testing.T) {
 		}
 
 		var tt2 AliasStruct
+
 		err := transformer.Struct(context.Background(), &tt2)
 		require.NoError(t, err)
 		assert.Equal(t, "test2", tt2.String)
@@ -313,12 +339,14 @@ func TestAlias(t *testing.T) {
 
 	t.Run("invalid alias with empty tag", func(t *testing.T) {
 		var s string
+
 		err := transformer.Field(context.Background(), &s, "bad")
 		assert.Error(t, err)
 	})
 
 	t.Run("combined alias usage", func(t *testing.T) {
 		var s string
+
 		err := transformer.Field(context.Background(), &s, "repl,rep,bad")
 		assert.Error(t, err)
 	})
@@ -330,14 +358,18 @@ func TestArray(t *testing.T) {
 		if hasValue(fl.Field()) {
 			return nil
 		}
+
 		fl.Field().Set(reflect.MakeSlice(fl.Field().Type(), 2, 2))
+
 		return nil
 	})
 	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
+
 		fl.Field().SetString("default")
+
 		return nil
 	})
 
@@ -347,6 +379,7 @@ func TestArray(t *testing.T) {
 		}
 
 		var tt ArrayStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.Len(t, tt.Arr, 2)
@@ -388,14 +421,18 @@ func TestMap(t *testing.T) {
 		if hasValue(fl.Field()) {
 			return nil
 		}
+
 		fl.Field().Set(reflect.MakeMap(fl.Field().Type()))
+
 		return nil
 	})
 	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
+
 		fl.Field().SetString("default")
+
 		return nil
 	})
 
@@ -405,6 +442,7 @@ func TestMap(t *testing.T) {
 		}
 
 		var tt MapStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.Len(t, tt.Map, 0)
@@ -451,17 +489,21 @@ func TestInterface(t *testing.T) {
 	transformer := New()
 	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(InnerStruct{STR: "test"}))
+
 		return nil
 	})
 	transformer.Register("default2", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(InnerErrorStruct{}))
+
 		return nil
 	})
 	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
 		if hasValue(fl.Field()) && fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
+
 		fl.Field().Set(reflect.ValueOf("default"))
+
 		return nil
 	})
 	transformer.Register("error", func(ctx context.Context, fl mold.FieldLevel) error {
@@ -474,6 +516,7 @@ func TestInterface(t *testing.T) {
 		}
 
 		var tt InterfaceStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.NotNil(t, tt.Iface)
@@ -490,6 +533,7 @@ func TestInterface(t *testing.T) {
 		}
 
 		var tt2 InterfaceErrorStruct
+
 		err := transformer.Struct(context.Background(), &tt2)
 		assert.Error(t, err)
 	})
@@ -500,6 +544,7 @@ func TestInterface(t *testing.T) {
 		}
 
 		var tt3 InterfaceStringStruct
+
 		tt3.Iface = "String"
 		err := transformer.Struct(context.Background(), &tt3)
 		require.NoError(t, err)
@@ -512,6 +557,7 @@ func TestInterface(t *testing.T) {
 		}
 
 		var tt4 InterfaceNilStruct
+
 		tt4.Iface = nil
 		err := transformer.Struct(context.Background(), &tt4)
 		require.NoError(t, err)
@@ -524,6 +570,7 @@ func TestInterface(t *testing.T) {
 		}
 
 		var tt5 InterfaceChainErrorStruct
+
 		tt5.Iface = "String"
 		err := transformer.Struct(context.Background(), &tt5)
 		assert.Error(t, err)
@@ -538,13 +585,16 @@ func TestInterfacePtr(t *testing.T) {
 	transformer := New()
 	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(new(InnerPtrStruct)))
+
 		return nil
 	})
 	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
+
 		fl.Field().SetString("default")
+
 		return nil
 	})
 
@@ -554,6 +604,7 @@ func TestInterfacePtr(t *testing.T) {
 		}
 
 		var tt InterfacePtrStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.NotNil(t, tt.Iface)
@@ -569,6 +620,7 @@ func TestInterfacePtr(t *testing.T) {
 		}
 
 		var tt2 InterfaceNoTransformStruct
+
 		tt2.Iface = InnerPtrStruct{}
 		err := transformer.Struct(context.Background(), &tt2)
 		require.NoError(t, err)
@@ -586,13 +638,16 @@ func TestStructLevel(t *testing.T) {
 		if s.String == "error" {
 			return errors.New("BAD VALUE")
 		}
+
 		s.String = "test"
 		sl.Struct().Set(reflect.ValueOf(s))
+
 		return nil
 	}, StructLevelStruct{})
 
 	t.Run("struct level transformation success", func(t *testing.T) {
 		var tt StructLevelStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.Equal(t, "test", tt.String)
@@ -600,6 +655,7 @@ func TestStructLevel(t *testing.T) {
 
 	t.Run("struct level transformation error", func(t *testing.T) {
 		var tt StructLevelStruct
+
 		tt.String = "error"
 		err := transformer.Struct(context.Background(), &tt)
 		assert.Error(t, err)
@@ -610,17 +666,20 @@ func TestTimeType(t *testing.T) {
 	transformer := New()
 	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(time.Now()))
+
 		return nil
 	})
 
 	t.Run("time field transformation", func(t *testing.T) {
 		var tt time.Time
+
 		err := transformer.Field(context.Background(), &tt, "default")
 		require.NoError(t, err)
 	})
 
 	t.Run("time field with invalid dive", func(t *testing.T) {
 		var tt time.Time
+
 		err := transformer.Field(context.Background(), &tt, "default,dive")
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, ErrInvalidDive))
@@ -631,6 +690,7 @@ func TestParam(t *testing.T) {
 	transformer := New()
 	transformer.Register("ltrim", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString(strings.TrimLeft(fl.Field().String(), fl.Param()))
+
 		return nil
 	})
 
@@ -650,6 +710,7 @@ func TestDiveKeys(t *testing.T) {
 	transformer := New()
 	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf("after"))
+
 		return nil
 	})
 	transformer.Register("err", func(ctx context.Context, fl mold.FieldLevel) error {
@@ -669,6 +730,7 @@ func TestDiveKeys(t *testing.T) {
 
 		err := transformer.Struct(context.Background(), &test)
 		require.NoError(t, err)
+
 		val := test.Map["after"]
 		assert.Equal(t, "after", val)
 	})
@@ -680,6 +742,7 @@ func TestDiveKeys(t *testing.T) {
 
 		err := transformer.Field(context.Background(), &m, "dive,keys,default,endkeys,default")
 		require.NoError(t, err)
+
 		val := m["after"]
 		assert.Equal(t, "after", val)
 	})
@@ -699,6 +762,7 @@ func TestDiveKeys(t *testing.T) {
 	t.Run("undefined tag in keys", func(t *testing.T) {
 		m := map[string]string{"b4": "b4"}
 		err := transformer.Field(context.Background(), &m, "dive,keys,undefinedtag")
+
 		var undefinedErr *ErrUndefinedTag
 		assert.ErrorAs(t, err, &undefinedErr)
 		assert.Equal(t, "undefinedtag", undefinedErr.tag)
@@ -727,14 +791,18 @@ func TestStructArray(t *testing.T) {
 		if hasValue(fl.Field()) {
 			return nil
 		}
+
 		fl.Field().Set(reflect.MakeSlice(fl.Field().Type(), 2, 2))
+
 		return nil
 	})
 	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
+
 		fl.Field().SetString("default")
+
 		return nil
 	})
 
@@ -747,6 +815,7 @@ func TestStructArray(t *testing.T) {
 		}
 
 		var tt StructArrayStruct
+
 		err := transformer.Struct(context.Background(), &tt)
 		require.NoError(t, err)
 		assert.Len(t, tt.Arr, 2)
@@ -824,6 +893,7 @@ func TestSiblingField(t *testing.T) {
 
 		// Translate based on status value
 		var translatedName string
+
 		switch statusValue {
 		case 1:
 			translatedName = "Active"
@@ -874,6 +944,7 @@ func TestSiblingField(t *testing.T) {
 			if _, ok := fl.SiblingField("NonExistentField"); ok {
 				return errors.New("should not find non-existent field")
 			}
+
 			return nil
 		})
 

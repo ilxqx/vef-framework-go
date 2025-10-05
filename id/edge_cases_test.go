@@ -41,6 +41,7 @@ func TestSnowflakeEdgeCases(t *testing.T) {
 
 		// Generate many IDs in rapid succession to test sequence counter
 		ids := make(map[string]bool)
+
 		for range 5000 {
 			id := generator.Generate()
 			assert.False(t, ids[id], "Rapid sequence generation should produce unique IDs")
@@ -138,8 +139,10 @@ func TestUuidEdgeCases(t *testing.T) {
 
 func TestXidEdgeCases(t *testing.T) {
 	t.Run("should handle concurrent generation from multiple generators", func(t *testing.T) {
-		const numGenerators = 10
-		const idsPerGenerator = 1000
+		const (
+			numGenerators   = 10
+			idsPerGenerator = 1000
+		)
 
 		idChan := make(chan string, numGenerators*idsPerGenerator)
 
@@ -155,6 +158,7 @@ func TestXidEdgeCases(t *testing.T) {
 
 		// Collect all IDs
 		ids := make(map[string]bool)
+
 		for range numGenerators * idsPerGenerator {
 			id := <-idChan
 			assert.False(t, ids[id], "Multiple generator instances should produce unique IDs")
@@ -189,6 +193,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		// We can test the conversion logic that would be used
 		// This is a unit test for the error handling logic
 		originalNodeId := os.Getenv("NODE_ID")
+
 		defer func() {
 			if originalNodeId != "" {
 				_ = os.Setenv("NODE_ID", originalNodeId)
@@ -226,7 +231,8 @@ func TestInterfaceCompliance(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
-		var _ IdGenerator = generator
+		_ = generator
+
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Snowflake generator should produce non-empty ID")
 	})

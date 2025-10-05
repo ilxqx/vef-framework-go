@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // PKField describes a model's primary key field with common aliases.
@@ -42,7 +43,7 @@ func (p *PKField) Value(model any) (any, error) {
 // - string (and *string)
 // - int/int32/int64 (and their pointer forms)
 // For unsupported kinds, an error is returned.
-func (p *PKField) Set(model any, value any) error {
+func (p *PKField) Set(model, value any) error {
 	modelValue, err := p.validateModel(model)
 	if err != nil {
 		return err
@@ -55,6 +56,7 @@ func (p *PKField) Set(model any, value any) error {
 		if err != nil {
 			return err
 		}
+
 		if p.f.IsPtr {
 			pkValue.Set(reflect.ValueOf(&v))
 		} else {
@@ -66,6 +68,7 @@ func (p *PKField) Set(model any, value any) error {
 		if err != nil {
 			return err
 		}
+
 		if p.f.IsPtr {
 			pkValue.Set(reflect.ValueOf(&v))
 		} else {
@@ -75,6 +78,7 @@ func (p *PKField) Set(model any, value any) error {
 	default:
 		return fmt.Errorf("%w: %s", ErrPrimaryKeyUnsupportedType, kind)
 	}
+
 	return nil
 }
 
@@ -151,6 +155,7 @@ func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias .
 	}
 
 	var values []any
+
 	pkv := reflect.ValueOf(pk)
 	if pkv.Kind() == reflect.Slice {
 		values = make([]any, 0, pkv.Len())
@@ -214,6 +219,7 @@ func (p *pkValues) AppendQuery(formatter schema.Formatter, b []byte) ([]byte, er
 
 	if vLen == 1 {
 		b = formatter.AppendValue(b, reflect.ValueOf(p.values[0]))
+
 		return b, nil
 	}
 

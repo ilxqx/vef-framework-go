@@ -1,37 +1,46 @@
 package vef
 
 import (
+	"github.com/samber/lo"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/middleware"
-	"github.com/samber/lo"
-	"go.uber.org/fx"
 )
 
-var Provide = fx.Provide
-var Supply = fx.Supply
-var Annotate = fx.Annotate
-var As = fx.As
-var ParamTags = fx.ParamTags
-var ResultTags = fx.ResultTags
-var Self = fx.Self
-var Invoke = fx.Invoke
-var Decorate = fx.Decorate
-var Module = fx.Module
-var Private = fx.Private
-var OnStart = fx.OnStart
-var OnStop = fx.OnStop
+var (
+	Provide    = fx.Provide
+	Supply     = fx.Supply
+	Annotate   = fx.Annotate
+	As         = fx.As
+	ParamTags  = fx.ParamTags
+	ResultTags = fx.ResultTags
+	Self       = fx.Self
+	Invoke     = fx.Invoke
+	Decorate   = fx.Decorate
+	Module     = fx.Module
+	Private    = fx.Private
+	OnStart    = fx.OnStart
+	OnStop     = fx.OnStop
+)
 
-type Hook = fx.Hook
-type HookFunc = fx.HookFunc
+type (
+	Hook     = fx.Hook
+	HookFunc = fx.HookFunc
+)
 
-var From = fx.From
-var Replace = fx.Replace
-var Populate = fx.Populate
+var (
+	From     = fx.From
+	Replace  = fx.Replace
+	Populate = fx.Populate
+)
 
-type In = fx.In
-type Out = fx.Out
-type Lifecycle = fx.Lifecycle
+type (
+	In        = fx.In
+	Out       = fx.Out
+	Lifecycle = fx.Lifecycle
+)
 
 func StartHook[T HookFunc](start T) Hook {
 	return fx.StartHook(start)
@@ -41,7 +50,7 @@ func StopHook[T HookFunc](stop T) Hook {
 	return fx.StopHook(stop)
 }
 
-func StartStopHook[T1 HookFunc, T2 HookFunc](start T1, stop T2) Hook {
+func StartStopHook[T1, T2 HookFunc](start T1, stop T2) Hook {
 	return fx.StartStopHook(start, stop)
 }
 
@@ -100,6 +109,7 @@ func ProvideSPAConfig(constructor any, paramTags ...string) fx.Option {
 // All configs will be registered in the "vef:spa" group.
 func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPAConfig) fx.Option {
 	spaConfigs := make([]any, 0, len(configs)+1)
+
 	spaConfigs = append(
 		spaConfigs,
 		fx.Annotate(

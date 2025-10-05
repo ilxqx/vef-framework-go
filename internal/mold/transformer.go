@@ -5,7 +5,7 @@ import (
 )
 
 // NewTransformer creates a new transformer instance, integrating all registered transformers and interceptors
-// Uses dependency injection to collect all extension components and build a complete transformer
+// Uses dependency injection to collect all extension components and build a complete transformer.
 func NewTransformer(fieldTransformers []mold.FieldTransformer, structTransformers []mold.StructTransformer, interceptors []mold.Interceptor) mold.Transformer {
 	// Create mold transformer instance
 	transformer := New()

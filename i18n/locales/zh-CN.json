@@ -41,6 +41,8 @@
   "import_validation_failed": "导入数据验证失败",
   "import_requires_multipart": "数据导入请求必须使用 'multipart/form-data' 格式",
   "import_requires_file": "未上传数据文件",
+  "unsupported_import_format": "不支持的导入格式",
+  "unsupported_export_format": "不支持的导出格式",
   "api_request_version": "版本",
   "api_request_resource": "资源",
   "api_request_action": "操作",

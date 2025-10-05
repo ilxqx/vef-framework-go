@@ -5,16 +5,17 @@ import (
 	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/spf13/viper"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mapx"
-	"github.com/spf13/viper"
 )
 
 var (
-	// decodeUsingJsonTagOption configures mapstructure decoder with custom options
+	// DecodeUsingJsonTagOption configures mapstructure decoder with custom options.
 	decodeUsingJsonTagOption viper.DecoderConfigOption = func(c *mapstructure.DecoderConfig) {
 		c.TagName = "config"
 		c.IgnoreUntaggedFields = true

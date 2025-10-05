@@ -2,10 +2,10 @@ package datetime
 
 import (
 	"database/sql/driver"
-	"errors"
 	"time"
 
 	"github.com/gofiber/utils/v2"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
@@ -48,6 +48,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	bs = append(bs, constants.JSONQuote)
 	bs = time.Time(t).AppendFormat(bs, time.TimeOnly)
 	bs = append(bs, constants.JSONQuote)
+
 	return bs, nil
 }
 
@@ -59,7 +60,7 @@ func (t *Time) UnmarshalJSON(bs []byte) error {
 	}
 
 	if err := validateJSONFormat(bs, timePatternLength); err != nil {
-		return errors.New("invalid time format")
+		return ErrInvalidTimeFormat
 	}
 
 	parsed, err := ParseTime(value[1 : timePatternLength+1])
@@ -68,6 +69,7 @@ func (t *Time) UnmarshalJSON(bs []byte) error {
 	}
 
 	*t = parsed
+
 	return nil
 }
 
@@ -154,24 +156,28 @@ func (t Time) Between(start, end Time) bool {
 // BeginOfMinute returns the beginning of the minute for t.
 func (t Time) BeginOfMinute() Time {
 	unwrapped := t.Unwrap()
+
 	return TimeOf(time.Date(1970, 1, 1, unwrapped.Hour(), unwrapped.Minute(), 0, 0, unwrapped.Location()))
 }
 
 // EndOfMinute returns the end of the minute for t.
 func (t Time) EndOfMinute() Time {
 	unwrapped := t.Unwrap()
+
 	return TimeOf(time.Date(1970, 1, 1, unwrapped.Hour(), unwrapped.Minute(), 59, 999999999, unwrapped.Location()))
 }
 
 // BeginOfHour returns the beginning of the hour for t.
 func (t Time) BeginOfHour() Time {
 	unwrapped := t.Unwrap()
+
 	return TimeOf(time.Date(1970, 1, 1, unwrapped.Hour(), 0, 0, 0, unwrapped.Location()))
 }
 
 // EndOfHour returns the end of the hour for t.
 func (t Time) EndOfHour() Time {
 	unwrapped := t.Unwrap()
+
 	return TimeOf(time.Date(1970, 1, 1, unwrapped.Hour(), 59, 59, 999999999, unwrapped.Location()))
 }
 
@@ -186,7 +192,9 @@ func (t *Time) UnmarshalText(text []byte) error {
 	if err != nil {
 		return err
 	}
+
 	*t = parsed
+
 	return nil
 }
 

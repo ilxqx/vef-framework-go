@@ -18,13 +18,13 @@ type RSAPasswordDecryptor struct {
 // The privateKey should be in PKCS#1 or PKCS#8 PEM format.
 func NewRSAPasswordDecryptor(privateKey *rsa.PrivateKey) (PasswordDecryptor, error) {
 	if privateKey == nil {
-		return nil, fmt.Errorf("private key cannot be nil")
+		return nil, fmt.Errorf("%w", ErrPrivateKeyNil)
 	}
 
 	// Use crypto package's RSA cipher with OAEP mode (default)
 	cipher, err := crypto.NewRSA(privateKey, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create RSA cipher: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateRSACipherFailed, err)
 	}
 
 	return &RSAPasswordDecryptor{
@@ -39,7 +39,7 @@ func NewRSAPasswordDecryptorFromPEM(pemKey []byte) (PasswordDecryptor, error) {
 	// Use crypto package's RSA cipher from PEM
 	cipher, err := crypto.NewRSAFromPEM(pemKey, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create RSA cipher from PEM: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateRSACipherFromPEMFailed, err)
 	}
 
 	return &RSAPasswordDecryptor{
@@ -53,7 +53,7 @@ func NewRSAPasswordDecryptorFromHex(privateKeyHex string) (PasswordDecryptor, er
 	// Use crypto package's RSA cipher from hex
 	cipher, err := crypto.NewRSAFromHex(privateKeyHex, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create RSA cipher from hex: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateRSACipherFromHexFailed, err)
 	}
 
 	return &RSAPasswordDecryptor{
@@ -67,7 +67,7 @@ func NewRSAPasswordDecryptorFromBase64(privateKeyBase64 string) (PasswordDecrypt
 	// Use crypto package's RSA cipher from base64
 	cipher, err := crypto.NewRSAFromBase64(privateKeyBase64, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create RSA cipher from base64: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateRSACipherFromBase64Failed, err)
 	}
 
 	return &RSAPasswordDecryptor{
@@ -76,7 +76,7 @@ func NewRSAPasswordDecryptorFromBase64(privateKeyBase64 string) (PasswordDecrypt
 }
 
 // Decrypt decrypts the base64-encoded RSA-encrypted password using OAEP with SHA-256.
-// The encrypted password is expected to be in the format: base64(RSA-OAEP(plaintext))
+// The encrypted password is expected to be in the format: base64(RSA-OAEP(plaintext)).
 func (d *RSAPasswordDecryptor) Decrypt(encryptedPassword string) (string, error) {
 	return d.cipher.Decrypt(encryptedPassword)
 }

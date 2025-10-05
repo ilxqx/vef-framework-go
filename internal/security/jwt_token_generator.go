@@ -40,6 +40,7 @@ func (g *JWTTokenGenerator) Generate(principal *security.Principal) (*security.A
 	accessToken, err := g.generateAccessToken(jwtId, principal)
 	if err != nil {
 		logger.Errorf("Failed to generate access token for principal '%s': %v", principal.Id, err)
+
 		return nil, err
 	}
 
@@ -47,6 +48,7 @@ func (g *JWTTokenGenerator) Generate(principal *security.Principal) (*security.A
 	refreshToken, err := g.generateRefreshToken(jwtId, principal)
 	if err != nil {
 		logger.Errorf("Failed to generate refresh token for principal '%s': %v", principal.Id, err)
+
 		return nil, err
 	}
 

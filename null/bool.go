@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -22,8 +21,8 @@ type Bool struct {
 	sql.NullBool
 }
 
-// NewBool creates a new Bool
-func NewBool(b bool, valid bool) Bool {
+// NewBool creates a new Bool.
+func NewBool(b, valid bool) Bool {
 	return Bool{
 		NullBool: sql.NullBool{
 			Bool:  b,
@@ -42,6 +41,7 @@ func BoolFromPtr(b *bool) Bool {
 	if b == nil {
 		return NewBool(false, false)
 	}
+
 	return NewBool(*b, true)
 }
 
@@ -53,6 +53,7 @@ func (b Bool) Value() (driver.Value, error) {
 	if b.Bool {
 		return int16(1), nil
 	}
+
 	return int16(0), nil
 }
 
@@ -66,6 +67,7 @@ func (b Bool) ValueOr(v bool) bool {
 	if !b.Valid {
 		return v
 	}
+
 	return b.Bool
 }
 
@@ -75,6 +77,7 @@ func (b Bool) ValueOr(v bool) bool {
 func (b *Bool) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == 'n' {
 		b.Valid = false
+
 		return nil
 	}
 
@@ -83,6 +86,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 	}
 
 	b.Valid = true
+
 	return nil
 }
 
@@ -94,15 +98,18 @@ func (b *Bool) UnmarshalText(text []byte) error {
 	switch str {
 	case constants.Empty, constants.JSONNull:
 		b.Valid = false
+
 		return nil
 	case "true":
 		b.Bool = true
 	case "false":
 		b.Bool = false
 	default:
-		return errors.New("null: invalid input for UnmarshalText:" + str)
+		return fmt.Errorf("%w: %s", ErrInvalidBoolText, str)
 	}
+
 	b.Valid = true
+
 	return nil
 }
 
@@ -112,9 +119,11 @@ func (b Bool) MarshalJSON() ([]byte, error) {
 	if !b.Valid {
 		return constants.JSONNullBytes, nil
 	}
+
 	if !b.Bool {
 		return falseBytes, nil
 	}
+
 	return trueBytes, nil
 }
 
@@ -124,9 +133,11 @@ func (b Bool) MarshalText() ([]byte, error) {
 	if !b.Valid {
 		return []byte{}, nil
 	}
+
 	if !b.Bool {
 		return falseBytes, nil
 	}
+
 	return trueBytes, nil
 }
 

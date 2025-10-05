@@ -8,6 +8,7 @@ import (
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
+
 	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/ilxqx/vef-framework-go/constants"
 )
@@ -42,8 +43,9 @@ func createBadgerStore(opts badgerOptions) (cache.Store, error) {
 		badgerOpts = badgerOpts.WithBlockCacheSize(50 << 20)  // 50MB block cache
 	} else {
 		if opts.Directory == constants.Empty {
-			return nil, errors.New("directory path is required for persistent storage")
+			return nil, ErrDirectoryRequired
 		}
+
 		badgerOpts = badgerOpts.WithDir(opts.Directory)
 		badgerOpts = badgerOpts.WithValueDir(opts.Directory)
 
@@ -90,14 +92,17 @@ func (s *badgerStore) runGC() {
 				// No cleanup was needed, continue
 				continue
 			}
+
 			if errors.Is(err, badger.ErrRejected) {
 				// Database is closed or another GC is running, stop GC
 				logger.Info("garbage collection stopped because database is closed or another GC is running")
+
 				return
 			}
 
 			// Other errors are not critical, just continue
 			logger.Errorf("failed to run garbage collection: %v", err)
+
 			continue
 		}
 	}
@@ -110,8 +115,10 @@ func (s *badgerStore) Name() string {
 
 // Get retrieves raw bytes by key.
 func (s *badgerStore) Get(ctx context.Context, key string) ([]byte, bool) {
-	var data []byte
-	var found bool
+	var (
+		data  []byte
+		found bool
+	)
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
@@ -119,6 +126,7 @@ func (s *badgerStore) Get(ctx context.Context, key string) ([]byte, bool) {
 			if errors.Is(err, badger.ErrKeyNotFound) {
 				return nil // Not an error, just not found
 			}
+
 			return err
 		}
 
@@ -126,13 +134,15 @@ func (s *badgerStore) Get(ctx context.Context, key string) ([]byte, bool) {
 			// Make a copy of the value since Badger reuses the slice
 			data = make([]byte, len(val))
 			copy(data, val)
+
 			found = true
+
 			return nil
 		})
 	})
-
 	if err != nil {
 		logger.Errorf("failed to get value: %v", err)
+
 		return nil, false
 	}
 
@@ -159,6 +169,7 @@ func (s *badgerStore) Set(ctx context.Context, key string, data []byte, ttl ...t
 func (s *badgerStore) Contains(ctx context.Context, key string) bool {
 	err := s.db.View(func(txn *badger.Txn) error {
 		_, err := txn.Get([]byte(key))
+
 		return err
 	})
 
@@ -209,8 +220,10 @@ func (s *badgerStore) Clear(ctx context.Context, prefix string) error {
 
 // Keys returns all keys in the cache, filtered by prefix.
 func (s *badgerStore) Keys(ctx context.Context, prefix string) ([]string, error) {
-	var keys []string
-	var prefixBytes []byte
+	var (
+		keys        []string
+		prefixBytes []byte
+	)
 
 	if prefix != constants.Empty {
 		prefixBytes = []byte(prefix)
@@ -250,13 +263,14 @@ func (s *badgerStore) processIteratorItem(item *badger.Item, callback func(key s
 	key := string(item.Key())
 
 	var data []byte
+
 	err := item.Value(func(val []byte) error {
 		// Make a copy of the value since Badger reuses the slice
 		data = make([]byte, len(val))
 		copy(data, val)
+
 		return nil
 	})
-
 	if err != nil {
 		return false, err
 	}
@@ -286,6 +300,7 @@ func (s *badgerStore) ForEach(ctx context.Context, prefix string, callback func(
 				if err != nil {
 					return err
 				}
+
 				if !shouldContinue {
 					break
 				}
@@ -296,6 +311,7 @@ func (s *badgerStore) ForEach(ctx context.Context, prefix string, callback func(
 				if err != nil {
 					return err
 				}
+
 				if !shouldContinue {
 					break
 				}
@@ -308,8 +324,10 @@ func (s *badgerStore) ForEach(ctx context.Context, prefix string, callback func(
 
 // Size returns the number of entries in the cache, filtered by prefix.
 func (s *badgerStore) Size(ctx context.Context, prefix string) (int64, error) {
-	var count int64
-	var prefixBytes []byte
+	var (
+		count       int64
+		prefixBytes []byte
+	)
 
 	if prefix != constants.Empty {
 		prefixBytes = []byte(prefix)

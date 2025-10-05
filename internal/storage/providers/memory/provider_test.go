@@ -6,9 +6,10 @@ import (
 	"io"
 	"testing"
 
-	"github.com/ilxqx/vef-framework-go/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 func TestMemoryProvider(t *testing.T) {
@@ -52,6 +53,7 @@ func TestMemoryProvider(t *testing.T) {
 		})
 
 		require.NoError(t, err)
+
 		require.NotNil(t, reader)
 		defer reader.Close()
 
@@ -99,6 +101,7 @@ func TestMemoryProvider(t *testing.T) {
 			Key: "test-copy.txt",
 		})
 		require.NoError(t, err)
+
 		defer reader.Close()
 
 		data, err := io.ReadAll(reader)
@@ -131,22 +134,25 @@ func TestMemoryProvider(t *testing.T) {
 			Key: "test-moved.txt",
 		})
 		require.NoError(t, err)
+
 		defer reader.Close()
 	})
 
 	// Test ListObjects
 	t.Run("ListObjects", func(t *testing.T) {
 		// Add more objects
-		provider.PutObject(ctx, storage.PutObjectOptions{
+		_, err := provider.PutObject(ctx, storage.PutObjectOptions{
 			Key:    "folder/file1.txt",
 			Reader: bytes.NewReader([]byte("file1")),
 			Size:   5,
 		})
-		provider.PutObject(ctx, storage.PutObjectOptions{
+		require.NoError(t, err)
+		_, err = provider.PutObject(ctx, storage.PutObjectOptions{
 			Key:    "folder/file2.txt",
 			Reader: bytes.NewReader([]byte("file2")),
 			Size:   5,
 		})
+		require.NoError(t, err)
 
 		// List all objects
 		objects, err := provider.ListObjects(ctx, storage.ListObjectsOptions{
@@ -170,11 +176,12 @@ func TestMemoryProvider(t *testing.T) {
 	t.Run("PromoteObject", func(t *testing.T) {
 		// Upload a temp file
 		tempKey := storage.TempPrefix + "2025/01/15/test.txt"
-		provider.PutObject(ctx, storage.PutObjectOptions{
+		_, err := provider.PutObject(ctx, storage.PutObjectOptions{
 			Key:    tempKey,
 			Reader: bytes.NewReader([]byte("temp content")),
 			Size:   12,
 		})
+		require.NoError(t, err)
 
 		// Promote it
 		info, err := provider.PromoteObject(ctx, tempKey)
@@ -191,6 +198,7 @@ func TestMemoryProvider(t *testing.T) {
 			Key: "2025/01/15/test.txt",
 		})
 		require.NoError(t, err)
+
 		defer reader.Close()
 	})
 
@@ -214,11 +222,12 @@ func TestMemoryProvider(t *testing.T) {
 		// Upload multiple objects
 		keys := []string{"delete1.txt", "delete2.txt", "delete3.txt"}
 		for _, key := range keys {
-			provider.PutObject(ctx, storage.PutObjectOptions{
+			_, err := provider.PutObject(ctx, storage.PutObjectOptions{
 				Key:    key,
 				Reader: bytes.NewReader([]byte("content")),
 				Size:   7,
 			})
+			require.NoError(t, err)
 		}
 
 		// Delete them all

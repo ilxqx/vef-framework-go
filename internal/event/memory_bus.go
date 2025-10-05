@@ -6,12 +6,13 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/id"
-	"go.uber.org/fx"
 )
 
-// memoryEventBus is a simple, thread-safe in-memory event bus implementation
+// memoryEventBus is a simple, thread-safe in-memory event bus implementation.
 type memoryEventBus struct {
 	middlewares []event.Middleware
 
@@ -29,7 +30,7 @@ type memoryEventBus struct {
 	started bool
 }
 
-// subscription represents an event subscription
+// subscription represents an event subscription.
 type subscription struct {
 	id        string
 	eventType string
@@ -37,12 +38,12 @@ type subscription struct {
 	created   time.Time
 }
 
-// eventMessage wraps an event for processing
+// eventMessage wraps an event for processing.
 type eventMessage struct {
 	event event.Event
 }
 
-// newMemoryEventBus creates a new memory-based event bus
+// newMemoryEventBus creates a new memory-based event bus.
 func newMemoryEventBus(middlewares []event.Middleware, lc fx.Lifecycle, c context.Context) *memoryEventBus {
 	ctx, cancel := context.WithCancel(c)
 
@@ -58,18 +59,20 @@ func newMemoryEventBus(middlewares []event.Middleware, lc fx.Lifecycle, c contex
 		fx.StartStopHook(
 			func() error {
 				if err := bus.Start(); err != nil {
-					return fmt.Errorf("failed to start event bus: %v", err)
+					return fmt.Errorf("failed to start event bus: %w", err)
 				}
 
 				logger.Info("event bus started")
+
 				return nil
 			},
 			func() error {
 				if err := bus.Shutdown(c); err != nil {
-					return fmt.Errorf("failed to stop event bus: %v", err)
+					return fmt.Errorf("failed to stop event bus: %w", err)
 				}
 
 				logger.Info("event bus stopped")
+
 				return nil
 			},
 		),
@@ -78,28 +81,32 @@ func newMemoryEventBus(middlewares []event.Middleware, lc fx.Lifecycle, c contex
 	return bus
 }
 
-// Start initializes and starts the event bus
+// Start initializes and starts the event bus.
 func (b *memoryEventBus) Start() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	if b.started {
-		return fmt.Errorf("event bus already started")
+		return fmt.Errorf("%w", ErrEventBusAlreadyStarted)
 	}
 
 	// Start event processor goroutine
 	b.wg.Go(b.processEvents)
 	b.started = true
+
 	return nil
 }
 
-// Shutdown gracefully shuts down the event bus
+// Shutdown gracefully shuts down the event bus.
 func (b *memoryEventBus) Shutdown(ctx context.Context) error {
 	b.mu.Lock()
+
 	if !b.started {
 		b.mu.Unlock()
+
 		return nil
 	}
+
 	b.mu.Unlock()
 
 	// Signal shutdown
@@ -108,6 +115,7 @@ func (b *memoryEventBus) Shutdown(ctx context.Context) error {
 
 	// Wait for shutdown with timeout
 	done := make(chan struct{})
+
 	go func() {
 		b.wg.Wait()
 		close(done)
@@ -117,13 +125,13 @@ func (b *memoryEventBus) Shutdown(ctx context.Context) error {
 	case <-done:
 		return nil
 	case <-time.After(10 * time.Second):
-		return fmt.Errorf("shutdown timeout exceeded")
+		return fmt.Errorf("%w", ErrShutdownTimeoutExceeded)
 	case <-ctx.Done():
 		return ctx.Err()
 	}
 }
 
-// Publish publishes an event asynchronously and returns a completion channel
+// Publish publishes an event asynchronously and returns a completion channel.
 func (b *memoryEventBus) Publish(event event.Event) {
 	message := &eventMessage{
 		event: event,
@@ -132,7 +140,7 @@ func (b *memoryEventBus) Publish(event event.Event) {
 	b.eventCh <- message
 }
 
-// Subscribe registers a handler for specific event types
+// Subscribe registers a handler for specific event types.
 func (b *memoryEventBus) Subscribe(eventType string, handler event.HandlerFunc) event.UnsubscribeFunc {
 	id := id.GenerateUuid()
 	sub := &subscription{
@@ -143,9 +151,11 @@ func (b *memoryEventBus) Subscribe(eventType string, handler event.HandlerFunc) 
 	}
 
 	b.mu.Lock()
+
 	if b.subscribers[eventType] == nil {
 		b.subscribers[eventType] = make(map[string]*subscription)
 	}
+
 	b.subscribers[eventType][id] = sub
 	b.mu.Unlock()
 
@@ -157,6 +167,7 @@ func (b *memoryEventBus) Subscribe(eventType string, handler event.HandlerFunc) 
 		if subs, exists := b.subscribers[eventType]; exists {
 			if _, exists := subs[id]; exists {
 				delete(subs, id)
+
 				if len(subs) == 0 {
 					delete(b.subscribers, eventType)
 				}
@@ -167,7 +178,7 @@ func (b *memoryEventBus) Subscribe(eventType string, handler event.HandlerFunc) 
 	return unsubscribe
 }
 
-// processEvents is the main event processing goroutine
+// processEvents is the main event processing goroutine.
 func (b *memoryEventBus) processEvents() {
 	for {
 		select {
@@ -175,21 +186,23 @@ func (b *memoryEventBus) processEvents() {
 			if !ok {
 				return
 			}
+
 			go b.handleEvent(message)
+
 		case <-b.ctx.Done():
 			return
 		}
 	}
 }
 
-// handleEvent processes a single event message
+// handleEvent processes a single event message.
 func (b *memoryEventBus) handleEvent(message *eventMessage) {
 	if err := b.deliverEvent(message.event); err != nil {
 		logger.Errorf("error delivering event: %v", err)
 	}
 }
 
-// deliverEvent delivers an event to all matching subscribers
+// deliverEvent delivers an event to all matching subscribers.
 func (b *memoryEventBus) deliverEvent(evt event.Event) error {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -200,6 +213,7 @@ func (b *memoryEventBus) deliverEvent(evt event.Event) error {
 	for _, middleware := range b.middlewares {
 		if err := middleware.Process(b.ctx, processedEvent, func(ctx context.Context, e event.Event) error {
 			processedEvent = e
+
 			return nil
 		}); err != nil {
 			return err

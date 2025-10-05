@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // NewMergeQuery creates a new MergeQuery instance with the provided database connection.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewMergeQuery(db bun.IDB) MergeQuery {
+func NewMergeQuery(db bun.IDB) *BunMergeQuery {
 	eb := &QueryExprBuilder{}
 	mq := db.NewMerge()
 	dialect := db.Dialect()
@@ -23,6 +24,7 @@ func NewMergeQuery(db bun.IDB) MergeQuery {
 		eb:      eb,
 	}
 	eb.qb = query
+
 	return query
 }
 
@@ -38,6 +40,7 @@ type BunMergeQuery struct {
 
 func (q *BunMergeQuery) With(name string, builder func(SelectQuery)) MergeQuery {
 	q.query.With(name, q.BuildSubQuery(builder))
+
 	return q
 }
 
@@ -48,16 +51,19 @@ func (q *BunMergeQuery) WithValues(name string, model any, withOrder ...bool) Me
 	}
 
 	q.query.With(name, values)
+
 	return q
 }
 
 func (q *BunMergeQuery) WithRecursive(name string, builder func(SelectQuery)) MergeQuery {
 	q.query.WithRecursive(name, q.BuildSubQuery(builder))
+
 	return q
 }
 
 func (q *BunMergeQuery) Model(model any) MergeQuery {
 	q.query.Model(model)
+
 	return q
 }
 
@@ -67,6 +73,7 @@ func (q *BunMergeQuery) ModelTable(name string, alias ...string) MergeQuery {
 	} else {
 		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
 	}
+
 	return q
 }
 
@@ -76,16 +83,19 @@ func (q *BunMergeQuery) Table(name string, alias ...string) MergeQuery {
 	} else {
 		q.query.Table(name)
 	}
+
 	return q
 }
 
 func (q *BunMergeQuery) TableExpr(alias string, builder func(ExprBuilder) any) MergeQuery {
 	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
+
 	return q
 }
 
 func (q *BunMergeQuery) TableSubQuery(alias string, builder func(SelectQuery)) MergeQuery {
 	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
+
 	return q
 }
 
@@ -95,21 +105,25 @@ func (q *BunMergeQuery) Using(source string, alias ...string) MergeQuery {
 	} else {
 		q.query.Using("?", bun.Name(source))
 	}
+
 	return q
 }
 
 func (q *BunMergeQuery) UsingModel(model any) MergeQuery {
 	q.query.Using("?", model)
+
 	return q
 }
 
 func (q *BunMergeQuery) UsingExpr(alias string, builder func(ExprBuilder) any) MergeQuery {
 	q.query.Using("(?) AS ?", builder(q.eb), bun.Name(alias))
+
 	return q
 }
 
 func (q *BunMergeQuery) UsingSubQuery(alias string, builder func(SelectQuery)) MergeQuery {
 	q.query.Using("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
+
 	return q
 }
 
@@ -118,12 +132,15 @@ func (q *BunMergeQuery) UsingValues(model any, columns ...string) MergeQuery {
 	if len(columns) > 0 {
 		values.Column(columns...)
 	}
+
 	q.query.Using("?", values)
+
 	return q
 }
 
 func (q *BunMergeQuery) On(builder func(ConditionBuilder)) MergeQuery {
 	q.query.On("?", q.BuildCondition(builder))
+
 	return q
 }
 
@@ -141,16 +158,19 @@ func (q *BunMergeQuery) WhenNotMatchedBySource(builder ...func(ConditionBuilder)
 
 func (q *BunMergeQuery) Returning(columns ...string) MergeQuery {
 	q.query.Returning("?", Names(columns...))
+
 	return q
 }
 
 func (q *BunMergeQuery) ReturningAll() MergeQuery {
 	q.query.Returning(columnAll)
+
 	return q
 }
 
 func (q *BunMergeQuery) ReturningNone() MergeQuery {
 	q.query.Returning(sqlNull)
+
 	return q
 }
 
@@ -160,6 +180,7 @@ func (q *BunMergeQuery) Apply(fns ...ApplyFunc[MergeQuery]) MergeQuery {
 			fn(q)
 		}
 	}
+
 	return q
 }
 
@@ -167,6 +188,7 @@ func (q *BunMergeQuery) ApplyIf(condition bool, fns ...ApplyFunc[MergeQuery]) Me
 	if condition {
 		return q.Apply(fns...)
 	}
+
 	return q
 }
 

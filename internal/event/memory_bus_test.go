@@ -6,21 +6,26 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/event"
 )
 
 func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 	t.Run("single subscriber receives event", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		var receivedEvent event.Event
-		var wg sync.WaitGroup
+		var (
+			receivedEvent event.Event
+			wg            sync.WaitGroup
+		)
+
 		wg.Add(1)
 
 		unsubscribe := bus.Subscribe("user.created", func(ctx context.Context, evt event.Event) {
 			receivedEvent = evt
+
 			wg.Done()
 		})
 		defer unsubscribe()
@@ -30,6 +35,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		// Wait for event delivery with timeout
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -41,6 +47,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 			assert.Equal(t, "user.created", receivedEvent.Type())
 			assert.Equal(t, "test-service", receivedEvent.Source())
 			assert.Equal(t, testEvent.Id(), receivedEvent.Id())
+
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("timeout waiting for event delivery")
 		}
@@ -49,9 +56,12 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 	t.Run("multiple subscribers receive same event", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		var receivedEvents []event.Event
-		var mu sync.Mutex
-		var wg sync.WaitGroup
+		var (
+			receivedEvents []event.Event
+			mu             sync.Mutex
+			wg             sync.WaitGroup
+		)
+
 		subscriberCount := 3
 		wg.Add(subscriberCount)
 
@@ -60,12 +70,15 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		for range subscriberCount {
 			unsub := bus.Subscribe("order.placed", func(ctx context.Context, evt event.Event) {
 				mu.Lock()
+
 				receivedEvents = append(receivedEvents, evt)
+
 				mu.Unlock()
 				wg.Done()
 			})
 			unsubscribers = append(unsubscribers, unsub)
 		}
+
 		defer func() {
 			for _, unsub := range unsubscribers {
 				unsub()
@@ -80,6 +93,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		// Wait for all subscribers to receive the event
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -89,12 +103,15 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		case <-done:
 			mu.Lock()
 			assert.Equal(t, subscriberCount, len(receivedEvents))
+
 			for _, evt := range receivedEvents {
 				assert.Equal(t, "order.placed", evt.Type())
 				assert.Equal(t, "order-service", evt.Source())
 				assert.Equal(t, testEvent.Id(), evt.Id())
 			}
+
 			mu.Unlock()
+
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("timeout waiting for event delivery to all subscribers")
 		}
@@ -103,15 +120,20 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 	t.Run("subscribers for different event types", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		var userEvents []event.Event
-		var orderEvents []event.Event
-		var mu sync.Mutex
-		var wg sync.WaitGroup
+		var (
+			userEvents  []event.Event
+			orderEvents []event.Event
+			mu          sync.Mutex
+			wg          sync.WaitGroup
+		)
+
 		wg.Add(2) // Expecting 2 events
 
 		unsubUser := bus.Subscribe("user.registered", func(ctx context.Context, evt event.Event) {
 			mu.Lock()
+
 			userEvents = append(userEvents, evt)
+
 			mu.Unlock()
 			wg.Done()
 		})
@@ -119,7 +141,9 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		unsubOrder := bus.Subscribe("order.created", func(ctx context.Context, evt event.Event) {
 			mu.Lock()
+
 			orderEvents = append(orderEvents, evt)
+
 			mu.Unlock()
 			wg.Done()
 		})
@@ -128,11 +152,13 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		// Publish events of different types
 		userEvent := event.NewBaseEvent("user.registered")
 		orderEvent := event.NewBaseEvent("order.created")
+
 		bus.Publish(userEvent)
 		bus.Publish(orderEvent)
 
 		// Wait for both events
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -146,6 +172,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 			assert.Equal(t, "user.registered", userEvents[0].Type())
 			assert.Equal(t, "order.created", orderEvents[0].Type())
 			mu.Unlock()
+
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("timeout waiting for events")
 		}
@@ -156,12 +183,16 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 	t.Run("unsubscribe prevents further event delivery", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		var eventCount int
-		var mu sync.Mutex
+		var (
+			eventCount int
+			mu         sync.Mutex
+		)
 
 		unsubscribe := bus.Subscribe("payment.processed", func(ctx context.Context, evt event.Event) {
 			mu.Lock()
+
 			eventCount++
+
 			mu.Unlock()
 		})
 
@@ -190,21 +221,27 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 	t.Run("unsubscribe one of multiple subscribers", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		var subscriber1Count int
-		var subscriber2Count int
-		var mu sync.Mutex
+		var (
+			subscriber1Count int
+			subscriber2Count int
+			mu               sync.Mutex
+		)
 
 		// First subscriber
 		unsubscribe1 := bus.Subscribe("notification.sent", func(ctx context.Context, evt event.Event) {
 			mu.Lock()
+
 			subscriber1Count++
+
 			mu.Unlock()
 		})
 
 		// Second subscriber
 		unsubscribe2 := bus.Subscribe("notification.sent", func(ctx context.Context, evt event.Event) {
 			mu.Lock()
+
 			subscriber2Count++
+
 			mu.Unlock()
 		})
 		defer unsubscribe2()
@@ -231,12 +268,16 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 	t.Run("unsubscribe function is idempotent", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		var eventCount int
-		var mu sync.Mutex
+		var (
+			eventCount int
+			mu         sync.Mutex
+		)
 
 		unsubscribe := bus.Subscribe("test.event", func(ctx context.Context, evt event.Event) {
 			mu.Lock()
+
 			eventCount++
+
 			mu.Unlock()
 		})
 
@@ -307,12 +348,16 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 	t.Run("events are processed after start", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		var receivedEvent event.Event
-		var wg sync.WaitGroup
+		var (
+			receivedEvent event.Event
+			wg            sync.WaitGroup
+		)
+
 		wg.Add(1)
 
 		unsubscribe := bus.Subscribe("lifecycle.test", func(ctx context.Context, evt event.Event) {
 			receivedEvent = evt
+
 			wg.Done()
 		})
 		defer unsubscribe()
@@ -321,6 +366,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		bus.Publish(testEvent)
 
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -337,26 +383,35 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 
 func TestMemoryEventBus_Middleware(t *testing.T) {
 	t.Run("middleware processes events", func(t *testing.T) {
-		var processedEvents []event.Event
-		var mu sync.Mutex
+		var (
+			processedEvents []event.Event
+			mu              sync.Mutex
+		)
 
 		middleware := &testMiddleware{
 			processFunc: func(ctx context.Context, evt event.Event, next event.MiddlewareFunc) error {
 				mu.Lock()
+
 				processedEvents = append(processedEvents, evt)
+
 				mu.Unlock()
+
 				return next(ctx, evt)
 			},
 		}
 
 		bus := createTestEventBusWithMiddleware(t, []event.Middleware{middleware})
 
-		var receivedEvent event.Event
-		var wg sync.WaitGroup
+		var (
+			receivedEvent event.Event
+			wg            sync.WaitGroup
+		)
+
 		wg.Add(1)
 
 		unsubscribe := bus.Subscribe("middleware.test", func(ctx context.Context, evt event.Event) {
 			receivedEvent = evt
+
 			wg.Done()
 		})
 		defer unsubscribe()
@@ -365,6 +420,7 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		bus.Publish(testEvent)
 
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -377,20 +433,26 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 			assert.Equal(t, testEvent.Id(), processedEvents[0].Id())
 			mu.Unlock()
 			assert.Equal(t, testEvent.Id(), receivedEvent.Id())
+
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("timeout waiting for middleware processing")
 		}
 	})
 
 	t.Run("middleware chain processes in order", func(t *testing.T) {
-		var processingOrder []string
-		var mu sync.Mutex
+		var (
+			processingOrder []string
+			mu              sync.Mutex
+		)
 
 		middleware1 := &testMiddleware{
 			processFunc: func(ctx context.Context, evt event.Event, next event.MiddlewareFunc) error {
 				mu.Lock()
+
 				processingOrder = append(processingOrder, "middleware1")
+
 				mu.Unlock()
+
 				return next(ctx, evt)
 			},
 		}
@@ -398,8 +460,11 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		middleware2 := &testMiddleware{
 			processFunc: func(ctx context.Context, evt event.Event, next event.MiddlewareFunc) error {
 				mu.Lock()
+
 				processingOrder = append(processingOrder, "middleware2")
+
 				mu.Unlock()
+
 				return next(ctx, evt)
 			},
 		}
@@ -418,6 +483,7 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		bus.Publish(testEvent)
 
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -438,26 +504,35 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 	t.Run("concurrent publish and subscribe", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
-		const numPublishers = 10
-		const numSubscribers = 5
-		const eventsPerPublisher = 20
+		const (
+			numPublishers      = 10
+			numSubscribers     = 5
+			eventsPerPublisher = 20
+		)
 
-		var totalReceived int
-		var mu sync.Mutex
-		var wg sync.WaitGroup
+		var (
+			totalReceived int
+			mu            sync.Mutex
+			wg            sync.WaitGroup
+		)
 
 		// Create subscribers
 		var unsubscribers []event.UnsubscribeFunc
+
 		for range numSubscribers {
 			wg.Add(eventsPerPublisher * numPublishers) // Each subscriber should receive all events
+
 			unsub := bus.Subscribe("concurrent.test", func(ctx context.Context, evt event.Event) {
 				mu.Lock()
+
 				totalReceived++
+
 				mu.Unlock()
 				wg.Done()
 			})
 			unsubscribers = append(unsubscribers, unsub)
 		}
+
 		defer func() {
 			for _, unsub := range unsubscribers {
 				unsub()
@@ -479,6 +554,7 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 
 		// Wait for all events to be processed
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -487,9 +563,11 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 		select {
 		case <-done:
 			expectedTotal := numPublishers * eventsPerPublisher * numSubscribers
+
 			mu.Lock()
 			assert.Equal(t, expectedTotal, totalReceived)
 			mu.Unlock()
+
 		case <-time.After(5 * time.Second):
 			t.Fatal("timeout waiting for concurrent event processing")
 		}
@@ -499,6 +577,7 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		const numRoutines = 50
+
 		var wg sync.WaitGroup
 		wg.Add(numRoutines)
 
@@ -518,6 +597,7 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 
 		// Wait for all routines to complete
 		done := make(chan struct{})
+
 		go func() {
 			wg.Wait()
 			close(done)
@@ -534,7 +614,7 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 
 // Helper functions and test utilities
 
-// testMiddleware implements the Middleware interface for testing
+// testMiddleware implements the Middleware interface for testing.
 type testMiddleware struct {
 	processFunc func(ctx context.Context, event event.Event, next event.MiddlewareFunc) error
 }
@@ -543,12 +623,12 @@ func (m *testMiddleware) Process(ctx context.Context, evt event.Event, next even
 	return m.processFunc(ctx, evt, next)
 }
 
-// createTestEventBus creates a memory event bus for testing
+// createTestEventBus creates a memory event bus for testing.
 func createTestEventBus(t *testing.T) *memoryEventBus {
 	return createTestEventBusWithMiddleware(t, []event.Middleware{})
 }
 
-// createTestEventBusWithMiddleware creates a memory event bus with custom middleware for testing
+// createTestEventBusWithMiddleware creates a memory event bus with custom middleware for testing.
 func createTestEventBusWithMiddleware(t *testing.T, middlewares []event.Middleware) *memoryEventBus {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -566,6 +646,7 @@ func createTestEventBusWithMiddleware(t *testing.T, middlewares []event.Middlewa
 	t.Cleanup(func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
+
 		_ = bus.Shutdown(shutdownCtx)
 	})
 

@@ -5,8 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/samber/lo"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Indirect returns the underlying type of pointer type.
@@ -36,6 +37,7 @@ func IsSimilarType(t1, t2 reflect.Type) bool {
 	}
 
 	name1, name2 := t1.Name(), t2.Name()
+
 	index1, index2 := strings.IndexByte(name1, constants.ByteLeftBracket), strings.IndexByte(name2, constants.ByteLeftBracket)
 	if index1 > -1 && index2 > -1 {
 		if index1 != index2 {
@@ -152,6 +154,7 @@ func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.V
 		if sourceValue.IsNil() {
 			return reflect.Zero(targetType), nil
 		}
+
 		elemValue := sourceValue.Elem()
 		if elemValue.Type().AssignableTo(targetType) {
 			return elemValue, nil
@@ -164,6 +167,7 @@ func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.V
 			// Create a new pointer to the source value
 			ptrValue := reflect.New(targetType.Elem())
 			ptrValue.Elem().Set(sourceValue)
+
 			return ptrValue, nil
 		}
 	}
@@ -173,10 +177,12 @@ func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.V
 		if sourceValue.IsNil() {
 			return reflect.Zero(targetType), nil
 		}
+
 		elemValue := sourceValue.Elem()
 		if elemValue.Type().AssignableTo(targetType.Elem()) {
 			ptrValue := reflect.New(targetType.Elem())
 			ptrValue.Elem().Set(elemValue)
+
 			return ptrValue, nil
 		}
 	}
@@ -186,5 +192,5 @@ func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.V
 		return sourceValue, nil
 	}
 
-	return reflect.Value{}, fmt.Errorf("cannot convert source type %s to target type %s", sourceType, targetType)
+	return reflect.Value{}, fmt.Errorf("%w: %s -> %s", ErrCannotConvertType, sourceType, targetType)
 }

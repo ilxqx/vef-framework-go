@@ -70,9 +70,10 @@ func TestParseTime(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			timeOnly, err := ParseTime(tt.input, tt.pattern...)
 			if tt.shouldErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected ParseTime error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected ParseTime error")
+
 				if !tt.expected.IsZero() {
 					// Check that date is epoch
 					unwrapped := timeOnly.Unwrap()
@@ -254,11 +255,12 @@ func TestTimeUnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var timeOnly Time
+
 			err := timeOnly.UnmarshalJSON([]byte(tt.input))
 			if tt.shouldErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected UnmarshalJSON error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected UnmarshalJSON error")
 			}
 		})
 	}
@@ -291,11 +293,12 @@ func TestTimeScan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var timeOnly Time
+
 			err := timeOnly.Scan(tt.src)
 			if tt.hasErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected Scan error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected Scan error")
 			}
 		})
 	}
@@ -310,6 +313,7 @@ func TestTimeJSONRoundTrip(t *testing.T) {
 
 	// Unmarshal
 	var result Time
+
 	err = json.Unmarshal(data, &result)
 	assertNoError(t, err, "Unmarshal")
 

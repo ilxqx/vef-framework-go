@@ -5,12 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/monad"
-	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cast"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/monad"
+	"github.com/ilxqx/vef-framework-go/reflectx"
 )
 
 var (
@@ -59,9 +60,11 @@ func parseStringRange(value string, conditionParams map[string]string) (any, any
 	}
 
 	delimiter := lo.CoalesceOrEmpty(conditionParams[ParamDelimiter], constants.Comma)
+
 	values := strings.SplitN(value, delimiter, 2)
 	if len(values) != 2 {
 		logger.Warnf("Invalid range value, expected value delimited by '%s', got '%v'", delimiter, value)
+
 		return nil, nil, false
 	}
 
@@ -87,8 +90,10 @@ func parseSliceRange(value reflect.Value) (any, any, bool) {
 	if value.Len() == 0 {
 		return nil, nil, false
 	}
+
 	if value.Len() != 2 {
 		logger.Warnf("Invalid range value, expected slice of length 2, got %v", value.Interface())
+
 		return nil, nil, false
 	}
 
@@ -100,12 +105,14 @@ func parseIntRange(values []string) (any, any, bool) {
 	start, err := cast.ToIntE(values[0])
 	if err != nil {
 		logger.Warnf("Invalid range value, expected int, got %v", values[0])
+
 		return nil, nil, false
 	}
 
 	end, err := cast.ToIntE(values[1])
 	if err != nil {
 		logger.Warnf("Invalid range value, expected int, got %v", values[1])
+
 		return nil, nil, false
 	}
 
@@ -117,12 +124,14 @@ func parseDecimalRange(values []string) (any, any, bool) {
 	start, err := decimal.NewFromString(values[0])
 	if err != nil {
 		logger.Warnf("Invalid range value, expected decimal, got %v", values[0])
+
 		return nil, nil, false
 	}
 
 	end, err := decimal.NewFromString(values[1])
 	if err != nil {
 		logger.Warnf("Invalid range value, expected decimal, got %v", values[1])
+
 		return nil, nil, false
 	}
 
@@ -134,12 +143,14 @@ func parseDateRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.DateOnly, values[0], time.Local)
 	if err != nil {
 		logger.Warnf("Invalid range value, expected date, got %v", values[0])
+
 		return nil, nil, false
 	}
 
 	end, err := time.ParseInLocation(time.DateOnly, values[1], time.Local)
 	if err != nil {
 		logger.Warnf("Invalid range value, expected date, got %v", values[1])
+
 		return nil, nil, false
 	}
 
@@ -151,12 +162,14 @@ func parseTimeRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.TimeOnly, values[0], time.Local)
 	if err != nil {
 		logger.Warnf("Invalid range value, expected time, got %v", values[0])
+
 		return nil, nil, false
 	}
 
 	end, err := time.ParseInLocation(time.TimeOnly, values[1], time.Local)
 	if err != nil {
 		logger.Warnf("Invalid range value, expected time, got %v", values[1])
+
 		return nil, nil, false
 	}
 
@@ -168,12 +181,14 @@ func parseDateTimeRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.DateTime, values[0], time.Local)
 	if err != nil {
 		logger.Warnf("Invalid range value, expected datetime, got %v", values[0])
+
 		return nil, nil, false
 	}
 
 	end, err := time.ParseInLocation(time.DateTime, values[1], time.Local)
 	if err != nil {
 		logger.Warnf("Invalid range value, expected datetime, got %v", values[1])
+
 		return nil, nil, false
 	}
 

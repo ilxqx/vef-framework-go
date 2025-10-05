@@ -8,12 +8,13 @@ type ConditionTestSuite struct {
 	*ORMTestSuite
 }
 
-// TestBasicConditions tests basic condition builders
+// TestBasicConditions tests basic condition builders.
 func (suite *ConditionTestSuite) TestBasicConditions() {
 	suite.T().Logf("Testing basic conditions for %s", suite.dbType)
 
 	// Test 1: Equals condition
 	var users []User
+
 	err := suite.db.NewSelect().
 		Model(&users).
 		Where(func(cb ConditionBuilder) {
@@ -26,6 +27,7 @@ func (suite *ConditionTestSuite) TestBasicConditions() {
 
 	// Test 2: NotEquals condition
 	var notAlice []User
+
 	err = suite.db.NewSelect().
 		Model(&notAlice).
 		Where(func(cb ConditionBuilder) {
@@ -35,12 +37,14 @@ func (suite *ConditionTestSuite) TestBasicConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(notAlice, 2)
+
 	for _, user := range notAlice {
 		suite.NotEqual("Alice Johnson", user.Name)
 	}
 
 	// Test 3: GreaterThan condition
 	var olderUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&olderUsers).
 		Where(func(cb ConditionBuilder) {
@@ -54,6 +58,7 @@ func (suite *ConditionTestSuite) TestBasicConditions() {
 
 	// Test 4: GreaterThanOrEqual condition
 	var thirtyPlusUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&thirtyPlusUsers).
 		Where(func(cb ConditionBuilder) {
@@ -63,12 +68,14 @@ func (suite *ConditionTestSuite) TestBasicConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(thirtyPlusUsers, 2) // Alice (30) and Charlie (35)
+
 	for _, user := range thirtyPlusUsers {
 		suite.True(user.Age >= 30)
 	}
 
 	// Test 5: LessThan condition
 	var youngerUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&youngerUsers).
 		Where(func(cb ConditionBuilder) {
@@ -82,6 +89,7 @@ func (suite *ConditionTestSuite) TestBasicConditions() {
 
 	// Test 6: LessThanOrEqual condition
 	var thirtyOrLessUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&thirtyOrLessUsers).
 		Where(func(cb ConditionBuilder) {
@@ -91,17 +99,19 @@ func (suite *ConditionTestSuite) TestBasicConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(thirtyOrLessUsers, 2) // Bob (25) and Alice (30)
+
 	for _, user := range thirtyOrLessUsers {
 		suite.True(user.Age <= 30)
 	}
 }
 
-// TestInAndNotInConditions tests IN and NOT IN conditions
+// TestInAndNotInConditions tests IN and NOT IN conditions.
 func (suite *ConditionTestSuite) TestInAndNotInConditions() {
 	suite.T().Logf("Testing IN and NOT IN conditions for %s", suite.dbType)
 
 	// Test 1: IN condition with string slice
 	var specificUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&specificUsers).
 		Where(func(cb ConditionBuilder) {
@@ -111,15 +121,18 @@ func (suite *ConditionTestSuite) TestInAndNotInConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(specificUsers, 2)
+
 	emails := make([]string, len(specificUsers))
 	for i, user := range specificUsers {
 		emails[i] = user.Email
 	}
+
 	suite.Contains(emails, "alice@example.com")
 	suite.Contains(emails, "bob@example.com")
 
 	// Test 2: IN condition with integer slice
 	var specificAgeUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&specificAgeUsers).
 		Where(func(cb ConditionBuilder) {
@@ -134,6 +147,7 @@ func (suite *ConditionTestSuite) TestInAndNotInConditions() {
 
 	// Test 3: NOT IN condition
 	var excludedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&excludedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -143,12 +157,14 @@ func (suite *ConditionTestSuite) TestInAndNotInConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(excludedUsers, 2)
+
 	for _, user := range excludedUsers {
 		suite.NotEqual("charlie@example.com", user.Email)
 	}
 
 	// Test 4: IN with subquery
 	var usersWithPosts []User
+
 	err = suite.db.NewSelect().
 		Model(&usersWithPosts).
 		Where(func(cb ConditionBuilder) {
@@ -165,6 +181,7 @@ func (suite *ConditionTestSuite) TestInAndNotInConditions() {
 
 	// Test 5: NOT IN with subquery
 	var usersWithoutDrafts []User
+
 	err = suite.db.NewSelect().
 		Model(&usersWithoutDrafts).
 		Where(func(cb ConditionBuilder) {
@@ -182,12 +199,13 @@ func (suite *ConditionTestSuite) TestInAndNotInConditions() {
 	// Should have users who don't have any draft posts
 }
 
-// TestBetweenConditions tests BETWEEN and NOT BETWEEN conditions
+// TestBetweenConditions tests BETWEEN and NOT BETWEEN conditions.
 func (suite *ConditionTestSuite) TestBetweenConditions() {
 	suite.T().Logf("Testing BETWEEN conditions for %s", suite.dbType)
 
 	// Test 1: BETWEEN condition with integers
 	var middleAgedUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&middleAgedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -197,12 +215,14 @@ func (suite *ConditionTestSuite) TestBetweenConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(middleAgedUsers, 2) // Bob (25) and Alice (30)
+
 	for _, user := range middleAgedUsers {
 		suite.True(user.Age >= 25 && user.Age <= 30)
 	}
 
 	// Test 2: NOT BETWEEN condition
 	var extremeAgeUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&extremeAgeUsers).
 		Where(func(cb ConditionBuilder) {
@@ -218,6 +238,7 @@ func (suite *ConditionTestSuite) TestBetweenConditions() {
 
 	// Test 3: BETWEEN with view counts
 	var moderateViewPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&moderateViewPosts).
 		Where(func(cb ConditionBuilder) {
@@ -238,6 +259,7 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 
 	// Test 1: Contains condition (LIKE %value%)
 	var johnsonUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&johnsonUsers).
 		Where(func(cb ConditionBuilder) {
@@ -250,6 +272,7 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 
 	// Test 2: StartsWith condition (LIKE value%)
 	var aliceUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&aliceUsers).
 		Where(func(cb ConditionBuilder) {
@@ -262,6 +285,7 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 
 	// Test 3: EndsWith condition (LIKE %value)
 	var brownUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&brownUsers).
 		Where(func(cb ConditionBuilder) {
@@ -274,6 +298,7 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 
 	// Test 4: NotContains condition (NOT LIKE %value%)
 	var nonJohnsonUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&nonJohnsonUsers).
 		Where(func(cb ConditionBuilder) {
@@ -283,12 +308,14 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(nonJohnsonUsers, 2)
+
 	for _, user := range nonJohnsonUsers {
 		suite.NotContains(user.Name, "Johnson")
 	}
 
 	// Test 5: ContainsAny condition
 	var multiContainUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&multiContainUsers).
 		Where(func(cb ConditionBuilder) {
@@ -301,6 +328,7 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 
 	// Test 6: StartsWithAny condition
 	var multiStartUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&multiStartUsers).
 		Where(func(cb ConditionBuilder) {
@@ -313,6 +341,7 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 
 	// Test 7: Case insensitive contains
 	var caseInsensitiveUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&caseInsensitiveUsers).
 		Where(func(cb ConditionBuilder) {
@@ -324,12 +353,13 @@ func (suite *ConditionTestSuite) TestStringConditions() {
 	suite.Equal("Alice Johnson", caseInsensitiveUsers[0].Name)
 }
 
-// TestNullConditions tests IS NULL and IS NOT NULL conditions
+// TestNullConditions tests IS NULL and IS NOT NULL conditions.
 func (suite *ConditionTestSuite) TestNullConditions() {
 	suite.T().Logf("Testing NULL conditions for %s", suite.dbType)
 
 	// Test 1: IS NOT NULL condition
 	var postsWithDescription []Post
+
 	err := suite.db.NewSelect().
 		Model(&postsWithDescription).
 		Where(func(cb ConditionBuilder) {
@@ -345,6 +375,7 @@ func (suite *ConditionTestSuite) TestNullConditions() {
 
 	// Test 2: IS NULL condition
 	var postsWithoutDescription []Post
+
 	err = suite.db.NewSelect().
 		Model(&postsWithoutDescription).
 		Where(func(cb ConditionBuilder) {
@@ -359,6 +390,7 @@ func (suite *ConditionTestSuite) TestNullConditions() {
 
 	// Test 3: IS NOT NULL on category parent_id
 	var subCategories []Category
+
 	err = suite.db.NewSelect().
 		Model(&subCategories).
 		Where(func(cb ConditionBuilder) {
@@ -373,6 +405,7 @@ func (suite *ConditionTestSuite) TestNullConditions() {
 
 	// Test 4: IS NULL on category parent_id (root categories)
 	var rootCategories []Category
+
 	err = suite.db.NewSelect().
 		Model(&rootCategories).
 		Where(func(cb ConditionBuilder) {
@@ -387,12 +420,13 @@ func (suite *ConditionTestSuite) TestNullConditions() {
 	}
 }
 
-// TestBooleanConditions tests boolean conditions like IsTrue, IsFalse
+// TestBooleanConditions tests boolean conditions like IsTrue, IsFalse.
 func (suite *ConditionTestSuite) TestBooleanConditions() {
 	suite.T().Logf("Testing boolean conditions for %s", suite.dbType)
 
 	// Test 1: IsTrue condition
 	var activeUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&activeUsers).
 		Where(func(cb ConditionBuilder) {
@@ -402,12 +436,14 @@ func (suite *ConditionTestSuite) TestBooleanConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(activeUsers, 2) // Alice and Bob are active
+
 	for _, user := range activeUsers {
 		suite.True(user.IsActive)
 	}
 
 	// Test 2: IsFalse condition
 	var inactiveUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&inactiveUsers).
 		Where(func(cb ConditionBuilder) {
@@ -416,12 +452,14 @@ func (suite *ConditionTestSuite) TestBooleanConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(inactiveUsers, 1) // Charlie is inactive
+
 	for _, user := range inactiveUsers {
 		suite.False(user.IsActive)
 	}
 
 	// Test 3: Equals with boolean value (alternative approach)
 	var explicitActiveUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&explicitActiveUsers).
 		Where(func(cb ConditionBuilder) {
@@ -430,17 +468,19 @@ func (suite *ConditionTestSuite) TestBooleanConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(explicitActiveUsers, 2)
+
 	for _, user := range explicitActiveUsers {
 		suite.True(user.IsActive)
 	}
 }
 
-// TestLogicalOperators tests AND, OR conditions and grouping
+// TestLogicalOperators tests AND, OR conditions and grouping.
 func (suite *ConditionTestSuite) TestLogicalOperators() {
 	suite.T().Logf("Testing logical operators for %s", suite.dbType)
 
 	// Test 1: Simple AND conditions (chained)
 	var activeAdults []User
+
 	err := suite.db.NewSelect().
 		Model(&activeAdults).
 		Where(func(cb ConditionBuilder) {
@@ -453,6 +493,7 @@ func (suite *ConditionTestSuite) TestLogicalOperators() {
 
 	// Test 2: OR conditions
 	var youngOrOld []User
+
 	err = suite.db.NewSelect().
 		Model(&youngOrOld).
 		Where(func(cb ConditionBuilder) {
@@ -465,6 +506,7 @@ func (suite *ConditionTestSuite) TestLogicalOperators() {
 
 	// Test 3: Complex grouping (A AND (B OR C))
 	var complexCondition []User
+
 	err = suite.db.NewSelect().
 		Model(&complexCondition).
 		Where(func(cb ConditionBuilder) {
@@ -479,6 +521,7 @@ func (suite *ConditionTestSuite) TestLogicalOperators() {
 
 	// Test 4: Nested groups ((A OR B) AND (C OR D))
 	var nestedCondition []User
+
 	err = suite.db.NewSelect().
 		Model(&nestedCondition).
 		Where(func(cb ConditionBuilder) {
@@ -495,6 +538,7 @@ func (suite *ConditionTestSuite) TestLogicalOperators() {
 
 	// Test 5: Mixed OR and AND with different precedence
 	var mixedLogic []User
+
 	err = suite.db.NewSelect().
 		Model(&mixedLogic).
 		Where(func(cb ConditionBuilder) {
@@ -511,12 +555,13 @@ func (suite *ConditionTestSuite) TestLogicalOperators() {
 	suite.Len(mixedLogic, 3)
 }
 
-// TestColumnComparisons tests comparing columns with each other
+// TestColumnComparisons tests comparing columns with each other.
 func (suite *ConditionTestSuite) TestColumnComparisons() {
 	suite.T().Logf("Testing column comparisons for %s", suite.dbType)
 
 	// Test 1: EqualsColumn - compare two columns
 	var usersWithSameCreatedUpdated []User
+
 	err := suite.db.NewSelect().
 		Model(&usersWithSameCreatedUpdated).
 		Where(func(cb ConditionBuilder) {
@@ -529,6 +574,7 @@ func (suite *ConditionTestSuite) TestColumnComparisons() {
 
 	// Test 2: NotEqualsColumn
 	var usersWithDifferentCreatedUpdated []User
+
 	err = suite.db.NewSelect().
 		Model(&usersWithDifferentCreatedUpdated).
 		Where(func(cb ConditionBuilder) {
@@ -542,6 +588,7 @@ func (suite *ConditionTestSuite) TestColumnComparisons() {
 	// Test 3: GreaterThanColumn comparison
 	// Let's use a more realistic example with posts
 	var postsViewCountVsId []Post
+
 	err = suite.db.NewSelect().
 		Model(&postsViewCountVsId).
 		Where(func(cb ConditionBuilder) {
@@ -553,12 +600,13 @@ func (suite *ConditionTestSuite) TestColumnComparisons() {
 	suite.Len(postsViewCountVsId, 0) // Should be empty as no column is greater than itself
 }
 
-// TestExpressionConditions tests conditions with SQL expressions
+// TestExpressionConditions tests conditions with SQL expressions.
 func (suite *ConditionTestSuite) TestExpressionConditions() {
 	suite.T().Logf("Testing expression conditions for %s", suite.dbType)
 
 	// Test 1: Expression comparing string length using CHAR_LENGTH(name) > CHAR_LENGTH('Alice')
 	var usersWithLongNames []User
+
 	err := suite.db.NewSelect().
 		Model(&usersWithLongNames).
 		Where(func(cb ConditionBuilder) {
@@ -575,6 +623,7 @@ func (suite *ConditionTestSuite) TestExpressionConditions() {
 
 	// Test 2: Expr - raw expression condition
 	var youngActiveUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&youngActiveUsers).
 		Where(func(cb ConditionBuilder) {
@@ -588,6 +637,7 @@ func (suite *ConditionTestSuite) TestExpressionConditions() {
 
 	// Test 3: Complex expression with calculations
 	var calculatedCondition []User
+
 	err = suite.db.NewSelect().
 		Model(&calculatedCondition).
 		Where(func(cb ConditionBuilder) {
@@ -607,6 +657,7 @@ func (suite *ConditionTestSuite) TestAuditConditions() {
 
 	// Test 1: CreatedByEquals
 	var systemCreatedUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&systemCreatedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -615,12 +666,14 @@ func (suite *ConditionTestSuite) TestAuditConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(systemCreatedUsers, 3) // All users created by system in fixture
+
 	for _, user := range systemCreatedUsers {
 		suite.Equal("system", user.CreatedBy)
 	}
 
 	// Test 2: CreatedByNotEquals
 	var nonSystemUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&nonSystemUsers).
 		Where(func(cb ConditionBuilder) {
@@ -632,6 +685,7 @@ func (suite *ConditionTestSuite) TestAuditConditions() {
 
 	// Test 3: UpdatedByEquals
 	var systemUpdatedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&systemUpdatedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -643,6 +697,7 @@ func (suite *ConditionTestSuite) TestAuditConditions() {
 
 	// Test 4: CreatedByIn
 	var multiCreatorUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&multiCreatorUsers).
 		Where(func(cb ConditionBuilder) {
@@ -653,7 +708,7 @@ func (suite *ConditionTestSuite) TestAuditConditions() {
 	suite.Len(multiCreatorUsers, 3) // All users created by system (admin not in fixture)
 }
 
-// TestTimeConditions tests time-based conditions
+// TestTimeConditions tests time-based conditions.
 func (suite *ConditionTestSuite) TestTimeConditions() {
 	suite.T().Logf("Testing time conditions for %s", suite.dbType)
 
@@ -664,6 +719,7 @@ func (suite *ConditionTestSuite) TestTimeConditions() {
 
 	// Test 1: CreatedAtGreaterThan
 	var recentUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&recentUsers).
 		Where(func(cb ConditionBuilder) {
@@ -676,6 +732,7 @@ func (suite *ConditionTestSuite) TestTimeConditions() {
 
 	// Test 2: CreatedAtLessThan
 	var futureUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&futureUsers).
 		Where(func(cb ConditionBuilder) {
@@ -688,6 +745,7 @@ func (suite *ConditionTestSuite) TestTimeConditions() {
 
 	// Test 3: CreatedAtBetween
 	var timeBoundUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&timeBoundUsers).
 		Where(func(cb ConditionBuilder) {
@@ -700,6 +758,7 @@ func (suite *ConditionTestSuite) TestTimeConditions() {
 
 	// Test 4: UpdatedAtGreaterThan
 	var recentlyUpdatedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&recentlyUpdatedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -710,12 +769,13 @@ func (suite *ConditionTestSuite) TestTimeConditions() {
 	suite.Len(recentlyUpdatedUsers, 3)
 }
 
-// TestPrimaryKeyConditions tests PK-related conditions
+// TestPrimaryKeyConditions tests PK-related conditions.
 func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 	suite.T().Logf("Testing primary key conditions for %s", suite.dbType)
 
 	// First get a user to test with
 	var firstUser User
+
 	err := suite.db.NewSelect().
 		Model(&firstUser).
 		OrderBy("name").
@@ -725,6 +785,7 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 
 	// Test 1: PKEquals
 	var userByPK []User
+
 	err = suite.db.NewSelect().
 		Model(&userByPK).
 		Where(func(cb ConditionBuilder) {
@@ -737,6 +798,7 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 
 	// Test 2: PKNotEquals
 	var otherUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&otherUsers).
 		Where(func(cb ConditionBuilder) {
@@ -745,12 +807,14 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(otherUsers, 2) // Should have 2 other users
+
 	for _, user := range otherUsers {
 		suite.NotEqual(firstUser.Id, user.Id)
 	}
 
 	// Get IDs for IN test
 	var allUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&allUsers).
 		OrderBy("name").
@@ -759,6 +823,7 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 
 	// Test 3: PKIn
 	var twoUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&twoUsers).
 		Where(func(cb ConditionBuilder) {
@@ -771,6 +836,7 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 
 	// Test 4: PKNotIn
 	var excludedUser []User
+
 	err = suite.db.NewSelect().
 		Model(&excludedUser).
 		Where(func(cb ConditionBuilder) {
@@ -782,7 +848,7 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 	suite.Equal(allUsers[2].Id, excludedUser[0].Id)
 }
 
-// TestApplyConditions tests the Apply and ApplyIf functionality
+// TestApplyConditions tests the Apply and ApplyIf functionality.
 func (suite *ConditionTestSuite) TestApplyConditions() {
 	suite.T().Logf("Testing Apply conditions for %s", suite.dbType)
 
@@ -797,6 +863,7 @@ func (suite *ConditionTestSuite) TestApplyConditions() {
 
 	// Test 1: Apply single condition
 	var activeUsers []User
+
 	err := suite.db.NewSelect().
 		Model(&activeUsers).
 		Where(func(cb ConditionBuilder) {
@@ -805,12 +872,14 @@ func (suite *ConditionTestSuite) TestApplyConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(activeUsers, 2) // Alice and Bob are active
+
 	for _, user := range activeUsers {
 		suite.True(user.IsActive)
 	}
 
 	// Test 2: Apply multiple conditions
 	var activeOlderUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&activeOlderUsers).
 		Where(func(cb ConditionBuilder) {
@@ -823,6 +892,7 @@ func (suite *ConditionTestSuite) TestApplyConditions() {
 
 	// Test 3: ApplyIf with true condition
 	var conditionalUsers []User
+
 	includeAgeFilter := true
 	err = suite.db.NewSelect().
 		Model(&conditionalUsers).
@@ -835,6 +905,7 @@ func (suite *ConditionTestSuite) TestApplyConditions() {
 
 	// Test 4: ApplyIf with false condition
 	var conditionalUsers2 []User
+
 	includeAgeFilter = false
 	err = suite.db.NewSelect().
 		Model(&conditionalUsers2).

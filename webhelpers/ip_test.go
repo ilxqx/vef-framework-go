@@ -17,6 +17,7 @@ func TestGetIP(t *testing.T) {
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIP(c)
 			assert.Equal(t, forwardedIP, ip)
+
 			return c.SendString(ip)
 		})
 
@@ -34,6 +35,7 @@ func TestGetIP(t *testing.T) {
 			ip := GetIP(c)
 			// The IP should be the test IP (usually "0.0.0.0")
 			assert.NotEmpty(t, ip)
+
 			return c.SendString(ip)
 		})
 
@@ -50,6 +52,7 @@ func TestGetIP(t *testing.T) {
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIP(c)
 			assert.Equal(t, forwardedIP, ip)
+
 			return c.SendString(ip)
 		})
 
@@ -67,6 +70,7 @@ func TestGetIP(t *testing.T) {
 			ip := GetIP(c)
 			// Should fall back to direct IP when header is empty
 			assert.NotEmpty(t, ip)
+
 			return c.SendString(ip)
 		})
 
@@ -85,6 +89,7 @@ func TestGetIP(t *testing.T) {
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIP(c)
 			assert.Equal(t, forwardedIPs, ip)
+
 			return c.SendString(ip)
 		})
 

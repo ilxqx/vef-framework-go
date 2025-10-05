@@ -7,9 +7,9 @@ import "github.com/ilxqx/vef-framework-go/constants"
 type OrderDirection int
 
 const (
-	// OrderAsc represents ascending order (A-Z, 0-9, oldest to newest)
+	// OrderAsc represents ascending order (A-Z, 0-9, oldest to newest).
 	OrderAsc OrderDirection = iota
-	// OrderDesc represents descending order (Z-A, 9-0, newest to oldest)
+	// OrderDesc represents descending order (Z-A, 9-0, newest to oldest).
 	OrderDesc
 )
 
@@ -33,11 +33,11 @@ const (
 	// WARNING: This may cause inconsistent behavior across different databases.
 	// PostgreSQL: ASC=NULLS LAST, DESC=NULLS FIRST
 	// MySQL/SQLite: ASC=NULLS FIRST, DESC=NULLS LAST
-	// Oracle: ASC=NULLS LAST, DESC=NULLS FIRST
+	// Oracle: ASC=NULLS LAST, DESC=NULLS FIRST.
 	NullsDefault NullsOrder = iota
-	// NullsFirst places NULL values before non-NULL values in the result set
+	// NullsFirst places NULL values before non-NULL values in the result set.
 	NullsFirst
-	// NullsLast places NULL values after non-NULL values in the result set
+	// NullsLast places NULL values after non-NULL values in the result set.
 	NullsLast
 )
 

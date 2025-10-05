@@ -3,11 +3,12 @@ package testhelpers
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redis"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 type RedisContainer struct {

@@ -7,23 +7,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
+
+	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/tabular"
 )
 
 // TestUser is a test struct for Excel operations.
 type TestUser struct {
-	ID        string      `excel:"width=15" validate:"required"`
-	Name      string      `excel:"姓名,width=20" validate:"required"`
-	Email     string      `excel:"邮箱,width=25" validate:"email"`
-	Age       int         `excel:"name=年龄,width=10" validate:"gte=0,lte=150"`
-	Salary    float64     `excel:"name=薪资,width=15,format=%.2f"`
-	CreatedAt time.Time   `excel:"name=创建时间,width=20,format=2006-01-02 15:04:05"`
-	Status    int         `excel:"name=状态,width=10"`
-	Remark    null.String `excel:"name=备注,width=30"`
-	Password  string      `excel:"-"` // Ignored field
+	Id        string      `tabular:"width=15"                                      validate:"required"`
+	Name      string      `tabular:"姓名,width=20"                                   validate:"required"`
+	Email     string      `tabular:"邮箱,width=25"                                   validate:"email"`
+	Age       int         `tabular:"name=年龄,width=10"                              validate:"gte=0,lte=150"`
+	Salary    float64     `tabular:"name=薪资,width=15,format=%.2f"`
+	CreatedAt time.Time   `tabular:"name=创建时间,width=20,format=2006-01-02 15:04:05"`
+	Status    int         `tabular:"name=状态,width=10"`
+	Remark    null.String `tabular:"name=备注,width=30"`
+	Password  string      `tabular:"-"` // Ignored field
 }
 
 func TestExporter_ExportToFile(t *testing.T) {
@@ -31,7 +33,7 @@ func TestExporter_ExportToFile(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -42,7 +44,7 @@ func TestExporter_ExportToFile(t *testing.T) {
 			Password:  "secret123", // Should be ignored
 		},
 		{
-			ID:        "2",
+			Id:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -60,8 +62,10 @@ func TestExporter_ExportToFile(t *testing.T) {
 	// Create temporary file
 	tmpFile, err := os.CreateTemp("", "test_users_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -77,7 +81,7 @@ func TestImporter_ImportFromFile(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -87,7 +91,7 @@ func TestImporter_ImportFromFile(t *testing.T) {
 			Remark:    null.StringFrom("测试用户1"),
 		},
 		{
-			ID:        "2",
+			Id:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -102,8 +106,10 @@ func TestImporter_ImportFromFile(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_import_users_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -119,7 +125,7 @@ func TestImporter_ImportFromFile(t *testing.T) {
 	assert.Len(t, imported, 2)
 
 	// Verify data
-	assert.Equal(t, "1", imported[0].ID)
+	assert.Equal(t, "1", imported[0].Id)
 	assert.Equal(t, "张三", imported[0].Name)
 	assert.Equal(t, "zhang@example.com", imported[0].Email)
 	assert.Equal(t, 30, imported[0].Age)
@@ -128,23 +134,24 @@ func TestImporter_ImportFromFile(t *testing.T) {
 	assert.True(t, imported[0].Remark.Valid)
 	assert.Equal(t, "测试用户1", imported[0].Remark.ValueOrZero())
 
-	assert.Equal(t, "2", imported[1].ID)
+	assert.Equal(t, "2", imported[1].Id)
 	assert.Equal(t, "李四", imported[1].Name)
 	assert.False(t, imported[1].Remark.Valid)
 }
 
 func TestSchema_ParseTags(t *testing.T) {
-	schema := NewSchemaFor[TestUser]()
+	schema := tabular.NewSchemaFor[TestUser]()
 
 	columns := schema.Columns()
 	assert.NotEmpty(t, columns)
 
 	// Find specific columns
-	var idCol, nameCol, passwordCol *Column
+	var idCol, nameCol, passwordCol *tabular.Column
+
 	for i := range columns {
 		col := columns[i]
 		switch col.Name {
-		case "ID":
+		case "Id":
 			idCol = col
 		case "姓名":
 			nameCol = col
@@ -155,7 +162,7 @@ func TestSchema_ParseTags(t *testing.T) {
 
 	// Verify ID column (no name specified, uses field name)
 	require.NotNil(t, idCol)
-	assert.Equal(t, "ID", idCol.Name)
+	assert.Equal(t, "Id", idCol.Name)
 	assert.Equal(t, 15.0, idCol.Width)
 
 	// Verify Name column (using shorthand syntax: "姓名")
@@ -171,7 +178,7 @@ func TestImporter_ValidationErrors(t *testing.T) {
 	// Create a test file with invalid data
 	invalidUsers := []TestUser{
 		{
-			ID:     "1",
+			Id:     "1",
 			Name:   "张三",
 			Email:  "invalid-email", // Invalid email
 			Age:    200,             // Age > 150
@@ -182,8 +189,10 @@ func TestImporter_ValidationErrors(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_invalid_users_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(invalidUsers, filename)
@@ -199,7 +208,7 @@ func TestImporter_ValidationErrors(t *testing.T) {
 	assert.NotEmpty(t, importErrors)
 }
 
-// TestNoTagStruct tests struct fields without excel tags (should use field name as column name)
+// TestNoTagStruct tests struct fields without excel tags (should use field name as column name).
 type TestNoTagStruct struct {
 	ID   string
 	Name string
@@ -207,7 +216,7 @@ type TestNoTagStruct struct {
 }
 
 func TestSchema_NoTags(t *testing.T) {
-	schema := NewSchemaFor[TestNoTagStruct]()
+	schema := tabular.NewSchemaFor[TestNoTagStruct]()
 
 	columns := schema.Columns()
 	assert.Len(t, columns, 3)
@@ -229,8 +238,10 @@ func TestExportImport_NoTags(t *testing.T) {
 	exporter := NewExporterFor[TestNoTagStruct]()
 	tmpFile, err := os.CreateTemp("", "test_no_tags_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(data, filename)
@@ -251,7 +262,7 @@ func TestExportImport_NoTags(t *testing.T) {
 	assert.Equal(t, 30, imported[0].Age)
 }
 
-// prefixFormatter is a custom formatter that adds prefix
+// prefixFormatter is a custom formatter that adds prefix.
 type prefixFormatter struct {
 	prefix string
 }
@@ -260,15 +271,16 @@ func (f *prefixFormatter) Format(value any) (string, error) {
 	if value == nil {
 		return "", nil
 	}
+
 	return f.prefix + " " + fmt.Sprint(value), nil
 }
 
-// TestExport_CustomFormatter tests export with custom formatter
+// TestExport_CustomFormatter tests export with custom formatter.
 func TestExport_CustomFormatter(t *testing.T) {
 	// Test data
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -285,8 +297,10 @@ func TestExport_CustomFormatter(t *testing.T) {
 
 	tmpFile, err := os.CreateTemp("", "test_custom_formatter_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
 	tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -297,11 +311,11 @@ func TestExport_CustomFormatter(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// TestExport_ToBuffer tests exporting to buffer
+// TestExport_ToBuffer tests exporting to buffer.
 func TestExport_ToBuffer(t *testing.T) {
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -320,15 +334,17 @@ func TestExport_ToBuffer(t *testing.T) {
 	assert.Greater(t, buf.Len(), 0)
 }
 
-// TestExport_EmptyData tests exporting empty data
+// TestExport_EmptyData tests exporting empty data.
 func TestExport_EmptyData(t *testing.T) {
 	var emptyUsers []TestUser
 
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_empty_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
 	tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(emptyUsers, filename)
@@ -339,11 +355,11 @@ func TestExport_EmptyData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// TestExport_WithOptions tests export with custom options
+// TestExport_WithOptions tests export with custom options.
 func TestExport_WithOptions(t *testing.T) {
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -356,8 +372,10 @@ func TestExport_WithOptions(t *testing.T) {
 	exporter := NewExporterFor[TestUser](WithSheetName("用户数据"))
 	tmpFile, err := os.CreateTemp("", "test_options_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
 	tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -368,7 +386,7 @@ func TestExport_WithOptions(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// prefixParser is a custom parser that removes prefix
+// prefixParser is a custom parser that removes prefix.
 type prefixParser struct{}
 
 func (p *prefixParser) Parse(cellValue string, targetType reflect.Type) (any, error) {
@@ -379,16 +397,17 @@ func (p *prefixParser) Parse(cellValue string, targetType reflect.Type) (any, er
 	if len(cellValue) > 4 {
 		return cellValue[4:], nil
 	}
+
 	return cellValue, nil
 }
 
-// TestImport_CustomParser tests import with custom parser
+// TestImport_CustomParser tests import with custom parser.
 func TestImport_CustomParser(t *testing.T) {
 	// Create test file manually
 	now := time.Now()
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -402,8 +421,10 @@ func TestImport_CustomParser(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_custom_parser_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -421,13 +442,13 @@ func TestImport_CustomParser(t *testing.T) {
 	assert.Len(t, imported, 1)
 }
 
-// TestImport_FromReader tests importing from io.Reader
+// TestImport_FromReader tests importing from io.Reader.
 func TestImport_FromReader(t *testing.T) {
 	// Create test file
 	now := time.Now()
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -449,16 +470,16 @@ func TestImport_FromReader(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
 	assert.Len(t, imported, 1)
-	assert.Equal(t, "1", imported[0].ID)
+	assert.Equal(t, "1", imported[0].Id)
 	assert.Equal(t, "张三", imported[0].Name)
 }
 
-// TestImport_WithOptions tests import with custom options
+// TestImport_WithOptions tests import with custom options.
 func TestImport_WithOptions(t *testing.T) {
 	// Create test file with custom sheet name
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -471,8 +492,10 @@ func TestImport_WithOptions(t *testing.T) {
 	exporter := NewExporterFor[TestUser](WithSheetName("用户数据"))
 	tmpFile, err := os.CreateTemp("", "test_import_options_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -488,12 +511,14 @@ func TestImport_WithOptions(t *testing.T) {
 	assert.Len(t, imported, 1)
 }
 
-// TestImport_EmptyRows tests importing file with empty rows
+// TestImport_EmptyRows tests importing file with empty rows.
 func TestImport_EmptyRows(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_empty_rows_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	// Create file with empty rows manually using excelize
@@ -501,7 +526,7 @@ func TestImport_EmptyRows(t *testing.T) {
 	sheetName := "Sheet1"
 
 	// Write header
-	_ = f.SetCellValue(sheetName, "A1", "ID")
+	_ = f.SetCellValue(sheetName, "A1", "Id")
 	_ = f.SetCellValue(sheetName, "B1", "姓名")
 	_ = f.SetCellValue(sheetName, "C1", "邮箱")
 
@@ -529,12 +554,14 @@ func TestImport_EmptyRows(t *testing.T) {
 	assert.Len(t, imported, 2) // Empty row should be skipped
 }
 
-// TestImport_MissingColumns tests importing file with missing columns
+// TestImport_MissingColumns tests importing file with missing columns.
 func TestImport_MissingColumns(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_missing_columns_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	// Create file with only some columns (but enough to pass validation)
@@ -542,7 +569,7 @@ func TestImport_MissingColumns(t *testing.T) {
 	sheetName := "Sheet1"
 
 	// Write header (include required fields to pass validation)
-	_ = f.SetCellValue(sheetName, "A1", "ID")
+	_ = f.SetCellValue(sheetName, "A1", "Id")
 	_ = f.SetCellValue(sheetName, "B1", "姓名")
 	_ = f.SetCellValue(sheetName, "C1", "邮箱")
 	_ = f.SetCellValue(sheetName, "D1", "年龄")
@@ -565,7 +592,7 @@ func TestImport_MissingColumns(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
 	assert.Len(t, imported, 1)
-	assert.Equal(t, "1", imported[0].ID)
+	assert.Equal(t, "1", imported[0].Id)
 	assert.Equal(t, "张三", imported[0].Name)
 	assert.Equal(t, "zhang@example.com", imported[0].Email)
 	assert.Equal(t, 30, imported[0].Age)
@@ -574,12 +601,14 @@ func TestImport_MissingColumns(t *testing.T) {
 	assert.False(t, imported[0].Remark.Valid) // Missing field should be invalid null
 }
 
-// TestImport_InvalidData tests importing file with invalid data
+// TestImport_InvalidData tests importing file with invalid data.
 func TestImport_InvalidData(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test_invalid_data_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	// Create file with invalid data
@@ -611,7 +640,7 @@ func TestImport_InvalidData(t *testing.T) {
 	assert.NotEmpty(t, importErrors)
 }
 
-// TestImport_LargeFile tests importing file with many rows
+// TestImport_LargeFile tests importing file with many rows.
 func TestImport_LargeFile(t *testing.T) {
 	// Create large test data
 	count := 1000
@@ -620,7 +649,7 @@ func TestImport_LargeFile(t *testing.T) {
 
 	for i := range count {
 		users[i] = TestUser{
-			ID:        fmt.Sprintf("%d", i+1),
+			Id:        fmt.Sprintf("%d", i+1),
 			Name:      fmt.Sprintf("用户%d", i+1),
 			Email:     fmt.Sprintf("user%d@example.com", i+1),
 			Age:       20 + (i % 50),
@@ -633,8 +662,10 @@ func TestImport_LargeFile(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_large_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -650,16 +681,16 @@ func TestImport_LargeFile(t *testing.T) {
 	assert.Len(t, imported, count)
 
 	// Spot check some data
-	assert.Equal(t, "1", imported[0].ID)
+	assert.Equal(t, "1", imported[0].Id)
 	assert.Equal(t, "用户1", imported[0].Name)
-	assert.Equal(t, fmt.Sprintf("%d", count), imported[count-1].ID)
+	assert.Equal(t, fmt.Sprintf("%d", count), imported[count-1].Id)
 }
 
-// TestExport_NullValues tests exporting null values
+// TestExport_NullValues tests exporting null values.
 func TestExport_NullValues(t *testing.T) {
 	users := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -669,7 +700,7 @@ func TestExport_NullValues(t *testing.T) {
 			Remark:    null.String{}, // Null value
 		},
 		{
-			ID:        "2",
+			Id:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -683,8 +714,10 @@ func TestExport_NullValues(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_null_values_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(users, filename)
@@ -705,12 +738,12 @@ func TestExport_NullValues(t *testing.T) {
 	assert.Equal(t, "有备注", imported[1].Remark.ValueOrZero())
 }
 
-// TestRoundTrip tests full export-import cycle
+// TestRoundTrip tests full export-import cycle.
 func TestRoundTrip(t *testing.T) {
 	now := time.Date(2024, 1, 1, 12, 0, 0, 0, time.Local)
 	original := []TestUser{
 		{
-			ID:        "1",
+			Id:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -720,7 +753,7 @@ func TestRoundTrip(t *testing.T) {
 			Remark:    null.StringFrom("测试用户1"),
 		},
 		{
-			ID:        "2",
+			Id:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -735,8 +768,10 @@ func TestRoundTrip(t *testing.T) {
 	exporter := NewExporterFor[TestUser]()
 	tmpFile, err := os.CreateTemp("", "test_roundtrip_*.xlsx")
 	require.NoError(t, err)
+
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
+
 	defer os.Remove(filename)
 
 	err = exporter.ExportToFile(original, filename)
@@ -753,13 +788,14 @@ func TestRoundTrip(t *testing.T) {
 
 	// Verify all fields match
 	for i := range original {
-		assert.Equal(t, original[i].ID, imported[i].ID)
+		assert.Equal(t, original[i].Id, imported[i].Id)
 		assert.Equal(t, original[i].Name, imported[i].Name)
 		assert.Equal(t, original[i].Email, imported[i].Email)
 		assert.Equal(t, original[i].Age, imported[i].Age)
 		assert.InDelta(t, original[i].Salary, imported[i].Salary, 0.01)
 		assert.Equal(t, original[i].Status, imported[i].Status)
 		assert.Equal(t, original[i].Remark.Valid, imported[i].Remark.Valid)
+
 		if original[i].Remark.Valid {
 			assert.Equal(t, original[i].Remark.ValueOrZero(), imported[i].Remark.ValueOrZero())
 		}

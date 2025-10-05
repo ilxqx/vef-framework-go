@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
@@ -17,9 +18,11 @@ func NewHeadersMiddleware() app.Middleware {
 
 			// Set headers
 			ctx.Set(fiber.HeaderXContentTypeOptions, "nosniff")
+
 			if ctx.Protocol() == "https" {
 				ctx.Set(fiber.HeaderStrictTransportSecurity, "max-age=31536000; includeSubDomains")
 			}
+
 			if len(ctx.Response().Header.Peek(fiber.HeaderCacheControl)) == 0 {
 				ctx.Set(fiber.HeaderCacheControl, "no-store, no-cache, must-revalidate, max-age=0")
 			}

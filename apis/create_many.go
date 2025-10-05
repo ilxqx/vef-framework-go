@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -31,11 +32,13 @@ func (c *createManyAPI[TModel, TParams]) Build(handler any) api.Spec {
 
 func (c *createManyAPI[TModel, TParams]) PreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyAPI[TModel, TParams] {
 	c.preCreateMany = processor
+
 	return c
 }
 
 func (c *createManyAPI[TModel, TParams]) PostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyAPI[TModel, TParams] {
 	c.postCreateMany = processor
+
 	return c
 }
 
@@ -75,6 +78,7 @@ func (c *createManyAPI[TModel, TParams]) createMany(ctx fiber.Ctx, db orm.Db, pa
 			if err != nil {
 				return err
 			}
+
 			pks[i] = pk
 		}
 

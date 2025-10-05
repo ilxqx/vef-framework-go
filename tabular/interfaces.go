@@ -1,4 +1,4 @@
-package excel
+package tabular
 
 import (
 	"bytes"
@@ -7,20 +7,21 @@ import (
 )
 
 // ValueParser defines the interface for custom value parsers.
-// Parsers convert Excel cell strings to Go values during import.
+// Parsers convert cell strings to Go values during import.
 type ValueParser interface {
-	// Parse converts an Excel cell string to a Go value
+	// Parse converts a cell string to a Go value
 	Parse(cellValue string, targetType reflect.Type) (any, error)
 }
 
 // Formatter defines the interface for custom value formatters.
-// Formatters convert Go values to Excel cell strings during export.
+// Formatters convert Go values to cell strings during export.
 type Formatter interface {
-	// Format converts a Go value to an Excel cell string
+	// Format converts a Go value to a cell string
 	Format(value any) (string, error)
 }
 
-// Importer defines the interface for importing data from Excel files.
+// Importer defines the interface for importing tabular data.
+// It provides methods to read and parse tabular data from various sources.
 type Importer interface {
 	// RegisterParser registers a custom parser with the given name.
 	RegisterParser(name string, parser ValueParser)
@@ -30,7 +31,8 @@ type Importer interface {
 	Import(reader io.Reader) (any, []ImportError, error)
 }
 
-// Exporter defines the interface for exporting data to Excel files.
+// Exporter defines the interface for exporting tabular data.
+// It provides methods to write and format tabular data to various destinations.
 type Exporter interface {
 	// RegisterFormatter registers a custom formatter with the given name.
 	RegisterFormatter(name string, formatter Formatter)

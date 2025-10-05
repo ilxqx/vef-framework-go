@@ -4,7 +4,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
@@ -177,36 +179,40 @@ type FindTreeAPI[TModel, TSearch any] interface {
 
 // FindOptionsAPI provides a fluent interface for building find options endpoints.
 // Supports custom query modifications, search conditions, filtering, and post-processing.
-// Note: sorting is controlled by OptionsConfig.SortField, not by SortApplier.
+// Note: sorting is controlled by OptionFieldMapping.SortField, not by SortApplier.
 type FindOptionsAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]]
 
-	// DefaultConfig sets the default configuration for options queries.
-	// This configuration provides fallback values for field mapping when not explicitly specified in queries.
-	DefaultConfig(config *OptionsConfig) FindOptionsAPI[TModel, TSearch]
+	// FieldMapping sets the default field mapping for options queries.
+	// This mapping provides fallback values for field mapping when not explicitly specified in queries.
+	FieldMapping(mapping *OptionFieldMapping) FindOptionsAPI[TModel, TSearch]
 }
 
 // FindTreeOptionsAPI provides a fluent interface for building find tree options endpoints.
 // Supports custom query modifications, search conditions, filtering, and post-processing.
-// Note: sorting is primarily controlled by TreeOptionsConfig.SortField; SortApplier is used only when SortField is empty.
+// Note: sorting is primarily controlled by TreeOptionFieldMapping.SortField; SortApplier is used only when SortField is empty.
 type FindTreeOptionsAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]]
 
-	// DefaultConfig sets the default configuration for tree options queries.
-	// This configuration provides fallback values for field mapping when not explicitly specified in queries.
-	DefaultConfig(config *TreeOptionsConfig) FindTreeOptionsAPI[TModel, TSearch]
+	// FieldMapping sets the default field mapping for tree options queries.
+	// This mapping provides fallback values for field mapping when not explicitly specified in queries.
+	FieldMapping(mapping *TreeOptionFieldMapping) FindTreeOptionsAPI[TModel, TSearch]
 }
 
 // ExportAPI provides a fluent interface for building export endpoints.
-// Queries data based on search conditions and exports to Excel file.
+// Queries data based on search conditions and exports to Excel or CSV file.
 type ExportAPI[TModel, TSearch any] interface {
 	api.Provider
 	FindAPI[TModel, TSearch, []TModel, ExportAPI[TModel, TSearch]]
 
-	// ExportOptions sets Excel exporter configuration options.
-	ExportOptions(opts ...excel.ExportOption) ExportAPI[TModel, TSearch]
+	// Format sets the export format (Excel or CSV). Default is Excel.
+	Format(format TabularFormat) ExportAPI[TModel, TSearch]
+	// ExcelOptions sets Excel exporter configuration options.
+	ExcelOptions(opts ...excel.ExportOption) ExportAPI[TModel, TSearch]
+	// CSVOptions sets CSV exporter configuration options.
+	CSVOptions(opts ...csv.ExportOption) ExportAPI[TModel, TSearch]
 	// PreExport sets a processor to modify data before exporting.
 	PreExport(processor PreExportProcessor[TModel, TSearch]) ExportAPI[TModel, TSearch]
 	// FilenameBuilder sets a function to generate the export filename dynamically.
@@ -214,13 +220,17 @@ type ExportAPI[TModel, TSearch any] interface {
 }
 
 // ImportAPI provides a fluent interface for building import endpoints.
-// Parses uploaded Excel file and creates records in database.
+// Parses uploaded Excel or CSV file and creates records in database.
 type ImportAPI[TModel, TSearch any] interface {
 	api.Provider
 	APIBuilder[ImportAPI[TModel, TSearch]]
 
-	// ImportOptions sets Excel importer configuration options.
-	ImportOptions(opts ...excel.ImportOption) ImportAPI[TModel, TSearch]
+	// Format sets the import format (Excel or CSV). Default is Excel.
+	Format(format TabularFormat) ImportAPI[TModel, TSearch]
+	// ExcelOptions sets Excel importer configuration options.
+	ExcelOptions(opts ...excel.ImportOption) ImportAPI[TModel, TSearch]
+	// CSVOptions sets CSV importer configuration options.
+	CSVOptions(opts ...csv.ImportOption) ImportAPI[TModel, TSearch]
 	// PreImport sets a processor to validate or modify data before saving.
 	PreImport(processor PreImportProcessor[TModel, TSearch]) ImportAPI[TModel, TSearch]
 	// PostImport sets a processor to perform additional actions after import.

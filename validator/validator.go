@@ -6,11 +6,7 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/samber/lo"
 
 	enLocale "github.com/go-playground/locales/en"
 	zhLocale "github.com/go-playground/locales/zh"
@@ -18,21 +14,26 @@ import (
 	v "github.com/go-playground/validator/v10"
 	enTranslation "github.com/go-playground/validator/v10/translations/en"
 	zhTranslation "github.com/go-playground/validator/v10/translations/zh"
-	"github.com/samber/lo"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/result"
 )
 
 const (
-	// tagLabel is the struct tag name for field labels
+	// TagLabel is the struct tag name for field labels.
 	tagLabel = "label"
-	// tagLabelI18n is the struct tag name for internationalized field labels
+	// TagLabelI18n is the struct tag name for internationalized field labels.
 	tagLabelI18n = "label_i18n"
 )
 
 var (
 	logger = log.Named("validator")
-	// translator handles error message translations
+	// Translator handles error message translations.
 	translator ut.Translator
-	// validator is the main validation instance
+	// Validator is the main validation instance.
 	validator *v.Validate
 )
 
@@ -126,6 +127,7 @@ func Validate(value any) error {
 	if err := validator.Struct(value); err != nil {
 		var validationErrors v.ValidationErrors
 		errors.As(err, &validationErrors)
+
 		for _, validationError := range validationErrors {
 			return result.ErrWithCode(result.ErrCodeBadRequest, validationError.Translate(translator))
 		}

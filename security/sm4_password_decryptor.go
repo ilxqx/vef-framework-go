@@ -3,8 +3,9 @@ package security
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/crypto"
 	"github.com/tjfoc/gmsm/sm4"
+
+	"github.com/ilxqx/vef-framework-go/crypto"
 )
 
 // SM4PasswordDecryptor implements PasswordDecryptor using SM4 encryption (国密算法).
@@ -19,9 +20,9 @@ type SM4PasswordDecryptor struct {
 // The iv (initialization vector) must be 16 bytes for CBC mode.
 // If iv is nil, it will use the first 16 bytes of the key as IV (not recommended for production).
 // If mode is not specified, defaults to SM4ModeCBC.
-func NewSM4PasswordDecryptor(key []byte, iv []byte, mode ...crypto.SM4Mode) (PasswordDecryptor, error) {
+func NewSM4PasswordDecryptor(key, iv []byte, mode ...crypto.SM4Mode) (PasswordDecryptor, error) {
 	if len(key) != sm4.BlockSize {
-		return nil, fmt.Errorf("invalid SM4 key length: %d (must be %d bytes)", len(key), sm4.BlockSize)
+		return nil, fmt.Errorf("%w: %d (must be %d bytes)", ErrInvalidSM4KeyLength, len(key), sm4.BlockSize)
 	}
 
 	// If no IV provided, derive from key (simple fallback, not cryptographically ideal)
@@ -29,18 +30,18 @@ func NewSM4PasswordDecryptor(key []byte, iv []byte, mode ...crypto.SM4Mode) (Pas
 		if len(key) >= sm4.BlockSize {
 			iv = key[:sm4.BlockSize]
 		} else {
-			return nil, fmt.Errorf("cannot derive IV: key too short")
+			return nil, fmt.Errorf("%w: key too short", ErrCannotDeriveIV)
 		}
 	}
 
 	if len(iv) != sm4.BlockSize {
-		return nil, fmt.Errorf("invalid IV length: %d (must be %d bytes)", len(iv), sm4.BlockSize)
+		return nil, fmt.Errorf("%w: %d (must be %d bytes)", ErrInvalidIVLength, len(iv), sm4.BlockSize)
 	}
 
 	// Use crypto package's SM4 cipher with CBC mode (default)
 	cipher, err := crypto.NewSM4(key, iv, mode...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SM4 cipher: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateSM4CipherFailed, err)
 	}
 
 	return &SM4PasswordDecryptor{
@@ -54,7 +55,7 @@ func NewSM4PasswordDecryptorFromHex(keyHex, ivHex string, mode ...crypto.SM4Mode
 	// Use crypto package's SM4 cipher from hex
 	cipher, err := crypto.NewSM4FromHex(keyHex, ivHex, mode...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SM4 cipher from hex: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateSM4CipherFromHexFailed, err)
 	}
 
 	return &SM4PasswordDecryptor{
@@ -68,7 +69,7 @@ func NewSM4PasswordDecryptorFromBase64(keyBase64, ivBase64 string, mode ...crypt
 	// Use crypto package's SM4 cipher from base64
 	cipher, err := crypto.NewSM4FromBase64(keyBase64, ivBase64, mode...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SM4 cipher from base64: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateSM4CipherFromBase64Failed, err)
 	}
 
 	return &SM4PasswordDecryptor{
@@ -77,7 +78,7 @@ func NewSM4PasswordDecryptorFromBase64(keyBase64, ivBase64 string, mode ...crypt
 }
 
 // Decrypt decrypts the base64-encoded SM4-encrypted password.
-// The encrypted password is expected to be in the format: base64(SM4-CBC/ECB(plaintext))
+// The encrypted password is expected to be in the format: base64(SM4-CBC/ECB(plaintext)).
 func (d *SM4PasswordDecryptor) Decrypt(encryptedPassword string) (string, error) {
 	return d.cipher.Decrypt(encryptedPassword)
 }

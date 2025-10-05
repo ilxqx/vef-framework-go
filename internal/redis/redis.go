@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"go.uber.org/fx"
+
+	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
 var logger = log.Named("redis")
@@ -41,7 +42,7 @@ func getConnectionConfig(poolSize int) (poolTimeout, idleTimeout time.Duration, 
 	// Max retries: conservative default
 	maxRetries = 3
 
-	return
+	return poolTimeout, idleTimeout, maxRetries
 }
 
 // newRedisClient creates and configures a Redis client with lifecycle management.
@@ -64,10 +65,12 @@ func newRedisClient(lc fx.Lifecycle, ctx context.Context, cfg *config.RedisConfi
 				}
 
 				logger.Infof("Redis client started successfully: %s", client.Options().Addr)
+
 				return nil
 			},
 			func() error {
 				logger.Info("Closing Redis client...")
+
 				return client.Close()
 			},
 		),
@@ -85,14 +88,17 @@ func logRedisServerInfo(ctx context.Context, client *redis.Client) error {
 
 	// Parse version info from INFO command result
 	version := "unknown"
+
 	for line := range strings.SplitSeq(info, constants.CarriageReturnNewline) {
 		if after, ok := strings.CutPrefix(line, "redis_version:"); ok {
 			version = strings.TrimSpace(after)
+
 			break
 		}
 	}
 
 	logger.Infof("Connected to Redis server: %s, version: %s", client.Options().Addr, version)
+
 	return nil
 }
 
@@ -148,6 +154,7 @@ func NewClient(name string, cfg *config.RedisConfig) *redis.Client {
 func buildRedisAddr(cfg *config.RedisConfig) string {
 	host := lo.Ternary(cfg.Host != constants.Empty, cfg.Host, "127.0.0.1")
 	port := lo.Ternary(cfg.Port != 0, cfg.Port, 6379)
+
 	return fmt.Sprintf("%s:%d", host, port)
 }
 

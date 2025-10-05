@@ -3,7 +3,7 @@ package search
 type Operator string
 
 const (
-	// Comparison operators
+	// Comparison operators.
 	Equals             Operator = "eq"
 	NotEquals          Operator = "neq"
 	GreaterThan        Operator = "gt"
@@ -11,19 +11,19 @@ const (
 	LessThan           Operator = "lt"
 	LessThanOrEqual    Operator = "lte"
 
-	// Range operators
+	// Range operators.
 	Between    Operator = "between"
 	NotBetween Operator = "notBetween"
 
-	// Collection operators
+	// Collection operators.
 	In    Operator = "in"
 	NotIn Operator = "notIn"
 
-	// Null check operators
+	// Null check operators.
 	IsNull    Operator = "isNull"
 	IsNotNull Operator = "isNotNull"
 
-	// String matching operators (case sensitive)
+	// String matching operators (case sensitive).
 	Contains      Operator = "contains"
 	NotContains   Operator = "notContains"
 	StartsWith    Operator = "startsWith"
@@ -31,7 +31,7 @@ const (
 	EndsWith      Operator = "endsWith"
 	NotEndsWith   Operator = "notEndsWith"
 
-	// String matching operators (case insensitive)
+	// String matching operators (case insensitive).
 	ContainsIgnoreCase      Operator = "iContains"
 	NotContainsIgnoreCase   Operator = "iNotContains"
 	StartsWithIgnoreCase    Operator = "iStartsWith"
@@ -39,20 +39,20 @@ const (
 	EndsWithIgnoreCase      Operator = "iEndsWith"
 	NotEndsWithIgnoreCase   Operator = "iNotEndsWith"
 
-	// Struct tag configuration
+	// Struct tag configuration.
 	TagSearch = "search"
 
-	// Tag attributes for field configuration
+	// Tag attributes for field configuration.
 	AttrDive     = "dive"
 	AttrAlias    = "alias"
 	AttrColumn   = "column"
 	AttrOperator = "operator"
 	AttrParams   = "params"
 
-	// Parameters for value processing
+	// Parameters for value processing.
 	ParamDelimiter = "delimiter"
 	ParamType      = "type"
 
-	// Special tag value
+	// Special tag value.
 	IgnoreField = "-" // Ignore this field
 )

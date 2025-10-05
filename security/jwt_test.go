@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/result"
 )
 
 func TestNewJWT(t *testing.T) {
@@ -201,6 +202,7 @@ func TestJWTErrorMapping(t *testing.T) {
 			tokenGen: func() string {
 				builder := NewJWTClaimsBuilder()
 				token, _ := jwt.Generate(builder, -1*time.Hour, 0)
+
 				return token
 			},
 			expectedError: result.ErrTokenExpired,
@@ -210,6 +212,7 @@ func TestJWTErrorMapping(t *testing.T) {
 			tokenGen: func() string {
 				builder := NewJWTClaimsBuilder()
 				token, _ := jwt.Generate(builder, 1*time.Hour, 2*time.Minute)
+
 				return token
 			},
 			expectedError: result.ErrTokenNotValidYet,

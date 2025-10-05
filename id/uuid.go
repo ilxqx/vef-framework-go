@@ -8,7 +8,7 @@ import (
 
 // DefaultUuidIdGenerator is the default UUID v7 generator instance.
 // UUID v7 provides time-based ordering and follows RFC 4122 standards.
-// It produces 36-character strings in the format: xxxxxxxx-xxxx-7xxx-xxxx-xxxxxxxxxxxx
+// It produces 36-character strings in the format: xxxxxxxx-xxxx-7xxx-xxxx-xxxxxxxxxxxx.
 var DefaultUuidIdGenerator = NewUuidIdGenerator()
 
 // uuidIdGenerator implements IdGenerator using UUID v7 algorithm.

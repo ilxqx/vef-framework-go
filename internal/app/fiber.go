@@ -9,10 +9,11 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api"
-	"github.com/samber/lo"
 )
 
 // createFiberApp creates a new Fiber application with the given configuration.
@@ -20,6 +21,7 @@ import (
 // including timeouts, encoders, validators, and error handlers.
 func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
 	specifiedLimit := strings.TrimSpace(cfg.BodyLimit)
+
 	bodyLimit, err := humanize.ParseBytes(
 		lo.Ternary(
 			specifiedLimit != constants.Empty,
@@ -67,7 +69,7 @@ func configureFiberApp(
 	middlewares []Middleware,
 	apiEngine api.Engine,
 	openApiEngine api.Engine,
-) error {
+) {
 	// Separate middlewares into before and after groups based on order
 	beforeMiddlewares := lo.Filter(middlewares, func(mid Middleware, _ int) bool {
 		return mid != nil && mid.Order() < 0
@@ -99,6 +101,4 @@ func configureFiberApp(
 		logger.Infof("Applying after middleware '%s'", mid.Name())
 		mid.Apply(app)
 	}
-
-	return nil
 }

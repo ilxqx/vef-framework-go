@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -11,6 +12,7 @@ import (
 // with additional framework-specific functionality like logger, principal, and database access.
 type CustomCtx struct {
 	fiber.DefaultCtx
+
 	logger    log.Logger
 	principal *security.Principal
 	db        orm.Db

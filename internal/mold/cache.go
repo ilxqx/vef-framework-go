@@ -27,7 +27,8 @@ type structCache struct {
 
 func (sc *structCache) Get(key reflect.Type) (c *cStruct, found bool) {
 	c, found = sc.m.Load().(map[reflect.Type]*cStruct)[key]
-	return
+
+	return c, found
 }
 
 func (sc *structCache) Set(key reflect.Type, value *cStruct) {
@@ -45,7 +46,8 @@ type tagCache struct {
 
 func (tc *tagCache) Get(key string) (c *cTag, found bool) {
 	c, found = tc.m.Load().(map[string]*cTag)[key]
-	return
+
+	return c, found
 }
 
 func (tc *tagCache) Set(key string, value *cTag) {
@@ -137,10 +139,11 @@ func (t *MoldTransformer) extractStructCache(current reflect.Value) (*cStruct, e
 	}
 
 	t.cCache.Set(typ, sc)
+
 	return sc, nil
 }
 
-func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName string, alias string, hasAlias bool) (firstCTag *cTag, currentCTag *cTag, err error) {
+func (t *MoldTransformer) parseFieldTagsRecursive(tagString, fieldName, alias string, hasAlias bool) (firstCTag, currentCTag *cTag, err error) {
 	var (
 		tag     string
 		ok      bool
@@ -159,17 +162,19 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName st
 			if i == 0 {
 				firstCTag, currentCTag, err = t.parseFieldTagsRecursive(tagsVal, fieldName, tag, true)
 				if err != nil {
-					return
+					return firstCTag, currentCTag, err
 				}
 			} else {
 				if currentCTag.next, currentCTag, err = t.parseFieldTagsRecursive(tagsVal, fieldName, tag, true); err != nil {
-					return
+					return firstCTag, currentCTag, err
 				}
 			}
+
 			continue
 		}
 
 		var prevTag tagType
+
 		if i == 0 {
 			currentCTag = &cTag{aliasTag: alias, hasAlias: hasAlias, hasTag: true}
 			firstCTag = currentCTag
@@ -182,6 +187,7 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName st
 		switch tag {
 		case diveTag:
 			currentCTag.typeof = typeDive
+
 			continue
 
 		case keysTag:
@@ -189,7 +195,8 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName st
 
 			if i == 0 || prevTag != typeDive {
 				err = ErrInvalidKeysTag
-				return
+
+				return firstCTag, currentCTag, err
 			}
 
 			currentCTag.typeof = typeKeys
@@ -210,8 +217,9 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName st
 			}
 
 			if currentCTag.keys, _, err = t.parseFieldTagsRecursive(string(b[:len(b)-1]), fieldName, constants.Empty, false); err != nil {
-				return
+				return firstCTag, currentCTag, err
 			}
+
 			continue
 
 		case endKeysTag:
@@ -222,7 +230,8 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName st
 			if i != len(tags)-1 {
 				err = ErrUndefinedKeysTag
 			}
-			return
+
+			return firstCTag, currentCTag, err
 
 		default:
 			vals := strings.SplitN(tag, tagKeySeparator, 2)
@@ -237,12 +246,14 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName st
 			currentCTag.tag = vals[0]
 			if len(currentCTag.tag) == 0 {
 				err = &ErrInvalidTag{tag: currentCTag.tag, field: fieldName}
-				return
+
+				return firstCTag, currentCTag, err
 			}
 
 			if currentCTag.fn, ok = t.transformations[currentCTag.tag]; !ok {
 				err = &ErrUndefinedTag{tag: currentCTag.tag, field: fieldName}
-				return
+
+				return firstCTag, currentCTag, err
 			}
 
 			if len(vals) > 1 {
@@ -251,5 +262,5 @@ func (t *MoldTransformer) parseFieldTagsRecursive(tagString string, fieldName st
 		}
 	}
 
-	return
+	return firstCTag, currentCTag, err
 }

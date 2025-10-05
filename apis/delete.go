@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -34,11 +35,13 @@ func (d *deleteAPI[TModel]) Build(handler any) api.Spec {
 
 func (d *deleteAPI[TModel]) PreDelete(processor PreDeleteProcessor[TModel]) DeleteAPI[TModel] {
 	d.preDelete = processor
+
 	return d
 }
 
 func (d *deleteAPI[TModel]) PostDelete(processor PostDeleteProcessor[TModel]) DeleteAPI[TModel] {
 	d.postDelete = processor
+
 	return d
 }
 
@@ -50,7 +53,7 @@ func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 
 	// Validate schema has primary keys
 	if len(pks) == 0 {
-		return nil, fmt.Errorf("model '%s' has no primary key", schema.Name)
+		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
 
 	return func(ctx fiber.Ctx, db orm.Db) error {

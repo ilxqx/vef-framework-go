@@ -90,9 +90,10 @@ func TestParse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dt, err := Parse(tt.input, tt.pattern...)
 			if tt.shouldErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected Parse error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected Parse error")
+
 				if !tt.expected.IsZero() {
 					assertTimeEqual(t, tt.expected, dt.Unwrap(), "Parsed datetime should match expected")
 				}
@@ -345,11 +346,12 @@ func TestDateTimeUnmarshalJSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var dt DateTime
+
 			err := dt.UnmarshalJSON([]byte(tt.input))
 			if tt.shouldErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected UnmarshalJSON error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected UnmarshalJSON error")
 			}
 		})
 	}
@@ -374,10 +376,22 @@ func TestDateTimeScan(t *testing.T) {
 	}{
 		{"String", "2023-12-25 14:30:45", false},
 		{"[]byte", []byte("2023-12-25 14:30:45"), false},
-		{"*string", func() *string { s := "2023-12-25 14:30:45"; return &s }(), false},
-		{"*[]byte", func() *[]byte { b := []byte("2023-12-25 14:30:45"); return &b }(), false},
+		{"*string", func() *string {
+			s := "2023-12-25 14:30:45"
+
+			return &s
+		}(), false},
+		{"*[]byte", func() *[]byte {
+			b := []byte("2023-12-25 14:30:45")
+
+			return &b
+		}(), false},
 		{"time.Time", testTime(2023, 12, 25, 14, 30, 45), false},
-		{"*time.Time", func() *time.Time { t := testTime(2023, 12, 25, 14, 30, 45); return &t }(), false},
+		{"*time.Time", func() *time.Time {
+			t := testTime(2023, 12, 25, 14, 30, 45)
+
+			return &t
+		}(), false},
 		{"nil *string", (*string)(nil), false},
 		{"nil *[]byte", (*[]byte)(nil), false},
 		{"nil *time.Time", (*time.Time)(nil), false},
@@ -388,11 +402,12 @@ func TestDateTimeScan(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var dt DateTime
+
 			err := dt.Scan(tt.src)
 			if tt.hasErr {
-				assertError(t, err, "Expected error")
+				assertError(t, err, "Expected Scan error")
 			} else {
-				assertNoError(t, err, "Unexpected error")
+				assertNoError(t, err, "Unexpected Scan error")
 			}
 		})
 	}
@@ -415,6 +430,7 @@ func TestDateTimeJSONRoundTrip(t *testing.T) {
 
 			// Unmarshal
 			var result DateTime
+
 			err = json.Unmarshal(data, &result)
 			assertNoError(t, err, "Unmarshal")
 

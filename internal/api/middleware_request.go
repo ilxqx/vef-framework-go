@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
@@ -54,6 +55,7 @@ func requestMiddleware(manager api.Manager) fiber.Handler {
 		}
 
 		contextx.SetAPIRequest(ctx, &request)
+
 		return ctx.Next()
 	}
 }

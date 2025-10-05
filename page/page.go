@@ -6,17 +6,18 @@ import (
 )
 
 const (
-	// DefaultPageNumber is the default page number for pagination (starts from 1)
+	// DefaultPageNumber is the default page number for pagination (starts from 1).
 	DefaultPageNumber int = 1
-	// DefaultPageSize is the default page size for pagination
+	// DefaultPageSize is the default page size for pagination.
 	DefaultPageSize int = 15
-	// MaxPageSize is the maximum allowed page size to prevent excessive data loading
+	// MaxPageSize is the maximum allowed page size to prevent excessive data loading.
 	MaxPageSize int = 1000
 )
 
 // Pageable represents pagination parameters for querying data.
 type Pageable struct {
 	api.In
+
 	Page int              `json:"page"` // Page is the page number (1-based)
 	Size int              `json:"size"` // Size is the number of items per page
 	Sort []sort.OrderSpec `json:"sort"` // Sort is the sort field names
@@ -28,9 +29,11 @@ func (p *Pageable) Normalize() {
 	if p.Page < 1 {
 		p.Page = DefaultPageNumber
 	}
+
 	if p.Size < 1 {
 		p.Size = DefaultPageSize
 	}
+
 	if p.Size > MaxPageSize {
 		p.Size = MaxPageSize
 	}
@@ -54,6 +57,7 @@ func (page Page[T]) TotalPages() int {
 	if page.Size == 0 {
 		return 0
 	}
+
 	return int((page.Total + int64(page.Size) - 1) / int64(page.Size))
 }
 

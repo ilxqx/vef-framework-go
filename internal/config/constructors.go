@@ -6,7 +6,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 )
 
-// newAppConfig creates and parses application configuration from "vef.app" section
+// newAppConfig creates and parses application configuration from "vef.app" section.
 func newAppConfig(cfg config.Config) (*config.AppConfig, error) {
 	var appConfig config.AppConfig
 	// Unmarshal extracts app config from "vef.app" section
@@ -17,7 +17,7 @@ func newAppConfig(cfg config.Config) (*config.AppConfig, error) {
 	return &appConfig, nil
 }
 
-// newDatasourceConfig creates and parses datasource configuration from "vef.datasource" section
+// newDatasourceConfig creates and parses datasource configuration from "vef.datasource" section.
 func newDatasourceConfig(cfg config.Config) (*config.DatasourceConfig, error) {
 	var datasourceConfig config.DatasourceConfig
 	// Unmarshal extracts datasource config from "vef.datasource" section
@@ -28,7 +28,7 @@ func newDatasourceConfig(cfg config.Config) (*config.DatasourceConfig, error) {
 	return &datasourceConfig, nil
 }
 
-// newCorsConfig creates and parses CORS configuration from "vef.cors" section
+// newCorsConfig creates and parses CORS configuration from "vef.cors" section.
 func newCorsConfig(cfg config.Config) (*config.CorsConfig, error) {
 	var corsConfig config.CorsConfig
 	// Unmarshal extracts CORS config from "vef.cors" section
@@ -39,7 +39,7 @@ func newCorsConfig(cfg config.Config) (*config.CorsConfig, error) {
 	return &corsConfig, nil
 }
 
-// newSecurityConfig creates and parses security configuration from "vef.security" section
+// newSecurityConfig creates and parses security configuration from "vef.security" section.
 func newSecurityConfig(cfg config.Config) (*config.SecurityConfig, error) {
 	var securityConfig config.SecurityConfig
 	// Unmarshal extracts security config from "vef.security" section
@@ -50,7 +50,7 @@ func newSecurityConfig(cfg config.Config) (*config.SecurityConfig, error) {
 	return &securityConfig, nil
 }
 
-// newRedisConfig creates and parses Redis configuration from "vef.redis" section
+// newRedisConfig creates and parses Redis configuration from "vef.redis" section.
 func newRedisConfig(cfg config.Config) (*config.RedisConfig, error) {
 	var redisConfig config.RedisConfig
 	// Unmarshal extracts Redis config from "vef.redis" section
@@ -61,7 +61,7 @@ func newRedisConfig(cfg config.Config) (*config.RedisConfig, error) {
 	return &redisConfig, nil
 }
 
-// newCacheConfig creates and parses cache configuration from "vef.cache" section
+// newCacheConfig creates and parses cache configuration from "vef.cache" section.
 func newCacheConfig(cfg config.Config) (*config.CacheConfig, error) {
 	var cacheConfig config.CacheConfig
 	// Unmarshal extracts cache config from "vef.cache" section
@@ -72,7 +72,7 @@ func newCacheConfig(cfg config.Config) (*config.CacheConfig, error) {
 	return &cacheConfig, nil
 }
 
-// newStorageConfig creates and parses storage configuration from "vef.storage" section
+// newStorageConfig creates and parses storage configuration from "vef.storage" section.
 func newStorageConfig(cfg config.Config) (*config.StorageConfig, error) {
 	var storageConfig config.StorageConfig
 	// Unmarshal extracts storage config from "vef.storage" section

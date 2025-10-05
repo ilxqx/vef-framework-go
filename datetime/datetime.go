@@ -2,10 +2,10 @@ package datetime
 
 import (
 	"database/sql/driver"
-	"errors"
 	"time"
 
 	"github.com/gofiber/utils/v2"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
@@ -48,6 +48,7 @@ func (dt DateTime) MarshalJSON() ([]byte, error) {
 	bs = append(bs, constants.JSONQuote)
 	bs = time.Time(dt).AppendFormat(bs, time.DateTime)
 	bs = append(bs, constants.JSONQuote)
+
 	return bs, nil
 }
 
@@ -59,7 +60,7 @@ func (dt *DateTime) UnmarshalJSON(bs []byte) error {
 	}
 
 	if err := validateJSONFormat(bs, dateTimePatternLength); err != nil {
-		return errors.New("invalid datetime format")
+		return ErrInvalidDateTimeFormat
 	}
 
 	parsed, err := Parse(value[1 : dateTimePatternLength+1])
@@ -68,6 +69,7 @@ func (dt *DateTime) UnmarshalJSON(bs []byte) error {
 	}
 
 	*dt = parsed
+
 	return nil
 }
 
@@ -210,36 +212,42 @@ func (dt DateTime) Between(start, end DateTime) bool {
 // BeginOfMinute returns the beginning of the minute for dt.
 func (dt DateTime) BeginOfMinute() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, t.Location()))
 }
 
 // EndOfMinute returns the end of the minute for dt.
 func (dt DateTime) EndOfMinute() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 59, 999999999, t.Location()))
 }
 
 // BeginOfHour returns the beginning of the hour for dt.
 func (dt DateTime) BeginOfHour() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location()))
 }
 
 // EndOfHour returns the end of the hour for dt.
 func (dt DateTime) EndOfHour() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 59, 59, 999999999, t.Location()))
 }
 
 // BeginOfDay returns the beginning of the day for dt.
 func (dt DateTime) BeginOfDay() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()))
 }
 
 // EndOfDay returns the end of the day for dt.
 func (dt DateTime) EndOfDay() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, t.Location()))
 }
 
@@ -247,6 +255,7 @@ func (dt DateTime) EndOfDay() DateTime {
 func (dt DateTime) BeginOfWeek() DateTime {
 	t := dt.Unwrap()
 	weekday := int(t.Weekday())
+
 	return dt.BeginOfDay().AddDays(-weekday)
 }
 
@@ -254,12 +263,14 @@ func (dt DateTime) BeginOfWeek() DateTime {
 func (dt DateTime) EndOfWeek() DateTime {
 	t := dt.Unwrap()
 	weekday := int(t.Weekday())
+
 	return dt.EndOfDay().AddDays(6 - weekday)
 }
 
 // BeginOfMonth returns the beginning of the month for dt.
 func (dt DateTime) BeginOfMonth() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location()))
 }
 
@@ -268,18 +279,21 @@ func (dt DateTime) EndOfMonth() DateTime {
 	t := dt.Unwrap()
 	nextMonth := t.AddDate(0, 1, 0)
 	firstOfNextMonth := time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, t.Location())
+
 	return DateTime(firstOfNextMonth.Add(-time.Nanosecond))
 }
 
 // BeginOfYear returns the beginning of the year for dt.
 func (dt DateTime) BeginOfYear() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location()))
 }
 
 // EndOfYear returns the end of the year for dt.
 func (dt DateTime) EndOfYear() DateTime {
 	t := dt.Unwrap()
+
 	return DateTime(time.Date(t.Year(), 12, 31, 23, 59, 59, 999999999, t.Location()))
 }
 
@@ -287,6 +301,7 @@ func (dt DateTime) EndOfYear() DateTime {
 func (dt DateTime) BeginOfQuarter() DateTime {
 	t := dt.Unwrap()
 	month := ((int(t.Month())-1)/3)*3 + 1
+
 	return DateTime(time.Date(t.Year(), time.Month(month), 1, 0, 0, 0, 0, t.Location()))
 }
 
@@ -294,6 +309,7 @@ func (dt DateTime) BeginOfQuarter() DateTime {
 func (dt DateTime) EndOfQuarter() DateTime {
 	t := dt.Unwrap()
 	month := ((int(t.Month())-1)/3)*3 + 3
+
 	return DateTime(time.Date(t.Year(), time.Month(month+1), 1, 0, 0, 0, 0, t.Location()).Add(-time.Nanosecond))
 }
 
@@ -338,6 +354,7 @@ func (dt DateTime) weekdayOffset(weekday time.Weekday) DateTime {
 	currentWeekday := int(t.Weekday())
 	targetWeekday := int(weekday)
 	offset := targetWeekday - currentWeekday
+
 	return dt.BeginOfDay().AddDays(offset)
 }
 
@@ -352,7 +369,9 @@ func (dt *DateTime) UnmarshalText(text []byte) error {
 	if err != nil {
 		return err
 	}
+
 	*dt = parsed
+
 	return nil
 }
 
@@ -367,7 +386,7 @@ func Of(t time.Time) DateTime {
 }
 
 // FromUnix returns the DateTime corresponding to the given Unix time, sec seconds and nsec nanoseconds since January 1, 1970 UTC.
-func FromUnix(sec int64, nsec int64) DateTime {
+func FromUnix(sec, nsec int64) DateTime {
 	return DateTime(time.Unix(sec, nsec))
 }
 

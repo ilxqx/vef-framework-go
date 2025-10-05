@@ -3,7 +3,6 @@
 package mapx
 
 import (
-	"errors"
 	"reflect"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 )
 
 var (
-	// defaultDecoderTagName is the default struct tag name used for map decoding.
+	// DefaultDecoderTagName is the default struct tag name used for map decoding.
 	defaultDecoderTagName = "json"
 
 	// DecoderHook composes multiple decode hooks for comprehensive type conversion.
@@ -46,7 +45,7 @@ var (
 )
 
 type (
-	// decoderOption is a function type for configuring decoder options.
+	// DecoderOption is a function type for configuring decoder options.
 	decoderOption func(c *mapstructure.DecoderConfig)
 
 	// Metadata is an alias for mapstructure.Metadata that contains decoding metadata.
@@ -195,7 +194,7 @@ func WithDecodeNil() decoderOption {
 // The input value must be a struct or a pointer to a struct.
 func ToMap(value any, options ...decoderOption) (result map[string]any, err error) {
 	if reflect.Indirect(reflect.ValueOf(value)).Kind() != reflect.Struct {
-		return nil, errors.New("the value of ToMap function must be a struct")
+		return nil, ErrInvalidToMapValue
 	}
 
 	var decoder *mapstructure.Decoder
@@ -214,7 +213,7 @@ func ToMap(value any, options ...decoderOption) (result map[string]any, err erro
 // The type parameter T must be a struct type.
 func FromMap[T any](value map[string]any, options ...decoderOption) (*T, error) {
 	if reflect.TypeFor[T]().Kind() != reflect.Struct {
-		return nil, errors.New("the type parameter of FromMap function must be a struct")
+		return nil, ErrInvalidFromMapType
 	}
 
 	var (
@@ -222,10 +221,10 @@ func FromMap[T any](value map[string]any, options ...decoderOption) (*T, error) 
 		decoder *mapstructure.Decoder
 		err     error
 	)
-
 	if decoder, err = NewDecoder(&result, options...); err != nil {
 		return nil, err
 	}
+
 	if err = decoder.Decode(value); err != nil {
 		return nil, err
 	}

@@ -89,11 +89,13 @@ func (b *mergeWhenBuilder) ThenDelete() MergeQuery {
 		if err != nil {
 			panic(fmt.Errorf("merge: merge condition build failed: %w", err))
 		}
+
 		expr = string(bs)
 	}
 
 	// Use bun's WhenDelete method
 	b.query.query.WhenDelete(expr)
+
 	return b.query
 }
 
@@ -121,6 +123,7 @@ func (b *mergeUpdateBuilder) Set(column string, value any) MergeUpdateBuilder {
 	eb := b.parent.query.eb
 	setExpr := eb.Expr("? = ?", bun.Name(column), value)
 	b.sets = append(b.sets, setExpr)
+
 	return b
 }
 
@@ -129,6 +132,7 @@ func (b *mergeUpdateBuilder) SetExpr(column string, builder func(ExprBuilder) an
 	expr := builder(eb)
 	setExpr := eb.Expr("? = ?", bun.Name(column), expr)
 	b.sets = append(b.sets, setExpr)
+
 	return b
 }
 
@@ -138,6 +142,7 @@ func (b *mergeUpdateBuilder) SetColumns(columns ...string) MergeUpdateBuilder {
 		setExpr := eb.Expr("? = SOURCE.?", bun.Name(column), bun.Name(column))
 		b.sets = append(b.sets, setExpr)
 	}
+
 	return b
 }
 
@@ -156,12 +161,14 @@ func (b *mergeUpdateBuilder) SetExcept(columns ...string) MergeUpdateBuilder {
 
 	// Add all table fields except the excluded ones
 	eb := b.parent.query.eb
+
 	for _, field := range table.Fields {
 		if !excludeSet[field.Name] {
 			setExpr := eb.Expr("? = SOURCE.?", bun.Name(field.Name), bun.Name(field.Name))
 			b.sets = append(b.sets, setExpr)
 		}
 	}
+
 	return b
 }
 
@@ -174,6 +181,7 @@ func (b *mergeUpdateBuilder) End() MergeQuery {
 		if err != nil {
 			panic(fmt.Errorf("merge: merge condition build failed: %w", err))
 		}
+
 		expr = string(bs)
 	}
 
@@ -182,8 +190,10 @@ func (b *mergeUpdateBuilder) End() MergeQuery {
 		for _, set := range b.sets {
 			q.Set("?", set)
 		}
+
 		return q
 	})
+
 	return b.parent.query
 }
 
@@ -217,6 +227,7 @@ func (b *mergeInsertBuilder) Value(column string, value any) MergeInsertBuilder 
 		column: column,
 		value:  valueExpr,
 	})
+
 	return b
 }
 
@@ -231,6 +242,7 @@ func (b *mergeInsertBuilder) ValueExpr(column string, builder func(ExprBuilder) 
 		column: column,
 		value:  valueExpr,
 	})
+
 	return b
 }
 
@@ -246,6 +258,7 @@ func (b *mergeInsertBuilder) Values(columns ...string) MergeInsertBuilder {
 			value:  valueExpr,
 		})
 	}
+
 	return b
 }
 
@@ -264,6 +277,7 @@ func (b *mergeInsertBuilder) ValuesExcept(columns ...string) MergeInsertBuilder 
 
 	// Add all table fields except the excluded ones
 	eb := b.parent.query.eb
+
 	for _, field := range table.Fields {
 		if !excludeSet[field.Name] {
 			valueExpr := eb.Expr("SOURCE.?", bun.Name(field.Name))
@@ -276,6 +290,7 @@ func (b *mergeInsertBuilder) ValuesExcept(columns ...string) MergeInsertBuilder 
 			})
 		}
 	}
+
 	return b
 }
 
@@ -288,6 +303,7 @@ func (b *mergeInsertBuilder) End() MergeQuery {
 		if err != nil {
 			panic(fmt.Errorf("merge: merge condition build failed: %w", err))
 		}
+
 		expr = string(bs)
 	}
 
@@ -296,7 +312,9 @@ func (b *mergeInsertBuilder) End() MergeQuery {
 		for _, value := range b.values {
 			q.Value(value.column, "?", value.value)
 		}
+
 		return q
 	})
+
 	return b.parent.query
 }

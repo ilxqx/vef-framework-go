@@ -89,8 +89,10 @@ func TestDefaultGenerators(t *testing.T) {
 
 func TestConcurrentGeneration(t *testing.T) {
 	t.Run("concurrent generation should be safe", func(t *testing.T) {
-		const numGoroutines = 100
-		const idsPerGoroutine = 100
+		const (
+			numGoroutines   = 100
+			idsPerGoroutine = 100
+		)
 
 		idChan := make(chan string, numGoroutines*idsPerGoroutine)
 
@@ -105,6 +107,7 @@ func TestConcurrentGeneration(t *testing.T) {
 
 		// Collect all IDs
 		ids := make(map[string]bool)
+
 		for range numGoroutines * idsPerGoroutine {
 			id := <-idChan
 			assert.False(t, ids[id], "Concurrent generation should produce unique IDs")

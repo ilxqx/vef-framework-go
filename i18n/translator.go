@@ -3,8 +3,9 @@ package i18n
 import (
 	"fmt"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Translator defines the interface for message translation services.
@@ -59,6 +60,7 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 		// Log the warning but don't fail - return the original messageId as fallback
 		// This ensures the application continues to work even with missing translations
 		logger.Warnf("Translation failed for messageId '%s': %v", messageId, err)
+
 		return messageId
 	}
 
@@ -70,7 +72,7 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (string, error) {
 	// Validate messageId is not empty
 	if messageId == constants.Empty {
-		return constants.Empty, fmt.Errorf("messageId cannot be empty")
+		return constants.Empty, fmt.Errorf("%w", ErrMessageIdEmpty)
 	}
 
 	// Extract template data if provided (only use the first map)
@@ -84,7 +86,6 @@ func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (s
 		MessageID:    messageId,
 		TemplateData: data,
 	})
-
 	if err != nil {
 		return constants.Empty, fmt.Errorf("translation failed for messageId '%s': %w", messageId, err)
 	}
@@ -102,7 +103,7 @@ func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (s
 // Returns:
 //   - Translator: A fully configured translator instance
 //   - error: Error if initialization fails (e.g., missing locale files, invalid configuration)
-func New(config I18nConfig) (Translator, error) {
+func New(config I18nConfig) (*i18nTranslator, error) {
 	localizer, err := newLocalizer(config)
 	if err != nil {
 		return nil, err

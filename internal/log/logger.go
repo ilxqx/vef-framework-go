@@ -4,14 +4,13 @@ import (
 	"os"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
-	"go.uber.org/zap"
 )
 
-var (
-	logger = newLogger()
-)
+var logger = newLogger()
 
 func Named(name string) log.Logger {
 	return logger.Named(name)

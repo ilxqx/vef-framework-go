@@ -1,24 +1,25 @@
-package excel
+package tabular
 
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/strhelpers"
+	"github.com/samber/lo"
 	"github.com/spf13/cast"
 	"github.com/uptrace/bun"
 
-	"github.com/samber/lo"
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/reflectx"
+	"github.com/ilxqx/vef-framework-go/strhelpers"
 )
 
 var baseModelType = reflect.TypeFor[bun.BaseModel]()
 
-// parseStruct parses the excel columns from a struct using visitor pattern.
+// parseStruct parses the tabular columns from a struct using visitor pattern.
 func parseStruct(t reflect.Type) []*Column {
 	t = reflectx.Indirect(t)
 	if t.Kind() != reflect.Struct {
 		logger.Warnf("Invalid value type, expected struct, got %s", t.Name())
+
 		return nil
 	}
 
@@ -31,7 +32,7 @@ func parseStruct(t reflect.Type) []*Column {
 				return reflectx.SkipChildren
 			}
 
-			tag, hasTag := field.Tag.Lookup(TagExcel)
+			tag, hasTag := field.Tag.Lookup(TagTabular)
 
 			// If has tag, parse it
 			if hasTag {
@@ -65,7 +66,7 @@ func parseStruct(t reflect.Type) []*Column {
 
 	reflectx.VisitType(
 		t, visitor,
-		reflectx.WithDiveTag(TagExcel, AttrDive),
+		reflectx.WithDiveTag(TagTabular, AttrDive),
 		reflectx.WithTraversalMode(reflectx.DepthFirst),
 	)
 

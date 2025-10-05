@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v3/middleware/compress"
+
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 

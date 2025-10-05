@@ -63,7 +63,9 @@ func TestNewBaseEvent(t *testing.T) {
 
 	t.Run("each event has unique ID and time", func(t *testing.T) {
 		event1 := NewBaseEvent("test.event")
+
 		time.Sleep(1 * time.Millisecond) // Ensure different timestamps
+
 		event2 := NewBaseEvent("test.event")
 
 		assert.NotEqual(t, event1.Id(), event2.Id())
@@ -72,7 +74,6 @@ func TestNewBaseEvent(t *testing.T) {
 }
 
 func TestBaseEvent_Metadata(t *testing.T) {
-
 	t.Run("Meta returns all metadata", func(t *testing.T) {
 		event := NewBaseEvent("test.event",
 			WithMeta("key1", "value1"),
@@ -110,6 +111,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 
 		// Verify JSON structure
 		var jsonMap map[string]any
+
 		err = json.Unmarshal(jsonData, &jsonMap)
 		require.NoError(t, err)
 
@@ -134,6 +136,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		require.NoError(t, err)
 
 		var jsonMap map[string]any
+
 		err = json.Unmarshal(jsonData, &jsonMap)
 		require.NoError(t, err)
 
@@ -157,12 +160,14 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		}`
 
 		var event BaseEvent
+
 		err := json.Unmarshal([]byte(jsonData), &event)
 		require.NoError(t, err)
 
 		assert.Equal(t, "test.unmarshal", event.Type())
 		assert.Equal(t, "test-id-123", event.Id())
 		assert.Equal(t, "test-source", event.Source())
+
 		expectedTime, _ := time.Parse(time.RFC3339, "2023-01-01T12:00:00Z")
 		assert.Equal(t, expectedTime, event.Time())
 		assert.Equal(t, 0, len(event.Meta()))
@@ -181,6 +186,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		}`
 
 		var event BaseEvent
+
 		err := json.Unmarshal([]byte(jsonData), &event)
 		require.NoError(t, err)
 
@@ -207,6 +213,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 
 		// Unmarshal back
 		var restored BaseEvent
+
 		err = json.Unmarshal(jsonData, &restored)
 		require.NoError(t, err)
 
@@ -227,6 +234,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		}`
 
 		var event BaseEvent
+
 		err := json.Unmarshal([]byte(jsonData), &event)
 		require.NoError(t, err)
 
@@ -241,6 +249,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		invalidJSON := `{invalid json`
 
 		var event BaseEvent
+
 		err := json.Unmarshal([]byte(invalidJSON), &event)
 		assert.Error(t, err)
 	})

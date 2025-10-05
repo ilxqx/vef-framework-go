@@ -10,9 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/spf13/cast"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/storage"
-	"github.com/spf13/cast"
 )
 
 // MemoryProvider implements the storage.Provider interface using in-memory storage.
@@ -89,6 +90,7 @@ func (p *MemoryProvider) DeleteObject(ctx context.Context, opts storage.DeleteOb
 	defer p.mu.Unlock()
 
 	delete(p.objects, opts.Key)
+
 	return nil
 }
 
@@ -100,6 +102,7 @@ func (p *MemoryProvider) DeleteObjects(ctx context.Context, opts storage.DeleteO
 	for _, key := range opts.Keys {
 		delete(p.objects, key)
 	}
+
 	return nil
 }
 
@@ -192,7 +195,7 @@ func (p *MemoryProvider) CopyObject(ctx context.Context, opts storage.CopyObject
 func (p *MemoryProvider) MoveObject(ctx context.Context, opts storage.MoveObjectOptions) (info *storage.ObjectInfo, err error) {
 	// Copy the object
 	if info, err = p.CopyObject(ctx, opts.CopyObjectOptions); err != nil {
-		return
+		return info, err
 	}
 
 	// Delete the source object
@@ -202,7 +205,7 @@ func (p *MemoryProvider) MoveObject(ctx context.Context, opts storage.MoveObject
 		return nil, fmt.Errorf("copied successfully but failed to delete source: %w", err)
 	}
 
-	return
+	return info, err
 }
 
 // StatObject retrieves metadata about an object.

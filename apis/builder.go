@@ -20,26 +20,31 @@ type baseAPIBuilder[T any] struct {
 
 func (b *baseAPIBuilder[T]) Action(action string) T {
 	b.action = action
+
 	return b.self
 }
 
 func (b *baseAPIBuilder[T]) EnableAudit() T {
 	b.enableAudit = true
+
 	return b.self
 }
 
 func (b *baseAPIBuilder[T]) Timeout(timeout time.Duration) T {
 	b.timeout = timeout
+
 	return b.self
 }
 
 func (b *baseAPIBuilder[T]) Public() T {
 	b.public = true
+
 	return b.self
 }
 
 func (b *baseAPIBuilder[T]) PermissionToken(token string) T {
 	b.permissionToken = token
+
 	return b.self
 }
 
@@ -48,6 +53,7 @@ func (b *baseAPIBuilder[T]) RateLimit(max int, expiration time.Duration) T {
 		Max:        max,
 		Expiration: expiration,
 	}
+
 	return b.self
 }
 

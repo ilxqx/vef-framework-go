@@ -12,7 +12,7 @@ var testFlags = []string{
 	"test.count", "test.parallel", "test.short", "test.failfast",
 }
 
-// IsTestEnv checks if the code is running in test mode
+// IsTestEnv checks if the code is running in test mode.
 func IsTestEnv() bool {
 	for _, flagName := range testFlags {
 		if flag.Lookup(flagName) != nil {
@@ -28,6 +28,8 @@ func isTestFunc() bool {
 	if !ok {
 		return false
 	}
+
 	fn := runtime.FuncForPC(pc)
+
 	return strings.Contains(fn.Name(), ".Test")
 }

@@ -194,6 +194,7 @@ func TestVerifyPassword(t *testing.T) {
 
 		hash1, err1 := HashPassword(password1)
 		hash2, err2 := HashPassword(password2)
+
 		require.NoError(t, err1)
 		require.NoError(t, err2)
 

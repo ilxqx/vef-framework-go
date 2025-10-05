@@ -16,7 +16,3 @@ type Logger interface {
 	Panic(message string)
 	Panicf(template string, args ...any)
 }
-
-type LoggerConfigurable[T any] interface {
-	WithLogger(logger Logger) T
-}

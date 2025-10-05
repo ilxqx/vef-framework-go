@@ -5,6 +5,7 @@ import "golang.org/x/crypto/bcrypt"
 // HashPassword hashes a password using bcrypt.
 func HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
 	return string(hashedPassword), err
 }
 

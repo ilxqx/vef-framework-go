@@ -2,13 +2,15 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
+	"github.com/spf13/cast"
+
 	loggerMiddleware "github.com/gofiber/fiber/v3/middleware/logger"
+
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
-	"github.com/samber/lo"
-	"github.com/spf13/cast"
 )
 
 // NewRequestRecordMiddleware returns a middleware that records request metrics.
@@ -30,6 +32,7 @@ func NewRequestRecordMiddleware() app.Middleware {
 				}),
 				ctx.Response().StatusCode(),
 			)
+
 			if data.ChainErr != nil {
 				if err, ok := result.AsErr(data.ChainErr); ok {
 					logger.Warnf("Request failed with error: %v [%d]", err.Message, err.Code)
@@ -37,6 +40,7 @@ func NewRequestRecordMiddleware() app.Middleware {
 					logger.Errorf("Request failed with error: %v", data.ChainErr)
 				}
 			}
+
 			return nil
 		},
 	})

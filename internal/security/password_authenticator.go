@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	// Password authentication type
+	// Password authentication type.
 	AuthTypePassword = "password"
 )
 
@@ -38,6 +38,7 @@ func (p *PasswordAuthenticator) Authenticate(authentication security.Authenticat
 	if p.loader == nil {
 		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("user_loader_not_implemented"))
 	}
+
 	username := authentication.Principal
 	if username == constants.Empty {
 		return nil, result.ErrWithCode(result.ErrCodePrincipalInvalid, i18n.T("username_required"))
@@ -54,8 +55,10 @@ func (p *PasswordAuthenticator) Authenticate(authentication security.Authenticat
 		plaintextPassword, err := p.decryptor.Decrypt(password)
 		if err != nil {
 			logger.Errorf("failed to decrypt password for principal '%s': %v", username, err)
+
 			return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
 		}
+
 		password = plaintextPassword
 	}
 
@@ -64,6 +67,7 @@ func (p *PasswordAuthenticator) Authenticate(authentication security.Authenticat
 	if err != nil {
 		return nil, err
 	}
+
 	if principal == nil || passwordHash == constants.Empty {
 		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
 	}
@@ -74,5 +78,6 @@ func (p *PasswordAuthenticator) Authenticate(authentication security.Authenticat
 	}
 
 	logger.Infof("Password authentication successful for principal '%s'", principal.Id)
+
 	return principal, nil
 }

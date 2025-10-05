@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserCreateResource struct {
 	api.Resource
 	apis.CreateAPI[TestUser, TestUserCreateParams]
@@ -22,7 +23,7 @@ func NewTestUserCreateResource() api.Resource {
 	}
 }
 
-// Resource with PreCreate hook
+// Resource with PreCreate hook.
 type TestUserCreateWithPreHookResource struct {
 	api.Resource
 	apis.CreateAPI[TestUser, TestUserCreateParams]
@@ -36,12 +37,13 @@ func NewTestUserCreateWithPreHookResource() api.Resource {
 			PreCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Add prefix to name
 				model.Name = "Mr. " + model.Name
+
 				return nil
 			}),
 	}
 }
 
-// Resource with PostCreate hook
+// Resource with PostCreate hook.
 type TestUserCreateWithPostHookResource struct {
 	api.Resource
 	apis.CreateAPI[TestUser, TestUserCreateParams]
@@ -55,28 +57,29 @@ func NewTestUserCreateWithPostHookResource() api.Resource {
 			PostCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Log or perform additional operations
 				ctx.Set("X-Created-User-Id", model.Id)
+
 				return nil
 			}),
 	}
 }
 
-// Test params for create
+// Test params for create.
 type TestUserCreateParams struct {
 	api.In
 
-	Name        string `json:"name" validate:"required"`
-	Email       string `json:"email" validate:"required,email"`
+	Name        string `json:"name"        validate:"required"`
+	Email       string `json:"email"       validate:"required,email"`
 	Description string `json:"description"`
-	Age         int    `json:"age" validate:"required,min=1,max=120"`
-	Status      string `json:"status" validate:"required,oneof=active inactive"`
+	Age         int    `json:"age"         validate:"required,min=1,max=120"`
+	Status      string `json:"status"      validate:"required,oneof=active inactive"`
 }
 
-// CreateTestSuite is the test suite for Create API tests
+// CreateTestSuite is the test suite for Create API tests.
 type CreateTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *CreateTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserCreateResource,
@@ -85,12 +88,12 @@ func (suite *CreateTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *CreateTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestCreateBasic tests basic Create functionality
+// TestCreateBasic tests basic Create functionality.
 func (suite *CreateTestSuite) TestCreateBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -118,7 +121,7 @@ func (suite *CreateTestSuite) TestCreateBasic() {
 	suite.NotEmpty(pk["id"])
 }
 
-// TestCreateWithPreHook tests Create with PreCreate hook
+// TestCreateWithPreHook tests Create with PreCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPreHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -144,7 +147,7 @@ func (suite *CreateTestSuite) TestCreateWithPreHook() {
 	suite.NotEmpty(pk["id"])
 }
 
-// TestCreateWithPostHook tests Create with PostCreate hook
+// TestCreateWithPostHook tests Create with PostCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPostHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -171,7 +174,7 @@ func (suite *CreateTestSuite) TestCreateWithPostHook() {
 	suite.NotEmpty(pk["id"])
 }
 
-// TestCreateNegativeCases tests negative scenarios
+// TestCreateNegativeCases tests negative scenarios.
 func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	suite.Run("MissingRequiredField", func() {
 		resp := suite.makeAPIRequest(api.Request{

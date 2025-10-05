@@ -6,10 +6,11 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// queryVersion queries the PostgreSQL version using version() function
+// queryVersion queries the PostgreSQL version using version() function.
 func queryVersion(db *bun.DB) (version string, err error) {
 	err = db.NewSelect().
 		ColumnExpr("version()").
 		Scan(context.Background(), &version)
-	return
+
+	return version, err
 }

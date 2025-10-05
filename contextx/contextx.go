@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mold"
@@ -25,6 +26,7 @@ const (
 // APIRequest returns the api.APIRequest from fiber context.
 func APIRequest(ctx context.Context) *api.Request {
 	req, _ := ctx.Value(KeyRequest).(*api.Request)
+
 	return req
 }
 
@@ -33,6 +35,7 @@ func SetAPIRequest(ctx context.Context, request *api.Request) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyRequest, request)
+
 		return c
 	default:
 		return context.WithValue(ctx, KeyRequest, request)
@@ -49,6 +52,7 @@ func SetRequestId(ctx context.Context, requestId string) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyRequestId, requestId)
+
 		return c
 	default:
 		return context.WithValue(ctx, KeyRequestId, requestId)
@@ -58,6 +62,7 @@ func SetRequestId(ctx context.Context, requestId string) context.Context {
 // Principal returns the security.Principal from fiber context.
 func Principal(ctx context.Context) *security.Principal {
 	principal, _ := ctx.Value(KeyPrincipal).(*security.Principal)
+
 	return principal
 }
 
@@ -66,6 +71,7 @@ func SetPrincipal(ctx context.Context, principal *security.Principal) context.Co
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyPrincipal, principal)
+
 		return c
 	default:
 		return context.WithValue(ctx, KeyPrincipal, principal)
@@ -75,6 +81,7 @@ func SetPrincipal(ctx context.Context, principal *security.Principal) context.Co
 // Logger returns the log.Logger from fiber context.
 func Logger(ctx context.Context) log.Logger {
 	logger, _ := ctx.Value(KeyLogger).(log.Logger)
+
 	return logger
 }
 
@@ -83,6 +90,7 @@ func SetLogger(ctx context.Context, logger log.Logger) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyLogger, logger)
+
 		return c
 	default:
 		return context.WithValue(ctx, KeyLogger, logger)
@@ -92,6 +100,7 @@ func SetLogger(ctx context.Context, logger log.Logger) context.Context {
 // Db returns the orm.Db from fiber context.
 func Db(ctx context.Context) orm.Db {
 	db, _ := ctx.Value(KeyDb).(orm.Db)
+
 	return db
 }
 
@@ -100,6 +109,7 @@ func SetDb(ctx context.Context, db orm.Db) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyDb, db)
+
 		return c
 	default:
 		return context.WithValue(ctx, KeyDb, db)
@@ -109,6 +119,7 @@ func SetDb(ctx context.Context, db orm.Db) context.Context {
 // Transformer returns the mold.Transformer from fiber context.
 func Transformer(ctx context.Context) mold.Transformer {
 	transformer, _ := ctx.Value(KeyTransformer).(mold.Transformer)
+
 	return transformer
 }
 
@@ -117,6 +128,7 @@ func SetTransformer(ctx context.Context, transformer mold.Transformer) context.C
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyTransformer, transformer)
+
 		return c
 	default:
 		return context.WithValue(ctx, KeyTransformer, transformer)

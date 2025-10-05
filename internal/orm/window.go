@@ -3,9 +3,10 @@ package orm
 import (
 	"strconv"
 
+	"github.com/uptrace/bun/schema"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/sort"
-	"github.com/uptrace/bun/schema"
 )
 
 // WindowPartitionable defines window functions that support partitioning.
@@ -85,32 +86,32 @@ type WindowFrameEndBuilder interface {
 
 // ========== Ranking Window Functions ==========
 
-// RowNumberBuilder defines the ROW_NUMBER() window function builder
+// RowNumberBuilder defines the ROW_NUMBER() window function builder.
 type RowNumberBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// RankBuilder defines the RANK() window function builder
+// RankBuilder defines the RANK() window function builder.
 type RankBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// DenseRankBuilder defines the DENSE_RANK() window function builder
+// DenseRankBuilder defines the DENSE_RANK() window function builder.
 type DenseRankBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// PercentRankBuilder defines the PERCENT_RANK() window function builder
+// PercentRankBuilder defines the PERCENT_RANK() window function builder.
 type PercentRankBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// CumeDistBuilder defines the CUME_DIST() window function builder
+// CumeDistBuilder defines the CUME_DIST() window function builder.
 type CumeDistBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// NtileBuilder defines the NTILE(n) window function builder
+// NtileBuilder defines the NTILE(n) window function builder.
 type NtileBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
@@ -119,7 +120,7 @@ type NtileBuilder interface {
 
 // ========== Value Window Functions ==========
 
-// LagBuilder defines the LAG() window function builder
+// LagBuilder defines the LAG() window function builder.
 type LagBuilder interface {
 	WindowPartitionable[WindowPartitionBuilder]
 
@@ -129,7 +130,7 @@ type LagBuilder interface {
 	DefaultValue(value any) LagBuilder // Default value when no previous row exists
 }
 
-// LeadBuilder defines the LEAD() window function builder
+// LeadBuilder defines the LEAD() window function builder.
 type LeadBuilder interface {
 	WindowPartitionable[WindowPartitionBuilder]
 
@@ -139,7 +140,7 @@ type LeadBuilder interface {
 	DefaultValue(value any) LeadBuilder // Default value when no next row exists
 }
 
-// FirstValueBuilder defines the FIRST_VALUE() window function builder
+// FirstValueBuilder defines the FIRST_VALUE() window function builder.
 type FirstValueBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 	NullHandlingBuilder[FirstValueBuilder]
@@ -148,7 +149,7 @@ type FirstValueBuilder interface {
 	Expr(expr any) FirstValueBuilder
 }
 
-// LastValueBuilder defines the LAST_VALUE() window function builder
+// LastValueBuilder defines the LAST_VALUE() window function builder.
 type LastValueBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 	NullHandlingBuilder[LastValueBuilder]
@@ -157,7 +158,7 @@ type LastValueBuilder interface {
 	Expr(expr any) LastValueBuilder
 }
 
-// NthValueBuilder defines the NTH_VALUE() window function builder
+// NthValueBuilder defines the NTH_VALUE() window function builder.
 type NthValueBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 	NullHandlingBuilder[NthValueBuilder]
@@ -171,7 +172,7 @@ type NthValueBuilder interface {
 
 // ========== Aggregate Window Functions ==========
 
-// WindowCountBuilder defines COUNT() as window function builder
+// WindowCountBuilder defines COUNT() as window function builder.
 type WindowCountBuilder interface {
 	BaseAggregate[WindowCountBuilder]
 	DistinctableAggregate[WindowCountBuilder]
@@ -180,33 +181,33 @@ type WindowCountBuilder interface {
 	All() WindowCountBuilder
 }
 
-// WindowSumBuilder defines SUM() as window function builder
+// WindowSumBuilder defines SUM() as window function builder.
 type WindowSumBuilder interface {
 	BaseAggregate[WindowSumBuilder]
 	DistinctableAggregate[WindowSumBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowAvgBuilder defines AVG() as window function builder
+// WindowAvgBuilder defines AVG() as window function builder.
 type WindowAvgBuilder interface {
 	BaseAggregate[WindowAvgBuilder]
 	DistinctableAggregate[WindowAvgBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowMinBuilder defines MIN() as window function builder
+// WindowMinBuilder defines MIN() as window function builder.
 type WindowMinBuilder interface {
 	BaseAggregate[WindowMinBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowMaxBuilder defines MAX() as window function builder
+// WindowMaxBuilder defines MAX() as window function builder.
 type WindowMaxBuilder interface {
 	BaseAggregate[WindowMaxBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowStringAggBuilder defines STRING_AGG() as window function builder
+// WindowStringAggBuilder defines STRING_AGG() as window function builder.
 type WindowStringAggBuilder interface {
 	DistinctableAggregate[WindowStringAggBuilder]
 	OrderableAggregate[WindowStringAggBuilder]
@@ -216,7 +217,7 @@ type WindowStringAggBuilder interface {
 	Separator(separator string) WindowStringAggBuilder
 }
 
-// WindowArrayAggBuilder defines ARRAY_AGG() as window function builder
+// WindowArrayAggBuilder defines ARRAY_AGG() as window function builder.
 type WindowArrayAggBuilder interface {
 	DistinctableAggregate[WindowArrayAggBuilder]
 	OrderableAggregate[WindowArrayAggBuilder]
@@ -224,21 +225,21 @@ type WindowArrayAggBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowStdDevBuilder defines STDDEV() as window function builder
+// WindowStdDevBuilder defines STDDEV() as window function builder.
 type WindowStdDevBuilder interface {
 	BaseAggregate[WindowStdDevBuilder]
 	StatisticalAggregate[WindowStdDevBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowVarianceBuilder defines VARIANCE() as window function builder
+// WindowVarianceBuilder defines VARIANCE() as window function builder.
 type WindowVarianceBuilder interface {
 	BaseAggregate[WindowVarianceBuilder]
 	StatisticalAggregate[WindowVarianceBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowJSONObjectAggBuilder defines JSON_OBJECT_AGG() as window function builder
+// WindowJSONObjectAggBuilder defines JSON_OBJECT_AGG() as window function builder.
 type WindowJSONObjectAggBuilder interface {
 	BaseAggregate[WindowJSONObjectAggBuilder]
 	DistinctableAggregate[WindowJSONObjectAggBuilder]
@@ -251,7 +252,7 @@ type WindowJSONObjectAggBuilder interface {
 	KeyExpr(expr any) WindowJSONObjectAggBuilder
 }
 
-// WindowJSONArrayAggBuilder defines JSON_ARRAY_AGG() as window function builder
+// WindowJSONArrayAggBuilder defines JSON_ARRAY_AGG() as window function builder.
 type WindowJSONArrayAggBuilder interface {
 	BaseAggregate[WindowJSONArrayAggBuilder]
 	DistinctableAggregate[WindowJSONArrayAggBuilder]
@@ -259,25 +260,25 @@ type WindowJSONArrayAggBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowBitOrBuilder defines BIT_OR() as window function builder
+// WindowBitOrBuilder defines BIT_OR() as window function builder.
 type WindowBitOrBuilder interface {
 	BaseAggregate[WindowBitOrBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowBitAndBuilder defines BIT_AND() as window function builder
+// WindowBitAndBuilder defines BIT_AND() as window function builder.
 type WindowBitAndBuilder interface {
 	BaseAggregate[WindowBitAndBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowBoolOrBuilder defines BOOL_OR() as window function builder
+// WindowBoolOrBuilder defines BOOL_OR() as window function builder.
 type WindowBoolOrBuilder interface {
 	BaseAggregate[WindowBoolOrBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowBoolAndBuilder defines BOOL_AND() as window function builder
+// WindowBoolAndBuilder defines BOOL_AND() as window function builder.
 type WindowBoolAndBuilder interface {
 	BaseAggregate[WindowBoolAndBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
@@ -285,7 +286,7 @@ type WindowBoolAndBuilder interface {
 
 // ========== Window Function Implementations ==========
 
-// partitionExpr implements the partition expression
+// partitionExpr implements the partition expression.
 type partitionExpr struct {
 	builders ExprBuilder
 	column   string
@@ -298,10 +299,11 @@ func (p *partitionExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte,
 	} else if p.expr != nil {
 		return p.builders.Expr("?", p.expr).AppendQuery(fmter, b)
 	}
+
 	return b, nil
 }
 
-// baseWindowExpr implements common functionality for all window function expressions
+// baseWindowExpr implements common functionality for all window function expressions.
 type baseWindowExpr struct {
 	// eb provides access to expression building utilities (columns, expressions, etc.)
 	eb ExprBuilder
@@ -411,10 +413,12 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 						dialectB = append(dialectB, constants.ByteSpace)
 						dialectB = append(dialectB, w.fromDir.String()...)
 					}
+
 					if w.nullsMode != NullsDefault {
 						dialectB = append(dialectB, constants.ByteSpace)
 						dialectB = append(dialectB, w.nullsMode.String()...)
 					}
+
 					return dialectB, nil
 				},
 				SQLServer: func() ([]byte, error) {
@@ -424,6 +428,7 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 						dialectB = append(dialectB, constants.ByteSpace)
 						dialectB = append(dialectB, w.nullsMode.String()...)
 					}
+
 					return dialectB, nil
 				},
 				Default: func() ([]byte, error) {
@@ -435,6 +440,7 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 			if err != nil {
 				return b, err
 			}
+
 			b = append(b, dialectBytes...)
 		}
 	} else {
@@ -450,10 +456,12 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 	// PARTITION BY clause
 	if len(w.partitionExprs) > 0 {
 		b = append(b, "PARTITION BY "...)
+
 		for i, expr := range w.partitionExprs {
 			if i > 0 {
 				b = append(b, constants.CommaSpace...)
 			}
+
 			if b, err = expr.AppendQuery(fmter, b); err != nil {
 				return
 			}
@@ -475,6 +483,7 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 		}
 
 		b = append(b, w.frameType.String()...)
+
 		b = append(b, constants.ByteSpace)
 		if w.frameEndKind != FrameBoundNone {
 			// Use BETWEEN syntax when both start and end bounds are present
@@ -499,64 +508,75 @@ func (w *baseWindowExpr) appendFrameBound(b []byte, kind FrameBoundKind, n int) 
 	case FrameBoundPreceding, FrameBoundFollowing:
 		b = strconv.AppendInt(b, int64(n), 10)
 		b = append(b, constants.ByteSpace)
+
 		return append(b, kind.String()...)
+
 	default:
 		return b
 	}
 }
 
-// baseWindowPartitionBuilder is a base struct for all window function builders
+// baseWindowPartitionBuilder is a base struct for all window function builders.
 type baseWindowPartitionBuilder[T any] struct {
 	*baseWindowExpr
+
 	self T
 }
 
 func (b *baseWindowPartitionBuilder[T]) PartitionBy(columns ...string) T {
 	b.appendPartitionBy(columns...)
+
 	return b.self
 }
 
 func (b *baseWindowPartitionBuilder[T]) PartitionByExpr(expr any) T {
 	b.appendPartitionByExpr(expr)
+
 	return b.self
 }
 
 func (b *baseWindowPartitionBuilder[T]) OrderBy(columns ...string) T {
 	b.appendOrderBy(columns...)
+
 	return b.self
 }
 
 func (b *baseWindowPartitionBuilder[T]) OrderByDesc(columns ...string) T {
 	b.appendOrderByDesc(columns...)
+
 	return b.self
 }
 
 func (b *baseWindowPartitionBuilder[T]) OrderByExpr(expr any) T {
 	b.appendOrderByExpr(expr)
+
 	return b.self
 }
 
-// baseWindowFrameablePartitionBuilder is a base struct for all window function builders
+// baseWindowFrameablePartitionBuilder is a base struct for all window function builders.
 type baseWindowFrameablePartitionBuilder[T any] struct {
 	*baseWindowPartitionBuilder[T]
 }
 
 func (b *baseWindowFrameablePartitionBuilder[T]) Rows() WindowFrameBuilder {
 	b.frameType = FrameRows
+
 	return &windowFrameBuilder{baseWindowExpr: b.baseWindowExpr}
 }
 
 func (b *baseWindowFrameablePartitionBuilder[T]) Range() WindowFrameBuilder {
 	b.frameType = FrameRange
+
 	return &windowFrameBuilder{baseWindowExpr: b.baseWindowExpr}
 }
 
 func (b *baseWindowFrameablePartitionBuilder[T]) Groups() WindowFrameBuilder {
 	b.frameType = FrameGroups
+
 	return &windowFrameBuilder{baseWindowExpr: b.baseWindowExpr}
 }
 
-// windowFrameBuilder implements WindowFrameBuilder
+// windowFrameBuilder implements WindowFrameBuilder.
 type windowFrameBuilder struct {
 	*baseWindowExpr
 }
@@ -564,24 +584,28 @@ type windowFrameBuilder struct {
 func (b *windowFrameBuilder) UnboundedPreceding() WindowFrameBuilder {
 	b.frameStartKind = FrameBoundUnboundedPreceding
 	b.frameStartN = 0
+
 	return b
 }
 
 func (b *windowFrameBuilder) CurrentRow() WindowFrameBuilder {
 	b.frameStartKind = FrameBoundCurrentRow
 	b.frameStartN = 0
+
 	return b
 }
 
 func (b *windowFrameBuilder) Preceding(n int) WindowFrameBuilder {
 	b.frameStartKind = FrameBoundPreceding
 	b.frameStartN = n
+
 	return b
 }
 
 func (b *windowFrameBuilder) Following(n int) WindowFrameBuilder {
 	b.frameStartKind = FrameBoundFollowing
 	b.frameStartN = n
+
 	return b
 }
 
@@ -589,7 +613,7 @@ func (b *windowFrameBuilder) And() WindowFrameEndBuilder {
 	return &windowFrameEndBuilder{baseWindowExpr: b.baseWindowExpr}
 }
 
-// windowFrameEndBuilder implements WindowFrameEndBuilder
+// windowFrameEndBuilder implements WindowFrameEndBuilder.
 type windowFrameEndBuilder struct {
 	*baseWindowExpr
 }
@@ -597,52 +621,60 @@ type windowFrameEndBuilder struct {
 func (b *windowFrameEndBuilder) UnboundedPreceding() WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundUnboundedPreceding
 	b.frameEndN = 0
+
 	return b
 }
 
 func (b *windowFrameEndBuilder) CurrentRow() WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundCurrentRow
 	b.frameEndN = 0
+
 	return b
 }
 
 func (b *windowFrameEndBuilder) Preceding(n int) WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundPreceding
 	b.frameEndN = n
+
 	return b
 }
 
 func (b *windowFrameEndBuilder) Following(n int) WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundFollowing
 	b.frameEndN = n
+
 	return b
 }
 
 func (b *windowFrameEndBuilder) UnboundedFollowing() WindowFrameEndBuilder {
 	b.frameEndKind = FrameBoundUnboundedFollowing
 	b.frameEndN = 0
+
 	return b
 }
 
-// baseWindowNullHandlingBuilder provides NULL handling functionality
+// baseWindowNullHandlingBuilder provides NULL handling functionality.
 type baseWindowNullHandlingBuilder[T any] struct {
 	*baseWindowExpr
+
 	self T
 }
 
 func (b *baseWindowNullHandlingBuilder[T]) IgnoreNulls() T {
 	b.nullsMode = NullsIgnore
+
 	return b.self
 }
 
 func (b *baseWindowNullHandlingBuilder[T]) RespectNulls() T {
 	b.nullsMode = NullsRespect
+
 	return b.self
 }
 
 // ========== Ranking Window Functions ==========
 
-// rowNumberExpr implements RowNumberBuilder
+// rowNumberExpr implements RowNumberBuilder.
 type rowNumberExpr struct {
 	*baseWindowExpr
 }
@@ -656,10 +688,11 @@ func (rn *rowNumberExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
-// rankExpr implements RankBuilder
+// rankExpr implements RankBuilder.
 type rankExpr struct {
 	*baseWindowExpr
 }
@@ -673,10 +706,11 @@ func (rn *rankExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
-// denseRankExpr implements DenseRankBuilder
+// denseRankExpr implements DenseRankBuilder.
 type denseRankExpr struct {
 	*baseWindowExpr
 }
@@ -690,10 +724,11 @@ func (rn *denseRankExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
-// percentRankExpr implements PercentRankBuilder
+// percentRankExpr implements PercentRankBuilder.
 type percentRankExpr struct {
 	*baseWindowExpr
 }
@@ -707,10 +742,11 @@ func (rn *percentRankExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
-// cumeDistExpr implements CumeDistBuilder
+// cumeDistExpr implements CumeDistBuilder.
 type cumeDistExpr struct {
 	*baseWindowExpr
 }
@@ -724,10 +760,11 @@ func (rn *cumeDistExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
-// ntileExpr implements NtileBuilder
+// ntileExpr implements NtileBuilder.
 type ntileExpr struct {
 	*baseWindowExpr
 }
@@ -741,17 +778,19 @@ func (ne *ntileExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (ne *ntileExpr) Buckets(n int) NtileBuilder {
 	ne.setArgs(n)
+
 	return ne
 }
 
 // ========== Value Window Functions ==========
 
-// lagExpr implements LagBuilder
+// lagExpr implements LagBuilder.
 type lagExpr struct {
 	*baseWindowExpr
 
@@ -767,28 +806,33 @@ func (l *lagExpr) Over() WindowPartitionBuilder {
 	}
 
 	builder.self = builder
+
 	return builder
 }
 
 func (l *lagExpr) Column(column string) LagBuilder {
 	l.column = column
 	l.expr = nil
+
 	return l
 }
 
 func (l *lagExpr) Expr(expr any) LagBuilder {
 	l.expr = expr
 	l.column = constants.Empty
+
 	return l
 }
 
 func (l *lagExpr) Offset(offset int) LagBuilder {
 	l.offset = offset
+
 	return l
 }
 
 func (l *lagExpr) DefaultValue(value any) LagBuilder {
 	l.defaultValue = value
+
 	return l
 }
 
@@ -812,10 +856,11 @@ func (l *lagExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err e
 	}
 
 	l.args = args
+
 	return l.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// leadExpr implements LeadBuilder
+// leadExpr implements LeadBuilder.
 type leadExpr struct {
 	*baseWindowExpr
 
@@ -831,28 +876,33 @@ func (l *leadExpr) Over() WindowPartitionBuilder {
 	}
 
 	builder.self = builder
+
 	return builder
 }
 
 func (l *leadExpr) Column(column string) LeadBuilder {
 	l.column = column
 	l.expr = nil
+
 	return l
 }
 
 func (l *leadExpr) Expr(expr any) LeadBuilder {
 	l.expr = expr
 	l.column = constants.Empty
+
 	return l
 }
 
 func (l *leadExpr) Offset(offset int) LeadBuilder {
 	l.offset = offset
+
 	return l
 }
 
 func (l *leadExpr) DefaultValue(value any) LeadBuilder {
 	l.defaultValue = value
+
 	return l
 }
 
@@ -876,10 +926,11 @@ func (l *leadExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err 
 	}
 
 	l.setArgs(args...)
+
 	return l.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// firstValueExpr implements FirstValueBuilder
+// firstValueExpr implements FirstValueBuilder.
 type firstValueExpr struct {
 	*baseWindowExpr
 	*baseWindowNullHandlingBuilder[FirstValueBuilder]
@@ -894,20 +945,23 @@ func (fv *firstValueExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (fv *firstValueExpr) Column(column string) FirstValueBuilder {
 	fv.setArgs(fv.eb.Column(column))
+
 	return fv
 }
 
 func (fv *firstValueExpr) Expr(expr any) FirstValueBuilder {
 	fv.setArgs(expr)
+
 	return fv
 }
 
-// lastValueExpr implements LastValueBuilder
+// lastValueExpr implements LastValueBuilder.
 type lastValueExpr struct {
 	*baseWindowExpr
 	*baseWindowNullHandlingBuilder[LastValueBuilder]
@@ -922,20 +976,23 @@ func (lv *lastValueExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (lv *lastValueExpr) Column(column string) LastValueBuilder {
 	lv.setArgs(lv.eb.Column(column))
+
 	return lv
 }
 
 func (lv *lastValueExpr) Expr(expr any) LastValueBuilder {
 	lv.setArgs(expr)
+
 	return lv
 }
 
-// nthValueExpr implements NthValueBuilder
+// nthValueExpr implements NthValueBuilder.
 type nthValueExpr struct {
 	*baseWindowExpr
 	*baseWindowNullHandlingBuilder[NthValueBuilder]
@@ -954,33 +1011,39 @@ func (nv *nthValueExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (nv *nthValueExpr) Column(column string) NthValueBuilder {
 	nv.column = column
 	nv.expr = nil
+
 	return nv
 }
 
 func (nv *nthValueExpr) Expr(expr any) NthValueBuilder {
 	nv.expr = expr
 	nv.column = constants.Empty
+
 	return nv
 }
 
 func (nv *nthValueExpr) N(nth int) NthValueBuilder {
 	nv.n = nth
+
 	return nv
 }
 
 func (nv *nthValueExpr) FromFirst() NthValueBuilder {
 	nv.fromDir = FromFirst
+
 	return nv
 }
 
 func (nv *nthValueExpr) FromLast() NthValueBuilder {
 	nv.fromDir = FromLast
+
 	return nv
 }
 
@@ -992,6 +1055,7 @@ func (nv *nthValueExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte,
 	} else if nv.expr != nil {
 		args = append(args, nv.expr)
 	}
+
 	args = append(args, nv.n)
 	nv.setArgs(args...)
 
@@ -1000,7 +1064,7 @@ func (nv *nthValueExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte,
 
 // ========== Window Aggregate Functions ==========
 
-// windowCountExpr implements WindowCountBuilder
+// windowCountExpr implements WindowCountBuilder.
 type windowCountExpr struct {
 	*countExpr[WindowCountBuilder]
 	*baseWindowExpr
@@ -1015,15 +1079,17 @@ func (wc *windowCountExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wc *windowCountExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wc.funcExpr = wc.countExpr
+
 	return wc.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowSumExpr implements WindowSumBuilder
+// windowSumExpr implements WindowSumBuilder.
 type windowSumExpr struct {
 	*sumExpr[WindowSumBuilder]
 	*baseWindowExpr
@@ -1038,15 +1104,17 @@ func (ws *windowSumExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (ws *windowSumExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	ws.funcExpr = ws.sumExpr
+
 	return ws.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowAvgExpr implements WindowAvgBuilder
+// windowAvgExpr implements WindowAvgBuilder.
 type windowAvgExpr struct {
 	*avgExpr[WindowAvgBuilder]
 	*baseWindowExpr
@@ -1061,15 +1129,17 @@ func (wa *windowAvgExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wa *windowAvgExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wa.funcExpr = wa.avgExpr
+
 	return wa.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowMinExpr implements WindowMinBuilder
+// windowMinExpr implements WindowMinBuilder.
 type windowMinExpr struct {
 	*minExpr[WindowMinBuilder]
 	*baseWindowExpr
@@ -1084,15 +1154,17 @@ func (wm *windowMinExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wm *windowMinExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wm.funcExpr = wm.minExpr
+
 	return wm.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowMaxExpr implements WindowMaxBuilder
+// windowMaxExpr implements WindowMaxBuilder.
 type windowMaxExpr struct {
 	*maxExpr[WindowMaxBuilder]
 	*baseWindowExpr
@@ -1107,15 +1179,17 @@ func (wm *windowMaxExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wm *windowMaxExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wm.funcExpr = wm.maxExpr
+
 	return wm.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowStringAggExpr implements WindowStringAggBuilder
+// windowStringAggExpr implements WindowStringAggBuilder.
 type windowStringAggExpr struct {
 	*stringAggExpr[WindowStringAggBuilder]
 	*baseWindowExpr
@@ -1130,15 +1204,17 @@ func (ws *windowStringAggExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (ws *windowStringAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	ws.funcExpr = ws.stringAggExpr
+
 	return ws.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowArrayAggExpr implements WindowArrayAggBuilder
+// windowArrayAggExpr implements WindowArrayAggBuilder.
 type windowArrayAggExpr struct {
 	*arrayAggExpr[WindowArrayAggBuilder]
 	*baseWindowExpr
@@ -1153,15 +1229,17 @@ func (wa *windowArrayAggExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wa *windowArrayAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wa.funcExpr = wa.arrayAggExpr
+
 	return wa.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowStdDevExpr implements WindowStdDevBuilder
+// windowStdDevExpr implements WindowStdDevBuilder.
 type windowStdDevExpr struct {
 	*stddevExpr[WindowStdDevBuilder]
 	*baseWindowExpr
@@ -1176,15 +1254,17 @@ func (ws *windowStdDevExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (ws *windowStdDevExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	ws.funcExpr = ws.stddevExpr
+
 	return ws.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowVarianceExpr implements WindowVarianceBuilder
+// windowVarianceExpr implements WindowVarianceBuilder.
 type windowVarianceExpr struct {
 	*varianceExpr[WindowVarianceBuilder]
 	*baseWindowExpr
@@ -1199,15 +1279,17 @@ func (wv *windowVarianceExpr) Over() WindowFrameablePartitionBuilder {
 	}
 
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wv *windowVarianceExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wv.funcExpr = wv.varianceExpr
+
 	return wv.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowJsonObjectAggExpr implements WindowJsonObjectAggBuilder
+// windowJsonObjectAggExpr implements WindowJsonObjectAggBuilder.
 type windowJsonObjectAggExpr struct {
 	*jsonObjectAggExpr[WindowJSONObjectAggBuilder]
 	*baseWindowExpr
@@ -1221,15 +1303,17 @@ func (wj *windowJsonObjectAggExpr) Over() WindowFrameablePartitionBuilder {
 		baseWindowPartitionBuilder: baseBuilder,
 	}
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wj *windowJsonObjectAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wj.funcExpr = wj.jsonObjectAggExpr
+
 	return wj.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowJsonArrayAggExpr implements WindowJsonArrayAggBuilder
+// windowJsonArrayAggExpr implements WindowJsonArrayAggBuilder.
 type windowJsonArrayAggExpr struct {
 	*jsonArrayAggExpr[WindowJSONArrayAggBuilder]
 	*baseWindowExpr
@@ -1243,15 +1327,17 @@ func (wj *windowJsonArrayAggExpr) Over() WindowFrameablePartitionBuilder {
 		baseWindowPartitionBuilder: baseBuilder,
 	}
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wj *windowJsonArrayAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wj.funcExpr = wj.jsonArrayAggExpr
+
 	return wj.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowBitOrExpr implements WindowBitOrBuilder
+// windowBitOrExpr implements WindowBitOrBuilder.
 type windowBitOrExpr struct {
 	*bitOrExpr[WindowBitOrBuilder]
 	*baseWindowExpr
@@ -1265,15 +1351,17 @@ func (wb *windowBitOrExpr) Over() WindowFrameablePartitionBuilder {
 		baseWindowPartitionBuilder: baseBuilder,
 	}
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wb *windowBitOrExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.bitOrExpr
+
 	return wb.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowBitAndExpr implements WindowBitAndBuilder
+// windowBitAndExpr implements WindowBitAndBuilder.
 type windowBitAndExpr struct {
 	*bitAndExpr[WindowBitAndBuilder]
 	*baseWindowExpr
@@ -1287,15 +1375,17 @@ func (wb *windowBitAndExpr) Over() WindowFrameablePartitionBuilder {
 		baseWindowPartitionBuilder: baseBuilder,
 	}
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wb *windowBitAndExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.bitAndExpr
+
 	return wb.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowBoolOrExpr implements WindowBoolOrBuilder
+// windowBoolOrExpr implements WindowBoolOrBuilder.
 type windowBoolOrExpr struct {
 	*boolOrExpr[WindowBoolOrBuilder]
 	*baseWindowExpr
@@ -1309,15 +1399,17 @@ func (wb *windowBoolOrExpr) Over() WindowFrameablePartitionBuilder {
 		baseWindowPartitionBuilder: baseBuilder,
 	}
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wb *windowBoolOrExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.boolOrExpr
+
 	return wb.baseWindowExpr.AppendQuery(fmter, b)
 }
 
-// windowBoolAndExpr implements WindowBoolAndBuilder
+// windowBoolAndExpr implements WindowBoolAndBuilder.
 type windowBoolAndExpr struct {
 	*boolAndExpr[WindowBoolAndBuilder]
 	*baseWindowExpr
@@ -1331,11 +1423,13 @@ func (wb *windowBoolAndExpr) Over() WindowFrameablePartitionBuilder {
 		baseWindowPartitionBuilder: baseBuilder,
 	}
 	baseBuilder.self = builder
+
 	return builder
 }
 
 func (wb *windowBoolAndExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.boolAndExpr
+
 	return wb.baseWindowExpr.AppendQuery(fmter, b)
 }
 
@@ -1428,6 +1522,7 @@ func newFirstValueExpr(eb ExprBuilder) *firstValueExpr {
 	}
 
 	baseBuilder.self = expr
+
 	return expr
 }
 
@@ -1445,6 +1540,7 @@ func newLastValueExpr(eb ExprBuilder) *lastValueExpr {
 	}
 
 	baseBuilder.self = expr
+
 	return expr
 }
 
@@ -1462,6 +1558,7 @@ func newNthValueExpr(eb ExprBuilder) *nthValueExpr {
 	}
 
 	baseBuilder.self = expr
+
 	return expr
 }
 
@@ -1473,6 +1570,7 @@ func newWindowCountExpr(qb QueryBuilder) *windowCountExpr {
 	}
 
 	expr.countExpr = newGenericCountExpr[WindowCountBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1484,6 +1582,7 @@ func newWindowSumExpr(qb QueryBuilder) *windowSumExpr {
 	}
 
 	expr.sumExpr = newGenericSumExpr[WindowSumBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1495,6 +1594,7 @@ func newWindowAvgExpr(qb QueryBuilder) *windowAvgExpr {
 	}
 
 	expr.avgExpr = newGenericAvgExpr[WindowAvgBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1506,6 +1606,7 @@ func newWindowMinExpr(qb QueryBuilder) *windowMinExpr {
 	}
 
 	expr.minExpr = newGenericMinExpr[WindowMinBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1517,6 +1618,7 @@ func newWindowMaxExpr(qb QueryBuilder) *windowMaxExpr {
 	}
 
 	expr.maxExpr = newGenericMaxExpr[WindowMaxBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1528,6 +1630,7 @@ func newWindowStringAggExpr(qb QueryBuilder) *windowStringAggExpr {
 	}
 
 	expr.stringAggExpr = newGenericStringAggExpr[WindowStringAggBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1539,6 +1642,7 @@ func newWindowArrayAggExpr(qb QueryBuilder) *windowArrayAggExpr {
 	}
 
 	expr.arrayAggExpr = newGenericArrayAggExpr[WindowArrayAggBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1550,6 +1654,7 @@ func newWindowStdDevExpr(qb QueryBuilder) *windowStdDevExpr {
 	}
 
 	expr.stddevExpr = newGenericStdDevExpr[WindowStdDevBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1561,6 +1666,7 @@ func newWindowVarianceExpr(qb QueryBuilder) *windowVarianceExpr {
 	}
 
 	expr.varianceExpr = newGenericVarianceExpr[WindowVarianceBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1572,6 +1678,7 @@ func newWindowJsonObjectAggExpr(qb QueryBuilder) *windowJsonObjectAggExpr {
 	}
 
 	expr.jsonObjectAggExpr = newGenericJsonObjectAggExpr[WindowJSONObjectAggBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1583,6 +1690,7 @@ func newWindowJsonArrayAggExpr(qb QueryBuilder) *windowJsonArrayAggExpr {
 	}
 
 	expr.jsonArrayAggExpr = newGenericJsonArrayAggExpr[WindowJSONArrayAggBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1594,6 +1702,7 @@ func newWindowBitOrExpr(qb QueryBuilder) *windowBitOrExpr {
 	}
 
 	expr.bitOrExpr = newGenericBitOrExpr[WindowBitOrBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1605,6 +1714,7 @@ func newWindowBitAndExpr(qb QueryBuilder) *windowBitAndExpr {
 	}
 
 	expr.bitAndExpr = newGenericBitAndExpr[WindowBitAndBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1616,6 +1726,7 @@ func newWindowBoolOrExpr(qb QueryBuilder) *windowBoolOrExpr {
 	}
 
 	expr.boolOrExpr = newGenericBoolOrExpr[WindowBoolOrBuilder](expr, qb)
+
 	return expr
 }
 
@@ -1627,5 +1738,6 @@ func newWindowBoolAndExpr(qb QueryBuilder) *windowBoolAndExpr {
 	}
 
 	expr.boolAndExpr = newGenericBoolAndExpr[WindowBoolAndBuilder](expr, qb)
+
 	return expr
 }

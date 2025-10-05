@@ -11,6 +11,7 @@ func TestNewRange(t *testing.T) {
 	if intRange.Start != 1 {
 		t.Errorf("Expected Start to be 1, got %d", intRange.Start)
 	}
+
 	if intRange.End != 10 {
 		t.Errorf("Expected End to be 10, got %d", intRange.End)
 	}
@@ -20,6 +21,7 @@ func TestNewRange(t *testing.T) {
 	if strRange.Start != "a" {
 		t.Errorf("Expected Start to be 'a', got %s", strRange.Start)
 	}
+
 	if strRange.End != "z" {
 		t.Errorf("Expected End to be 'z', got %s", strRange.End)
 	}
@@ -29,6 +31,7 @@ func TestNewRange(t *testing.T) {
 	if floatRange.Start != 1.5 {
 		t.Errorf("Expected Start to be 1.5, got %f", floatRange.Start)
 	}
+
 	if floatRange.End != 9.5 {
 		t.Errorf("Expected End to be 9.5, got %f", floatRange.End)
 	}
@@ -308,6 +311,7 @@ func TestRangeJSONMarshaling(t *testing.T) {
 
 	// Unmarshal
 	var result Range[int]
+
 	err = json.Unmarshal(data, &result)
 	if err != nil {
 		t.Fatalf("Unmarshal error: %v", err)
@@ -378,6 +382,7 @@ func TestRangeEdgeCases(t *testing.T) {
 	if !maxRange.IsValid() {
 		t.Error("Max uint8 range should be valid")
 	}
+
 	if !maxRange.Contains(255) {
 		t.Error("Max uint8 range should contain 255")
 	}
@@ -387,9 +392,11 @@ func TestRangeEdgeCases(t *testing.T) {
 	if !negRange.IsValid() {
 		t.Error("Negative range should be valid")
 	}
+
 	if !negRange.Contains(-50) {
 		t.Error("Negative range should contain -50")
 	}
+
 	if negRange.Contains(-5) {
 		t.Error("Negative range should not contain -5")
 	}
@@ -403,6 +410,7 @@ func TestRangeEdgeCases(t *testing.T) {
 	}
 
 	intersection := r1.Intersection(r2)
+
 	expected := NewRange(-5, 0)
 	if intersection != expected {
 		t.Errorf("Expected negative intersection %v, got %v", expected, intersection)
@@ -418,6 +426,7 @@ func TestRangeStringOperations(t *testing.T) {
 	if !r1.Contains("mango") {
 		t.Error("Range [apple, orange] should contain 'mango'")
 	}
+
 	if r1.Contains("pear") {
 		t.Error("Range [apple, orange] should not contain 'pear'")
 	}
@@ -430,6 +439,7 @@ func TestRangeStringOperations(t *testing.T) {
 	// Test intersection
 	intersection := r1.Intersection(r2)
 	expectedStart := "banana"
+
 	expectedEnd := "orange"
 	if intersection.Start != expectedStart || intersection.End != expectedEnd {
 		t.Errorf("Expected string intersection [%s, %s], got [%s, %s]",

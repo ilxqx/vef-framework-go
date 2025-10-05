@@ -91,6 +91,7 @@ func TestRSACipher_FromPEM(t *testing.T) {
 	// Encode public key to PEM
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	require.NoError(t, err, "Failed to marshal public key")
+
 	publicPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "PUBLIC KEY",
 		Bytes: publicKeyBytes,
@@ -156,6 +157,7 @@ func TestRSACipher_PKCS8PrivateKey(t *testing.T) {
 	// Encode private key to PKCS8 PEM
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	require.NoError(t, err, "Failed to marshal PKCS8 private key")
+
 	privatePEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "PRIVATE KEY",
 		Bytes: privateKeyBytes,
@@ -185,6 +187,7 @@ func TestRSACipher_FromHex(t *testing.T) {
 	// Encode public key to hex (PKIX format)
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	require.NoError(t, err, "Failed to marshal public key")
+
 	publicKeyHex := hex.EncodeToString(publicKeyBytes)
 
 	cipher, err := NewRSAFromHex(privateKeyHex, publicKeyHex, RSAModeOAEP)
@@ -207,6 +210,7 @@ func TestRSACipher_FromHex_PKCS8(t *testing.T) {
 	// Encode private key to hex (PKCS8 format)
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	require.NoError(t, err, "Failed to marshal PKCS8 private key")
+
 	privateKeyHex := hex.EncodeToString(privateKeyBytes)
 
 	cipher, err := NewRSAFromHex(privateKeyHex, "", RSAModeOAEP)
@@ -233,6 +237,7 @@ func TestRSACipher_FromBase64(t *testing.T) {
 	// Encode public key to base64 (PKIX format)
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	require.NoError(t, err, "Failed to marshal public key")
+
 	publicKeyBase64 := base64.StdEncoding.EncodeToString(publicKeyBytes)
 
 	cipher, err := NewRSAFromBase64(privateKeyBase64, publicKeyBase64, RSAModeOAEP)

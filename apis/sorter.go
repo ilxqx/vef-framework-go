@@ -24,22 +24,25 @@ type querySorter struct {
 
 func (s *querySorter) OrderBy(columns ...string) Sorter {
 	s.query.OrderBy(columns...)
+
 	return s
 }
 
 func (s *querySorter) OrderByDesc(columns ...string) Sorter {
 	s.query.OrderByDesc(columns...)
+
 	return s
 }
 
 func (s *querySorter) OrderByExpr(builder func(orm.ExprBuilder) any) Sorter {
 	s.query.OrderByExpr(builder)
+
 	return s
 }
 
 // newSorter creates a new Sorter instance that wraps the provided ORM query.
 // This factory function is used internally by the APIs package to create
 // Sorter instances for use in SortApplier functions.
-func newSorter(query orm.SelectQuery) Sorter {
+func newSorter(query orm.SelectQuery) *querySorter {
 	return &querySorter{query: query}
 }

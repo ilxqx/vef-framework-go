@@ -7,20 +7,21 @@ import (
 	"slices"
 
 	"github.com/goccy/go-json"
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/i18n/locales"
-	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/samber/lo"
 	"golang.org/x/text/language"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/i18n/locales"
+	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
 var (
 	logger = log.Named("i18n")
-	// supportedLanguages defines the list of supported language codes
+	// SupportedLanguages defines the list of supported language codes.
 	supportedLanguages = []string{"zh-CN", "en"}
-	// translator is the global translator instance initialized with embedded locales
-	// No longer depends on container injection - uses environment variables for configuration
+	// Translator is the global translator instance initialized with embedded locales
+	// No longer depends on container injection - uses environment variables for configuration.
 	translator Translator
 )
 
@@ -61,8 +62,10 @@ func newLocalizer(config I18nConfig) (*i18n.Localizer, error) {
 		filename := fmt.Sprintf("%s.json", lang)
 		if _, err := bundle.LoadMessageFileFS(config.EmbedLocales, filename); err != nil {
 			logger.Errorf("Failed to load language file %s: %v", filename, err)
+
 			return nil, fmt.Errorf("failed to load language file %s: %w", filename, err)
 		}
+
 		logger.Debugf("Successfully loaded language file: %s", filename)
 	}
 

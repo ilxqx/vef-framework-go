@@ -103,15 +103,15 @@ type Visitor struct {
 }
 
 // StructVisitor is called when entering a struct during traversal.
-// Parameters: structType, structValue, depth in traversal tree
+// Parameters: structType, structValue, depth in traversal tree.
 type StructVisitor func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction
 
 // FieldVisitor is called for each field during traversal.
-// Parameters: field metadata, field value, depth in traversal tree
+// Parameters: field metadata, field value, depth in traversal tree.
 type FieldVisitor func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction
 
 // MethodVisitor is called for each method during traversal.
-// Parameters: method metadata, bound method value (ready to call), depth in traversal tree
+// Parameters: method metadata, bound method value (ready to call), depth in traversal tree.
 type MethodVisitor func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction
 
 // TypeVisitor defines callback functions for type-only traversal (without values).
@@ -126,15 +126,15 @@ type TypeVisitor struct {
 }
 
 // StructTypeVisitor is called when entering a struct type during traversal.
-// Parameters: structType, depth in traversal tree
+// Parameters: structType, depth in traversal tree.
 type StructTypeVisitor func(structType reflect.Type, depth int) VisitAction
 
 // FieldTypeVisitor is called for each field type during traversal.
-// Parameters: field metadata, depth in traversal tree
+// Parameters: field metadata, depth in traversal tree.
 type FieldTypeVisitor func(field reflect.StructField, depth int) VisitAction
 
 // MethodTypeVisitor is called for each method type during traversal.
-// Parameters: method metadata, receiver type, depth in traversal tree
+// Parameters: method metadata, receiver type, depth in traversal tree.
 type MethodTypeVisitor func(method reflect.Method, receiverType reflect.Type, depth int) VisitAction
 
 // VisitFor is a generic convenience function that visits a struct type T using type visitor callbacks.
@@ -166,6 +166,7 @@ func Visit(target reflect.Value, visitor Visitor, opts ...VisitorOption) {
 		if target.IsNil() {
 			return
 		}
+
 		target = target.Elem()
 	}
 
@@ -212,7 +213,7 @@ func VisitType(targetType reflect.Type, visitor TypeVisitor, opts ...VisitorOpti
 	}
 }
 
-// visitDepthFirst performs depth-first traversal of the struct
+// visitDepthFirst performs depth-first traversal of the struct.
 func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor, visited map[reflect.Type]bool, depth int) VisitAction {
 	// Check max depth
 	if config.MaxDepth > 0 && depth >= config.MaxDepth {
@@ -224,6 +225,7 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 		if target.IsNil() {
 			return Continue
 		}
+
 		target = target.Elem()
 	}
 
@@ -238,6 +240,7 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 	if visited[targetType] {
 		return Continue
 	}
+
 	visited[targetType] = true
 
 	// Visit the struct itself
@@ -282,7 +285,7 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 	return Continue
 }
 
-// visitBreadthFirst performs breadth-first traversal of the struct
+// visitBreadthFirst performs breadth-first traversal of the struct.
 func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visitor, visited map[reflect.Type]bool) {
 	type queueItem struct {
 		value reflect.Value
@@ -307,6 +310,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 			if current.IsNil() {
 				continue
 			}
+
 			current = current.Elem()
 		}
 
@@ -320,6 +324,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 		if visited[currentType] {
 			continue
 		}
+
 		visited[currentType] = true
 
 		// Visit the struct
@@ -344,6 +349,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 
 			// Visit the field
 			skipChildren := false
+
 			if visitor.VisitField != nil {
 				if action := visitor.VisitField(fieldType, field, depth); action == Stop {
 					return
@@ -370,7 +376,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 	}
 }
 
-// visitTypeDepthFirst performs depth-first traversal of struct types
+// visitTypeDepthFirst performs depth-first traversal of struct types.
 func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor TypeVisitor, visited map[reflect.Type]bool, depth int) VisitAction {
 	// Check max depth
 	if config.MaxDepth > 0 && depth >= config.MaxDepth {
@@ -381,6 +387,7 @@ func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor 
 	if visited[targetType] {
 		return Continue
 	}
+
 	visited[targetType] = true
 
 	// Visit the struct type itself
@@ -425,7 +432,7 @@ func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor 
 	return Continue
 }
 
-// visitTypeBreadthFirst performs breadth-first traversal of struct types
+// visitTypeBreadthFirst performs breadth-first traversal of struct types.
 func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visitor TypeVisitor, visited map[reflect.Type]bool) {
 	type queueItem struct {
 		structType reflect.Type
@@ -453,6 +460,7 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 		if visited[current] {
 			continue
 		}
+
 		visited[current] = true
 
 		// Visit the struct type
@@ -476,6 +484,7 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 
 			// Visit the field type
 			skipChildren := false
+
 			if visitor.VisitFieldType != nil {
 				if action := visitor.VisitFieldType(field, depth); action == Stop {
 					return
@@ -503,7 +512,7 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 	}
 }
 
-// visitMethods visits all methods on a struct value (including pointer receiver methods)
+// visitMethods visits all methods on a struct value (including pointer receiver methods).
 func visitMethods(target reflect.Value, targetType reflect.Type, visitor MethodVisitor, depth int) VisitAction {
 	if visitor == nil {
 		return Continue
@@ -533,7 +542,7 @@ func visitMethods(target reflect.Value, targetType reflect.Type, visitor MethodV
 	return Continue
 }
 
-// visitMethodTypes visits all method types on a struct type (including pointer receiver methods)
+// visitMethodTypes visits all method types on a struct type (including pointer receiver methods).
 func visitMethodTypes(targetType reflect.Type, visitor MethodTypeVisitor, depth int) VisitAction {
 	if visitor == nil {
 		return Continue
@@ -551,7 +560,7 @@ func visitMethodTypes(targetType reflect.Type, visitor MethodTypeVisitor, depth 
 	return Continue
 }
 
-// shouldRecurse determines if a field should be recursively traversed
+// shouldRecurse determines if a field should be recursively traversed.
 func shouldRecurse(field reflect.StructField, diveTag TagConfig) bool {
 	// Always recurse into anonymous embedded fields
 	if field.Anonymous {

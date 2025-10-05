@@ -7,14 +7,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-// Test struct for encoding/decoding tests
+// Test struct for encoding/decoding tests.
 type TestStruct struct {
 	Name       string        `json:"name"`
 	Age        int           `json:"age"`
@@ -41,6 +42,7 @@ type StructWithEmbedding struct {
 func TestNewDecoder(t *testing.T) {
 	t.Run("create decoder with default options", func(t *testing.T) {
 		var result TestStruct
+
 		decoder, err := NewDecoder(&result)
 		require.NoError(t, err)
 		assert.NotNil(t, decoder)
@@ -48,6 +50,7 @@ func TestNewDecoder(t *testing.T) {
 
 	t.Run("create decoder with custom options", func(t *testing.T) {
 		var result TestStruct
+
 		decoder, err := NewDecoder(&result, WithTagName("custom"), WithErrorUnused())
 		require.NoError(t, err)
 		assert.NotNil(t, decoder)
@@ -313,6 +316,7 @@ func TestDecoderOptions(t *testing.T) {
 		}
 
 		var metadata Metadata
+
 		input := map[string]any{
 			"name":  "John",
 			"age":   30,
@@ -339,6 +343,7 @@ func TestComplexTypeConversions(t *testing.T) {
 
 		result, err := FromMap[TimeStruct](input)
 		require.NoError(t, err)
+
 		expectedTime, _ := time.Parse(time.RFC3339, "2023-01-01T12:00:00Z")
 		assert.Equal(t, expectedTime, result.Created)
 	})
@@ -354,6 +359,7 @@ func TestComplexTypeConversions(t *testing.T) {
 
 		result, err := FromMap[DurationStruct](input)
 		require.NoError(t, err)
+
 		expected, _ := time.ParseDuration("5m30s")
 		assert.Equal(t, expected, result.Timeout)
 	})
@@ -633,7 +639,6 @@ func TestNullTypesIntegration(t *testing.T) {
 		// Note: Round trip with null types has limitations because ToMap converts
 		// null.Value and null.Bool to map structures rather than primitives.
 		// This is expected behavior due to how mapstructure handles struct decomposition.
-
 		type NullStruct struct {
 			Name   null.Value[string] `json:"name"`
 			Age    null.Value[int]    `json:"age"`
@@ -760,6 +765,7 @@ func TestNullValueBasicOperations(t *testing.T) {
 
 	t.Run("ValueFromPtr with nil creates invalid null.Value", func(t *testing.T) {
 		var nilStr *string
+
 		str := null.ValueFromPtr(nilStr)
 		assert.False(t, str.Valid)
 		assert.Equal(t, "", str.ValueOrZero())
@@ -1144,6 +1150,7 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 
 		// Test nil pointer to null.String
 		var nilString *string
+
 		input3 := map[string]any{
 			"name": nilString,
 		}

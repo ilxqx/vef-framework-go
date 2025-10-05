@@ -3,6 +3,9 @@ package test
 import (
 	"testing"
 
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
+
 	configPkg "github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
@@ -17,8 +20,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/redis"
 	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/storage"
-	"go.uber.org/fx"
-	"go.uber.org/fx/fxtest"
 )
 
 // MockConfig implements config.Config for testing without file dependencies.

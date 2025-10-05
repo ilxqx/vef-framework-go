@@ -1,11 +1,12 @@
 package cache
 
 import (
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/redis/go-redis/v9"
-	"go.uber.org/fx"
 )
 
 var logger = log.Named("cache")
@@ -16,7 +17,6 @@ func newBadgerStore(lc fx.Lifecycle, cacheConfig *config.CacheConfig) (cache.Sto
 		Directory:  cacheConfig.Local.Directory,
 		DefaultTTL: cacheConfig.Local.DefaultTTL,
 	})
-
 	if err != nil {
 		return nil, err
 	}

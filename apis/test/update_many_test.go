@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -11,7 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserUpdateManyResource struct {
 	api.Resource
 	apis.UpdateManyAPI[TestUser, TestUserUpdateParams]
@@ -24,7 +25,7 @@ func NewTestUserUpdateManyResource() api.Resource {
 	}
 }
 
-// Resource with PreUpdateMany hook
+// Resource with PreUpdateMany hook.
 type TestUserUpdateManyWithPreHookResource struct {
 	api.Resource
 	apis.UpdateManyAPI[TestUser, TestUserUpdateParams]
@@ -42,12 +43,13 @@ func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 						models[i].Description = paramsList[i].Description + " [Batch Updated]"
 					}
 				}
+
 				return nil
 			}),
 	}
 }
 
-// Resource with PostUpdateMany hook
+// Resource with PostUpdateMany hook.
 type TestUserUpdateManyWithPostHookResource struct {
 	api.Resource
 	apis.UpdateManyAPI[TestUser, TestUserUpdateParams]
@@ -61,17 +63,18 @@ func NewTestUserUpdateManyWithPostHookResource() api.Resource {
 			PostUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header with count
 				ctx.Set("X-Updated-Count", strconv.Itoa(len(models)))
+
 				return nil
 			}),
 	}
 }
 
-// UpdateManyTestSuite is the test suite for UpdateMany API tests
+// UpdateManyTestSuite is the test suite for UpdateMany API tests.
 type UpdateManyTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *UpdateManyTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserUpdateManyResource,
@@ -80,12 +83,12 @@ func (suite *UpdateManyTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *UpdateManyTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestUpdateManyBasic tests basic UpdateMany functionality
+// TestUpdateManyBasic tests basic UpdateMany functionality.
 func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -121,7 +124,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 	// UpdateManyAPI returns no data, just success status
 }
 
-// TestUpdateManyWithPreHook tests UpdateMany with PreUpdateMany hook
+// TestUpdateManyWithPreHook tests UpdateMany with PreUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -157,7 +160,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestUpdateManyWithPostHook tests UpdateMany with PostUpdateMany hook
+// TestUpdateManyWithPostHook tests UpdateMany with PostUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -193,7 +196,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestUpdateManyNegativeCases tests negative scenarios
+// TestUpdateManyNegativeCases tests negative scenarios.
 func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -400,7 +403,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 }
 
-// TestUpdateManyTransactionRollback tests that the entire batch rolls back on error
+// TestUpdateManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to update a batch where the second item will fail
@@ -436,6 +439,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 
 		// Verify that the first user was not updated (transaction rolled back)
 		var user TestUser
+
 		err := suite.db.NewSelect().Model(&user).Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("id", "user001")
 		}).Scan(suite.ctx, &user)
@@ -444,7 +448,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 	})
 }
 
-// TestUpdateManyPartialUpdate tests updating only some fields
+// TestUpdateManyPartialUpdate tests updating only some fields.
 func (suite *UpdateManyTestSuite) TestUpdateManyPartialUpdate() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{

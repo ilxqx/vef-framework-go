@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test structures for visitor pattern testing
+// Test structures for visitor pattern testing.
 type VisitorTestBase struct {
 	BaseValue string
 }
@@ -19,6 +19,7 @@ func (b VisitorTestBase) BaseMethod() string {
 
 type VisitorTestEmbedded struct {
 	VisitorTestBase
+
 	EmbeddedValue int
 	Services      *VisitorTestServices `visit:"dive"`
 }
@@ -42,6 +43,7 @@ type VisitorTestCache struct {
 
 type VisitorTestNested struct {
 	VisitorTestEmbedded
+
 	NestedValue bool
 }
 
@@ -59,21 +61,26 @@ func TestVisit_DepthFirst(t *testing.T) {
 		NestedValue: true,
 	}
 
-	var visitedStructs []string
-	var visitedFields []string
-	var visitedMethods []string
+	var (
+		visitedStructs []string
+		visitedFields  []string
+		visitedMethods []string
+	)
 
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
 			visitedFields = append(visitedFields, field.Name)
+
 			return Continue
 		},
 		VisitMethod: func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction {
 			visitedMethods = append(visitedMethods, method.Name)
+
 			return Continue
 		},
 	}
@@ -110,13 +117,16 @@ func TestVisit_BreadthFirst(t *testing.T) {
 		NestedValue: true,
 	}
 
-	var visitedStructs []string
-	var depths []int
+	var (
+		visitedStructs []string
+		depths         []int
+	)
 
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
 			depths = append(depths, depth)
+
 			return Continue
 		},
 	}
@@ -133,11 +143,13 @@ func TestVisit_BreadthFirst(t *testing.T) {
 
 	// Find structures at depth 1
 	depth1Structs := []string{}
+
 	for i, depth := range depths {
 		if depth == 1 {
 			depth1Structs = append(depth1Structs, visitedStructs[i])
 		}
 	}
+
 	assert.Contains(t, depth1Structs, "VisitorTestEmbedded")
 }
 
@@ -156,6 +168,7 @@ func TestVisit_MaxDepth(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -180,6 +193,7 @@ func TestVisit_StopAction(t *testing.T) {
 			if field.Name == "EmbeddedValue" {
 				return Stop // Stop traversal when we find EmbeddedValue
 			}
+
 			return Continue
 		},
 	}
@@ -191,17 +205,21 @@ func TestVisit_StopAction(t *testing.T) {
 	// Verify it actually stopped by checking that later fields are not visited
 	laterFieldFound := false
 	embeddedValueIndex := -1
+
 	for i, field := range visitedFields {
 		if field == "EmbeddedValue" {
 			embeddedValueIndex = i
+
 			break
 		}
 	}
+
 	for i := embeddedValueIndex + 1; i < len(visitedFields); i++ {
 		if visitedFields[i] != "" {
 			laterFieldFound = true
 		}
 	}
+
 	assert.False(t, laterFieldFound, "Should not visit fields after Stop action")
 }
 
@@ -220,10 +238,12 @@ func TestVisit_SkipChildrenAction(t *testing.T) {
 			if field.Name == "Services" {
 				return SkipChildren // Don't traverse into Services
 			}
+
 			return Continue
 		},
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -248,6 +268,7 @@ func TestVisit_TaggedFields(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -272,6 +293,7 @@ func TestVisit_NoRecursion(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -290,6 +312,7 @@ func TestVisit_NilPointer(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -308,6 +331,7 @@ func TestVisit_NonStruct(t *testing.T) {
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -321,21 +345,26 @@ func TestVisit_NonStruct(t *testing.T) {
 // Tests for type-only visitor API
 
 func TestVisitType_DepthFirst(t *testing.T) {
-	var visitedTypes []string
-	var visitedFields []string
-	var visitedMethods []string
+	var (
+		visitedTypes   []string
+		visitedFields  []string
+		visitedMethods []string
+	)
 
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 		VisitFieldType: func(field reflect.StructField, depth int) VisitAction {
 			visitedFields = append(visitedFields, field.Name)
+
 			return Continue
 		},
 		VisitMethodType: func(method reflect.Method, receiverType reflect.Type, depth int) VisitAction {
 			visitedMethods = append(visitedMethods, method.Name)
+
 			return Continue
 		},
 	}
@@ -360,13 +389,16 @@ func TestVisitType_DepthFirst(t *testing.T) {
 }
 
 func TestVisitType_BreadthFirst(t *testing.T) {
-	var visitedTypes []string
-	var depths []int
+	var (
+		visitedTypes []string
+		depths       []int
+	)
 
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
 			depths = append(depths, depth)
+
 			return Continue
 		},
 	}
@@ -382,11 +414,13 @@ func TestVisitType_BreadthFirst(t *testing.T) {
 
 	// Find types at depth 1
 	depth1Types := []string{}
+
 	for i, depth := range depths {
 		if depth == 1 {
 			depth1Types = append(depth1Types, visitedTypes[i])
 		}
 	}
+
 	assert.Contains(t, depth1Types, "VisitorTestEmbedded")
 }
 
@@ -396,6 +430,7 @@ func TestVisitType_MaxDepth(t *testing.T) {
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -415,6 +450,7 @@ func TestVisitType_StopAction(t *testing.T) {
 			if structType.Name() == "VisitorTestEmbedded" {
 				return Stop // Stop traversal when we find VisitorTestEmbedded
 			}
+
 			return Continue
 		},
 	}
@@ -434,10 +470,12 @@ func TestVisitType_SkipChildrenAction(t *testing.T) {
 			if field.Name == "Services" {
 				return SkipChildren // Don't traverse into Services
 			}
+
 			return Continue
 		},
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -455,6 +493,7 @@ func TestVisitType_NonStruct(t *testing.T) {
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -471,6 +510,7 @@ func TestVisitType_PointerToStruct(t *testing.T) {
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -497,6 +537,7 @@ func TestMethodVisitor_CallableMethodValue(t *testing.T) {
 					methodResults = append(methodResults, results[0].String())
 				}
 			}
+
 			return Continue
 		},
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
@@ -504,6 +545,7 @@ func TestMethodVisitor_CallableMethodValue(t *testing.T) {
 			if depth > 0 {
 				return SkipChildren
 			}
+
 			return Continue
 		},
 	}
@@ -520,14 +562,17 @@ func TestVisitor_NilCheckBehavior(t *testing.T) {
 		VisitorTestBase: VisitorTestBase{BaseValue: "test"},
 	}
 
-	var visitedStructs []string
-	var visitedFields []string
-	var visitedMethods []string
+	var (
+		visitedStructs []string
+		visitedFields  []string
+		visitedMethods []string
+	)
 
 	// Test with only struct visitor (no field or method visitors)
 	visitor1 := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 		// VisitField and VisitMethod are nil - should not be called
@@ -549,14 +594,17 @@ func TestVisitor_NilCheckBehavior(t *testing.T) {
 	visitor2 := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
 			visitedFields = append(visitedFields, field.Name)
+
 			return Continue
 		},
 		VisitMethod: func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction {
 			visitedMethods = append(visitedMethods, method.Name)
+
 			return Continue
 		},
 	}
@@ -575,6 +623,7 @@ func TestVisitFor_Generic(t *testing.T) {
 	visitor := TypeVisitor{
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedTypes = append(visitedTypes, structType.Name())
+
 			return Continue
 		},
 	}
@@ -594,16 +643,20 @@ func TestVisitOf_Convenience(t *testing.T) {
 		EmbeddedValue:   42,
 	}
 
-	var visitedStructs []string
-	var visitedFields []string
+	var (
+		visitedStructs []string
+		visitedFields  []string
+	)
 
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
 			visitedFields = append(visitedFields, field.Name)
+
 			return Continue
 		},
 	}
@@ -622,23 +675,29 @@ func TestVisitOf_Convenience(t *testing.T) {
 
 func TestVisit_EmptyStruct(t *testing.T) {
 	type EmptyStruct struct{}
+
 	testStruct := EmptyStruct{}
 
-	var visitedStructs []string
-	var visitedFields []string
-	var visitedMethods []string
+	var (
+		visitedStructs []string
+		visitedFields  []string
+		visitedMethods []string
+	)
 
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
 			visitedFields = append(visitedFields, field.Name)
+
 			return Continue
 		},
 		VisitMethod: func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction {
 			visitedMethods = append(visitedMethods, method.Name)
+
 			return Continue
 		},
 	}
@@ -655,15 +714,18 @@ func TestVisit_UnexportedFields(t *testing.T) {
 		PublicField  string
 		privateField int // Should be skipped
 	}
+
 	testStruct := StructWithUnexportedFields{
 		PublicField:  "public",
 		privateField: 42,
 	}
 
 	var visitedFields []string
+
 	visitor := Visitor{
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
 			visitedFields = append(visitedFields, field.Name)
+
 			return Continue
 		},
 	}
@@ -679,9 +741,11 @@ func TestVisit_MultiplePointerLevels(t *testing.T) {
 	ptrToPtr := &ptrToStruct
 
 	var visitedStructs []string
+
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -694,9 +758,11 @@ func TestVisit_MultiplePointerLevels(t *testing.T) {
 
 func TestVisit_InvalidValue(t *testing.T) {
 	var visitedStructs []string
+
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -721,9 +787,11 @@ func TestVisit_CyclicReference(t *testing.T) {
 	node2.Next = node1 // Create cycle
 
 	var visitedStructs []string
+
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name()+"_"+structValue.FieldByName("Value").String())
+
 			return Continue
 		},
 	}
@@ -744,9 +812,11 @@ func TestVisit_MethodsOnNonAddressableValue(t *testing.T) {
 	}
 
 	var visitedMethods []string
+
 	visitor := Visitor{
 		VisitMethod: func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction {
 			visitedMethods = append(visitedMethods, method.Name)
+
 			return Continue
 		},
 	}
@@ -768,9 +838,11 @@ func TestVisit_MaxDepthZero(t *testing.T) {
 	}
 
 	var visitedStructs []string
+
 	visitor := Visitor{
 		VisitStruct: func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 	}
@@ -794,6 +866,7 @@ func TestVisitType_WithNilVisitors(t *testing.T) {
 		// Only set VisitStructType, leave others nil
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
+
 			return Continue
 		},
 		// VisitFieldType and VisitMethodType are nil

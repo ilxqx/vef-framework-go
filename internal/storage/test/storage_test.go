@@ -13,6 +13,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/encoding"
@@ -22,13 +25,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 	storagePkg "github.com/ilxqx/vef-framework-go/storage"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
-	"github.com/stretchr/testify/suite"
-	"go.uber.org/fx"
 )
 
-// StorageResourceTestSuite is the test suite for StorageResource
+// StorageResourceTestSuite is the test suite for StorageResource.
 type StorageResourceTestSuite struct {
 	suite.Suite
+
 	ctx            context.Context
 	app            *app.App
 	stop           func()
@@ -41,7 +43,7 @@ type StorageResourceTestSuite struct {
 	testContentType string
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.testBucketName = testhelpers.TestMinioBucket
@@ -69,7 +71,7 @@ func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *StorageResourceTestSuite) TearDownSuite() {
 	if suite.stop != nil {
 		suite.stop()
@@ -111,6 +113,7 @@ func (suite *StorageResourceTestSuite) makeAPIRequest(body api.Request) *http.Re
 
 	resp, err := suite.app.Test(req)
 	suite.Require().NoError(err)
+
 	return resp
 }
 
@@ -139,20 +142,25 @@ func (suite *StorageResourceTestSuite) makeMultipartRequest(params map[string]st
 
 	resp, err := suite.app.Test(req)
 	suite.Require().NoError(err)
+
 	return resp
 }
 
 func (suite *StorageResourceTestSuite) readBody(resp *http.Response) result.Result {
 	body, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
 	suite.Require().NoError(err)
 	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err)
+
 	return *res
 }
 
 func (suite *StorageResourceTestSuite) readDataAsMap(data any) map[string]any {
 	m, ok := data.(map[string]any)
 	suite.Require().True(ok, "Expected data to be a map")
+
 	return m
 }
 
@@ -194,6 +202,7 @@ func (suite *StorageResourceTestSuite) TestUploadSuccess() {
 		Key: key,
 	})
 	suite.Require().NoError(err)
+
 	defer reader.Close()
 
 	content, err := io.ReadAll(reader)
@@ -271,8 +280,12 @@ func (suite *StorageResourceTestSuite) TestGetPresignedUrlForDownload() {
 	suite.Contains(url, suite.testObjectKey)
 
 	// Verify we can download using the presigned URL
-	downloadResp, err := http.Get(url)
+	downloadReq, err := http.NewRequestWithContext(suite.ctx, http.MethodGet, url, nil)
 	suite.Require().NoError(err)
+
+	downloadResp, err := http.DefaultClient.Do(downloadReq)
+	suite.Require().NoError(err)
+
 	defer downloadResp.Body.Close()
 
 	suite.Equal(http.StatusOK, downloadResp.StatusCode)
@@ -308,11 +321,12 @@ func (suite *StorageResourceTestSuite) TestGetPresignedUrlForUpload() {
 
 	// Upload using the presigned URL
 	uploadData := []byte("Uploaded via presigned URL")
-	uploadReq, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(uploadData))
+	uploadReq, err := http.NewRequestWithContext(suite.ctx, http.MethodPut, url, bytes.NewReader(uploadData))
 	suite.Require().NoError(err)
 
 	uploadResp, err := http.DefaultClient.Do(uploadReq)
 	suite.Require().NoError(err)
+
 	defer uploadResp.Body.Close()
 
 	suite.Equal(http.StatusOK, uploadResp.StatusCode)
@@ -621,18 +635,20 @@ func (suite *StorageResourceTestSuite) TestConcurrentUploads() {
 
 	// Wait for all uploads to complete
 	timeout := time.After(30 * time.Second)
+
 	for range numUploads {
 		select {
 		case <-done:
 			// Upload completed
 		case <-timeout:
 			suite.Fail("Concurrent upload test timed out")
+
 			return
 		}
 	}
 }
 
-// TestStorageResourceSuite runs the test suite
+// TestStorageResourceSuite runs the test suite.
 func TestStorageResourceSuite(t *testing.T) {
 	suite.Run(t, new(StorageResourceTestSuite))
 }

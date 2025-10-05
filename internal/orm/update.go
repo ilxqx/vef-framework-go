@@ -5,18 +5,19 @@ import (
 	"database/sql"
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
-	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/result"
 )
 
 // NewUpdateQuery creates a new UpdateQuery instance with the provided database connection.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewUpdateQuery(db bun.IDB) UpdateQuery {
+func NewUpdateQuery(db bun.IDB) *BunUpdateQuery {
 	eb := &QueryExprBuilder{}
 	uq := db.NewUpdate()
 	dialect := db.Dialect()
@@ -28,6 +29,7 @@ func NewUpdateQuery(db bun.IDB) UpdateQuery {
 		query:   uq,
 	}
 	eb.qb = query
+
 	return query
 }
 
@@ -44,6 +46,7 @@ type BunUpdateQuery struct {
 
 func (q *BunUpdateQuery) With(name string, builder func(SelectQuery)) UpdateQuery {
 	q.query.With(name, q.BuildSubQuery(builder))
+
 	return q
 }
 
@@ -54,16 +57,19 @@ func (q *BunUpdateQuery) WithValues(name string, model any, withOrder ...bool) U
 	}
 
 	q.query.With(name, values)
+
 	return q
 }
 
 func (q *BunUpdateQuery) WithRecursive(name string, builder func(SelectQuery)) UpdateQuery {
 	q.query.WithRecursive(name, q.BuildSubQuery(builder))
+
 	return q
 }
 
 func (q *BunUpdateQuery) Model(model any) UpdateQuery {
 	q.query.Model(model)
+
 	return q
 }
 
@@ -73,6 +79,7 @@ func (q *BunUpdateQuery) ModelTable(name string, alias ...string) UpdateQuery {
 	} else {
 		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
 	}
+
 	return q
 }
 
@@ -82,21 +89,25 @@ func (q *BunUpdateQuery) Table(name string, alias ...string) UpdateQuery {
 	} else {
 		q.query.Table(name)
 	}
+
 	return q
 }
 
 func (q *BunUpdateQuery) TableExpr(alias string, builder func(ExprBuilder) any) UpdateQuery {
 	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
+
 	return q
 }
 
 func (q *BunUpdateQuery) TableSubQuery(alias string, builder func(SelectQuery)) UpdateQuery {
 	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
+
 	return q
 }
 
 func (q *BunUpdateQuery) Join(model any, builder func(ConditionBuilder), alias ...string) UpdateQuery {
 	table := getTableSchema(model, q.query.DB())
+
 	aliasToUse := table.Alias
 	if len(alias) > 0 && alias[0] != constants.Empty {
 		aliasToUse = alias[0]
@@ -108,6 +119,7 @@ func (q *BunUpdateQuery) Join(model any, builder func(ConditionBuilder), alias .
 		bun.Name(aliasToUse),
 	)
 	q.query.JoinOn("?", q.BuildCondition(builder))
+
 	return q
 }
 
@@ -117,72 +129,86 @@ func (q *BunUpdateQuery) JoinTable(name string, builder func(ConditionBuilder), 
 	} else {
 		q.query.Join("JOIN ?", bun.Name(name))
 	}
+
 	q.query.JoinOn("?", q.BuildCondition(builder))
+
 	return q
 }
 
 func (q *BunUpdateQuery) JoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) UpdateQuery {
 	q.query.Join("JOIN (?) AS ?", q.BuildSubQuery(sqBuilder), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
+
 	return q
 }
 
 func (q *BunUpdateQuery) JoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) UpdateQuery {
 	q.query.Join("JOIN (?) AS ?", eBuilder(q.eb), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
+
 	return q
 }
 
 func (q *BunUpdateQuery) Where(builder func(ConditionBuilder)) UpdateQuery {
 	cb := newQueryConditionBuilder(q.query.QueryBuilder(), q)
 	builder(cb)
+
 	return q
 }
 
 func (q *BunUpdateQuery) WherePK(columns ...string) UpdateQuery {
 	q.query.WherePK(columns...)
+
 	return q
 }
 
 func (q *BunUpdateQuery) WhereDeleted() UpdateQuery {
 	q.query.WhereDeleted()
+
 	return q
 }
 
 func (q *BunUpdateQuery) IncludeDeleted() UpdateQuery {
 	q.query.WhereAllWithDeleted()
+
 	return q
 }
 
 func (q *BunUpdateQuery) SelectAll() UpdateQuery {
 	q.query.Column(columnAll)
+
 	return q
 }
 
 func (q *BunUpdateQuery) Select(columns ...string) UpdateQuery {
 	q.query.Column(columns...)
+
 	return q
 }
 
 func (q *BunUpdateQuery) Exclude(columns ...string) UpdateQuery {
 	q.query.ExcludeColumn(columns...)
+
 	return q
 }
 
 func (q *BunUpdateQuery) ExcludeAll() UpdateQuery {
 	q.query.ExcludeColumn(columnAll)
+
 	return q
 }
 
 func (q *BunUpdateQuery) Column(name string, value any) UpdateQuery {
 	q.query.Value(name, "?", value)
 	q.query.Returning("?", bun.Ident(name))
+
 	return q
 }
 
 func (q *BunUpdateQuery) ColumnExpr(name string, builder func(ExprBuilder) any) UpdateQuery {
 	q.query.Value(name, "?", builder(q.eb))
 	q.query.Returning("?", bun.Ident(name))
+
 	return q
 }
 
@@ -198,6 +224,7 @@ func (q *BunUpdateQuery) Set(name string, value any) UpdateQuery {
 	}
 
 	q.hasSet = true
+
 	return q
 }
 
@@ -213,16 +240,19 @@ func (q *BunUpdateQuery) SetExpr(name string, builder func(ExprBuilder) any) Upd
 	}
 
 	q.hasSet = true
+
 	return q
 }
 
 func (q *BunUpdateQuery) OmitZero() UpdateQuery {
 	q.query.OmitZero()
+
 	return q
 }
 
 func (q *BunUpdateQuery) OrderBy(columns ...string) UpdateQuery {
 	q.query.Order(columns...)
+
 	return q
 }
 
@@ -236,31 +266,37 @@ func (q *BunUpdateQuery) OrderByDesc(columns ...string) UpdateQuery {
 
 func (q *BunUpdateQuery) OrderByExpr(builder func(ExprBuilder) any) UpdateQuery {
 	q.query.OrderExpr("?", builder(q.eb))
+
 	return q
 }
 
 func (q *BunUpdateQuery) Limit(limit int) UpdateQuery {
 	q.query.Limit(limit)
+
 	return q
 }
 
 func (q *BunUpdateQuery) Returning(columns ...string) UpdateQuery {
 	q.query.Returning("?", Names(columns...))
+
 	return q
 }
 
 func (q *BunUpdateQuery) ReturningAll() UpdateQuery {
 	q.query.Returning(columnAll)
+
 	return q
 }
 
 func (q *BunUpdateQuery) ReturningNone() UpdateQuery {
 	q.query.Returning(sqlNull)
+
 	return q
 }
 
 func (q *BunUpdateQuery) Bulk() UpdateQuery {
 	q.query.Bulk()
+
 	return q
 }
 
@@ -278,6 +314,7 @@ func (q *BunUpdateQuery) ApplyIf(condition bool, fns ...ApplyFunc[UpdateQuery]) 
 	if condition {
 		return q.Apply(fns...)
 	}
+
 	return q
 }
 
@@ -299,12 +336,15 @@ func (q *BunUpdateQuery) beforeUpdate() {
 
 func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
 	q.beforeUpdate()
+
 	res, err := q.query.Exec(ctx, dest...)
 	if err != nil {
 		if dbhelpers.IsDuplicateKeyError(err) {
 			logger.Warnf("Record already exists: %v", err)
+
 			return nil, result.ErrRecordAlreadyExists
 		}
+
 		return nil, err
 	}
 
@@ -313,11 +353,14 @@ func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (sql.Result, err
 
 func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) error {
 	q.beforeUpdate()
+
 	if err := q.query.Scan(ctx, dest...); err != nil {
 		if dbhelpers.IsDuplicateKeyError(err) {
 			logger.Warnf("Record already exists: %v", err)
+
 			return result.ErrRecordAlreadyExists
 		}
+
 		return err
 	}
 

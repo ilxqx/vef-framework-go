@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserFindOptionsResource struct {
 	api.Resource
 	apis.FindOptionsAPI[TestUser, TestUserSearch]
@@ -20,14 +21,14 @@ func NewTestUserFindOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_options"),
 		FindOptionsAPI: apis.NewFindOptionsAPI[TestUser, TestUserSearch]().
 			Public().
-			DefaultConfig(&apis.OptionsConfig{
+			FieldMapping(&apis.OptionFieldMapping{
 				LabelField: "name",
 				ValueField: "id",
 			}),
 	}
 }
 
-// Resource with custom field mapping
+// Resource with custom field mapping.
 type CustomFieldUserFindOptionsResource struct {
 	api.Resource
 	apis.FindOptionsAPI[TestUser, TestUserSearch]
@@ -38,7 +39,7 @@ func NewCustomFieldUserFindOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_options_custom"),
 		FindOptionsAPI: apis.NewFindOptionsAPI[TestUser, TestUserSearch]().
 			Public().
-			DefaultConfig(&apis.OptionsConfig{
+			FieldMapping(&apis.OptionFieldMapping{
 				LabelField:       "email",
 				ValueField:       "id",
 				DescriptionField: "description",
@@ -46,7 +47,7 @@ func NewCustomFieldUserFindOptionsResource() api.Resource {
 	}
 }
 
-// Filtered Options Resource
+// Filtered Options Resource.
 type FilteredUserFindOptionsResource struct {
 	api.Resource
 	apis.FindOptionsAPI[TestUser, TestUserSearch]
@@ -65,12 +66,12 @@ func NewFilteredUserFindOptionsResource() api.Resource {
 	}
 }
 
-// FindOptionsTestSuite is the test suite for FindOptions API tests
+// FindOptionsTestSuite is the test suite for FindOptions API tests.
 type FindOptionsTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *FindOptionsTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserFindOptionsResource,
@@ -79,12 +80,12 @@ func (suite *FindOptionsTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *FindOptionsTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestFindOptionsBasic tests basic FindOptions functionality
+// TestFindOptionsBasic tests basic FindOptions functionality.
 func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -109,7 +110,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
 	suite.NotEmpty(firstOption["value"])
 }
 
-// TestFindOptionsWithConfig tests FindOptions with custom config
+// TestFindOptionsWithConfig tests FindOptions with custom config.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	suite.Run("DefaultConfig", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -177,7 +178,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	})
 }
 
-// TestFindOptionsWithSearch tests FindOptions with search conditions
+// TestFindOptionsWithSearch tests FindOptions with search conditions.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 	suite.Run("SearchByStatus", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -220,7 +221,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 	})
 }
 
-// TestFindOptionsWithFilterApplier tests FindOptions with filter applier
+// TestFindOptionsWithFilterApplier tests FindOptions with filter applier.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -238,7 +239,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
 	suite.Len(options, 7) // Only active users
 }
 
-// TestFindOptionsNegativeCases tests negative scenarios
+// TestFindOptionsNegativeCases tests negative scenarios.
 func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 	suite.Run("NoMatchingRecords", func() {
 		resp := suite.makeAPIRequest(api.Request{

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
@@ -23,11 +24,11 @@ const (
 // It consists of version, resource name, and action name.
 type Identifier struct {
 	// The version of the API endpoint
-	Version string `json:"version" form:"version" validate:"required,alphanum" label_i18n:"api_request_version"`
+	Version string `json:"version"  form:"version"  validate:"required,alphanum" label_i18n:"api_request_version"`
 	// The resource name of the API endpoint
-	Resource string `json:"resource" form:"resource" validate:"required,ascii" label_i18n:"api_request_resource"`
+	Resource string `json:"resource" form:"resource" validate:"required,ascii"    label_i18n:"api_request_resource"`
 	// The action name of the API endpoint
-	Action string `json:"action" form:"action" validate:"required,alphanum" label_i18n:"api_request_action"`
+	Action string `json:"action"   form:"action"   validate:"required,alphanum" label_i18n:"api_request_action"`
 }
 
 // String returns a string representation of the identifier.
@@ -56,6 +57,7 @@ type Meta map[string]any
 // Request represents an API request with identifier, params, and metadata.
 type Request struct {
 	Identifier
+
 	// The params of the request
 	Params Params `json:"params"`
 	// The meta of the request
@@ -69,6 +71,7 @@ func (r *Request) GetParam(key string) (any, bool) {
 	}
 
 	value, exists := r.Params[key]
+
 	return value, exists
 }
 
@@ -79,6 +82,7 @@ func (r *Request) GetMeta(key string) (any, bool) {
 	}
 
 	value, exists := r.Meta[key]
+
 	return value, exists
 }
 
@@ -117,6 +121,7 @@ type RateLimit struct {
 // Definition represents a complete API definition with identifier, configuration, and handler.
 type Definition struct {
 	Identifier
+
 	// EnableAudit indicates whether to enable audit logging for this endpoint
 	EnableAudit bool
 	// Timeout is the request timeout duration

@@ -54,12 +54,15 @@ func TestPageableNormalize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.input.Normalize()
+
 			if tt.input.Page != tt.expected.Page {
 				t.Errorf("Expected Page %d, got %d", tt.expected.Page, tt.input.Page)
 			}
+
 			if tt.input.Size != tt.expected.Size {
 				t.Errorf("Expected Size %d, got %d", tt.expected.Size, tt.input.Size)
 			}
+
 			if !reflect.DeepEqual(tt.input.Sort, tt.expected.Sort) {
 				t.Errorf("Expected Sort %+v, got %+v", tt.expected.Sort, tt.input.Sort)
 			}
@@ -100,15 +103,19 @@ func TestNewPage(t *testing.T) {
 	if page.Page != 2 {
 		t.Errorf("Expected Page to be 2, got %d", page.Page)
 	}
+
 	if page.Size != 10 {
 		t.Errorf("Expected Size to be 10, got %d", page.Size)
 	}
+
 	if page.Total != 25 {
 		t.Errorf("Expected Total to be 25, got %d", page.Total)
 	}
+
 	if len(page.Items) != 3 {
 		t.Errorf("Expected 3 items, got %d", len(page.Items))
 	}
+
 	if page.Items[0] != "item1" {
 		t.Errorf("Expected first item to be 'item1', got %s", page.Items[0])
 	}
@@ -123,6 +130,7 @@ func TestNewPageWithNilItems(t *testing.T) {
 	if page.Items == nil {
 		t.Error("Expected Items to be empty slice, not nil")
 	}
+
 	if len(page.Items) != 0 {
 		t.Errorf("Expected empty slice, got length %d", len(page.Items))
 	}
@@ -272,6 +280,7 @@ func TestPageableJSONMarshaling(t *testing.T) {
 
 	// Unmarshal
 	var result Pageable
+
 	err = json.Unmarshal(data, &result)
 	if err != nil {
 		t.Fatalf("Unmarshal error: %v", err)
@@ -281,9 +290,11 @@ func TestPageableJSONMarshaling(t *testing.T) {
 	if result.Page != pageable.Page {
 		t.Errorf("Expected Page %d, got %d", pageable.Page, result.Page)
 	}
+
 	if result.Size != pageable.Size {
 		t.Errorf("Expected Size %d, got %d", pageable.Size, result.Size)
 	}
+
 	if !reflect.DeepEqual(result.Sort, pageable.Sort) {
 		t.Errorf("Expected Sort %+v, got %+v", pageable.Sort, result.Sort)
 	}
@@ -306,6 +317,7 @@ func TestPageJSONMarshaling(t *testing.T) {
 
 	// Unmarshal
 	var result Page[string]
+
 	err = json.Unmarshal(data, &result)
 	if err != nil {
 		t.Fatalf("Unmarshal error: %v", err)
@@ -315,15 +327,19 @@ func TestPageJSONMarshaling(t *testing.T) {
 	if result.Page != page.Page {
 		t.Errorf("Expected Page %d, got %d", page.Page, result.Page)
 	}
+
 	if result.Size != page.Size {
 		t.Errorf("Expected Size %d, got %d", page.Size, result.Size)
 	}
+
 	if result.Total != page.Total {
 		t.Errorf("Expected Total %d, got %d", page.Total, result.Total)
 	}
+
 	if len(result.Items) != len(page.Items) {
 		t.Errorf("Expected %d items, got %d", len(page.Items), len(result.Items))
 	}
+
 	for i, item := range page.Items {
 		if result.Items[i] != item {
 			t.Errorf("Expected item[%d] to be %s, got %s", i, item, result.Items[i])
@@ -357,6 +373,7 @@ func TestPageWithDifferentTypes(t *testing.T) {
 	if len(numberPage.Items) != 5 {
 		t.Errorf("Expected 5 numbers, got %d", len(numberPage.Items))
 	}
+
 	if numberPage.Items[0] != 1 {
 		t.Errorf("Expected first number to be 1, got %d", numberPage.Items[0])
 	}
@@ -386,9 +403,11 @@ func TestPaginationScenarios(t *testing.T) {
 		if !page.HasPrevious() {
 			t.Error("Expected page to have previous")
 		}
+
 		if !page.HasNext() {
 			t.Error("Expected page to have next")
 		}
+
 		if page.TotalPages() != 5 {
 			t.Errorf("Expected 5 total pages, got %d", page.TotalPages())
 		}
@@ -403,9 +422,11 @@ func TestPaginationScenarios(t *testing.T) {
 		if emptyPage.HasNext() {
 			t.Error("Empty page should not have next")
 		}
+
 		if emptyPage.HasPrevious() {
 			t.Error("Empty page should not have previous")
 		}
+
 		if emptyPage.TotalPages() != 0 {
 			t.Errorf("Empty page should have 0 total pages, got %d", emptyPage.TotalPages())
 		}
@@ -417,6 +438,7 @@ func TestPaginationScenarios(t *testing.T) {
 		if singlePage.HasNext() {
 			t.Error("Single item page should not have next")
 		}
+
 		if singlePage.TotalPages() != 1 {
 			t.Errorf("Single item page should have 1 total page, got %d", singlePage.TotalPages())
 		}

@@ -2,11 +2,16 @@ package crypto
 
 import (
 	"crypto/rand"
+	"encoding/asn1"
+	"encoding/pem"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tjfoc/gmsm/sm2"
+	"github.com/tjfoc/gmsm/x509"
+
+	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 func generateSM2KeyPair() (*sm2.PrivateKey, error) {
@@ -45,15 +50,68 @@ func TestSM2Cipher_Encrypt_Decrypt(t *testing.T) {
 }
 
 func TestSM2Cipher_FromPEM(t *testing.T) {
-	// Skip this test as SM2 PEM encoding is library-specific
-	// Users should use NewSM2 or NewSM2FromHex for now
-	t.Skip("SM2 PEM encoding is library-specific, use NewSM2 or NewSM2FromHex instead")
+	// Generate key pair using the same library used by the implementation
+	priv, err := generateSM2KeyPair()
+	require.NoError(t, err, "failed to generate SM2 key pair")
+
+	// Build raw SM2 private key DER matching x509.ParseSm2PrivateKey expectations
+	type sm2Priv struct {
+		Version       int
+		PrivateKey    []byte
+		NamedCurveOID asn1.ObjectIdentifier `asn1:"optional,explicit,tag:0"`
+		PublicKey     asn1.BitString        `asn1:"optional,explicit,tag:1"`
+	}
+	derPriv, err := asn1.Marshal(sm2Priv{Version: 1, PrivateKey: priv.D.Bytes()})
+	require.NoError(t, err, "failed to marshal raw SM2 private key")
+	// For public key, use library helper to ensure correct DER
+	derPub, err := x509.MarshalSm2PublicKey(&priv.PublicKey)
+	require.NoError(t, err, "failed to marshal SM2 public key")
+
+	// Wrap into PEM blocks
+	pemPriv := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: derPriv})
+	pemPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: derPub})
+
+	cipher, err := NewSM2FromPEM(pemPriv, pemPub)
+	require.NoError(t, err, "failed to create SM2 cipher from PEM")
+
+	// Verify encrypt/decrypt
+	plaintext := "PEM roundtrip message"
+	ciphertext, err := cipher.Encrypt(plaintext)
+	require.NoError(t, err, "encryption failed for PEM roundtrip")
+	decrypted, err := cipher.Decrypt(ciphertext)
+	require.NoError(t, err, "decryption failed for PEM roundtrip")
+	assert.Equal(t, plaintext, decrypted)
 }
 
 func TestSM2Cipher_FromHex(t *testing.T) {
-	// Skip this test as SM2 key marshaling is library-specific
-	// Users should use NewSM2 for direct key usage
-	t.Skip("SM2 key marshaling is library-specific, use NewSM2 instead")
+	// Generate key pair
+	priv, err := generateSM2KeyPair()
+	require.NoError(t, err, "failed to generate SM2 key pair")
+
+	// Build raw SM2 private key DER as above and convert to HEX
+	type sm2Priv struct {
+		Version       int
+		PrivateKey    []byte
+		NamedCurveOID asn1.ObjectIdentifier `asn1:"optional,explicit,tag:0"`
+		PublicKey     asn1.BitString        `asn1:"optional,explicit,tag:1"`
+	}
+	derPriv, err := asn1.Marshal(sm2Priv{Version: 1, PrivateKey: priv.D.Bytes()})
+	require.NoError(t, err, "failed to marshal raw SM2 private key")
+	derPub, err := x509.MarshalSm2PublicKey(&priv.PublicKey)
+	require.NoError(t, err, "failed to marshal SM2 public key")
+
+	hexPriv := encoding.ToHex(derPriv)
+	hexPub := encoding.ToHex(derPub)
+
+	cipher, err := NewSM2FromHex(hexPriv, hexPub)
+	require.NoError(t, err, "failed to create SM2 cipher from HEX")
+
+	plaintext := "HEX roundtrip message"
+	ciphertext, err := cipher.Encrypt(plaintext)
+	require.NoError(t, err, "encryption failed for HEX roundtrip")
+	decrypted, err := cipher.Decrypt(ciphertext)
+	require.NoError(t, err, "decryption failed for HEX roundtrip")
+	assert.Equal(t, plaintext, decrypted)
 }
 
 func TestSM2Cipher_PublicKeyOnly(t *testing.T) {

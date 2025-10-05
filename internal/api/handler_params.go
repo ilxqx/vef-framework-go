@@ -6,13 +6,14 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/validator"
-	"github.com/samber/lo"
 )
 
 var (
@@ -75,7 +76,7 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 		return buildFieldResolver(field, paramType), nil
 	}
 
-	return nil, fmt.Errorf("failed to resolve api handler parameter type: %s", paramType.String())
+	return nil, fmt.Errorf("%w: %s", ErrResolveParamType, paramType.String())
 }
 
 // findFieldInStruct searches for a field with the specified type in the target struct,
@@ -83,7 +84,7 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 // Search strategy (in order of priority):
 // 1. Direct fields (non-embedded) with matching types
 // 2. Fields with api:"params" tag (deep search into tagged structs)
-// 3. Embedded anonymous structs (traditional embedding)
+// 3. Embedded anonymous structs (traditional embedding).
 func findFieldInStruct(target reflect.Value, paramType reflect.Type) reflect.Value {
 	// Priority 1: Search direct fields first (non-recursive, non-embedded only)
 	if found := searchDirectFields(target, paramType); found.IsValid() {
@@ -103,7 +104,7 @@ func findFieldInStruct(target reflect.Value, paramType reflect.Type) reflect.Val
 	return reflect.Value{}
 }
 
-// searchDirectFields searches for direct (non-embedded) fields with matching types
+// searchDirectFields searches for direct (non-embedded) fields with matching types.
 func searchDirectFields(target reflect.Value, paramType reflect.Type) reflect.Value {
 	var foundField reflect.Value
 
@@ -112,17 +113,20 @@ func searchDirectFields(target reflect.Value, paramType reflect.Type) reflect.Va
 			// Only check direct (non-embedded) fields
 			if !field.Anonymous && reflectx.IsTypeCompatible(fieldValue.Type(), paramType) {
 				foundField = fieldValue
+
 				return reflectx.Stop
 			}
+
 			return reflectx.Continue
 		},
 	}
 
 	reflectx.Visit(target, visitor, reflectx.WithDisableRecursive())
+
 	return foundField
 }
 
-// searchTaggedFields searches recursively in fields with api:"params" tag
+// searchTaggedFields searches recursively in fields with api:"params" tag.
 func searchTaggedFields(target reflect.Value, paramType reflect.Type) reflect.Value {
 	var foundField reflect.Value
 
@@ -136,6 +140,7 @@ func searchTaggedFields(target reflect.Value, paramType reflect.Type) reflect.Va
 			// Check for matching type in any depth
 			if reflectx.IsTypeCompatible(fieldValue.Type(), paramType) {
 				foundField = fieldValue
+
 				return reflectx.Stop
 			}
 
@@ -145,10 +150,11 @@ func searchTaggedFields(target reflect.Value, paramType reflect.Type) reflect.Va
 
 	// Use dive tag to recurse into api:"params" tagged fields
 	reflectx.Visit(target, visitor, reflectx.WithDiveTag("api", "params"))
+
 	return foundField
 }
 
-// searchEmbeddedFields searches recursively in embedded anonymous structs
+// searchEmbeddedFields searches recursively in embedded anonymous structs.
 func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.Value {
 	var foundField reflect.Value
 
@@ -162,6 +168,7 @@ func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.
 			// Check for matching type
 			if reflectx.IsTypeCompatible(fieldValue.Type(), paramType) {
 				foundField = fieldValue
+
 				return reflectx.Stop
 			}
 
@@ -171,10 +178,11 @@ func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.
 
 	// Default recursive behavior will handle anonymous embedded fields
 	reflectx.Visit(target, visitor)
+
 	return foundField
 }
 
-// hasAPIInEmbedded checks if the given struct type embeds api.In
+// hasAPIInEmbedded checks if the given struct type embeds api.In.
 func hasAPIInEmbedded(t reflect.Type) bool {
 	t = reflectx.Indirect(t)
 	if t.Kind() != reflect.Struct {
@@ -184,6 +192,7 @@ func hasAPIInEmbedded(t reflect.Type) bool {
 	// We are going to do a breadth-first search of all embedded fields.
 	types := list.New()
 	types.PushBack(t)
+
 	for types.Len() > 0 {
 		t := types.Remove(types.Front()).(reflect.Type)
 
@@ -206,7 +215,7 @@ func hasAPIInEmbedded(t reflect.Type) bool {
 	return false
 }
 
-// buildParamsResolver constructs a parameter resolver for parameter structs that embed api.In
+// buildParamsResolver constructs a parameter resolver for parameter structs that embed api.In.
 func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 	t := reflectx.Indirect(paramType)
 
@@ -217,6 +226,7 @@ func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 		if err := unmarshalParams(request.Params, paramValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err
 		}
+
 		if err := validator.Validate(paramValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err
 		}
@@ -250,7 +260,7 @@ func buildFieldResolver(field reflect.Value, targetType reflect.Type) ParamResol
 	}
 }
 
-// hasWithLoggerMethod checks if the given type has a WithLogger method
+// hasWithLoggerMethod checks if the given type has a WithLogger method.
 func hasWithLoggerMethod(t reflect.Type) bool {
 	// First try to find method on the type itself
 	method, found := t.MethodByName(withLoggerMethod)
@@ -278,7 +288,7 @@ func hasWithLoggerMethod(t reflect.Type) bool {
 	return loggerType.AssignableTo(paramType)
 }
 
-// callWithLogger calls the WithLogger method on the value with the given logger
+// callWithLogger calls the WithLogger method on the value with the given logger.
 func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
 	method := reflectx.FindMethod(field, withLoggerMethod)
 	if method.IsValid() {
@@ -296,7 +306,7 @@ func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
 func unmarshalParams(params map[string]any, out any) error {
 	t := reflect.TypeOf(out)
 	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("the parameter of UnmarshalParams function must be a pointer to a struct, but got %s", t.Kind().String())
+		return fmt.Errorf("%w, but got %s", ErrUnmarshalParamsMustPointerStruct, t.Kind().String())
 	}
 
 	decoder, err := mapx.NewDecoder(out)

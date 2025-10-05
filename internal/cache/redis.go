@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/redis/go-redis/v9"
+
 	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/redis/go-redis/v9"
 )
 
 // redisStore implements the Store interface using Redis as the storage backend.
@@ -45,6 +46,7 @@ func (r *redisStore) Get(ctx context.Context, key string) ([]byte, bool) {
 		}
 
 		logger.Errorf("failed to get value for key %s: %v", key, err)
+
 		return nil, false
 	}
 
@@ -98,6 +100,7 @@ func (r *redisStore) Clear(ctx context.Context, prefix string) error {
 		if err != nil {
 			return fmt.Errorf("failed to flush database: %w", err)
 		}
+
 		return nil
 	}
 
@@ -140,6 +143,7 @@ func (r *redisStore) Keys(ctx context.Context, prefix string) ([]string, error) 
 
 	// Use SCAN for safe iteration
 	var keys []string
+
 	iter := r.client.Scan(ctx, 0, pattern, 0).Iterator()
 
 	for iter.Next(ctx) {
@@ -177,6 +181,7 @@ func (r *redisStore) ForEach(ctx context.Context, prefix string, callback func(k
 				// Key might have been deleted between scan and get, skip it
 				continue
 			}
+
 			return fmt.Errorf("failed to get value for key %s: %w", redisKey, err)
 		}
 
@@ -201,11 +206,13 @@ func (r *redisStore) Size(ctx context.Context, prefix string) (int64, error) {
 		if err != nil {
 			return 0, fmt.Errorf("failed to get database size: %w", err)
 		}
+
 		return size, nil
 	}
 
 	// With prefix, we need to count matching keys
 	pattern := prefix + constants.Asterisk
+
 	var count int64
 
 	iter := r.client.Scan(ctx, 0, pattern, 0).Iterator()
@@ -225,5 +232,6 @@ func (r *redisStore) Size(ctx context.Context, prefix string) (int64, error) {
 func (r *redisStore) Close(ctx context.Context) error {
 	// Redis client is managed by fx container, so we don't close it here
 	logger.Info("redis store closed (client remains managed by container)")
+
 	return nil
 }

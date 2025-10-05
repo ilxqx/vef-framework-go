@@ -43,8 +43,11 @@ func TestXidIdGenerator(t *testing.T) {
 
 	t.Run("should be thread-safe", func(t *testing.T) {
 		generator := NewXidIdGenerator()
-		const numGoroutines = 100
-		const idsPerGoroutine = 100
+
+		const (
+			numGoroutines   = 100
+			idsPerGoroutine = 100
+		)
 
 		idChan := make(chan string, numGoroutines*idsPerGoroutine)
 
@@ -59,6 +62,7 @@ func TestXidIdGenerator(t *testing.T) {
 
 		// Collect all IDs
 		ids := make(map[string]bool)
+
 		for range numGoroutines * idsPerGoroutine {
 			id := <-idChan
 			assert.False(t, ids[id], "Concurrent XID generation should produce unique IDs")

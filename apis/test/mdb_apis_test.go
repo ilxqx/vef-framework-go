@@ -5,26 +5,28 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dbfixture"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
-	"github.com/stretchr/testify/suite"
-	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dbfixture"
 )
 
 // MultiDatabaseAPIsTestSuite manages multiple database containers and runs API test suites against each.
 // This is the top-level test suite that orchestrates testing across PostgreSQL, MySQL, and SQLite.
 type MultiDatabaseAPIsTestSuite struct {
 	suite.Suite
+
 	ctx               context.Context
 	postgresContainer *testhelpers.PostgresContainer
 	mysqlContainer    *testhelpers.MySQLContainer
 }
 
-// SetupSuite initializes database containers
+// SetupSuite initializes database containers.
 func (suite *MultiDatabaseAPIsTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
@@ -35,27 +37,28 @@ func (suite *MultiDatabaseAPIsTestSuite) SetupSuite() {
 	suite.mysqlContainer = testhelpers.NewMySQLContainer(suite.ctx, &suite.Suite)
 }
 
-// TearDownSuite cleans up database containers
+// TearDownSuite cleans up database containers.
 func (suite *MultiDatabaseAPIsTestSuite) TearDownSuite() {
 	if suite.postgresContainer != nil {
 		suite.postgresContainer.Terminate(suite.ctx, &suite.Suite)
 	}
+
 	if suite.mysqlContainer != nil {
 		suite.mysqlContainer.Terminate(suite.ctx, &suite.Suite)
 	}
 }
 
-// TestPostgres runs all API tests against PostgreSQL
+// TestPostgres runs all API tests against PostgreSQL.
 func (suite *MultiDatabaseAPIsTestSuite) TestPostgres() {
 	suite.runAPITests(suite.postgresContainer.DsConfig)
 }
 
-// TestMySQL runs all API tests against MySQL
+// TestMySQL runs all API tests against MySQL.
 func (suite *MultiDatabaseAPIsTestSuite) TestMySQL() {
 	suite.runAPITests(suite.mysqlContainer.DsConfig)
 }
 
-// TestSQLite runs all API tests against SQLite (in-memory)
+// TestSQLite runs all API tests against SQLite (in-memory).
 func (suite *MultiDatabaseAPIsTestSuite) TestSQLite() {
 	// Create SQLite in-memory database config
 	dsConfig := &config.DatasourceConfig{
@@ -65,16 +68,18 @@ func (suite *MultiDatabaseAPIsTestSuite) TestSQLite() {
 	suite.runAPITests(dsConfig)
 }
 
-// runAPITests executes all API test suites on the given database configuration
+// runAPITests executes all API test suites on the given database configuration.
 func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceConfig) {
 	// Create database connection
 	db, err := database.New(dsConfig)
 	st.Require().NoError(err)
+
 	defer func() {
 		// Close the database connection after all tests are completed
 		if err := db.Close(); err != nil {
 			st.T().Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
 		}
+
 		st.T().Logf("All API tests completed for %s", dsConfig.Type)
 	}()
 
@@ -137,7 +142,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 		},
 	}
 
-	// Create Create Suite
+	// Create Suite
 	createSuite := &CreateTestSuite{
 		BaseSuite{
 			ctx:    st.ctx,
@@ -267,7 +272,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	})
 }
 
-// setupTestFixtures loads test data from fixture files using dbfixture
+// setupTestFixtures loads test data from fixture files using dbfixture.
 func (st *MultiDatabaseAPIsTestSuite) setupTestFixtures(db bun.IDB, dbType constants.DbType) {
 	st.T().Logf("Setting up test fixtures for %s", dbType)
 

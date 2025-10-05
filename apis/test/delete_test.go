@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserDeleteResource struct {
 	api.Resource
 	apis.DeleteAPI[TestUser]
@@ -22,7 +23,7 @@ func NewTestUserDeleteResource() api.Resource {
 	}
 }
 
-// Resource with PreDelete hook
+// Resource with PreDelete hook.
 type TestUserDeleteWithPreHookResource struct {
 	api.Resource
 	apis.DeleteAPI[TestUser]
@@ -38,12 +39,13 @@ func NewTestUserDeleteWithPreHookResource() api.Resource {
 				if model.Status == "active" {
 					ctx.Set("X-Delete-Warning", "Deleting active user")
 				}
+
 				return nil
 			}),
 	}
 }
 
-// Resource with PostDelete hook
+// Resource with PostDelete hook.
 type TestUserDeleteWithPostHookResource struct {
 	api.Resource
 	apis.DeleteAPI[TestUser]
@@ -57,17 +59,18 @@ func NewTestUserDeleteWithPostHookResource() api.Resource {
 			PostDelete(func(model *TestUser, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header after deletion
 				ctx.Set("X-Deleted-User-Id", model.Id)
+
 				return nil
 			}),
 	}
 }
 
-// DeleteTestSuite is the test suite for Delete API tests
+// DeleteTestSuite is the test suite for Delete API tests.
 type DeleteTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *DeleteTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserDeleteResource,
@@ -76,12 +79,12 @@ func (suite *DeleteTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *DeleteTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestDeleteBasic tests basic Delete functionality
+// TestDeleteBasic tests basic Delete functionality.
 func (suite *DeleteTestSuite) TestDeleteBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -100,7 +103,7 @@ func (suite *DeleteTestSuite) TestDeleteBasic() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestDeleteWithPreHook tests Delete with PreDelete hook
+// TestDeleteWithPreHook tests Delete with PreDelete hook.
 func (suite *DeleteTestSuite) TestDeleteWithPreHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -121,7 +124,7 @@ func (suite *DeleteTestSuite) TestDeleteWithPreHook() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestDeleteWithPostHook tests Delete with PostDelete hook
+// TestDeleteWithPostHook tests Delete with PostDelete hook.
 func (suite *DeleteTestSuite) TestDeleteWithPostHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -142,7 +145,7 @@ func (suite *DeleteTestSuite) TestDeleteWithPostHook() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestDeleteNegativeCases tests negative scenarios
+// TestDeleteNegativeCases tests negative scenarios.
 func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 	suite.Run("NonExistentUser", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -216,7 +219,7 @@ func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 	})
 }
 
-// TestDeleteRequiresPrimaryKey tests that delete requires primary key
+// TestDeleteRequiresPrimaryKey tests that delete requires primary key.
 func (suite *DeleteTestSuite) TestDeleteRequiresPrimaryKey() {
 	suite.Run("DeleteByEmailShouldFail", func() {
 		// DeleteAPI only supports deletion by primary key, not by other fields

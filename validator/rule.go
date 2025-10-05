@@ -7,14 +7,12 @@ import (
 	v "github.com/go-playground/validator/v10"
 )
 
-var (
-	// presetValidationRules contains all custom validation rules
-	presetValidationRules = []ValidationRule{
-		newPhoneNumberRule(), // Phone number validation rule
-		newDecimalMinRule(),  // Decimal minimum value validation rule
-		newDecimalMaxRule(),  // Decimal maximum value validation rule
-	}
-)
+// presetValidationRules contains all custom validation rules.
+var presetValidationRules = []ValidationRule{
+	newPhoneNumberRule(), // Phone number validation rule
+	newDecimalMinRule(),  // Decimal minimum value validation rule
+	newDecimalMaxRule(),  // Decimal maximum value validation rule
+}
 
 // ValidationRule defines a custom validation rule with translation support.
 type ValidationRule struct {
@@ -41,6 +39,7 @@ func (vr ValidationRule) register(validator *v.Validate) error {
 			msg, err := t.T(vr.RuleTag, vr.ParseParam(fe)...)
 			if err != nil {
 				logger.Errorf("Failed to translate %s: %v", vr.RuleTag, err)
+
 				return vr.ErrMessageTemplate // fallback to template
 			}
 

@@ -72,6 +72,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 func (t *Time) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == 'n' {
 		t.Valid = false
+
 		return nil
 	}
 
@@ -80,6 +81,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	}
 
 	t.Valid = true
+
 	return nil
 }
 
@@ -101,12 +103,16 @@ func (t *Time) UnmarshalText(text []byte) error {
 	// allowing "null" is for backwards compatibility with v3
 	if str == constants.Empty || str == constants.JSONNull {
 		t.Valid = false
+
 		return nil
 	}
+
 	if err := t.V.UnmarshalText(text); err != nil {
 		return fmt.Errorf("null: couldn't unmarshal text: %w", err)
 	}
+
 	t.Valid = true
+
 	return nil
 }
 

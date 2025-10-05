@@ -1,20 +1,22 @@
 package database
 
 import (
+	"context"
 	"database/sql"
+
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/schema"
+	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
-	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/schema"
-	"go.uber.org/fx"
 )
 
 var logger = log.Named("database")
 
-// newDb creates a new Db with lifecycle management
+// newDb creates a new Db with lifecycle management.
 func newDb(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err error) {
 	// Create database without validation and version logging
 	// These will be done in the StartHook
@@ -23,7 +25,7 @@ func newDb(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err er
 	}
 
 	if db, err = New(config, opts...); err != nil {
-		return
+		return db, err
 	}
 
 	// Get provider for StartHook validation
@@ -35,9 +37,9 @@ func newDb(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err er
 	// Register lifecycle hooks for proper startup and shutdown
 	lc.Append(
 		fx.StartStopHook(
-			func() error {
+			func(ctx context.Context) error {
 				// Validate connection
-				if err := db.DB.Ping(); err != nil {
+				if err := db.PingContext(ctx); err != nil {
 					return wrapPingError(provider.Type(), err)
 				}
 
@@ -47,16 +49,18 @@ func newDb(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err er
 				}
 
 				logger.Infof("Database client started successfully: %s", provider.Type())
+
 				return nil
 			},
 			func() error {
 				logger.Info("Closing database connection...")
+
 				return db.Close()
 			},
 		),
 	)
 
-	return
+	return db, err
 }
 
 // logDbVersion logs the version of the database using the provider's QueryVersion method.
@@ -67,10 +71,11 @@ func logDbVersion(provider DatabaseProvider, db *bun.DB, logger logPkg.Logger) e
 	}
 
 	logger.Infof("Database type: %s | Database version: %s", provider.Type(), version)
+
 	return nil
 }
 
-// setupBunDB creates and configures a bun.DB instance with the provided SQL database and dialect
+// setupBunDB creates and configures a bun.DB instance with the provided SQL database and dialect.
 func setupBunDB(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) *bun.DB {
 	db := bun.NewDB(sqlDb, dialect, opts.BunOptions...)
 
@@ -79,23 +84,25 @@ func setupBunDB(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) *b
 	}
 
 	db = db.WithNamedArg(constants.PlaceholderKeyOperator, constants.OperatorSystem)
+
 	return db
 }
 
-// configureConnectionPool applies connection pool configuration to the SQL database
+// configureConnectionPool applies connection pool configuration to the SQL database.
 func configureConnectionPool(sqlDb *sql.DB, opts *databaseOptions) {
 	if opts.PoolConfig != nil {
 		opts.PoolConfig.ApplyToDB(sqlDb)
 	}
 }
 
-// initializeDatabase performs the complete database initialization process
+// initializeDatabase performs the complete database initialization process.
 func initializeDatabase(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) (*bun.DB, error) {
 	// Setup bun.DB instance
 	db := setupBunDB(sqlDb, dialect, opts)
 
 	// Configure connection pool
 	configureConnectionPool(sqlDb, opts)
+
 	return db, nil
 }
 

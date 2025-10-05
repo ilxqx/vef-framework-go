@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/samber/lo"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 type DeleteTestSuite struct {
 	*ORMTestSuite
 }
 
-// TestBasicDelete tests basic DELETE functionality across all databases
+// TestBasicDelete tests basic DELETE functionality across all databases.
 func (suite *DeleteTestSuite) TestBasicDelete() {
 	suite.T().Logf("Testing basic DELETE for %s", suite.dbType)
 
@@ -37,6 +38,7 @@ func (suite *DeleteTestSuite) TestBasicDelete() {
 		Exec(suite.ctx)
 	suite.NoError(err)
 	suite.True(len(testUsers) == 2)
+
 	for _, user := range testUsers {
 		suite.NotEmpty(user.Id, "Each test user should have ID after insert")
 	}
@@ -57,6 +59,7 @@ func (suite *DeleteTestSuite) TestBasicDelete() {
 
 	// Verify the user was deleted
 	var deletedUser User
+
 	err = suite.db.NewSelect().
 		Model(&deletedUser).
 		Where(func(cb ConditionBuilder) {
@@ -106,6 +109,7 @@ func (suite *DeleteTestSuite) TestBasicDelete() {
 
 	// Verify bulk deletion
 	var remainingBulkUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&remainingBulkUsers).
 		Where(func(cb ConditionBuilder) {
@@ -126,7 +130,7 @@ func (suite *DeleteTestSuite) TestBasicDelete() {
 	suite.NoError(err)
 }
 
-// TestDeleteWithConditions tests DELETE with various WHERE conditions
+// TestDeleteWithConditions tests DELETE with various WHERE conditions.
 func (suite *DeleteTestSuite) TestDeleteWithConditions() {
 	suite.T().Logf("Testing DELETE with conditions for %s", suite.dbType)
 
@@ -174,6 +178,7 @@ func (suite *DeleteTestSuite) TestDeleteWithConditions() {
 
 	// Verify simple condition deletion (should delete 2 draft posts)
 	var remainingTestPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&remainingTestPosts).
 		Where(func(cb ConditionBuilder) {
@@ -207,6 +212,7 @@ func (suite *DeleteTestSuite) TestDeleteWithConditions() {
 
 	// Verify complex condition deletion
 	var complexRemaining []Post
+
 	err = suite.db.NewSelect().
 		Model(&complexRemaining).
 		Where(func(cb ConditionBuilder) {
@@ -253,7 +259,7 @@ func (suite *DeleteTestSuite) TestDeleteWithConditions() {
 	suite.NoError(err)
 }
 
-// TestDeleteWithJoins tests DELETE with subqueries (simulating JOINs)
+// TestDeleteWithJoins tests DELETE with subqueries (simulating JOINs).
 func (suite *DeleteTestSuite) TestDeleteWithJoins() {
 	suite.T().Logf("Testing DELETE with JOINs (subqueries) for %s", suite.dbType)
 
@@ -297,6 +303,7 @@ func (suite *DeleteTestSuite) TestDeleteWithJoins() {
 
 	// Verify subquery-based deletion
 	var remainingJoinPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&remainingJoinPosts).
 		Where(func(cb ConditionBuilder) {
@@ -346,6 +353,7 @@ func (suite *DeleteTestSuite) TestDeleteWithJoins() {
 
 	// Verify complex subquery deletion
 	var activeUserPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&activeUserPosts).
 		Where(func(cb ConditionBuilder) {
@@ -374,7 +382,7 @@ func (suite *DeleteTestSuite) TestDeleteWithJoins() {
 	suite.NoError(err)
 }
 
-// TestDeleteWithReturning tests DELETE with RETURNING clause
+// TestDeleteWithReturning tests DELETE with RETURNING clause.
 func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 	suite.T().Logf("Testing DELETE with RETURNING for %s", suite.dbType)
 
@@ -404,6 +412,7 @@ func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 	}
 
 	var returnedUser DeleteResult
+
 	err = suite.db.NewDelete().
 		Model((*User)(nil)).
 		Where(func(cb ConditionBuilder) {
@@ -420,6 +429,7 @@ func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 
 	// Verify the user was actually deleted
 	var deletedUser User
+
 	err = suite.db.NewSelect().
 		Model(&deletedUser).
 		Where(func(cb ConditionBuilder) {
@@ -440,6 +450,7 @@ func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 	suite.NoError(err)
 
 	var returnedUsers []DeleteResult
+
 	err = suite.db.NewDelete().
 		Model((*User)(nil)).
 		Where(func(cb ConditionBuilder) {
@@ -452,6 +463,7 @@ func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 
 	// Verify all were deleted
 	var remainingMultiUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&remainingMultiUsers).
 		Where(func(cb ConditionBuilder) {
@@ -462,7 +474,7 @@ func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 	suite.Len(remainingMultiUsers, 0, "No multi users should remain")
 }
 
-// TestDeleteCascade tests cascading delete operations
+// TestDeleteCascade tests cascading delete operations.
 func (suite *DeleteTestSuite) TestDeleteCascade() {
 	suite.T().Logf("Testing cascade DELETE for %s", suite.dbType)
 
@@ -510,6 +522,7 @@ func (suite *DeleteTestSuite) TestDeleteCascade() {
 
 	// Verify posts were deleted
 	var userPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&userPosts).
 		Where(func(cb ConditionBuilder) {
@@ -530,6 +543,7 @@ func (suite *DeleteTestSuite) TestDeleteCascade() {
 
 	// Verify user was deleted
 	var deletedUser User
+
 	err = suite.db.NewSelect().
 		Model(&deletedUser).
 		Where(func(cb ConditionBuilder) {
@@ -548,7 +562,7 @@ func (suite *DeleteTestSuite) TestDeleteCascade() {
 	suite.NoError(err)
 }
 
-// TestDeleteErrorHandling tests error handling in delete operations
+// TestDeleteErrorHandling tests error handling in delete operations.
 func (suite *DeleteTestSuite) TestDeleteErrorHandling() {
 	suite.T().Logf("Testing DELETE error handling for %s", suite.dbType)
 
@@ -592,6 +606,7 @@ func (suite *DeleteTestSuite) TestDeleteErrorHandling() {
 
 	// Verify all test records were deleted
 	var remainingSimple []SimpleModel
+
 	err = suite.db.NewSelect().
 		Model(&remainingSimple).
 		Where(func(cb ConditionBuilder) {
@@ -611,7 +626,7 @@ func (suite *DeleteTestSuite) TestDeleteErrorHandling() {
 	suite.Error(err, "DELETE with invalid field should error")
 }
 
-// TestDeleteComplexConditions tests DELETE with complex conditions
+// TestDeleteComplexConditions tests DELETE with complex conditions.
 func (suite *DeleteTestSuite) TestDeleteComplexConditions() {
 	suite.T().Logf("Testing DELETE with complex conditions for %s", suite.dbType)
 
@@ -643,6 +658,7 @@ func (suite *DeleteTestSuite) TestDeleteComplexConditions() {
 	// Should delete: published posts with (view_count < 100 OR user_id = user2)
 	// This means: Complex 2 (published, view=50) and Complex 3 (published, user2, view=150)
 	var remainingComplex []Post
+
 	err = suite.db.NewSelect().
 		Model(&remainingComplex).
 		Where(func(cb ConditionBuilder) {
@@ -657,6 +673,7 @@ func (suite *DeleteTestSuite) TestDeleteComplexConditions() {
 	for _, post := range remainingComplex {
 		statusCount[post.Status]++
 	}
+
 	suite.Equal(1, statusCount["draft"], "Should have 1 draft post")
 	suite.Equal(1, statusCount["review"], "Should have 1 review post")
 
@@ -706,6 +723,7 @@ func (suite *DeleteTestSuite) TestDeleteComplexConditions() {
 
 	// Verify BETWEEN deletion
 	var betweenRemaining []Post
+
 	err = suite.db.NewSelect().
 		Model(&betweenRemaining).
 		Where(func(cb ConditionBuilder) {
@@ -731,12 +749,13 @@ func (suite *DeleteTestSuite) TestDeleteComplexConditions() {
 	suite.NoError(err)
 }
 
-// TestDeletePerformance tests delete performance with larger datasets
+// TestDeletePerformance tests delete performance with larger datasets.
 func (suite *DeleteTestSuite) TestDeletePerformance() {
 	suite.T().Logf("Testing DELETE performance for %s", suite.dbType)
 
 	// Create a batch of test records for performance testing
 	batchSize := 100
+
 	performanceUsers := make([]*User, batchSize)
 	for i := range batchSize {
 		performanceUsers[i] = &User{
@@ -752,6 +771,7 @@ func (suite *DeleteTestSuite) TestDeletePerformance() {
 		Model(&performanceUsers).
 		Exec(suite.ctx)
 	suite.NoError(err)
+
 	insertDuration := time.Since(start)
 	suite.T().Logf("Inserted %d users in %v", batchSize, insertDuration)
 
@@ -764,6 +784,7 @@ func (suite *DeleteTestSuite) TestDeletePerformance() {
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
+
 	deleteDuration := time.Since(start)
 
 	rowsAffected, err := result.RowsAffected()
@@ -774,6 +795,7 @@ func (suite *DeleteTestSuite) TestDeletePerformance() {
 
 	// Verify all performance test users were deleted
 	var remainingPerfUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&remainingPerfUsers).
 		Where(func(cb ConditionBuilder) {

@@ -8,10 +8,11 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/etag"
 	"github.com/gofiber/fiber/v3/middleware/helmet"
 	"github.com/gofiber/fiber/v3/middleware/static"
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/middleware"
-	"github.com/samber/lo"
 )
 
 type spaMiddleware struct {
@@ -37,6 +38,7 @@ func (s *spaMiddleware) Apply(router fiber.Router) {
 			for _, config := range s.configs {
 				if strings.HasPrefix(path, config.Path) {
 					ctx.Path(config.Path)
+
 					return ctx.RestartRouting()
 				}
 			}
@@ -82,6 +84,7 @@ func applySPA(router fiber.Router, config *middleware.SPAConfig) {
 		Compress:      true,
 		NotFoundHandler: func(ctx fiber.Ctx) error {
 			ctx.Path(lo.Ternary(config.Path == constants.Empty, constants.Slash, config.Path))
+
 			return ctx.RestartRouting()
 		},
 	}))

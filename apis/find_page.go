@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mold"
@@ -36,6 +37,7 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
 		var models []TModel
+
 		query := a.BuildQuery(db, (*TModel)(nil), search, ctx)
 
 		// Normalize pagination parameters
@@ -77,6 +79,7 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 			for i := range modelsValue.Len() {
 				items[i] = modelsValue.Index(i).Interface()
 			}
+
 			return result.Ok(page.New(pageable, total, items)).Response(ctx)
 		}
 

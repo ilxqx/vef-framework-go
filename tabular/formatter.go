@@ -1,14 +1,15 @@
-package excel
+package tabular
 
 import (
 	"fmt"
 	"reflect"
 	"time"
 
+	"github.com/spf13/cast"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/spf13/cast"
 )
 
 // defaultFormatter is the built-in formatter that handles common Go types.
@@ -30,51 +31,70 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Int16:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Int32:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Float:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Bool:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Byte:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.DateTime:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Date:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Time:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Decimal:
 		if !v.Valid {
 			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
 	}
 
@@ -84,6 +104,7 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 		if rv.IsNil() {
 			return constants.Empty, nil
 		}
+
 		value = rv.Elem().Interface()
 	}
 
@@ -110,7 +131,7 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 	return cast.ToStringE(value)
 }
 
-// newDefaultFormatter creates a default formatter with optional format template.
-func newDefaultFormatter(format string) Formatter {
+// NewDefaultFormatter creates a default formatter with optional format template.
+func NewDefaultFormatter(format string) *defaultFormatter {
 	return &defaultFormatter{format: format}
 }

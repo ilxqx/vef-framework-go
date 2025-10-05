@@ -26,6 +26,7 @@ func newQueryConditionBuilder(builder bun.QueryBuilder, qb QueryBuilder) *QueryC
 					sep,
 					func(builder bun.QueryBuilder) bun.QueryBuilder {
 						cb(newQueryConditionBuilder(builder, qb))
+
 						return builder
 					},
 				)

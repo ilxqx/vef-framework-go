@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// TestNode represents a simple node structure for testing
+// TestNode represents a simple node structure for testing.
 type TestNode struct {
 	Id       string     `json:"id"`       // unique identifier
 	ParentId string     `json:"parentId"` // parent identifier
@@ -17,7 +18,7 @@ type TestNode struct {
 	Children []TestNode `json:"children"` // children nodes
 }
 
-// TestCategory represents a category structure for testing
+// TestCategory represents a category structure for testing.
 type TestCategory struct {
 	CategoryId    string         `json:"categoryId"`    // unique identifier
 	ParentCatId   string         `json:"parentCatId"`   // parent identifier
@@ -26,7 +27,7 @@ type TestCategory struct {
 	Level         int            `json:"level"`         // category level
 }
 
-// createTestNodeAdapter creates a TreeAdapter for TestNode
+// createTestNodeAdapter creates a TreeAdapter for TestNode.
 func createTestNodeAdapter() Adapter[TestNode] {
 	return Adapter[TestNode]{
 		GetId:       func(node TestNode) string { return node.Id },
@@ -36,7 +37,7 @@ func createTestNodeAdapter() Adapter[TestNode] {
 	}
 }
 
-// createTestCategoryAdapter creates a TreeAdapter for TestCategory
+// createTestCategoryAdapter creates a TreeAdapter for TestCategory.
 func createTestCategoryAdapter() Adapter[TestCategory] {
 	return Adapter[TestCategory]{
 		GetId:       func(cat TestCategory) string { return cat.CategoryId },
@@ -46,7 +47,7 @@ func createTestCategoryAdapter() Adapter[TestCategory] {
 	}
 }
 
-// createTestNodes creates a set of test nodes for testing
+// createTestNodes creates a set of test nodes for testing.
 func createTestNodes() []TestNode {
 	return []TestNode{
 		{Id: "1", ParentId: constants.Empty, Name: "Root 1"},
@@ -60,7 +61,7 @@ func createTestNodes() []TestNode {
 	}
 }
 
-// createComplexTestNodes creates a more complex set of test nodes
+// createComplexTestNodes creates a more complex set of test nodes.
 func createComplexTestNodes() []TestNode {
 	return []TestNode{
 		{Id: "root1", ParentId: constants.Empty, Name: "Root 1"},
@@ -98,6 +99,7 @@ func TestBuild(t *testing.T) {
 		// Check children
 		child1 := root.Children[0]
 		child2 := root.Children[1]
+
 		assert.Equal(t, "2", child1.Id)
 		assert.Equal(t, "3", child2.Id)
 		assert.Len(t, child1.Children, 0)
@@ -113,6 +115,7 @@ func TestBuild(t *testing.T) {
 
 		// Find roots by ID
 		var root1, root2, orphan *TestNode
+
 		for i := range result {
 			switch result[i].Id {
 			case "1":
@@ -150,12 +153,15 @@ func TestBuild(t *testing.T) {
 
 		// Find root1
 		var root1 *TestNode
+
 		for i := range result {
 			if result[i].Id == "root1" {
 				root1 = &result[i]
+
 				break
 			}
 		}
+
 		require.NotNil(t, root1)
 
 		// Check structure: root1 -> {a, b}
@@ -163,12 +169,15 @@ func TestBuild(t *testing.T) {
 
 		// Find child 'a'
 		var childA *TestNode
+
 		for i := range root1.Children {
 			if root1.Children[i].Id == "a" {
 				childA = &root1.Children[i]
+
 				break
 			}
 		}
+
 		require.NotNil(t, childA)
 
 		// Check structure: a -> {c, d}
@@ -176,12 +185,15 @@ func TestBuild(t *testing.T) {
 
 		// Find child 'c'
 		var childC *TestNode
+
 		for i := range childA.Children {
 			if childA.Children[i].Id == "c" {
 				childC = &childA.Children[i]
+
 				break
 			}
 		}
+
 		require.NotNil(t, childC)
 
 		// Check structure: c -> {f, g}
@@ -226,12 +238,15 @@ func TestBuild(t *testing.T) {
 
 		// Find the valid node
 		var validNode *TestNode
+
 		for i := range result {
 			if result[i].Id == "1" {
 				validNode = &result[i]
+
 				break
 			}
 		}
+
 		require.NotNil(t, validNode)
 		assert.Equal(t, "Valid", validNode.Name)
 	})
@@ -287,12 +302,15 @@ func TestBuild(t *testing.T) {
 
 		// Find software category
 		var software *TestCategory
+
 		for i := range tech.SubCategories {
 			if tech.SubCategories[i].CategoryId == "software" {
 				software = &tech.SubCategories[i]
+
 				break
 			}
 		}
+
 		require.NotNil(t, software)
 		assert.Len(t, software.SubCategories, 1)
 		assert.Equal(t, "ai", software.SubCategories[0].CategoryId)
@@ -631,6 +649,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 	t.Run("large tree performance", func(t *testing.T) {
 		// Create a large flat list to test performance
 		const nodeCount = 1000
+
 		nodes := make([]TestNode, nodeCount)
 
 		// Create a single root with many children
@@ -654,6 +673,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 	t.Run("deep nesting performance", func(t *testing.T) {
 		// Create a deeply nested tree
 		const depth = 100
+
 		nodes := make([]TestNode, depth)
 
 		// Create a chain: 0 -> 1 -> 2 -> ... -> depth-1
@@ -674,10 +694,12 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		// Traverse to verify depth
 		current := result[0]
 		depth_count := 1
+
 		for len(current.Children) > 0 {
 			current = current.Children[0]
 			depth_count++
 		}
+
 		assert.Equal(t, depth, depth_count)
 	})
 
@@ -699,12 +721,15 @@ func TestAdapter_EdgeCases(t *testing.T) {
 
 		// Find the email child
 		var emailChild *TestNode
+
 		for i := range root.Children {
 			if root.Children[i].Id == "child@domain.com" {
 				emailChild = &root.Children[i]
+
 				break
 			}
 		}
+
 		require.NotNil(t, emailChild)
 		assert.Len(t, emailChild.Children, 1)
 		assert.Equal(t, "unicode_测试_🌟", emailChild.Children[0].Id)
@@ -719,8 +744,8 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		// Run multiple goroutines that read from the tree
 		done := make(chan bool, 10)
 
-		for i := range 10 {
-			go func(id int) {
+		for range 10 {
+			go func() {
 				defer func() { done <- true }()
 
 				// Perform various read operations
@@ -735,7 +760,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 						_ = child.Name
 					}
 				}
-			}(i)
+			}()
 		}
 
 		// Wait for all goroutines to complete
@@ -776,10 +801,12 @@ func TestAdapter_BenchmarkScenarios(t *testing.T) {
 	t.Run("compares Build efficiency vs naive approach", func(t *testing.T) {
 		// Create a reasonably sized test case
 		const nodeCount = 100
+
 		nodes := make([]TestNode, nodeCount)
 
 		// Create a balanced tree structure
 		nodes[0] = TestNode{Id: "root", ParentId: constants.Empty, Name: "Root"}
+
 		for i := 1; i < nodeCount; i++ {
 			parentIndex := (i - 1) / 3 // Each node has up to 3 children
 			nodes[i] = TestNode{
@@ -804,11 +831,13 @@ func TestAdapter_BenchmarkScenarios(t *testing.T) {
 
 		// Count total nodes in tree
 		var countNodes func([]TestNode) int
+
 		countNodes = func(nodes []TestNode) int {
 			count := len(nodes)
 			for _, node := range nodes {
 				count += countNodes(node.Children)
 			}
+
 			return count
 		}
 

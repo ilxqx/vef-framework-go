@@ -9,6 +9,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/guregu/null/v6"
+	"github.com/stretchr/testify/suite"
+	"github.com/uptrace/bun"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
@@ -18,72 +22,70 @@ import (
 	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/stretchr/testify/suite"
-	"github.com/uptrace/bun"
-	"go.uber.org/fx"
 )
 
-// TestUser is a test model for all tests
+// TestUser is a test model for all tests.
 type TestUser struct {
 	bun.BaseModel `bun:"table:test_user,alias:tu"`
 	orm.Model     `bun:"extend"`
 
-	Name        string `json:"name" bun:",notnull"`
-	Email       string `json:"email" bun:",unique,notnull"`
+	Name        string `json:"name"        bun:",notnull"`
+	Email       string `json:"email"       bun:",unique,notnull"`
 	Description string `json:"description"`
-	Age         int    `json:"age" bun:",notnull"`
-	Status      string `json:"status" bun:",notnull,default:'active'"`
+	Age         int    `json:"age"         bun:",notnull"`
+	Status      string `json:"status"      bun:",notnull,default:'active'"`
 }
 
-// TestUserSearch is the search parameters for TestUser
+// TestUserSearch is the search parameters for TestUser.
 type TestUserSearch struct {
 	api.In
 
-	Id      null.String `json:"id" search:"eq"`
+	Id      null.String `json:"id"      search:"eq"`
 	Keyword null.String `json:"keyword" search:"contains,column=name|description"`
-	Email   null.String `json:"email" search:"eq"`
-	Status  null.String `json:"status" search:"eq"`
-	Age     []int       `json:"age" search:"between"`
+	Email   null.String `json:"email"   search:"eq"`
+	Status  null.String `json:"status"  search:"eq"`
+	Age     []int       `json:"age"     search:"between"`
 }
 
-// TestCategory is a test model for tree-based tests
+// TestCategory is a test model for tree-based tests.
 type TestCategory struct {
 	bun.BaseModel `bun:"table:test_category,alias:tc"`
 	orm.Model     `bun:"extend"`
 
-	Name        string  `json:"name" bun:",notnull"`
-	Code        string  `json:"code" bun:",unique,notnull"`
+	Name        string  `json:"name"               bun:",notnull"`
+	Code        string  `json:"code"               bun:",unique,notnull"`
 	Description string  `json:"description"`
 	ParentId    *string `json:"parentId"`
-	Sort        int     `json:"sort" bun:",notnull,default:0"`
+	Sort        int     `json:"sort"               bun:",notnull,default:0"`
 	Children    any     `json:"children,omitempty" bun:"-"`
 }
 
-// TestCategorySearch is the search parameters for TestCategory
+// TestCategorySearch is the search parameters for TestCategory.
 type TestCategorySearch struct {
 	api.In
 
-	Id       null.String `json:"id" search:"eq"`
-	Keyword  null.String `json:"keyword" search:"contains,column=name|description"`
-	Code     null.String `json:"code" search:"eq"`
+	Id       null.String `json:"id"       search:"eq"`
+	Keyword  null.String `json:"keyword"  search:"contains,column=name|description"`
+	Code     null.String `json:"code"     search:"eq"`
 	ParentId null.String `json:"parentId" search:"eq"`
 }
 
-// TestCompositePKItem is a test model with composite primary keys
+// TestCompositePKItem is a test model with composite primary keys.
 type TestCompositePKItem struct {
 	bun.BaseModel `bun:"table:test_composite_pk_item,alias:tcpi"`
 
-	TenantId  string `json:"tenantId" bun:",pk,notnull"`
-	ItemCode  string `json:"itemCode" bun:",pk,notnull"`
-	Name      string `json:"name" bun:",notnull"`
-	Quantity  int    `json:"quantity" bun:",notnull,default:0"`
-	Status    string `json:"status" bun:",notnull,default:'active'"`
+	TenantId  string `json:"tenantId"  bun:",pk,notnull"`
+	ItemCode  string `json:"itemCode"  bun:",pk,notnull"`
+	Name      string `json:"name"      bun:",notnull"`
+	Quantity  int    `json:"quantity"  bun:",notnull,default:0"`
+	Status    string `json:"status"    bun:",notnull,default:'active'"`
 	CreatedAt string `json:"createdAt" bun:",notnull"`
 	CreatedBy string `json:"createdBy" bun:",notnull"`
 }
 
 type BaseSuite struct {
 	suite.Suite
+
 	ctx    context.Context
 	app    *app.App
 	stop   func()
@@ -134,25 +136,35 @@ func (suite *BaseSuite) makeAPIRequest(body api.Request) *http.Response {
 
 	resp, err := suite.app.Test(req)
 	suite.Require().NoError(err)
+
 	return resp
 }
 
 func (suite *BaseSuite) readBody(resp *http.Response) result.Result {
 	body, err := io.ReadAll(resp.Body)
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			suite.T().Errorf("failed to close response body: %v", closeErr)
+		}
+	}()
+
 	suite.Require().NoError(err)
 	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err)
+
 	return *res
 }
 
 func (suite *BaseSuite) readDataAsSlice(data any) []any {
 	slice, ok := data.([]any)
 	suite.Require().True(ok, "Expected data to be a slice")
+
 	return slice
 }
 
 func (suite *BaseSuite) readDataAsMap(data any) map[string]any {
 	m, ok := data.(map[string]any)
 	suite.Require().True(ok, "Expected data to be a map")
+
 	return m
 }

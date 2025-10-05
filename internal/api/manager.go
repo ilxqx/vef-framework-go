@@ -2,9 +2,10 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v3/middleware/timeout"
+	"github.com/puzpuzpuz/xsync/v4"
+
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/puzpuzpuz/xsync/v4"
 )
 
 // apiManager implements the Manager interface using xsync.Map for thread-safe operations.
@@ -38,8 +39,10 @@ func (m *apiManager) List() []*apiPkg.Definition {
 	var definitions []*apiPkg.Definition
 	m.apis.Range(func(key apiPkg.Identifier, value *apiPkg.Definition) bool {
 		definitions = append(definitions, value)
+
 		return true
 	})
+
 	return definitions
 }
 
@@ -63,11 +66,13 @@ func NewManager(resources []apiPkg.Resource, db orm.Db, paramResolver *HandlerPa
 	manager := &apiManager{
 		apis: xsync.NewMap[apiPkg.Identifier, *apiPkg.Definition](),
 	}
+
 	definition, err := parse(resources, db, paramResolver)
 	if err != nil {
 		return nil, err
 	}
 
 	definition.Register(manager)
+
 	return manager, nil
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // createTestScheduler creates a gocron.Scheduler instance for testing
-// Similar to the production configuration but simplified for tests
+// Similar to the production configuration but simplified for tests.
 func createTestScheduler() (gocron.Scheduler, error) {
 	return gocron.NewScheduler(
 		gocron.WithLocation(time.Local),
@@ -23,7 +23,12 @@ func createTestScheduler() (gocron.Scheduler, error) {
 func TestNewScheduler(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 	assert.NotNil(t, scheduler)
@@ -32,11 +37,17 @@ func TestNewScheduler(t *testing.T) {
 func TestScheduler_NewJob_OneTime(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed int32
+
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
 	}
@@ -65,11 +76,17 @@ func TestScheduler_NewJob_OneTime(t *testing.T) {
 func TestScheduler_NewJob_Duration(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed int32
+
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
 	}
@@ -98,11 +115,17 @@ func TestScheduler_NewJob_Duration(t *testing.T) {
 func TestScheduler_NewJob_Cron(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed int32
+
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
 	}
@@ -131,11 +154,17 @@ func TestScheduler_NewJob_Cron(t *testing.T) {
 func TestScheduler_NewJob_DurationRandom(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed int32
+
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
 	}
@@ -166,7 +195,12 @@ func TestScheduler_NewJob_DurationRandom(t *testing.T) {
 func TestScheduler_Jobs(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
@@ -192,7 +226,12 @@ func TestScheduler_Jobs(t *testing.T) {
 func TestScheduler_RemoveJob(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
@@ -221,7 +260,12 @@ func TestScheduler_RemoveJob(t *testing.T) {
 func TestScheduler_RemoveByTags(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
@@ -267,11 +311,17 @@ func TestScheduler_RemoveByTags(t *testing.T) {
 func TestScheduler_UpdateJob(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed1, executed2 int32
+
 	testFunc1 := func() {
 		atomic.AddInt32(&executed1, 1)
 	}
@@ -287,6 +337,7 @@ func TestScheduler_UpdateJob(t *testing.T) {
 
 	job, err := scheduler.NewJob(jobDef1)
 	require.NoError(t, err)
+
 	originalID := job.Id()
 
 	// Update with new definition
@@ -311,17 +362,23 @@ func TestScheduler_UpdateJob(t *testing.T) {
 func TestScheduler_WithContext(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed int32
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	testFunc := func(jobCtx context.Context) {
 		select {
 		case <-jobCtx.Done():
-			// Context was cancelled
+			// Context was canceled
 			return
 		case <-time.After(100 * time.Millisecond):
 			atomic.AddInt32(&executed, 1)
@@ -353,11 +410,17 @@ func TestScheduler_WithContext(t *testing.T) {
 func TestScheduler_StopJobs(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed int32
+
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
 	}
@@ -384,6 +447,7 @@ func TestScheduler_StopJobs(t *testing.T) {
 
 	// Wait and verify no more executions
 	time.Sleep(150 * time.Millisecond)
+
 	finalExecuted := atomic.LoadInt32(&executed)
 
 	assert.Equal(t, executedAfterStop, finalExecuted, "Jobs should not execute after being stopped")
@@ -392,11 +456,17 @@ func TestScheduler_StopJobs(t *testing.T) {
 func TestJob_RunNow(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 
 	var executed int32
+
 	testFunc := func() {
 		atomic.AddInt32(&executed, 1)
 	}
@@ -428,7 +498,12 @@ func TestJob_RunNow(t *testing.T) {
 func TestJob_NextRuns(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
 	require.NoError(t, err)
-	defer gocronScheduler.Shutdown()
+
+	defer func() {
+		if err := gocronScheduler.Shutdown(); err != nil {
+			t.Errorf("Failed to shutdown gocron scheduler: %v", err)
+		}
+	}()
 
 	scheduler := NewScheduler(gocronScheduler)
 

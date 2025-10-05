@@ -5,21 +5,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
-	"github.com/redis/go-redis/v9"
-	"github.com/stretchr/testify/suite"
 )
 
-// RedisTestSuite is the test suite for redis package
+// RedisTestSuite is the test suite for redis package.
 type RedisTestSuite struct {
 	suite.Suite
+
 	ctx            context.Context
 	redisContainer *testhelpers.RedisContainer
 }
 
-// SetupSuite runs before all tests in the suite
+// SetupSuite runs before all tests in the suite.
 func (suite *RedisTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
@@ -27,14 +29,14 @@ func (suite *RedisTestSuite) SetupSuite() {
 	suite.redisContainer = testhelpers.NewRedisContainer(suite.ctx, &suite.Suite)
 }
 
-// TearDownSuite runs after all tests in the suite
+// TearDownSuite runs after all tests in the suite.
 func (suite *RedisTestSuite) TearDownSuite() {
 	if suite.redisContainer != nil {
 		suite.redisContainer.Terminate(suite.ctx, &suite.Suite)
 	}
 }
 
-// TestNewClient tests Redis client creation with default configuration
+// TestNewClient tests Redis client creation with default configuration.
 func (suite *RedisTestSuite) TestNewClient() {
 	config := &config.RedisConfig{
 		Host:     "127.0.0.1",
@@ -65,7 +67,7 @@ func (suite *RedisTestSuite) TestNewClient() {
 	suite.T().Logf("Redis client created with pool size: %d", options.PoolSize)
 }
 
-// TestNewClientWithCustomConfig tests Redis client with custom configuration
+// TestNewClientWithCustomConfig tests Redis client with custom configuration.
 func (suite *RedisTestSuite) TestNewClientWithCustomConfig() {
 	config := &config.RedisConfig{
 		Host:     "custom-host",
@@ -88,7 +90,7 @@ func (suite *RedisTestSuite) TestNewClientWithCustomConfig() {
 	suite.Equal("tcp", options.Network)
 }
 
-// TestRedisConnection tests actual Redis connection using testcontainers
+// TestRedisConnection tests actual Redis connection using testcontainers.
 func (suite *RedisTestSuite) TestRedisConnection() {
 	// Use the pre-configured Redis container
 	config := suite.redisContainer.RdsConfig
@@ -109,7 +111,7 @@ func (suite *RedisTestSuite) TestRedisConnection() {
 	suite.Require().NoError(client.Close())
 }
 
-// TestHealthCheck tests the health check functionality
+// TestHealthCheck tests the health check functionality.
 func (suite *RedisTestSuite) TestHealthCheck() {
 	// Use the pre-configured Redis container
 	config := suite.redisContainer.RdsConfig
@@ -125,7 +127,7 @@ func (suite *RedisTestSuite) TestHealthCheck() {
 	suite.Require().NoError(client.Close())
 }
 
-// TestHealthCheckFailure tests health check with invalid configuration
+// TestHealthCheckFailure tests health check with invalid configuration.
 func (suite *RedisTestSuite) TestHealthCheckFailure() {
 	config := &config.RedisConfig{
 		Host:     "invalid-host",
@@ -144,7 +146,7 @@ func (suite *RedisTestSuite) TestHealthCheckFailure() {
 	suite.Require().NoError(client.Close())
 }
 
-// TestBuildRedisAddr tests the Redis address building function
+// TestBuildRedisAddr tests the Redis address building function.
 func (suite *RedisTestSuite) TestBuildRedisAddr() {
 	tests := []struct {
 		name     string
@@ -193,7 +195,7 @@ func (suite *RedisTestSuite) TestBuildRedisAddr() {
 	}
 }
 
-// TestGetPoolSize tests the pool size calculation
+// TestGetPoolSize tests the pool size calculation.
 func (suite *RedisTestSuite) TestGetPoolSize() {
 	poolSize := getPoolSize()
 
@@ -204,7 +206,7 @@ func (suite *RedisTestSuite) TestGetPoolSize() {
 	suite.T().Logf("Calculated pool size: %d", poolSize)
 }
 
-// TestGetConnectionConfig tests the connection configuration
+// TestGetConnectionConfig tests the connection configuration.
 func (suite *RedisTestSuite) TestGetConnectionConfig() {
 	poolSize := 10
 	poolTimeout, idleTimeout, maxRetries := getConnectionConfig(poolSize)
@@ -219,7 +221,7 @@ func (suite *RedisTestSuite) TestGetConnectionConfig() {
 		poolTimeout, idleTimeout, maxRetries)
 }
 
-// testBasicRedisOperations performs basic Redis operations to verify functionality
+// testBasicRedisOperations performs basic Redis operations to verify functionality.
 func (suite *RedisTestSuite) testBasicRedisOperations(client *redis.Client) {
 	suite.T().Log("Testing basic Redis operations")
 
@@ -254,7 +256,7 @@ func (suite *RedisTestSuite) testBasicRedisOperations(client *redis.Client) {
 	suite.T().Log("Basic Redis operations completed successfully")
 }
 
-// TestRedisSuite runs the test suite
+// TestRedisSuite runs the test suite.
 func TestRedisSuite(t *testing.T) {
 	suite.Run(t, new(RedisTestSuite))
 }

@@ -3,11 +3,12 @@ package audit
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/datetime"
 )
 
 // CreatedAtHandler implements InsertHandler for automatically setting created_at timestamps.

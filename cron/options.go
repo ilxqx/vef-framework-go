@@ -60,7 +60,7 @@ func WithLimitedRuns(limitedRuns uint) JobDescriptorOption {
 }
 
 // WithContext sets a custom context for the job execution.
-// If the context is cancelled, the job will be cancelled as well.
+// If the context is canceled, the job will be canceled as well.
 func WithContext(ctx context.Context) JobDescriptorOption {
 	return func(d *jobDescriptor) {
 		d.ctx = ctx

@@ -1,19 +1,21 @@
 package apis
 
 import (
+	"github.com/samber/lo"
+	"github.com/uptrace/bun/schema"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/samber/lo"
-	"github.com/uptrace/bun/schema"
 )
 
-// validateConfigFields validates that the specified fields exist in the model schema.
-// This is a helper function to ensure field configurations are valid before query execution.
-func validateConfigFields(schema *schema.Table, fields ...struct {
+// validateFieldsExist validates that the specified fields exist in the model schema.
+// This is a helper function to ensure field mappings are valid before query execution.
+func validateFieldsExist(schema *schema.Table, fields ...struct {
 	name  string
 	field string
-}) error {
+},
+) error {
 	for _, f := range fields {
 		if f.field != constants.Empty {
 			if field, _ := schema.Field(f.field); field == nil {
@@ -25,103 +27,112 @@ func validateConfigFields(schema *schema.Table, fields ...struct {
 			}
 		}
 	}
+
 	return nil
 }
 
-// validateOptionsFields validates fields for OptionsConfig.
+// validateOptionFields validates fields for OptionFieldMapping.
 // Ensures that all specified field names exist in the database model schema.
-func validateOptionsFields(schema *schema.Table, config *OptionsConfig) error {
+func validateOptionFields(schema *schema.Table, mapping *OptionFieldMapping) error {
 	fields := []struct {
 		name  string
 		field string
 	}{
-		{"labelField", config.LabelField},
-		{"valueField", config.ValueField},
+		{"labelField", mapping.LabelField},
+		{"valueField", mapping.ValueField},
 	}
 
-	if config.DescriptionField != constants.Empty {
+	if mapping.DescriptionField != constants.Empty {
 		fields = append(fields, struct {
 			name  string
 			field string
-		}{"descriptionField", config.DescriptionField})
+		}{"descriptionField", mapping.DescriptionField})
 	}
 
-	if config.SortField != constants.Empty {
+	if mapping.SortField != constants.Empty {
 		fields = append(fields, struct {
 			name  string
 			field string
-		}{"sortField", config.SortField})
+		}{"sortField", mapping.SortField})
 	}
 
-	return validateConfigFields(schema, fields...)
+	return validateFieldsExist(schema, fields...)
 }
 
-// validateTreeOptionsFields validates fields for TreeOptionsConfig.
+// validateTreeOptionFields validates fields for TreeOptionFieldMapping.
 // Ensures that all specified field names exist in the database model schema.
-func validateTreeOptionsFields(schema *schema.Table, config *TreeOptionsConfig) error {
+func validateTreeOptionFields(schema *schema.Table, mapping *TreeOptionFieldMapping) error {
 	fields := []struct {
 		name  string
 		field string
 	}{
-		{"labelField", config.LabelField},
-		{"valueField", config.ValueField},
-		{"idField", config.IdField},
-		{"parentIdField", config.ParentIdField},
+		{"labelField", mapping.LabelField},
+		{"valueField", mapping.ValueField},
+		{"idField", mapping.IdField},
+		{"parentIdField", mapping.ParentIdField},
 	}
 
-	if config.DescriptionField != constants.Empty {
+	if mapping.DescriptionField != constants.Empty {
 		fields = append(fields, struct {
 			name  string
 			field string
-		}{"descriptionField", config.DescriptionField})
+		}{"descriptionField", mapping.DescriptionField})
 	}
 
-	if config.SortField != constants.Empty {
+	if mapping.SortField != constants.Empty {
 		fields = append(fields, struct {
 			name  string
 			field string
-		}{"sortField", config.SortField})
+		}{"sortField", mapping.SortField})
 	}
 
-	return validateConfigFields(schema, fields...)
+	return validateFieldsExist(schema, fields...)
 }
 
-// applyOptionsDefaults applies default values to OptionsConfig.
-// Uses fallback values for empty fields based on the provided default configuration or system defaults.
-func applyOptionsDefaults(config *OptionsConfig, defaultConfig *OptionsConfig) {
-	if config.LabelField == constants.Empty {
-		config.LabelField = lo.CoalesceOrEmpty(defaultConfig.LabelField, defaultLabelField)
+// mergeOptionFieldMapping merges the provided mapping with default mapping.
+// Uses fallback values for empty fields based on the provided default mapping or system defaults.
+func mergeOptionFieldMapping(mapping, defaultMapping *OptionFieldMapping) {
+	if mapping.LabelField == constants.Empty {
+		mapping.LabelField = lo.CoalesceOrEmpty(defaultMapping.LabelField, defaultLabelField)
 	}
-	if config.ValueField == constants.Empty {
-		config.ValueField = lo.CoalesceOrEmpty(defaultConfig.ValueField, defaultValueField)
+
+	if mapping.ValueField == constants.Empty {
+		mapping.ValueField = lo.CoalesceOrEmpty(defaultMapping.ValueField, defaultValueField)
 	}
-	if config.DescriptionField == constants.Empty {
-		config.DescriptionField = defaultConfig.DescriptionField
+
+	if mapping.DescriptionField == constants.Empty {
+		mapping.DescriptionField = defaultMapping.DescriptionField
 	}
-	if config.SortField == constants.Empty {
-		config.SortField = defaultConfig.SortField
+
+	if mapping.SortField == constants.Empty {
+		mapping.SortField = defaultMapping.SortField
 	}
 }
 
-// applyTreeOptionsDefaults applies default values to TreeOptionsConfig.
-// Uses fallback values for empty fields based on the provided default configuration or system defaults.
-func applyTreeOptionsDefaults(config *TreeOptionsConfig, defaultConfig *TreeOptionsConfig) {
-	if config.LabelField == constants.Empty {
-		config.LabelField = lo.CoalesceOrEmpty(defaultConfig.LabelField, defaultLabelField)
+// mergeTreeOptionFieldMapping merges the provided mapping with default mapping.
+// Uses fallback values for empty fields based on the provided default mapping or system defaults.
+func mergeTreeOptionFieldMapping(mapping, defaultMapping *TreeOptionFieldMapping) {
+	if mapping.LabelField == constants.Empty {
+		mapping.LabelField = lo.CoalesceOrEmpty(defaultMapping.LabelField, defaultLabelField)
 	}
-	if config.ValueField == constants.Empty {
-		config.ValueField = lo.CoalesceOrEmpty(defaultConfig.ValueField, defaultValueField)
+
+	if mapping.ValueField == constants.Empty {
+		mapping.ValueField = lo.CoalesceOrEmpty(defaultMapping.ValueField, defaultValueField)
 	}
-	if config.DescriptionField == constants.Empty {
-		config.DescriptionField = defaultConfig.DescriptionField
+
+	if mapping.DescriptionField == constants.Empty {
+		mapping.DescriptionField = defaultMapping.DescriptionField
 	}
-	if config.SortField == constants.Empty {
-		config.SortField = defaultConfig.SortField
+
+	if mapping.SortField == constants.Empty {
+		mapping.SortField = defaultMapping.SortField
 	}
-	if config.IdField == constants.Empty {
-		config.IdField = lo.CoalesceOrEmpty(defaultConfig.IdField, idField)
+
+	if mapping.IdField == constants.Empty {
+		mapping.IdField = lo.CoalesceOrEmpty(defaultMapping.IdField, idField)
 	}
-	if config.ParentIdField == constants.Empty {
-		config.ParentIdField = lo.CoalesceOrEmpty(defaultConfig.ParentIdField, parentIdField)
+
+	if mapping.ParentIdField == constants.Empty {
+		mapping.ParentIdField = lo.CoalesceOrEmpty(defaultMapping.ParentIdField, parentIdField)
 	}
 }

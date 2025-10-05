@@ -1,9 +1,10 @@
 package orm
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun/dialect"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // Names returns a query appender that appends a list of names to the query.

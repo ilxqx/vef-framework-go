@@ -2,6 +2,7 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
@@ -30,11 +31,13 @@ func (a *findTreeAPI[TModel, TSearch]) Build(handler any) api.Spec {
 
 func (a *findTreeAPI[TModel, TSearch]) IdField(name string) FindTreeAPI[TModel, TSearch] {
 	a.idField = name
+
 	return a
 }
 
 func (a *findTreeAPI[TModel, TSearch]) ParentIdField(name string) FindTreeAPI[TModel, TSearch] {
 	a.parentIdField = name
+
 	return a
 }
 
@@ -74,6 +77,7 @@ func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 			Table("tmp_tree")
 
 		a.ApplySort(query, search, ctx)
+
 		if shouldApplyDefaultSort {
 			query.OrderByDesc(constants.ColumnCreatedAt)
 		}
@@ -95,6 +99,7 @@ func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 
 		// Build tree structure using the configured TreeBuilder
 		models := a.treeBuilder(flatModels)
+
 		return result.Ok(a.Process(models, search, ctx)).Response(ctx)
 	}
 }

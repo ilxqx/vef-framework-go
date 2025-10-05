@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ilxqx/vef-framework-go/monad"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ilxqx/vef-framework-go/monad"
 )
 
 // Test structs with various field types and conditions
@@ -176,6 +177,7 @@ func TestComplexSearch(t *testing.T) {
 		// Check for multi-column condition
 		if len(condition.Columns) > 1 {
 			foundMultiColumn = true
+
 			assert.Equal(t, Contains, condition.Operator, "Multi-column should use contains")
 		}
 
@@ -211,12 +213,15 @@ func TestNestedSearch(t *testing.T) {
 	// Verify all expected columns are present
 	for _, expectedCol := range expectedColumns {
 		found := false
+
 		for _, condition := range search.conditions {
 			if len(condition.Columns) == 1 && condition.Columns[0] == expectedCol {
 				found = true
+
 				break
 			}
 		}
+
 		assert.True(t, found, "Expected column not found: %s", expectedCol)
 	}
 }
@@ -239,6 +244,7 @@ func TestEdgeCases(t *testing.T) {
 		// Check for alias
 		if condition.Alias == "t1" {
 			foundWithAlias = true
+
 			assert.Equal(t, []string{"name"}, condition.Columns)
 		}
 
@@ -391,21 +397,25 @@ func TestDeepNestedStruct(t *testing.T) {
 	search := NewFor[Level1]()
 
 	expectedColumns := []string{"level1_title", "level2_name", "level3_value"}
+
 	assert.Len(t, search.conditions, 3, "Should have all deeply nested fields")
 
 	for _, expectedCol := range expectedColumns {
 		found := false
+
 		for _, condition := range search.conditions {
 			if len(condition.Columns) == 1 && condition.Columns[0] == expectedCol {
 				found = true
+
 				break
 			}
 		}
+
 		assert.True(t, found, "Expected column not found: %s", expectedCol)
 	}
 }
 
-// TestNoTagStruct tests struct fields without search tags
+// TestNoTagStruct tests struct fields without search tags.
 type TestNoTagStruct struct {
 	Name   string
 	Age    int

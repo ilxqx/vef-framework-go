@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // NewDeleteQuery creates a new DeleteQuery instance with the provided database connection.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewDeleteQuery(db bun.IDB) DeleteQuery {
+func NewDeleteQuery(db bun.IDB) *BunDeleteQuery {
 	eb := &QueryExprBuilder{}
 	dq := db.NewDelete()
 	dialect := db.Dialect()
@@ -23,6 +24,7 @@ func NewDeleteQuery(db bun.IDB) DeleteQuery {
 		eb:      eb,
 	}
 	eb.qb = query
+
 	return query
 }
 
@@ -38,6 +40,7 @@ type BunDeleteQuery struct {
 
 func (q *BunDeleteQuery) With(name string, builder func(SelectQuery)) DeleteQuery {
 	q.query.With(name, q.BuildSubQuery(builder))
+
 	return q
 }
 
@@ -48,16 +51,19 @@ func (q *BunDeleteQuery) WithValues(name string, model any, withOrder ...bool) D
 	}
 
 	q.query.With(name, values)
+
 	return q
 }
 
 func (q *BunDeleteQuery) WithRecursive(name string, builder func(SelectQuery)) DeleteQuery {
 	q.query.WithRecursive(name, q.BuildSubQuery(builder))
+
 	return q
 }
 
 func (q *BunDeleteQuery) Model(model any) DeleteQuery {
 	q.query.Model(model)
+
 	return q
 }
 
@@ -67,6 +73,7 @@ func (q *BunDeleteQuery) ModelTable(name string, alias ...string) DeleteQuery {
 	} else {
 		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
 	}
+
 	return q
 }
 
@@ -76,42 +83,50 @@ func (q *BunDeleteQuery) Table(name string, alias ...string) DeleteQuery {
 	} else {
 		q.query.Table(name)
 	}
+
 	return q
 }
 
 func (q *BunDeleteQuery) TableExpr(alias string, builder func(ExprBuilder) any) DeleteQuery {
 	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
+
 	return q
 }
 
 func (q *BunDeleteQuery) TableSubQuery(alias string, builder func(SelectQuery)) DeleteQuery {
 	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
+
 	return q
 }
 
 func (q *BunDeleteQuery) Where(builder func(ConditionBuilder)) DeleteQuery {
 	cb := newQueryConditionBuilder(q.query.QueryBuilder(), q)
 	builder(cb)
+
 	return q
 }
 
 func (q *BunDeleteQuery) WherePK(columns ...string) DeleteQuery {
 	q.query.WherePK(columns...)
+
 	return q
 }
 
 func (q *BunDeleteQuery) WhereDeleted() DeleteQuery {
 	q.query.WhereDeleted()
+
 	return q
 }
 
 func (q *BunDeleteQuery) IncludeDeleted() DeleteQuery {
 	q.query.WhereAllWithDeleted()
+
 	return q
 }
 
 func (q *BunDeleteQuery) OrderBy(columns ...string) DeleteQuery {
 	q.query.Order(columns...)
+
 	return q
 }
 
@@ -125,31 +140,37 @@ func (q *BunDeleteQuery) OrderByDesc(columns ...string) DeleteQuery {
 
 func (q *BunDeleteQuery) OrderByExpr(builder func(ExprBuilder) any) DeleteQuery {
 	q.query.OrderExpr("?", builder(q.eb))
+
 	return q
 }
 
 func (q *BunDeleteQuery) ForceDelete() DeleteQuery {
 	q.query.ForceDelete()
+
 	return q
 }
 
 func (q *BunDeleteQuery) Limit(limit int) DeleteQuery {
 	q.query.Limit(limit)
+
 	return q
 }
 
 func (q *BunDeleteQuery) Returning(columns ...string) DeleteQuery {
 	q.query.Returning("?", Names(columns...))
+
 	return q
 }
 
 func (q *BunDeleteQuery) ReturningAll() DeleteQuery {
 	q.query.Returning(columnAll)
+
 	return q
 }
 
 func (q *BunDeleteQuery) ReturningNone() DeleteQuery {
 	q.query.Returning(sqlNull)
+
 	return q
 }
 
@@ -167,6 +188,7 @@ func (q *BunDeleteQuery) ApplyIf(condition bool, fns ...ApplyFunc[DeleteQuery]) 
 	if condition {
 		return q.Apply(fns...)
 	}
+
 	return q
 }
 

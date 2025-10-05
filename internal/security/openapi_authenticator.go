@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	// OpenAPI authentication type
+	// OpenAPI authentication type.
 	AuthTypeOpenAPI = "openapi"
 )
 
@@ -58,8 +58,10 @@ func (a *OpenapiAuthenticator) Authenticate(authentication security.Authenticati
 	if len(parts) != 3 {
 		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("credentials_format_invalid"))
 	}
+
 	signatureHex := parts[0]
 	timestamp := parts[1]
+
 	bodyHash := parts[2]
 	if signatureHex == constants.Empty || timestamp == constants.Empty || bodyHash == constants.Empty {
 		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("credentials_fields_required"))
@@ -69,12 +71,14 @@ func (a *OpenapiAuthenticator) Authenticate(authentication security.Authenticati
 	if err != nil {
 		return nil, err
 	}
+
 	if principal == nil || secret == constants.Empty {
 		return nil, result.ErrWithCode(result.ErrCodeExternalAppNotFound, result.ErrMessageExternalAppNotFound)
 	}
 
 	// Recompute signature: hex(HMAC-SHA256(secret, appId + "\n" + timestamp + "\n" + bodyHash))
 	var sb strings.Builder
+
 	_, _ = sb.WriteString(appId)
 	_ = sb.WriteByte(constants.ByteNewline)
 	_, _ = sb.WriteString(timestamp)
@@ -94,14 +98,17 @@ func (a *OpenapiAuthenticator) Authenticate(authentication security.Authenticati
 	if err != nil {
 		return nil, result.ErrWithCode(result.ErrCodeSignatureInvalid, i18n.T("signature_decode_failed"))
 	}
+
 	expectedMac, err := encoding.FromHex(expectedSignatureHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode expected signature: %w", err)
 	}
+
 	if !hmac.Equal(expectedMac, providedMac) {
 		return nil, result.ErrSignatureInvalid
 	}
 
 	logger.Infof("Openapi authentication successful for principal '%s'", principal.Id)
+
 	return principal, nil
 }

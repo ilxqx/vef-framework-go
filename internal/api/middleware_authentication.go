@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/extractors"
 	"github.com/gofiber/fiber/v3/middleware/keyauth"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
@@ -48,6 +49,7 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 			ctx.SetContext(
 				contextx.SetPrincipal(ctx.Context(), principal),
 			)
+
 			return true, nil
 		},
 	})
@@ -93,16 +95,19 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 				if !cfg.Enabled {
 					return result.ErrExternalAppDisabled
 				}
+
 				if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
 					if !ipAllowed(webhelpers.GetIP(ctx), cfg.IpWhitelist) {
 						return result.ErrIpNotAllowed
 					}
 				}
+
 			case *securityPkg.ExternalAppConfig:
 				if cfg != nil {
 					if !cfg.Enabled {
 						return result.ErrExternalAppDisabled
 					}
+
 					if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
 						if !ipAllowed(webhelpers.GetIP(ctx), cfg.IpWhitelist) {
 							return result.ErrIpNotAllowed
@@ -113,15 +118,17 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 		}
 
 		contextx.SetPrincipal(ctx, principal)
+
 		return ctx.Next()
 	}
 }
 
 // ipAllowed checks if client IP is in whitelist (comma-separated IP or CIDR list).
-func ipAllowed(clientIP string, whitelist string) bool {
+func ipAllowed(clientIP, whitelist string) bool {
 	if strings.TrimSpace(whitelist) == constants.Empty {
 		return true
 	}
+
 	ip := net.ParseIP(clientIP)
 	if ip == nil {
 		return false
@@ -132,11 +139,13 @@ func ipAllowed(clientIP string, whitelist string) bool {
 		if entry == constants.Empty {
 			continue
 		}
+
 		if strings.Contains(entry, constants.Slash) {
 			_, ipNet, err := net.ParseCIDR(entry)
 			if err != nil {
 				continue
 			}
+
 			if ipNet.Contains(ip) {
 				return true
 			}

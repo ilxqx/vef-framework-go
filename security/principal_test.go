@@ -4,19 +4,20 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// Test user details struct
+// Test user details struct.
 type TestUserDetails struct {
 	Email       string `json:"email"`
 	PhoneNumber string `json:"phone_number"`
 	Age         int    `json:"age"`
 }
 
-// Test external app details struct
+// Test external app details struct.
 type TestExternalAppDetails struct {
 	AppID     string   `json:"app_id"`
 	AppSecret string   `json:"app_secret"`
@@ -103,6 +104,7 @@ func TestPrincipalJSONMarshal(t *testing.T) {
 		require.NoError(t, err)
 
 		var result map[string]any
+
 		err = json.Unmarshal(data, &result)
 		require.NoError(t, err)
 
@@ -119,6 +121,7 @@ func TestPrincipalJSONMarshal(t *testing.T) {
 		require.NoError(t, err)
 
 		var result map[string]any
+
 		err = json.Unmarshal(data, &result)
 		require.NoError(t, err)
 
@@ -141,6 +144,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		}`
 
 		var principal Principal
+
 		err := json.Unmarshal([]byte(jsonData), &principal)
 		require.NoError(t, err)
 
@@ -152,6 +156,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		// Details will be a pointer to map[string]any when userDetailsType is map[string]any
 		detailsPtr, ok := principal.Details.(*map[string]any)
 		require.True(t, ok)
+
 		details := *detailsPtr
 		assert.Equal(t, "test@example.com", details["email"])
 		assert.Equal(t, float64(30), details["age"])
@@ -161,6 +166,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		// Set user details type
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
+
 		SetUserDetailsType[TestUserDetails]()
 
 		jsonData := `{
@@ -176,6 +182,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		}`
 
 		var principal Principal
+
 		err := json.Unmarshal([]byte(jsonData), &principal)
 		require.NoError(t, err)
 
@@ -190,6 +197,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		// Set external app details type
 		originalType := externalAppDetailsType
 		defer func() { externalAppDetailsType = originalType }() // Reset at end
+
 		SetExternalAppDetailsType[TestExternalAppDetails]()
 
 		jsonData := `{
@@ -205,6 +213,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		}`
 
 		var principal Principal
+
 		err := json.Unmarshal([]byte(jsonData), &principal)
 		require.NoError(t, err)
 
@@ -224,6 +233,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		}`
 
 		var principal Principal
+
 		err := json.Unmarshal([]byte(jsonData), &principal)
 		require.NoError(t, err)
 
@@ -236,6 +246,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var principal Principal
+
 		err := json.Unmarshal([]byte(jsonData), &principal)
 		assert.Error(t, err)
 	})
@@ -245,6 +256,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 	t.Run("unmarshal user details from map", func(t *testing.T) {
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
+
 		SetUserDetailsType[TestUserDetails]()
 
 		user := NewUser("user123", "Test User")
@@ -266,6 +278,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 	t.Run("unmarshal external app details from map", func(t *testing.T) {
 		originalType := externalAppDetailsType
 		defer func() { externalAppDetailsType = originalType }() // Reset at end
+
 		SetExternalAppDetailsType[TestExternalAppDetails]()
 
 		app := NewExternalApp("app123", "Test App")
@@ -318,6 +331,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 	t.Run("decode with partial fields creates struct", func(t *testing.T) {
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
+
 		SetUserDetailsType[TestUserDetails]()
 
 		user := NewUser("user123", "Test User")
@@ -340,6 +354,7 @@ func TestSetUserDetailsType(t *testing.T) {
 	t.Run("set valid struct type", func(t *testing.T) {
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
+
 		SetUserDetailsType[TestUserDetails]()
 		assert.Equal(t, "TestUserDetails", userDetailsType.Name())
 	})
@@ -355,6 +370,7 @@ func TestSetExternalAppDetailsType(t *testing.T) {
 	t.Run("set valid struct type", func(t *testing.T) {
 		originalType := externalAppDetailsType
 		defer func() { externalAppDetailsType = originalType }() // Reset at end
+
 		SetExternalAppDetailsType[TestExternalAppDetails]()
 		assert.Equal(t, "TestExternalAppDetails", externalAppDetailsType.Name())
 	})
@@ -380,6 +396,7 @@ func TestPrincipalRoundTrip(t *testing.T) {
 
 		// Unmarshal
 		var restored Principal
+
 		err = json.Unmarshal(data, &restored)
 		require.NoError(t, err)
 
@@ -402,6 +419,7 @@ func TestPrincipalRoundTrip(t *testing.T) {
 
 		// Unmarshal
 		var restored Principal
+
 		err = json.Unmarshal(data, &restored)
 		require.NoError(t, err)
 

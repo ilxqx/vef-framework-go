@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// ConnectionPoolConfig defines the connection pool configuration
+// ConnectionPoolConfig defines the connection pool configuration.
 type ConnectionPoolConfig struct {
 	MaxIdleConns    int
 	MaxOpenConns    int
@@ -13,7 +13,7 @@ type ConnectionPoolConfig struct {
 	ConnMaxLifetime time.Duration
 }
 
-// Default connection pool constants
+// Default connection pool constants.
 const (
 	DefaultMaxIdleConnsMultiplier = 4
 	DefaultMaxOpenConnsMultiplier = 16
@@ -23,7 +23,7 @@ const (
 	DefaultConnMaxLifetime        = 30 * time.Minute
 )
 
-// NewDefaultConnectionPoolConfig creates a default connection pool configuration
+// NewDefaultConnectionPoolConfig creates a default connection pool configuration.
 func NewDefaultConnectionPoolConfig() *ConnectionPoolConfig {
 	return &ConnectionPoolConfig{
 		MaxIdleConns:    max(runtime.GOMAXPROCS(0)*DefaultMaxIdleConnsMultiplier, DefaultMinIdleConns),
@@ -33,13 +33,14 @@ func NewDefaultConnectionPoolConfig() *ConnectionPoolConfig {
 	}
 }
 
-// ApplyToDB applies the connection pool configuration to a database connection
+// ApplyToDB applies the connection pool configuration to a database connection.
 func (c *ConnectionPoolConfig) ApplyToDB(db interface {
 	SetMaxIdleConns(int)
 	SetMaxOpenConns(int)
 	SetConnMaxIdleTime(time.Duration)
 	SetConnMaxLifetime(time.Duration)
-}) {
+},
+) {
 	db.SetMaxIdleConns(c.MaxIdleConns)
 	db.SetMaxOpenConns(c.MaxOpenConns)
 	db.SetConnMaxIdleTime(c.ConnMaxIdleTime)

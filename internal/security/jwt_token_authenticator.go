@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// Token authentication type
+	// Token authentication type.
 	AuthTypeToken = "token"
 )
 
@@ -48,6 +48,7 @@ func (ja *JWTTokenAuthenticator) Authenticate(authentication security.Authentica
 	claimsAccessor, err := ja.jwt.Parse(token)
 	if err != nil {
 		logger.Warnf("JWT token validation failed: %v", err)
+
 		return nil, err
 	}
 
@@ -64,5 +65,6 @@ func (ja *JWTTokenAuthenticator) Authenticate(authentication security.Authentica
 	principal.AttemptUnmarshalDetails(claimsAccessor.Details())
 
 	logger.Infof("JWT authentication successful for principal '%s'", principal.Id)
+
 	return principal, nil
 }

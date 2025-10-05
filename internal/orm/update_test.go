@@ -10,12 +10,13 @@ type UpdateTestSuite struct {
 	*ORMTestSuite
 }
 
-// TestBasicUpdate tests basic UPDATE functionality across all databases
+// TestBasicUpdate tests basic UPDATE functionality across all databases.
 func (suite *UpdateTestSuite) TestBasicUpdate() {
 	suite.T().Logf("Testing basic UPDATE for %s", suite.dbType)
 
 	// First get a user to update
 	var user User
+
 	err := suite.db.NewSelect().
 		Model(&user).
 		Where(func(cb ConditionBuilder) {
@@ -23,6 +24,7 @@ func (suite *UpdateTestSuite) TestBasicUpdate() {
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
+
 	originalAge := user.Age
 
 	// Test 1: Update single field
@@ -42,6 +44,7 @@ func (suite *UpdateTestSuite) TestBasicUpdate() {
 
 	// Verify the update
 	var updatedUser User
+
 	err = suite.db.NewSelect().
 		Model(&updatedUser).
 		Where(func(cb ConditionBuilder) {
@@ -114,7 +117,7 @@ func (suite *UpdateTestSuite) TestBasicUpdate() {
 	suite.NoError(err)
 }
 
-// TestUpdateWithConditions tests UPDATE with various WHERE conditions
+// TestUpdateWithConditions tests UPDATE with various WHERE conditions.
 func (suite *UpdateTestSuite) TestUpdateWithConditions() {
 	suite.T().Logf("Testing UPDATE with conditions for %s", suite.dbType)
 
@@ -130,6 +133,7 @@ func (suite *UpdateTestSuite) TestUpdateWithConditions() {
 
 	// Verify the updates
 	var activeUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&activeUsers).
 		Where(func(cb ConditionBuilder) {
@@ -138,6 +142,7 @@ func (suite *UpdateTestSuite) TestUpdateWithConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(activeUsers, 2) // Alice and Bob are active
+
 	for _, user := range activeUsers {
 		suite.Equal("batch_update", user.UpdatedBy)
 	}
@@ -154,6 +159,7 @@ func (suite *UpdateTestSuite) TestUpdateWithConditions() {
 
 	// Verify complex condition update (should only affect Alice)
 	var complexUpdatedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&complexUpdatedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -176,6 +182,7 @@ func (suite *UpdateTestSuite) TestUpdateWithConditions() {
 
 	// Verify OR condition update (should affect Bob and Charlie)
 	var orUpdatedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&orUpdatedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -200,6 +207,7 @@ func (suite *UpdateTestSuite) TestUpdateWithConditions() {
 
 	// Verify IN condition update
 	var inUpdatedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&inUpdatedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -220,12 +228,13 @@ func (suite *UpdateTestSuite) TestUpdateWithConditions() {
 	suite.NoError(err)
 }
 
-// TestUpdateWithExpressions tests UPDATE with SQL expressions
+// TestUpdateWithExpressions tests UPDATE with SQL expressions.
 func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 	suite.T().Logf("Testing UPDATE with expressions for %s", suite.dbType)
 
 	// Get initial post view count
 	var post Post
+
 	err := suite.db.NewSelect().
 		Model(&post).
 		Where(func(cb ConditionBuilder) {
@@ -233,6 +242,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
+
 	initialViewCount := post.ViewCount
 
 	// Test 1: Arithmetic expression (increment view count)
@@ -249,6 +259,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 
 	// Verify arithmetic update
 	var updatedPost Post
+
 	err = suite.db.NewSelect().
 		Model(&updatedPost).
 		Where(func(cb ConditionBuilder) {
@@ -299,6 +310,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 
 	// Verify conditional expression update
 	var posts []Post
+
 	err = suite.db.NewSelect().
 		Model(&posts).
 		Where(func(cb ConditionBuilder) {
@@ -321,7 +333,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 	suite.NoError(err)
 }
 
-// TestUpdateWithJoins tests UPDATE with JOIN operations
+// TestUpdateWithJoins tests UPDATE with JOIN operations.
 func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 	suite.T().Logf("Testing UPDATE with JOINs for %s", suite.dbType)
 
@@ -344,6 +356,7 @@ func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 
 	// Verify subquery-based update
 	var inactiveUserPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&inactiveUserPosts).
 		Where(func(cb ConditionBuilder) {
@@ -356,6 +369,7 @@ func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 	for _, post := range inactiveUserPosts {
 		// Verify these are indeed from inactive users
 		var user User
+
 		err = suite.db.NewSelect().
 			Model(&user).
 			Where(func(cb ConditionBuilder) {
@@ -384,6 +398,7 @@ func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 
 	// Verify complex subquery update
 	var highActivityPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&highActivityPosts).
 		Where(func(cb ConditionBuilder) {
@@ -395,6 +410,7 @@ func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 	// Should have posts by active users with age > 25 (Alice)
 	for _, post := range highActivityPosts {
 		var user User
+
 		err = suite.db.NewSelect().
 			Model(&user).
 			Where(func(cb ConditionBuilder) {
@@ -430,7 +446,7 @@ func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 	}
 }
 
-// TestUpdateReturning tests UPDATE with RETURNING clause
+// TestUpdateReturning tests UPDATE with RETURNING clause.
 func (suite *UpdateTestSuite) TestUpdateReturning() {
 	suite.T().Logf("Testing UPDATE with RETURNING for %s", suite.dbType)
 
@@ -441,6 +457,7 @@ func (suite *UpdateTestSuite) TestUpdateReturning() {
 
 	// Get a user to update
 	var user User
+
 	err := suite.db.NewSelect().
 		Model(&user).
 		Where(func(cb ConditionBuilder) {
@@ -448,6 +465,7 @@ func (suite *UpdateTestSuite) TestUpdateReturning() {
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
+
 	originalAge := user.Age
 
 	// Test: Update with RETURNING clause
@@ -458,6 +476,7 @@ func (suite *UpdateTestSuite) TestUpdateReturning() {
 	}
 
 	var returnedUser UpdateResult
+
 	err = suite.db.NewUpdate().
 		Model((*User)(nil)).
 		Set("name", "Bob Johnson").
@@ -476,6 +495,7 @@ func (suite *UpdateTestSuite) TestUpdateReturning() {
 
 	// Verify the update actually happened
 	var updatedUser User
+
 	err = suite.db.NewSelect().
 		Model(&updatedUser).
 		Where(func(cb ConditionBuilder) {
@@ -488,6 +508,7 @@ func (suite *UpdateTestSuite) TestUpdateReturning() {
 
 	// Test: RETURNING with multiple updates
 	var returnedUsers []UpdateResult
+
 	err = suite.db.NewUpdate().
 		Model((*User)(nil)).
 		Set("updated_by", "returning_test").
@@ -512,7 +533,7 @@ func (suite *UpdateTestSuite) TestUpdateReturning() {
 	suite.NoError(err)
 }
 
-// TestUpdateComplexModel tests updating models with various data types
+// TestUpdateComplexModel tests updating models with various data types.
 func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 	suite.T().Logf("Testing UPDATE with complex model for %s", suite.dbType)
 
@@ -549,6 +570,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 
 	// Verify basic field updates
 	var updatedComplex ComplexModel
+
 	err = suite.db.NewSelect().
 		Model(&updatedComplex).
 		Where(func(cb ConditionBuilder) {
@@ -575,12 +597,12 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 			cb.PKEquals(complexModel.Id)
 		}).
 		Exec(suite.ctx)
-
 	if err != nil {
 		suite.T().Logf("JSON field update not supported for %s: %v", suite.dbType, err)
 	} else {
 		// Verify JSON update
 		var jsonUpdated ComplexModel
+
 		err = suite.db.NewSelect().
 			Model(&jsonUpdated).
 			Where(func(cb ConditionBuilder) {
@@ -649,12 +671,15 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 	if updatedComplex.NullString != nil && *updatedComplex.NullString == "" {
 		updatedComplex.NullString = nil
 	}
+
 	if updatedComplex.NullInt != nil && *updatedComplex.NullInt == 0 {
 		updatedComplex.NullInt = nil
 	}
+
 	if updatedComplex.NullTime != nil && updatedComplex.NullTime.IsZero() {
 		updatedComplex.NullTime = nil
 	}
+
 	suite.Nil(updatedComplex.NullString)
 	suite.Nil(updatedComplex.NullInt)
 	suite.Nil(updatedComplex.NullTime)
@@ -669,7 +694,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 	suite.NoError(err)
 }
 
-// TestUpdateBulkOperations tests bulk update operations
+// TestUpdateBulkOperations tests bulk update operations.
 func (suite *UpdateTestSuite) TestUpdateBulkOperations() {
 	suite.T().Logf("Testing bulk UPDATE operations for %s", suite.dbType)
 
@@ -685,6 +710,7 @@ func (suite *UpdateTestSuite) TestUpdateBulkOperations() {
 
 	// Verify bulk update
 	var bulkUpdatedPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&bulkUpdatedPosts).
 		Where(func(cb ConditionBuilder) {
@@ -729,6 +755,7 @@ func (suite *UpdateTestSuite) TestUpdateBulkOperations() {
 
 	// Verify conditional bulk update
 	var trafficPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&trafficPosts).
 		Where(func(cb ConditionBuilder) {
@@ -777,7 +804,7 @@ func (suite *UpdateTestSuite) TestUpdateBulkOperations() {
 	}
 }
 
-// TestUpdateErrorHandling tests error handling in update operations
+// TestUpdateErrorHandling tests error handling in update operations.
 func (suite *UpdateTestSuite) TestUpdateErrorHandling() {
 	suite.T().Logf("Testing UPDATE error handling for %s", suite.dbType)
 
@@ -843,12 +870,13 @@ func (suite *UpdateTestSuite) TestUpdateErrorHandling() {
 	suite.NoError(err)
 }
 
-// TestUpdateWithOptionalFields tests updating with optional/nullable fields
+// TestUpdateWithOptionalFields tests updating with optional/nullable fields.
 func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 	suite.T().Logf("Testing UPDATE with optional fields for %s", suite.dbType)
 
 	// Get a post with description to update
 	var post Post
+
 	err := suite.db.NewSelect().
 		Model(&post).
 		Where(func(cb ConditionBuilder) {
@@ -873,6 +901,7 @@ func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 
 	// Verify non-null update
 	var updatedPost Post
+
 	err = suite.db.NewSelect().
 		Model(&updatedPost).
 		Where(func(cb ConditionBuilder) {

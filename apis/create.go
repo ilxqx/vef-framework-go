@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -31,11 +32,13 @@ func (c *createAPI[TModel, TParams]) Build(handler any) api.Spec {
 
 func (c *createAPI[TModel, TParams]) PreCreate(processor PreCreateProcessor[TModel, TParams]) CreateAPI[TModel, TParams] {
 	c.preCreate = processor
+
 	return c
 }
 
 func (c *createAPI[TModel, TParams]) PostCreate(processor PostCreateProcessor[TModel, TParams]) CreateAPI[TModel, TParams] {
 	c.postCreate = processor
+
 	return c
 }
 

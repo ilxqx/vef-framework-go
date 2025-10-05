@@ -1,14 +1,15 @@
 package mold
 
 import (
-	"github.com/ilxqx/vef-framework-go/internal/log"
 	"go.uber.org/fx"
+
+	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
 var logger = log.Named("mold")
 
 // Module defines the fx module for the transformer package
-// It provides dependency injection configuration for all transformer components
+// It provides dependency injection configuration for all transformer components.
 var Module = fx.Module(
 	"vef:mold",
 	fx.Provide(

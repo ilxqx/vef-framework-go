@@ -14,15 +14,19 @@ func IsDuplicateKeyError(err error) bool {
 	if strings.Contains(message, "duplicate key") { // PostgreSQL
 		return true
 	}
+
 	if strings.Contains(message, "unique violation") { // PostgreSQL
 		return true
 	}
+
 	if strings.Contains(message, "unique constraint") { // Generic/ORM
 		return true
 	}
+
 	if strings.Contains(message, "unique constraint failed") { // SQLite
 		return true
 	}
+
 	if strings.Contains(message, "duplicate entry") { // MySQL
 		return true
 	}

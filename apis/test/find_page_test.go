@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserFindPageResource struct {
 	api.Resource
 	apis.FindPageAPI[TestUser, TestUserSearch]
@@ -22,7 +23,7 @@ func NewTestUserFindPageResource() api.Resource {
 	}
 }
 
-// Processed User Resource - with processor
+// Processed User Resource - with processor.
 type ProcessedUserFindPageResource struct {
 	api.Resource
 	apis.FindPageAPI[TestUser, TestUserSearch]
@@ -42,12 +43,13 @@ func NewProcessedUserFindPageResource() api.Resource {
 						Processed: true,
 					}
 				}
+
 				return processed
 			}),
 	}
 }
 
-// Filtered User Resource - with filter applier
+// Filtered User Resource - with filter applier.
 type FilteredUserFindPageResource struct {
 	api.Resource
 	apis.FindPageAPI[TestUser, TestUserSearch]
@@ -66,12 +68,12 @@ func NewFilteredUserFindPageResource() api.Resource {
 	}
 }
 
-// FindPageTestSuite is the test suite for FindPage API tests
+// FindPageTestSuite is the test suite for FindPage API tests.
 type FindPageTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *FindPageTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserFindPageResource,
@@ -80,12 +82,12 @@ func (suite *FindPageTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *FindPageTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestFindPageBasic tests basic FindPage functionality
+// TestFindPageBasic tests basic FindPage functionality.
 func (suite *FindPageTestSuite) TestFindPageBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -114,7 +116,7 @@ func (suite *FindPageTestSuite) TestFindPageBasic() {
 	suite.Len(items, 5)
 }
 
-// TestFindPagePagination tests pagination functionality
+// TestFindPagePagination tests pagination functionality.
 func (suite *FindPageTestSuite) TestFindPagePagination() {
 	suite.Run("FirstPage", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -218,7 +220,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	})
 }
 
-// TestFindPageWithSearch tests FindPage with search conditions
+// TestFindPageWithSearch tests FindPage with search conditions.
 func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -244,7 +246,7 @@ func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 	suite.Len(items, 7)
 }
 
-// TestFindPageWithProcessor tests FindPage with post-processing
+// TestFindPageWithProcessor tests FindPage with post-processing.
 func (suite *FindPageTestSuite) TestFindPageWithProcessor() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -274,7 +276,7 @@ func (suite *FindPageTestSuite) TestFindPageWithProcessor() {
 	suite.Equal(true, firstUser["processed"])
 }
 
-// TestFindPageWithFilterApplier tests FindPage with filter applier
+// TestFindPageWithFilterApplier tests FindPage with filter applier.
 func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -299,7 +301,7 @@ func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
 	suite.Len(items, 7)
 }
 
-// TestFindPageNegativeCases tests negative scenarios
+// TestFindPageNegativeCases tests negative scenarios.
 func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 	suite.Run("InvalidPageNumber", func() {
 		resp := suite.makeAPIRequest(api.Request{

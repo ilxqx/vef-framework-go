@@ -1,8 +1,9 @@
 package vef
 
 import (
-	"github.com/ilxqx/vef-framework-go/internal/app"
 	"go.uber.org/fx"
+
+	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
 // startApp starts the application.
@@ -13,5 +14,6 @@ func startApp(lc fx.Lifecycle, app *app.App) error {
 	}
 
 	lc.Append(fx.StopHook(app.Stop))
+
 	return nil
 }

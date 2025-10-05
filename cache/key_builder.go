@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -41,5 +40,13 @@ func (k *PrefixKeyBuilder) Build(keyParts ...string) string {
 		return strings.Join(keyParts, k.separator)
 	}
 
-	return fmt.Sprintf("%s%s%s", k.prefix, k.separator, strings.Join(keyParts, k.separator))
+	key := strings.Join(keyParts, k.separator)
+
+	var sb strings.Builder
+	sb.Grow(len(k.prefix) + len(k.separator) + len(key))
+	_, _ = sb.WriteString(k.prefix)
+	_, _ = sb.WriteString(k.separator)
+	_, _ = sb.WriteString(key)
+
+	return sb.String()
 }

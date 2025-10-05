@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserFindAllResource struct {
 	api.Resource
 	apis.FindAllAPI[TestUser, TestUserSearch]
@@ -22,7 +23,7 @@ func NewTestUserFindAllResource() api.Resource {
 	}
 }
 
-// Processed User Resource - with processor
+// Processed User Resource - with processor.
 type ProcessedUserFindAllResource struct {
 	api.Resource
 	apis.FindAllAPI[TestUser, TestUserSearch]
@@ -47,7 +48,7 @@ func NewProcessedUserFindAllResource() api.Resource {
 	}
 }
 
-// Filtered User Resource - with filter applier
+// Filtered User Resource - with filter applier.
 type FilteredUserFindAllResource struct {
 	api.Resource
 	apis.FindAllAPI[TestUser, TestUserSearch]
@@ -66,7 +67,7 @@ func NewFilteredUserFindAllResource() api.Resource {
 	}
 }
 
-// Ordered User Resource - with order applier
+// Ordered User Resource - with order applier.
 type OrderedUserFindAllResource struct {
 	api.Resource
 	apis.FindAllAPI[TestUser, TestUserSearch]
@@ -85,12 +86,12 @@ func NewOrderedUserFindAllResource() api.Resource {
 	}
 }
 
-// FindAllTestSuite is the test suite for FindAll API tests
+// FindAllTestSuite is the test suite for FindAll API tests.
 type FindAllTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *FindAllTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserFindAllResource,
@@ -100,12 +101,12 @@ func (suite *FindAllTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *FindAllTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestFindAllBasic tests basic FindAll functionality
+// TestFindAllBasic tests basic FindAll functionality.
 func (suite *FindAllTestSuite) TestFindAllBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -126,7 +127,7 @@ func (suite *FindAllTestSuite) TestFindAllBasic() {
 	suite.Len(users, 10)
 }
 
-// TestFindAllWithSearchApplier tests FindAll with custom search conditions
+// TestFindAllWithSearchApplier tests FindAll with custom search conditions.
 func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	suite.Run("SearchByStatus", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -192,7 +193,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	})
 }
 
-// TestFindAllWithProcessor tests FindAll with post-processing
+// TestFindAllWithProcessor tests FindAll with post-processing.
 func (suite *FindAllTestSuite) TestFindAllWithProcessor() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -215,7 +216,7 @@ func (suite *FindAllTestSuite) TestFindAllWithProcessor() {
 	suite.Len(users, 10)
 }
 
-// TestFindAllWithFilterApplier tests FindAll with filter applier
+// TestFindAllWithFilterApplier tests FindAll with filter applier.
 func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -234,7 +235,7 @@ func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
 	suite.Len(users, 7) // Only active users
 }
 
-// TestFindAllWithSortApplier tests FindAll with sort applier
+// TestFindAllWithSortApplier tests FindAll with sort applier.
 func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -257,7 +258,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
 	suite.Equal(float64(25), firstUser["age"])
 }
 
-// TestFindAllNegativeCases tests negative scenarios
+// TestFindAllNegativeCases tests negative scenarios.
 func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 	suite.Run("EmptySearchCriteria", func() {
 		resp := suite.makeAPIRequest(api.Request{

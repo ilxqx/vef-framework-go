@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestCategoryFindTreeOptionsResource struct {
 	api.Resource
 	apis.FindTreeOptionsAPI[TestCategory, TestCategorySearch]
@@ -20,8 +21,8 @@ func NewTestCategoryFindTreeOptionsResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_options"),
 		FindTreeOptionsAPI: apis.NewFindTreeOptionsAPI[TestCategory, TestCategorySearch]().
 			Public().
-			DefaultConfig(&apis.TreeOptionsConfig{
-				OptionsConfig: apis.OptionsConfig{
+			FieldMapping(&apis.TreeOptionFieldMapping{
+				OptionFieldMapping: apis.OptionFieldMapping{
 					LabelField: "name",
 					ValueField: "id",
 				},
@@ -31,7 +32,7 @@ func NewTestCategoryFindTreeOptionsResource() api.Resource {
 	}
 }
 
-// Resource with custom field mapping
+// Resource with custom field mapping.
 type CustomFieldCategoryFindTreeOptionsResource struct {
 	api.Resource
 	apis.FindTreeOptionsAPI[TestCategory, TestCategorySearch]
@@ -42,8 +43,8 @@ func NewCustomFieldCategoryFindTreeOptionsResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_options_custom"),
 		FindTreeOptionsAPI: apis.NewFindTreeOptionsAPI[TestCategory, TestCategorySearch]().
 			Public().
-			DefaultConfig(&apis.TreeOptionsConfig{
-				OptionsConfig: apis.OptionsConfig{
+			FieldMapping(&apis.TreeOptionFieldMapping{
+				OptionFieldMapping: apis.OptionFieldMapping{
 					LabelField:       "code",
 					ValueField:       "id",
 					DescriptionField: "description",
@@ -54,7 +55,7 @@ func NewCustomFieldCategoryFindTreeOptionsResource() api.Resource {
 	}
 }
 
-// Filtered Tree Options Resource
+// Filtered Tree Options Resource.
 type FilteredCategoryFindTreeOptionsResource struct {
 	api.Resource
 	apis.FindTreeOptionsAPI[TestCategory, TestCategorySearch]
@@ -77,12 +78,12 @@ func NewFilteredCategoryFindTreeOptionsResource() api.Resource {
 	}
 }
 
-// FindTreeOptionsTestSuite is the test suite for FindTreeOptions API tests
+// FindTreeOptionsTestSuite is the test suite for FindTreeOptions API tests.
 type FindTreeOptionsTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *FindTreeOptionsTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestCategoryFindTreeOptionsResource,
@@ -91,12 +92,12 @@ func (suite *FindTreeOptionsTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *FindTreeOptionsTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestFindTreeOptionsBasic tests basic FindTreeOptions functionality
+// TestFindTreeOptionsBasic tests basic FindTreeOptions functionality.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -139,7 +140,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 	suite.NotEmpty(computers["parentId"])
 }
 
-// TestFindTreeOptionsWithConfig tests FindTreeOptions with custom config
+// TestFindTreeOptionsWithConfig tests FindTreeOptions with custom config.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 	suite.Run("DefaultConfig", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -211,7 +212,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 	})
 }
 
-// TestFindTreeOptionsWithSearch tests FindTreeOptions with search conditions
+// TestFindTreeOptionsWithSearch tests FindTreeOptions with search conditions.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithSearch() {
 	suite.Run("SearchByCode", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -257,7 +258,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithSearch() {
 	})
 }
 
-// TestFindTreeOptionsWithFilterApplier tests FindTreeOptions with filter applier
+// TestFindTreeOptionsWithFilterApplier tests FindTreeOptions with filter applier.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithFilterApplier() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -282,7 +283,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithFilterApplier() {
 	suite.Len(children, 2) // Fiction and Non-Fiction
 }
 
-// TestFindTreeOptionsNegativeCases tests negative scenarios
+// TestFindTreeOptionsNegativeCases tests negative scenarios.
 func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsNegativeCases() {
 	suite.Run("NoMatchingRecords", func() {
 		resp := suite.makeAPIRequest(api.Request{

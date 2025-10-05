@@ -7,27 +7,30 @@ import (
 	"net/http/httptest"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/uptrace/bun"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
+	"github.com/ilxqx/vef-framework-go/csv"
+	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/uptrace/bun"
 )
 
-// ImportUser is the test model for import tests (uses excel tags)
+// ImportUser is the test model for import tests (uses tabular tags).
 type ImportUser struct {
 	bun.BaseModel `bun:"table:import_user,alias:iu"`
-	orm.Model     `bun:"extend" excel:"-"`
+	orm.Model     `bun:"extend"                     tabular:"-"`
 
-	Name   string `json:"name" excel:"姓名,width=20" bun:",notnull" validate:"required"`
-	Email  string `json:"email" excel:"邮箱,width=25" bun:",notnull" validate:"required,email"`
-	Age    int    `json:"age" excel:"年龄,width=10" bun:",notnull" validate:"gte=0,lte=150"`
-	Status string `json:"status" excel:"状态,width=10" bun:",notnull,default:'active'" validate:"required,oneof=active inactive pending"`
+	Name   string `json:"name"   tabular:"姓名,width=20" bun:",notnull"                  validate:"required"`
+	Email  string `json:"email"  tabular:"邮箱,width=25" bun:",notnull"                  validate:"required,email"`
+	Age    int    `json:"age"    tabular:"年龄,width=10" bun:",notnull"                  validate:"gte=0,lte=150"`
+	Status string `json:"status" tabular:"状态,width=10" bun:",notnull,default:'active'" validate:"required,oneof=active inactive pending"`
 }
 
-// ImportUserSearch is the search parameters for ImportUser
+// ImportUserSearch is the search parameters for ImportUser.
 type ImportUserSearch struct {
 	api.In
 }
@@ -56,7 +59,7 @@ func NewTestUserImportWithOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_import_opts"),
 		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
 			Public().
-			ImportOptions(excel.WithImportSheetName("用户列表")),
+			ExcelOptions(excel.WithImportSheetName("用户列表")),
 	}
 }
 
@@ -77,6 +80,7 @@ func NewTestUserImportWithPreProcessorResource() api.Resource {
 						models[i].Status = "pending"
 					}
 				}
+
 				return nil
 			}),
 	}
@@ -95,27 +99,59 @@ func NewTestUserImportWithPostProcessorResource() api.Resource {
 			PostImport(func(models []ImportUser, search ImportUserSearch, ctx fiber.Ctx, db orm.Db) error {
 				// Set custom header with count
 				ctx.Set("X-Import-Count", string(rune('0'+len(models))))
+
 				return nil
 			}),
 	}
 }
 
-// ImportTestSuite is the test suite for Import API tests
+type TestUserImportCSVResource struct {
+	api.Resource
+	apis.ImportAPI[ImportUser, ImportUserSearch]
+}
+
+func NewTestUserImportCSVResource() api.Resource {
+	return &TestUserImportCSVResource{
+		Resource: api.NewResource("test/user_import_csv"),
+		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
+			Public().
+			Format(apis.FormatCSV),
+	}
+}
+
+type TestUserImportCSVWithOptionsResource struct {
+	api.Resource
+	apis.ImportAPI[ImportUser, ImportUserSearch]
+}
+
+func NewTestUserImportCSVWithOptionsResource() api.Resource {
+	return &TestUserImportCSVWithOptionsResource{
+		Resource: api.NewResource("test/user_import_csv_opts"),
+		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
+			Public().
+			Format(apis.FormatCSV).
+			CSVOptions(csv.WithImportDelimiter(';')),
+	}
+}
+
+// ImportTestSuite is the test suite for Import API tests.
 type ImportTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *ImportTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserImportResource,
 		NewTestUserImportWithOptionsResource,
 		NewTestUserImportWithPreProcessorResource,
 		NewTestUserImportWithPostProcessorResource,
+		NewTestUserImportCSVResource,
+		NewTestUserImportCSVWithOptionsResource,
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *ImportTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
@@ -275,6 +311,7 @@ func (suite *ImportTestSuite) TestImportWithPostProcessor() {
 func (suite *ImportTestSuite) TestImportEmptyFile() {
 	// Create empty Excel file (with headers but no data rows)
 	exporter := excel.NewExporterFor[ImportUser]()
+
 	var testUsers []ImportUser
 
 	buf, err := exporter.Export(testUsers)
@@ -303,6 +340,7 @@ func (suite *ImportTestSuite) TestImportEmptyFile() {
 func (suite *ImportTestSuite) TestImportLargeFile() {
 	// Create large test file with many rows
 	exporter := excel.NewExporterFor[ImportUser]()
+
 	testUsers := make([]ImportUser, 100)
 	for i := range testUsers {
 		testUsers[i] = ImportUser{
@@ -414,15 +452,147 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 	})
 }
 
-// Helper method for multipart requests
+// CSV Import Tests
+
+func (suite *ImportTestSuite) TestImportCSVBasic() {
+	// Create test CSV file
+	exporter := csv.NewExporterFor[ImportUser]()
+	testUsers := []ImportUser{
+		{Name: "CSV User 1", Email: "csv1@example.com", Age: 30, Status: "active"},
+		{Name: "CSV User 2", Email: "csv2@example.com", Age: 25, Status: "active"},
+		{Name: "CSV User 3", Email: "csv3@example.com", Age: 28, Status: "inactive"},
+	}
+
+	buf, err := exporter.Export(testUsers)
+	suite.NoError(err)
+
+	// Create multipart request
+	resp := suite.makeMultipartAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/user_import_csv",
+			Action:   "import",
+			Version:  "v1",
+		},
+	}, "test_import.csv", buf.Bytes())
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.True(body.IsOk())
+	suite.Equal(i18n.T(result.OkMessage), body.Message)
+
+	// Verify response data
+	data := suite.readDataAsMap(body.Data)
+	suite.Equal(float64(3), data["total"])
+}
+
+func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
+	// Create test CSV file with invalid data
+	exporter := csv.NewExporterFor[ImportUser]()
+	testUsers := []ImportUser{
+		{Name: "Valid User", Email: "valid@example.com", Age: 30, Status: "active"},
+		{Name: "Invalid Email", Email: "invalid-email", Age: 25, Status: "active"},     // Invalid email
+		{Name: "Invalid Age", Email: "test@example.com", Age: 200, Status: "active"},   // Invalid age > 150
+		{Name: "Invalid Status", Email: "test2@example.com", Age: 25, Status: "wrong"}, // Invalid status
+	}
+
+	buf, err := exporter.Export(testUsers)
+	suite.NoError(err)
+
+	// Import should detect validation errors
+	resp := suite.makeMultipartAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/user_import_csv",
+			Action:   "import",
+			Version:  "v1",
+		},
+	}, "test_import_invalid.csv", buf.Bytes())
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.False(body.IsOk())
+
+	// Verify error data contains validation errors
+	data := suite.readDataAsMap(body.Data)
+	suite.NotNil(data["errors"])
+	errors := suite.readDataAsSlice(data["errors"])
+	suite.NotEmpty(errors)
+}
+
+func (suite *ImportTestSuite) TestImportCSVWithOptions() {
+	// Create test CSV file with semicolon delimiter
+	exporter := csv.NewExporterFor[ImportUser](csv.WithExportDelimiter(';'))
+	testUsers := []ImportUser{
+		{Name: "CSV Options User 1", Email: "csvopts1@example.com", Age: 30, Status: "active"},
+		{Name: "CSV Options User 2", Email: "csvopts2@example.com", Age: 25, Status: "active"},
+	}
+
+	buf, err := exporter.Export(testUsers)
+	suite.NoError(err)
+
+	resp := suite.makeMultipartAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/user_import_csv_opts",
+			Action:   "import",
+			Version:  "v1",
+		},
+	}, "test_import_opts.csv", buf.Bytes())
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.True(body.IsOk())
+
+	data := suite.readDataAsMap(body.Data)
+	suite.Equal(float64(2), data["total"])
+}
+
+func (suite *ImportTestSuite) TestImportFormatOverride() {
+	// Test format parameter override
+	exporter := csv.NewExporterFor[ImportUser]()
+	testUsers := []ImportUser{
+		{Name: "Format Override User", Email: "override@example.com", Age: 30, Status: "active"},
+	}
+
+	buf, err := exporter.Export(testUsers)
+	suite.NoError(err)
+
+	// Use Excel endpoint but override format to CSV via parameter
+	resp := suite.makeMultipartAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/user_import",
+			Action:   "import",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"format": "csv",
+		},
+	}, "test_import_override.csv", buf.Bytes())
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.True(body.IsOk())
+
+	data := suite.readDataAsMap(body.Data)
+	suite.Equal(float64(1), data["total"])
+}
+
+// Helper method for multipart requests.
 func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename string, fileContent []byte) *http.Response {
 	var buf bytes.Buffer
+
 	writer := multipart.NewWriter(&buf)
 
 	// Add API request fields
 	_ = writer.WriteField("resource", req.Resource)
 	_ = writer.WriteField("action", req.Action)
 	_ = writer.WriteField("version", req.Version)
+
+	// Add params as JSON string if present
+	if req.Params != nil {
+		paramsJSON, err := encoding.ToJSON(req.Params)
+		suite.NoError(err)
+
+		_ = writer.WriteField("params", paramsJSON)
+	}
 
 	// Add file
 	part, err := writer.CreateFormFile("file", filename)
@@ -438,5 +608,6 @@ func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename 
 
 	resp, err := suite.app.Test(httpReq)
 	suite.Require().NoError(err)
+
 	return resp
 }

@@ -4,10 +4,11 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/ilxqx/vef-framework-go/crypto"
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/crypto"
+	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 func TestAESPasswordDecryptor(t *testing.T) {

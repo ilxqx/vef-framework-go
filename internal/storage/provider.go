@@ -22,10 +22,10 @@ func NewStorageProvider(cfg *config.StorageConfig, appCfg *config.AppConfig) (st
 		return minio.NewMinIOProvider(cfg.MinIO, appCfg)
 	case constants.StorageMemory:
 		return memory.NewMemoryProvider(), nil
-	// TODO: Add other providers here
-	// case constants.StorageOSS:
-	//     return oss.NewOSSProvider(...)
+		// TODO: Add other providers here
+		// case constants.StorageOSS:
+		//     return oss.NewOSSProvider(...)
 	default:
-		return nil, fmt.Errorf("unsupported storage provider: %s", cfg.Provider)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedStorageProvider, cfg.Provider)
 	}
 }

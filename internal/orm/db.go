@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	// txOptions defines transaction options for read-write transactions
+	// TxOptions defines transaction options for read-write transactions.
 	txOptions = &sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 		ReadOnly:  false,
 	}
-	// readOnlyTxOptions defines transaction options for read-only transactions
+	// ReadOnlyTxOptions defines transaction options for read-only transactions.
 	readOnlyTxOptions = &sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,
 		ReadOnly:  true,
@@ -87,6 +87,7 @@ func (d *BunDb) ModelPKs(model any) (map[string]any, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		pkValues[pk.Name] = value
 	}
 

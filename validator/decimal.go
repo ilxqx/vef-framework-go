@@ -1,8 +1,9 @@
 package validator
 
 import (
-	v "github.com/go-playground/validator/v10"
 	"github.com/shopspring/decimal"
+
+	v "github.com/go-playground/validator/v10"
 )
 
 // newDecimalMinRule creates a validation rule that ensures decimal values meet minimum threshold.
@@ -29,12 +30,14 @@ func newDecimalComparisonRule(ruleTag, errMessageTemplate string, compareFn func
 			dec, ok := fl.Field().Interface().(decimal.Decimal)
 			if !ok {
 				logger.Warnf("[%s] %s requires a decimal.Decimal, but got %s", fl.FieldName(), ruleTag, fl.Field().Type().String())
+
 				return false
 			}
 
 			threshold, err := decimal.NewFromString(fl.Param())
 			if err != nil {
 				logger.Warnf("[%s] Failed to parse the param of %s: %v", fl.FieldName(), ruleTag, err)
+
 				return false
 			}
 

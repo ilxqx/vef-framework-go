@@ -1,8 +1,9 @@
 package orm
 
 import (
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/uptrace/bun/schema"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // ClauseConditionBuilder is responsible for collecting and grouping condition clauses, and rendering them.
@@ -29,6 +30,7 @@ func newConditionBuilder(qb QueryBuilder) *ClauseConditionBuilder {
 	cb.and = builder.And
 	cb.or = builder.Or
 	cb.group = builder.BuildGroup
+
 	return builder
 }
 

@@ -12,11 +12,12 @@ type MergeTestSuite struct {
 	*ORMTestSuite
 }
 
-// TestBasicMerge tests basic MERGE functionality
+// TestBasicMerge tests basic MERGE functionality.
 func (suite *MergeTestSuite) TestBasicMerge() {
 	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
+
 	suite.T().Logf("Testing basic MERGE for %s", suite.dbType)
 
 	// Test 1: Basic MERGE with INSERT and UPDATE
@@ -54,6 +55,7 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 		Exec(suite.ctx)
 
 	suite.NoError(err)
+
 	if result != nil {
 		affected, _ := result.RowsAffected()
 		suite.True(affected >= 0, "Should complete without error")
@@ -61,6 +63,7 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 
 	// Verify results
 	var newUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&newUsers).
 		Where(func(cb ConditionBuilder) {
@@ -72,11 +75,12 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 	suite.T().Logf("Found %d new users after merge", len(newUsers))
 }
 
-// TestMergeWithConditions tests MERGE with conditional operations
+// TestMergeWithConditions tests MERGE with conditional operations.
 func (suite *MergeTestSuite) TestMergeWithConditions() {
 	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
+
 	suite.T().Logf("Testing MERGE with conditions for %s", suite.dbType)
 
 	// Test conditional MERGE with WHEN MATCHED AND conditions
@@ -117,6 +121,7 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 		Exec(suite.ctx)
 
 	suite.NoError(err)
+
 	if result != nil {
 		affected, _ := result.RowsAffected()
 		suite.True(affected >= 0, "Should complete without error")
@@ -125,11 +130,12 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 	suite.T().Logf("Conditional merge completed")
 }
 
-// TestMergeWithDelete tests MERGE operations that include DELETE
+// TestMergeWithDelete tests MERGE operations that include DELETE.
 func (suite *MergeTestSuite) TestMergeWithDelete() {
 	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
+
 	suite.T().Logf("Testing MERGE with DELETE for %s", suite.dbType)
 
 	// Create some test posts first
@@ -184,6 +190,7 @@ func (suite *MergeTestSuite) TestMergeWithDelete() {
 		Exec(suite.ctx)
 
 	suite.NoError(err)
+
 	if result != nil {
 		affected, _ := result.RowsAffected()
 		suite.True(affected >= 0, "Should complete without error")
@@ -191,6 +198,7 @@ func (suite *MergeTestSuite) TestMergeWithDelete() {
 
 	// Verify results
 	var remainingPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&remainingPosts).
 		Where(func(cb ConditionBuilder) {
@@ -201,6 +209,7 @@ func (suite *MergeTestSuite) TestMergeWithDelete() {
 	suite.NoError(err)
 
 	suite.T().Logf("Remaining posts after merge with delete: %d", len(remainingPosts))
+
 	for _, post := range remainingPosts {
 		suite.T().Logf("Post %s: %s - %s (views: %d)", post.Id, post.Title, post.Status, post.ViewCount)
 		// merge_test_3 should be deleted because it had low view count
@@ -208,11 +217,12 @@ func (suite *MergeTestSuite) TestMergeWithDelete() {
 	}
 }
 
-// TestMergeWithSubquerySource tests MERGE using subquery as source
+// TestMergeWithSubquerySource tests MERGE using subquery as source.
 func (suite *MergeTestSuite) TestMergeWithSubquerySource() {
 	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
+
 	suite.T().Logf("Testing MERGE with subquery source for %s", suite.dbType)
 
 	// Test MERGE where source is a subquery
@@ -243,6 +253,7 @@ func (suite *MergeTestSuite) TestMergeWithSubquerySource() {
 		Exec(suite.ctx)
 
 	suite.NoError(err)
+
 	if result != nil {
 		affected, _ := result.RowsAffected()
 		suite.True(affected >= 0, "Should complete without error")
@@ -251,6 +262,7 @@ func (suite *MergeTestSuite) TestMergeWithSubquerySource() {
 
 	// Verify subquery merge results
 	var publishedPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&publishedPosts).
 		Where(func(cb ConditionBuilder) {
@@ -261,16 +273,18 @@ func (suite *MergeTestSuite) TestMergeWithSubquerySource() {
 	suite.NoError(err)
 
 	suite.T().Logf("Published posts after subquery merge: %d", len(publishedPosts))
+
 	for _, post := range publishedPosts {
 		suite.T().Logf("Post %s: %s (views: %d)", post.Id, post.Title, post.ViewCount)
 	}
 }
 
-// TestMergeWithExpressions tests MERGE with complex expressions
+// TestMergeWithExpressions tests MERGE with complex expressions.
 func (suite *MergeTestSuite) TestMergeWithExpressions() {
 	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
+
 	suite.T().Logf("Testing MERGE with expressions for %s", suite.dbType)
 
 	// Test MERGE with calculated values and expressions
@@ -301,6 +315,7 @@ func (suite *MergeTestSuite) TestMergeWithExpressions() {
 		Exec(suite.ctx)
 
 	suite.NoError(err)
+
 	if result != nil {
 		affected, _ := result.RowsAffected()
 		suite.True(affected >= 0, "Should complete without error")
@@ -309,11 +324,12 @@ func (suite *MergeTestSuite) TestMergeWithExpressions() {
 	suite.T().Logf("MERGE with expressions completed")
 }
 
-// TestMergePerformance tests MERGE performance with datasets
+// TestMergePerformance tests MERGE performance with datasets.
 func (suite *MergeTestSuite) TestMergePerformance() {
 	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
+
 	suite.T().Logf("Testing MERGE performance for %s", suite.dbType)
 
 	// Skip performance test if running in short mode
@@ -323,6 +339,7 @@ func (suite *MergeTestSuite) TestMergePerformance() {
 
 	// Create dataset for performance testing
 	const batchSize = 100
+
 	type PerfTestData struct {
 		Id    string `bun:"id,pk"`
 		Value int64  `bun:"value"`
@@ -359,6 +376,7 @@ func (suite *MergeTestSuite) TestMergePerformance() {
 	duration := time.Since(start)
 
 	suite.NoError(err)
+
 	if result != nil {
 		affected, _ := result.RowsAffected()
 		suite.True(affected >= 0, "Should complete without error")
@@ -377,11 +395,12 @@ func (suite *MergeTestSuite) TestMergePerformance() {
 	suite.NoError(err)
 }
 
-// TestMergeWithReturning tests MERGE with RETURNING clause
+// TestMergeWithReturning tests MERGE with RETURNING clause.
 func (suite *MergeTestSuite) TestMergeWithReturning() {
 	if suite.dbType != constants.DbPostgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
+
 	suite.T().Logf("Testing MERGE with RETURNING for %s", suite.dbType)
 
 	type UserMergeData struct {
@@ -398,6 +417,7 @@ func (suite *MergeTestSuite) TestMergeWithReturning() {
 
 	// Test MERGE with RETURNING clause
 	var returnedUsers []User
+
 	err := suite.db.NewMerge().
 		Model((*User)(nil)).
 		WithValues("_source_data", sourceData).
@@ -442,6 +462,7 @@ func (suite *MergeTestSuite) TestMergeWithReturning() {
 			End().
 			Exec(suite.ctx)
 		suite.NoError(err)
+
 		if result != nil {
 			affected, _ := result.RowsAffected()
 			suite.True(affected >= 0, "Should complete without error")
@@ -449,6 +470,7 @@ func (suite *MergeTestSuite) TestMergeWithReturning() {
 	} else {
 		suite.True(len(returnedUsers) >= 0, "Should return some users")
 		suite.T().Logf("MERGE with RETURNING returned %d users", len(returnedUsers))
+
 		for _, user := range returnedUsers {
 			suite.T().Logf("Returned user: %s (%s)", user.Name, user.Email)
 		}
@@ -456,6 +478,7 @@ func (suite *MergeTestSuite) TestMergeWithReturning() {
 
 	// Verify the merge was successful
 	var mergedUsers []User
+
 	err = suite.db.NewSelect().
 		Model(&mergedUsers).
 		Where(func(cb ConditionBuilder) {
@@ -466,6 +489,7 @@ func (suite *MergeTestSuite) TestMergeWithReturning() {
 	suite.NoError(err)
 
 	suite.T().Logf("Merged users: %d", len(mergedUsers))
+
 	for _, user := range mergedUsers {
 		suite.T().Logf("User %s: %s (%s)", user.Id, user.Name, user.Email)
 	}

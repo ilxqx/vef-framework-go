@@ -13,7 +13,7 @@ const (
 	dictKeyPrefix = "dict:"
 )
 
-// DataDictTranslator is a data dictionary translator that converts code values to readable names
+// DataDictTranslator is a data dictionary translator that converts code values to readable names.
 type DataDictTranslator struct {
 	logger   log.Logger
 	resolver mold.DataDictResolver
@@ -27,6 +27,7 @@ func (t *DataDictTranslator) Translate(ctx context.Context, kind, value string) 
 	// Skip if resolver is nil
 	if t.resolver == nil {
 		t.logger.Warnf("Ignore dict translation for value '%s' because DataDictResolver is nil, please provide one in the container", value)
+
 		return constants.Empty, nil
 	}
 
@@ -34,10 +35,11 @@ func (t *DataDictTranslator) Translate(ctx context.Context, kind, value string) 
 	dictKey := kind[len(dictKeyPrefix):]
 
 	result := t.resolver.Resolve(ctx, dictKey, value)
+
 	return result.ValueOrZero(), nil
 }
 
-// NewDataDictTranslator creates a data dictionary translator instance
+// NewDataDictTranslator creates a data dictionary translator instance.
 func NewDataDictTranslator(resolver mold.DataDictResolver) mold.Translator {
 	return &DataDictTranslator{
 		logger:   logger.Named("data_dict"),

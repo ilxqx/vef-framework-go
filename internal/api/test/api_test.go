@@ -11,6 +11,10 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/fx"
+
 	"github.com/ilxqx/vef-framework-go"
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
@@ -20,12 +24,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/samber/lo"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/fx"
 )
 
-// TestAPIBasicFlow tests the basic API request flow
+// TestAPIBasicFlow tests the basic API request flow.
 func TestAPIBasicFlow(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
@@ -43,7 +44,7 @@ func TestAPIBasicFlow(t *testing.T) {
 	require.Contains(t, body, `"data":{"id":"123","name":"User 123"}`)
 }
 
-// TestAPIWithDatabaseAccess tests API with database parameter injection
+// TestAPIWithDatabaseAccess tests API with database parameter injection.
 func TestAPIWithDatabaseAccess(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
@@ -59,7 +60,7 @@ func TestAPIWithDatabaseAccess(t *testing.T) {
 	require.Contains(t, body, `"data":"db access works"`)
 }
 
-// TestAPIWithLogger tests API with logger parameter injection
+// TestAPIWithLogger tests API with logger parameter injection.
 func TestAPIWithLogger(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
@@ -75,7 +76,7 @@ func TestAPIWithLogger(t *testing.T) {
 	require.Contains(t, body, `"data":"logged"`)
 }
 
-// TestAPIMultipleResources tests multiple resources
+// TestAPIMultipleResources tests multiple resources.
 func TestAPIMultipleResources(t *testing.T) {
 	testApp, stop := newTestApp(t,
 		NewTestResource,
@@ -107,7 +108,7 @@ func TestAPIMultipleResources(t *testing.T) {
 	require.Contains(t, body, `"data":"products"`)
 }
 
-// TestAPIWithCustomParams tests API with custom parameter struct
+// TestAPIWithCustomParams tests API with custom parameter struct.
 func TestAPIWithCustomParams(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
@@ -128,7 +129,7 @@ func TestAPIWithCustomParams(t *testing.T) {
 	require.Contains(t, body, `"email":"john@example.com"`)
 }
 
-// TestAPINotFound tests non-existent API
+// TestAPINotFound tests non-existent API.
 func TestAPINotFound(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
@@ -142,7 +143,7 @@ func TestAPINotFound(t *testing.T) {
 	require.Equal(t, 404, resp.StatusCode)
 }
 
-// TestAPIInvalidRequest tests invalid request format
+// TestAPIInvalidRequest tests invalid request format.
 func TestAPIInvalidRequest(t *testing.T) {
 	testApp, stop := newTestApp(t)
 	defer stop()
@@ -157,7 +158,7 @@ func TestAPIInvalidRequest(t *testing.T) {
 	require.Contains(t, body, `"code":1400`)
 }
 
-// TestAPIVersioning tests API versioning
+// TestAPIVersioning tests API versioning.
 func TestAPIVersioning(t *testing.T) {
 	testApp, stop := newTestApp(t,
 		NewVersionedResource,
@@ -188,7 +189,7 @@ func TestAPIVersioning(t *testing.T) {
 	require.Contains(t, body, `"version":"v2"`)
 }
 
-// TestAPIParamValidation tests parameter validation
+// TestAPIParamValidation tests parameter validation.
 func TestAPIParamValidation(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
@@ -207,7 +208,7 @@ func TestAPIParamValidation(t *testing.T) {
 	require.Contains(t, body, `"code":1400`)
 }
 
-// TestAPIEmailValidation tests email format validation
+// TestAPIEmailValidation tests email format validation.
 func TestAPIEmailValidation(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
@@ -229,7 +230,7 @@ func TestAPIEmailValidation(t *testing.T) {
 	require.Contains(t, body, `"code":1400`)
 }
 
-// TestAPIExplicitHandler tests Spec.Handler field
+// TestAPIExplicitHandler tests Spec.Handler field.
 func TestAPIExplicitHandler(t *testing.T) {
 	testApp, stop := newTestApp(t, NewExplicitHandlerResource)
 	defer stop()
@@ -245,7 +246,7 @@ func TestAPIExplicitHandler(t *testing.T) {
 	require.Contains(t, body, `"data":"explicit handler"`)
 }
 
-// TestAPIHandlerFactory tests handler factory pattern with db parameter
+// TestAPIHandlerFactory tests handler factory pattern with db parameter.
 func TestAPIHandlerFactory(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFactoryResource)
 	defer stop()
@@ -261,7 +262,7 @@ func TestAPIHandlerFactory(t *testing.T) {
 	require.Contains(t, body, `"data":"factory handler with db"`)
 }
 
-// TestAPIHandlerFactoryNoParam tests handler factory pattern without parameters
+// TestAPIHandlerFactoryNoParam tests handler factory pattern without parameters.
 func TestAPIHandlerFactoryNoParam(t *testing.T) {
 	testApp, stop := newTestApp(t, NewNoParamFactoryResource)
 	defer stop()
@@ -277,7 +278,7 @@ func TestAPIHandlerFactoryNoParam(t *testing.T) {
 	require.Contains(t, body, `"data":"factory handler without params"`)
 }
 
-// TestAPINoReturnValue tests handler without return value
+// TestAPINoReturnValue tests handler without return value.
 func TestAPINoReturnValue(t *testing.T) {
 	testApp, stop := newTestApp(t, NewNoReturnResource)
 	defer stop()
@@ -291,7 +292,7 @@ func TestAPINoReturnValue(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 }
 
-// TestAPIFieldInjection tests parameter injection from resource fields
+// TestAPIFieldInjection tests parameter injection from resource fields.
 func TestAPIFieldInjection(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFieldInjectionResource)
 	defer stop()
@@ -307,7 +308,7 @@ func TestAPIFieldInjection(t *testing.T) {
 	require.Contains(t, body, `"service":"injected"`)
 }
 
-// TestAPIEmbeddedProvider tests API from embedded Provider
+// TestAPIEmbeddedProvider tests API from embedded Provider.
 func TestAPIEmbeddedProvider(t *testing.T) {
 	testApp, stop := newTestApp(t, NewEmbeddedProviderResource)
 	defer stop()
@@ -323,7 +324,7 @@ func TestAPIEmbeddedProvider(t *testing.T) {
 	require.Contains(t, body, `"data":"from provider"`)
 }
 
-// TestAPIMultipartFormData tests API request with multipart/form-data format
+// TestAPIMultipartFormData tests API request with multipart/form-data format.
 func TestAPIMultipartFormData(t *testing.T) {
 	testApp, stop := newTestApp(t, NewMultipartResource)
 	defer stop()
@@ -341,7 +342,7 @@ func TestAPIMultipartFormData(t *testing.T) {
 	require.Contains(t, body, `"email":"john@example.com"`)
 }
 
-// TestAPIRequestFormats tests both JSON and multipart/form-data request formats
+// TestAPIRequestFormats tests both JSON and multipart/form-data request formats.
 func TestAPIRequestFormats(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFormatsResource)
 	defer stop()
@@ -371,7 +372,7 @@ func TestAPIRequestFormats(t *testing.T) {
 	require.Contains(t, formBody, `"data":"multipart/form-data`)
 }
 
-// TestAPIMultipartWithMultipleFiles tests uploading multiple files with different keys
+// TestAPIMultipartWithMultipleFiles tests uploading multiple files with different keys.
 func TestAPIMultipartWithMultipleFiles(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFileUploadResource)
 	defer stop()
@@ -399,7 +400,7 @@ func TestAPIMultipartWithMultipleFiles(t *testing.T) {
 	require.Contains(t, body, `"document":"resume.pdf"`)
 }
 
-// TestAPIMultipartWithSameKeyFiles tests uploading multiple files with the same key
+// TestAPIMultipartWithSameKeyFiles tests uploading multiple files with the same key.
 func TestAPIMultipartWithSameKeyFiles(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFileUploadResource)
 	defer stop()
@@ -426,7 +427,7 @@ func TestAPIMultipartWithSameKeyFiles(t *testing.T) {
 	require.Contains(t, body, `"attachments":["file1.txt","file2.txt","file3.txt"]`)
 }
 
-// TestAPIMultipartFilesWithParams tests uploading files along with other parameters
+// TestAPIMultipartFilesWithParams tests uploading files along with other parameters.
 func TestAPIMultipartFilesWithParams(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFileUploadResource)
 	defer stop()
@@ -469,19 +470,23 @@ func newTestApp(t *testing.T, resourceCtors ...any) (*app.App, func()) {
 
 func makeAPIRequest(t *testing.T, app interface {
 	Test(req *http.Request, timeout ...time.Duration) (*http.Response, error)
-}, body string) *http.Response {
+}, body string,
+) *http.Response {
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(body))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := app.Test(req)
 	require.NoError(t, err)
+
 	return resp
 }
 
 func makeAPIRequestMultipart(t *testing.T, app interface {
 	Test(req *http.Request, timeout ...time.Duration) (*http.Response, error)
-}, fields map[string]string) *http.Response {
+}, fields map[string]string,
+) *http.Response {
 	var buf bytes.Buffer
+
 	writer := multipart.NewWriter(&buf)
 
 	// Add form fields
@@ -498,10 +503,11 @@ func makeAPIRequestMultipart(t *testing.T, app interface {
 
 	resp, err := app.Test(req)
 	require.NoError(t, err)
+
 	return resp
 }
 
-// FileContent represents a file to be uploaded
+// FileContent represents a file to be uploaded.
 type FileContent struct {
 	Filename string
 	Content  []byte
@@ -509,8 +515,10 @@ type FileContent struct {
 
 func makeAPIRequestWithFiles(t *testing.T, app interface {
 	Test(req *http.Request, timeout ...time.Duration) (*http.Response, error)
-}, fields map[string]string, files map[string][]FileContent) *http.Response {
+}, fields map[string]string, files map[string][]FileContent,
+) *http.Response {
 	var buf bytes.Buffer
+
 	writer := multipart.NewWriter(&buf)
 
 	// Add form fields
@@ -538,12 +546,16 @@ func makeAPIRequestWithFiles(t *testing.T, app interface {
 
 	resp, err := app.Test(req)
 	require.NoError(t, err)
+
 	return resp
 }
 
 func readBody(t *testing.T, resp *http.Response) string {
 	body, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
 	require.NoError(t, err)
+
 	return string(body)
 }
 
@@ -569,6 +581,7 @@ func NewTestResource() apiPkg.Resource {
 
 type GetUserParams struct {
 	apiPkg.In
+
 	ID string `json:"id" validate:"required"`
 }
 
@@ -584,12 +597,14 @@ func (r *TestUserResource) List(ctx fiber.Ctx, db orm.Db) error {
 	if db != nil {
 		return result.Ok("db access works").Response(ctx)
 	}
+
 	return result.Err("db not injected")
 }
 
 type CreateUserParams struct {
 	apiPkg.In
-	Name  string `json:"name" validate:"required"`
+
+	Name  string `json:"name"  validate:"required"`
 	Email string `json:"email" validate:"required,email"`
 }
 
@@ -602,6 +617,7 @@ func (r *TestUserResource) Create(ctx fiber.Ctx, params CreateUserParams) error 
 
 func (r *TestUserResource) Log(ctx fiber.Ctx, logger log.Logger) error {
 	logger.Info("Test log message")
+
 	return result.Ok("logged").Response(ctx)
 }
 
@@ -720,6 +736,7 @@ func (r *FactoryResource) Query(db orm.Db) func(ctx fiber.Ctx) error {
 		if db != nil {
 			return result.Ok("factory handler with db").Response(ctx)
 		}
+
 		return result.Err("db not available")
 	}
 }
@@ -765,9 +782,11 @@ func NewNoReturnResource() apiPkg.Resource {
 	}
 }
 
-func (r *NoReturnResource) Ping(ctx fiber.Ctx) {
+func (r *NoReturnResource) Ping(ctx fiber.Ctx, logger log.Logger) {
 	// No return value
-	result.Ok("pong").Response(ctx)
+	if err := result.Ok("pong").Response(ctx); err != nil {
+		logger.Errorf("Failed to send response: %v", err)
+	}
 }
 
 // Field Injection Resource - tests parameter injection from struct fields
@@ -778,6 +797,7 @@ type TestService struct {
 
 type FieldInjectionResource struct {
 	apiPkg.Resource
+
 	Service *TestService
 }
 
@@ -799,6 +819,7 @@ func (r *FieldInjectionResource) Check(ctx fiber.Ctx, service *TestService) erro
 			"service": service.Name,
 		}).Response(ctx)
 	}
+
 	return result.Err("service not injected")
 }
 
@@ -848,7 +869,7 @@ func NewMultipartResource() apiPkg.Resource {
 type ImportParams struct {
 	apiPkg.In
 
-	Name  string `json:"name" validate:"required"`
+	Name  string `json:"name"  validate:"required"`
 	Email string `json:"email" validate:"required,email"`
 }
 
@@ -938,7 +959,7 @@ func (r *FileUploadResource) SameKey(ctx fiber.Ctx, params SameKeyParams) error 
 type WithParamsParams struct {
 	apiPkg.In
 
-	Title       string   `json:"title" validate:"required"`
+	Title       string   `json:"title"       validate:"required"`
 	Description string   `json:"description"`
 	Tags        []string `json:"tags"`
 	Image       *multipart.FileHeader

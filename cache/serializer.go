@@ -12,6 +12,7 @@ type gobSerializer[T any] struct{}
 
 func (s gobSerializer[T]) Serialize(value T) ([]byte, error) {
 	var buf bytes.Buffer
+
 	encoder := gob.NewEncoder(&buf)
 	if err := encoder.Encode(value); err != nil {
 		return nil, err
@@ -22,6 +23,7 @@ func (s gobSerializer[T]) Serialize(value T) ([]byte, error) {
 
 func (s gobSerializer[T]) Deserialize(data []byte) (T, error) {
 	var value T
+
 	buf := bytes.NewReader(data)
 	decoder := gob.NewDecoder(buf)
 	err := decoder.Decode(&value)
@@ -43,7 +45,9 @@ func (s jsonSerializer[T]) Serialize(value T) ([]byte, error) {
 // Returns an error if the data is not valid JSON or cannot be unmarshaled to type T.
 func (s jsonSerializer[T]) Deserialize(data []byte) (T, error) {
 	var value T
+
 	err := json.Unmarshal(data, &value)
+
 	return value, err
 }
 

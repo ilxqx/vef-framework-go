@@ -72,6 +72,7 @@ func (d Date) MarshalJSON() ([]byte, error) {
 func (d *Date) UnmarshalJSON(data []byte) error {
 	if len(data) > 0 && data[0] == 'n' {
 		d.Valid = false
+
 		return nil
 	}
 
@@ -80,6 +81,7 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 	}
 
 	d.Valid = true
+
 	return nil
 }
 
@@ -101,12 +103,16 @@ func (d *Date) UnmarshalText(text []byte) error {
 	// allowing "null" is for backwards compatibility with v3
 	if str == constants.Empty || str == constants.JSONNull {
 		d.Valid = false
+
 		return nil
 	}
+
 	if err := d.V.UnmarshalText(text); err != nil {
 		return fmt.Errorf("null: couldn't unmarshal text: %w", err)
 	}
+
 	d.Valid = true
+
 	return nil
 }
 

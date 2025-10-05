@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test structs for method testing
+// Test structs for method testing.
 type BaseStruct struct {
 	Value string
 }
@@ -23,6 +23,7 @@ func (b *BaseStruct) BasePointerMethod() string {
 
 type EmbeddedStruct struct {
 	BaseStruct
+
 	Name string
 }
 
@@ -32,6 +33,7 @@ func (e EmbeddedStruct) EmbeddedMethod() string {
 
 type NestedStruct struct {
 	EmbeddedStruct
+
 	Age int
 }
 
@@ -39,7 +41,7 @@ func (n *NestedStruct) NestedPointerMethod() string {
 	return "nested pointer method"
 }
 
-// Generic types for testing IsSimilarType
+// Generic types for testing IsSimilarType.
 type GenericStruct[T any] struct {
 	Data T
 }
@@ -157,6 +159,7 @@ func TestApplyIfString(t *testing.T) {
 
 	t.Run("nil pointer", func(t *testing.T) {
 		var str *string
+
 		result := ApplyIfString(str, func(s string) int {
 			return len(s)
 		}, 100)
@@ -308,7 +311,7 @@ func TestFindMethod(t *testing.T) {
 	})
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkFindMethod(b *testing.B) {
 	// Expensive initialization - creating complex nested struct and reflect.Value
 	nested := NestedStruct{
@@ -322,6 +325,7 @@ func BenchmarkFindMethod(b *testing.B) {
 
 	// Reset timer after initialization to exclude setup cost
 	b.ResetTimer()
+
 	for b.Loop() {
 		FindMethod(rv, "BaseMethod")
 	}
@@ -333,12 +337,13 @@ func BenchmarkIndirect(b *testing.B) {
 
 	// Reset timer after initialization
 	b.ResetTimer()
+
 	for b.Loop() {
 		Indirect(ptrType)
 	}
 }
 
-// Test types and interfaces for compatibility tests
+// Test types and interfaces for compatibility tests.
 type TestInterface interface {
 	TestMethod() string
 }
@@ -451,6 +456,7 @@ func TestConvertValue(t *testing.T) {
 
 	t.Run("nil pointer to value conversion", func(t *testing.T) {
 		var str *string
+
 		ptrValue := reflect.ValueOf(str)
 		stringType := reflect.TypeOf("")
 
@@ -485,6 +491,7 @@ func TestConvertValue(t *testing.T) {
 
 	t.Run("nil pointer to pointer conversion", func(t *testing.T) {
 		var str *string
+
 		ptrValue := reflect.ValueOf(str)
 		stringPtrType := reflect.TypeOf((*string)(nil))
 
@@ -525,6 +532,7 @@ func TestConvertValue(t *testing.T) {
 		result, err := ConvertValue(original, testStructType)
 
 		require.NoError(t, err)
+
 		convertedStruct := result.Interface().(TestStruct)
 		assert.Equal(t, "test", convertedStruct.Value)
 	})

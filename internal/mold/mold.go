@@ -18,7 +18,7 @@ var (
 )
 
 // MoldTransformer is the base controlling object which contains
-// all necessary information
+// all necessary information.
 type MoldTransformer struct {
 	tagName          string
 	aliases          map[string]string
@@ -29,7 +29,7 @@ type MoldTransformer struct {
 	tCache           *tagCache
 }
 
-// New creates a new Transform object with default tag name of 'mold'
+// New creates a new Transform object with default tag name of 'mold'.
 func New() *MoldTransformer {
 	tc := new(tagCache)
 	tc.m.Store(make(map[string]*cTag))
@@ -51,7 +51,7 @@ func New() *MoldTransformer {
 //
 // NOTES:
 // - if the key already exists, the previous transformation function will be replaced.
-// - this method is not thread-safe it is intended that these all be registered before hand
+// - this method is not thread-safe it is intended that these all be registered before hand.
 func (t *MoldTransformer) Register(tag string, fn mold.Func) {
 	if len(tag) == 0 {
 		panic("mold: transformation tag cannot be empty")
@@ -66,6 +66,7 @@ func (t *MoldTransformer) Register(tag string, fn mold.Func) {
 	if ok || strings.ContainsAny(tag, restrictedTagChars) {
 		panic(fmt.Sprintf(restrictedTagErr, tag))
 	}
+
 	t.transformations[tag] = fn
 }
 
@@ -73,7 +74,7 @@ func (t *MoldTransformer) Register(tag string, fn mold.Func) {
 // defines a common or complex set of transformations to simplify adding transforms
 // to structs.
 //
-// NOTE: this function is not thread-safe it is intended that these all be registered before hand
+// NOTE: this function is not thread-safe it is intended that these all be registered before hand.
 func (t *MoldTransformer) RegisterAlias(alias, tags string) {
 	if len(alias) == 0 {
 		panic("mold: transformation alias cannot be empty")
@@ -88,6 +89,7 @@ func (t *MoldTransformer) RegisterAlias(alias, tags string) {
 	if ok || strings.ContainsAny(alias, restrictedTagChars) {
 		panic(fmt.Sprintf(restrictedAliasErr, alias))
 	}
+
 	t.aliases[alias] = tags
 }
 
@@ -96,7 +98,7 @@ func (t *MoldTransformer) RegisterAlias(alias, tags string) {
 // from other packages your using.
 //
 // NOTES:
-// - this method is not thread-safe it is intended that these all be registered prior to any validation
+// - this method is not thread-safe it is intended that these all be registered prior to any validation.
 func (t *MoldTransformer) RegisterStructLevel(fn mold.StructLevelFunc, types ...any) {
 	if t.structLevelFuncs == nil {
 		t.structLevelFuncs = make(map[reflect.Type]mold.StructLevelFunc)
@@ -107,18 +109,18 @@ func (t *MoldTransformer) RegisterStructLevel(fn mold.StructLevelFunc, types ...
 	}
 }
 
-// RegisterInterceptor registers a new interceptor functions agains one or more types.
-// This InterceptorFunc allows one to intercept the incoming to to redirect the application of modifications
+// RegisterInterceptor registers a new interceptor functions against one or more types.
+// This InterceptorFunc allows one to intercept the incoming to redirect the application of modifications
 // to an inner type/value.
 //
-// eg. sql.NullString
+// Eg. Sql.NullString.
 func (t *MoldTransformer) RegisterInterceptor(fn mold.InterceptorFunc, types ...any) {
 	for _, typ := range types {
 		t.interceptors[reflect.TypeOf(typ)] = fn
 	}
 }
 
-// Struct applies transformations against the provided struct
+// Struct applies transformations against the provided struct.
 func (t *MoldTransformer) Struct(ctx context.Context, v any) error {
 	orig := reflect.ValueOf(v)
 
@@ -132,6 +134,7 @@ func (t *MoldTransformer) Struct(ctx context.Context, v any) error {
 	if val.Kind() != reflect.Struct || val.Type() == timeType {
 		return &ErrInvalidTransformation{typ: reflect.TypeOf(v)}
 	}
+
 	return t.setByStruct(ctx, orig, val, typ)
 }
 
@@ -139,7 +142,7 @@ func (t *MoldTransformer) setByStruct(ctx context.Context, parent, current refle
 	cs, ok := t.cCache.Get(typ)
 	if !ok {
 		if cs, err = t.extractStructCache(current); err != nil {
-			return
+			return err
 		}
 	}
 
@@ -150,19 +153,20 @@ func (t *MoldTransformer) setByStruct(ctx context.Context, parent, current refle
 			parent:      parent,
 			current:     current,
 		}); err != nil {
-			return
+			return err
 		}
 	}
 
 	for name, field := range cs.fields {
 		if err = t.setByFieldWithContainer(ctx, name, current.Field(field.idx), field.cTags, current, cs); err != nil {
-			return
+			return err
 		}
 	}
+
 	return nil
 }
 
-// Field applies the provided transformations against the variable
+// Field applies the provided transformations against the variable.
 func (t *MoldTransformer) Field(ctx context.Context, v any, tags string) (err error) {
 	if len(tags) == 0 || tags == ignoreTag {
 		return nil
@@ -173,6 +177,7 @@ func (t *MoldTransformer) Field(ctx context.Context, v any, tags string) (err er
 	if val.Kind() != reflect.Pointer || val.IsNil() {
 		return &ErrInvalidTransformValue{typ: reflect.TypeOf(v), fn: "Field"}
 	}
+
 	val = val.Elem()
 
 	// find cached tag
@@ -186,14 +191,19 @@ func (t *MoldTransformer) Field(ctx context.Context, v any, tags string) (err er
 		if !ok {
 			if ctag, _, err = t.parseFieldTagsRecursive(tags, constants.Empty, constants.Empty, false); err != nil {
 				t.tCache.lock.Unlock()
-				return
+
+				return err
 			}
+
 			t.tCache.Set(tags, ctag)
 		}
+
 		t.tCache.lock.Unlock()
 	}
+
 	err = t.setByField(ctx, val, ctag)
-	return
+
+	return err
 }
 
 func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name string, original reflect.Value, ct *cTag, structValue reflect.Value, structCache *cStruct) (err error) {
@@ -203,7 +213,7 @@ func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name stri
 		for ct != nil {
 			switch ct.typeof {
 			case typeEndKeys:
-				return
+				return err
 			case typeDive:
 				ct = ct.next
 
@@ -220,15 +230,18 @@ func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name stri
 					}
 					// not a valid use of the dive tag
 					fallthrough
+
 				default:
 					err = ErrInvalidDive
 				}
-				return
+
+				return err
 
 			default:
 				if !current.CanAddr() {
 					newVal := reflect.New(current.Type()).Elem()
 					newVal.Set(current)
+
 					if err = ct.fn(ctx, MoldFieldLevel{
 						transformer: t,
 						name:        name,
@@ -238,8 +251,9 @@ func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name stri
 						container:   structValue,
 						sc:          structCache,
 					}); err != nil {
-						return
+						return err
 					}
+
 					original.Set(reflect.Indirect(newVal))
 					current, kind = t.extractType(original)
 				} else {
@@ -252,11 +266,12 @@ func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name stri
 						container:   structValue,
 						sc:          structCache,
 					}); err != nil {
-						return
+						return err
 					}
 					// value could have been changed or reassigned
 					current, kind = t.extractType(current)
 				}
+
 				ct = ct.next
 			}
 		}
@@ -271,7 +286,7 @@ func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name stri
 	if kind == reflect.Struct {
 		typ := current.Type()
 		if typ == timeType {
-			return
+			return err
 		}
 
 		if !current.CanAddr() {
@@ -279,14 +294,18 @@ func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name stri
 			newVal.Set(current)
 
 			if err = t.setByStruct(ctx, original, newVal, typ); err != nil {
-				return
+				return err
 			}
+
 			original.Set(reflect.Indirect(newVal))
-			return
+
+			return err
 		}
+
 		err = t.setByStruct(ctx, original2, current, typ)
 	}
-	return
+
+	return err
 }
 
 func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value, ct *cTag) (err error) {
@@ -296,7 +315,7 @@ func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value
 		for ct != nil {
 			switch ct.typeof {
 			case typeEndKeys:
-				return
+				return err
 			case typeDive:
 				ct = ct.next
 
@@ -313,23 +332,27 @@ func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value
 					}
 					// not a valid use of the dive tag
 					fallthrough
+
 				default:
 					err = ErrInvalidDive
 				}
-				return
+
+				return err
 
 			default:
 				if !current.CanAddr() {
 					newVal := reflect.New(current.Type()).Elem()
 					newVal.Set(current)
+
 					if err = ct.fn(ctx, MoldFieldLevel{
 						transformer: t,
 						parent:      original,
 						current:     newVal,
 						param:       ct.param,
 					}); err != nil {
-						return
+						return err
 					}
+
 					original.Set(reflect.Indirect(newVal))
 					current, kind = t.extractType(original)
 				} else {
@@ -339,11 +362,12 @@ func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value
 						current:     current,
 						param:       ct.param,
 					}); err != nil {
-						return
+						return err
 					}
 					// value could have been changed or reassigned
 					current, kind = t.extractType(current)
 				}
+
 				ct = ct.next
 			}
 		}
@@ -358,7 +382,7 @@ func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value
 	if kind == reflect.Struct {
 		typ := current.Type()
 		if typ == timeType {
-			return
+			return err
 		}
 
 		if !current.CanAddr() {
@@ -366,23 +390,28 @@ func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value
 			newVal.Set(current)
 
 			if err = t.setByStruct(ctx, original, newVal, typ); err != nil {
-				return
+				return err
 			}
+
 			original.Set(reflect.Indirect(newVal))
-			return
+
+			return err
 		}
+
 		err = t.setByStruct(ctx, original2, current, typ)
 	}
-	return
+
+	return err
 }
 
 func (t *MoldTransformer) setByIterable(ctx context.Context, current reflect.Value, ct *cTag) (err error) {
 	for i := 0; i < current.Len(); i++ {
 		if err = t.setByField(ctx, current.Index(i), ct); err != nil {
-			return
+			return err
 		}
 	}
-	return
+
+	return err
 }
 
 func (t *MoldTransformer) setByMap(ctx context.Context, current reflect.Value, ct *cTag) error {
@@ -415,6 +444,7 @@ func (t *MoldTransformer) setByMap(ctx context.Context, current reflect.Value, c
 				return err
 			}
 		}
+
 		current.SetMapIndex(key, newVal)
 	}
 

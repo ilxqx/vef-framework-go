@@ -18,9 +18,9 @@ type AESPasswordDecryptor struct {
 // The key length must be 16, 24, or 32 bytes for AES-128, AES-192, or AES-256 respectively.
 // The iv (initialization vector) must be 16 bytes for AES block size.
 // If iv is nil, it will use the first 16 bytes of the key as IV (not recommended for production).
-func NewAESPasswordDecryptor(key []byte, iv []byte) (PasswordDecryptor, error) {
+func NewAESPasswordDecryptor(key, iv []byte) (PasswordDecryptor, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil, fmt.Errorf("invalid AES key length: %d (must be 16, 24, or 32 bytes)", len(key))
+		return nil, fmt.Errorf("%w: %d (must be 16, 24, or 32 bytes)", ErrInvalidAESKeyLength, len(key))
 	}
 
 	// If no IV provided, derive from key (simple fallback, not cryptographically ideal)
@@ -28,18 +28,18 @@ func NewAESPasswordDecryptor(key []byte, iv []byte) (PasswordDecryptor, error) {
 		if len(key) >= 16 {
 			iv = key[:16]
 		} else {
-			return nil, fmt.Errorf("cannot derive IV: key too short")
+			return nil, fmt.Errorf("%w: key too short", ErrCannotDeriveIV)
 		}
 	}
 
 	if len(iv) != aes.BlockSize {
-		return nil, fmt.Errorf("invalid IV length: %d (must be %d bytes)", len(iv), aes.BlockSize)
+		return nil, fmt.Errorf("%w: %d (must be %d bytes)", ErrInvalidIVLength, len(iv), aes.BlockSize)
 	}
 
 	// Use crypto package's AES cipher with CBC mode
 	cipher, err := crypto.NewAES(key, iv, crypto.AESModeCBC)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AES cipher: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateAESCipherFailed, err)
 	}
 
 	return &AESPasswordDecryptor{
@@ -52,7 +52,7 @@ func NewAESPasswordDecryptorFromHex(keyHex, ivHex string) (PasswordDecryptor, er
 	// Use crypto package's AES cipher from hex
 	cipher, err := crypto.NewAESFromHex(keyHex, ivHex, crypto.AESModeCBC)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AES cipher from hex: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateAESCipherFailed, err)
 	}
 
 	return &AESPasswordDecryptor{
@@ -65,7 +65,7 @@ func NewAESPasswordDecryptorFromBase64(keyBase64, ivBase64 string) (PasswordDecr
 	// Use crypto package's AES cipher from base64
 	cipher, err := crypto.NewAESFromBase64(keyBase64, ivBase64, crypto.AESModeCBC)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AES cipher from base64: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCreateAESCipherFailed, err)
 	}
 
 	return &AESPasswordDecryptor{
@@ -74,7 +74,7 @@ func NewAESPasswordDecryptorFromBase64(keyBase64, ivBase64 string) (PasswordDecr
 }
 
 // Decrypt decrypts the base64-encoded AES-encrypted password.
-// The encrypted password is expected to be in the format: base64(AES-CBC(plaintext))
+// The encrypted password is expected to be in the format: base64(AES-CBC(plaintext)).
 func (d *AESPasswordDecryptor) Decrypt(encryptedPassword string) (string, error) {
 	return d.cipher.Decrypt(encryptedPassword)
 }

@@ -7,21 +7,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
+	goredis "github.com/redis/go-redis/v9"
+
 	"github.com/ilxqx/vef-framework-go/internal/redis"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
-	goredis "github.com/redis/go-redis/v9"
-	"github.com/stretchr/testify/suite"
 )
 
-// RedisStoreTestSuite is the test suite for Redis store functionality
+// RedisStoreTestSuite is the test suite for Redis store functionality.
 type RedisStoreTestSuite struct {
 	suite.Suite
+
 	ctx            context.Context
 	redisContainer *testhelpers.RedisContainer
 	client         *goredis.Client
 }
 
-// SetupSuite runs before all tests in the suite
+// SetupSuite runs before all tests in the suite.
 func (suite *RedisStoreTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
@@ -37,19 +40,20 @@ func (suite *RedisStoreTestSuite) SetupSuite() {
 	suite.Require().NoError(err, "Failed to ping redis client")
 }
 
-// TearDownSuite runs after all tests in the suite
+// TearDownSuite runs after all tests in the suite.
 func (suite *RedisStoreTestSuite) TearDownSuite() {
 	if suite.client != nil {
 		if err := suite.client.Close(); err != nil {
 			suite.T().Logf("Failed to close redis client: %v", err)
 		}
 	}
+
 	if suite.redisContainer != nil {
 		suite.redisContainer.Terminate(suite.ctx, &suite.Suite)
 	}
 }
 
-// SetupTest runs before each individual test method (not sub-tests)
+// SetupTest runs before each individual test method (not sub-tests).
 func (suite *RedisStoreTestSuite) SetupTest() {
 	// Clean up any existing test keys before each test method
 	keys, _ := suite.client.Keys(suite.ctx, "*").Result()
@@ -189,6 +193,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 		suite.Require().NoError(err)
 
 		sort.Strings(keys)
+
 		expectedKeys := []string{"config:x", "product:a", "product:b", "user:1", "user:2", "user:3"}
 		suite.Equal(expectedKeys, keys)
 	})
@@ -220,6 +225,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 		suite.Require().NoError(err)
 
 		sort.Strings(userKeys)
+
 		expectedUserKeys := []string{"user:1", "user:2", "user:3"}
 		suite.Equal(expectedUserKeys, userKeys)
 
@@ -227,6 +233,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 		suite.Require().NoError(err)
 
 		sort.Strings(productKeys)
+
 		expectedProductKeys := []string{"product:a", "product:b"}
 		suite.Equal(expectedProductKeys, productKeys)
 	})
@@ -259,6 +266,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 
 		err := store.ForEach(suite.ctx, "", func(key string, value []byte) bool {
 			collected[key] = value
+
 			return true
 		})
 		suite.Require().NoError(err)
@@ -293,6 +301,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 
 		err := store.ForEach(suite.ctx, "user:", func(key string, value []byte) bool {
 			userCollected[key] = value
+
 			return true
 		})
 		suite.Require().NoError(err)
@@ -334,6 +343,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 		err := store.ForEach(suite.ctx, "", func(key string, value []byte) bool {
 			collected[key] = value
 			count++
+
 			return count < 3 // Stop after 3 items
 		})
 		suite.Require().NoError(err)
@@ -531,7 +541,7 @@ func (st *RedisStoreTestSuite) TestRedisCacheSuite() {
 	})
 }
 
-// TestRedisStoreSuite runs the test suite
+// TestRedisStoreSuite runs the test suite.
 func TestRedisStoreSuite(t *testing.T) {
 	suite.Run(t, new(RedisStoreTestSuite))
 }

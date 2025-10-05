@@ -2,6 +2,7 @@ package test
 
 import (
 	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -9,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources
+// Test Resources.
 type TestUserUpdateResource struct {
 	api.Resource
 	apis.UpdateAPI[TestUser, TestUserUpdateParams]
@@ -22,7 +23,7 @@ func NewTestUserUpdateResource() api.Resource {
 	}
 }
 
-// Resource with PreUpdate hook
+// Resource with PreUpdate hook.
 type TestUserUpdateWithPreHookResource struct {
 	api.Resource
 	apis.UpdateAPI[TestUser, TestUserUpdateParams]
@@ -38,12 +39,13 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 				if params.Description != "" {
 					model.Description = params.Description + " [Updated]"
 				}
+
 				return nil
 			}),
 	}
 }
 
-// Resource with PostUpdate hook
+// Resource with PostUpdate hook.
 type TestUserUpdateWithPostHookResource struct {
 	api.Resource
 	apis.UpdateAPI[TestUser, TestUserUpdateParams]
@@ -57,29 +59,30 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 			PostUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header
 				ctx.Set("X-Updated-User-Name", model.Name)
+
 				return nil
 			}),
 	}
 }
 
-// Test params for update (includes id)
+// Test params for update (includes id).
 type TestUserUpdateParams struct {
 	api.In
 	orm.ModelPK `json:",inline"`
 
-	Name        string `json:"name" validate:"required"`
-	Email       string `json:"email" validate:"required,email"`
+	Name        string `json:"name"        validate:"required"`
+	Email       string `json:"email"       validate:"required,email"`
 	Description string `json:"description"`
-	Age         int    `json:"age" validate:"required,min=1,max=120"`
-	Status      string `json:"status" validate:"required,oneof=active inactive"`
+	Age         int    `json:"age"         validate:"required,min=1,max=120"`
+	Status      string `json:"status"      validate:"required,oneof=active inactive"`
 }
 
-// UpdateTestSuite is the test suite for Update API tests
+// UpdateTestSuite is the test suite for Update API tests.
 type UpdateTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite
+// SetupSuite runs once before all tests in the suite.
 func (suite *UpdateTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserUpdateResource,
@@ -88,12 +91,12 @@ func (suite *UpdateTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite
+// TearDownSuite runs once after all tests in the suite.
 func (suite *UpdateTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
-// TestUpdateBasic tests basic Update functionality
+// TestUpdateBasic tests basic Update functionality.
 func (suite *UpdateTestSuite) TestUpdateBasic() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -118,7 +121,7 @@ func (suite *UpdateTestSuite) TestUpdateBasic() {
 	// UpdateAPI returns no data, just success status
 }
 
-// TestUpdateWithPreHook tests Update with PreUpdate hook
+// TestUpdateWithPreHook tests Update with PreUpdate hook.
 func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -143,7 +146,7 @@ func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
 	// UpdateAPI returns no data, PreUpdate hook was executed if update succeeded
 }
 
-// TestUpdateWithPostHook tests Update with PostUpdate hook
+// TestUpdateWithPostHook tests Update with PostUpdate hook.
 func (suite *UpdateTestSuite) TestUpdateWithPostHook() {
 	resp := suite.makeAPIRequest(api.Request{
 		Identifier: api.Identifier{
@@ -168,7 +171,7 @@ func (suite *UpdateTestSuite) TestUpdateWithPostHook() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 }
 
-// TestUpdateNegativeCases tests negative scenarios
+// TestUpdateNegativeCases tests negative scenarios.
 func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 	suite.Run("NonExistentUser", func() {
 		resp := suite.makeAPIRequest(api.Request{
@@ -281,7 +284,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 	})
 }
 
-// TestPartialUpdate tests updating only some fields
+// TestPartialUpdate tests updating only some fields.
 func (suite *UpdateTestSuite) TestPartialUpdate() {
 	// First, get original user
 	resp := suite.makeAPIRequest(api.Request{

@@ -4,12 +4,13 @@ import (
 	"errors"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
+
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/samber/lo"
 )
 
-// handleError handles the error and returns the response
+// handleError handles the error and returns the response.
 func handleError(ctx fiber.Ctx, err error) error {
 	var fiberErr *fiber.Error
 	if errors.As(err, &fiberErr) {
@@ -38,7 +39,7 @@ func handleError(ctx fiber.Ctx, err error) error {
 	return responseError(result.ErrUnknown, ctx)
 }
 
-// responseError returns the response with the error
+// responseError returns the response with the error.
 func responseError(e result.Error, ctx fiber.Ctx) error {
 	r := result.Result{
 		Code:    e.Code,

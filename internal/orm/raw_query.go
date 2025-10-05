@@ -11,7 +11,7 @@ type bunRawQuery struct {
 	query *bun.RawQuery
 }
 
-func newRawQuery(db bun.IDB, query string, args ...any) RawQuery {
+func newRawQuery(db bun.IDB, query string, args ...any) *bunRawQuery {
 	return &bunRawQuery{query: db.NewRaw(query, args...)}
 }
 

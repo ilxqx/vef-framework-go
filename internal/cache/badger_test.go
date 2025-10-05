@@ -13,16 +13,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test struct for cache testing
+// Test struct for cache testing.
 type TestStruct struct {
 	Name  string `json:"name"`
 	Value int    `json:"value"`
 }
 
-// Basic Store Tests
+// Basic Store Tests.
 func TestBadgerStoreBasicOperations(t *testing.T) {
 	store, err := createBadgerStore(badgerOptions{InMemory: true})
 	require.NoError(t, err)
+
 	ctx := context.Background()
 	defer store.Close(ctx)
 
@@ -84,37 +85,34 @@ func TestBadgerStoreBasicOperations(t *testing.T) {
 func TestBadgerStoreTTL(t *testing.T) {
 	store, err := createBadgerStore(badgerOptions{InMemory: true})
 	require.NoError(t, err)
+
 	ctx := context.Background()
 	defer store.Close(ctx)
 
 	t.Run("TTL expiration", func(t *testing.T) {
-		err := store.Set(ctx, "ttl-key", []byte("ttl-value"), 50*time.Millisecond)
+		err := store.Set(ctx, "ttl-key", []byte("ttl-value"), time.Second)
 		require.NoError(t, err)
 
 		// Should exist immediately
 		value, found := store.Get(ctx, "ttl-key")
-		if !found {
-			t.Skip("TTL test skipped - value not found immediately, might be a timing issue with test environment")
-		}
-		assert.True(t, found)
+		assert.True(t, found, "expected key 'ttl-key' to exist immediately after set with 1s TTL")
 		assert.Equal(t, []byte("ttl-value"), value)
 
 		// Wait for expiration (give extra time)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(time.Second)
 
-		// Should be expired (but may still exist due to lazy cleanup)
+		// Should be expired
 		_, found = store.Get(ctx, "ttl-key")
-		// Note: badger uses lazy deletion, so we might still find expired keys
-		// This is expected behavior
-		t.Logf("After TTL expiration, found: %v", found)
+		assert.False(t, found, "expected key 'ttl-key' to be expired after 1s TTL")
 	})
 
 	t.Run("Default TTL", func(t *testing.T) {
 		storeWithDefaultTTL, err := createBadgerStore(badgerOptions{
 			InMemory:   true,
-			DefaultTTL: 50 * time.Millisecond,
+			DefaultTTL: time.Second,
 		})
 		require.NoError(t, err)
+
 		defer storeWithDefaultTTL.Close(ctx)
 
 		err = storeWithDefaultTTL.Set(ctx, "default-ttl-key", []byte("default-ttl-value"))
@@ -122,25 +120,22 @@ func TestBadgerStoreTTL(t *testing.T) {
 
 		// Should exist immediately
 		value, found := storeWithDefaultTTL.Get(ctx, "default-ttl-key")
-		if !found {
-			t.Skip("Default TTL test skipped - value not found immediately")
-		}
-		assert.True(t, found)
+		assert.True(t, found, "expected key 'default-ttl-key' to exist immediately after set with 1s TTL")
 		assert.Equal(t, []byte("default-ttl-value"), value)
 
 		// Wait for expiration (give extra time)
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(time.Second)
 
-		// Should be expired (but may still exist due to lazy cleanup)
+		// Should be expired
 		_, found = storeWithDefaultTTL.Get(ctx, "default-ttl-key")
-		// Note: badger uses lazy deletion, so we might still find expired keys
-		t.Logf("After default TTL expiration, found: %v", found)
+		assert.False(t, found, "expected key 'default-ttl-key' to be expired after 1s TTL")
 	})
 }
 
 func TestBadgerStoreIteration(t *testing.T) {
 	store, err := createBadgerStore(badgerOptions{InMemory: true})
 	require.NoError(t, err)
+
 	ctx := context.Background()
 	defer store.Close(ctx)
 
@@ -164,6 +159,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 		require.NoError(t, err)
 
 		sort.Strings(keys)
+
 		expectedKeys := []string{"config:x", "product:a", "product:b", "user:1", "user:2", "user:3"}
 		assert.Equal(t, expectedKeys, keys)
 	})
@@ -173,6 +169,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 		require.NoError(t, err)
 
 		sort.Strings(userKeys)
+
 		expectedUserKeys := []string{"user:1", "user:2", "user:3"}
 		assert.Equal(t, expectedUserKeys, userKeys)
 
@@ -180,6 +177,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 		require.NoError(t, err)
 
 		sort.Strings(productKeys)
+
 		expectedProductKeys := []string{"product:a", "product:b"}
 		assert.Equal(t, expectedProductKeys, productKeys)
 	})
@@ -189,6 +187,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 
 		err := store.ForEach(ctx, "", func(key string, value []byte) bool {
 			collected[key] = value
+
 			return true
 		})
 		require.NoError(t, err)
@@ -201,6 +200,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 
 		err := store.ForEach(ctx, "user:", func(key string, value []byte) bool {
 			userCollected[key] = value
+
 			return true
 		})
 		require.NoError(t, err)
@@ -220,6 +220,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 		err := store.ForEach(ctx, "", func(key string, value []byte) bool {
 			collected[key] = value
 			count++
+
 			return count < 3 // Stop after 3 items
 		})
 		require.NoError(t, err)
@@ -238,6 +239,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 func TestBadgerStoreClear(t *testing.T) {
 	store, err := createBadgerStore(badgerOptions{InMemory: true})
 	require.NoError(t, err)
+
 	ctx := context.Background()
 	defer store.Close(ctx)
 
@@ -276,6 +278,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	t.Run("String cache", func(t *testing.T) {
 		store, err := createBadgerStore(badgerOptions{InMemory: true})
 		require.NoError(t, err)
+
 		defer store.Close(ctx)
 
 		err = store.Set(ctx, "key", []byte("hello world"))
@@ -289,6 +292,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	t.Run("Integer cache", func(t *testing.T) {
 		store, err := createBadgerStore(badgerOptions{InMemory: true})
 		require.NoError(t, err)
+
 		defer store.Close(ctx)
 
 		err = store.Set(ctx, "key", []byte("42"))
@@ -302,6 +306,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	t.Run("Slice cache", func(t *testing.T) {
 		store, err := createBadgerStore(badgerOptions{InMemory: true})
 		require.NoError(t, err)
+
 		defer store.Close(ctx)
 
 		testData := []byte(`["a","b","c"]`)
@@ -316,6 +321,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	t.Run("Map cache", func(t *testing.T) {
 		store, err := createBadgerStore(badgerOptions{InMemory: true})
 		require.NoError(t, err)
+
 		defer store.Close(ctx)
 
 		testData := []byte(`{"a":1,"b":2}`)
@@ -331,6 +337,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 func TestBadgerStoreEdgeCases(t *testing.T) {
 	store, err := createBadgerStore(badgerOptions{InMemory: true})
 	require.NoError(t, err)
+
 	ctx := context.Background()
 	defer store.Close(ctx)
 
@@ -339,6 +346,7 @@ func TestBadgerStoreEdgeCases(t *testing.T) {
 		// Badger doesn't allow empty keys, so this should error
 		if err != nil {
 			t.Logf("Empty key correctly rejected: %v", err)
+
 			return
 		}
 
@@ -388,6 +396,7 @@ func TestBadgerStoreEdgeCases(t *testing.T) {
 		count := 0
 		err = store.ForEach(ctx, "", func(key string, value []byte) bool {
 			count++
+
 			return true
 		})
 		require.NoError(t, err)
@@ -395,7 +404,7 @@ func TestBadgerStoreEdgeCases(t *testing.T) {
 	})
 }
 
-// Garbage Collection Tests
+// Garbage Collection Tests.
 func TestBadgerStoreGarbageCollection(t *testing.T) {
 	t.Run("In-memory store should not start GC goroutine", func(t *testing.T) {
 		store, err := createBadgerStore(badgerOptions{InMemory: true})
@@ -410,6 +419,7 @@ func TestBadgerStoreGarbageCollection(t *testing.T) {
 	t.Run("Persistent store should start and stop GC goroutine properly", func(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "gc-test-*")
 		require.NoError(t, err)
+
 		defer os.RemoveAll(tempDir)
 
 		store, err := createBadgerStore(badgerOptions{
@@ -432,6 +442,7 @@ func TestBadgerStoreGarbageCollection(t *testing.T) {
 	t.Run("Multiple close calls should not panic", func(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "multi-close-test-*")
 		require.NoError(t, err)
+
 		defer os.RemoveAll(tempDir)
 
 		store, err := createBadgerStore(badgerOptions{
@@ -439,6 +450,7 @@ func TestBadgerStoreGarbageCollection(t *testing.T) {
 			Directory: tempDir,
 		})
 		require.NoError(t, err)
+
 		ctx := context.Background()
 
 		// First close
@@ -462,6 +474,7 @@ func TestBadgerStoreGracefulShutdown(t *testing.T) {
 	t.Run("Store close stops GC goroutine via ErrRejected", func(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "shutdown-test-*")
 		require.NoError(t, err)
+
 		defer os.RemoveAll(tempDir)
 
 		store, err := createBadgerStore(badgerOptions{
@@ -489,11 +502,12 @@ func TestBadgerStoreGracefulShutdown(t *testing.T) {
 	})
 }
 
-// Persistent Storage Tests
+// Persistent Storage Tests.
 func TestBadgerStorePersistentOperations(t *testing.T) {
 	// Create temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "cache-test-*")
 	require.NoError(t, err)
+
 	defer os.RemoveAll(tempDir)
 
 	// Create persistent cache
@@ -502,6 +516,7 @@ func TestBadgerStorePersistentOperations(t *testing.T) {
 		Directory: tempDir,
 	})
 	require.NoError(t, err)
+
 	ctx := context.Background()
 	defer store.Close(ctx)
 
@@ -564,10 +579,10 @@ func TestBadgerStorePersistentErrorHandling(t *testing.T) {
 
 func TestBadgerStoreConfigurationDifferences(t *testing.T) {
 	// This test documents the different configurations for memory vs persistent
-
 	t.Run("In-memory store configuration", func(t *testing.T) {
 		store, err := createBadgerStore(badgerOptions{InMemory: true})
 		require.NoError(t, err)
+
 		ctx := context.Background()
 		defer store.Close(ctx)
 
@@ -584,6 +599,7 @@ func TestBadgerStoreConfigurationDifferences(t *testing.T) {
 	t.Run("Persistent store configuration", func(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "persistent-config-test-*")
 		require.NoError(t, err)
+
 		defer os.RemoveAll(tempDir)
 
 		store, err := createBadgerStore(badgerOptions{
@@ -591,6 +607,7 @@ func TestBadgerStoreConfigurationDifferences(t *testing.T) {
 			Directory: tempDir,
 		})
 		require.NoError(t, err)
+
 		ctx := context.Background()
 		defer store.Close(ctx)
 
