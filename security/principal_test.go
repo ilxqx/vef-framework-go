@@ -176,7 +176,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 			"roles": ["viewer"],
 			"details": {
 				"email": "jane@example.com",
-				"phone_number": "+1234567890",
+				"phoneNumber": "+1234567890",
 				"age": 25
 			}
 		}`
@@ -206,8 +206,8 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 			"name": "Auth Service",
 			"roles": ["service"],
 			"details": {
-				"app_id": "app_123456",
-				"app_secret": "secret_abc",
+				"appId": "app_123456",
+				"appSecret": "secret_abc",
 				"scopes": ["read", "write"]
 			}
 		}`
@@ -261,9 +261,9 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 		user := NewUser("user123", "Test User")
 		detailsMap := map[string]any{
-			"email":        "test@example.com",
-			"phone_number": "+1234567890",
-			"age":          30,
+			"email":       "test@example.com",
+			"phoneNumber": "+1234567890",
+			"age":         30,
 		}
 
 		user.AttemptUnmarshalDetails(detailsMap)
@@ -283,9 +283,9 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 		app := NewExternalApp("app123", "Test App")
 		detailsMap := map[string]any{
-			"app_id":     "app_123",
-			"app_secret": "secret",
-			"scopes":     []any{"read", "write"},
+			"appId":     "app_123",
+			"appSecret": "secret",
+			"scopes":    []any{"read", "write"},
 		}
 
 		app.AttemptUnmarshalDetails(detailsMap)
@@ -337,8 +337,8 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		user := NewUser("user123", "Test User")
 		// Details with only some fields that match TestUserDetails
 		partialDetails := map[string]any{
-			"email":         "test@example.com",
-			"invalid_field": "value", // This field will be ignored
+			"email":        "test@example.com",
+			"invalidField": "value", // This field will be ignored
 		}
 
 		user.AttemptUnmarshalDetails(partialDetails)
@@ -409,7 +409,7 @@ func TestPrincipalRoundTrip(t *testing.T) {
 	t.Run("marshal and unmarshal external app", func(t *testing.T) {
 		original := NewExternalApp("app123", "Auth Service", "service")
 		original.Details = map[string]any{
-			"app_id": "123",
+			"appId":  "123",
 			"scopes": []string{"read", "write"},
 		}
 
