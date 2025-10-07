@@ -25,3 +25,8 @@ func FromJSON[T any](value string) (*T, error) {
 
 	return &result, nil
 }
+
+// DecodeJSON decodes a JSON string into the provided result pointer.
+func DecodeJSON(value string, result any) error {
+	return json.Unmarshal([]byte(value), result)
+}

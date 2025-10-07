@@ -35,7 +35,7 @@ type RSACipher struct {
 // If mode is not specified, defaults to RSAModeOAEP (recommended).
 func NewRSA(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, mode ...RSAMode) (Cipher, error) {
 	if privateKey == nil && publicKey == nil {
-		return nil, fmt.Errorf("%w", ErrAtLeastOneKeyRequired)
+		return nil, ErrAtLeastOneKeyRequired
 	}
 
 	// Default to OAEP mode if not specified
@@ -76,7 +76,7 @@ func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 
 			privateKey, ok = key.(*rsa.PrivateKey)
 			if !ok {
-				return nil, nil, fmt.Errorf("%w", ErrNotRSAPrivateKey)
+				return nil, nil, ErrNotRSAPrivateKey
 			}
 		}
 	}
@@ -93,7 +93,7 @@ func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 
 			publicKey, ok = key.(*rsa.PublicKey)
 			if !ok {
-				return nil, nil, fmt.Errorf("%w", ErrNotRSAPublicKey)
+				return nil, nil, ErrNotRSAPublicKey
 			}
 		}
 	}
@@ -191,7 +191,7 @@ func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, mode ...RSAMode)
 // Encrypt encrypts the plaintext using RSA public key and returns base64-encoded ciphertext.
 func (r *RSACipher) Encrypt(plaintext string) (string, error) {
 	if r.publicKey == nil {
-		return constants.Empty, fmt.Errorf("%w", ErrPublicKeyRequiredForEncrypt)
+		return constants.Empty, ErrPublicKeyRequiredForEncrypt
 	}
 
 	var (
@@ -216,7 +216,7 @@ func (r *RSACipher) Encrypt(plaintext string) (string, error) {
 // Decrypt decrypts the base64-encoded ciphertext using RSA private key and returns plaintext.
 func (r *RSACipher) Decrypt(ciphertext string) (string, error) {
 	if r.privateKey == nil {
-		return constants.Empty, fmt.Errorf("%w", ErrPrivateKeyRequiredForDecrypt)
+		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
 	}
 
 	encryptedData, err := encoding.FromBase64(ciphertext)
@@ -243,7 +243,7 @@ func (r *RSACipher) Decrypt(ciphertext string) (string, error) {
 func parseRSAPrivateKeyFromPEM(pemData []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, fmt.Errorf("%w", ErrFailedDecodePEMBlock)
+		return nil, ErrFailedDecodePEMBlock
 	}
 
 	// Try PKCS1 format first
@@ -260,7 +260,7 @@ func parseRSAPrivateKeyFromPEM(pemData []byte) (*rsa.PrivateKey, error) {
 
 		rsaKey, ok := key.(*rsa.PrivateKey)
 		if !ok {
-			return nil, fmt.Errorf("%w", ErrNotRSAPrivateKey)
+			return nil, ErrNotRSAPrivateKey
 		}
 
 		return rsaKey, nil
@@ -273,7 +273,7 @@ func parseRSAPrivateKeyFromPEM(pemData []byte) (*rsa.PrivateKey, error) {
 func parseRSAPublicKeyFromPEM(pemData []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, fmt.Errorf("%w", ErrFailedDecodePEMBlock)
+		return nil, ErrFailedDecodePEMBlock
 	}
 
 	// Try PKIX format
@@ -285,7 +285,7 @@ func parseRSAPublicKeyFromPEM(pemData []byte) (*rsa.PublicKey, error) {
 
 		rsaKey, ok := key.(*rsa.PublicKey)
 		if !ok {
-			return nil, fmt.Errorf("%w", ErrNotRSAPublicKey)
+			return nil, ErrNotRSAPublicKey
 		}
 
 		return rsaKey, nil

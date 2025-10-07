@@ -30,6 +30,7 @@ go.work.sum
 .claude/
 .mcp.json
 CLAUDE.md
+AGENTS.md
 
 # shell scripts
 *.sh

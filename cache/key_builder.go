@@ -6,6 +6,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
+var defaultKeyBuilder = NewPrefixKeyBuilder(constants.Empty)
+
+// Key builds a key with the default key builder.
+func Key(keyParts ...string) string {
+	return defaultKeyBuilder.Build(keyParts...)
+}
+
 // KeyBuilder defines the interface for building cache keys with different naming strategies.
 type KeyBuilder interface {
 	// Build constructs a cache key from the given base key

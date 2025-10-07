@@ -11,6 +11,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // Test struct for cache testing.
@@ -21,7 +23,7 @@ type TestStruct struct {
 
 // Basic Store Tests.
 func TestBadgerStoreBasicOperations(t *testing.T) {
-	store, err := createBadgerStore(badgerOptions{InMemory: true})
+	store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -83,7 +85,7 @@ func TestBadgerStoreBasicOperations(t *testing.T) {
 }
 
 func TestBadgerStoreTTL(t *testing.T) {
-	store, err := createBadgerStore(badgerOptions{InMemory: true})
+	store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -107,7 +109,7 @@ func TestBadgerStoreTTL(t *testing.T) {
 	})
 
 	t.Run("Default TTL", func(t *testing.T) {
-		storeWithDefaultTTL, err := createBadgerStore(badgerOptions{
+		storeWithDefaultTTL, err := NewBadgerStore(&config.LocalCacheConfig{
 			InMemory:   true,
 			DefaultTTL: time.Second,
 		})
@@ -133,7 +135,7 @@ func TestBadgerStoreTTL(t *testing.T) {
 }
 
 func TestBadgerStoreIteration(t *testing.T) {
-	store, err := createBadgerStore(badgerOptions{InMemory: true})
+	store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -237,7 +239,7 @@ func TestBadgerStoreIteration(t *testing.T) {
 }
 
 func TestBadgerStoreClear(t *testing.T) {
-	store, err := createBadgerStore(badgerOptions{InMemory: true})
+	store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -276,7 +278,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("String cache", func(t *testing.T) {
-		store, err := createBadgerStore(badgerOptions{InMemory: true})
+		store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 		require.NoError(t, err)
 
 		defer store.Close(ctx)
@@ -290,7 +292,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	})
 
 	t.Run("Integer cache", func(t *testing.T) {
-		store, err := createBadgerStore(badgerOptions{InMemory: true})
+		store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 		require.NoError(t, err)
 
 		defer store.Close(ctx)
@@ -304,7 +306,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	})
 
 	t.Run("Slice cache", func(t *testing.T) {
-		store, err := createBadgerStore(badgerOptions{InMemory: true})
+		store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 		require.NoError(t, err)
 
 		defer store.Close(ctx)
@@ -319,7 +321,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 	})
 
 	t.Run("Map cache", func(t *testing.T) {
-		store, err := createBadgerStore(badgerOptions{InMemory: true})
+		store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 		require.NoError(t, err)
 
 		defer store.Close(ctx)
@@ -335,7 +337,7 @@ func TestBadgerStoreTypes(t *testing.T) {
 }
 
 func TestBadgerStoreEdgeCases(t *testing.T) {
-	store, err := createBadgerStore(badgerOptions{InMemory: true})
+	store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -407,7 +409,7 @@ func TestBadgerStoreEdgeCases(t *testing.T) {
 // Garbage Collection Tests.
 func TestBadgerStoreGarbageCollection(t *testing.T) {
 	t.Run("In-memory store should not start GC goroutine", func(t *testing.T) {
-		store, err := createBadgerStore(badgerOptions{InMemory: true})
+		store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 		require.NoError(t, err)
 
 		// For in-memory cache, GC goroutine should not be started
@@ -422,7 +424,7 @@ func TestBadgerStoreGarbageCollection(t *testing.T) {
 
 		defer os.RemoveAll(tempDir)
 
-		store, err := createBadgerStore(badgerOptions{
+		store, err := NewBadgerStore(&config.LocalCacheConfig{
 			InMemory:  false,
 			Directory: tempDir,
 		})
@@ -445,7 +447,7 @@ func TestBadgerStoreGarbageCollection(t *testing.T) {
 
 		defer os.RemoveAll(tempDir)
 
-		store, err := createBadgerStore(badgerOptions{
+		store, err := NewBadgerStore(&config.LocalCacheConfig{
 			InMemory:  false,
 			Directory: tempDir,
 		})
@@ -477,7 +479,7 @@ func TestBadgerStoreGracefulShutdown(t *testing.T) {
 
 		defer os.RemoveAll(tempDir)
 
-		store, err := createBadgerStore(badgerOptions{
+		store, err := NewBadgerStore(&config.LocalCacheConfig{
 			InMemory:  false,
 			Directory: tempDir,
 		})
@@ -511,7 +513,7 @@ func TestBadgerStorePersistentOperations(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create persistent cache
-	store, err := createBadgerStore(badgerOptions{
+	store, err := NewBadgerStore(&config.LocalCacheConfig{
 		InMemory:  false,
 		Directory: tempDir,
 	})
@@ -553,7 +555,7 @@ func TestBadgerStorePersistentOperations(t *testing.T) {
 
 func TestBadgerStorePersistentErrorHandling(t *testing.T) {
 	t.Run("Missing directory should error", func(t *testing.T) {
-		store, err := createBadgerStore(badgerOptions{
+		store, err := NewBadgerStore(&config.LocalCacheConfig{
 			InMemory: false,
 			// Directory is empty, should cause error
 		})
@@ -566,7 +568,7 @@ func TestBadgerStorePersistentErrorHandling(t *testing.T) {
 	t.Run("Invalid directory should error", func(t *testing.T) {
 		invalidPath := filepath.Join("/", "non-existent-root-dir", "cache-test")
 
-		store, err := createBadgerStore(badgerOptions{
+		store, err := NewBadgerStore(&config.LocalCacheConfig{
 			InMemory:  false,
 			Directory: invalidPath,
 		})
@@ -580,7 +582,7 @@ func TestBadgerStorePersistentErrorHandling(t *testing.T) {
 func TestBadgerStoreConfigurationDifferences(t *testing.T) {
 	// This test documents the different configurations for memory vs persistent
 	t.Run("In-memory store configuration", func(t *testing.T) {
-		store, err := createBadgerStore(badgerOptions{InMemory: true})
+		store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 		require.NoError(t, err)
 
 		ctx := context.Background()
@@ -602,7 +604,7 @@ func TestBadgerStoreConfigurationDifferences(t *testing.T) {
 
 		defer os.RemoveAll(tempDir)
 
-		store, err := createBadgerStore(badgerOptions{
+		store, err := NewBadgerStore(&config.LocalCacheConfig{
 			InMemory:  false,
 			Directory: tempDir,
 		})

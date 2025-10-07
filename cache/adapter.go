@@ -3,16 +3,7 @@ package cache
 import (
 	"context"
 	"time"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
-
-var defaultKeyBuilder = NewPrefixKeyBuilder(constants.Empty)
-
-// Key builds a key with the default key builder.
-func Key(keyParts ...string) string {
-	return defaultKeyBuilder.Build(keyParts...)
-}
 
 // cacheAdapter adapts a Store to implement the Cache[T] interface with serialization.
 type cacheAdapter[T any] struct {

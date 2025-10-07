@@ -23,7 +23,7 @@ type SM2Cipher struct {
 // For decryption-only operations, publicKey can be nil.
 func NewSM2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (Cipher, error) {
 	if privateKey == nil && publicKey == nil {
-		return nil, fmt.Errorf("%w", ErrAtLeastOneKeyRequired)
+		return nil, ErrAtLeastOneKeyRequired
 	}
 
 	// If only private key is provided, derive public key
@@ -136,7 +136,7 @@ func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (Cipher, error) 
 // Encrypt encrypts the plaintext using SM2 public key and returns base64-encoded ciphertext.
 func (s *SM2Cipher) Encrypt(plaintext string) (string, error) {
 	if s.publicKey == nil {
-		return constants.Empty, fmt.Errorf("%w", ErrPublicKeyRequiredForEncrypt)
+		return constants.Empty, ErrPublicKeyRequiredForEncrypt
 	}
 
 	ciphertext, err := sm2.Encrypt(s.publicKey, []byte(plaintext), rand.Reader, sm2.C1C3C2)
@@ -150,7 +150,7 @@ func (s *SM2Cipher) Encrypt(plaintext string) (string, error) {
 // Decrypt decrypts the base64-encoded ciphertext using SM2 private key and returns plaintext.
 func (s *SM2Cipher) Decrypt(ciphertext string) (string, error) {
 	if s.privateKey == nil {
-		return constants.Empty, fmt.Errorf("%w", ErrPrivateKeyRequiredForDecrypt)
+		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
 	}
 
 	encryptedData, err := encoding.FromBase64(ciphertext)
@@ -170,7 +170,7 @@ func (s *SM2Cipher) Decrypt(ciphertext string) (string, error) {
 func parseSM2PrivateKeyFromPEM(pemData []byte) (*sm2.PrivateKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, fmt.Errorf("%w", ErrFailedDecodePEMBlock)
+		return nil, ErrFailedDecodePEMBlock
 	}
 
 	return x509.ParseSm2PrivateKey(block.Bytes)
@@ -180,7 +180,7 @@ func parseSM2PrivateKeyFromPEM(pemData []byte) (*sm2.PrivateKey, error) {
 func parseSM2PublicKeyFromPEM(pemData []byte) (*sm2.PublicKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, fmt.Errorf("%w", ErrFailedDecodePEMBlock)
+		return nil, ErrFailedDecodePEMBlock
 	}
 
 	return x509.ParseSm2PublicKey(block.Bytes)

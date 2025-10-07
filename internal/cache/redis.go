@@ -8,36 +8,23 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/ilxqx/vef-framework-go/cache"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// redisStore implements the Store interface using Redis as the storage backend.
-type redisStore struct {
-	client  *redis.Client
-	options redisOptions
-}
-
-// redisOptions for cache configuration.
-type redisOptions struct {
-	DefaultTTL time.Duration // Default TTL for cache entries
-}
-
-// createRedisStore creates a new redis-based store.
-func createRedisStore(client *redis.Client, opts redisOptions) cache.Store {
-	return &redisStore{
-		client:  client,
-		options: opts,
-	}
+// RedisStore implements the Store interface using Redis as the storage backend.
+type RedisStore struct {
+	client *redis.Client
+	cfg    *config.RedisCacheConfig
 }
 
 // Name returns the name of the store.
-func (r *redisStore) Name() string {
+func (r *RedisStore) Name() string {
 	return "redis"
 }
 
 // Get retrieves raw bytes by key.
-func (r *redisStore) Get(ctx context.Context, key string) ([]byte, bool) {
+func (r *RedisStore) Get(ctx context.Context, key string) ([]byte, bool) {
 	val, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -54,13 +41,13 @@ func (r *redisStore) Get(ctx context.Context, key string) ([]byte, bool) {
 }
 
 // Set stores raw bytes with the given key and optional TTL.
-func (r *redisStore) Set(ctx context.Context, key string, data []byte, ttl ...time.Duration) error {
+func (r *RedisStore) Set(ctx context.Context, key string, data []byte, ttl ...time.Duration) error {
 	// Determine expiration
 	var expiration time.Duration
 	if len(ttl) > 0 && ttl[0] > 0 {
 		expiration = ttl[0]
-	} else if r.options.DefaultTTL > 0 {
-		expiration = r.options.DefaultTTL
+	} else if r.cfg.DefaultTTL > 0 {
+		expiration = r.cfg.DefaultTTL
 	}
 
 	// If expiration is 0, key will not expire
@@ -73,7 +60,7 @@ func (r *redisStore) Set(ctx context.Context, key string, data []byte, ttl ...ti
 }
 
 // Contains checks if a key exists in the cache.
-func (r *redisStore) Contains(ctx context.Context, key string) bool {
+func (r *RedisStore) Contains(ctx context.Context, key string) bool {
 	exists, err := r.client.Exists(ctx, key).Result()
 	if err != nil {
 		return false
@@ -83,7 +70,7 @@ func (r *redisStore) Contains(ctx context.Context, key string) bool {
 }
 
 // Delete removes a key from the cache.
-func (r *redisStore) Delete(ctx context.Context, key string) error {
+func (r *RedisStore) Delete(ctx context.Context, key string) error {
 	err := r.client.Del(ctx, key).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete key %s: %w", key, err)
@@ -93,7 +80,7 @@ func (r *redisStore) Delete(ctx context.Context, key string) error {
 }
 
 // Clear removes all entries from the cache with the given prefix.
-func (r *redisStore) Clear(ctx context.Context, prefix string) error {
+func (r *RedisStore) Clear(ctx context.Context, prefix string) error {
 	if prefix == constants.Empty {
 		// If no prefix, clear entire database
 		err := r.client.FlushDB(ctx).Err()
@@ -131,7 +118,7 @@ func (r *redisStore) Clear(ctx context.Context, prefix string) error {
 }
 
 // Keys returns all keys in the cache, filtered by prefix.
-func (r *redisStore) Keys(ctx context.Context, prefix string) ([]string, error) {
+func (r *RedisStore) Keys(ctx context.Context, prefix string) ([]string, error) {
 	var pattern string
 
 	// Build the search pattern
@@ -158,7 +145,7 @@ func (r *redisStore) Keys(ctx context.Context, prefix string) ([]string, error) 
 }
 
 // ForEach iterates over all key-value pairs in the cache, filtered by prefix.
-func (r *redisStore) ForEach(ctx context.Context, prefix string, callback func(key string, data []byte) bool) error {
+func (r *RedisStore) ForEach(ctx context.Context, prefix string, callback func(key string, data []byte) bool) error {
 	var pattern string
 
 	// Build the search pattern
@@ -199,7 +186,7 @@ func (r *redisStore) ForEach(ctx context.Context, prefix string, callback func(k
 }
 
 // Size returns the number of entries in the cache, filtered by prefix.
-func (r *redisStore) Size(ctx context.Context, prefix string) (int64, error) {
+func (r *RedisStore) Size(ctx context.Context, prefix string) (int64, error) {
 	// If no prefix, use DBSize for efficiency
 	if prefix == constants.Empty {
 		size, err := r.client.DBSize(ctx).Result()
@@ -229,7 +216,7 @@ func (r *redisStore) Size(ctx context.Context, prefix string) (int64, error) {
 
 // Close closes the cache and releases any resources.
 // Note: We don't close the Redis client since it's managed by the DI container.
-func (r *redisStore) Close(ctx context.Context) error {
+func (r *RedisStore) Close(ctx context.Context) error {
 	// Redis client is managed by fx container, so we don't close it here
 	logger.Info("redis store closed (client remains managed by container)")
 

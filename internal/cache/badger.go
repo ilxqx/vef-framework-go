@@ -3,84 +3,24 @@ package cache
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/dgraph-io/badger/v4/options"
 
-	"github.com/ilxqx/vef-framework-go/cache"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// badgerStore implements the Store interface using Badger as the storage backend.
-type badgerStore struct {
-	db      *badger.DB
-	options badgerOptions
-}
-
-// badgerOptions for cache configuration.
-type badgerOptions struct {
-	InMemory   bool          // Whether to use in-memory storage
-	Directory  string        // Directory path for persistent storage
-	DefaultTTL time.Duration // Default TTL for cache entries
-}
-
-// createBadgerStore creates a new badger-based store.
-func createBadgerStore(opts badgerOptions) (cache.Store, error) {
-	// Configure Badger options
-	badgerOpts := badger.DefaultOptions(constants.Empty)
-
-	if opts.InMemory {
-		// Use pure in-memory mode
-		badgerOpts = badgerOpts.WithInMemory(true)
-		badgerOpts = badgerOpts.WithDir(constants.Empty)
-		badgerOpts = badgerOpts.WithValueDir(constants.Empty)
-
-		// Optimize for in-memory performance: prioritize speed over space
-		badgerOpts = badgerOpts.WithCompression(options.None) // No compression for zero latency
-		badgerOpts = badgerOpts.WithIndexCacheSize(100 << 20) // 100MB index cache for speed
-		badgerOpts = badgerOpts.WithBlockCacheSize(50 << 20)  // 50MB block cache
-	} else {
-		if opts.Directory == constants.Empty {
-			return nil, ErrDirectoryRequired
-		}
-
-		badgerOpts = badgerOpts.WithDir(opts.Directory)
-		badgerOpts = badgerOpts.WithValueDir(opts.Directory)
-
-		// Optimize for persistent storage: balance performance and space
-		badgerOpts = badgerOpts.WithCompression(options.Snappy) // Light compression for disk space
-		badgerOpts = badgerOpts.WithIndexCacheSize(50 << 20)    // 50MB index cache (smaller)
-		badgerOpts = badgerOpts.WithBlockCacheSize(25 << 20)    // 25MB block cache (smaller)
-	}
-
-	// Common optimizations for both modes
-	badgerOpts = badgerOpts.WithLoggingLevel(badger.WARNING)
-
-	// Open the database
-	db, err := badger.Open(badgerOpts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open badger database: %w", err)
-	}
-
-	store := &badgerStore{
-		db:      db,
-		options: opts,
-	}
-
-	// Start garbage collection for TTL entries (only for persistent mode)
-	if !opts.InMemory {
-		go store.runGC()
-	}
-
-	return store, nil
+// BadgerStore implements the Store interface using Badger as the storage backend.
+type BadgerStore struct {
+	db  *badger.DB
+	cfg *config.LocalCacheConfig
 }
 
 // runGC runs garbage collection to clean up expired entries.
 // This is only necessary for persistent mode as in-memory mode doesn't have value logs.
 // The GC will automatically stop when the database is closed (ErrRejected).
-func (s *badgerStore) runGC() {
+func (s *BadgerStore) runGC() {
 	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
 
@@ -109,12 +49,12 @@ func (s *badgerStore) runGC() {
 }
 
 // Name returns the name of the store.
-func (s *badgerStore) Name() string {
+func (s *BadgerStore) Name() string {
 	return "badger"
 }
 
 // Get retrieves raw bytes by key.
-func (s *badgerStore) Get(ctx context.Context, key string) ([]byte, bool) {
+func (s *BadgerStore) Get(ctx context.Context, key string) ([]byte, bool) {
 	var (
 		data  []byte
 		found bool
@@ -150,15 +90,15 @@ func (s *badgerStore) Get(ctx context.Context, key string) ([]byte, bool) {
 }
 
 // Set stores raw bytes with the given key and optional TTL.
-func (s *badgerStore) Set(ctx context.Context, key string, data []byte, ttl ...time.Duration) error {
+func (s *BadgerStore) Set(ctx context.Context, key string, data []byte, ttl ...time.Duration) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		entry := badger.NewEntry([]byte(key), data)
 
 		// Set TTL if provided
 		if len(ttl) > 0 && ttl[0] > 0 {
 			entry = entry.WithTTL(ttl[0])
-		} else if s.options.DefaultTTL > 0 {
-			entry = entry.WithTTL(s.options.DefaultTTL)
+		} else if s.cfg.DefaultTTL > 0 {
+			entry = entry.WithTTL(s.cfg.DefaultTTL)
 		}
 
 		return txn.SetEntry(entry)
@@ -166,7 +106,7 @@ func (s *badgerStore) Set(ctx context.Context, key string, data []byte, ttl ...t
 }
 
 // Contains checks if a key exists in the cache.
-func (s *badgerStore) Contains(ctx context.Context, key string) bool {
+func (s *BadgerStore) Contains(ctx context.Context, key string) bool {
 	err := s.db.View(func(txn *badger.Txn) error {
 		_, err := txn.Get([]byte(key))
 
@@ -177,14 +117,14 @@ func (s *badgerStore) Contains(ctx context.Context, key string) bool {
 }
 
 // Delete removes a key from the cache.
-func (s *badgerStore) Delete(ctx context.Context, key string) error {
+func (s *BadgerStore) Delete(ctx context.Context, key string) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		return txn.Delete([]byte(key))
 	})
 }
 
 // Clear removes all entries from the cache with the given prefix.
-func (s *badgerStore) Clear(ctx context.Context, prefix string) error {
+func (s *BadgerStore) Clear(ctx context.Context, prefix string) error {
 	if prefix == constants.Empty {
 		// If no prefix, clear all entries
 		return s.db.DropAll()
@@ -219,7 +159,7 @@ func (s *badgerStore) Clear(ctx context.Context, prefix string) error {
 }
 
 // Keys returns all keys in the cache, filtered by prefix.
-func (s *badgerStore) Keys(ctx context.Context, prefix string) ([]string, error) {
+func (s *BadgerStore) Keys(ctx context.Context, prefix string) ([]string, error) {
 	var (
 		keys        []string
 		prefixBytes []byte
@@ -259,7 +199,7 @@ func (s *badgerStore) Keys(ctx context.Context, prefix string) ([]string, error)
 // processIteratorItem processes a single item from the badger iterator
 // and calls the callback with the key-value pair.
 // Returns false if the callback wants to stop iteration, true otherwise.
-func (s *badgerStore) processIteratorItem(item *badger.Item, callback func(key string, data []byte) bool) (bool, error) {
+func (s *BadgerStore) processIteratorItem(item *badger.Item, callback func(key string, data []byte) bool) (bool, error) {
 	key := string(item.Key())
 
 	var data []byte
@@ -280,7 +220,7 @@ func (s *badgerStore) processIteratorItem(item *badger.Item, callback func(key s
 }
 
 // ForEach iterates over all key-value pairs in the cache, filtered by prefix.
-func (s *badgerStore) ForEach(ctx context.Context, prefix string, callback func(key string, data []byte) bool) error {
+func (s *BadgerStore) ForEach(ctx context.Context, prefix string, callback func(key string, data []byte) bool) error {
 	var prefixBytes []byte
 
 	if prefix != constants.Empty {
@@ -323,7 +263,7 @@ func (s *badgerStore) ForEach(ctx context.Context, prefix string, callback func(
 }
 
 // Size returns the number of entries in the cache, filtered by prefix.
-func (s *badgerStore) Size(ctx context.Context, prefix string) (int64, error) {
+func (s *BadgerStore) Size(ctx context.Context, prefix string) (int64, error) {
 	var (
 		count       int64
 		prefixBytes []byte
@@ -358,6 +298,6 @@ func (s *badgerStore) Size(ctx context.Context, prefix string) (int64, error) {
 
 // Close closes the cache and releases resources.
 // The GC goroutine will automatically stop when the database is closed.
-func (s *badgerStore) Close(_ context.Context) error {
+func (s *BadgerStore) Close(_ context.Context) error {
 	return s.db.Close()
 }

@@ -3,7 +3,10 @@ package mold
 import (
 	"go.uber.org/fx"
 
+	"github.com/ilxqx/vef-framework-go/cache"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/mold"
 )
 
 var logger = log.Named("mold")
@@ -30,6 +33,17 @@ var Module = fx.Module(
 			NewDataDictTranslator,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:mold:translators"`),
+		),
+		// Built-in cached data dictionary resolver
+		fx.Annotate(
+			func(loader mold.DataDictLoader, store cache.Store, bus event.Subscriber) mold.DataDictResolver {
+				if loader == nil {
+					return nil
+				}
+
+				return mold.NewCachedDataDictResolver(loader, store, bus)
+			},
+			fx.ParamTags(`optional:"true"`, `name:"vef:cache:badger"`),
 		),
 	),
 	// Initialize the mold module

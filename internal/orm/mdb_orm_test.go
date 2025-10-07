@@ -67,7 +67,7 @@ func (suite *MultiDatabaseORMTestSuite) TestSQLite() {
 // runORMTests executes all ORM test methods on the given suite.
 func (st *MultiDatabaseORMTestSuite) runORMTests(dsConfig *config.DatasourceConfig) {
 	// Create database connection
-	db, err := database.New(dsConfig)
+	db, err := database.CreateDb(dsConfig)
 	st.Require().NoError(err)
 
 	defer func() {

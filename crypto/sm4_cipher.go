@@ -188,7 +188,7 @@ func (s *SM4Cipher) decryptCBC(ciphertext string) (string, error) {
 	}
 
 	if len(encryptedData)%sm4.BlockSize != 0 {
-		return constants.Empty, fmt.Errorf("%w", ErrCiphertextNotMultipleOfBlock)
+		return constants.Empty, ErrCiphertextNotMultipleOfBlock
 	}
 
 	plaintext := make([]byte, len(encryptedData))

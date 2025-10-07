@@ -147,7 +147,7 @@ func resolveAPIHandler(api apiPkg.Spec, resource apiPkg.Resource, db orm.Db, par
 // It supports both regular handler functions and handler factory functions.
 func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
 	if handlerValue == nil {
-		return nil, fmt.Errorf("%w", ErrProvidedHandlerNil)
+		return nil, ErrProvidedHandlerNil
 	}
 
 	handlerReflect := reflect.ValueOf(handlerValue)
@@ -156,7 +156,7 @@ func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db,
 	}
 
 	if handlerReflect.IsNil() {
-		return nil, fmt.Errorf("%w", ErrProvidedHandlerFuncNil)
+		return nil, ErrProvidedHandlerFuncNil
 	}
 
 	target := reflect.ValueOf(resource)
@@ -164,7 +164,7 @@ func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db,
 	// Check if this is a handler factory function (takes db, returns handler)
 	if isHandlerFactory(handlerReflect.Type()) {
 		if db == nil {
-			return nil, fmt.Errorf("%w", ErrHandlerFactoryRequireDB)
+			return nil, ErrHandlerFactoryRequireDB
 		}
 
 		handler, err := createHandler(handlerReflect, db)

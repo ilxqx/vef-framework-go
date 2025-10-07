@@ -6,6 +6,7 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/dustin/go-humanize v1.0.1
+	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fatih/color v1.18.0
 	github.com/go-co-op/gocron/v2 v2.16.6
 	github.com/go-playground/locales v0.14.1
@@ -49,6 +50,7 @@ require (
 	go.uber.org/fx v1.24.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.42.0
+	golang.org/x/sync v0.17.0
 	golang.org/x/text v0.29.0
 )
 

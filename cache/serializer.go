@@ -1,34 +1,24 @@
 package cache
 
 import (
-	"bytes"
-	"encoding/gob"
-
 	"github.com/goccy/go-json"
+
+	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 // gobSerializer implements Serializer using gob encoding.
 type gobSerializer[T any] struct{}
 
 func (s gobSerializer[T]) Serialize(value T) ([]byte, error) {
-	var buf bytes.Buffer
-
-	encoder := gob.NewEncoder(&buf)
-	if err := encoder.Encode(value); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return encoding.ToGOB(value)
 }
 
-func (s gobSerializer[T]) Deserialize(data []byte) (T, error) {
-	var value T
+func (s gobSerializer[T]) Deserialize(data []byte) (result T, err error) {
+	if err = encoding.DecodeGOB(data, &result); err != nil {
+		return result, err
+	}
 
-	buf := bytes.NewReader(data)
-	decoder := gob.NewDecoder(buf)
-	err := decoder.Decode(&value)
-
-	return value, err
+	return result, err
 }
 
 // jsonSerializer implements Serializer using JSON encoding.

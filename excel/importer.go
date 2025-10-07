@@ -214,7 +214,7 @@ func (i *importer) parseRow(row []string, columnMapping map[int]int, excelRow in
 				Row:    excelRow,
 				Column: col.Name,
 				Field:  field.Type().Name(),
-				Err:    fmt.Errorf("%w", ErrFieldNotSettable),
+				Err:    ErrFieldNotSettable,
 			})
 
 			continue

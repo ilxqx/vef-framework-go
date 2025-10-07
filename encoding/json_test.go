@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test struct for encoding/decoding tests.
+// TestStruct for encoding/decoding tests.
 type TestStruct struct {
 	Name    string    `json:"name"`
 	Age     int       `json:"age"`
@@ -19,7 +19,7 @@ type TestStruct struct {
 }
 
 func TestToJSON(t *testing.T) {
-	t.Run("valid struct", func(t *testing.T) {
+	t.Run("Valid struct", func(t *testing.T) {
 		input := TestStruct{
 			Name:   "John Doe",
 			Age:    30,
@@ -33,13 +33,13 @@ func TestToJSON(t *testing.T) {
 		assert.Contains(t, result, "\"active\":true")
 	})
 
-	t.Run("nil input", func(t *testing.T) {
+	t.Run("Nil input", func(t *testing.T) {
 		result, err := ToJSON(nil)
 		require.NoError(t, err)
 		assert.Equal(t, "null", result)
 	})
 
-	t.Run("empty struct", func(t *testing.T) {
+	t.Run("Empty struct", func(t *testing.T) {
 		input := TestStruct{}
 
 		result, err := ToJSON(input)
@@ -51,7 +51,7 @@ func TestToJSON(t *testing.T) {
 }
 
 func TestFromJSON(t *testing.T) {
-	t.Run("valid JSON", func(t *testing.T) {
+	t.Run("Valid JSON", func(t *testing.T) {
 		input := `{"name":"John Doe","age":30,"email":"john@example.com","active":true,"score":95.5}`
 
 		result, err := FromJSON[TestStruct](input)
@@ -65,7 +65,7 @@ func TestFromJSON(t *testing.T) {
 		assert.Equal(t, 95.5, result.Score)
 	})
 
-	t.Run("partial JSON", func(t *testing.T) {
+	t.Run("Partial JSON", func(t *testing.T) {
 		input := `{"name":"Jane Doe"}`
 
 		result, err := FromJSON[TestStruct](input)
@@ -76,7 +76,7 @@ func TestFromJSON(t *testing.T) {
 		assert.Equal(t, 0, result.Age)
 	})
 
-	t.Run("invalid JSON", func(t *testing.T) {
+	t.Run("Invalid JSON", func(t *testing.T) {
 		input := `{"name":"John Doe","age":}`
 
 		result, err := FromJSON[TestStruct](input)
@@ -84,7 +84,7 @@ func TestFromJSON(t *testing.T) {
 		assert.Nil(t, result)
 	})
 
-	t.Run("empty JSON", func(t *testing.T) {
+	t.Run("Empty JSON", func(t *testing.T) {
 		input := `{}`
 
 		result, err := FromJSON[TestStruct](input)
@@ -93,5 +93,29 @@ func TestFromJSON(t *testing.T) {
 
 		assert.Equal(t, "", result.Name)
 		assert.Equal(t, 0, result.Age)
+	})
+}
+
+func TestDecodeJSON(t *testing.T) {
+	t.Run("Decode into struct pointer", func(t *testing.T) {
+		input := `{"name":"John Doe","age":30,"active":true}`
+
+		var result TestStruct
+
+		err := DecodeJSON(input, &result)
+		require.NoError(t, err)
+
+		assert.Equal(t, "John Doe", result.Name)
+		assert.Equal(t, 30, result.Age)
+		assert.True(t, result.Active)
+	})
+
+	t.Run("Invalid JSON", func(t *testing.T) {
+		input := `{"name":"John Doe","age":}`
+
+		var result TestStruct
+
+		err := DecodeJSON(input, &result)
+		assert.Error(t, err)
 	})
 }

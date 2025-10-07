@@ -54,7 +54,7 @@ func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 	}
 
 	// Test basic connection
-	db, err := New(config)
+	db, err := CreateDb(config)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(db)
 
@@ -73,7 +73,7 @@ func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 	}
 
 	// Test with custom options
-	db, err := New(config,
+	db, err := CreateDb(config,
 		WithQueryHook(false),
 	)
 	suite.Require().NoError(err)
@@ -93,7 +93,7 @@ func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 	suite.T().Logf("PostgreSQL connection config: %+v", config)
 
 	// Test basic connection
-	db, err := New(config)
+	db, err := CreateDb(config)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(db)
 
@@ -111,7 +111,7 @@ func (suite *DatabaseTestSuite) TestMySQLConnection() {
 	suite.T().Logf("MySQL connection config: %+v", config)
 
 	// Test basic connection
-	db, err := New(config)
+	db, err := CreateDb(config)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(db)
 
@@ -127,7 +127,7 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 		Type: "unsupported",
 	}
 
-	db, err := New(config)
+	db, err := CreateDb(config)
 	suite.Error(err)
 	suite.Nil(db)
 	suite.Contains(err.Error(), "unsupported database type")
@@ -140,7 +140,7 @@ func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 		// No Path specified - should use in-memory mode
 	}
 
-	db, err := New(config)
+	db, err := CreateDb(config)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(db)
 
@@ -171,7 +171,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 		Path: tempFile.Name(),
 	}
 
-	db, err := New(config)
+	db, err := CreateDb(config)
 	suite.Require().NoError(err)
 	suite.Require().NotNil(db)
 
@@ -191,7 +191,7 @@ func (suite *DatabaseTestSuite) TestMySQLValidation() {
 		// Missing Database
 	}
 
-	db, err := New(config)
+	db, err := CreateDb(config)
 	suite.Error(err)
 	suite.Nil(db)
 	suite.Contains(err.Error(), "database name is required")
@@ -212,7 +212,7 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 		ConnMaxLifetime: 5 * time.Minute,
 	}
 
-	db, err := New(config, WithConnectionPool(customPoolConfig))
+	db, err := CreateDb(config, WithConnectionPool(customPoolConfig))
 	suite.Require().NoError(err)
 	suite.Require().NotNil(db)
 

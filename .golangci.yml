@@ -117,6 +117,7 @@ linters:
       align: false
       sort: true
       order: [json, xml, yaml, yml, toml, query, form, config, tabular, search, bun, mold, validate, label, label_i18n]
+      strict: false
 
   exclusions:
     rules:

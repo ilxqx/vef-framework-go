@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/cache"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // TestUser represents a test user struct for cache operations.
@@ -22,7 +23,7 @@ type TestUserBadger struct {
 
 // setupBadgerCache sets up a Badger-backed cache for testing.
 func setupBadgerCache[T any](t *testing.T, cacheName string) cache.Cache[T] {
-	store, err := createBadgerStore(badgerOptions{InMemory: true})
+	store, err := NewBadgerStore(&config.LocalCacheConfig{InMemory: true})
 	require.NoError(t, err, "Failed to create badger store")
 
 	// Create cache instance

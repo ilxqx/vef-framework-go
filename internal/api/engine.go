@@ -7,6 +7,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/security"
 )
 
 // Engine defines the interface for API engines that can connect to a router.
@@ -17,25 +18,33 @@ type Engine interface {
 }
 
 // NewEngine creates an Engine with the given policy.
-func NewEngine(manager api.Manager, policy Policy, db orm.Db, transformer mold.Transformer) Engine {
-	return &apiEngine{
+func NewEngine(
+	manager api.Manager,
+	policy Policy,
+	checker security.PermissionChecker,
+	db orm.Db,
+	transformer mold.Transformer,
+) Engine {
+	return &DefaultEngine{
 		manager:     manager,
 		policy:      policy,
+		checker:     checker,
 		db:          db,
 		transformer: transformer,
 	}
 }
 
-type apiEngine struct {
+type DefaultEngine struct {
 	manager     api.Manager
 	policy      Policy
+	checker     security.PermissionChecker
 	db          orm.Db
 	transformer mold.Transformer
 }
 
 // Connect registers the API engine with the given router.
 // It sets up the middleware chain and registers the API endpoint.
-func (e *apiEngine) Connect(router fiber.Router) {
+func (e *DefaultEngine) Connect(router fiber.Router) {
 	middlewares := e.buildMiddlewares()
 	middlewares = append(middlewares, e.dispatch)
 
@@ -48,7 +57,7 @@ func (e *apiEngine) Connect(router fiber.Router) {
 
 // dispatch handles the API request by looking up the definition and calling its handler.
 // The definition lookup is guaranteed to succeed as requestMiddleware already validates it exists.
-func (e *apiEngine) dispatch(ctx fiber.Ctx) error {
+func (e *DefaultEngine) dispatch(ctx fiber.Ctx) error {
 	request := contextx.APIRequest(ctx)
 	definition := e.manager.Lookup(request.Identifier)
 
@@ -57,12 +66,12 @@ func (e *apiEngine) dispatch(ctx fiber.Ctx) error {
 
 // buildMiddlewares constructs the middleware chain for the API engine.
 // The middleware order is important: request parsing, authentication, context setup, permission check, and rate limiting.
-func (e *apiEngine) buildMiddlewares() []fiber.Handler {
+func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
 	return []fiber.Handler{
 		requestMiddleware(e.manager),
 		e.policy.BuildAuthenticationMiddleware(e.manager),
 		buildContextMiddleware(e.db, e.transformer),
-		buildAuthorizationMiddleware(e.manager),
+		buildAuthorizationMiddleware(e.manager, e.checker),
 		buildRateLimiterMiddleware(e.manager),
 	}
 }

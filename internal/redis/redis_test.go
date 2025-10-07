@@ -38,13 +38,15 @@ func (suite *RedisTestSuite) TearDownSuite() {
 
 // TestNewClient tests Redis client creation with default configuration.
 func (suite *RedisTestSuite) TestNewClient() {
-	config := &config.RedisConfig{
+	cfg := &config.RedisConfig{
 		Host:     "127.0.0.1",
 		Port:     6379,
 		Database: 0,
 	}
 
-	client := NewClient("test-app", config)
+	client := NewClient(cfg, &config.AppConfig{
+		Name: "test-app",
+	})
 	suite.Require().NotNil(client)
 
 	// Verify client options
@@ -69,7 +71,7 @@ func (suite *RedisTestSuite) TestNewClient() {
 
 // TestNewClientWithCustomConfig tests Redis client with custom configuration.
 func (suite *RedisTestSuite) TestNewClientWithCustomConfig() {
-	config := &config.RedisConfig{
+	cfg := &config.RedisConfig{
 		Host:     "custom-host",
 		Port:     6380,
 		User:     "testuser",
@@ -78,7 +80,9 @@ func (suite *RedisTestSuite) TestNewClientWithCustomConfig() {
 		Network:  "tcp",
 	}
 
-	client := NewClient("custom-app", config)
+	client := NewClient(cfg, &config.AppConfig{
+		Name: "custom-app",
+	})
 	suite.Require().NotNil(client)
 
 	options := client.Options()
@@ -93,12 +97,14 @@ func (suite *RedisTestSuite) TestNewClientWithCustomConfig() {
 // TestRedisConnection tests actual Redis connection using testcontainers.
 func (suite *RedisTestSuite) TestRedisConnection() {
 	// Use the pre-configured Redis container
-	config := suite.redisContainer.RdsConfig
+	cfg := suite.redisContainer.RdsConfig
 
-	client := NewClient("test-connection", config)
+	client := NewClient(cfg, &config.AppConfig{
+		Name: "test-connection",
+	})
 	suite.Require().NotNil(client)
 
-	suite.T().Logf("Redis connection config: %+v", config)
+	suite.T().Logf("Redis connection config: %+v", cfg)
 
 	// Test connection
 	err := client.Ping(suite.ctx).Err()
@@ -114,9 +120,11 @@ func (suite *RedisTestSuite) TestRedisConnection() {
 // TestHealthCheck tests the health check functionality.
 func (suite *RedisTestSuite) TestHealthCheck() {
 	// Use the pre-configured Redis container
-	config := suite.redisContainer.RdsConfig
+	cfg := suite.redisContainer.RdsConfig
 
-	client := NewClient("test-health", config)
+	client := NewClient(cfg, &config.AppConfig{
+		Name: "test-health",
+	})
 	suite.Require().NotNil(client)
 
 	// Test health check
@@ -129,13 +137,15 @@ func (suite *RedisTestSuite) TestHealthCheck() {
 
 // TestHealthCheckFailure tests health check with invalid configuration.
 func (suite *RedisTestSuite) TestHealthCheckFailure() {
-	config := &config.RedisConfig{
+	cfg := &config.RedisConfig{
 		Host:     "invalid-host",
 		Port:     9999,
 		Database: 0,
 	}
 
-	client := NewClient("test-health-fail", config)
+	client := NewClient(cfg, &config.AppConfig{
+		Name: "test-health-fail",
+	})
 	suite.Require().NotNil(client)
 
 	// Test health check failure

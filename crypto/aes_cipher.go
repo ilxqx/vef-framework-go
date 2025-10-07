@@ -154,7 +154,7 @@ func (a *AESCipher) decryptCBC(ciphertext string) (string, error) {
 	}
 
 	if len(encryptedData)%aes.BlockSize != 0 {
-		return constants.Empty, fmt.Errorf("%w", ErrCiphertextNotMultipleOfBlock)
+		return constants.Empty, ErrCiphertextNotMultipleOfBlock
 	}
 
 	plaintext := make([]byte, len(encryptedData))
@@ -213,7 +213,7 @@ func (a *AESCipher) decryptGCM(ciphertext string) (string, error) {
 
 	nonceSize := gcm.NonceSize()
 	if len(encryptedData) < nonceSize {
-		return constants.Empty, fmt.Errorf("%w", ErrCiphertextTooShort)
+		return constants.Empty, ErrCiphertextTooShort
 	}
 
 	nonce, ciphertextBytes := encryptedData[:nonceSize], encryptedData[nonceSize:]
@@ -242,18 +242,18 @@ func pkcs7Padding(data []byte, blockSize int) []byte {
 func pkcs7Unpadding(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {
-		return nil, fmt.Errorf("%w", ErrDataEmpty)
+		return nil, ErrDataEmpty
 	}
 
 	padding := int(data[length-1])
 	if padding > length || padding > aes.BlockSize {
-		return nil, fmt.Errorf("%w", ErrInvalidPadding)
+		return nil, ErrInvalidPadding
 	}
 
 	// Verify padding
 	for i := range padding {
 		if data[length-1-i] != byte(padding) {
-			return nil, fmt.Errorf("%w", ErrInvalidPadding)
+			return nil, ErrInvalidPadding
 		}
 	}
 

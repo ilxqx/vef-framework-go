@@ -71,7 +71,7 @@ func (suite *MultiDatabaseAPIsTestSuite) TestSQLite() {
 // runAPITests executes all API test suites on the given database configuration.
 func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceConfig) {
 	// Create database connection
-	db, err := database.New(dsConfig)
+	db, err := database.CreateDb(dsConfig)
 	st.Require().NoError(err)
 
 	defer func() {

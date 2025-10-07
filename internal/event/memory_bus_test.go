@@ -301,7 +301,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 	t.Run("start and shutdown", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		bus := &memoryEventBus{
+		bus := &MemoryBus{
 			middlewares: []event.Middleware{},
 			subscribers: make(map[string]map[string]*subscription),
 			eventCh:     make(chan *eventMessage, 1000),
@@ -332,7 +332,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 	t.Run("shutdown without start", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		bus := &memoryEventBus{
+		bus := &MemoryBus{
 			middlewares: []event.Middleware{},
 			subscribers: make(map[string]map[string]*subscription),
 			eventCh:     make(chan *eventMessage, 1000),
@@ -624,15 +624,15 @@ func (m *testMiddleware) Process(ctx context.Context, evt event.Event, next even
 }
 
 // createTestEventBus creates a memory event bus for testing.
-func createTestEventBus(t *testing.T) *memoryEventBus {
+func createTestEventBus(t *testing.T) *MemoryBus {
 	return createTestEventBusWithMiddleware(t, []event.Middleware{})
 }
 
 // createTestEventBusWithMiddleware creates a memory event bus with custom middleware for testing.
-func createTestEventBusWithMiddleware(t *testing.T, middlewares []event.Middleware) *memoryEventBus {
+func createTestEventBusWithMiddleware(t *testing.T, middlewares []event.Middleware) *MemoryBus {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	bus := &memoryEventBus{
+	bus := &MemoryBus{
 		middlewares: middlewares,
 		subscribers: make(map[string]map[string]*subscription),
 		eventCh:     make(chan *eventMessage, 1000),

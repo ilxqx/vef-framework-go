@@ -1,5 +1,11 @@
 package security
 
+import (
+	"context"
+
+	"github.com/ilxqx/vef-framework-go/set"
+)
+
 // Authenticator defines the interface for authentication providers.
 // Each authenticator supports specific authentication types and validates credentials.
 type Authenticator interface {
@@ -60,4 +66,30 @@ type PasswordDecryptor interface {
 	// The encryptedPassword parameter is typically a base64-encoded or hex-encoded string.
 	// Returns an error if decryption fails (e.g., invalid format, wrong key, corrupted data).
 	Decrypt(encryptedPassword string) (string, error)
+}
+
+// PermissionChecker defines the interface for checking whether a principal has a specific permission.
+// Users should implement this interface and provide it via the fx container.
+// The framework provides a default RBAC implementation, but users can implement custom logic.
+type PermissionChecker interface {
+	// HasPermission checks if the given principal has the specified permission.
+	// ctx: The request context for carrying trace info, cancellation signals, etc.
+	// principal: The current user/app/system identity.
+	// permissionToken: The permission token required by the API endpoint.
+	// Returns true if the principal has the permission, false otherwise.
+	// Returns an error if the permission check fails due to internal errors.
+	HasPermission(ctx context.Context, principal *Principal, permissionToken string) (bool, error)
+}
+
+// RolePermissionsLoader defines a strategy for loading permissions associated with a role.
+// This interface is used by the RBAC PermissionChecker implementation.
+// Users should implement this interface to define how role permissions are loaded.
+type RolePermissionsLoader interface {
+	// LoadPermissions loads all permission tokens associated with the given role.
+	// ctx: The request context.
+	// role: The role name to load permissions for.
+	// Returns a set of permission tokens for the role.
+	// Returns an empty set if the role doesn't exist or has no permissions.
+	// Returns an error if loading fails due to internal errors.
+	LoadPermissions(ctx context.Context, role string) (set.Set[string], error)
 }

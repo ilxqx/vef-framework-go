@@ -2,6 +2,9 @@ package mold
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
@@ -9,7 +12,18 @@ import (
 )
 
 const (
-	descFieldNameSuffix = "Desc"
+	translatedFieldNameSuffix = "Name"
+)
+
+var (
+	// ErrTranslatedFieldNotFound is returned when the target translated field (e.g., StatusName) is not found.
+	ErrTranslatedFieldNotFound = errors.New("target translated field not found")
+	// ErrTranslationKindEmpty is returned when the translation kind parameter is missing.
+	ErrTranslationKindEmpty = errors.New("translation kind parameter is empty")
+	// ErrTranslatedFieldNotSettable is returned when the target translated field cannot be set.
+	ErrTranslatedFieldNotSettable = errors.New("target translated field is not settable")
+	// ErrNoTranslatorSupportsKind is returned when no translator supports the given kind.
+	ErrNoTranslatorSupportsKind = errors.New("no translator supports the given kind")
 )
 
 // TranslateTransformer is a translator-based transformer that converts values to readable names
@@ -36,18 +50,14 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 		return nil
 	}
 
-	descField, ok := fl.SiblingField(name + descFieldNameSuffix)
+	translatedField, ok := fl.SiblingField(name + translatedFieldNameSuffix)
 	if !ok {
-		t.logger.Warnf("Ignore translation for field '%s' with value '%s' because target desc field '%s%s' is not found", name, value, name, descFieldNameSuffix)
-
-		return nil
+		return fmt.Errorf("%w: failed to get field '%s%s' for field '%s' with value '%s'", ErrTranslatedFieldNotFound, name, translatedFieldNameSuffix, name, value)
 	}
 
 	kind := fl.Param()
 	if kind == constants.Empty {
-		t.logger.Warnf("Ignore translation for field '%s' with value '%s' because translation kind parameter is empty", name, value)
-
-		return nil
+		return fmt.Errorf("%w: field '%s' with value '%s'", ErrTranslationKindEmpty, name, value)
 	}
 
 	// Find the translator that supports the translation kind
@@ -58,19 +68,21 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 				return err
 			}
 
-			if descField.CanSet() {
-				descField.SetString(translated)
+			if translatedField.CanSet() {
+				translatedField.SetString(translated)
 			} else {
-				t.logger.Warnf("Ignore translation for field '%s' with value '%s' because target field '%s%s' is not settable", name, value, name, descFieldNameSuffix)
+				return fmt.Errorf("%w: field '%s%s' for field '%s' with value '%s'", ErrTranslatedFieldNotSettable, name, translatedFieldNameSuffix, name, value)
 			}
 
 			return nil
 		}
 	}
 
-	t.logger.Warnf("Ignore translation for field '%s' with value '%s' because no translator supports kind '%s'", name, value, kind)
+	if strings.HasSuffix(kind, constants.QuestionMark) {
+		return nil
+	}
 
-	return nil
+	return fmt.Errorf("%w: kind '%s' for field '%s' with value '%s'", ErrNoTranslatorSupportsKind, kind, name, value)
 }
 
 // NewTranslateTransformer creates a translate transformer instance.

@@ -72,7 +72,7 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (string, error) {
 	// Validate messageId is not empty
 	if messageId == constants.Empty {
-		return constants.Empty, fmt.Errorf("%w", ErrMessageIdEmpty)
+		return constants.Empty, ErrMessageIdEmpty
 	}
 
 	// Extract template data if provided (only use the first map)

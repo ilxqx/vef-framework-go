@@ -8,7 +8,7 @@ import (
 )
 
 func TestToXML(t *testing.T) {
-	t.Run("valid struct", func(t *testing.T) {
+	t.Run("Valid struct", func(t *testing.T) {
 		input := TestStruct{
 			Name:   "John Doe",
 			Age:    30,
@@ -23,7 +23,7 @@ func TestToXML(t *testing.T) {
 		assert.Contains(t, result, "<Active>true</Active>")
 	})
 
-	t.Run("empty struct", func(t *testing.T) {
+	t.Run("Empty struct", func(t *testing.T) {
 		input := TestStruct{}
 
 		result, err := ToXML(input)
@@ -36,7 +36,7 @@ func TestToXML(t *testing.T) {
 }
 
 func TestFromXML(t *testing.T) {
-	t.Run("valid XML", func(t *testing.T) {
+	t.Run("Valid XML", func(t *testing.T) {
 		input := `<TestStruct><Name>John Doe</Name><Age>30</Age><Active>true</Active><Score>95.5</Score></TestStruct>`
 
 		result, err := FromXML[TestStruct](input)
@@ -49,7 +49,7 @@ func TestFromXML(t *testing.T) {
 		assert.Equal(t, 95.5, result.Score)
 	})
 
-	t.Run("partial XML", func(t *testing.T) {
+	t.Run("Partial XML", func(t *testing.T) {
 		input := `<TestStruct><Name>Jane Doe</Name></TestStruct>`
 
 		result, err := FromXML[TestStruct](input)
@@ -60,7 +60,7 @@ func TestFromXML(t *testing.T) {
 		assert.Equal(t, 0, result.Age)
 	})
 
-	t.Run("invalid XML", func(t *testing.T) {
+	t.Run("Invalid XML", func(t *testing.T) {
 		input := `<TestStruct><Name>John Doe</Name><Age>30</TestStruct>`
 
 		result, err := FromXML[TestStruct](input)
@@ -68,7 +68,7 @@ func TestFromXML(t *testing.T) {
 		assert.Nil(t, result)
 	})
 
-	t.Run("empty XML", func(t *testing.T) {
+	t.Run("Empty XML", func(t *testing.T) {
 		input := `<TestStruct></TestStruct>`
 
 		result, err := FromXML[TestStruct](input)
@@ -77,5 +77,29 @@ func TestFromXML(t *testing.T) {
 
 		assert.Equal(t, "", result.Name)
 		assert.Equal(t, 0, result.Age)
+	})
+}
+
+func TestDecodeXML(t *testing.T) {
+	t.Run("Decode into struct pointer", func(t *testing.T) {
+		input := `<TestStruct><Name>John Doe</Name><Age>30</Age><Active>true</Active></TestStruct>`
+
+		var result TestStruct
+
+		err := DecodeXML(input, &result)
+		require.NoError(t, err)
+
+		assert.Equal(t, "John Doe", result.Name)
+		assert.Equal(t, 30, result.Age)
+		assert.True(t, result.Active)
+	})
+
+	t.Run("Invalid XML", func(t *testing.T) {
+		input := `<TestStruct><Name>John Doe</Name><Age>30</TestStruct>`
+
+		var result TestStruct
+
+		err := DecodeXML(input, &result)
+		assert.Error(t, err)
 	})
 }

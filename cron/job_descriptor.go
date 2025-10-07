@@ -29,7 +29,7 @@ func (i *jobInfo) buildJobOptions() ([]gocron.JobOption, error) {
 	var options []gocron.JobOption
 
 	if i.name == constants.Empty {
-		return nil, fmt.Errorf("%w", ErrJobNameRequired)
+		return nil, ErrJobNameRequired
 	}
 
 	uuid, err := uuid.NewRandom()
@@ -76,11 +76,11 @@ type jobTask struct {
 
 func (t *jobTask) buildTask() (gocron.Task, error) {
 	if t.handler == nil {
-		return nil, fmt.Errorf("%w", ErrJobTaskHandlerRequired)
+		return nil, ErrJobTaskHandlerRequired
 	}
 
 	if reflect.ValueOf(t.handler).Kind() != reflect.Func {
-		return nil, fmt.Errorf("%w", ErrJobTaskHandlerMustFunc)
+		return nil, ErrJobTaskHandlerMustFunc
 	}
 
 	return gocron.NewTask(t.handler, t.params...), nil

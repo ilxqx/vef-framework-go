@@ -11,6 +11,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
@@ -33,7 +34,9 @@ func (suite *RedisStoreTestSuite) SetupSuite() {
 	suite.redisContainer = redisContainer
 
 	// Create Redis client
-	suite.client = redis.NewClient("test-app", redisContainer.RdsConfig)
+	suite.client = redis.NewClient(redisContainer.RdsConfig, &config.AppConfig{
+		Name: "test-app",
+	})
 
 	// Test connection
 	err := suite.client.Ping(suite.ctx).Err()
@@ -63,7 +66,7 @@ func (suite *RedisStoreTestSuite) SetupTest() {
 }
 
 func (suite *RedisStoreTestSuite) TestRedisStoreBasicOperations() {
-	store := createRedisStore(suite.client, redisOptions{
+	store := NewRedisStore(suite.client, &config.RedisCacheConfig{
 		DefaultTTL: 0, // No default TTL
 	})
 
@@ -124,7 +127,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreBasicOperations() {
 
 func (suite *RedisStoreTestSuite) TestRedisStoreTTL() {
 	suite.Run("TTL expiration", func() {
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		err := store.Set(suite.ctx, "ttl-key", []byte("ttl-value"), 100*time.Millisecond)
 		suite.Require().NoError(err)
@@ -143,7 +146,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreTTL() {
 	})
 
 	suite.Run("Default TTL", func() {
-		store := createRedisStore(suite.client, redisOptions{
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{
 			DefaultTTL: 100 * time.Millisecond,
 		})
 
@@ -172,7 +175,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 			suite.client.Del(suite.ctx, keys...)
 		}
 
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -205,7 +208,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 			suite.client.Del(suite.ctx, keys...)
 		}
 
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -245,7 +248,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 			suite.client.Del(suite.ctx, keys...)
 		}
 
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -281,7 +284,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 			suite.client.Del(suite.ctx, keys...)
 		}
 
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -321,7 +324,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 			suite.client.Del(suite.ctx, keys...)
 		}
 
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -359,7 +362,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 			suite.client.Del(suite.ctx, keys...)
 		}
 
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Setup test data for this test only
 		testData := map[string][]byte{
@@ -384,7 +387,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreIteration() {
 
 func (suite *RedisStoreTestSuite) TestRedisStoreClear() {
 	suite.Run("Clear all keys", func() {
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Add some test data
 		for i := range 10 {
@@ -410,7 +413,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreClear() {
 	})
 
 	suite.Run("Clear with prefix", func() {
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Add test data with different prefixes
 		testData := map[string][]byte{
@@ -454,7 +457,7 @@ func (suite *RedisStoreTestSuite) TestRedisStoreClear() {
 
 func (suite *RedisStoreTestSuite) TestRedisStorePrefixFiltering() {
 	suite.Run("Prefix filtering in operations", func() {
-		store := createRedisStore(suite.client, redisOptions{})
+		store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 		// Add test data with different prefixes
 		testData := map[string][]byte{
@@ -516,7 +519,7 @@ func (suite *RedisStoreTestSuite) TestRedisStorePrefixFiltering() {
 }
 
 func (suite *RedisStoreTestSuite) TestRedisStoreClose() {
-	store := createRedisStore(suite.client, redisOptions{})
+	store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 	// Set some data
 	err := store.Set(suite.ctx, "test-key", []byte("test-value"))

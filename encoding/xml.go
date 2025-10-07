@@ -25,3 +25,8 @@ func FromXML[T any](value string) (*T, error) {
 
 	return &result, nil
 }
+
+// DecodeXML decodes an XML string into the provided result pointer.
+func DecodeXML(value string, result any) error {
+	return xml.Unmarshal([]byte(value), result)
+}

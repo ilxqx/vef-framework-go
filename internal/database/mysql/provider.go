@@ -53,7 +53,7 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
 	// MySQL requires at least database name
 	if config.Database == constants.Empty {
-		return fmt.Errorf("%w", ErrMySQLDatabaseRequired)
+		return ErrMySQLDatabaseRequired
 	}
 
 	return nil

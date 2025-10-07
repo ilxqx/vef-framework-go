@@ -96,8 +96,8 @@ type AppParams struct {
 
 	Config        *config.AppConfig
 	Middlewares   []Middleware `group:"vef:app:middlewares"`
-	ApiEngine     api.Engine   `name:"vef:api:engine"`
-	OpenApiEngine api.Engine   `name:"vef:openapi:engine"`
+	ApiEngine     api.Engine   `                            name:"vef:api:engine"`
+	OpenApiEngine api.Engine   `                            name:"vef:openapi:engine"`
 }
 
 // New creates a new VEF application instance with the provided dependencies.

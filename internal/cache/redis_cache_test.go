@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/cache"
+	"github.com/ilxqx/vef-framework-go/config"
 )
 
 // TestUser represents a test user struct for cache operations.
@@ -38,14 +39,14 @@ func (suite *RedisCacheTestSuite) SetupTest() {
 
 // setupRedisCache creates a Redis-backed cache for testing.
 func (suite *RedisCacheTestSuite) setupRedisCache(cacheName string) cache.Cache[TestUser] {
-	store := createRedisStore(suite.client, redisOptions{})
+	store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 	return cache.New[TestUser](cacheName, store)
 }
 
 // setupStringCache creates a Redis-backed string cache for testing.
 func (suite *RedisCacheTestSuite) setupStringCache(cacheName string) cache.Cache[string] {
-	store := createRedisStore(suite.client, redisOptions{})
+	store := NewRedisStore(suite.client, &config.RedisCacheConfig{})
 
 	return cache.New[string](cacheName, store)
 }

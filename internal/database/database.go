@@ -24,7 +24,7 @@ func newDb(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err er
 		WithQueryHook(true),
 	}
 
-	if db, err = New(config, opts...); err != nil {
+	if db, err = CreateDb(config, opts...); err != nil {
 		return db, err
 	}
 
@@ -106,7 +106,7 @@ func initializeDatabase(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOpt
 	return db, nil
 }
 
-// New creates a new database connection with custom options.
+// CreateDb creates a new *bun.DB instance with custom options.
 //
 // Parameters:
 //   - config: The datasource configuration containing database connection details
@@ -115,7 +115,7 @@ func initializeDatabase(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOpt
 // Returns:
 //   - *bun.DB: A configured bun database instance ready for use
 //   - error: Any error that occurred during database initialization
-func New(config *config.DatasourceConfig, options ...Option) (*bun.DB, error) {
+func CreateDb(config *config.DatasourceConfig, options ...Option) (*bun.DB, error) {
 	provider, exists := registry.provider(config.Type)
 	if !exists {
 		return nil, newUnsupportedDbTypeError(config.Type)

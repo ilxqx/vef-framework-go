@@ -17,7 +17,7 @@ type SM2PasswordDecryptor struct {
 // NewSM2PasswordDecryptor creates a new SM2 password decryptor with the given private key.
 func NewSM2PasswordDecryptor(privateKey *sm2.PrivateKey) (PasswordDecryptor, error) {
 	if privateKey == nil {
-		return nil, fmt.Errorf("%w", ErrPrivateKeyNil)
+		return nil, ErrPrivateKeyNil
 	}
 
 	// Use crypto package's SM2 cipher

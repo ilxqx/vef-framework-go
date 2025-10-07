@@ -3,8 +3,6 @@ package mold
 import (
 	"context"
 	"reflect"
-
-	"github.com/ilxqx/vef-framework-go/null"
 )
 
 // Transformer defines the main interface for struct transformers that provide tag-based data transformation.
@@ -88,6 +86,13 @@ type Translator interface {
 // Supports multi-level data dictionaries, using key to distinguish different dictionary types.
 type DataDictResolver interface {
 	// Resolve resolves the corresponding name based on dictionary key and code value
-	// Returns Option type, None indicates no corresponding name was found
-	Resolve(ctx context.Context, key, code string) null.String
+	// Returns the translated name and an error if resolution fails
+	Resolve(ctx context.Context, key, code string) (string, error)
+}
+
+// DataDictLoader defines the contract for loading dictionary entries by key.
+// Implementations should return a map where the key is the dictionary item's code
+// and the value is the translated/display name.
+type DataDictLoader interface {
+	Load(ctx context.Context, key string) (map[string]string, error)
 }

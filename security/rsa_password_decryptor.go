@@ -18,7 +18,7 @@ type RSAPasswordDecryptor struct {
 // The privateKey should be in PKCS#1 or PKCS#8 PEM format.
 func NewRSAPasswordDecryptor(privateKey *rsa.PrivateKey) (PasswordDecryptor, error) {
 	if privateKey == nil {
-		return nil, fmt.Errorf("%w", ErrPrivateKeyNil)
+		return nil, ErrPrivateKeyNil
 	}
 
 	// Use crypto package's RSA cipher with OAEP mode (default)
