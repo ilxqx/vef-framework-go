@@ -127,6 +127,7 @@ linters:
           - errcheck
           - err113
           - dupl
+          - unparam
       - path: 'internal/orm/aggregate\.go'
         linters:
           - dupl

@@ -98,8 +98,8 @@ type Spec struct {
 	Timeout time.Duration
 	// Public indicates whether this endpoint is publicly accessible
 	Public bool
-	// PermissionToken is the permission token required for access
-	PermissionToken string
+	// PermToken is the permission token required for access
+	PermToken string
 	// Limit represents the rate limit for an API endpoint
 	Limit RateLimit
 	// Handler is optional. If not provided, the system will automatically search for a method
@@ -128,8 +128,8 @@ type Definition struct {
 	Timeout time.Duration
 	// Public indicates whether this endpoint is publicly accessible
 	Public bool
-	// PermissionToken is the permission token required for access
-	PermissionToken string
+	// PermToken is the permission token required for access
+	PermToken string
 	// Limit represents the rate limit for an API endpoint
 	Limit RateLimit
 	// Handler is the actual handler function for this endpoint
@@ -143,7 +143,7 @@ func (d *Definition) IsPublic() bool {
 
 // RequiresPermission returns true if the endpoint requires a permission token.
 func (d *Definition) RequiresPermission() bool {
-	return d.PermissionToken != constants.Empty
+	return d.PermToken != constants.Empty
 }
 
 // HasRateLimit returns true if the endpoint has a rate limit configured.

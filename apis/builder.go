@@ -7,13 +7,13 @@ import (
 )
 
 type baseAPIBuilder[T any] struct {
-	action          string
-	version         string
-	enableAudit     bool
-	timeout         time.Duration
-	public          bool
-	permissionToken string
-	rateLimit       api.RateLimit
+	action      string
+	version     string
+	enableAudit bool
+	timeout     time.Duration
+	public      bool
+	permToken   string
+	rateLimit   api.RateLimit
 
 	self T
 }
@@ -42,8 +42,8 @@ func (b *baseAPIBuilder[T]) Public() T {
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) PermissionToken(token string) T {
-	b.permissionToken = token
+func (b *baseAPIBuilder[T]) PermToken(token string) T {
+	b.permToken = token
 
 	return b.self
 }
@@ -59,13 +59,13 @@ func (b *baseAPIBuilder[T]) RateLimit(max int, expiration time.Duration) T {
 
 func (b *baseAPIBuilder[T]) Build(handler any) api.Spec {
 	return api.Spec{
-		Action:          b.action,
-		Version:         b.version,
-		EnableAudit:     b.enableAudit,
-		Timeout:         b.timeout,
-		Public:          b.public,
-		PermissionToken: b.permissionToken,
-		Limit:           b.rateLimit,
-		Handler:         handler,
+		Action:      b.action,
+		Version:     b.version,
+		EnableAudit: b.enableAudit,
+		Timeout:     b.timeout,
+		Public:      b.public,
+		PermToken:   b.permToken,
+		Limit:       b.rateLimit,
+		Handler:     handler,
 	}
 }

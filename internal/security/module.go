@@ -53,15 +53,14 @@ var Module = fx.Module(
 			NewAuthManager,
 			fx.ParamTags(`group:"vef:security:authenticators"`),
 		),
-		// // Provide cached role permission loader decorator
-		// // This will wrap the user-provided RolePermissionsLoader with caching
-		// fx.Annotate(
-		// 	NewCachedRolePermissionsLoader,
-		// 	fx.ParamTags(`optional:"true"`, `name:"vef:cache:badger"`, ``),
-		// ),
 		// Provide RBAC permission checker (requires RolePermissionsLoader implementation from user)
 		fx.Annotate(
 			NewRBACPermissionChecker,
+			fx.ParamTags(`optional:"true"`),
+		),
+		// Provide RBAC data permission resolver (requires RolePermissionsLoader implementation from user)
+		fx.Annotate(
+			NewRBACDataPermResolver,
 			fx.ParamTags(`optional:"true"`),
 		),
 		// Provide auth resource

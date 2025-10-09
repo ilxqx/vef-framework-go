@@ -9,7 +9,6 @@ import (
 	configPkg "github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	"github.com/ilxqx/vef-framework-go/internal/cache"
 	"github.com/ilxqx/vef-framework-go/internal/config"
 	"github.com/ilxqx/vef-framework-go/internal/cron"
 	"github.com/ilxqx/vef-framework-go/internal/database"
@@ -57,7 +56,6 @@ func NewTestApp(t testing.TB, options ...fx.Option) (*app.App, func()) {
 		middleware.Module,
 		api.Module,
 		security.Module,
-		cache.Module,
 		event.Module,
 		cron.Module,
 		redis.Module,

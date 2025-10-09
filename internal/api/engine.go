@@ -22,6 +22,7 @@ func NewEngine(
 	manager api.Manager,
 	policy Policy,
 	checker security.PermissionChecker,
+	resolver security.DataPermissionResolver,
 	db orm.Db,
 	transformer mold.Transformer,
 ) Engine {
@@ -29,6 +30,7 @@ func NewEngine(
 		manager:     manager,
 		policy:      policy,
 		checker:     checker,
+		resolver:    resolver,
 		db:          db,
 		transformer: transformer,
 	}
@@ -38,6 +40,7 @@ type DefaultEngine struct {
 	manager     api.Manager
 	policy      Policy
 	checker     security.PermissionChecker
+	resolver    security.DataPermissionResolver
 	db          orm.Db
 	transformer mold.Transformer
 }
@@ -65,13 +68,14 @@ func (e *DefaultEngine) dispatch(ctx fiber.Ctx) error {
 }
 
 // buildMiddlewares constructs the middleware chain for the API engine.
-// The middleware order is important: request parsing, authentication, context setup, permission check, and rate limiting.
+// The middleware order is important: request parsing, authentication, context setup, authorization, data permission, and rate limiting.
 func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
 	return []fiber.Handler{
 		requestMiddleware(e.manager),
 		e.policy.BuildAuthenticationMiddleware(e.manager),
 		buildContextMiddleware(e.db, e.transformer),
 		buildAuthorizationMiddleware(e.manager, e.checker),
+		buildDataPermMiddleware(e.manager, e.resolver),
 		buildRateLimiterMiddleware(e.manager),
 	}
 }

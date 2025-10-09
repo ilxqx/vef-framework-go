@@ -36,14 +36,16 @@ var Module = fx.Module(
 		),
 		// Built-in cached data dictionary resolver
 		fx.Annotate(
-			func(loader mold.DataDictLoader, store cache.Store, bus event.Subscriber) mold.DataDictResolver {
+			func(loader mold.DataDictLoader, bus event.Subscriber) mold.DataDictResolver {
 				if loader == nil {
 					return nil
 				}
 
-				return mold.NewCachedDataDictResolver(loader, store, bus)
+				dictCache := cache.NewMemory[map[string]string]()
+
+				return mold.NewCachedDataDictResolver(loader, dictCache, bus)
 			},
-			fx.ParamTags(`optional:"true"`, `name:"vef:cache:badger"`),
+			fx.ParamTags(`optional:"true"`),
 		),
 	),
 	// Initialize the mold module

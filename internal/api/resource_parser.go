@@ -47,12 +47,12 @@ func parseResource(resource apiPkg.Resource, db orm.Db, paramResolver *HandlerPa
 				Resource: resourceName,
 				Action:   api.Action,
 			},
-			EnableAudit:     api.EnableAudit,
-			Timeout:         api.Timeout,
-			Public:          api.Public,
-			PermissionToken: api.PermissionToken,
-			Limit:           api.Limit,
-			Handler:         handler,
+			EnableAudit: api.EnableAudit,
+			Timeout:     api.Timeout,
+			Public:      api.Public,
+			PermToken:   api.PermToken,
+			Limit:       api.Limit,
+			Handler:     handler,
 		}
 
 		logger.Infof(

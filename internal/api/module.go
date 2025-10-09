@@ -37,12 +37,22 @@ var Module = fx.Module(
 		// provide engines
 		fx.Annotate(
 			NewEngine,
-			fx.ParamTags(`name:"vef:api:manager"`, `name:"vef:api:policy"`, `optional:"true"`),
+			fx.ParamTags(
+				`name:"vef:api:manager"`,
+				`name:"vef:api:policy"`,
+				`optional:"true"`, // PermissionChecker
+				`optional:"true"`, // DataPermissionResolver
+			),
 			fx.ResultTags(`name:"vef:api:engine"`),
 		),
 		fx.Annotate(
 			NewEngine,
-			fx.ParamTags(`name:"vef:openapi:manager"`, `name:"vef:openapi:policy"`, `optional:"true"`),
+			fx.ParamTags(
+				`name:"vef:openapi:manager"`,
+				`name:"vef:openapi:policy"`,
+				`optional:"true"`, // PermissionChecker
+				`optional:"true"`, // DataPermissionResolver
+			),
 			fx.ResultTags(`name:"vef:openapi:engine"`),
 		),
 	),

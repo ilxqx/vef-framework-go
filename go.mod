@@ -4,7 +4,6 @@ go 1.25.1
 
 require (
 	github.com/bwmarrin/snowflake v0.3.0
-	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fatih/color v1.18.0
@@ -69,7 +68,6 @@ require (
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgraph-io/ristretto/v2 v2.3.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker v28.3.3+incompatible // indirect
@@ -85,7 +83,6 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gofiber/schema v1.6.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/flatbuffers v25.9.23+incompatible // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
@@ -146,6 +143,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel v1.38.0 // indirect
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

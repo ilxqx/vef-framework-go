@@ -2,19 +2,19 @@ package cache
 
 import (
 	"context"
+	"io"
 	"time"
-
-	"github.com/ilxqx/vef-framework-go/constants"
-)
-
-const (
-	cacheKeyPrefix = constants.VEFName + constants.Colon
 )
 
 // Cache defines the interface for a generic key-value cache.
 type Cache[T any] interface {
+	io.Closer
+
 	// Get retrieves a value by key. Returns the value and true if found, zero value and false if not found.
 	Get(ctx context.Context, key string) (T, bool)
+	// GetOrLoad retrieves a value by key or computes it using the provided loader when missing.
+	// Implementations must ensure concurrent calls for the same key only trigger a single loader execution.
+	GetOrLoad(ctx context.Context, key string, loader LoaderFunc[T], ttl ...time.Duration) (T, error)
 	// Set stores a value with the given key. If ttl is provided and > 0, the entry will expire after the duration.
 	Set(ctx context.Context, key string, value T, ttl ...time.Duration) error
 	// Contains checks if a key exists in the cache.

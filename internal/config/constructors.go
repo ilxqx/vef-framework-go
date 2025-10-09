@@ -61,17 +61,6 @@ func newRedisConfig(cfg config.Config) (*config.RedisConfig, error) {
 	return &redisConfig, nil
 }
 
-// newCacheConfig creates and parses cache configuration from "vef.cache" section.
-func newCacheConfig(cfg config.Config) (*config.CacheConfig, error) {
-	var cacheConfig config.CacheConfig
-	// Unmarshal extracts cache config from "vef.cache" section
-	if err := cfg.Unmarshal("vef.cache", &cacheConfig); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal cache config: %w", err)
-	}
-
-	return &cacheConfig, nil
-}
-
 // newStorageConfig creates and parses storage configuration from "vef.storage" section.
 func newStorageConfig(cfg config.Config) (*config.StorageConfig, error) {
 	var storageConfig config.StorageConfig

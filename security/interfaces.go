@@ -3,7 +3,7 @@ package security
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/set"
+	"github.com/ilxqx/vef-framework-go/orm"
 )
 
 // Authenticator defines the interface for authentication providers.
@@ -73,23 +73,43 @@ type PasswordDecryptor interface {
 // The framework provides a default RBAC implementation, but users can implement custom logic.
 type PermissionChecker interface {
 	// HasPermission checks if the given principal has the specified permission.
-	// ctx: The request context for carrying trace info, cancellation signals, etc.
-	// principal: The current user/app/system identity.
-	// permissionToken: The permission token required by the API endpoint.
-	// Returns true if the principal has the permission, false otherwise.
-	// Returns an error if the permission check fails due to internal errors.
-	HasPermission(ctx context.Context, principal *Principal, permissionToken string) (bool, error)
+	HasPermission(ctx context.Context, principal *Principal, permToken string) (bool, error)
 }
 
-// RolePermissionsLoader defines a strategy for loading permissions associated with a role.
-// This interface is used by the RBAC PermissionChecker implementation.
+// RolePermissionsLoader defines a strategy for loading all permissions associated with a role.
+// It returns a map where keys are permission tokens and values are their corresponding data scopes.
+// This interface is used by the RBAC PermissionChecker and DataPermissionResolver implementations.
 // Users should implement this interface to define how role permissions are loaded.
 type RolePermissionsLoader interface {
-	// LoadPermissions loads all permission tokens associated with the given role.
-	// ctx: The request context.
-	// role: The role name to load permissions for.
-	// Returns a set of permission tokens for the role.
-	// Returns an empty set if the role doesn't exist or has no permissions.
-	// Returns an error if loading fails due to internal errors.
-	LoadPermissions(ctx context.Context, role string) (set.Set[string], error)
+	// LoadPermissions loads all permissions associated with the given role.
+	// Returns a map of permission token to DataScope, allowing O(1) permission checks.
+	LoadPermissions(ctx context.Context, role string) (map[string]DataScope, error)
+}
+
+// DataScope represents an abstract data permission scope that defines access boundaries.
+// Each DataScope implementation encapsulates a specific data access pattern (e.g., department-level, organization-level).
+// Implementations should be stateless and thread-safe, as they may be shared across multiple requests.
+type DataScope interface {
+	// Key returns the unique identifier of this data scope.
+	Key() string
+	// Supports determines whether this data scope is applicable to the given table structure.
+	// It checks if the table has the necessary fields required by this scope.
+	Supports(principal *Principal, table *orm.Table) bool
+	// Apply applies the data permission filter conditions using the provided SelectQuery.
+	// This method should use the SelectQuery to add filtering conditions.
+	Apply(principal *Principal, query orm.SelectQuery) error
+}
+
+// DataPermissionResolver resolves the applicable DataScope instance for a given principal and permission.
+type DataPermissionResolver interface {
+	// ResolveDataScope loads the DataScope instance applicable to the principal.
+	ResolveDataScope(ctx context.Context, principal *Principal, permToken string) (DataScope, error)
+}
+
+// DataPermissionApplier applies data permission filtering to queries.
+// Thread Safety:
+// Instances are NOT required to be thread-safe as they are request-scoped.
+type DataPermissionApplier interface {
+	// Apply applies data permission filter conditions to the query.
+	Apply(query orm.SelectQuery) error
 }

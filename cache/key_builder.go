@@ -47,6 +47,11 @@ func (k *PrefixKeyBuilder) Build(keyParts ...string) string {
 		return strings.Join(keyParts, k.separator)
 	}
 
+	// When no keyParts provided, return prefix only (without trailing separator)
+	if len(keyParts) == 0 {
+		return k.prefix
+	}
+
 	key := strings.Join(keyParts, k.separator)
 
 	var sb strings.Builder

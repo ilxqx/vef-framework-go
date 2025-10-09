@@ -9,50 +9,37 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	cachePkg "github.com/ilxqx/vef-framework-go/cache"
-	"github.com/ilxqx/vef-framework-go/config"
 	eventPkg "github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/internal/cache"
 	"github.com/ilxqx/vef-framework-go/internal/event"
-	"github.com/ilxqx/vef-framework-go/set"
 )
 
 type CachedRolePermissionsLoaderTestSuite struct {
 	suite.Suite
 
-	ctx   context.Context
-	store cachePkg.Store
-	bus   eventPkg.Bus
+	ctx context.Context
+	bus eventPkg.Bus
 }
 
 func (s *CachedRolePermissionsLoaderTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	var err error
-
-	s.store, err = cache.NewBadgerStore(&config.LocalCacheConfig{
-		InMemory: true,
-	})
-
-	s.Require().NoError(err, "Failed to create badger store")
-
 	s.bus = event.NewMemoryBus(s.ctx, []eventPkg.Middleware{})
 	// Start the event bus
-	err = s.bus.(interface{ Start() error }).Start()
+	err := s.bus.(interface{ Start() error }).Start()
 	s.Require().NoError(err, "Failed to start event bus")
-}
-
-func (s *CachedRolePermissionsLoaderTestSuite) TearDownTest() {
-	// Clear cache between tests to avoid interference
-	_ = s.store.Clear(s.ctx, "")
 }
 
 func (s *CachedRolePermissionsLoaderTestSuite) TestCachesResults() {
 	mockLoader := new(MockRolePermissionsLoader)
 
 	// Setup mock expectations - each role should be loaded only once
-	adminPerms := set.NewHashSetFromSlice([]string{"test.read", "test.write"})
-	userPerms := set.NewHashSetFromSlice([]string{"test.read"})
+	adminPerms := map[string]DataScope{
+		"test.read":  NewAllDataScope(),
+		"test.write": NewAllDataScope(),
+	}
+	userPerms := map[string]DataScope{
+		"test.read": NewSelfDataScope(""),
+	}
 
 	mockLoader.On("LoadPermissions", mock.Anything, "admin").
 		Return(adminPerms, nil).
@@ -61,31 +48,35 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestCachesResults() {
 		Return(userPerms, nil).
 		Once()
 
-	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.store, s.bus)
+	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.bus)
 
 	// First call for admin - should call the underlying loader
 	result, err := cachedLoader.LoadPermissions(s.ctx, "admin")
 	s.Require().NoError(err)
-	s.Require().True(result.Contains("test.read"))
-	s.Require().True(result.Contains("test.write"))
-	s.Require().False(result.Contains("test.delete"))
+	s.Require().Equal(2, len(result))
+	s.Require().Contains(result, "test.read")
+	s.Require().Contains(result, "test.write")
+	s.Require().NotContains(result, "test.delete")
 
 	// Second call for admin - should use cache without calling underlying loader
 	result2, err := cachedLoader.LoadPermissions(s.ctx, "admin")
 	s.Require().NoError(err)
-	s.Require().True(result2.Contains("test.read"))
-	s.Require().True(result2.Contains("test.write"))
+	s.Require().Equal(2, len(result2))
+	s.Require().Contains(result2, "test.read")
+	s.Require().Contains(result2, "test.write")
 
 	// First call for user - should call the underlying loader
 	result3, err := cachedLoader.LoadPermissions(s.ctx, "user")
 	s.Require().NoError(err)
-	s.Require().True(result3.Contains("test.read"))
-	s.Require().False(result3.Contains("test.write"))
+	s.Require().Equal(1, len(result3))
+	s.Require().Contains(result3, "test.read")
+	s.Require().NotContains(result3, "test.write")
 
 	// Second call for user - should use cache
 	result4, err := cachedLoader.LoadPermissions(s.ctx, "user")
 	s.Require().NoError(err)
-	s.Require().True(result4.Contains("test.read"))
+	s.Require().Equal(1, len(result4))
+	s.Require().Contains(result4, "test.read")
 
 	// Verify mock was called exactly twice (once per role)
 	mockLoader.AssertExpectations(s.T())
@@ -95,8 +86,13 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesSpecificRoles() {
 	mockLoader := new(MockRolePermissionsLoader)
 
 	// First call expectations
-	adminPerms1 := set.NewHashSetFromSlice([]string{"test.read", "test.write"})
-	userPerms := set.NewHashSetFromSlice([]string{"test.read"})
+	adminPerms1 := map[string]DataScope{
+		"test.read":  NewAllDataScope(),
+		"test.write": NewAllDataScope(),
+	}
+	userPerms := map[string]DataScope{
+		"test.read": NewSelfDataScope(""),
+	}
 
 	mockLoader.On("LoadPermissions", mock.Anything, "admin").
 		Return(adminPerms1, nil).
@@ -106,24 +102,28 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesSpecificRoles() {
 		Once()
 
 	// After invalidation, admin should be reloaded with new permissions
-	adminPerms2 := set.NewHashSetFromSlice([]string{"test.read", "test.write", "test.delete"})
+	adminPerms2 := map[string]DataScope{
+		"test.read":   NewAllDataScope(),
+		"test.write":  NewAllDataScope(),
+		"test.delete": NewAllDataScope(),
+	}
 	mockLoader.On("LoadPermissions", mock.Anything, "admin").
 		Return(adminPerms2, nil).
 		Once()
 
-	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.store, s.bus)
+	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.bus)
 
 	// First call - loads from underlying loader
 	result, err := cachedLoader.LoadPermissions(s.ctx, "admin")
 	s.Require().NoError(err)
-	s.Require().True(result.Contains("test.read"))
-	s.Require().True(result.Contains("test.write"))
-	s.Require().False(result.Contains("test.delete"))
+	s.Require().Contains(result, "test.read")
+	s.Require().Contains(result, "test.write")
+	s.Require().NotContains(result, "test.delete")
 
 	// Load user too
 	resultUser, err := cachedLoader.LoadPermissions(s.ctx, "user")
 	s.Require().NoError(err)
-	s.Require().True(resultUser.Contains("test.read"))
+	s.Require().Contains(resultUser, "test.read")
 
 	// Publish event to invalidate specific role (admin only)
 	PublishRolePermissionsChangedEvent(s.bus, "admin")
@@ -134,14 +134,14 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesSpecificRoles() {
 	// Second call for admin - should reload from underlying loader with new permissions
 	result2, err := cachedLoader.LoadPermissions(s.ctx, "admin")
 	s.Require().NoError(err)
-	s.Require().True(result2.Contains("test.read"))
-	s.Require().True(result2.Contains("test.write"))
-	s.Require().True(result2.Contains("test.delete"))
+	s.Require().Contains(result2, "test.read")
+	s.Require().Contains(result2, "test.write")
+	s.Require().Contains(result2, "test.delete")
 
 	// User should still come from cache (not reloaded)
 	resultUser2, err := cachedLoader.LoadPermissions(s.ctx, "user")
 	s.Require().NoError(err)
-	s.Require().True(resultUser2.Contains("test.read"))
+	s.Require().Contains(resultUser2, "test.read")
 
 	mockLoader.AssertExpectations(s.T())
 }
@@ -150,8 +150,13 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesAllRoles() {
 	mockLoader := new(MockRolePermissionsLoader)
 
 	// First call expectations
-	adminPerms1 := set.NewHashSetFromSlice([]string{"test.read", "test.write"})
-	userPerms1 := set.NewHashSetFromSlice([]string{"test.read"})
+	adminPerms1 := map[string]DataScope{
+		"test.read":  NewAllDataScope(),
+		"test.write": NewAllDataScope(),
+	}
+	userPerms1 := map[string]DataScope{
+		"test.read": NewSelfDataScope(""),
+	}
 
 	mockLoader.On("LoadPermissions", mock.Anything, "admin").
 		Return(adminPerms1, nil).
@@ -161,8 +166,15 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesAllRoles() {
 		Once()
 
 	// After invalidation, both roles should be reloaded with new permissions
-	adminPerms2 := set.NewHashSetFromSlice([]string{"test.read", "test.write", "test.delete"})
-	userPerms2 := set.NewHashSetFromSlice([]string{"test.read", "test.update"})
+	adminPerms2 := map[string]DataScope{
+		"test.read":   NewAllDataScope(),
+		"test.write":  NewAllDataScope(),
+		"test.delete": NewAllDataScope(),
+	}
+	userPerms2 := map[string]DataScope{
+		"test.read":   NewSelfDataScope(""),
+		"test.update": NewSelfDataScope(""),
+	}
 
 	mockLoader.On("LoadPermissions", mock.Anything, "admin").
 		Return(adminPerms2, nil).
@@ -171,19 +183,19 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesAllRoles() {
 		Return(userPerms2, nil).
 		Once()
 
-	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.store, s.bus)
+	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.bus)
 
 	// First call - loads from underlying loader
 	result, err := cachedLoader.LoadPermissions(s.ctx, "admin")
 	s.Require().NoError(err)
-	s.Require().True(result.Contains("test.read"))
-	s.Require().True(result.Contains("test.write"))
-	s.Require().False(result.Contains("test.delete"))
+	s.Require().Contains(result, "test.read")
+	s.Require().Contains(result, "test.write")
+	s.Require().NotContains(result, "test.delete")
 
 	resultUser, err := cachedLoader.LoadPermissions(s.ctx, "user")
 	s.Require().NoError(err)
-	s.Require().True(resultUser.Contains("test.read"))
-	s.Require().False(resultUser.Contains("test.update"))
+	s.Require().Contains(resultUser, "test.read")
+	s.Require().NotContains(resultUser, "test.update")
 
 	// Publish event to invalidate all roles (empty roles slice)
 	PublishRolePermissionsChangedEvent(s.bus)
@@ -194,14 +206,14 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesAllRoles() {
 	// Second call - should reload all roles from underlying loader
 	result2, err := cachedLoader.LoadPermissions(s.ctx, "admin")
 	s.Require().NoError(err)
-	s.Require().True(result2.Contains("test.read"))
-	s.Require().True(result2.Contains("test.write"))
-	s.Require().True(result2.Contains("test.delete"))
+	s.Require().Contains(result2, "test.read")
+	s.Require().Contains(result2, "test.write")
+	s.Require().Contains(result2, "test.delete")
 
 	resultUser2, err := cachedLoader.LoadPermissions(s.ctx, "user")
 	s.Require().NoError(err)
-	s.Require().True(resultUser2.Contains("test.read"))
-	s.Require().True(resultUser2.Contains("test.update"))
+	s.Require().Contains(resultUser2, "test.read")
+	s.Require().Contains(resultUser2, "test.update")
 
 	mockLoader.AssertExpectations(s.T())
 }
@@ -209,18 +221,18 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestInvalidatesAllRoles() {
 func (s *CachedRolePermissionsLoaderTestSuite) TestEmptyRole() {
 	mockLoader := new(MockRolePermissionsLoader)
 
-	// Mock for empty role should return empty set
-	emptySet := set.NewHashSet[string]()
+	// Mock for empty role should return empty map
+	emptyMap := make(map[string]DataScope)
 	mockLoader.On("LoadPermissions", mock.Anything, "").
-		Return(emptySet, nil).
+		Return(emptyMap, nil).
 		Once()
 
-	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.store, s.bus)
+	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.bus)
 
 	result, err := cachedLoader.LoadPermissions(s.ctx, "")
 	s.Require().NoError(err)
 	s.Require().NotNil(result)
-	s.Require().True(result.IsEmpty())
+	s.Require().Empty(result)
 
 	mockLoader.AssertExpectations(s.T())
 }
@@ -232,7 +244,7 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestLoaderError() {
 		Return(nil, expectedError).
 		Once()
 
-	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.store, s.bus)
+	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.bus)
 
 	result, err := cachedLoader.LoadPermissions(s.ctx, "admin")
 	s.Require().Error(err)
@@ -248,21 +260,24 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestSingleflightMergesConcurrentR
 	mockLoader := new(MockRolePermissionsLoader)
 
 	// Setup mock to return permissions for the role
-	adminPerms := set.NewHashSetFromSlice([]string{"test.read", "test.write"})
+	adminPerms := map[string]DataScope{
+		"test.read":  NewAllDataScope(),
+		"test.write": NewAllDataScope(),
+	}
 
 	// The mock should be called only once, even though we make multiple concurrent requests
 	mockLoader.On("LoadPermissions", mock.Anything, "admin").
 		Return(adminPerms, nil).
 		Once()
 
-	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.store, s.bus)
+	cachedLoader := NewCachedRolePermissionsLoader(mockLoader, s.bus)
 
 	// Make multiple concurrent requests for the same role
 	const numRequests = 10
 
 	var wg sync.WaitGroup
 
-	results := make([]set.Set[string], numRequests)
+	results := make([]map[string]DataScope, numRequests)
 	errors := make([]error, numRequests)
 
 	for i := range numRequests {
@@ -277,8 +292,8 @@ func (s *CachedRolePermissionsLoaderTestSuite) TestSingleflightMergesConcurrentR
 	for i := range numRequests {
 		s.Require().NoError(errors[i], "Request %d should not error", i)
 		s.Require().NotNil(results[i], "Request %d should return a result", i)
-		s.Require().True(results[i].Contains("test.read"))
-		s.Require().True(results[i].Contains("test.write"))
+		s.Require().Contains(results[i], "test.read")
+		s.Require().Contains(results[i], "test.write")
 	}
 
 	// The mock should have been called only once, proving that singleflight merged all requests
@@ -289,14 +304,14 @@ type MockRolePermissionsLoader struct {
 	mock.Mock
 }
 
-func (m *MockRolePermissionsLoader) LoadPermissions(ctx context.Context, role string) (set.Set[string], error) {
+func (m *MockRolePermissionsLoader) LoadPermissions(ctx context.Context, role string) (map[string]DataScope, error) {
 	args := m.Called(ctx, role)
 
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 
-	return args.Get(0).(set.Set[string]), args.Error(1)
+	return args.Get(0).(map[string]DataScope), args.Error(1)
 }
 
 func TestCachedRolePermissionsLoaderSuite(t *testing.T) {

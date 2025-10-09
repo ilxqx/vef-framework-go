@@ -22,8 +22,8 @@ type APIBuilder[T any] interface {
 	Timeout(timeout time.Duration) T
 	// Public sets this endpoint is publicly accessible.
 	Public() T
-	// PermissionToken sets the permission token required for access.
-	PermissionToken(token string) T
+	// PermToken sets the permission token required for access.
+	PermToken(token string) T
 	// RateLimit sets the rate limit configuration for this endpoint.
 	RateLimit(max int, expiration time.Duration) T
 	// Build builds the API endpoint specification.

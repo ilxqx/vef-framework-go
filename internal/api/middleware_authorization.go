@@ -18,31 +18,36 @@ func buildAuthorizationMiddleware(manager api.Manager, checker security.Permissi
 		if definition.RequiresPermission() {
 			principal := contextx.Principal(ctx)
 
+			// System principal has all permissions
+			if principal.Type == security.PrincipalTypeSystem {
+				return ctx.Next()
+			}
+
 			// If no permission checker is provided, deny access to protected endpoints
 			if checker == nil {
-				logger.Warnf("No PermissionChecker provided, denying access to permission: %s", definition.PermissionToken)
+				logger.Warnf("No PermissionChecker provided, denying access to permission: %s", definition.PermToken)
 
 				return fiber.ErrForbidden
 			}
 
 			// Check if the principal has the required permission
-			hasPermission, err := checker.HasPermission(ctx.Context(), principal, definition.PermissionToken)
+			hasPermission, err := checker.HasPermission(ctx.Context(), principal, definition.PermToken)
 			if err != nil {
 				logger.Errorf("Permission check failed for principal %s on permission %s: %v",
-					principal.Id, definition.PermissionToken, err)
+					principal.Id, definition.PermToken, err)
 
 				return fiber.ErrInternalServerError
 			}
 
 			if !hasPermission {
 				logger.Infof("Permission denied for principal %s (type=%s) on permission %s",
-					principal.Id, principal.Type, definition.PermissionToken)
+					principal.Id, principal.Type, definition.PermToken)
 
 				return fiber.ErrForbidden
 			}
 
 			logger.Debugf("Permission granted for principal %s on permission %s",
-				principal.Id, definition.PermissionToken)
+				principal.Id, definition.PermToken)
 		}
 
 		return ctx.Next()

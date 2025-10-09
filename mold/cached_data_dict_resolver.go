@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/singleflight"
-
 	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -45,41 +43,35 @@ func PublishDataDictChangedEvent(publisher event.Publisher, keys ...string) {
 }
 
 // CachedDataDictResolver adds caching and event-based invalidation around a DataDictLoader implementation.
+// Underlying cache implementations already coordinate concurrent loads to prevent stampede.
 type CachedDataDictResolver struct {
 	loader     DataDictLoader
-	cache      cache.Cache[map[string]string]
+	dictCache  cache.Cache[map[string]string]
 	keyBuilder cache.KeyBuilder
 	logger     logPkg.Logger
-	group      singleflight.Group // Prevents cache stampede
 }
 
 // NewCachedDataDictResolver constructs a caching resolver for dictionary lookups.
-//
-// loader: Mandatory dictionary loader implementation (must not be nil).
-// store:  Backing cache store instance (must not be nil).
-// bus:    Event subscriber used to listen for invalidation events (must not be nil).
-//
-// Panics if any of the required parameters (loader, store, bus) is nil.
 func NewCachedDataDictResolver(
 	loader DataDictLoader,
-	store cache.Store,
+	dictCache cache.Cache[map[string]string],
 	bus event.Subscriber,
 ) DataDictResolver {
 	if loader == nil {
 		panic("NewCachedDataDictResolver requires a non-nil DataDictLoader, but got nil")
 	}
 
-	if store == nil {
-		panic("NewCachedDataDictResolver requires a non-nil cache.Store, but got nil")
-	}
-
 	if bus == nil {
 		panic("NewCachedDataDictResolver requires a non-nil event.Subscriber, but got nil")
 	}
 
+	if dictCache == nil {
+		dictCache = cache.NewMemory[map[string]string]()
+	}
+
 	resolver := &CachedDataDictResolver{
 		loader:     loader,
-		cache:      cache.New[map[string]string](cache.Key("translate", "data_dict"), store),
+		dictCache:  dictCache,
 		keyBuilder: cache.NewPrefixKeyBuilder("dict"),
 		logger:     log.Named("translate:cached_data_dict_resolver"),
 	}
@@ -113,20 +105,7 @@ func (r *CachedDataDictResolver) Resolve(ctx context.Context, key, code string) 
 func (r *CachedDataDictResolver) getEntries(ctx context.Context, key string) (map[string]string, error) {
 	cacheKey := r.keyBuilder.Build(key)
 
-	// First, try to get from cache
-	if cached, found := r.cache.Get(ctx, cacheKey); found {
-		return cached, nil
-	}
-
-	// Use singleflight to prevent cache stampede
-	// Use dictionary key as the singleflight key to ensure concurrent requests for the same dictionary are merged
-	result, err, _ := r.group.Do(key, func() (any, error) {
-		// Double-check cache after acquiring the singleflight lock
-		// Another goroutine might have populated the cache while we were waiting
-		if cached, found := r.cache.Get(ctx, cacheKey); found {
-			return cached, nil
-		}
-
+	entries, err := r.dictCache.GetOrLoad(ctx, cacheKey, func(ctx context.Context) (map[string]string, error) {
 		// Load from underlying loader
 		entries, err := r.loader.Load(ctx, key)
 		if err != nil {
@@ -137,18 +116,13 @@ func (r *CachedDataDictResolver) getEntries(ctx context.Context, key string) (ma
 			entries = make(map[string]string)
 		}
 
-		// Cache the result
-		if err := r.cache.Set(ctx, cacheKey, entries); err != nil {
-			return nil, fmt.Errorf("failed to cache dictionary '%s': %w", key, err)
-		}
-
 		return entries, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return result.(map[string]string), nil
+	return entries, nil
 }
 
 func (r *CachedDataDictResolver) handleInvalidation(ctx context.Context, evt event.Event) {
@@ -160,7 +134,7 @@ func (r *CachedDataDictResolver) handleInvalidation(ctx context.Context, evt eve
 	}
 
 	if len(changeEvent.Keys) == 0 {
-		if err := r.cache.Clear(ctx); err != nil {
+		if err := r.dictCache.Clear(ctx); err != nil {
 			r.logger.Errorf("Failed to clear dictionary cache: %v", err)
 		} else {
 			r.logger.Info("Cleared all dictionary cache entries")
@@ -171,7 +145,8 @@ func (r *CachedDataDictResolver) handleInvalidation(ctx context.Context, evt eve
 
 	for _, dictKey := range changeEvent.Keys {
 		cacheKey := r.keyBuilder.Build(dictKey)
-		if err := r.cache.Delete(ctx, cacheKey); err != nil {
+
+		if err := r.dictCache.Delete(ctx, cacheKey); err != nil {
 			r.logger.Errorf("Failed to delete cache for dictionary '%s': %v", dictKey, err)
 		} else {
 			r.logger.Infof("Cleared cache for dictionary '%s'", dictKey)

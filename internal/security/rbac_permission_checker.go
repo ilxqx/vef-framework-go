@@ -2,14 +2,12 @@ package security
 
 import (
 	"context"
-	"sync"
 
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/ilxqx/vef-framework-go/set"
 )
 
 // RBACPermissionChecker implements role-based access control (RBAC) permission checking.
-// It delegates role permission loading to a RolePermissionsLoader implementation.
+// It delegates role permissions loading to a RolePermissionsLoader implementation.
 type RBACPermissionChecker struct {
 	loader security.RolePermissionsLoader
 }
@@ -24,7 +22,8 @@ func NewRBACPermissionChecker(loader security.RolePermissionsLoader) security.Pe
 
 // HasPermission checks if the principal has the required permission based on their roles.
 // System principals always have all permissions.
-// For user and external app principals, it loads role permissions concurrently.
+// For user and external app principals, it loads role permissions sequentially.
+// Sequential loading is more efficient for typical use cases (1-3 roles per user).
 func (c *RBACPermissionChecker) HasPermission(
 	ctx context.Context,
 	principal *security.Principal,
@@ -34,48 +33,21 @@ func (c *RBACPermissionChecker) HasPermission(
 		return false, nil
 	}
 
-	// System principal has all permissions
-	if principal.Type == security.PrincipalTypeSystem {
-		return true, nil
-	}
-
 	// If principal has no roles, they have no permissions
 	if len(principal.Roles) == 0 {
 		return false, nil
 	}
 
-	// Load permissions for all roles concurrently
-	type roleResult struct {
-		permissions set.Set[string]
-		err         error
-	}
-
-	results := make(chan roleResult, len(principal.Roles))
-
-	var wg sync.WaitGroup
-
+	// Load permissions for each role and check if any contains the required permission
+	// Using sequential loading for efficiency since most users have only 1-3 roles
 	for _, role := range principal.Roles {
-		wg.Add(1)
-
-		go func(r string) {
-			defer wg.Done()
-
-			permissions, err := c.loader.LoadPermissions(ctx, r)
-			results <- roleResult{permissions: permissions, err: err}
-		}(role)
-	}
-
-	// Wait for all goroutines to complete
-	wg.Wait()
-	close(results)
-
-	// Check results
-	for result := range results {
-		if result.err != nil {
-			return false, result.err
+		permissions, err := c.loader.LoadPermissions(ctx, role)
+		if err != nil {
+			return false, err
 		}
 
-		if result.permissions.Contains(permissionToken) {
+		// O(1) lookup: check if the permission token exists in the map
+		if _, exists := permissions[permissionToken]; exists {
 			return true, nil
 		}
 	}

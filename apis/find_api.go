@@ -3,6 +3,7 @@ package apis
 import (
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
@@ -57,7 +58,14 @@ func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) BuildQuery(db orm.Db,
 }
 
 func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ConfigureQuery(query orm.SelectQuery, model any, search TSearch, ctx fiber.Ctx) {
-	a.ApplyConditions(query.Model(model), search, ctx)
+	// Set the model first (required for data permission)
+	query.Model(model)
+
+	// Apply data permission if available
+	a.ApplyDataPermission(query, ctx)
+
+	// Apply other query conditions
+	a.ApplyConditions(query, search, ctx)
 	a.ApplyRelations(query, search, ctx)
 	a.ApplyQuery(query, search, ctx)
 	a.ApplySort(query, search, ctx)
@@ -110,6 +118,22 @@ func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplyQuery(query orm.
 func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplyRelations(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) {
 	if len(a.relations) > 0 {
 		query.ModelRelations(a.relations...)
+	}
+}
+
+// ApplyDataPermission applies data permission filtering to the query.
+// This method retrieves the DataPermissionApplier from context and applies it to the query.
+// It should be called after Model() is set but before other conditions are applied.
+func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ApplyDataPermission(query orm.SelectQuery, ctx fiber.Ctx) {
+	applier := contextx.DataPermApplier(ctx)
+	if applier == nil {
+		return
+	}
+
+	if err := applier.Apply(query); err != nil {
+		// Log error but don't fail the request
+		// The error is already logged by the applier
+		contextx.Logger(ctx).Errorf("Failed to apply data permission: %v", err)
 	}
 }
 

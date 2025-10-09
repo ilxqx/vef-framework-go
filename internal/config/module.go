@@ -17,7 +17,6 @@ var (
 			newCorsConfig,
 			newSecurityConfig,
 			newRedisConfig,
-			newCacheConfig,
 			newStorageConfig,
 		),
 		fx.Invoke(func() {

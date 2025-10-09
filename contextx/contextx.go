@@ -21,6 +21,7 @@ const (
 	KeyLogger
 	KeyDb
 	KeyTransformer
+	KeyDataPermApplier
 )
 
 // APIRequest returns the api.APIRequest from fiber context.
@@ -132,5 +133,24 @@ func SetTransformer(ctx context.Context, transformer mold.Transformer) context.C
 		return c
 	default:
 		return context.WithValue(ctx, KeyTransformer, transformer)
+	}
+}
+
+// DataPermApplier returns the security.DataPermissionApplier from fiber context.
+func DataPermApplier(ctx context.Context) security.DataPermissionApplier {
+	applier, _ := ctx.Value(KeyDataPermApplier).(security.DataPermissionApplier)
+
+	return applier
+}
+
+// SetDataPermApplier stores the security.DataPermissionApplier into fiber context.
+func SetDataPermApplier(ctx context.Context, applier security.DataPermissionApplier) context.Context {
+	switch c := ctx.(type) {
+	case fiber.Ctx:
+		c.Locals(KeyDataPermApplier, applier)
+
+		return c
+	default:
+		return context.WithValue(ctx, KeyDataPermApplier, applier)
 	}
 }

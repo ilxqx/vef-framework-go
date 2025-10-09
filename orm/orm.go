@@ -10,6 +10,7 @@ type (
 	DeleteQuery                = orm.DeleteQuery
 	MergeQuery                 = orm.MergeQuery
 	RawQuery                   = orm.RawQuery
+	QueryBuilder               = orm.QueryBuilder
 	ConditionBuilder           = orm.ConditionBuilder
 	Applier[T any]             = orm.Applier[T]
 	ApplyFunc[T any]           = orm.ApplyFunc[T]

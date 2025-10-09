@@ -11,42 +11,32 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	cachePkg "github.com/ilxqx/vef-framework-go/cache"
-	"github.com/ilxqx/vef-framework-go/config"
 	eventPkg "github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/internal/cache"
 	"github.com/ilxqx/vef-framework-go/internal/event"
 )
 
 type CachedDataDictResolverTestSuite struct {
 	suite.Suite
 
-	ctx   context.Context
-	store cachePkg.Store
-	bus   eventPkg.Bus
+	ctx context.Context
+	bus eventPkg.Bus
 }
 
 func (s *CachedDataDictResolverTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	var err error
-
-	s.store, err = cache.NewBadgerStore(&config.LocalCacheConfig{
-		InMemory: true,
-	})
-	s.Require().NoError(err)
-
 	s.bus = event.NewMemoryBus(s.ctx, []eventPkg.Middleware{})
 
-	err = s.bus.(interface{ Start() error }).Start()
+	err := s.bus.Start()
 	s.Require().NoError(err)
-}
-
-func (s *CachedDataDictResolverTestSuite) TearDownTest() {
-	_ = s.store.Clear(s.ctx, "")
 }
 
 func (s *CachedDataDictResolverTestSuite) TearDownSuite() {
 	_ = s.bus.Shutdown(context.Background())
+}
+
+func (s *CachedDataDictResolverTestSuite) newResolver(loader DataDictLoader) DataDictResolver {
+	return NewCachedDataDictResolver(loader, cachePkg.NewMemory[map[string]string](), s.bus)
 }
 
 func (s *CachedDataDictResolverTestSuite) TestCachesEntries() {
@@ -56,7 +46,7 @@ func (s *CachedDataDictResolverTestSuite) TestCachesEntries() {
 		"published": "已发布",
 	}, nil).Once()
 
-	resolver := NewCachedDataDictResolver(loader, s.store, s.bus)
+	resolver := s.newResolver(loader)
 
 	result, err := resolver.Resolve(s.ctx, "status", "published")
 	s.NoError(err)
@@ -79,7 +69,7 @@ func (s *CachedDataDictResolverTestSuite) TestInvalidatesSpecificKeys() {
 		"archived": "已归档",
 	}, nil).Once()
 
-	resolver := NewCachedDataDictResolver(loader, s.store, s.bus)
+	resolver := s.newResolver(loader)
 
 	first, err := resolver.Resolve(s.ctx, "status", "draft")
 	s.NoError(err)
@@ -108,7 +98,7 @@ func (s *CachedDataDictResolverTestSuite) TestInvalidatesAllKeys() {
 		"published": "已发布",
 	}, nil).Once()
 
-	resolver := NewCachedDataDictResolver(loader, s.store, s.bus)
+	resolver := s.newResolver(loader)
 
 	firstStatus, err := resolver.Resolve(s.ctx, "status", "draft")
 	s.NoError(err)
@@ -133,7 +123,7 @@ func (s *CachedDataDictResolverTestSuite) TestLoaderError() {
 	expectedErr := context.DeadlineExceeded
 	loader.On("Load", mock.Anything, "status").Return(map[string]string(nil), expectedErr).Once()
 
-	resolver := NewCachedDataDictResolver(loader, s.store, s.bus)
+	resolver := s.newResolver(loader)
 
 	result, err := resolver.Resolve(s.ctx, "status", "draft")
 	s.Error(err)
@@ -147,7 +137,7 @@ func (s *CachedDataDictResolverTestSuite) TestLoaderError() {
 func (s *CachedDataDictResolverTestSuite) TestEmptyKeyOrCode() {
 	loader := new(MockDataDictLoader)
 
-	resolver := NewCachedDataDictResolver(loader, s.store, s.bus)
+	resolver := s.newResolver(loader)
 
 	result1, err1 := resolver.Resolve(s.ctx, "", "code")
 	s.NoError(err1)
@@ -167,7 +157,7 @@ func (s *CachedDataDictResolverTestSuite) TestCodeNotFound() {
 		"published": "已发布",
 	}, nil).Once()
 
-	resolver := NewCachedDataDictResolver(loader, s.store, s.bus)
+	resolver := s.newResolver(loader)
 
 	result, err := resolver.Resolve(s.ctx, "status", "archived")
 	s.NoError(err)
@@ -178,22 +168,30 @@ func (s *CachedDataDictResolverTestSuite) TestCodeNotFound() {
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenLoaderIsNil() {
 	s.Panics(func() {
-		NewCachedDataDictResolver(nil, s.store, s.bus)
+		NewCachedDataDictResolver(nil, cachePkg.NewMemory[map[string]string](), s.bus)
 	}, "Expected panic when loader is nil")
-}
-
-func (s *CachedDataDictResolverTestSuite) TestPanicsWhenStoreIsNil() {
-	loader := new(MockDataDictLoader)
-	s.Panics(func() {
-		NewCachedDataDictResolver(loader, nil, s.bus)
-	}, "Expected panic when store is nil")
 }
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenBusIsNil() {
 	loader := new(MockDataDictLoader)
 	s.Panics(func() {
-		NewCachedDataDictResolver(loader, s.store, nil)
+		NewCachedDataDictResolver(loader, cachePkg.NewMemory[map[string]string](), nil)
 	}, "Expected panic when bus is nil")
+}
+
+func (s *CachedDataDictResolverTestSuite) TestNilCacheCreatesDefault() {
+	loader := new(MockDataDictLoader)
+	loader.On("Load", mock.Anything, "status").Return(map[string]string{
+		"draft": "草稿",
+	}, nil).Once()
+
+	resolver := NewCachedDataDictResolver(loader, nil, s.bus)
+
+	result, err := resolver.Resolve(s.ctx, "status", "draft")
+	s.NoError(err)
+	s.Equal("草稿", result)
+
+	loader.AssertExpectations(s.T())
 }
 
 // TestSingleflightMergesConcurrentRequests verifies that concurrent requests for the same dictionary key
@@ -213,7 +211,7 @@ func (s *CachedDataDictResolverTestSuite) TestSingleflightMergesConcurrentReques
 		Return(dictData, nil).
 		Once()
 
-	resolver := NewCachedDataDictResolver(loader, s.store, s.bus)
+	resolver := s.newResolver(loader)
 
 	// Make multiple concurrent requests for the same dictionary key
 	const numRequests = 10
