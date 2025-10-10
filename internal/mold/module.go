@@ -3,7 +3,6 @@ package mold
 import (
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/mold"
@@ -41,9 +40,7 @@ var Module = fx.Module(
 					return nil
 				}
 
-				dictCache := cache.NewMemory[map[string]string]()
-
-				return mold.NewCachedDataDictResolver(loader, dictCache, bus)
+				return mold.NewCachedDataDictResolver(loader, bus)
 			},
 			fx.ParamTags(`optional:"true"`),
 		),

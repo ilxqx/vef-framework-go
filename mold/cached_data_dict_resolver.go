@@ -45,16 +45,14 @@ func PublishDataDictChangedEvent(publisher event.Publisher, keys ...string) {
 // CachedDataDictResolver adds caching and event-based invalidation around a DataDictLoader implementation.
 // Underlying cache implementations already coordinate concurrent loads to prevent stampede.
 type CachedDataDictResolver struct {
-	loader     DataDictLoader
-	dictCache  cache.Cache[map[string]string]
-	keyBuilder cache.KeyBuilder
-	logger     logPkg.Logger
+	loader    DataDictLoader
+	dictCache cache.Cache[map[string]string]
+	logger    logPkg.Logger
 }
 
 // NewCachedDataDictResolver constructs a caching resolver for dictionary lookups.
 func NewCachedDataDictResolver(
 	loader DataDictLoader,
-	dictCache cache.Cache[map[string]string],
 	bus event.Subscriber,
 ) DataDictResolver {
 	if loader == nil {
@@ -65,15 +63,10 @@ func NewCachedDataDictResolver(
 		panic("NewCachedDataDictResolver requires a non-nil event.Subscriber, but got nil")
 	}
 
-	if dictCache == nil {
-		dictCache = cache.NewMemory[map[string]string]()
-	}
-
 	resolver := &CachedDataDictResolver{
-		loader:     loader,
-		dictCache:  dictCache,
-		keyBuilder: cache.NewPrefixKeyBuilder("dict"),
-		logger:     log.Named("translate:cached_data_dict_resolver"),
+		loader:    loader,
+		dictCache: cache.NewMemory[map[string]string](),
+		logger:    log.Named("translate:cached_data_dict_resolver"),
 	}
 
 	bus.Subscribe(eventTypeDataDictChanged, resolver.handleInvalidation)
@@ -103,9 +96,7 @@ func (r *CachedDataDictResolver) Resolve(ctx context.Context, key, code string) 
 }
 
 func (r *CachedDataDictResolver) getEntries(ctx context.Context, key string) (map[string]string, error) {
-	cacheKey := r.keyBuilder.Build(key)
-
-	entries, err := r.dictCache.GetOrLoad(ctx, cacheKey, func(ctx context.Context) (map[string]string, error) {
+	entries, err := r.dictCache.GetOrLoad(ctx, key, func(ctx context.Context) (map[string]string, error) {
 		// Load from underlying loader
 		entries, err := r.loader.Load(ctx, key)
 		if err != nil {
@@ -144,9 +135,7 @@ func (r *CachedDataDictResolver) handleInvalidation(ctx context.Context, evt eve
 	}
 
 	for _, dictKey := range changeEvent.Keys {
-		cacheKey := r.keyBuilder.Build(dictKey)
-
-		if err := r.dictCache.Delete(ctx, cacheKey); err != nil {
+		if err := r.dictCache.Delete(ctx, dictKey); err != nil {
 			r.logger.Errorf("Failed to delete cache for dictionary '%s': %v", dictKey, err)
 		} else {
 			r.logger.Infof("Cleared cache for dictionary '%s'", dictKey)

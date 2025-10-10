@@ -1,6 +1,7 @@
 package security
 
 import (
+	"context"
 	"crypto/hmac"
 	"fmt"
 	"strings"
@@ -38,7 +39,7 @@ func NewOpenAPIAuthenticator(loader security.ExternalAppLoader) security.Authent
 func (*OpenapiAuthenticator) Supports(authType string) bool { return authType == AuthTypeOpenAPI }
 
 // Authenticate validates the provided OpenAPI authentication information.
-func (a *OpenapiAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (a *OpenapiAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if a.loader == nil {
 		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("external_app_loader_not_implemented"))
 	}
@@ -67,7 +68,7 @@ func (a *OpenapiAuthenticator) Authenticate(authentication security.Authenticati
 		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("credentials_fields_required"))
 	}
 
-	principal, secret, err := a.loader.LoadById(appId)
+	principal, secret, err := a.loader.LoadById(ctx, appId)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-package storage
+package storage_test
 
 import (
 	"testing"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/internal/storage"
 	"github.com/ilxqx/vef-framework-go/internal/storage/providers/memory"
 )
 
@@ -17,7 +18,7 @@ func TestNewStorageProvider(t *testing.T) {
 			Provider: constants.StorageMemory,
 		}
 
-		provider, err := NewStorageProvider(cfg, &config.AppConfig{})
+		provider, err := storage.NewStorageProvider(cfg, &config.AppConfig{})
 		require.NoError(t, err)
 		require.NotNil(t, provider)
 
@@ -31,7 +32,7 @@ func TestNewStorageProvider(t *testing.T) {
 			Provider: "unsupported",
 		}
 
-		provider, err := NewStorageProvider(cfg, &config.AppConfig{})
+		provider, err := storage.NewStorageProvider(cfg, &config.AppConfig{})
 		assert.Error(t, err)
 		assert.Nil(t, provider)
 		assert.Contains(t, err.Error(), "unsupported storage provider")

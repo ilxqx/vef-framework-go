@@ -10,15 +10,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// NewDeleteQuery creates a new DeleteQuery instance with the provided database connection.
+// NewDeleteQuery creates a new DeleteQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewDeleteQuery(db bun.IDB) *BunDeleteQuery {
+func NewDeleteQuery(db *BunDb) *BunDeleteQuery {
 	eb := &QueryExprBuilder{}
-	dq := db.NewDelete()
-	dialect := db.Dialect()
+	dq := db.db.NewDelete()
+	dialect := db.db.Dialect()
 	query := &BunDeleteQuery{
 		QueryBuilder: newQueryBuilder(dialect, dq, eb),
 
+		db:      db,
 		dialect: dialect,
 		query:   dq,
 		eb:      eb,
@@ -33,9 +34,14 @@ func NewDeleteQuery(db bun.IDB) *BunDeleteQuery {
 type BunDeleteQuery struct {
 	QueryBuilder
 
+	db      *BunDb
 	dialect schema.Dialect
 	eb      ExprBuilder
 	query   *bun.DeleteQuery
+}
+
+func (q *BunDeleteQuery) Db() Db {
+	return q.db
 }
 
 func (q *BunDeleteQuery) With(name string, builder func(SelectQuery)) DeleteQuery {

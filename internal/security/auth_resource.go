@@ -55,7 +55,7 @@ type LoginParams struct {
 // It validates the provided credentials and generates access tokens upon successful authentication.
 func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 	// Authenticate user credentials using the auth manager
-	principal, err := a.authManager.Authenticate(params.Authentication)
+	principal, err := a.authManager.Authenticate(ctx.Context(), params.Authentication)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ type RefreshParams struct {
 // Note: The user data reload logic is now handled by JWTRefreshAuthenticator.
 func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
 	// Validate and extract/reload user information from the refresh token
-	principal, err := a.authManager.Authenticate(security.Authentication{
+	principal, err := a.authManager.Authenticate(ctx.Context(), security.Authentication{
 		Type:      AuthTypeRefresh,
 		Principal: params.RefreshToken,
 	})

@@ -12,65 +12,64 @@ import (
 type findOptionsAPI[TModel, TSearch any] struct {
 	FindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]]
 
-	fieldMapping *OptionFieldMapping
+	columnMapping *OptionColumnMapping
 }
 
 func (a *findOptionsAPI[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findOptions)
 }
 
-func (a *findOptionsAPI[TModel, TSearch]) FieldMapping(mapping *OptionFieldMapping) FindOptionsAPI[TModel, TSearch] {
-	a.fieldMapping = mapping
+func (a *findOptionsAPI[TModel, TSearch]) ColumnMapping(mapping *OptionColumnMapping) FindOptionsAPI[TModel, TSearch] {
+	a.columnMapping = mapping
 
 	return a
 }
 
-func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, params OptionParams, search TSearch) error {
-	// Pre-compute schema information
-	schema := db.TableOf((*TModel)(nil))
+func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params OptionParams, search TSearch) error, error) {
+	if err := a.Init(db); err != nil {
+		return nil, err
+	}
 
-	// Pre-compute whether default created_at ordering should be applied
-	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
-	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
+	table := db.TableOf((*TModel)(nil))
 
 	return func(ctx fiber.Ctx, db orm.Db, params OptionParams, search TSearch) error {
 		var options []Option
 
 		selectQuery := a.BuildQuery(db, (*TModel)(nil), search, ctx)
 
-		// Merge field mapping with defaults and validate
-		mergeOptionFieldMapping(&params.OptionFieldMapping, a.fieldMapping)
+		// Merge column mapping with defaults and validate
+		mergeOptionColumnMapping(&params.OptionColumnMapping, a.columnMapping)
 
-		if err := validateOptionFields(schema, &params.OptionFieldMapping); err != nil {
+		if err := validateOptionColumns(table, &params.OptionColumnMapping); err != nil {
 			return err
 		}
 
-		// Select only required fields
-		if params.ValueField == valueField {
-			selectQuery.Select(params.ValueField)
+		// Select only required columns
+		if params.ValueColumn == valueColumn {
+			selectQuery.Select(params.ValueColumn)
 		} else {
-			selectQuery.SelectAs(params.ValueField, valueField)
+			selectQuery.SelectAs(params.ValueColumn, valueColumn)
 		}
 
-		if params.LabelField == labelField {
-			selectQuery.Select(params.LabelField)
+		if params.LabelColumn == labelColumn {
+			selectQuery.Select(params.LabelColumn)
 		} else {
-			selectQuery.SelectAs(params.LabelField, labelField)
+			selectQuery.SelectAs(params.LabelColumn, labelColumn)
 		}
 
-		if params.DescriptionField != constants.Empty {
-			if params.DescriptionField == descriptionField {
-				selectQuery.Select(params.DescriptionField)
+		if params.DescriptionColumn != constants.Empty {
+			if params.DescriptionColumn == descriptionColumn {
+				selectQuery.Select(params.DescriptionColumn)
 			} else {
-				selectQuery.SelectAs(params.DescriptionField, descriptionField)
+				selectQuery.SelectAs(params.DescriptionColumn, descriptionColumn)
 			}
 		}
 
 		// Apply sorting
-		if params.SortField != constants.Empty {
-			selectQuery.OrderBy(params.SortField)
-		} else if shouldApplyDefaultSort {
-			selectQuery.OrderBy(constants.ColumnCreatedAt)
+		if params.SortColumn != constants.Empty {
+			selectQuery.OrderBy(params.SortColumn)
+		} else {
+			a.ApplyDefaultSort(selectQuery)
 		}
 
 		// Execute query with limit
@@ -84,5 +83,5 @@ func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) func(ctx fiber.
 		}
 
 		return result.Ok(a.Process(options, search, ctx)).Response(ctx)
-	}
+	}, nil
 }

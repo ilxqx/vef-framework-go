@@ -1,4 +1,4 @@
-package test
+package apis_test
 
 import (
 	"github.com/gofiber/fiber/v3"

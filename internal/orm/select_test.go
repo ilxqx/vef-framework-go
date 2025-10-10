@@ -1576,3 +1576,366 @@ func (suite *SelectTestSuite) TestSelectWithDecodeExpressions() {
 		suite.T().Logf("Post %s: %d views -> %s", result.Title, result.ViewCount, result.Category)
 	}
 }
+
+// TestSelectWithJoinRelations tests SELECT with JoinRelations method using RelationSpec.
+func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
+	suite.T().Logf("Testing SELECT with JoinRelations for %s", suite.dbType)
+
+	// Test 1: Basic LEFT JOIN using RelationSpec with default settings
+	type PostWithUserName struct {
+		Id       string `bun:"id"`
+		Title    string `bun:"title"`
+		UserName string `bun:"user_name"`
+	}
+
+	var postsWithUser []PostWithUserName
+
+	err := suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(RelationSpec{
+			Model:         (*User)(nil),
+			Alias:         "u",
+			ForeignColumn: "user_id",
+			SelectedColumns: []ColumnInfo{
+				{Name: "name", Alias: "user_name"},
+			},
+		}).
+		OrderBy("p.title").
+		Scan(suite.ctx, &postsWithUser)
+	suite.NoError(err)
+	suite.True(len(postsWithUser) > 0, "Should have posts with user names")
+
+	for _, post := range postsWithUser {
+		suite.NotEmpty(post.Title, "Post title should not be empty")
+		suite.NotEmpty(post.UserName, "User name should be populated via LEFT JOIN")
+		suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
+	}
+
+	// Test 2: INNER JOIN using RelationSpec
+	type PostWithCategory struct {
+		Id           string `bun:"id"`
+		Title        string `bun:"title"`
+		CategoryName string `bun:"category_name"`
+	}
+
+	var postsWithCategory []PostWithCategory
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(RelationSpec{
+			Model:         (*Category)(nil),
+			Alias:         "c",
+			JoinType:      JoinInner,
+			ForeignColumn: "category_id",
+			SelectedColumns: []ColumnInfo{
+				{Name: "name", Alias: "category_name"},
+			},
+		}).
+		OrderBy("p.title").
+		Scan(suite.ctx, &postsWithCategory)
+	suite.NoError(err)
+	suite.True(len(postsWithCategory) > 0, "Should have posts with categories (INNER JOIN)")
+
+	for _, post := range postsWithCategory {
+		suite.NotEmpty(post.CategoryName, "Category name should be populated via INNER JOIN")
+		suite.T().Logf("Post: %s in category %s", post.Title, post.CategoryName)
+	}
+
+	// Test 3: Multiple JoinRelations in a single query
+	type PostComplete struct {
+		Id           string `bun:"id"`
+		Title        string `bun:"title"`
+		UserName     string `bun:"user_name"`
+		UserEmail    string `bun:"user_email"`
+		CategoryName string `bun:"category_name"`
+		CategoryDesc string `bun:"category_desc"`
+	}
+
+	var completePosts []PostComplete
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(
+			RelationSpec{
+				Model:         (*User)(nil),
+				Alias:         "u",
+				ForeignColumn: "user_id",
+				SelectedColumns: []ColumnInfo{
+					{Name: "name", Alias: "user_name"},
+					{Name: "email", Alias: "user_email"},
+				},
+			},
+			RelationSpec{
+				Model:         (*Category)(nil),
+				Alias:         "c",
+				ForeignColumn: "category_id",
+				SelectedColumns: []ColumnInfo{
+					{Name: "name", Alias: "category_name"},
+					{Name: "description", Alias: "category_desc"},
+				},
+			},
+		).
+		OrderBy("p.title").
+		Limit(5).
+		Scan(suite.ctx, &completePosts)
+	suite.NoError(err)
+	suite.True(len(completePosts) > 0, "Should have complete posts with multiple joins")
+
+	for _, post := range completePosts {
+		suite.NotEmpty(post.UserName, "User name should be populated")
+		suite.NotEmpty(post.CategoryName, "Category name should be populated")
+		suite.T().Logf("Post: %s by %s (%s) in %s [%s]",
+			post.Title, post.UserName, post.UserEmail, post.CategoryName, post.CategoryDesc)
+	}
+
+	// Test 4: RelationSpec with AutoAlias for columns
+	type PostWithAutoAlias struct {
+		Id           string `bun:"id"`
+		Title        string `bun:"title"`
+		UserName     string `bun:"user_name"`
+		UserAge      int16  `bun:"user_age"`
+		UserIsActive bool   `bun:"user_is_active"`
+	}
+
+	var postsWithAutoAlias []PostWithAutoAlias
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(RelationSpec{
+			Model:         (*User)(nil),
+			Alias:         "u",
+			ForeignColumn: "user_id",
+			SelectedColumns: []ColumnInfo{
+				{Name: "name", AutoAlias: true},      // Will become "user_name"
+				{Name: "age", AutoAlias: true},       // Will become "user_age"
+				{Name: "is_active", AutoAlias: true}, // Will become "user_is_active"
+			},
+		}).
+		OrderBy("p.title").
+		Limit(3).
+		Scan(suite.ctx, &postsWithAutoAlias)
+	suite.NoError(err)
+	suite.True(len(postsWithAutoAlias) > 0, "Should have posts with auto-aliased columns")
+
+	for _, post := range postsWithAutoAlias {
+		suite.NotEmpty(post.UserName, "Auto-aliased user_name should be populated")
+		suite.True(post.UserAge > 0, "Auto-aliased user_age should be populated")
+		suite.T().Logf("Post: %s by %s (age: %d, active: %t)",
+			post.Title, post.UserName, post.UserAge, post.UserIsActive)
+	}
+
+	// Test 5: RelationSpec with custom ON conditions
+	type PostWithActiveUser struct {
+		Id       string `bun:"id"`
+		Title    string `bun:"title"`
+		UserName string `bun:"user_name"`
+	}
+
+	var postsWithActiveUser []PostWithActiveUser
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(RelationSpec{
+			Model:         (*User)(nil),
+			Alias:         "u",
+			ForeignColumn: "user_id",
+			SelectedColumns: []ColumnInfo{
+				{Name: "name", Alias: "user_name"},
+			},
+			// Add custom ON condition to filter only active users
+			On: func(cb ConditionBuilder) {
+				cb.IsTrue("u.is_active")
+			},
+		}).
+		OrderBy("p.title").
+		Scan(suite.ctx, &postsWithActiveUser)
+	suite.NoError(err)
+	suite.True(len(postsWithActiveUser) >= 0, "Should have posts with active users")
+
+	// LEFT JOIN with ON condition will still return all posts, but inactive users will have null names
+	for _, post := range postsWithActiveUser {
+		suite.T().Logf("Post: %s by active user %s", post.Title, post.UserName)
+	}
+
+	// Test 6: INNER JOIN to count posts per user
+	type UserWithPostCount struct {
+		Id        string `bun:"id"`
+		Name      string `bun:"name"`
+		PostCount int64  `bun:"post_count"`
+	}
+
+	var usersWithPostCount []UserWithPostCount
+
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		Select("u.id", "u.name").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.CountColumn("p.id")
+		}, "post_count").
+		JoinRelations(RelationSpec{
+			Model:            (*Post)(nil),
+			Alias:            "p",
+			JoinType:         JoinInner,
+			ReferencedColumn: "user_id",
+			ForeignColumn:    "id",
+		}).
+		GroupBy("u.id", "u.name").
+		OrderBy("u.name").
+		Scan(suite.ctx, &usersWithPostCount)
+	suite.NoError(err)
+	suite.True(len(usersWithPostCount) > 0, "Should have users with post counts (INNER JOIN)")
+
+	for _, user := range usersWithPostCount {
+		suite.NotEmpty(user.Name, "User name should be populated")
+		suite.T().Logf("User: %s has %d posts", user.Name, user.PostCount)
+	}
+
+	// Test 7: RelationSpec with no SelectedColumns (tests default behavior)
+	type PostWithUser struct {
+		Id    string `bun:"id"`
+		Title string `bun:"title"`
+	}
+
+	var postsNoSelect []PostWithUser
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(RelationSpec{
+			Model:         (*User)(nil),
+			Alias:         "u",
+			ForeignColumn: "user_id",
+			// No SelectedColumns - join exists for filtering only
+		}).
+		Where(func(cb ConditionBuilder) {
+			cb.Equals("u.is_active", true)
+		}).
+		OrderBy("p.title").
+		Limit(3).
+		Scan(suite.ctx, &postsNoSelect)
+	suite.NoError(err)
+	suite.True(len(postsNoSelect) >= 0, "Should execute join without selecting columns")
+
+	// Test 8: RelationSpec with default alias (empty alias)
+	type PostSimple struct {
+		Id       string `bun:"id"`
+		Title    string `bun:"title"`
+		UserName string `bun:"user_name"`
+	}
+
+	var postsDefaultAlias []PostSimple
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(RelationSpec{
+			Model: (*User)(nil),
+			// Alias omitted - should use model's default alias
+			ForeignColumn: "user_id",
+			SelectedColumns: []ColumnInfo{
+				{Name: "name", Alias: "user_name"},
+			},
+		}).
+		OrderBy("p.title").
+		Limit(2).
+		Scan(suite.ctx, &postsDefaultAlias)
+	suite.NoError(err)
+	suite.True(len(postsDefaultAlias) > 0, "Should work with default model alias")
+
+	for _, post := range postsDefaultAlias {
+		suite.NotEmpty(post.UserName, "User name should be populated with default alias")
+		suite.T().Logf("Post: %s by %s (using default alias)", post.Title, post.UserName)
+	}
+
+	// Test 9: Complex query with JoinRelations, WHERE, and aggregation
+	type CategoryPostStats struct {
+		CategoryName   string  `bun:"category_name"`
+		PostCount      int64   `bun:"post_count"`
+		TotalViews     int64   `bun:"total_views"`
+		AvgViews       float64 `bun:"avg_views"`
+		PublishedCount int64   `bun:"published_count"`
+	}
+
+	var categoryStats []CategoryPostStats
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		JoinRelations(RelationSpec{
+			Model:         (*Category)(nil),
+			Alias:         "c",
+			JoinType:      JoinInner,
+			ForeignColumn: "category_id",
+			SelectedColumns: []ColumnInfo{
+				{Name: "name", Alias: "category_name"},
+			},
+		}).
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.CountAll()
+		}, "post_count").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.SumColumn("p.view_count")
+		}, "total_views").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.AvgColumn("p.view_count")
+		}, "avg_views").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Count(func(cb CountBuilder) {
+				cb.All().Filter(func(cb ConditionBuilder) {
+					cb.Equals("p.status", "published")
+				})
+			})
+		}, "published_count").
+		GroupBy("c.id", "c.name").
+		OrderBy("c.name").
+		Scan(suite.ctx, &categoryStats)
+	suite.NoError(err)
+	suite.True(len(categoryStats) > 0, "Should have category statistics")
+
+	for _, stat := range categoryStats {
+		suite.NotEmpty(stat.CategoryName, "Category name should not be empty")
+		suite.True(stat.PostCount > 0, "Post count should be positive")
+		suite.True(stat.TotalViews >= 0, "Total views should be non-negative")
+		suite.T().Logf("Category %s: %d posts, %d total views (avg: %.2f), %d published",
+			stat.CategoryName, stat.PostCount, stat.TotalViews, stat.AvgViews, stat.PublishedCount)
+	}
+
+	// Test 10: JoinRelations with WHERE condition on joined table
+	type PostWithPopularCategory struct {
+		Id           string `bun:"id"`
+		Title        string `bun:"title"`
+		CategoryName string `bun:"category_name"`
+	}
+
+	var postsWithPopularCategory []PostWithPopularCategory
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		Select("p.id", "p.title").
+		JoinRelations(RelationSpec{
+			Model:         (*Category)(nil),
+			Alias:         "c",
+			ForeignColumn: "category_id",
+			SelectedColumns: []ColumnInfo{
+				{Name: "name", Alias: "category_name"},
+			},
+		}).
+		Where(func(cb ConditionBuilder) {
+			// Filter for specific categories
+			cb.In("c.name", []string{"Technology", "Science", "GoLang"})
+		}).
+		OrderBy("p.title").
+		Limit(5).
+		Scan(suite.ctx, &postsWithPopularCategory)
+	suite.NoError(err)
+	suite.True(len(postsWithPopularCategory) > 0, "Should have posts in selected categories")
+
+	for _, post := range postsWithPopularCategory {
+		suite.NotEmpty(post.CategoryName, "Category name should be populated")
+		suite.T().Logf("Post: %s in category %s", post.Title, post.CategoryName)
+	}
+}

@@ -5,7 +5,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -80,13 +79,10 @@ type exportParams struct {
 	Format TabularFormat `json:"format"` // Optional: override default format
 }
 
-func (a *exportAPI[TModel, TSearch]) exportData(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch, params exportParams) error {
-	// Pre-compute schema information
-	schema := db.TableOf((*TModel)(nil))
-
-	// Pre-compute whether default ordering should be applied
-	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
-	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
+func (a *exportAPI[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch, params exportParams) error, error) {
+	if err := a.Init(db); err != nil {
+		return nil, err
+	}
 
 	// Pre-create exporters for both formats
 	excelExporter := excel.NewExporterFor[TModel](a.excelOpts...)
@@ -118,11 +114,7 @@ func (a *exportAPI[TModel, TSearch]) exportData(db orm.Db) func(ctx fiber.Ctx, d
 		var models []TModel
 
 		query := a.BuildQuery(db, &models, search, ctx)
-
-		if shouldApplyDefaultSort {
-			// Add default ordering by created_at
-			query.OrderByDesc(constants.ColumnCreatedAt)
-		}
+		a.ApplyDefaultSort(query)
 
 		// Execute query with safety limit
 		if err := query.Limit(maxQueryLimit).Scan(ctx.Context()); err != nil {
@@ -162,5 +154,5 @@ func (a *exportAPI[TModel, TSearch]) exportData(db orm.Db) func(ctx fiber.Ctx, d
 		ctx.Set(fiber.HeaderContentDisposition, "attachment; filename="+filename)
 
 		return ctx.Send(buf.Bytes())
-	}
+	}, nil
 }

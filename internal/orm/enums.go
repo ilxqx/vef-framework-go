@@ -2,6 +2,53 @@ package orm
 
 import "github.com/ilxqx/vef-framework-go/constants"
 
+// JoinType specifies the type of JOIN operation to perform in a RelationSpec.
+type JoinType int
+
+const (
+	// JoinDefault uses the default JOIN type (LEFT JOIN).
+	// When JoinType is not explicitly set or set to JoinDefault, a LEFT JOIN will be used.
+	JoinDefault JoinType = iota
+	// JoinInner performs an INNER JOIN.
+	// Only returns rows when there is a match in both tables.
+	JoinInner
+	// JoinLeft performs a LEFT JOIN (LEFT OUTER JOIN).
+	// Returns all rows from the left table, and matched rows from the right table.
+	// NULL values are returned for unmatched rows from the right table.
+	JoinLeft
+	// JoinRight performs a RIGHT JOIN (RIGHT OUTER JOIN).
+	// Returns all rows from the right table, and matched rows from the left table.
+	// NULL values are returned for unmatched rows from the left table.
+	JoinRight
+	// JoinFull performs a FULL OUTER JOIN.
+	// Returns all rows from both tables, with NULL values for unmatched rows.
+	// This is equivalent to the union of LEFT JOIN and RIGHT JOIN results.
+	// Note: Not supported by SQLite.
+	JoinFull
+	// JoinCross performs a CROSS JOIN (Cartesian product).
+	// Returns all possible combinations of rows from both tables.
+	// No ON condition is required for CROSS JOIN.
+	JoinCross
+)
+
+// String returns the SQL snippet for the given JoinType.
+func (j JoinType) String() string {
+	switch j {
+	case JoinInner:
+		return "INNER JOIN"
+	case JoinLeft, JoinDefault:
+		return "LEFT JOIN"
+	case JoinRight:
+		return "RIGHT JOIN"
+	case JoinFull:
+		return "FULL JOIN"
+	case JoinCross:
+		return "CROSS JOIN"
+	default:
+		return "JOIN"
+	}
+}
+
 // FuzzyKind represents the wildcard placement for LIKE patterns.
 // 0: startsWith (value%), 1: endsWith (%value), 2: contains (%value%)
 type FuzzyKind uint8

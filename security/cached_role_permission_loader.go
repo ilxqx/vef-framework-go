@@ -35,10 +35,9 @@ func PublishRolePermissionsChangedEvent(publisher event.Publisher, roles ...stri
 // CachedRolePermissionsLoader is a decorator that adds caching to a RolePermissionsLoader.
 // It uses the cache system and event bus for automatic cache invalidation.
 type CachedRolePermissionsLoader struct {
-	loader     RolePermissionsLoader
-	permCache  cache.Cache[map[string]DataScope]
-	keyBuilder cache.KeyBuilder
-	logger     logPkg.Logger
+	loader    RolePermissionsLoader
+	permCache cache.Cache[map[string]DataScope]
+	logger    logPkg.Logger
 }
 
 // NewCachedRolePermissionsLoader creates a new cached role permissions loader.
@@ -48,10 +47,9 @@ func NewCachedRolePermissionsLoader(
 	eventBus event.Subscriber,
 ) RolePermissionsLoader {
 	cached := &CachedRolePermissionsLoader{
-		loader:     loader,
-		permCache:  cache.NewMemory[map[string]DataScope](),
-		keyBuilder: cache.NewPrefixKeyBuilder("role"),
-		logger:     log.Named("security:cached_role_permissions_loader"),
+		loader:    loader,
+		permCache: cache.NewMemory[map[string]DataScope](),
+		logger:    log.Named("security:cached_role_permissions_loader"),
 	}
 
 	// Subscribe to role permissions change events
@@ -83,9 +81,7 @@ func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Conte
 
 	// Clear cache for specific roles
 	for _, role := range changeEvent.Roles {
-		cacheKey := c.keyBuilder.Build(role)
-
-		if err := c.permCache.Delete(ctx, cacheKey); err != nil {
+		if err := c.permCache.Delete(ctx, role); err != nil {
 			c.logger.Errorf("Failed to delete cache for role %s: %v", role, err)
 		} else {
 			c.logger.Infof("Cleared cache for role: %s", role)
@@ -95,15 +91,7 @@ func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Conte
 
 // LoadPermissions loads permissions for a single role, using cache when available.
 func (c *CachedRolePermissionsLoader) LoadPermissions(ctx context.Context, role string) (map[string]DataScope, error) {
-	cacheKey := c.keyBuilder.Build(role)
-
-	// Use cache.GetOrLoad - it handles all the complexity:
-	// 1. First check cache
-	// 2. Use singleflight to coordinate concurrent requests
-	// 3. Double-check cache after acquiring singleflight lock
-	// 4. Load from underlying loader if needed
-	// 5. Store in cache
-	return c.permCache.GetOrLoad(ctx, cacheKey, func(ctx context.Context) (map[string]DataScope, error) {
+	return c.permCache.GetOrLoad(ctx, role, func(ctx context.Context) (map[string]DataScope, error) {
 		// Load from underlying loader and return directly (no conversion needed)
 		return c.loader.LoadPermissions(ctx, role)
 	})

@@ -28,6 +28,7 @@ type SelectQueryExecutor interface {
 type SelectQuery interface {
 	QueryBuilder
 	SelectQueryExecutor
+	DbAccessor
 	CTE[SelectQuery]
 	Selectable[SelectQuery]
 	TableSource[SelectQuery]
@@ -68,8 +69,9 @@ type SelectQuery interface {
 	RightJoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) SelectQuery
 	// RightJoinExpr joins an expression.
 	RightJoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) SelectQuery
-	// ModelRelations joins a model relation.
-	ModelRelations(relations ...ModelRelation) SelectQuery
+	// JoinRelations applies RelationSpec configurations to perform JOIN operations with automatic column resolution.
+	// It provides a declarative way to join related models with minimal configuration.
+	JoinRelations(specs ...RelationSpec) SelectQuery
 	// Relation joins a relation.
 	Relation(name string, apply ...func(query SelectQuery)) SelectQuery
 	// GroupBy groups the query by a column.
@@ -119,6 +121,7 @@ type RawQuery interface {
 type InsertQuery interface {
 	QueryBuilder
 	QueryExecutor
+	DbAccessor
 	CTE[InsertQuery]
 	TableSource[InsertQuery]
 	Selectable[InsertQuery]
@@ -135,6 +138,7 @@ type InsertQuery interface {
 type UpdateQuery interface {
 	QueryBuilder
 	QueryExecutor
+	DbAccessor
 	CTE[UpdateQuery]
 	TableSource[UpdateQuery]
 	JoinOperations[UpdateQuery]
@@ -161,6 +165,7 @@ type UpdateQuery interface {
 type DeleteQuery interface {
 	QueryBuilder
 	QueryExecutor
+	DbAccessor
 	CTE[DeleteQuery]
 	TableSource[DeleteQuery]
 	Filterable[DeleteQuery]
@@ -178,6 +183,7 @@ type DeleteQuery interface {
 type MergeQuery interface {
 	QueryBuilder
 	QueryExecutor
+	DbAccessor
 	CTE[MergeQuery]
 	TableSource[MergeQuery]
 	Returnable[MergeQuery]

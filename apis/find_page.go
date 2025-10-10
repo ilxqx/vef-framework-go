@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/page"
@@ -27,13 +26,10 @@ func (a *findPageAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findPageAPI; call Provide() instead")
 }
 
-func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
-	// Pre-compute schema information
-	schema := db.TableOf((*TModel)(nil))
-
-	// Pre-compute whether default created_at ordering should be applied
-	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
-	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
+func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error, error) {
+	if err := a.Init(db); err != nil {
+		return nil, err
+	}
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
 		var models []TModel
@@ -43,9 +39,9 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 		// Normalize pagination parameters
 		pageable.Normalize()
 
-		if shouldApplyDefaultSort && len(pageable.Sort) == 0 {
-			// Add default ordering by created_at
-			query.OrderByDesc(constants.ColumnCreatedAt)
+		// Apply default sort only if user hasn't specified custom sorting
+		if len(pageable.Sort) == 0 {
+			a.ApplyDefaultSort(query)
 		}
 
 		// Execute paginated query and get total count
@@ -85,5 +81,5 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) func(ctx fiber.Ctx, d
 
 		// Ensure empty slice instead of nil for consistent JSON response
 		return result.Ok(page.New(pageable, total, []any{})).Response(ctx)
-	}
+	}, nil
 }

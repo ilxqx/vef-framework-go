@@ -3,12 +3,12 @@ package orm
 import (
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/sort"
 )
 
@@ -50,22 +50,31 @@ func buildColumnExpr(column string, alias ...string) schema.QueryWithArgs {
 	return bun.SafeQuery("?.?", bun.Name(alias[0]), bun.Name(column))
 }
 
-// applyModelRelation applies a model relation to a SelectQuery by creating the appropriate LEFT JOIN.
+// applyRelationSpec applies a RelationSpec to a SelectQuery by creating the appropriate JOIN.
 // It automatically determines foreign and referenced columns based on table schema and conventions.
-func applyModelRelation(relation ModelRelation, query SelectQuery) {
+func applyRelationSpec(spec RelationSpec, query SelectQuery) {
 	var (
-		table            = getTableSchema(relation.Model, query.(*BunSelectQuery).query.DB())
-		expr             strings.Builder
-		foreignColumn    = relation.ForeignColumn
-		referencedColumn = relation.ReferencedColumn
-		pk               = constants.ColumnId
+		table            = query.Db().TableOf(spec.Model)
+		pk               string
+		alias            = spec.Alias
+		joinType         = spec.JoinType
+		foreignColumn    = spec.ForeignColumn
+		referencedColumn = spec.ReferencedColumn
 	)
 
-	_, _ = expr.WriteString(constants.ExprTableAlias)
-	_, _ = expr.WriteString(".? = ?.?")
+	if len(table.PKs) != 1 {
+		panic(fmt.Sprintf("applyRelationSpec: model '%s' requires exactly one primary key, got %d primary key(s)", table.TypeName, len(table.PKs)))
+	}
 
-	if len(table.PKs) > 0 {
-		pk = table.PKs[0].Name
+	pk = table.PKs[0].Name
+
+	if alias == constants.Empty {
+		alias = table.Alias
+	}
+
+	// Default to LEFT JOIN if not specified
+	if joinType == JoinDefault {
+		joinType = JoinLeft
 	}
 
 	if foreignColumn == constants.Empty {
@@ -76,20 +85,43 @@ func applyModelRelation(relation ModelRelation, query SelectQuery) {
 		referencedColumn = pk
 	}
 
-	query.LeftJoin(
-		relation.Model,
-		func(cb ConditionBuilder) {
-			if relation.ForeignColumn == constants.Empty {
-				cb.Expr(func(eb ExprBuilder) any {
-					return eb.Expr(expr.String(), bun.Name(foreignColumn), bun.Name(table.Alias), bun.Name(referencedColumn))
-				})
+	// Select specified columns from the joined table
+	if len(spec.SelectedColumns) > 0 {
+		for _, ci := range spec.SelectedColumns {
+			column := dbhelpers.ColumnWithAlias(ci.Name, alias)
+
+			columnAlias := ci.Alias
+			if ci.AutoAlias {
+				columnAlias = table.ModelName + constants.Underscore + ci.Name
 			}
 
-			if relation.On != nil {
-				relation.On(cb)
+			if columnAlias != constants.Empty {
+				query.SelectAs(column, columnAlias)
+			} else {
+				query.Select(column)
 			}
-		},
-	)
+		}
+	}
+
+	// Build the JOIN condition
+	joinCondition := func(cb ConditionBuilder) {
+		cb.EqualsColumn(dbhelpers.ColumnWithAlias(referencedColumn, alias), foreignColumn)
+
+		// Apply additional custom ON conditions if provided
+		if spec.On != nil {
+			spec.On(cb)
+		}
+	}
+
+	// Apply the appropriate JOIN type
+	switch joinType {
+	case JoinInner:
+		query.Join(spec.Model, joinCondition, alias)
+	case JoinLeft:
+		query.LeftJoin(spec.Model, joinCondition, alias)
+	case JoinRight:
+		query.RightJoin(spec.Model, joinCondition, alias)
+	}
 }
 
 // applySort applies the sort orders to the query.

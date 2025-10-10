@@ -1,4 +1,4 @@
-package test
+package apis_test
 
 import (
 	"github.com/gofiber/fiber/v3"
@@ -21,13 +21,13 @@ func NewTestCategoryFindTreeOptionsResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_options"),
 		FindTreeOptionsAPI: apis.NewFindTreeOptionsAPI[TestCategory, TestCategorySearch]().
 			Public().
-			FieldMapping(&apis.TreeOptionFieldMapping{
-				OptionFieldMapping: apis.OptionFieldMapping{
-					LabelField: "name",
-					ValueField: "id",
+			ColumnMapping(&apis.TreeOptionColumnMapping{
+				OptionColumnMapping: apis.OptionColumnMapping{
+					LabelColumn: "name",
+					ValueColumn: "id",
 				},
-				IdField:       "id",
-				ParentIdField: "parent_id",
+				IdColumn:       "id",
+				ParentIdColumn: "parent_id",
 			}),
 	}
 }
@@ -43,14 +43,14 @@ func NewCustomFieldCategoryFindTreeOptionsResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_options_custom"),
 		FindTreeOptionsAPI: apis.NewFindTreeOptionsAPI[TestCategory, TestCategorySearch]().
 			Public().
-			FieldMapping(&apis.TreeOptionFieldMapping{
-				OptionFieldMapping: apis.OptionFieldMapping{
-					LabelField:       "code",
-					ValueField:       "id",
-					DescriptionField: "description",
+			ColumnMapping(&apis.TreeOptionColumnMapping{
+				OptionColumnMapping: apis.OptionColumnMapping{
+					LabelColumn:       "code",
+					ValueColumn:       "id",
+					DescriptionColumn: "description",
 				},
-				IdField:       "id",
-				ParentIdField: "parent_id",
+				IdColumn:       "id",
+				ParentIdColumn: "parent_id",
 			}),
 	}
 }
@@ -117,9 +117,9 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 	// Should return 3 root categories
 	suite.Len(tree, 3)
 
-	// Verify default ordering by created_at ASC - Electronics (earliest) should be first
+	// Verify default ordering by created_at DESC - Clothing (latest) should be first
 	first := suite.readDataAsMap(tree[0])
-	suite.Equal("Electronics", first["label"])
+	suite.Equal("Clothing", first["label"])
 	suite.NotEmpty(first["value"])
 	suite.NotEmpty(first["id"])
 
@@ -127,17 +127,17 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 	suite.Equal("Books", second["label"])
 
 	third := suite.readDataAsMap(tree[2])
-	suite.Equal("Clothing", third["label"])
+	suite.Equal("Electronics", third["label"])
 
-	// Check first option (Electronics) has children
+	// Check first option (Clothing) has children
 	children := suite.readDataAsSlice(first["children"])
-	suite.Len(children, 2) // Computers and Phones
+	suite.Len(children, 2) // Men and Women
 
 	// Check child option structure
-	computers := suite.readDataAsMap(children[0])
-	suite.NotEmpty(computers["label"])
-	suite.NotEmpty(computers["value"])
-	suite.NotEmpty(computers["parentId"])
+	childOption := suite.readDataAsMap(children[0])
+	suite.NotEmpty(childOption["label"])
+	suite.NotEmpty(childOption["value"])
+	suite.NotEmpty(childOption["parentId"])
 }
 
 // TestFindTreeOptionsWithConfig tests FindTreeOptions with custom config.
@@ -167,8 +167,8 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"labelField": "code",
-				"valueField": "id",
+				"labelColumn": "code",
+				"valueColumn": "id",
 			},
 		})
 
@@ -179,15 +179,15 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 		tree := suite.readDataAsSlice(body.Data)
 		suite.Len(tree, 3)
 
-		// Verify code is used as label and ordering by created_at ASC
+		// Verify code is used as label and ordering by created_at DESC
 		first := suite.readDataAsMap(tree[0])
-		suite.Equal("electronics", first["label"])
+		suite.Equal("clothing", first["label"])
 
 		second := suite.readDataAsMap(tree[1])
 		suite.Equal("books", second["label"])
 
 		third := suite.readDataAsMap(tree[2])
-		suite.Equal("clothing", third["label"])
+		suite.Equal("electronics", third["label"])
 	})
 
 	suite.Run("WithDescription", func() {
@@ -313,8 +313,8 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsNegativeCases() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"labelField": "nonexistent_field",
-				"valueField": "id",
+				"labelColumn": "nonexistent_field",
+				"valueColumn": "id",
 			},
 		})
 

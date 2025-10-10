@@ -331,7 +331,8 @@
 
 - model: ImportUser
   rows:
-    - name: Import Alice
+    - id: import001
+      name: Import Alice
       email: import_alice@example.com
       age: 28
       status: active

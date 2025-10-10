@@ -37,7 +37,7 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 			return fiber.ErrUnauthorized
 		},
 		Validator: func(ctx fiber.Ctx, accessToken string) (bool, error) {
-			principal, err := auth.Authenticate(securityPkg.Authentication{
+			principal, err := auth.Authenticate(ctx.Context(), securityPkg.Authentication{
 				Type:      security.AuthTypeToken,
 				Principal: accessToken,
 			})
@@ -79,7 +79,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 		// Build credentials: "<signatureHex>@<timestamp>@<bodySha256Base64>"
 		credentials := signatureHex + constants.At + timestamp + constants.At + bodySha256Base64
 
-		principal, err := auth.Authenticate(securityPkg.Authentication{
+		principal, err := auth.Authenticate(ctx.Context(), securityPkg.Authentication{
 			Type:        security.AuthTypeOpenAPI,
 			Principal:   appId,
 			Credentials: credentials,

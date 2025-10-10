@@ -23,21 +23,27 @@ func (a *findOneAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findOneAPI; call Provide() instead")
 }
 
-func (a *findOneAPI[TModel, TSearch]) findOne(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
-	var (
-		model TModel
-		query = a.BuildQuery(db, &model, search, ctx)
-	)
-
-	// Limit to 1 record for efficiency
-	if err := query.Limit(1).Scan(ctx.Context()); err != nil {
-		return err
+func (a *findOneAPI[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
+	if err := a.Init(db); err != nil {
+		return nil, err
 	}
 
-	// Apply transformation to the model
-	if err := transformer.Struct(ctx.Context(), &model); err != nil {
-		return err
-	}
+	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
+		var (
+			model TModel
+			query = a.BuildQuery(db, &model, search, ctx)
+		)
 
-	return result.Ok(a.Process(model, search, ctx)).Response(ctx)
+		// Limit to 1 record for efficiency
+		if err := query.Limit(1).Scan(ctx.Context()); err != nil {
+			return err
+		}
+
+		// Apply transformation to the model
+		if err := transformer.Struct(ctx.Context(), &model); err != nil {
+			return err
+		}
+
+		return result.Ok(a.Process(model, search, ctx)).Response(ctx)
+	}, nil
 }

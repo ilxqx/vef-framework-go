@@ -17,8 +17,9 @@ import (
 type deleteAPI[TModel any] struct {
 	APIBuilder[DeleteAPI[TModel]]
 
-	preDelete  PreDeleteProcessor[TModel]
-	postDelete PostDeleteProcessor[TModel]
+	preDelete       PreDeleteProcessor[TModel]
+	postDelete      PostDeleteProcessor[TModel]
+	disableDataPerm bool
 }
 
 // Provide generates the final API specification for model deletion.
@@ -41,6 +42,12 @@ func (d *deleteAPI[TModel]) PreDelete(processor PreDeleteProcessor[TModel]) Dele
 
 func (d *deleteAPI[TModel]) PostDelete(processor PostDeleteProcessor[TModel]) DeleteAPI[TModel] {
 	d.postDelete = processor
+
+	return d
+}
+
+func (d *deleteAPI[TModel]) DisableDataPerm() DeleteAPI[TModel] {
+	d.disableDataPerm = true
 
 	return d
 }
@@ -75,8 +82,16 @@ func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 			}
 		}
 
+		// Build query with data permission filtering
+		query := db.NewSelect().Model(&model).WherePK()
+		if !d.disableDataPerm {
+			if err := applyDataPermission(query, ctx); err != nil {
+				return err
+			}
+		}
+
 		// Load the existing model
-		if err := db.NewSelect().Model(&model).WherePK().Scan(ctx.Context(), &model); err != nil {
+		if err := query.Scan(ctx.Context(), &model); err != nil {
 			return err
 		}
 

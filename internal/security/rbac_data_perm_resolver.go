@@ -21,24 +21,25 @@ func NewRBACDataPermResolver(loader security.RolePermissionsLoader) security.Dat
 }
 
 // ResolveDataScope resolves the applicable DataScope for the given principal and permission token.
-// It loads permissions for all roles and returns the first matching DataScope.
-// If multiple roles have the same permission token, the first match is returned.
+// When a user has multiple roles with the same permission token but different data scopes,
+// this method collects all matching scopes and returns the one with the highest priority.
 // Returns nil if no matching permission is found.
 func (r *RBACDataPermResolver) ResolveDataScope(
 	ctx context.Context,
 	principal *security.Principal,
 	permToken string,
 ) (security.DataScope, error) {
-	if principal == nil {
+	// If principal is nil or has no roles, they have no permissions
+	if principal == nil || len(principal.Roles) == 0 {
 		return nil, nil
 	}
 
-	// If principal has no roles, they have no permissions
-	if len(principal.Roles) == 0 {
-		return nil, nil
-	}
+	var (
+		selectedScope security.DataScope
+		maxPriority   = -1
+	)
 
-	// Load permissions for each role and find the matching permission
+	// Load permissions for each role and collect all matching DataScopes
 	// Using sequential loading for efficiency since most users have only 1-3 roles
 	for _, role := range principal.Roles {
 		permissions, err := r.loader.LoadPermissions(ctx, role)
@@ -46,12 +47,15 @@ func (r *RBACDataPermResolver) ResolveDataScope(
 			return nil, err
 		}
 
-		// O(1) lookup: check if the permission token exists and return its DataScope
 		if dataScope, exists := permissions[permToken]; exists {
-			return dataScope, nil
+			// Compare priorities and select the scope with the highest priority
+			if priority := dataScope.Priority(); priority > maxPriority {
+				maxPriority = priority
+				selectedScope = dataScope
+			}
 		}
 	}
 
-	// No matching permission found
-	return nil, nil
+	// Return the DataScope with the highest priority, or nil if none found
+	return selectedScope, nil
 }

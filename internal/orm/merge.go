@@ -10,15 +10,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// NewMergeQuery creates a new MergeQuery instance with the provided database connection.
+// NewMergeQuery creates a new MergeQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewMergeQuery(db bun.IDB) *BunMergeQuery {
+func NewMergeQuery(db *BunDb) *BunMergeQuery {
 	eb := &QueryExprBuilder{}
-	mq := db.NewMerge()
-	dialect := db.Dialect()
+	mq := db.db.NewMerge()
+	dialect := db.db.Dialect()
 	query := &BunMergeQuery{
 		QueryBuilder: newQueryBuilder(dialect, mq, eb),
 
+		db:      db,
 		dialect: dialect,
 		query:   mq,
 		eb:      eb,
@@ -33,9 +34,14 @@ func NewMergeQuery(db bun.IDB) *BunMergeQuery {
 type BunMergeQuery struct {
 	QueryBuilder
 
+	db      *BunDb
 	dialect schema.Dialect
 	eb      ExprBuilder
 	query   *bun.MergeQuery
+}
+
+func (q *BunMergeQuery) Db() Db {
+	return q.db
 }
 
 func (q *BunMergeQuery) With(name string, builder func(SelectQuery)) MergeQuery {

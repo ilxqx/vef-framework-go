@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	cachePkg "github.com/ilxqx/vef-framework-go/cache"
 	eventPkg "github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/event"
 )
@@ -36,7 +35,7 @@ func (s *CachedDataDictResolverTestSuite) TearDownSuite() {
 }
 
 func (s *CachedDataDictResolverTestSuite) newResolver(loader DataDictLoader) DataDictResolver {
-	return NewCachedDataDictResolver(loader, cachePkg.NewMemory[map[string]string](), s.bus)
+	return NewCachedDataDictResolver(loader, s.bus)
 }
 
 func (s *CachedDataDictResolverTestSuite) TestCachesEntries() {
@@ -168,14 +167,14 @@ func (s *CachedDataDictResolverTestSuite) TestCodeNotFound() {
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenLoaderIsNil() {
 	s.Panics(func() {
-		NewCachedDataDictResolver(nil, cachePkg.NewMemory[map[string]string](), s.bus)
+		NewCachedDataDictResolver(nil, s.bus)
 	}, "Expected panic when loader is nil")
 }
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenBusIsNil() {
 	loader := new(MockDataDictLoader)
 	s.Panics(func() {
-		NewCachedDataDictResolver(loader, cachePkg.NewMemory[map[string]string](), nil)
+		NewCachedDataDictResolver(loader, nil)
 	}, "Expected panic when bus is nil")
 }
 
@@ -185,7 +184,7 @@ func (s *CachedDataDictResolverTestSuite) TestNilCacheCreatesDefault() {
 		"draft": "草稿",
 	}, nil).Once()
 
-	resolver := NewCachedDataDictResolver(loader, nil, s.bus)
+	resolver := NewCachedDataDictResolver(loader, s.bus)
 
 	result, err := resolver.Resolve(s.ctx, "status", "draft")
 	s.NoError(err)

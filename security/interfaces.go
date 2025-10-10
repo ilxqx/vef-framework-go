@@ -13,7 +13,7 @@ type Authenticator interface {
 	Supports(authType string) bool
 	// Authenticate validates the provided authentication information and returns a Principal.
 	// Returns an error if authentication fails or the authenticator doesn't support the type.
-	Authenticate(authentication Authentication) (*Principal, error)
+	Authenticate(ctx context.Context, authentication Authentication) (*Principal, error)
 }
 
 // TokenGenerator defines the interface for generating authentication tokens.
@@ -30,7 +30,7 @@ type AuthManager interface {
 	// Authenticate attempts to authenticate the provided authentication information.
 	// It delegates to the appropriate authenticator based on the authentication type.
 	// Returns a Principal if authentication succeeds, or an error if it fails.
-	Authenticate(authentication Authentication) (*Principal, error)
+	Authenticate(ctx context.Context, authentication Authentication) (*Principal, error)
 }
 
 // UserLoader defines a strategy for loading user information by username.
@@ -40,11 +40,11 @@ type UserLoader interface {
 	// LoadByUsername loads a user by username and returns the associated Principal and password hash.
 	// If the username does not exist, return (nil, "", nil) and the authenticator will treat it as invalid credentials.
 	// If an internal error occurs, return a non-nil error.
-	LoadByUsername(username string) (*Principal, string, error)
+	LoadByUsername(ctx context.Context, username string) (*Principal, string, error)
 	// LoadById loads a user by id and returns the associated Principal.
 	// If the user does not exist, return nil.
 	// If an internal error occurs, return a non-nil error.
-	LoadById(id string) (*Principal, error)
+	LoadById(ctx context.Context, id string) (*Principal, error)
 }
 
 // ExternalAppLoader defines a strategy for loading external application information by appId.
@@ -54,7 +54,7 @@ type ExternalAppLoader interface {
 	// LoadById loads an external application by appId and returns the associated Principal and app secret.
 	// If the app does not exist, return (nil, "", nil) and the authenticator will treat it as invalid credentials.
 	// If an internal error occurs, return a non-nil error.
-	LoadById(id string) (*Principal, string, error)
+	LoadById(ctx context.Context, id string) (*Principal, string, error)
 }
 
 // PasswordDecryptor defines the interface for decrypting passwords received from clients.
@@ -92,6 +92,11 @@ type RolePermissionsLoader interface {
 type DataScope interface {
 	// Key returns the unique identifier of this data scope.
 	Key() string
+	// Priority returns the priority level of this data scope.
+	// Higher values indicate broader access permissions.
+	// When a user has multiple roles with the same permission token but different data scopes,
+	// the framework will select the scope with the highest priority.
+	Priority() int
 	// Supports determines whether this data scope is applicable to the given table structure.
 	// It checks if the table has the necessary fields required by this scope.
 	Supports(principal *Principal, table *orm.Table) bool

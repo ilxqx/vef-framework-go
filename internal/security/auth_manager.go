@@ -1,6 +1,8 @@
 package security
 
 import (
+	"context"
+
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -20,7 +22,7 @@ func NewAuthManager(authenticators []security.Authenticator) security.AuthManage
 
 // Authenticate attempts to authenticate the provided authentication information.
 // It finds the appropriate authenticator and delegates the authentication request.
-func (am *AuthenticatorAuthManager) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	// Find the appropriate authenticator
 	authenticator := am.findAuthenticator(authentication.Type)
 	if authenticator == nil {
@@ -34,7 +36,7 @@ func (am *AuthenticatorAuthManager) Authenticate(authentication security.Authent
 	}
 
 	// Delegate to the authenticator
-	principal, err := authenticator.Authenticate(authentication)
+	principal, err := authenticator.Authenticate(ctx, authentication)
 	if err != nil {
 		logger.Warnf("Authentication failed for principal '%s' with type '%s': %v",
 			authentication.Principal, authentication.Type, err)

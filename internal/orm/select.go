@@ -13,15 +13,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// NewSelectQuery creates a new SelectQuery instance with the provided database connection.
+// NewSelectQuery creates a new SelectQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewSelectQuery(db bun.IDB) *BunSelectQuery {
+func NewSelectQuery(db *BunDb) *BunSelectQuery {
 	eb := &QueryExprBuilder{}
-	sq := db.NewSelect()
-	dialect := db.Dialect()
+	sq := db.db.NewSelect()
+	dialect := db.db.Dialect()
 	query := &BunSelectQuery{
 		QueryBuilder: newQueryBuilder(dialect, sq, eb),
 
+		db:      db,
 		dialect: dialect,
 		eb:      eb,
 		query:   sq,
@@ -36,10 +37,15 @@ func NewSelectQuery(db bun.IDB) *BunSelectQuery {
 type BunSelectQuery struct {
 	QueryBuilder
 
+	db         *BunDb
 	dialect    schema.Dialect
 	eb         ExprBuilder
 	query      *bun.SelectQuery
 	isSubQuery bool
+}
+
+func (q *BunSelectQuery) Db() Db {
+	return q.db
 }
 
 func (q *BunSelectQuery) With(name string, builder func(query SelectQuery)) SelectQuery {
@@ -188,7 +194,8 @@ func (q *BunSelectQuery) Join(model any, builder func(ConditionBuilder), alias .
 	}
 
 	q.query.Join(
-		"JOIN ? AS ?",
+		"? ? AS ?",
+		bun.Safe(JoinInner.String()),
 		bun.Name(table.Name),
 		bun.Name(aliasToUse),
 	)
@@ -199,9 +206,9 @@ func (q *BunSelectQuery) Join(model any, builder func(ConditionBuilder), alias .
 
 func (q *BunSelectQuery) JoinTable(name string, builder func(ConditionBuilder), alias ...string) SelectQuery {
 	if len(alias) > 0 && alias[0] != constants.Empty {
-		q.query.Join("JOIN ? AS ?", bun.Name(name), bun.Name(alias[0]))
+		q.query.Join("? ? AS ?", bun.Safe(JoinInner.String()), bun.Name(name), bun.Name(alias[0]))
 	} else {
-		q.query.Join("JOIN ?", bun.Name(name))
+		q.query.Join("? ?", bun.Safe(JoinInner.String()), bun.Name(name))
 	}
 
 	q.query.JoinOn("?", q.BuildCondition(builder))
@@ -210,21 +217,21 @@ func (q *BunSelectQuery) JoinTable(name string, builder func(ConditionBuilder), 
 }
 
 func (q *BunSelectQuery) JoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) SelectQuery {
-	q.query.Join("JOIN (?) AS ?", q.BuildSubQuery(sqBuilder), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) JoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) SelectQuery {
-	q.query.Join("JOIN (?) AS ?", eBuilder(q.eb), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), eBuilder(q.eb), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) LeftJoin(model any, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	table := getTableSchema(model, q.query.DB())
+	table := q.db.TableOf(model)
 
 	aliasToUse := table.Alias
 	if len(alias) > 0 && alias[0] != constants.Empty {
@@ -232,7 +239,8 @@ func (q *BunSelectQuery) LeftJoin(model any, builder func(ConditionBuilder), ali
 	}
 
 	q.query.Join(
-		"LEFT JOIN ? AS ?",
+		"? ? AS ?",
+		bun.Safe(JoinLeft.String()),
 		bun.Name(table.Name),
 		bun.Name(aliasToUse),
 	)
@@ -243,9 +251,9 @@ func (q *BunSelectQuery) LeftJoin(model any, builder func(ConditionBuilder), ali
 
 func (q *BunSelectQuery) LeftJoinTable(name string, builder func(ConditionBuilder), alias ...string) SelectQuery {
 	if len(alias) > 0 && alias[0] != constants.Empty {
-		q.query.Join("LEFT JOIN ? AS ?", bun.Name(name), bun.Name(alias[0]))
+		q.query.Join("? ? AS ?", bun.Safe(JoinLeft.String()), bun.Name(name), bun.Name(alias[0]))
 	} else {
-		q.query.Join("LEFT JOIN ?", bun.Name(name))
+		q.query.Join("? ?", bun.Safe(JoinLeft.String()), bun.Name(name))
 	}
 
 	q.query.JoinOn("?", q.BuildCondition(builder))
@@ -254,21 +262,21 @@ func (q *BunSelectQuery) LeftJoinTable(name string, builder func(ConditionBuilde
 }
 
 func (q *BunSelectQuery) LeftJoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) SelectQuery {
-	q.query.Join("LEFT JOIN (?) AS ?", q.BuildSubQuery(sqBuilder), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinLeft.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) LeftJoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) SelectQuery {
-	q.query.Join("LEFT JOIN (?) AS ?", eBuilder(q.eb), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinLeft.String()), eBuilder(q.eb), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) RightJoin(model any, builder func(ConditionBuilder), alias ...string) SelectQuery {
-	table := getTableSchema(model, q.query.DB())
+	table := q.db.TableOf(model)
 
 	aliasToUse := table.Alias
 	if len(alias) > 0 && alias[0] != constants.Empty {
@@ -276,7 +284,8 @@ func (q *BunSelectQuery) RightJoin(model any, builder func(ConditionBuilder), al
 	}
 
 	q.query.Join(
-		"RIGHT JOIN ? AS ?",
+		"? ? AS ?",
+		bun.Safe(JoinRight.String()),
 		bun.Name(table.Name),
 		bun.Name(aliasToUse),
 	)
@@ -287,9 +296,9 @@ func (q *BunSelectQuery) RightJoin(model any, builder func(ConditionBuilder), al
 
 func (q *BunSelectQuery) RightJoinTable(name string, builder func(ConditionBuilder), alias ...string) SelectQuery {
 	if len(alias) > 0 && alias[0] != constants.Empty {
-		q.query.Join("RIGHT JOIN ? AS ?", bun.Name(name), bun.Name(alias[0]))
+		q.query.Join("? ? AS ?", bun.Safe(JoinRight.String()), bun.Name(name), bun.Name(alias[0]))
 	} else {
-		q.query.Join("RIGHT JOIN ?", bun.Name(name))
+		q.query.Join("? ?", bun.Safe(JoinRight.String()), bun.Name(name))
 	}
 
 	q.query.JoinOn("?", q.BuildCondition(builder))
@@ -298,22 +307,22 @@ func (q *BunSelectQuery) RightJoinTable(name string, builder func(ConditionBuild
 }
 
 func (q *BunSelectQuery) RightJoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) SelectQuery {
-	q.query.Join("RIGHT JOIN (?) AS ?", q.BuildSubQuery(sqBuilder), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinRight.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunSelectQuery) RightJoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) SelectQuery {
-	q.query.Join("RIGHT JOIN (?) AS ?", eBuilder(q.eb), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinRight.String()), eBuilder(q.eb), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
-func (q *BunSelectQuery) ModelRelations(relations ...ModelRelation) SelectQuery {
-	for _, r := range relations {
-		applyModelRelation(r, q)
+func (q *BunSelectQuery) JoinRelations(specs ...RelationSpec) SelectQuery {
+	for _, spec := range specs {
+		applyRelationSpec(spec, q)
 	}
 
 	return q
@@ -541,42 +550,36 @@ func (q *BunSelectQuery) ApplyIf(condition bool, fns ...ApplyFunc[SelectQuery]) 
 	return q
 }
 
-func (q *BunSelectQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
+func (q *BunSelectQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
 	if q.isSubQuery {
 		return nil, ErrSubQuery
 	}
 
-	r, err := q.query.Exec(ctx, dest...)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
+	if res, err = q.query.Exec(ctx, dest...); err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, result.ErrRecordNotFound
 	}
 
-	return r, err
+	return res, err
 }
 
-func (q *BunSelectQuery) Scan(ctx context.Context, dest ...any) error {
+func (q *BunSelectQuery) Scan(ctx context.Context, dest ...any) (err error) {
 	if q.isSubQuery {
 		return ErrSubQuery
 	}
 
-	if err := q.query.Scan(ctx, dest...); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return result.ErrRecordNotFound
-		}
-
-		return err
+	if err = q.query.Scan(ctx, dest...); err != nil && errors.Is(err, sql.ErrNoRows) {
+		return result.ErrRecordNotFound
 	}
 
-	return nil
+	return err
 }
 
-func (q *BunSelectQuery) Rows(ctx context.Context) (*sql.Rows, error) {
+func (q *BunSelectQuery) Rows(ctx context.Context) (rows *sql.Rows, err error) {
 	if q.isSubQuery {
 		return nil, ErrSubQuery
 	}
 
-	rows, err := q.query.Rows(ctx)
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
+	if rows, err = q.query.Rows(ctx); err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, result.ErrRecordNotFound
 	}
 

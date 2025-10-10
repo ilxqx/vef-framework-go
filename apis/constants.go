@@ -33,13 +33,13 @@ const (
 	maxQueryLimit = 10000
 	// MaxOptionsLimit is the maximum number of options that can be returned in a single query.
 	maxOptionsLimit = 10000
-	// DefaultLabelField is the default field name for option labels.
-	defaultLabelField = "name"
-	// DefaultValueField is the default field name for option values.
-	defaultValueField = constants.ColumnId
-	idField           = constants.ColumnId
-	parentIdField     = "parent_id"
-	labelField        = "label"
-	valueField        = "value"
-	descriptionField  = "description"
+	// DefaultLabelColumn is the default column name for option labels.
+	defaultLabelColumn = "name"
+	// DefaultValueColumn is the default column name for option values.
+	defaultValueColumn = constants.ColumnId
+	idColumn           = constants.ColumnId
+	parentIdColumn     = "parent_id"
+	labelColumn        = "label"
+	valueColumn        = "value"
+	descriptionColumn  = "description"
 )

@@ -16,8 +16,9 @@ import (
 type deleteManyAPI[TModel any] struct {
 	APIBuilder[DeleteManyAPI[TModel]]
 
-	preDeleteMany  PreDeleteManyProcessor[TModel]
-	postDeleteMany PostDeleteManyProcessor[TModel]
+	preDeleteMany   PreDeleteManyProcessor[TModel]
+	postDeleteMany  PostDeleteManyProcessor[TModel]
+	disableDataPerm bool
 }
 
 // Provide generates the final API specification for batch model deletion.
@@ -40,6 +41,12 @@ func (d *deleteManyAPI[TModel]) PreDeleteMany(processor PreDeleteManyProcessor[T
 
 func (d *deleteManyAPI[TModel]) PostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyAPI[TModel] {
 	d.postDeleteMany = processor
+
+	return d
+}
+
+func (d *deleteManyAPI[TModel]) DisableDataPerm() DeleteManyAPI[TModel] {
+	d.disableDataPerm = true
 
 	return d
 }
@@ -90,8 +97,16 @@ func (d *deleteManyAPI[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 				}
 			}
 
+			// Build query with data permission filtering
+			query := db.NewSelect().Model(&models[i]).WherePK()
+			if !d.disableDataPerm {
+				if err := applyDataPermission(query, ctx); err != nil {
+					return err
+				}
+			}
+
 			// Load the existing model
-			if err := db.NewSelect().Model(&models[i]).WherePK().Scan(ctx.Context(), &models[i]); err != nil {
+			if err := query.Scan(ctx.Context(), &models[i]); err != nil {
 				return err
 			}
 		}

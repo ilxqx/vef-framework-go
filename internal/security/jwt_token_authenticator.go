@@ -1,6 +1,7 @@
 package security
 
 import (
+	"context"
 	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -34,7 +35,7 @@ func (*JWTTokenAuthenticator) Supports(authType string) bool {
 
 // Authenticate validates the JWT token and returns the principal.
 // The credentials field should contain the JWT access token.
-func (ja *JWTTokenAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication security.Authentication) (*security.Principal, error) {
 	// Extract the token from credentials
 	token := authentication.Principal
 	if token == constants.Empty {

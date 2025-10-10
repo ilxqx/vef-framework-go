@@ -14,7 +14,9 @@ type (
 	ConditionBuilder           = orm.ConditionBuilder
 	Applier[T any]             = orm.Applier[T]
 	ApplyFunc[T any]           = orm.ApplyFunc[T]
-	ModelRelation              = orm.ModelRelation
+	RelationSpec               = orm.RelationSpec
+	JoinType                   = orm.JoinType
+	ColumnInfo                 = orm.ColumnInfo
 	Model                      = orm.Model
 	ModelPK                    = orm.ModelPK
 	PKField                    = orm.PKField
@@ -68,4 +70,13 @@ type (
 	FirstValueBuilder          = orm.FirstValueBuilder
 	LastValueBuilder           = orm.LastValueBuilder
 	NthValueBuilder            = orm.NthValueBuilder
+)
+
+const (
+	// InnerJoin performs an INNER JOIN.
+	InnerJoin = orm.JoinInner
+	// LeftJoin performs a LEFT JOIN (default).
+	LeftJoin = orm.JoinLeft
+	// RightJoin performs a RIGHT JOIN.
+	RightJoin = orm.JoinRight
 )

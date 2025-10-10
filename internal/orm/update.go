@@ -15,15 +15,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// NewUpdateQuery creates a new UpdateQuery instance with the provided database connection.
+// NewUpdateQuery creates a new UpdateQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewUpdateQuery(db bun.IDB) *BunUpdateQuery {
+func NewUpdateQuery(db *BunDb) *BunUpdateQuery {
 	eb := &QueryExprBuilder{}
-	uq := db.NewUpdate()
-	dialect := db.Dialect()
+	uq := db.db.NewUpdate()
+	dialect := db.db.Dialect()
 	query := &BunUpdateQuery{
 		QueryBuilder: newQueryBuilder(dialect, uq, eb),
 
+		db:      db,
 		dialect: dialect,
 		eb:      eb,
 		query:   uq,
@@ -38,10 +39,15 @@ func NewUpdateQuery(db bun.IDB) *BunUpdateQuery {
 type BunUpdateQuery struct {
 	QueryBuilder
 
+	db      *BunDb
 	dialect schema.Dialect
 	eb      ExprBuilder
 	query   *bun.UpdateQuery
 	hasSet  bool
+}
+
+func (q *BunUpdateQuery) Db() Db {
+	return q.db
 }
 
 func (q *BunUpdateQuery) With(name string, builder func(SelectQuery)) UpdateQuery {
@@ -114,7 +120,8 @@ func (q *BunUpdateQuery) Join(model any, builder func(ConditionBuilder), alias .
 	}
 
 	q.query.Join(
-		"JOIN ? AS ?",
+		"? ? AS ?",
+		bun.Safe(JoinInner.String()),
 		bun.Name(table.Name),
 		bun.Name(aliasToUse),
 	)
@@ -125,9 +132,9 @@ func (q *BunUpdateQuery) Join(model any, builder func(ConditionBuilder), alias .
 
 func (q *BunUpdateQuery) JoinTable(name string, builder func(ConditionBuilder), alias ...string) UpdateQuery {
 	if len(alias) > 0 && alias[0] != constants.Empty {
-		q.query.Join("JOIN ? AS ?", bun.Name(name), bun.Name(alias[0]))
+		q.query.Join("? ? AS ?", bun.Safe(JoinInner.String()), bun.Name(name), bun.Name(alias[0]))
 	} else {
-		q.query.Join("JOIN ?", bun.Name(name))
+		q.query.Join("? ?", bun.Safe(JoinInner.String()), bun.Name(name))
 	}
 
 	q.query.JoinOn("?", q.BuildCondition(builder))
@@ -136,14 +143,14 @@ func (q *BunUpdateQuery) JoinTable(name string, builder func(ConditionBuilder), 
 }
 
 func (q *BunUpdateQuery) JoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) UpdateQuery {
-	q.query.Join("JOIN (?) AS ?", q.BuildSubQuery(sqBuilder), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
 }
 
 func (q *BunUpdateQuery) JoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) UpdateQuery {
-	q.query.Join("JOIN (?) AS ?", eBuilder(q.eb), bun.Name(alias))
+	q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), eBuilder(q.eb), bun.Name(alias))
 	q.query.JoinOn("?", q.BuildCondition(cBuilder))
 
 	return q
@@ -322,49 +329,36 @@ func (q *BunUpdateQuery) ApplyIf(condition bool, fns ...ApplyFunc[UpdateQuery]) 
 // It processes UpdateHandler for fields like updated_at and updated_by,
 // and excludes InsertHandler-only fields from being updated.
 func (q *BunUpdateQuery) beforeUpdate() {
-	model := q.query.GetModel()
-	if model != nil {
-		if tm, ok := model.(bun.TableModel); ok {
-			table := tm.Table()
-			modelValue := model.Value()
-			mv := reflect.Indirect(reflect.ValueOf(modelValue))
+	if table := q.GetTable(); table != nil {
+		modelValue := q.query.GetModel().Value()
+		mv := reflect.Indirect(reflect.ValueOf(modelValue))
 
-			processAutoColumns(autoColumns, q.query, q.hasSet, table, modelValue, mv)
-		}
+		processAutoColumns(autoColumns, q.query, q.hasSet, table, modelValue, mv)
 	}
 }
 
-func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
+func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
 	q.beforeUpdate()
 
-	res, err := q.query.Exec(ctx, dest...)
-	if err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
+	if res, err = q.query.Exec(ctx, dest...); err != nil && dbhelpers.IsDuplicateKeyError(err) {
+		logger.Warnf("Record already exists: %v", err)
 
-			return nil, result.ErrRecordAlreadyExists
-		}
-
-		return nil, err
+		return nil, result.ErrRecordAlreadyExists
 	}
 
-	return res, nil
+	return res, err
 }
 
-func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) error {
+func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) (err error) {
 	q.beforeUpdate()
 
-	if err := q.query.Scan(ctx, dest...); err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
+	if err = q.query.Scan(ctx, dest...); err != nil && dbhelpers.IsDuplicateKeyError(err) {
+		logger.Warnf("Record already exists: %v", err)
 
-			return result.ErrRecordAlreadyExists
-		}
-
-		return err
+		return result.ErrRecordAlreadyExists
 	}
 
-	return nil
+	return err
 }
 
 func (q *BunUpdateQuery) Unwrap() *bun.UpdateQuery {

@@ -46,4 +46,9 @@ var (
 	ErrUserDetailsTypeMustBeStruct = errors.New("user details type must be a struct")
 	// ErrExternalAppDetailsTypeMustBeStruct indicates external app details type must be a struct.
 	ErrExternalAppDetailsTypeMustBeStruct = errors.New("external app details type must be a struct")
+
+	// ErrQueryNotQueryBuilder is returned when the query does not implement QueryBuilder interface.
+	ErrQueryNotQueryBuilder = errors.New("query does not implement QueryBuilder interface")
+	// ErrQueryModelNotSet is returned when the query does not have a model set before applying data permission.
+	ErrQueryModelNotSet = errors.New("query must call Model() before applying data permission")
 )

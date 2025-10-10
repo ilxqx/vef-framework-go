@@ -1,6 +1,8 @@
 package security
 
 import (
+	"context"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -34,7 +36,7 @@ func NewPasswordAuthenticator(loader security.UserLoader, decryptor security.Pas
 func (*PasswordAuthenticator) Supports(authType string) bool { return authType == AuthTypePassword }
 
 // Authenticate validates credentials which should be a plaintext password for the given principal (username).
-func (p *PasswordAuthenticator) Authenticate(authentication security.Authentication) (*security.Principal, error) {
+func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if p.loader == nil {
 		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("user_loader_not_implemented"))
 	}
@@ -63,9 +65,15 @@ func (p *PasswordAuthenticator) Authenticate(authentication security.Authenticat
 	}
 
 	// Load user info and password hash via injected loader
-	principal, passwordHash, err := p.loader.LoadByUsername(username)
+	principal, passwordHash, err := p.loader.LoadByUsername(ctx, username)
 	if err != nil {
-		return nil, err
+		if result.IsErrRecordNotFound(err) {
+			logger.Infof("user loader returned record not found for username '%s'", username)
+		} else {
+			logger.Warnf("failed to load user by username '%s': %v", username, err)
+		}
+
+		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
 	}
 
 	if principal == nil || passwordHash == constants.Empty {

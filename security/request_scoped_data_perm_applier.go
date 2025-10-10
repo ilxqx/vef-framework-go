@@ -33,13 +33,6 @@ func NewRequestScopedDataPermApplier(
 
 // Apply implements security.DataPermissionApplier.Apply.
 func (a *RequestScopedDataPermApplier) Apply(query orm.SelectQuery) error {
-	// System principals bypass data permission checks
-	if a.principal != nil && a.principal.Type == PrincipalTypeSystem {
-		a.logger.Debugf("Skipping data permission for system principal")
-
-		return nil
-	}
-
 	// No data scope means no restrictions
 	if a.dataScope == nil {
 		a.logger.Debugf("No data scope configured, skipping data permission")
@@ -51,12 +44,12 @@ func (a *RequestScopedDataPermApplier) Apply(query orm.SelectQuery) error {
 	// The query MUST have called Model() before this point
 	queryBuilder, ok := query.(orm.QueryBuilder)
 	if !ok {
-		return fmt.Errorf("query does not implement QueryBuilder interface")
+		return ErrQueryNotQueryBuilder
 	}
 
 	table := queryBuilder.GetTable()
 	if table == nil {
-		return fmt.Errorf("query must call Model() before applying data permission")
+		return ErrQueryModelNotSet
 	}
 
 	// Check if the data scope supports this table

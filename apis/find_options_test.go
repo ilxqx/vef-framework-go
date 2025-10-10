@@ -1,4 +1,4 @@
-package test
+package apis_test
 
 import (
 	"github.com/gofiber/fiber/v3"
@@ -21,9 +21,9 @@ func NewTestUserFindOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_options"),
 		FindOptionsAPI: apis.NewFindOptionsAPI[TestUser, TestUserSearch]().
 			Public().
-			FieldMapping(&apis.OptionFieldMapping{
-				LabelField: "name",
-				ValueField: "id",
+			ColumnMapping(&apis.OptionColumnMapping{
+				LabelColumn: "name",
+				ValueColumn: "id",
 			}),
 	}
 }
@@ -39,10 +39,10 @@ func NewCustomFieldUserFindOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_options_custom"),
 		FindOptionsAPI: apis.NewFindOptionsAPI[TestUser, TestUserSearch]().
 			Public().
-			FieldMapping(&apis.OptionFieldMapping{
-				LabelField:       "email",
-				ValueField:       "id",
-				DescriptionField: "description",
+			ColumnMapping(&apis.OptionColumnMapping{
+				LabelColumn:       "email",
+				ValueColumn:       "id",
+				DescriptionColumn: "description",
 			}),
 	}
 }
@@ -137,8 +137,8 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"labelField": "email",
-				"valueField": "id",
+				"labelColumn": "email",
+				"valueColumn": "id",
 			},
 		})
 
@@ -269,8 +269,8 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"labelField": "nonexistent_field",
-				"valueField": "id",
+				"labelColumn": "nonexistent_field",
+				"valueColumn": "id",
 			},
 		})
 

@@ -1,4 +1,4 @@
-package test
+package app_test
 
 import (
 	"io"
@@ -15,12 +15,13 @@ import (
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
+	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
 // TestAppStartStop tests basic app lifecycle using fx.
 func TestAppStartStop(t *testing.T) {
-	testApp, stop := NewTestApp(
+	testApp, stop := appTest.NewTestApp(
 		t,
 		fx.Replace(&config.DatasourceConfig{
 			Type: constants.DbSQLite,
@@ -68,7 +69,7 @@ func (r *TestResource) Ping(ctx fiber.Ctx) error {
 
 // TestAppWithCustomResource tests app with custom API resource.
 func TestAppWithCustomResource(t *testing.T) {
-	testApp, stop := NewTestApp(
+	testApp, stop := appTest.NewTestApp(
 		t,
 		fx.Replace(&config.DatasourceConfig{
 			Type: constants.DbSQLite,

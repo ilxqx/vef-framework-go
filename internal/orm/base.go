@@ -9,6 +9,12 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
+// DbAccessor provides access to the underlying Db instance.
+type DbAccessor interface {
+	// Db returns the underlying Db instance.
+	Db() Db
+}
+
 // QueryExecutor is an interface that defines the methods for executing database queries.
 // It provides the basic execution methods that all query types must implement.
 type QueryExecutor interface {

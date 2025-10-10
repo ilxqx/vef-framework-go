@@ -27,27 +27,27 @@ type BunDb struct {
 }
 
 func (d *BunDb) NewSelect() SelectQuery {
-	return NewSelectQuery(d.db)
+	return NewSelectQuery(d)
 }
 
 func (d *BunDb) NewInsert() InsertQuery {
-	return NewInsertQuery(d.db)
+	return NewInsertQuery(d)
 }
 
 func (d *BunDb) NewUpdate() UpdateQuery {
-	return NewUpdateQuery(d.db)
+	return NewUpdateQuery(d)
 }
 
 func (d *BunDb) NewDelete() DeleteQuery {
-	return NewDeleteQuery(d.db)
+	return NewDeleteQuery(d)
 }
 
 func (d *BunDb) NewMerge() MergeQuery {
-	return NewMergeQuery(d.db)
+	return NewMergeQuery(d)
 }
 
 func (d *BunDb) NewRaw(query string, args ...any) RawQuery {
-	return newRawQuery(d.db, query, args...)
+	return newRawQuery(d, query, args...)
 }
 
 func (d *BunDb) RunInTx(ctx context.Context, fn func(context.Context, Db) error) error {

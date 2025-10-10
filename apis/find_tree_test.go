@@ -1,4 +1,4 @@
-package test
+package apis_test
 
 import (
 	"github.com/gofiber/fiber/v3"
@@ -41,8 +41,8 @@ func NewTestCategoryFindTreeResource() api.Resource {
 		Resource: api.NewResource("test/category_tree"),
 		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
-			IdField("id").
-			ParentIdField("parent_id"),
+			IdColumn("id").
+			ParentIdColumn("parent_id"),
 	}
 }
 
@@ -57,8 +57,8 @@ func NewFilteredCategoryFindTreeResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_filtered"),
 		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
-			IdField("id").
-			ParentIdField("parent_id").
+			IdColumn("id").
+			ParentIdColumn("parent_id").
 			FilterApplier(func(search TestCategorySearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
 				return func(cb orm.ConditionBuilder) {
 					// Only show Electronics and its children
@@ -82,8 +82,8 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_ordered"),
 		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
-			IdField("id").
-			ParentIdField("parent_id").
+			IdColumn("id").
+			ParentIdColumn("parent_id").
 			SortApplier(func(search TestCategorySearch, ctx fiber.Ctx) orm.ApplyFunc[apis.Sorter] {
 				return func(s apis.Sorter) {
 					s.OrderBy("sort")

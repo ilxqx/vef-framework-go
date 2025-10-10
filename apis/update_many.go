@@ -17,8 +17,9 @@ import (
 type updateManyAPI[TModel, TParams any] struct {
 	APIBuilder[UpdateManyAPI[TModel, TParams]]
 
-	preUpdateMany  PreUpdateManyProcessor[TModel, TParams]
-	postUpdateMany PostUpdateManyProcessor[TModel, TParams]
+	preUpdateMany   PreUpdateManyProcessor[TModel, TParams]
+	postUpdateMany  PostUpdateManyProcessor[TModel, TParams]
+	disableDataPerm bool
 }
 
 // Provide generates the final API specification for batch model updates.
@@ -41,6 +42,12 @@ func (u *updateManyAPI[TModel, TParams]) PreUpdateMany(processor PreUpdateManyPr
 
 func (u *updateManyAPI[TModel, TParams]) PostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyAPI[TModel, TParams] {
 	u.postUpdateMany = processor
+
+	return u
+}
+
+func (u *updateManyAPI[TModel, TParams]) DisableDataPerm() UpdateManyAPI[TModel, TParams] {
+	u.disableDataPerm = true
 
 	return u
 }
@@ -83,8 +90,16 @@ func (u *updateManyAPI[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.C
 				}
 			}
 
+			// Build query with data permission filtering
+			query := db.NewSelect().Model(&models[i]).WherePK()
+			if !u.disableDataPerm {
+				if err := applyDataPermission(query, ctx); err != nil {
+					return err
+				}
+			}
+
 			// Load existing model
-			if err := db.NewSelect().Model(&models[i]).WherePK().Scan(ctx.Context(), &oldModels[i]); err != nil {
+			if err := query.Scan(ctx.Context(), &oldModels[i]); err != nil {
 				return err
 			}
 		}

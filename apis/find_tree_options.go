@@ -14,7 +14,7 @@ import (
 type findTreeOptionsAPI[TModel, TSearch any] struct {
 	FindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]]
 
-	fieldMapping *TreeOptionFieldMapping
+	columnMapping *TreeOptionColumnMapping
 }
 
 func (a *findTreeOptionsAPI[TModel, TSearch]) Provide() api.Spec {
@@ -27,19 +27,19 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findTreeOptionsAPI; call Provide() instead")
 }
 
-func (a *findTreeOptionsAPI[TModel, TSearch]) FieldMapping(mapping *TreeOptionFieldMapping) FindTreeOptionsAPI[TModel, TSearch] {
-	a.fieldMapping = mapping
+func (a *findTreeOptionsAPI[TModel, TSearch]) ColumnMapping(mapping *TreeOptionColumnMapping) FindTreeOptionsAPI[TModel, TSearch] {
+	a.columnMapping = mapping
 
 	return a
 }
 
-func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ctx fiber.Ctx, db orm.Db, params TreeOptionParams, search TSearch) error {
-	// Pre-compute schema information
-	schema := db.TableOf((*TModel)(nil))
+func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TreeOptionParams, search TSearch) error, error) {
+	if err := a.Init(db); err != nil {
+		return nil, err
+	}
 
-	// Pre-compute whether default created_at ordering should be applied
-	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
-	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
+	// Pre-compute schema information for field validation
+	schema := db.TableOf((*TModel)(nil))
 
 	// Pre-compute tree adapter for building hierarchical structure
 	treeAdapter := treebuilder.Adapter[TreeOption]{
@@ -57,49 +57,49 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 	return func(ctx fiber.Ctx, db orm.Db, params TreeOptionParams, search TSearch) error {
 		var flatOptions []TreeOption
 
-		mergeTreeOptionFieldMapping(&params.TreeOptionFieldMapping, a.fieldMapping)
+		mergeTreeOptionColumnMapping(&params.TreeOptionColumnMapping, a.columnMapping)
 
-		if err := validateTreeOptionFields(schema, &params.TreeOptionFieldMapping); err != nil {
+		if err := validateTreeOptionColumns(schema, &params.TreeOptionColumnMapping); err != nil {
 			return err
 		}
 
-		// Helper function to apply field selections with proper aliasing
-		applyFieldSelections := func(selectQuery orm.SelectQuery) {
-			if params.ValueField == valueField {
-				selectQuery.Select(params.ValueField)
+		// Helper function to apply column selections with proper aliasing
+		applyColumnSelections := func(selectQuery orm.SelectQuery) {
+			if params.ValueColumn == valueColumn {
+				selectQuery.Select(params.ValueColumn)
 			} else {
-				selectQuery.SelectAs(params.ValueField, valueField)
+				selectQuery.SelectAs(params.ValueColumn, valueColumn)
 			}
 
-			if params.LabelField == labelField {
-				selectQuery.Select(params.LabelField)
+			if params.LabelColumn == labelColumn {
+				selectQuery.Select(params.LabelColumn)
 			} else {
-				selectQuery.SelectAs(params.LabelField, labelField)
+				selectQuery.SelectAs(params.LabelColumn, labelColumn)
 			}
 
-			if params.IdField == idField {
-				selectQuery.Select(params.IdField)
+			if params.IdColumn == idColumn {
+				selectQuery.Select(params.IdColumn)
 			} else {
-				selectQuery.SelectAs(params.IdField, idField)
+				selectQuery.SelectAs(params.IdColumn, idColumn)
 			}
 
-			if params.ParentIdField == parentIdField {
-				selectQuery.Select(params.ParentIdField)
+			if params.ParentIdColumn == parentIdColumn {
+				selectQuery.Select(params.ParentIdColumn)
 			} else {
-				selectQuery.SelectAs(params.ParentIdField, parentIdField)
+				selectQuery.SelectAs(params.ParentIdColumn, parentIdColumn)
 			}
 
-			if params.DescriptionField != constants.Empty {
-				if params.DescriptionField == descriptionField {
-					selectQuery.Select(params.DescriptionField)
+			if params.DescriptionColumn != constants.Empty {
+				if params.DescriptionColumn == descriptionColumn {
+					selectQuery.Select(params.DescriptionColumn)
 				} else {
-					selectQuery.SelectAs(params.DescriptionField, descriptionField)
+					selectQuery.SelectAs(params.DescriptionColumn, descriptionColumn)
 				}
 			}
 
-			if params.SortField != constants.Empty {
-				selectQuery.Select(params.SortField)
-			} else if shouldApplyDefaultSort {
+			if params.SortColumn != constants.Empty {
+				selectQuery.Select(params.SortColumn)
+			} else if a.ShouldApplyDefaultSort() {
 				selectQuery.Select(constants.ColumnCreatedAt)
 			}
 		}
@@ -110,17 +110,17 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 				a.ApplyConditions(selectQuery.Model((*TModel)(nil)), search, ctx)
 				a.ApplyRelations(selectQuery, search, ctx)
 				a.ApplyQuery(selectQuery, search, ctx)
-				applyFieldSelections(selectQuery)
+				applyColumnSelections(selectQuery)
 
 				// Recursive part: find all ancestor nodes
 				selectQuery.UnionAll(func(selectQuery orm.SelectQuery) {
 					a.ApplyRelations(selectQuery, search, ctx)
 					a.ApplyQuery(selectQuery, search, ctx)
-					applyFieldSelections(selectQuery.Model((*TModel)(nil)))
+					applyColumnSelections(selectQuery.Model((*TModel)(nil)))
 					selectQuery.JoinTable(
 						"tmp_tree",
 						func(cb orm.ConditionBuilder) {
-							cb.EqualsColumn(params.IdField, dbhelpers.ColumnWithAlias(params.ParentIdField, "tt"))
+							cb.EqualsColumn(params.IdColumn, dbhelpers.ColumnWithAlias(params.ParentIdColumn, "tt"))
 						},
 						"tt",
 					)
@@ -130,14 +130,11 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 			Distinct()
 
 		// Apply sorting
-		if params.SortField != constants.Empty {
-			cteQuery.OrderBy(params.SortField)
+		if params.SortColumn != constants.Empty {
+			cteQuery.OrderBy(params.SortColumn)
 		} else {
 			a.ApplySort(cteQuery, search, ctx)
-
-			if shouldApplyDefaultSort {
-				cteQuery.OrderBy(constants.ColumnCreatedAt)
-			}
+			a.ApplyDefaultSort(cteQuery)
 		}
 
 		// Execute recursive CTE query
@@ -149,5 +146,5 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) func(ct
 		treeOptions := treebuilder.Build(flatOptions, treeAdapter)
 
 		return result.Ok(a.Process(treeOptions, search, ctx)).Response(ctx)
-	}
+	}, nil
 }

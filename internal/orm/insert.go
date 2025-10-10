@@ -13,15 +13,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// NewInsertQuery creates a new InsertQuery instance with the provided database connection.
+// NewInsertQuery creates a new InsertQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewInsertQuery(db bun.IDB) *BunInsertQuery {
+func NewInsertQuery(db *BunDb) *BunInsertQuery {
 	eb := &QueryExprBuilder{}
-	iq := db.NewInsert()
-	dialect := db.Dialect()
+	iq := db.db.NewInsert()
+	dialect := db.db.Dialect()
 	query := &BunInsertQuery{
 		QueryBuilder: newQueryBuilder(dialect, iq, eb),
 
+		db:      db,
 		dialect: dialect,
 		eb:      eb,
 		query:   iq,
@@ -36,9 +37,14 @@ func NewInsertQuery(db bun.IDB) *BunInsertQuery {
 type BunInsertQuery struct {
 	QueryBuilder
 
+	db      *BunDb
 	dialect schema.Dialect
 	eb      ExprBuilder
 	query   *bun.InsertQuery
+}
+
+func (q *BunInsertQuery) Db() Db {
+	return q.db
 }
 
 func (q *BunInsertQuery) With(name string, builder func(SelectQuery)) InsertQuery {
@@ -187,49 +193,36 @@ func (q *BunInsertQuery) ApplyIf(condition bool, fns ...ApplyFunc[InsertQuery]) 
 // beforeInsert applies auto column handlers before executing the insert operation.
 // It processes InsertHandler to automatically set values like IDs, timestamps, and user tracking.
 func (q *BunInsertQuery) beforeInsert() {
-	model := q.query.GetModel()
-	if model != nil {
-		if tm, ok := model.(bun.TableModel); ok {
-			table := tm.Table()
-			modelValue := model.Value()
-			mv := reflect.Indirect(reflect.ValueOf(modelValue))
+	if table := q.GetTable(); table != nil {
+		modelValue := q.query.GetModel().Value()
+		mv := reflect.Indirect(reflect.ValueOf(modelValue))
 
-			processAutoColumns(autoColumns, q.query, false, table, modelValue, mv)
-		}
+		processAutoColumns(autoColumns, q.query, false, table, modelValue, mv)
 	}
 }
 
-func (q *BunInsertQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
+func (q *BunInsertQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
 	q.beforeInsert()
 
-	res, err := q.query.Exec(ctx, dest...)
-	if err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
+	if res, err = q.query.Exec(ctx, dest...); err != nil && dbhelpers.IsDuplicateKeyError(err) {
+		logger.Warnf("Record already exists: %v", err)
 
-			return nil, result.ErrRecordAlreadyExists
-		}
-
-		return nil, err
+		return nil, result.ErrRecordAlreadyExists
 	}
 
-	return res, nil
+	return res, err
 }
 
-func (q *BunInsertQuery) Scan(ctx context.Context, dest ...any) error {
+func (q *BunInsertQuery) Scan(ctx context.Context, dest ...any) (err error) {
 	q.beforeInsert()
 
-	if err := q.query.Scan(ctx, dest...); err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
+	if err = q.query.Scan(ctx, dest...); err != nil && dbhelpers.IsDuplicateKeyError(err) {
+		logger.Warnf("Record already exists: %v", err)
 
-			return result.ErrRecordAlreadyExists
-		}
-
-		return err
+		return result.ErrRecordAlreadyExists
 	}
 
-	return nil
+	return err
 }
 
 func (q *BunInsertQuery) Unwrap() *bun.InsertQuery {

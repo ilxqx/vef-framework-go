@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -14,9 +13,9 @@ import (
 type findTreeAPI[TModel, TSearch any] struct {
 	FindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]]
 
-	idField       string
-	parentIdField string
-	treeBuilder   func(flatModels []TModel) []TModel
+	idColumn       string
+	parentIdColumn string
+	treeBuilder    func(flatModels []TModel) []TModel
 }
 
 func (a *findTreeAPI[TModel, TSearch]) Provide() api.Spec {
@@ -29,25 +28,27 @@ func (a *findTreeAPI[TModel, TSearch]) Build(handler any) api.Spec {
 	panic("apis: do not call FindAPI.Build on findTreeAPI; call Provide() instead")
 }
 
-func (a *findTreeAPI[TModel, TSearch]) IdField(name string) FindTreeAPI[TModel, TSearch] {
-	a.idField = name
+func (a *findTreeAPI[TModel, TSearch]) IdColumn(name string) FindTreeAPI[TModel, TSearch] {
+	a.idColumn = name
 
 	return a
 }
 
-func (a *findTreeAPI[TModel, TSearch]) ParentIdField(name string) FindTreeAPI[TModel, TSearch] {
-	a.parentIdField = name
+func (a *findTreeAPI[TModel, TSearch]) ParentIdColumn(name string) FindTreeAPI[TModel, TSearch] {
+	a.parentIdColumn = name
 
 	return a
 }
 
 func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
-	// Pre-compute schema information
-	schema := db.TableOf((*TModel)(nil))
-
-	// Pre-compute whether default created_at ordering should be applied
-	hasCreatedAt := schema.HasField(constants.ColumnCreatedAt)
-	shouldApplyDefaultSort := !a.HasSortApplier() && hasCreatedAt
+	// Initialize FindAPI with database schema information
+	// This pre-computes expensive operations like default sort configuration
+	if err := a.Init(db); err != nil {
+		// If initialization fails, return a handler that always returns the error
+		return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
+			return err
+		}
+	}
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 		var flatModels []TModel
@@ -67,7 +68,7 @@ func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 						JoinTable(
 							"tmp_tree",
 							func(cb orm.ConditionBuilder) {
-								cb.EqualsColumn(a.idField, dbhelpers.ColumnWithAlias(a.parentIdField, "tt"))
+								cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "tt"))
 							},
 							"tt",
 						)
@@ -78,9 +79,8 @@ func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 
 		a.ApplySort(query, search, ctx)
 
-		if shouldApplyDefaultSort {
-			query.OrderByDesc(constants.ColumnCreatedAt)
-		}
+		// Apply default sort if configured
+		a.ApplyDefaultSort(query)
 
 		if err := query.Limit(maxQueryLimit).Scan(ctx.Context(), &flatModels); err != nil {
 			return err

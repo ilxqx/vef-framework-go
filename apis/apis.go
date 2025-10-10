@@ -104,9 +104,9 @@ func NewFindPageAPI[TModel, TSearch any](version ...string) FindPageAPI[TModel, 
 // NewFindOptionsAPI creates a new FindOptionsAPI with the specified options.
 func NewFindOptionsAPI[TModel, TSearch any](version ...string) FindOptionsAPI[TModel, TSearch] {
 	api := &findOptionsAPI[TModel, TSearch]{
-		fieldMapping: &OptionFieldMapping{
-			LabelField: defaultLabelField,
-			ValueField: defaultValueField,
+		columnMapping: &OptionColumnMapping{
+			LabelColumn: defaultLabelColumn,
+			ValueColumn: defaultValueColumn,
 		},
 	}
 	api.FindAPI = NewFindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]](api, version...)
@@ -116,12 +116,12 @@ func NewFindOptionsAPI[TModel, TSearch any](version ...string) FindOptionsAPI[TM
 
 // NewFindTreeAPI creates a new FindTreeAPI for hierarchical data retrieval.
 // The treeBuilder function converts flat database records into nested tree structures.
-// Requires models to have id and parent_id fields for parent-child relationships.
+// Requires models to have id and parent_id columns for parent-child relationships.
 func NewFindTreeAPI[TModel, TSearch any](treeBuilder func(flatModels []TModel) []TModel, version ...string) FindTreeAPI[TModel, TSearch] {
 	api := &findTreeAPI[TModel, TSearch]{
-		idField:       idField,
-		parentIdField: parentIdField,
-		treeBuilder:   treeBuilder,
+		idColumn:       idColumn,
+		parentIdColumn: parentIdColumn,
+		treeBuilder:    treeBuilder,
 	}
 	api.FindAPI = NewFindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]](api, version...)
 
@@ -131,13 +131,13 @@ func NewFindTreeAPI[TModel, TSearch any](treeBuilder func(flatModels []TModel) [
 // NewFindTreeOptionsAPI creates a new FindTreeOptionsAPI with the specified options.
 func NewFindTreeOptionsAPI[TModel, TSearch any](version ...string) FindTreeOptionsAPI[TModel, TSearch] {
 	api := &findTreeOptionsAPI[TModel, TSearch]{
-		fieldMapping: &TreeOptionFieldMapping{
-			OptionFieldMapping: OptionFieldMapping{
-				LabelField: defaultLabelField,
-				ValueField: defaultValueField,
+		columnMapping: &TreeOptionColumnMapping{
+			OptionColumnMapping: OptionColumnMapping{
+				LabelColumn: defaultLabelColumn,
+				ValueColumn: defaultValueColumn,
 			},
-			IdField:       idField,
-			ParentIdField: parentIdField,
+			IdColumn:       idColumn,
+			ParentIdColumn: parentIdColumn,
 		},
 	}
 	api.FindAPI = NewFindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]](api, version...)

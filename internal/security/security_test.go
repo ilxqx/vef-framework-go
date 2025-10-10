@@ -1,7 +1,8 @@
-package test
+package security_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -32,8 +33,8 @@ type MockUserLoader struct {
 	mock.Mock
 }
 
-func (m *MockUserLoader) LoadByUsername(username string) (*securityPkg.Principal, string, error) {
-	args := m.Called(username)
+func (m *MockUserLoader) LoadByUsername(ctx context.Context, username string) (*securityPkg.Principal, string, error) {
+	args := m.Called(ctx, username)
 	if args.Get(0) == nil {
 		return nil, args.String(1), args.Error(2)
 	}
@@ -41,8 +42,8 @@ func (m *MockUserLoader) LoadByUsername(username string) (*securityPkg.Principal
 	return args.Get(0).(*securityPkg.Principal), args.String(1), args.Error(2)
 }
 
-func (m *MockUserLoader) LoadById(id string) (*securityPkg.Principal, error) {
-	args := m.Called(id)
+func (m *MockUserLoader) LoadById(ctx context.Context, id string) (*securityPkg.Principal, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -127,21 +128,21 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 		// Setup default mock responses
 		fx.Invoke(func() {
 			// Default LoadByUsername behavior
-			suite.userLoader.On("LoadByUsername", "testuser").
+			suite.userLoader.On("LoadByUsername", mock.Anything, "testuser").
 				Return(suite.testUser, hashedPassword, nil).
 				Maybe()
 
 			// Default LoadById behavior
-			suite.userLoader.On("LoadById", "user001").
+			suite.userLoader.On("LoadById", mock.Anything, "user001").
 				Return(suite.testUser, nil).
 				Maybe()
 
 			// User not found cases
-			suite.userLoader.On("LoadByUsername", "nonexistent").
+			suite.userLoader.On("LoadByUsername", mock.Anything, "nonexistent").
 				Return(nil, "", nil).
 				Maybe()
 
-			suite.userLoader.On("LoadById", "nonexistent").
+			suite.userLoader.On("LoadById", mock.Anything, "nonexistent").
 				Return(nil, nil).
 				Maybe()
 		}),
@@ -225,7 +226,7 @@ func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 	suite.NotEmpty(data["refreshToken"])
 
 	// Verify mock was called
-	suite.userLoader.AssertCalled(suite.T(), "LoadByUsername", "testuser")
+	suite.userLoader.AssertCalled(suite.T(), "LoadByUsername", mock.Anything, "testuser")
 }
 
 func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
@@ -333,6 +334,60 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 		suite.False(body.IsOk(), "Expected login to fail with empty password")
 		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code)
 	})
+
+	suite.Run("LoaderRecordNotFoundError", func() {
+		username := "loaderNotFound"
+		suite.userLoader.On("LoadByUsername", mock.Anything, username).
+			Return((*securityPkg.Principal)(nil), "", result.ErrRecordNotFound).
+			Once()
+
+		resp := suite.makeAPIRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "security/auth",
+				Action:   "login",
+				Version:  "v1",
+			},
+			Params: map[string]any{
+				"type":        security.AuthTypePassword,
+				"principal":   username,
+				"credentials": "password123",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+
+		body := suite.readBody(resp)
+		suite.False(body.IsOk(), "Expected login to fail when loader reports record not found")
+		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code)
+		suite.userLoader.AssertExpectations(suite.T())
+	})
+
+	suite.Run("LoaderUnexpectedError", func() {
+		username := "loaderUnexpected"
+		suite.userLoader.On("LoadByUsername", mock.Anything, username).
+			Return((*securityPkg.Principal)(nil), "", errors.New("loader failure")).
+			Once()
+
+		resp := suite.makeAPIRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "security/auth",
+				Action:   "login",
+				Version:  "v1",
+			},
+			Params: map[string]any{
+				"type":        security.AuthTypePassword,
+				"principal":   username,
+				"credentials": "password123",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+
+		body := suite.readBody(resp)
+		suite.False(body.IsOk(), "Expected login to fail when loader returns unexpected error")
+		suite.Equal(result.ErrCodeCredentialsInvalid, body.Code)
+		suite.userLoader.AssertExpectations(suite.T())
+	})
 }
 
 func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
@@ -387,7 +442,7 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 	suite.NotEqual(tokens["accessToken"], data["accessToken"])
 
 	// Verify LoadById was called
-	suite.userLoader.AssertCalled(suite.T(), "LoadById", "user001")
+	suite.userLoader.AssertCalled(suite.T(), "LoadById", mock.Anything, "user001")
 }
 
 func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
@@ -519,7 +574,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 	defer func() { suite.userLoader.ExpectedCalls = prevExpected }()
 
 	// Add an override for the next LoadById call and move it to the front so it matches first
-	call := suite.userLoader.On("LoadById", mock.Anything).Return((*securityPkg.Principal)(nil), nil).Once()
+	call := suite.userLoader.On("LoadById", mock.Anything, mock.Anything).Return((*securityPkg.Principal)(nil), nil).Once()
 	// Reorder: move last added expectation to the front
 	if n := len(suite.userLoader.ExpectedCalls); n > 1 {
 		last := suite.userLoader.ExpectedCalls[n-1]

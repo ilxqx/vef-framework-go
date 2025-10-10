@@ -18,22 +18,22 @@ type Option struct {
 	Meta map[string]any `json:"meta,omitempty"`
 }
 
-// OptionFieldMapping defines the mapping between database fields and option fields.
-type OptionFieldMapping struct {
-	// Field name for label (default: "name")
-	LabelField string `json:"labelField"`
-	// Field name for value (default: "id")
-	ValueField string `json:"valueField"`
-	// Field name for description
-	DescriptionField string `json:"descriptionField"`
-	// Field name for sorting
-	SortField string `json:"sortField"`
+// OptionColumnMapping defines the mapping between database columns and option fields.
+type OptionColumnMapping struct {
+	// Column name for label (default: "name")
+	LabelColumn string `json:"labelColumn"`
+	// Column name for value (default: "id")
+	ValueColumn string `json:"valueColumn"`
+	// Column name for description
+	DescriptionColumn string `json:"descriptionColumn"`
+	// Column name for sorting
+	SortColumn string `json:"sortColumn"`
 }
 
 // OptionParams is the API request parameter for querying options.
 type OptionParams struct {
 	api.In
-	OptionFieldMapping
+	OptionColumnMapping
 }
 
 // TreeOption represents a hierarchical selectable item that can contain child options.
@@ -49,18 +49,18 @@ type TreeOption struct {
 	Children []TreeOption `json:"children,omitempty"`
 }
 
-// TreeOptionFieldMapping defines the mapping between database fields and tree option fields.
-type TreeOptionFieldMapping struct {
-	OptionFieldMapping
+// TreeOptionColumnMapping defines the mapping between database columns and tree option fields.
+type TreeOptionColumnMapping struct {
+	OptionColumnMapping
 
-	// Field name for ID (default: "id")
-	IdField string `json:"idField"`
-	// Field name for parent ID (default: "parentId")
-	ParentIdField string `json:"parentIdField"`
+	// Column name for ID (default: "id")
+	IdColumn string `json:"idColumn"`
+	// Column name for parent ID (default: "parentId")
+	ParentIdColumn string `json:"parentIdColumn"`
 }
 
 // TreeOptionParams is the API request parameter for querying tree options.
 type TreeOptionParams struct {
 	api.In
-	TreeOptionFieldMapping
+	TreeOptionColumnMapping
 }

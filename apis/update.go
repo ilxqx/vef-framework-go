@@ -17,8 +17,9 @@ import (
 type updateAPI[TModel, TParams any] struct {
 	APIBuilder[UpdateAPI[TModel, TParams]]
 
-	preUpdate  PreUpdateProcessor[TModel, TParams]
-	postUpdate PostUpdateProcessor[TModel, TParams]
+	preUpdate       PreUpdateProcessor[TModel, TParams]
+	postUpdate      PostUpdateProcessor[TModel, TParams]
+	disableDataPerm bool
 }
 
 // Provide generates the final API specification for model updates.
@@ -41,6 +42,12 @@ func (u *updateAPI[TModel, TParams]) PreUpdate(processor PreUpdateProcessor[TMod
 
 func (u *updateAPI[TModel, TParams]) PostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateAPI[TModel, TParams] {
 	u.postUpdate = processor
+
+	return u
+}
+
+func (u *updateAPI[TModel, TParams]) DisableDataPerm() UpdateAPI[TModel, TParams] {
+	u.disableDataPerm = true
 
 	return u
 }
@@ -79,7 +86,15 @@ func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 			}
 		}
 
-		if err := db.NewSelect().Model(&model).WherePK().Scan(ctx.Context(), &oldModel); err != nil {
+		// Build query with data permission filtering
+		query := db.NewSelect().Model(&model).WherePK()
+		if !u.disableDataPerm {
+			if err := applyDataPermission(query, ctx); err != nil {
+				return err
+			}
+		}
+
+		if err := query.Scan(ctx.Context(), &oldModel); err != nil {
 			return err
 		}
 
