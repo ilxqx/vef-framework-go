@@ -44,9 +44,6 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 		return nil, err
 	}
 
-	logger.Infof("Authentication successful for principal '%s' with type '%s'",
-		authentication.Principal, authentication.Type)
-
 	return principal, nil
 }
 
