@@ -31,6 +31,7 @@
   "username_required": "Username cannot be empty",
   "password_required": "Password cannot be empty",
   "invalid_credentials": "Invalid username or password",
+  "system_principal_login_forbidden": "System internal user login is forbidden",
   "external_app_loader_not_implemented": "Please provide a 'security.ExternalAppLoader' implementation",
   "credentials_format_invalid": "Invalid signature format",
   "credentials_fields_required": "Signature, timestamp, or digest cannot be empty",

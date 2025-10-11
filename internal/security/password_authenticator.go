@@ -46,6 +46,11 @@ func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication
 		return nil, result.ErrWithCode(result.ErrCodePrincipalInvalid, i18n.T("username_required"))
 	}
 
+	// Prevent system internal principals from logging in
+	if username == constants.PrincipalSystem || username == constants.PrincipalCronJob || username == constants.PrincipalAnonymous {
+		return nil, result.ErrWithCode(result.ErrCodePrincipalInvalid, i18n.T("system_principal_login_forbidden"))
+	}
+
 	// Expect password in credentials (may be encrypted)
 	password, ok := authentication.Credentials.(string)
 	if !ok || password == constants.Empty {

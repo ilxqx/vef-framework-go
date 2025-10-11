@@ -31,6 +31,7 @@
   "username_required": "账号不能为空",
   "password_required": "密码不能为空",
   "invalid_credentials": "账号或密码错误",
+  "system_principal_login_forbidden": "禁止登录系统内部用户",
   "external_app_loader_not_implemented": "请提供一个 'security.ExternalAppLoader' 的实现",
   "credentials_format_invalid": "签名格式不正确",
   "credentials_fields_required": "签名、时间戳或摘要不能为空",
