@@ -2126,17 +2126,17 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 	// Test 5: SelectExpr with SelectModelColumns
 	type UserModelWithTotal struct {
-		Id          string `bun:"id"`
-		CreatedAt   string `bun:"created_at"`
-		CreatedBy   string `bun:"created_by"`
-		UpdatedAt   string `bun:"updated_at"`
-		UpdatedBy   string `bun:"updated_by"`
-		Name        string `bun:"name"`
-		Email       string `bun:"email"`
-		Age         int16  `bun:"age"`
-		IsActive    bool   `bun:"is_active"`
-		Meta        string `bun:"meta"`
-		TotalCount  int64  `bun:"total_count"`
+		Id         string `bun:"id"`
+		CreatedAt  string `bun:"created_at"`
+		CreatedBy  string `bun:"created_by"`
+		UpdatedAt  string `bun:"updated_at"`
+		UpdatedBy  string `bun:"updated_by"`
+		Name       string `bun:"name"`
+		Email      string `bun:"email"`
+		Age        int16  `bun:"age"`
+		IsActive   bool   `bun:"is_active"`
+		Meta       string `bun:"meta"`
+		TotalCount int64  `bun:"total_count"`
 	}
 	var users5 []UserModelWithTotal
 	err = suite.db.NewSelect().
@@ -2240,9 +2240,9 @@ func (suite *SelectTestSuite) TestSelectInSubQuery() {
 
 	// Test 3: Subquery in FROM clause with SelectAll
 	type UserSummary struct {
-		Name       string `bun:"name"`
-		Email      string `bun:"email"`
-		PostCount  int64  `bun:"post_count"`
+		Name      string `bun:"name"`
+		Email     string `bun:"email"`
+		PostCount int64  `bun:"post_count"`
 	}
 	var userSummaries []UserSummary
 	err = suite.db.NewSelect().
