@@ -34,7 +34,7 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
 		var models []TModel
 
-		query := a.BuildQuery(db, (*TModel)(nil), search, ctx)
+		query := a.BuildQuery(db, (*TModel)(nil), search, ctx).SelectModelColumns()
 
 		// Normalize pagination parameters
 		pageable.Normalize()

@@ -65,7 +65,5 @@ func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication 
 	principal := security.NewUser(subjectParts[0], subjectParts[1], claimsAccessor.Roles()...)
 	principal.AttemptUnmarshalDetails(claimsAccessor.Details())
 
-	logger.Infof("JWT authentication successful for principal '%s'", principal.Id)
-
 	return principal, nil
 }

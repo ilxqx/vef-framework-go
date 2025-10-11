@@ -1,6 +1,10 @@
 package orm
 
-import "github.com/ilxqx/vef-framework-go/constants"
+import (
+	"github.com/uptrace/bun"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+)
 
 type SelectTestSuite struct {
 	*ORMTestSuite
@@ -1938,4 +1942,327 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 		suite.NotEmpty(post.CategoryName, "Category name should be populated")
 		suite.T().Logf("Post: %s in category %s", post.Title, post.CategoryName)
 	}
+}
+
+// TestSelectMutualExclusivity tests that base column selection methods are mutually exclusive.
+func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
+	suite.T().Logf("Testing Select method mutual exclusivity for %s", suite.dbType)
+
+	// Test 1: SelectAll overrides Select
+	var users1 []User
+	err := suite.db.NewSelect().
+		Model(&users1).
+		Select("name").
+		SelectAll().
+		Scan(suite.ctx)
+	suite.NoError(err, "SelectAll should override Select")
+	suite.True(len(users1) > 0, "Should return results")
+	// Verify all columns are selected (not just name)
+	suite.NotEmpty(users1[0].Email, "Email should be populated when SelectAll is used")
+
+	// Test 2: Select overrides SelectAll
+	type UserNameOnly struct {
+		Name string `bun:"name"`
+	}
+	var users2 []UserNameOnly
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		SelectAll().
+		Select("name").
+		Scan(suite.ctx, &users2)
+	suite.NoError(err, "Select should override SelectAll")
+	suite.True(len(users2) > 0, "Should return results")
+	suite.NotEmpty(users2[0].Name, "Name should be populated")
+
+	// Test 3: SelectModelColumns overrides SelectAll
+	var users3 []User
+	err = suite.db.NewSelect().
+		Model(&users3).
+		SelectAll().
+		SelectModelColumns().
+		Scan(suite.ctx)
+	suite.NoError(err, "SelectModelColumns should override SelectAll")
+	suite.True(len(users3) > 0, "Should return results")
+
+	// Test 4: SelectAll overrides SelectModelColumns
+	var users4 []User
+	err = suite.db.NewSelect().
+		Model(&users4).
+		SelectModelColumns().
+		SelectAll().
+		Scan(suite.ctx)
+	suite.NoError(err, "SelectAll should override SelectModelColumns")
+	suite.True(len(users4) > 0, "Should return results")
+
+	// Test 5: SelectModelPKs overrides SelectModelColumns
+	type UserIDOnly struct {
+		Id string `bun:"id,pk"`
+	}
+	var users5 []UserIDOnly
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		SelectModelColumns().
+		SelectModelPKs().
+		Scan(suite.ctx, &users5)
+	suite.NoError(err, "SelectModelPKs should override SelectModelColumns")
+	suite.True(len(users5) > 0, "Should return results")
+	suite.NotEmpty(users5[0].Id, "ID should be populated")
+
+	// Test 6: SelectModelColumns overrides SelectModelPKs
+	var users6 []User
+	err = suite.db.NewSelect().
+		Model(&users6).
+		SelectModelPKs().
+		SelectModelColumns().
+		Scan(suite.ctx)
+	suite.NoError(err, "SelectModelColumns should override SelectModelPKs")
+	suite.True(len(users6) > 0, "Should return results")
+	suite.NotEmpty(users6[0].Name, "Name should be populated when SelectModelColumns is used")
+}
+
+// TestSelectExprCumulative tests that SelectExpr is cumulative and works with any base selection.
+func (suite *SelectTestSuite) TestSelectExprCumulative() {
+	suite.T().Logf("Testing SelectExpr cumulative behavior for %s", suite.dbType)
+
+	// Test 1: SelectExpr with SelectAll
+	type UserWithComputed struct {
+		Id       string `bun:"id"`
+		Name     string `bun:"name"`
+		Email    string `bun:"email"`
+		Age      int16  `bun:"age"`
+		AgeGroup string `bun:"age_group"`
+	}
+	var users1 []UserWithComputed
+	err := suite.db.NewSelect().
+		Model((*User)(nil)).
+		SelectAll().
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Case(func(cb CaseBuilder) {
+				cb.When(func(cond ConditionBuilder) {
+					cond.GreaterThan("age", 30)
+				}).Then("'senior'")
+				cb.Else("'junior'")
+			})
+		}, "age_group").
+		OrderBy("name").
+		Scan(suite.ctx, &users1)
+	suite.NoError(err, "SelectExpr should work with SelectAll")
+	suite.True(len(users1) > 0, "Should return results")
+	suite.NotEmpty(users1[0].Name, "Name should be populated")
+	suite.NotEmpty(users1[0].AgeGroup, "Computed age_group should be populated")
+
+	// Test 2: SelectExpr with Select
+	type UserWithRowNum struct {
+		Name   string `bun:"name"`
+		Email  string `bun:"email"`
+		RowNum int    `bun:"row_num"`
+	}
+	var users2 []UserWithRowNum
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		Select("name", "email").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.RowNumber(func(rb RowNumberBuilder) {
+				rb.Over().OrderBy("name")
+			})
+		}, "row_num").
+		OrderBy("name").
+		Scan(suite.ctx, &users2)
+	suite.NoError(err, "SelectExpr should work with Select")
+	suite.True(len(users2) > 0, "Should return results")
+	suite.NotEmpty(users2[0].Name, "Name should be populated")
+	suite.True(users2[0].RowNum > 0, "Row number should be populated")
+
+	// Test 3: Multiple SelectExpr calls (cumulative)
+	type UserWithMultipleComputed struct {
+		Name      string `bun:"name"`
+		UpperName string `bun:"upper_name"`
+		NameLen   int    `bun:"name_len"`
+	}
+	var users3 []UserWithMultipleComputed
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		Select("name").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Upper(eb.Column("name"))
+		}, "upper_name").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Length(eb.Column("name"))
+		}, "name_len").
+		OrderBy("name").
+		Scan(suite.ctx, &users3)
+	suite.NoError(err, "Multiple SelectExpr should be cumulative")
+	suite.True(len(users3) > 0, "Should return results")
+	suite.NotEmpty(users3[0].Name, "Name should be populated")
+	suite.NotEmpty(users3[0].UpperName, "Upper name should be populated")
+	suite.True(users3[0].NameLen > 0, "Name length should be populated")
+
+	// Test 4: SelectExpr preserved when switching base selection
+	type UserAllWithComputed struct {
+		Id       string `bun:"id"`
+		Name     string `bun:"name"`
+		Email    string `bun:"email"`
+		Age      int16  `bun:"age"`
+		IsActive bool   `bun:"is_active"`
+		RowNum   int    `bun:"row_num"`
+	}
+	var users4 []UserAllWithComputed
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		Select("name").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.RowNumber(func(rb RowNumberBuilder) {
+				rb.Over().OrderBy("name")
+			})
+		}, "row_num").
+		SelectAll(). // Switch to SelectAll, but SelectExpr should be preserved
+		OrderBy("name").
+		Scan(suite.ctx, &users4)
+	suite.NoError(err, "SelectExpr should be preserved when switching to SelectAll")
+	suite.True(len(users4) > 0, "Should return results")
+	suite.NotEmpty(users4[0].Name, "Name should be populated")
+	suite.NotEmpty(users4[0].Email, "Email should be populated (SelectAll)")
+	suite.True(users4[0].RowNum > 0, "Row number should still be populated (SelectExpr preserved)")
+
+	// Test 5: SelectExpr with SelectModelColumns
+	type UserModelWithTotal struct {
+		Id          string `bun:"id"`
+		CreatedAt   string `bun:"created_at"`
+		CreatedBy   string `bun:"created_by"`
+		UpdatedAt   string `bun:"updated_at"`
+		UpdatedBy   string `bun:"updated_by"`
+		Name        string `bun:"name"`
+		Email       string `bun:"email"`
+		Age         int16  `bun:"age"`
+		IsActive    bool   `bun:"is_active"`
+		Meta        string `bun:"meta"`
+		TotalCount  int64  `bun:"total_count"`
+	}
+	var users5 []UserModelWithTotal
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		SelectModelColumns().
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.WCount(func(wcb WindowCountBuilder) {
+				wcb.All().Over()
+			})
+		}, "total_count").
+		OrderBy("name").
+		Scan(suite.ctx, &users5)
+	suite.NoError(err, "SelectExpr should work with SelectModelColumns")
+	suite.True(len(users5) > 0, "Should return results")
+	suite.NotEmpty(users5[0].Name, "Name should be populated")
+	suite.True(users5[0].TotalCount > 0, "Total count should be populated")
+}
+
+// TestSelectIdempotency tests that SelectModelColumns and SelectModelPKs are idempotent.
+func (suite *SelectTestSuite) TestSelectIdempotency() {
+	suite.T().Logf("Testing Select method idempotency for %s", suite.dbType)
+
+	// Test 1: Multiple SelectModelColumns calls (should be idempotent)
+	var users1 []User
+	err := suite.db.NewSelect().
+		Model(&users1).
+		SelectModelColumns().
+		SelectModelColumns().
+		SelectModelColumns().
+		Scan(suite.ctx)
+	suite.NoError(err, "Multiple SelectModelColumns should not cause errors")
+	suite.True(len(users1) > 0, "Should return results")
+	suite.NotEmpty(users1[0].Name, "Name should be populated")
+
+	// Test 2: Multiple SelectModelPKs calls (should be idempotent)
+	type UserIDOnly struct {
+		Id string `bun:"id,pk"`
+	}
+	var users2 []UserIDOnly
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		SelectModelPKs().
+		SelectModelPKs().
+		SelectModelPKs().
+		Scan(suite.ctx, &users2)
+	suite.NoError(err, "Multiple SelectModelPKs should not cause errors")
+	suite.True(len(users2) > 0, "Should return results")
+	suite.NotEmpty(users2[0].Id, "ID should be populated")
+
+	// Test 3: Multiple SelectAll calls (should be idempotent)
+	var users3 []User
+	err = suite.db.NewSelect().
+		Model(&users3).
+		SelectAll().
+		SelectAll().
+		SelectAll().
+		Scan(suite.ctx)
+	suite.NoError(err, "Multiple SelectAll should not cause errors")
+	suite.True(len(users3) > 0, "Should return results")
+	suite.NotEmpty(users3[0].Email, "All columns should be populated")
+}
+
+// TestSelectInSubQuery tests that deferred select state is properly applied in subqueries.
+func (suite *SelectTestSuite) TestSelectInSubQuery() {
+	suite.T().Logf("Testing Select in subqueries for %s", suite.dbType)
+
+	// Test 1: SelectModelColumns in subquery should only select model columns
+	var users []User
+	err := suite.db.NewSelect().
+		Model(&users).
+		Where(func(cb ConditionBuilder) {
+			cb.InSubQuery("id", func(subquery SelectQuery) {
+				subquery.Model((*Post)(nil)).
+					Select("user_id"). // Should only select user_id, not all columns
+					Where(func(cb ConditionBuilder) {
+						cb.Equals("status", "published")
+					})
+			})
+		}).
+		OrderBy("name").
+		Scan(suite.ctx)
+	suite.NoError(err, "Subquery with Select should work correctly")
+	suite.True(len(users) > 0, "Should have users with published posts")
+
+	// Test 2: SelectExpr in subquery with aggregation
+	var popularPosts []Post
+	err = suite.db.NewSelect().
+		Model(&popularPosts).
+		Where(func(cb ConditionBuilder) {
+			cb.GreaterThanSubQuery("view_count", func(subquery SelectQuery) {
+				subquery.Model((*Post)(nil)).
+					SelectExpr(func(eb ExprBuilder) any {
+						return eb.AvgColumn("view_count")
+					})
+			})
+		}).
+		OrderByDesc("view_count").
+		Scan(suite.ctx)
+	suite.NoError(err, "Subquery with SelectExpr should work correctly")
+	suite.True(len(popularPosts) > 0, "Should have posts with above average views")
+
+	// Test 3: Subquery in FROM clause with SelectAll
+	type UserSummary struct {
+		Name       string `bun:"name"`
+		Email      string `bun:"email"`
+		PostCount  int64  `bun:"post_count"`
+	}
+	var userSummaries []UserSummary
+	err = suite.db.NewSelect().
+		TableSubQuery("u", func(sq SelectQuery) {
+			sq.Model((*User)(nil)).
+				SelectAll()
+		}).
+		Select("u.name", "u.email").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Expr("COALESCE((SELECT COUNT(*) FROM ? AS ? WHERE ?.? = ?.?), 0)",
+				bun.Name("test_post"),
+				bun.Name("p"),
+				bun.Name("p"),
+				bun.Name("user_id"),
+				bun.Name("u"),
+				bun.Name("id"),
+			)
+		}, "post_count").
+		OrderBy("u.name").
+		Scan(suite.ctx, &userSummaries)
+	suite.NoError(err, "Subquery in FROM with SelectAll should work")
+	suite.True(len(userSummaries) > 0, "Should return user summaries")
 }

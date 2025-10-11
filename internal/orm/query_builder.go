@@ -62,7 +62,14 @@ func (b *BaseQueryBuilder) CreateSubQuery(subQuery *bun.SelectQuery) SelectQuery
 // BuildSubQuery constructs a subquery using a builder function.
 func (b *BaseQueryBuilder) BuildSubQuery(builder func(query SelectQuery)) *bun.SelectQuery {
 	subQuery := b.query.NewSelect()
-	builder(b.CreateSubQuery(subQuery))
+	wrappedQuery := b.CreateSubQuery(subQuery)
+	builder(wrappedQuery)
+
+	// Apply deferred select state before returning the subquery
+	// This ensures that select operations in the subquery are properly applied
+	if sq, ok := wrappedQuery.(*BunSelectQuery); ok {
+		sq.applySelectState()
+	}
 
 	return subQuery
 }

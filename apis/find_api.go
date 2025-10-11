@@ -119,7 +119,6 @@ func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) BuildQuery(db orm.Db,
 }
 
 func (a *baseFindAPI[TModel, TSearch, TProcessorIn, TAPI]) ConfigureQuery(query orm.SelectQuery, model any, search TSearch, ctx fiber.Ctx) {
-	// Set the model first (required for data permission)
 	query.Model(model)
 
 	// Apply data permission if available

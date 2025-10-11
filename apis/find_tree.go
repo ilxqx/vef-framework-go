@@ -56,22 +56,24 @@ func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 		query := db.NewSelect().
 			WithRecursive("tmp_tree", func(query orm.SelectQuery) {
 				// Base query
-				a.ApplyConditions(query.Model((*TModel)(nil)), search, ctx)
+				a.ApplyDataPermission(query.Model((*TModel)(nil)), ctx)
+				a.ApplyConditions(query, search, ctx)
 				a.ApplyRelations(query, search, ctx)
+				a.ApplyAuditUserRelations(query)
 				a.ApplyQuery(query, search, ctx)
 
 				// Recursive part: find all ancestor nodes
 				query.UnionAll(func(query orm.SelectQuery) {
-					a.ApplyRelations(query, search, ctx)
+					a.ApplyRelations(query.Model((*TModel)(nil)), search, ctx)
+					a.ApplyAuditUserRelations(query)
 					a.ApplyQuery(query, search, ctx)
-					query.Model((*TModel)(nil)).
-						JoinTable(
-							"tmp_tree",
-							func(cb orm.ConditionBuilder) {
-								cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "tt"))
-							},
-							"tt",
-						)
+					query.JoinTable(
+						"tmp_tree",
+						func(cb orm.ConditionBuilder) {
+							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "tt"))
+						},
+						"tt",
+					)
 				})
 			}).
 			Distinct().

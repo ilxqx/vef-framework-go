@@ -42,6 +42,15 @@ type BunSelectQuery struct {
 	eb         ExprBuilder
 	query      *bun.SelectQuery
 	isSubQuery bool
+
+	// State tracking for deferred select operations
+	hasSelectAll          bool
+	hasSelectModelColumns bool
+	hasSelectModelPKs     bool
+	hasExplicitSelect     bool
+	explicitSelects       []func()
+	exprSelects           []func()
+	selectStateApplied    bool
 }
 
 func (q *BunSelectQuery) Db() Db {
@@ -72,44 +81,82 @@ func (q *BunSelectQuery) WithRecursive(name string, builder func(query SelectQue
 }
 
 func (q *BunSelectQuery) SelectAll() SelectQuery {
-	q.query.Column(columnAll)
+	q.clearSelectState()
+	q.hasSelectAll = true
 
 	return q
 }
 
 func (q *BunSelectQuery) Select(columns ...string) SelectQuery {
+	if q.hasSelectAll {
+		q.hasSelectAll = false
+	}
+	q.hasExplicitSelect = true
+
 	for _, column := range columns {
-		q.query.ColumnExpr("?", q.eb.Column(column))
+		q.explicitSelects = append(q.explicitSelects, func() {
+			q.query.ColumnExpr("?", q.eb.Column(column))
+		})
 	}
 
 	return q
 }
 
 func (q *BunSelectQuery) SelectAs(column, alias string) SelectQuery {
-	q.query.ColumnExpr("? AS ?", q.eb.Column(column), bun.Name(alias))
+	if q.hasSelectAll {
+		q.hasSelectAll = false
+	}
+	q.hasExplicitSelect = true
+
+	q.explicitSelects = append(q.explicitSelects, func() {
+		q.query.ColumnExpr("? AS ?", q.eb.Column(column), bun.Name(alias))
+	})
 
 	return q
 }
 
 func (q *BunSelectQuery) SelectExpr(builder func(ExprBuilder) any, alias ...string) SelectQuery {
-	expr := builder(q.eb)
+	var (
+		expr       = builder(q.eb)
+		aliasToUse string
+	)
 	if len(alias) > 0 && alias[0] != constants.Empty {
-		q.query.ColumnExpr("? AS ?", expr, bun.Name(alias[0]))
-	} else {
-		q.query.ColumnExpr("?", expr)
+		aliasToUse = alias[0]
 	}
+
+	q.exprSelects = append(q.exprSelects, func() {
+		if aliasToUse != constants.Empty {
+			q.query.ColumnExpr("? AS ?", expr, bun.Name(aliasToUse))
+		} else {
+			q.query.ColumnExpr("?", expr)
+		}
+	})
 
 	return q
 }
 
 func (q *BunSelectQuery) SelectModelColumns() SelectQuery {
-	q.query.ColumnExpr(constants.ExprTableColumns)
+	if q.hasSelectAll {
+		q.hasSelectAll = false
+	}
+	if q.hasSelectModelPKs {
+		q.hasSelectModelPKs = false
+	}
+
+	q.hasSelectModelColumns = true
 
 	return q
 }
 
 func (q *BunSelectQuery) SelectModelPKs() SelectQuery {
-	q.query.ColumnExpr(constants.ExprTablePKs)
+	if q.hasSelectAll {
+		q.hasSelectAll = false
+	}
+	if q.hasSelectModelColumns {
+		q.hasSelectModelColumns = false
+	}
+
+	q.hasSelectModelPKs = true
 
 	return q
 }
@@ -550,10 +597,47 @@ func (q *BunSelectQuery) ApplyIf(condition bool, fns ...ApplyFunc[SelectQuery]) 
 	return q
 }
 
+// clearSelectState clears base column selection state flags.
+// Note: exprSelects are NOT cleared as SelectExpr is cumulative and can combine with any mode.
+func (q *BunSelectQuery) clearSelectState() {
+	q.hasSelectAll = false
+	q.hasSelectModelColumns = false
+	q.hasSelectModelPKs = false
+	q.hasExplicitSelect = false
+	q.explicitSelects = nil
+}
+
+// applySelectState applies deferred select state before query execution.
+func (q *BunSelectQuery) applySelectState() {
+	if q.selectStateApplied {
+		return
+	}
+
+	if q.hasSelectAll {
+		q.query.Column(columnAll)
+	} else if q.hasSelectModelColumns {
+		q.query.ColumnExpr(constants.ExprTableColumns)
+	} else if q.hasSelectModelPKs {
+		q.query.ColumnExpr(constants.ExprTablePKs)
+	} else if q.hasExplicitSelect {
+		for _, selectFn := range q.explicitSelects {
+			selectFn()
+		}
+	}
+
+	for _, exprFn := range q.exprSelects {
+		exprFn()
+	}
+
+	q.selectStateApplied = true
+}
+
 func (q *BunSelectQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
 	if q.isSubQuery {
 		return nil, ErrSubQuery
 	}
+
+	q.applySelectState()
 
 	if res, err = q.query.Exec(ctx, dest...); err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, result.ErrRecordNotFound
@@ -567,6 +651,8 @@ func (q *BunSelectQuery) Scan(ctx context.Context, dest ...any) (err error) {
 		return ErrSubQuery
 	}
 
+	q.applySelectState()
+
 	if err = q.query.Scan(ctx, dest...); err != nil && errors.Is(err, sql.ErrNoRows) {
 		return result.ErrRecordNotFound
 	}
@@ -579,6 +665,8 @@ func (q *BunSelectQuery) Rows(ctx context.Context) (rows *sql.Rows, err error) {
 		return nil, ErrSubQuery
 	}
 
+	q.applySelectState()
+
 	if rows, err = q.query.Rows(ctx); err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, result.ErrRecordNotFound
 	}
@@ -590,6 +678,8 @@ func (q *BunSelectQuery) ScanAndCount(ctx context.Context, dest ...any) (int64, 
 	if q.isSubQuery {
 		return 0, ErrSubQuery
 	}
+
+	q.applySelectState()
 
 	total, err := q.query.ScanAndCount(ctx, dest...)
 	if err != nil {
@@ -608,6 +698,8 @@ func (q *BunSelectQuery) Count(ctx context.Context) (int64, error) {
 		return 0, ErrSubQuery
 	}
 
+	q.applySelectState()
+
 	total, err := q.query.Count(ctx)
 
 	return int64(total), err
@@ -617,6 +709,8 @@ func (q *BunSelectQuery) Exists(ctx context.Context) (bool, error) {
 	if q.isSubQuery {
 		return false, ErrSubQuery
 	}
+
+	q.applySelectState()
 
 	return q.query.Exists(ctx)
 }

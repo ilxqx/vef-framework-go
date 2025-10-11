@@ -107,16 +107,17 @@ func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 		cteQuery := db.NewSelect().
 			WithRecursive("tmp_tree", func(selectQuery orm.SelectQuery) {
 				// Base query
-				a.ApplyConditions(selectQuery.Model((*TModel)(nil)), search, ctx)
+				a.ApplyDataPermission(selectQuery.Model((*TModel)(nil)), ctx)
+				a.ApplyConditions(selectQuery, search, ctx)
 				a.ApplyRelations(selectQuery, search, ctx)
 				a.ApplyQuery(selectQuery, search, ctx)
 				applyColumnSelections(selectQuery)
 
 				// Recursive part: find all ancestor nodes
 				selectQuery.UnionAll(func(selectQuery orm.SelectQuery) {
-					a.ApplyRelations(selectQuery, search, ctx)
+					a.ApplyRelations(selectQuery.Model((*TModel)(nil)), search, ctx)
 					a.ApplyQuery(selectQuery, search, ctx)
-					applyColumnSelections(selectQuery.Model((*TModel)(nil)))
+					applyColumnSelections(selectQuery)
 					selectQuery.JoinTable(
 						"tmp_tree",
 						func(cb orm.ConditionBuilder) {

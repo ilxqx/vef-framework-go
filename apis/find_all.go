@@ -31,7 +31,7 @@ func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 		var models []TModel
 
-		query := a.BuildQuery(db, &models, search, ctx)
+		query := a.BuildQuery(db, &models, search, ctx).SelectModelColumns()
 
 		// Apply default sort if configured
 		a.ApplyDefaultSort(query)

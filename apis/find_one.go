@@ -31,7 +31,7 @@ func (a *findOneAPI[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 		var (
 			model TModel
-			query = a.BuildQuery(db, &model, search, ctx)
+			query = a.BuildQuery(db, &model, search, ctx).SelectModelColumns()
 		)
 
 		// Limit to 1 record for efficiency
