@@ -1,56 +1,36 @@
 # VEF Framework Go
 
-VEF Framework Go 是一个现代化的 Go Web 开发框架，基于依赖注入和模块化设计，提供开箱即用的 CRUD API、ORM、认证、缓存、事件系统等企业级功能。
+📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-## 🚀 核心特性
+A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 
-- **开箱即用的 CRUD API**: 预置一套略带偏见的 CRUD API，快速完成增删改查接口的开发
-- **强类型 ORM**: 类型安全数据库操作
-- **多策略认证体系**: 内置支持 JWT、OpenAPI 和基于密码的认证，具有可扩展的认证架构
-- **灵活的缓存系统**: 支持本地和 Redis 缓存
-- **异步事件系统**: 发布订阅模式的事件处理
-- **定时任务调度**: Cron表达式支持的任务系统
-- **模块化架构**: 依赖注入和模块化设计
+**Current Version:** v0.4.4
 
-## 📦 快速开始
+## Features
 
-### 1. 安装和初始化
+- **Single-Endpoint API Architecture** - All API requests through `POST /api` with unified request/response format
+- **Generic CRUD APIs** - Pre-built type-safe CRUD operations with minimal boilerplate
+- **Type-Safe ORM** - Bun-based ORM with fluent query builder and automatic audit tracking
+- **Multi-Strategy Authentication** - JWT, OpenAPI signature, and password authentication out of the box
+- **Modular Design** - Uber FX dependency injection with pluggable modules
+- **Built-in Features** - Cache, event bus, cron scheduler, object storage, data validation, i18n
+- **RBAC & Data Permissions** - Row-level security with customizable data scopes
+
+## Quick Start
+
+### Installation
 
 ```bash
-# 创建新项目
-mkdir myapp && cd myapp
-go mod init myapp
-
-# 安装框架
-go get -u github.com/ilxqx/vef-framework-go
+go get github.com/ilxqx/vef-framework-go
 ```
 
-### 2. 基础配置
+**Requirements:** Go 1.25 or higher
 
-创建 `application.toml` 配置文件：
+### Minimal Example
 
-```toml
-[vef.app]
-name = "my-app"
-port = 8080
-
-[vef.security]
-token_expires = "2h"
-
-[vef.datasource]
-type = "postgres"  # 目前支持 postgres、mysql、sqlite
-host = "localhost"
-port = 5432
-user = "postgres"
-password = "password"
-database = "postgres"
-schema = "public"
-```
-
-### 3. 创建主程序
+Create `main.go`:
 
 ```go
-// main.go
 package main
 
 import "github.com/ilxqx/vef-framework-go"
@@ -60,703 +40,1397 @@ func main() {
 }
 ```
 
-这样就完成了一个最基础的 Web 服务器，监听在 8080 端口。
+Create `configs/application.toml`:
 
-## 🏗️ 项目结构建议
+```toml
+[vef.app]
+name = "my-app"
+port = 8080
 
-```
-my-app/
-├── cmd/                 
-│   └── main.go          # 应用入口
-├── config/              
-│   └── application.toml # 配置文件
-├── internal/
-│   └── models/          # 数据模型定义
-│       └── user.go
-│   └── payloads/        # API参数定义
-│       └── user.go
-│   └── resources/       # API资源定义
-│       └── user.go
-│   └── services/        # 业务共享逻辑定义
-        └── user.go
+[vef.datasource]
+type = "postgres"
+host = "localhost"
+port = 5432
+user = "postgres"
+password = "password"
+database = "mydb"
+schema = "public"
 ```
 
-## 📊 数据模型
+Run the application:
 
-### 定义模型
+```bash
+go run main.go
+```
 
-所有模型都应继承 `orm.Model`，它提供了基础的审计字段：
+Your API server is now running at `http://localhost:8080`.
+
+## Architecture
+
+### Single-Endpoint Design
+
+VEF uses a single-endpoint approach where all API requests go through `POST /api` (or `POST /openapi` for external integrations).
+
+**Request Format:**
+
+```json
+{
+  "resource": "sys/user",
+  "action": "findPage",
+  "version": "v1",
+  "params": {
+    "page": 1,
+    "size": 20,
+    "keyword": "john"
+  },
+  "meta": {}
+}
+```
+
+**Response Format:**
+
+```json
+{
+  "code": 0,
+  "message": "Success",
+  "data": {
+    "page": 1,
+    "size": 20,
+    "total": 100,
+    "items": [...]
+  }
+}
+```
+
+### Dependency Injection
+
+VEF leverages Uber FX for dependency injection. Register components using helper functions:
 
 ```go
-// models/user.go
+vef.Run(
+    vef.ProvideAPIResource(NewUserResource),
+    vef.Provide(NewUserService),
+)
+```
+
+## Defining Models
+
+All models should embed `orm.Model` for automatic audit field management:
+
+```go
 package models
 
 import (
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/orm"
+    "github.com/ilxqx/vef-framework-go/null"
+    "github.com/ilxqx/vef-framework-go/orm"
 )
 
 type User struct {
-	orm.BaseModel `bun:"table:sys_user,alias:su"`
-	orm.Model     `bun:"extend"`
-
-	Username          string        `json:"username" validate:"required,alphanum,max=32" label:"用户账号"` // 用户账号
-	Password          string        `json:"-" validate:"required,min=6,max=128" label:"用户密码"`          // 用户密码
-	Name              string        `json:"name" validate:"required,max=16" label:"用户名称"`              // 用户名称
-	IsActive          null.Bool     `json:"isActive"`                                                  // 是否启用
-	IsLocked          null.Bool     `json:"isLocked"`                                                  // 是否锁定
-	Email             null.String   `json:"email" validate:"omitempty,email,max=64" label:"邮箱"`        // 邮箱
-	Remark            null.String   `json:"remark" validate:"omitempty,max=256" label:"备注"`            // 备注
+    orm.BaseModel `bun:"table:sys_user,alias:su"`
+    orm.Model     `bun:"extend"`
+    
+    Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
+    Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"Email"`
+    IsActive bool        `json:"isActive"`
 }
 ```
 
-### 模型字段标签
+**Field Tags:**
 
-具体请参考 [Bun ORM](https://bun.uptrace.dev/guide/models.html) 的文档。
+- `bun` - Bun ORM configuration (table name, column mapping, relations)
+- `json` - JSON serialization name
+- `validate` - Validation rules ([go-playground/validator](https://github.com/go-playground/validator))
+- `label` - Human-readable field name for error messages
 
-## 🔌 CRUD API
+**Audit Fields** (automatically maintained by `orm.Model`):
 
-### 1. 定义参数结构
+- `id` - Primary key (20-character XID in base32 encoding)
+- `created_at`, `created_by` - Creation timestamp and user ID
+- `updated_at`, `updated_by` - Last update timestamp and user ID
 
-框架预置了完整的 CRUD API，支持泛型和类型安全。首先需要定义参数结构体：
+**Null Types:** Use `null.String`, `null.Int`, `null.Bool`, etc. for nullable fields.
+
+## Building CRUD APIs
+
+### Step 1: Define Parameter Structures
+
+**Search Parameters:**
 
 ```go
-// payloads/user.go
 package payloads
 
-import (
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/orm"
-)
+import "github.com/ilxqx/vef-framework-go/api"
 
-// UserSearch 用户搜索参数
-// 嵌入 api.In 来标识这是一个API参数结构体
 type UserSearch struct {
-	api.In
-	Keyword string `json:"keyword" search:"contains,column=username|name|email"` // 关键词搜索
+    api.In
+    Keyword string `json:"keyword" search:"contains,column=username|email"`
+    IsActive *bool `json:"isActive" search:"eq"`
 }
+```
 
-// UserParams 用户新增/修改参数
+**Create/Update Parameters:**
+
+```go
 type UserParams struct {
-	api.In
-	orm.ModelPK `json:",inline"` // 嵌入主键字段（用于更新操作）
-
-	Username string      `json:"username" validate:"required,alphanum,max=32" label:"用户账号"`    // 用户账号
-	Password string      `json:"password" validate:"required,min=6,max=128" label:"用户密码"`      // 用户密码
-	Name     string      `json:"name" validate:"required,max=16" label:"用户名称"`                 // 用户名称
-	IsActive bool        `json:"isActive"`                                                     // 是否启用
-	IsLocked bool        `json:"isLocked"`                                                     // 是否锁定
-	Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"邮箱"`           // 邮箱
-	Remark   null.String `json:"remark" validate:"omitempty,max=256" label:"备注"`               // 备注
+    api.In
+    orm.ModelPK `json:",inline"` // For updates
+    
+    Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
+    Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"Email"`
+    IsActive bool        `json:"isActive"`
 }
 ```
 
-#### 参数验证规则
-
-框架使用 `validate` 标签进行参数验证，支持以下规则：
-
-- `required`: 必填字段
-- `omitempty`: 空值时跳过验证
-- `min=6,max=128`: 字符串长度限制
-- `email`: 邮箱格式验证
-- `alphanum`: 仅允许字母和数字
-- `label`: 错误信息中显示的字段名称
-
-更多验证规则请参考 [Go Playground Validator](https://github.com/go-playground/validator) 文档。
-
-### 2. 创建 API 资源
-
-使用框架预置的 CRUD API 创建资源：
+### Step 2: Create API Resource
 
 ```go
-// resources/user.go
 package resources
 
 import (
-	"myapp/internal/sys/models"
-	"myapp/internal/sys/payloads"
-
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
+    "github.com/ilxqx/vef-framework-go/api"
+    "github.com/ilxqx/vef-framework-go/apis"
 )
 
-type userResource struct {
-	api.Resource
-	*apis.FindAllAPI[models.User, payloads.UserSearch]
-	*apis.FindPageAPI[models.User, payloads.UserSearch]
-	*apis.CreateAPI[models.User, payloads.UserParams]
-	*apis.UpdateAPI[models.User, payloads.UserParams]
-	*apis.DeleteAPI[models.User]
+type UserResource struct {
+    api.Resource
+    *apis.FindAllAPI[models.User, payloads.UserSearch]
+    *apis.FindPageAPI[models.User, payloads.UserSearch]
+    *apis.CreateAPI[models.User, payloads.UserParams]
+    *apis.UpdateAPI[models.User, payloads.UserParams]
+    *apis.DeleteAPI[models.User]
 }
 
 func NewUserResource() api.Resource {
-	return &userResource{
-		Resource: api.NewResource("sys/user"),
-		FindAllAPI: apis.NewFindAllAPI[models.User, payloads.UserSearch]().Public(),
-		FindPageAPI: apis.NewFindPageAPI[models.User, payloads.UserSearch]().Public(),
-		FindOneAPI: apis.NewFindOneAPI[models.User, payloads.UserSearch]().Public(),
-		CreateAPI:  apis.NewCreateAPI[models.User, payloads.UserParams]().Public(),
-		UpdateAPI:  apis.NewUpdateAPI[models.User, payloads.UserParams]().Public(),
-		DeleteAPI:  apis.NewDeleteAPI[models.User]().Public(),
-	}
+    return &UserResource{
+        Resource: api.NewResource("sys/user"),
+        FindAllAPI: apis.NewFindAllAPI[models.User, payloads.UserSearch](),
+        FindPageAPI: apis.NewFindPageAPI[models.User, payloads.UserSearch](),
+        CreateAPI: apis.NewCreateAPI[models.User, payloads.UserParams](),
+        UpdateAPI: apis.NewUpdateAPI[models.User, payloads.UserParams](),
+        DeleteAPI: apis.NewDeleteAPI[models.User](),
+    }
 }
 ```
 
-### 3. 高级功能
-
-#### Pre/Post 处理器
-
-框架支持在 CRUD 操作前后执行自定义逻辑：
+### Step 3: Register Resource
 
 ```go
-// 创建用户资源时的业务逻辑处理
-func NewUserResource() api.Resource {
-	return &userResource{
-		Resource: api.NewResource("sys/user"),
-		CreateAPI: apis.NewCreateAPI[models.User, payloads.UserParams]().
-			PreCreate(func(model *models.User, params *payloads.UserParams, ctx fiber.Ctx, db orm.Db) error {
-				// 创建前的业务逻辑：密码加密
-				hashed, err := security.HashPassword(params.Password)
-				if err != nil {
-					return err
-				}
-				model.Password = hashed
-				return nil
-			}).
-			PostCreate(func(model *models.User, params *payloads.UserParams, ctx fiber.Ctx, tx orm.Db) error {
-				// 创建后的业务逻辑：发送欢迎邮件
-				return sendWelcomeEmail(model.Email)
-			}),
-		UpdateAPI: apis.NewUpdateAPI[models.User, payloads.UserParams]().
-			PreUpdate(func(oldModel, newModel *models.User, params *payloads.UserParams, ctx fiber.Ctx, db orm.Db) error {
-				// 更新前的业务逻辑：检查权限
-				if oldModel.IsLocked && !hasAdminPermission(ctx) {
-					return result.ErrWithCode(result.ErrCodeForbidden, "无法修改已锁定的用户")
-				}
-				return nil
-			}),
-		DeleteAPI: apis.NewDeleteAPI[models.User]().
-			PreDelete(func(model *models.User, ctx fiber.Ctx, db orm.Db) (err error) {
-				// 删除前的业务逻辑：检查依赖关系
-				var count int64
-				if count, err = db.NewSelect().Model((*models.Order)(nil)).
-					Where(func(cb orm.ConditionBuilder) {
-						cb.Equals("user_id", model.Id)
-					}).Count(ctx); err != nil {
-					return
-				}
-			
-				if count > 0 {
-					return result.Err("用户存在关联订单，无法删除")
-				}
-				return nil
-			}),
-	}
-}
-```
-
-#### 查询定制
-
-FindAPI 支持自定义查询逻辑：
-
-```go
-// 自定义用户查询
-FindAllAPI: apis.NewFindAllAPI[models.User, payloads.UserSearch]().
-	// 自定义查询条件
-	QueryApplier(func(query orm.SelectQuery, search payloads.UserSearch, ctx fiber.Ctx) {
-		query.Where(func(cb orm.ConditionBuilder) {
-			cb.IsTrue("is_active")
-		})
-	}).
-	// 包含关联关系
-	// Relations(...).
-	// 结果后处理
-	Processor(func(users []models.User, search payloads.UserSearch, ctx fiber.Ctx) any {
-		// 可以对结果进行转换或过滤
-		return users
-	}),
-```
-
-#### 服务注入
-
-框架支持在 API 资源中注入服务，并自动传递给处理器：
-
-```go
-// services/user_service.go
-type UserService struct {
-	logger log.Logger
-	db     orm.Db
-}
-
-func (s *UserService) WithLogger(logger log.Logger) *UserService {
-	// 框架会自动调用此方法注入 Logger
-	return &UserService{
-		logger: logger,
-		db:     s.db,
-	}
-}
-
-// 业务方法
-func (s *UserService) ValidateUser(user *models.User) error {
-	s.logger.Infof("Validating user: %s", user.Username)
-	// 业务逻辑...
-	return nil
-}
-
-// resources/user.go
-type userResource struct {
-	api.Resource
-	*apis.FindAllAPI[models.User, payloads.UserSearch]
-	*apis.CreateAPI[models.User, payloads.UserParams]
-	*apis.UpdateAPI[models.User, payloads.UserParams]
-	*apis.DeleteAPI[models.User]
-	
-	// 注入的服务
-	UserService *UserService
-}
-
-// 自定义处理器可以接收注入的服务
-func (r *userResource) ValidateUser(ctx fiber.Ctx, userService *UserService, params ValidateUserParams) error {
-	// userService 会被自动注入
-	user := &models.User{Username: params.Username}
-	return userService.ValidateUser(user)
-}
-```
-
-#### 参数验证规则
-
-框架使用 `validate` 标签进行参数验证，支持以下规则：
-
-- `required`: 必填字段
-- `omitempty`: 空值时跳过验证
-- `min=6,max=128`: 字符串长度限制
-- `email`: 邮箱格式验证
-- `alphanum`: 仅允许字母和数字
-- `label`: 错误信息中显示的字段名称
-
-更多验证规则请参考 [Go Playground Validator](https://github.com/go-playground/validator) 文档。
-
-### 2. 创建 API 资源
-
-```go
-// resources/user.go
-package resources
-
-import (
-	"myapp/internal/sys/models"
-	"myapp/internal/sys/payloads"
-
-	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/apis"
-)
-
-type userResource struct {
-	api.Resource
-	*apis.FindAllAPI[models.User, payloads.UserSearch]
-	*apis.CreateAPI[models.User, payloads.UserParams]
-	*apis.UpdateAPI[models.User, payloads.UserParams]
-	*apis.DeleteAPI[models.User]
-}
-
-func NewUserResource() api.Resource {
-	return &userResource{
-		Resource: api.NewResource("sys/user"),
-		FindAllAPI: apis.NewFindAllAPI[models.User, payloads.UserSearch](),
-		FindPageAPI: apis.NewFindPageAPI[models.User, payloads.UserSearch](),
-		FindOneAPI: apis.NewFindOneAPI[models.User, payloads.UserSearch](),
-		CreateAPI:  apis.NewCreateAPI[models.User, payloads.UserParams](),
-		UpdateAPI:  apis.NewUpdateAPI[models.User, payloads.UserParams](),
-		DeleteAPI:  apis.NewDeleteAPI[models.User](),
-	}
-}
-```
-
-### 注册资源
-
-在 `main.go` 中注册 API 资源：
-
-```go
-package main
-
-import (
-    "github.com/ilxqx/vef-framework-go"
-    "myapp/resources"
-)
-
 func main() {
     vef.Run(
         vef.ProvideAPIResource(resources.NewUserResource),
-        // 可以注册多个资源
-        // vef.ProvideAPIResource(resources.NewOrderResource),
     )
 }
 ```
 
-### API 请求规范
+### Pre-built APIs
 
-整个应用只存在一个端点 `POST /api`，请求体为 JSON 格式，请求体规范：
+| API | Description | Action |
+|-----|-------------|--------|
+| FindOneAPI | Find single record | findOne |
+| FindAllAPI | Find all records | findAll |
+| FindPageAPI | Paginated query | findPage |
+| CreateAPI | Create record | create |
+| UpdateAPI | Update record | update |
+| DeleteAPI | Delete record | delete |
+| CreateManyAPI | Batch create | createMany |
+| UpdateManyAPI | Batch update | updateMany |
+| DeleteManyAPI | Batch delete | deleteMany |
+| FindTreeAPI | Hierarchical query | findTree |
+| FindOptionsAPI | Options list (label/value) | findOptions |
+| FindTreeOptionsAPI | Tree options | findTreeOptions |
+| ImportAPI | Import from Excel/CSV | import |
+| ExportAPI | Export to Excel/CSV | export |
 
-```json
-{
-    "resource": "sys/user",
-    "action": "findAll",
-    "version": "v1",
-    "params": {
-        "keyword": "test"
-    },
-    "meta": {}
-}
-```
+### API Builder Methods
 
-`meta` 字段为可选字段，用于传递一些元数据，一般不会使用。
-
-## 🗄️ 数据库操作
-
-### 基础查询
-
-框架基于 Bun ORM 提供类型安全的数据库操作：
-
-```go
-// 简单查询
-func (r *userResource) GetUser(ctx fiber.Ctx, db orm.Db, params GetUserParams) error {
-	var user models.User
-	err := db.NewSelect().
-		Model(&user).
-		Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("id", params.Id)
-		}).
-		Scan(ctx)
-	if err != nil {
-		return err
-	}
-	return result.Ok(user).Response(ctx)
-}
-
-// 复杂查询示例
-func (r *userResource) SearchUsers(ctx fiber.Ctx, db orm.Db, params UserSearchParams) error {
-	var users []models.User
-	query := db.NewSelect().Model(&users)
-	
-	// 动态条件构建
-	if params.Name != constants.Empty {
-		query.Where(func(cb orm.ConditionBuilder) {
-			cb.Contains("name", params.Name)
-		})
-	}
-	
-	if params.IsActive != nil {
-		query.Where(func(cb orm.ConditionBuilder) {
-			cb.Equals("is_active", *params.IsActive)
-		})
-	}
-	
-	// 关联查询
-	query.Relation("Profile").Relation("Orders")
-	
-	// 排序和分页
-	query.OrderByDesc("created_at").Limit(params.Limit).Offset(params.Offset)
-	
-	if err := query.Scan(ctx); err != nil {
-		return err
-	}
-	return result.Ok(users).Response(ctx)
-}
-```
-
-### 事务操作
+Configure API behavior with fluent builder methods:
 
 ```go
-func (r *userResource) TransferUser(ctx fiber.Ctx, db orm.Db, params TransferParams) error {
-	return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
-		// 查询源用户
-		var fromUser models.User
-		err := tx.NewSelect().Model(&fromUser).
-			Where(func(cb orm.ConditionBuilder) {
-				cb.Equals("id", params.FromUserId)
-			}).Scan(txCtx)
-		if err != nil {
-			return err
-		}
-		
-		// 更新用户状态
-		_, err = tx.NewUpdate().Model(&fromUser).
-			Set("status", "transferred").
-			WherePK().Exec(txCtx)
-		if err != nil {
-			return err
-		}
-		
-		// 创建转移记录
-		transferRecord := &models.TransferRecord{
-			FromUserId: params.FromUserId,
-			ToUserId:   params.ToUserId,
-			Reason:     params.Reason,
-		}
-		_, err = tx.NewInsert().Model(transferRecord).Exec(txCtx)
-		return err
-	})
-}
+CreateAPI: apis.NewCreateAPI[User, UserParams]().
+    Action("createUser").              // Custom action name
+    Public().                          // No authentication required
+    PermToken("sys.user.create").      // Permission token
+    EnableAudit().                     // Enable audit logging
+    Timeout(10 * time.Second).         // Request timeout
+    RateLimit(10, 1*time.Minute).      // 10 requests per minute
 ```
 
-### 条件构建器
+### Pre/Post Hooks
+
+Add custom business logic before/after CRUD operations:
 
 ```go
-// 使用条件构建器进行复杂查询
-query := db.NewSelect().Model(&users).
-	Where(func(cb orm.ConditionBuilder) {
-		// AND 条件组合
-		cb.Equals("department_id", departmentId)
-		cb.GreaterThan("salary", 5000)
-		
-		// OR 条件组合
-		cb.Or(
-			func(cb orm.ConditionBuilder) {
-				cb.Equals("level", "senior")
-			},
-			func(cb orm.ConditionBuilder) {
-				cb.Equals("level", "expert")
-			},
-		)
-		
-		// IN 查询
-		cb.In("status", []string{"active", "pending"})
-		
-		// 模糊查询
-		cb.Contains("email", "@company.com")
-		cb.StartsWith("name", "张")
-		cb.EndsWith("phone", "1234")
-		
-		// 空值检查
-		cb.IsNotNull("avatar")
-		cb.IsNull("deleted_at")
-		
-		// 日期范围
-		cb.Between("created_at", startDate, endDate)
-	})
+CreateAPI: apis.NewCreateAPI[User, UserParams]().
+    PreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
+        // Hash password before creating user
+        hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
+        if err != nil {
+            return err
+        }
+        model.Password = string(hashed)
+        return nil
+    }).
+    PostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.Db) error {
+        // Send welcome email after user creation (within transaction)
+        return sendWelcomeEmail(model.Email)
+    }),
 ```
 
-## 🔗 依赖注入
+Available hooks:
 
-### 注册 API 资源
+**Single Record Operations:**
+- `PreCreate`, `PostCreate` - Before/after creation (PostCreate runs in transaction)
+- `PreUpdate`, `PostUpdate` - Before/after update (receives both old and new model, PostUpdate runs in transaction)
+- `PreDelete`, `PostDelete` - Before/after deletion (PostDelete runs in transaction)
 
-在 `main.go` 中注册 API 资源到依赖注入容器：
+**Batch Operations:**
+- `PreCreateMany`, `PostCreateMany` - Before/after batch creation (PostCreateMany runs in transaction)
+- `PreUpdateMany`, `PostUpdateMany` - Before/after batch update (receives old and new model arrays, PostUpdateMany runs in transaction)
+- `PreDeleteMany`, `PostDeleteMany` - Before/after batch deletion (PostDeleteMany runs in transaction)
 
-```go
-package main
+**Import/Export Operations:**
+- `PreImport`, `PostImport` - Before/after import (PreImport for validation, PostImport runs in transaction)
+- `PreExport` - Before export (for data formatting)
 
-import (
-    "github.com/ilxqx/vef-framework-go"
-    "my-app/resources"
-    "my-app/services"
-)
+### Custom Handlers
 
-func main() {
-    vef.Run(
-        // 注册 API 资源
-        vef.ProvideAPIResource(resources.NewUserResource),
-        vef.ProvideAPIResource(resources.NewOrderResource),
-        vef.ProvideAPIResource(resources.NewProductResource),
-        
-        // 注册服务
-        fx.Provide(services.NewUserService),
-        fx.Provide(services.NewEmailService),
-        
-        // 注册中间件
-        vef.ProvideMiddleware(middleware.NewAuthMiddleware),
-    )
-}
-```
-
-### 可注入的内置类型
-
-框架内置支持以下类型的自动注入：
+Add custom endpoints by defining methods on your resource:
 
 ```go
-// API 处理器可以接收这些内置类型
-func (r *userResource) MyHandler(
-	ctx fiber.Ctx,                    // HTTP 上下文
-	db orm.Db,                        // 数据库连接
-	logger log.Logger,                // 日志记录器
-	transformer trans.Transformer,    // 数据转换器
-	principal *security.Principal,    // 当前用户信息（需要认证）
-	params MyParams,                  // 请求参数（嵌入 api.In）
+func (r *UserResource) ResetPassword(
+    ctx fiber.Ctx,
+    db orm.Db,
+    logger log.Logger,
+    principal *security.Principal,
+    params ResetPasswordParams,
 ) error {
-	logger.Infof("Processing request for user: %s", principal.Name)
-	// 处理逻辑...
-	return result.Ok("success").Response(ctx)
-}
-```
-
-### 自定义参数解析器
-
-可以注册自定义的参数解析器来注入特定类型：
-
-```go
-// 自定义解析器
-type CustomServiceResolver struct{}
-
-func (*CustomServiceResolver) Type() reflect.Type {
-	return reflect.TypeFor[*services.CustomService]()
-}
-
-func (*CustomServiceResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
-	// 从上下文中获取或创建服务实例
-	service := getCustomServiceFromContext(ctx)
-	return reflect.ValueOf(service), nil
-}
-
-// 在 main.go 中注册
-func main() {
-    vef.Run(
-        fx.Provide(func() api.HandlerParamResolver {
-            return &CustomServiceResolver{}
-        }),
-        // 其他配置...
-    )
-}
-```
-
-## 📜 API 调用规范
-
-### 请求格式
-
-整个应用只存在一个端点 `POST /api`，请求体为 JSON 格式：
-
-```json
-{
-    "resource": "sys/user",     // 资源名称
-    "action": "findAll",       // 操作名称
-    "version": "v1",           // API 版本（可选，默认 v1）
-    "params": {                 // 请求参数
-        "keyword": "test",
-        "pageSize": 20
-    },
-    "meta": {}                  // 元数据（可选）
-}
-```
-
-### 响应格式
-
-所有 API 响应都遵循统一的格式：
-
-```json
-{
-    "code": 0,                  // 状态码（0 表示成功）
-    "message": "成功",         // 状态信息
-    "data": {                   // 响应数据
-        // 具体数据内容
-    }
-}
-```
-
-### 分页响应
-
-使用 `findPage` 动作时的响应格式：
-
-```json
-{
-    "code": 0,
-    "message": "成功",
-    "data": {
-        "content": [...],           // 数据列表
-        "totalElements": 100,       // 总记录数
-        "totalPages": 10,           // 总页数
-        "page": 0,                  // 当前页码（从 0 开始）
-        "size": 10,                 // 每页大小
-        "first": true,              // 是否第一页
-        "last": false               // 是否最后一页
-    }
-}
-```
-
-### CRUD 操作映射
-
-| 操作     | 动作        | 说明           | 参数类型      |
-|----------|-------------|----------------|---------------|
-| 查询全部 | findAll     | 查询所有记录     | Search 类型    |
-| 分页查询 | findPage    | 分页查询记录     | Search 类型    |
-| 查询单个 | findOne     | 根据条件查询单个 | Search 类型    |
-| 新增     | create      | 创建新记录       | Params 类型    |
-| 修改     | update      | 更新记录         | Params 类型    |
-| 删除     | delete      | 删除记录         | 包含 ID 参数 |
-
-## 🛠️ 最佳实践
-
-### 1. 项目结构建议
-
-```
-my-app/
-├── cmd/
-│   └── main.go              # 应用入口
-├── config/
-│   └── application.toml     # 配置文件
-├── internal/
-│   ├── models/              # 数据模型定义
-│   │   ├── user.go
-│   │   └── order.go
-│   ├── payloads/            # API参数定义
-│   │   ├── user.go
-│   │   └── order.go
-│   ├── resources/           # API资源定义
-│   │   ├── user.go
-│   │   └── order.go
-│   └── services/            # 业务逻辑定义
-│       ├── user_service.go
-│       └── email_service.go
-└── docs/                   # 文档
-```
-
-### 2. 命名约定
-
-- **模型命名**: 使用单数大驼峰命名，如 `User`、`Order`
-- **资源命名**: 使用斜杠分隔的小写名称，如 `sys/user`、`shop/order`
-- **参数结构**: 使用复数大驼峰，如 `UserParams`、`UserSearch`
-- **服务命名**: 使用 `Service` 后缀，如 `UserService`
-
-### 3. 错误处理
-
-```go
-// 使用框架提供的错误类型
-func (r *userResource) CreateUser(ctx fiber.Ctx, db orm.Db, params UserParams) error {
-    // 参数验证错误会自动处理
+    logger.Infof("User %s resetting password", principal.Id)
     
-    // 业务逻辑错误
-    if existsUser(params.Email) {
-        return result.ErrWithCode(result.ErrCodeBadRequest, "邮箱已存在")
+    // Custom business logic
+    var user models.User
+    if err := db.NewSelect().
+        Model(&user).
+        Where(func(cb orm.ConditionBuilder) {
+            cb.Equals("id", principal.Id)
+        }).
+        Scan(ctx.Context()); err != nil {
+        return err
     }
     
-    // 数据库错误会自动转换
-    // 成功响应
-    return result.Ok(user.Id).Response(ctx)
-}
-```
-
-### 4. 日志记录
-
-```go
-// 在处理器中使用日志
-func (r *userResource) UpdateUser(
-    ctx fiber.Ctx, 
-    logger log.Logger, 
-    db orm.Db, 
-    params UserParams,
-) error {
-    logger.Infof("开始更新用户: %s", params.Id)
+    // Update password
+    // ...
     
-    // 业务逻辑...
-    
-    logger.Infof("用户更新成功: %s", params.Id)
     return result.Ok().Response(ctx)
 }
 ```
 
-## 🔗 相关资源
+**Injectable Parameters:**
 
-- [Fiber Web Framework](https://gofiber.io/) - 底层 HTTP 框架
-- [Bun ORM](https://bun.uptrace.dev/) - 数据库 ORM
-- [Go Playground Validator](https://github.com/go-playground/validator) - 数据验证
+- `fiber.Ctx` - HTTP context
+- `orm.Db` - Database connection
+- `log.Logger` - Logger instance
+- `mold.Transformer` - Data transformer
+- `*security.Principal` - Current authenticated user
+- `page.Pageable` - Pagination parameters
+- Custom structs embedding `api.In`
+- Resource struct fields (direct fields, `api:"params"` tagged fields, or embedded structs)
 
----
+**Example of Resource Field Injection:**
 
-**VEF Framework Go** - 让企业级 Go Web 开发更简单高效！
+```go
+type UserResource struct {
+    api.Resource
+    userService *UserService  // Resource field
+}
+
+func NewUserResource(userService *UserService) api.Resource {
+    return &UserResource{
+        Resource: api.NewResource("sys/user"),
+        userService: userService,
+    }
+}
+
+// Handler can inject userService directly
+func (r *UserResource) SendNotification(
+    ctx fiber.Ctx,
+    service *UserService,  // Injected from r.userService
+    params NotificationParams,
+) error {
+    return service.SendEmail(params.Email, params.Message)
+}
+```
+
+**Why use parameter injection instead of `r.userService` directly?**
+
+If your service implements the `log.LoggerConfigurable[T]` interface, the framework will automatically call the `WithLogger` method when injecting the service, providing a request-scoped logger. This allows each request to have its own logging context with request ID and other contextual information.
+
+```go
+type UserService struct {
+    logger log.Logger
+}
+
+// Implement log.LoggerConfigurable[*UserService] interface
+func (s *UserService) WithLogger(logger log.Logger) *UserService {
+    return &UserService{logger: logger}
+}
+
+func (s *UserService) SendEmail(email, message string) error {
+    s.logger.Infof("Sending email to %s", email)  // Request-scoped logger
+    // ...
+}
+```
+
+## Database Operations
+
+### Query Builder
+
+```go
+var users []models.User
+err := db.NewSelect().
+    Model(&users).
+    Where(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)
+        cb.GreaterThan("age", 18)
+        cb.Contains("username", keyword)
+    }).
+    Relation("Profile").
+    OrderByDesc("created_at").
+    Limit(10).
+    Scan(ctx)
+```
+
+### Condition Builder Methods
+
+Build type-safe query conditions:
+
+- `Equals(column, value)` - Equal to
+- `NotEquals(column, value)` - Not equal to
+- `GreaterThan(column, value)` - Greater than
+- `GreaterThanOrEquals(column, value)` - Greater than or equal
+- `LessThan(column, value)` - Less than
+- `LessThanOrEquals(column, value)` - Less than or equal
+- `Contains(column, value)` - LIKE %value%
+- `StartsWith(column, value)` - LIKE value%
+- `EndsWith(column, value)` - LIKE %value
+- `In(column, values)` - IN clause
+- `Between(column, min, max)` - BETWEEN clause
+- `IsNull(column)` - IS NULL
+- `IsNotNull(column)` - IS NOT NULL
+- `Or(conditions...)` - OR multiple conditions
+
+### Search Tags
+
+Automatically apply query conditions using `search` tags:
+
+```go
+type UserSearch struct {
+    api.In
+    Username string `search:"eq"`                                    // username = ?
+    Email    string `search:"contains"`                              // email LIKE ?
+    Age      int    `search:"gte"`                                   // age >= ?
+    Status   string `search:"in"`                                    // status IN (?)
+    Keyword  string `search:"contains,column=username|email|name"`   // Search multiple columns
+}
+```
+
+**Supported Operators:**
+
+**Comparison Operators:**
+| Tag | SQL Operator | Description |
+|-----|--------------|-------------|
+| `eq` | = | Equal |
+| `neq` | != | Not equal |
+| `gt` | > | Greater than |
+| `gte` | >= | Greater than or equal |
+| `lt` | < | Less than |
+| `lte` | <= | Less than or equal |
+
+**Range Operators:**
+| Tag | SQL Operator | Description |
+|-----|--------------|-------------|
+| `between` | BETWEEN | Between range |
+| `notBetween` | NOT BETWEEN | Not between range |
+
+**Collection Operators:**
+| Tag | SQL Operator | Description |
+|-----|--------------|-------------|
+| `in` | IN | In list |
+| `notIn` | NOT IN | Not in list |
+
+**Null Check Operators:**
+| Tag | SQL Operator | Description |
+|-----|--------------|-------------|
+| `isNull` | IS NULL | Is null |
+| `isNotNull` | IS NOT NULL | Is not null |
+
+**String Matching (Case Sensitive):**
+| Tag | SQL Operator | Description |
+|-----|--------------|-------------|
+| `contains` | LIKE %?% | Contains |
+| `notContains` | NOT LIKE %?% | Does not contain |
+| `startsWith` | LIKE ?% | Starts with |
+| `notStartsWith` | NOT LIKE ?% | Does not start with |
+| `endsWith` | LIKE %? | Ends with |
+| `notEndsWith` | NOT LIKE %? | Does not end with |
+
+**String Matching (Case Insensitive):**
+| Tag | SQL Operator | Description |
+|-----|--------------|-------------|
+| `iContains` | ILIKE %?% | Contains (case insensitive) |
+| `iNotContains` | NOT ILIKE %?% | Does not contain (case insensitive) |
+| `iStartsWith` | ILIKE ?% | Starts with (case insensitive) |
+| `iNotStartsWith` | NOT ILIKE ?% | Does not start with (case insensitive) |
+| `iEndsWith` | ILIKE %? | Ends with (case insensitive) |
+| `iNotEndsWith` | NOT ILIKE %? | Does not end with (case insensitive) |
+
+### Transactions
+
+Execute multiple operations in a transaction:
+
+```go
+err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+    // Insert user
+    _, err := tx.NewInsert().Model(&user).Exec(txCtx)
+    if err != nil {
+        return err // Auto-rollback
+    }
+    
+    // Update related records
+    _, err = tx.NewUpdate().Model(&profile).WherePK().Exec(txCtx)
+    return err // Auto-commit on nil, rollback on error
+})
+```
+
+## Authentication & Authorization
+
+### Authentication Methods
+
+VEF supports multiple authentication strategies:
+
+1. **JWT Authentication** (default) - Bearer token or query parameter `?__accessToken=xxx`
+2. **OpenAPI Signature** - For external applications using HMAC signature
+3. **Password Authentication** - Username/password login
+
+### Implementing User Loader
+
+Implement `security.UserLoader` to integrate with your user system:
+
+```go
+package services
+
+import (
+    "context"
+    "github.com/ilxqx/vef-framework-go/orm"
+    "github.com/ilxqx/vef-framework-go/security"
+)
+
+type MyUserLoader struct {
+    db orm.Db
+}
+
+func (l *MyUserLoader) LoadByUsername(ctx context.Context, username string) (*security.Principal, string, error) {
+    var user models.User
+    if err := l.db.NewSelect().
+        Model(&user).
+        Where(func(cb orm.ConditionBuilder) {
+            cb.Equals("username", username)
+        }).
+        Scan(ctx); err != nil {
+        return nil, constants.Empty, err
+    }
+
+    principal := &security.Principal{
+        Type: security.PrincipalTypeUser,
+        Id:   user.Id,
+        Name: user.Name,
+        Roles: []string{"user"}, // Load from database
+    }
+
+    return principal, user.Password, nil // Return hashed password
+}
+
+func (l *MyUserLoader) LoadById(ctx context.Context, id string) (*security.Principal, error) {
+    // Similar implementation
+}
+
+func NewMyUserLoader(db orm.Db) *MyUserLoader {
+    return &MyUserLoader{db: db}
+}
+
+// Register in main.go
+func main() {
+    vef.Run(
+        vef.Provide(NewMyUserLoader),
+    )
+}
+```
+
+### Permission Control
+
+Set permission tokens on APIs:
+
+```go
+CreateAPI: apis.NewCreateAPI[User, UserParams]().
+    PermToken("sys.user.create"),
+```
+
+#### Using Built-in RBAC Implementation (Recommended)
+
+The framework provides a built-in Role-Based Access Control (RBAC) implementation. You only need to implement the `security.RolePermissionsLoader` interface:
+
+```go
+package services
+
+import (
+    "context"
+    "github.com/ilxqx/vef-framework-go/orm"
+    "github.com/ilxqx/vef-framework-go/security"
+)
+
+type MyRolePermissionsLoader struct {
+    db orm.Db
+}
+
+// LoadPermissions loads all permissions for the given role
+// Returns map[permission token]data scope
+func (l *MyRolePermissionsLoader) LoadPermissions(ctx context.Context, role string) (map[string]security.DataScope, error) {
+    // Load role permissions from database
+    var permissions []RolePermission
+    if err := l.db.NewSelect().
+        Model(&permissions).
+        Where(func(cb orm.ConditionBuilder) {
+            cb.Equals("role_code", role)
+        }).
+        Scan(ctx); err != nil {
+        return nil, err
+    }
+    
+    // Build mapping of permission tokens to data scopes
+    result := make(map[string]security.DataScope)
+    for _, perm := range permissions {
+        // Create corresponding DataScope instance based on scope type
+        var dataScope security.DataScope
+        switch perm.DataScopeType {
+        case "all":
+            dataScope = security.NewAllDataScope()
+        case "self":
+            dataScope = security.NewSelfDataScope("")
+        case "dept":
+            dataScope = NewDepartmentDataScope() // Custom implementation
+        // ... more custom data scopes
+        }
+        
+        result[perm.PermissionToken] = dataScope
+    }
+    
+    return result, nil
+}
+
+func NewMyRolePermissionsLoader(db orm.Db) security.RolePermissionsLoader {
+    return &MyRolePermissionsLoader{db: db}
+}
+
+// Register in main.go
+func main() {
+    vef.Run(
+        vef.Provide(NewMyRolePermissionsLoader),
+    )
+}
+```
+
+**Note:** The framework will automatically use your `RolePermissionsLoader` implementation to initialize the built-in RBAC permission checker and data permission resolver.
+
+#### Fully Custom Permission Control
+
+If you need to implement completely custom permission control logic (non-RBAC), you can implement the `security.PermissionChecker` interface and replace the framework's implementation:
+
+```go
+type MyCustomPermissionChecker struct {
+    // Custom fields
+}
+
+func (c *MyCustomPermissionChecker) HasPermission(ctx context.Context, principal *security.Principal, permToken string) (bool, error) {
+    // Custom permission check logic
+    // ...
+    return true, nil
+}
+
+func NewMyCustomPermissionChecker() security.PermissionChecker {
+    return &MyCustomPermissionChecker{}
+}
+
+// Replace framework implementation in main.go
+func main() {
+    vef.Run(
+        vef.Provide(NewMyCustomPermissionChecker),
+        vef.Replace(fx.Annotate(
+            NewMyCustomPermissionChecker,
+            fx.As(new(security.PermissionChecker)),
+        )),
+    )
+}
+```
+
+### Data Permissions
+
+Data permissions implement row-level data access control, restricting users to specific data scopes.
+
+#### Built-in Data Scopes
+
+The framework provides two built-in data scope implementations:
+
+1. **AllDataScope** - Unrestricted access to all data (typically for administrators)
+2. **SelfDataScope** - Access only to self-created data
+
+```go
+import "github.com/ilxqx/vef-framework-go/security"
+
+// All data
+allScope := security.NewAllDataScope()
+
+// Only self-created data (defaults to created_by column)
+selfScope := security.NewSelfDataScope("")
+
+// Custom creator column name
+selfScope := security.NewSelfDataScope("creator_id")
+```
+
+#### Using Built-in RBAC Data Permissions (Recommended)
+
+The framework's RBAC implementation automatically handles data permissions. Simply return the data scope for each permission token in `RolePermissionsLoader.LoadPermissions`:
+
+```go
+func (l *MyRolePermissionsLoader) LoadPermissions(ctx context.Context, role string) (map[string]security.DataScope, error) {
+    result := make(map[string]security.DataScope)
+    
+    // Assign different data scopes to different permissions
+    result["sys.user.view"] = security.NewAllDataScope()      // View all users
+    result["sys.user.edit"] = security.NewSelfDataScope("")    // Edit only self-created users
+    
+    return result, nil
+}
+```
+
+**Data Scope Priority:** When a user has multiple roles with different data scopes for the same permission token, the framework selects the scope with the highest priority. Built-in priority constants:
+
+- `security.PrioritySelf` (10) - Self-created data only
+- `security.PriorityDepartment` (20) - Department data
+- `security.PriorityDeptAndSub` (30) - Department and sub-department data
+- `security.PriorityOrganization` (40) - Organization data
+- `security.PriorityOrgAndSub` (50) - Organization and sub-organization data
+- `security.PriorityCustom` (60) - Custom data scope
+- `security.PriorityAll` (10000) - All data
+
+#### Custom Data Scopes
+
+Implement the `security.DataScope` interface to create custom data access scopes:
+
+```go
+package scopes
+
+import (
+    "github.com/ilxqx/vef-framework-go/orm"
+    "github.com/ilxqx/vef-framework-go/security"
+)
+
+type DepartmentDataScope struct{}
+
+func NewDepartmentDataScope() security.DataScope {
+    return &DepartmentDataScope{}
+}
+
+func (s *DepartmentDataScope) Key() string {
+    return "department"
+}
+
+func (s *DepartmentDataScope) Priority() int {
+    return security.PriorityDepartment // Use framework-defined priority
+}
+
+func (s *DepartmentDataScope) Supports(principal *security.Principal, table *orm.Table) bool {
+    // Check if table has department_id column
+    field, _ := table.Field("department_id")
+    return field != nil
+}
+
+func (s *DepartmentDataScope) Apply(principal *security.Principal, query orm.SelectQuery) error {
+    // Get user's department ID from principal.Details
+    type UserDetails struct {
+        DepartmentId string `json:"departmentId"`
+    }
+    
+    details, ok := principal.Details.(UserDetails)
+    if !ok {
+        return nil // If no department info, don't apply filter
+    }
+    
+    // Apply filtering condition
+    query.Where(func(cb orm.ConditionBuilder) {
+        cb.Equals("department_id", details.DepartmentId)
+    })
+    
+    return nil
+}
+```
+
+Then use the custom data scope in your `RolePermissionsLoader`:
+
+```go
+func (l *MyRolePermissionsLoader) LoadPermissions(ctx context.Context, role string) (map[string]security.DataScope, error) {
+    result := make(map[string]security.DataScope)
+    
+    result["sys.user.view"] = NewDepartmentDataScope() // View only department users
+    
+    return result, nil
+}
+```
+
+#### Fully Custom Data Permission Resolution
+
+If you need to implement completely custom data permission resolution logic (non-RBAC), you can implement the `security.DataPermissionResolver` interface and replace the framework's implementation:
+
+```go
+type MyCustomDataPermResolver struct {
+    // Custom fields
+}
+
+func (r *MyCustomDataPermResolver) ResolveDataScope(ctx context.Context, principal *security.Principal, permToken string) (security.DataScope, error) {
+    // Custom data permission resolution logic
+    // ...
+    return security.NewAllDataScope(), nil
+}
+
+func NewMyCustomDataPermResolver() security.DataPermissionResolver {
+    return &MyCustomDataPermResolver{}
+}
+
+// Replace framework implementation in main.go
+func main() {
+    vef.Run(
+        vef.Provide(NewMyCustomDataPermResolver),
+        vef.Replace(fx.Annotate(
+            NewMyCustomDataPermResolver,
+            fx.As(new(security.DataPermissionResolver)),
+        )),
+    )
+}
+```
+
+## Configuration
+
+### Configuration File
+
+Place `application.toml` in `./configs/` or `./` directory, or specify via `VEF_CONFIG_PATH` environment variable.
+
+**Complete Configuration Example:**
+
+```toml
+[vef.app]
+name = "my-app"          # Application name
+port = 8080              # HTTP port
+body_limit = "10MB"      # Request body size limit
+
+[vef.datasource]
+type = "postgres"        # Database type: postgres, mysql, sqlite
+host = "localhost"
+port = 5432
+user = "postgres"
+password = "password"
+database = "mydb"
+schema = "public"        # PostgreSQL schema
+# path = "./data.db"    # SQLite database file path
+
+[vef.security]
+token_expires = "2h"     # JWT token expiration time
+
+[vef.storage]
+provider = "minio"       # Storage provider: memory, minio
+
+[vef.storage.minio]
+endpoint = "localhost:9000"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+use_ssl = false
+region = "us-east-1"
+bucket = "mybucket"
+
+[vef.redis]
+host = "localhost"
+port = 6379
+user = ""                # Optional
+password = ""            # Optional
+database = 0             # 0-15
+network = "tcp"          # tcp or unix
+
+[vef.cors]
+enabled = true
+allow_origins = ["*"]
+```
+
+### Environment Variables
+
+Override configuration with environment variables:
+
+- `VEF_CONFIG_PATH` - Configuration file path
+- `VEF_LOG_LEVEL` - Log level (debug, info, warn, error)
+- `VEF_NODE_ID` - Snowflake node ID for ID generation
+- `VEF_I18N_LANGUAGE` - Language (en, zh-CN)
+
+## Advanced Features
+
+### Cache
+
+Use in-memory or Redis cache:
+
+```go
+import (
+    "github.com/ilxqx/vef-framework-go/cache"
+    "time"
+)
+
+// In-memory cache
+memCache := cache.NewMemory[models.User](
+    cache.WithMemoryMaxSize(1000),
+    cache.WithMemoryDefaultTTL(5 * time.Minute),
+)
+
+// Redis cache
+redisCache := cache.NewRedis[models.User](
+    redisClient,
+    "users",
+    cache.WithRedisDefaultTTL(10 * time.Minute),
+)
+
+// Usage
+user, err := memCache.GetOrLoad(ctx, "user:123", func(ctx context.Context) (models.User, error) {
+    // Fallback loader when cache miss
+    return loadUserFromDB(ctx, "123")
+})
+```
+
+### Event Bus
+
+Publish and subscribe to events:
+
+```go
+import "github.com/ilxqx/vef-framework-go/event"
+
+// Publishing events
+func (r *UserResource) CreateUser(ctx fiber.Ctx, bus event.Bus, ...) error {
+    // Create user logic
+    
+    bus.Publish(event.NewBase("user.created", "user-service", map[string]string{
+        "userId": user.Id,
+    }))
+    
+    return result.Ok().Response(ctx)
+}
+
+// Subscribing to events
+func main() {
+    vef.Run(
+        vef.Invoke(func(bus event.Bus) {
+            unsubscribe := bus.Subscribe("user.created", func(ctx context.Context, e event.Event) {
+                // Handle event
+                log.Infof("User created: %s", e.Meta()["userId"])
+            })
+            
+            // Optionally unsubscribe later
+            _ = unsubscribe
+        }),
+    )
+}
+```
+
+### Cron Scheduler
+
+The framework provides cron job scheduling based on [gocron](https://github.com/go-co-op/gocron).
+
+#### Basic Usage
+
+Inject `cron.Scheduler` via DI and create jobs:
+
+```go
+import (
+    "context"
+    "time"
+    "github.com/ilxqx/vef-framework-go/cron"
+)
+
+func main() {
+    vef.Run(
+        vef.Invoke(func(scheduler cron.Scheduler) {
+            // Cron expression job (5-field format)
+            scheduler.NewJob(
+                cron.NewCronJob(
+                    "0 0 * * *",  // Expression: daily at midnight
+                    false,         // withSeconds: use 5-field format
+                    cron.WithName("daily-cleanup"),
+                    cron.WithTags("maintenance"),
+                    cron.WithTask(func(ctx context.Context) {
+                        // Task logic
+                    }),
+                ),
+            )
+            
+            // Fixed interval job
+            scheduler.NewJob(
+                cron.NewDurationJob(
+                    5*time.Minute,
+                    cron.WithName("health-check"),
+                    cron.WithTask(func() {
+                        // Every 5 minutes
+                    }),
+                ),
+            )
+        }),
+    )
+}
+```
+
+#### Job Types
+
+The framework supports multiple job scheduling strategies:
+
+**1. Cron Expression Jobs**
+
+```go
+// 5-field format: minute hour day month weekday
+scheduler.NewJob(
+    cron.NewCronJob(
+        "30 * * * *",  // Every hour at minute 30
+        false,          // No seconds field
+        cron.WithName("hourly-report"),
+        cron.WithTask(func() {
+            // Generate report
+        }),
+    ),
+)
+
+// 6-field format: second minute hour day month weekday
+scheduler.NewJob(
+    cron.NewCronJob(
+        "0 30 * * * *",  // Every hour at minute 30, second 0
+        true,             // With seconds field
+        cron.WithName("precise-task"),
+        cron.WithTask(func() {
+            // Precise timing task
+        }),
+    ),
+)
+```
+
+**2. Fixed Interval Jobs**
+
+```go
+scheduler.NewJob(
+    cron.NewDurationJob(
+        10*time.Second,
+        cron.WithName("metrics-collector"),
+        cron.WithTask(func() {
+            // Collect metrics every 10 seconds
+        }),
+    ),
+)
+```
+
+**3. Random Interval Jobs**
+
+```go
+scheduler.NewJob(
+    cron.NewDurationRandomJob(
+        1*time.Minute,  // Minimum interval
+        5*time.Minute,  // Maximum interval
+        cron.WithName("random-check"),
+        cron.WithTask(func() {
+            // Execute at random intervals between 1-5 minutes
+        }),
+    ),
+)
+```
+
+**4. One-Time Jobs**
+
+```go
+// Execute immediately
+scheduler.NewJob(
+    cron.NewOneTimeJob(
+        []time.Time{},  // Empty slice means immediate execution
+        cron.WithName("init-task"),
+        cron.WithTask(func() {
+            // Initialization task
+        }),
+    ),
+)
+
+// Execute at specific time
+scheduler.NewJob(
+    cron.NewOneTimeJob(
+        []time.Time{time.Now().Add(1 * time.Hour)},
+        cron.WithName("delayed-task"),
+        cron.WithTask(func() {
+            // Execute after 1 hour
+        }),
+    ),
+)
+
+// Execute at multiple specific times
+scheduler.NewJob(
+    cron.NewOneTimeJob(
+        []time.Time{
+            time.Date(2024, 12, 31, 23, 59, 0, 0, time.Local),
+            time.Date(2025, 1, 1, 0, 0, 0, 0, time.Local),
+        },
+        cron.WithName("new-year-task"),
+        cron.WithTask(func() {
+            // Execute at specific times
+        }),
+    ),
+)
+```
+
+#### Job Configuration Options
+
+```go
+scheduler.NewJob(
+    cron.NewDurationJob(
+        1*time.Hour,
+        // Job name (required)
+        cron.WithName("backup-task"),
+        
+        // Tags (for grouping and bulk operations)
+        cron.WithTags("backup", "critical"),
+        
+        // Task handler function (required)
+        cron.WithTask(func(ctx context.Context) {
+            // If the function accepts context.Context, the framework auto-injects it
+            // Supports graceful shutdown and timeout control
+        }),
+        
+        // Allow concurrent execution (default is singleton mode)
+        cron.WithConcurrent(),
+        
+        // Set start time
+        cron.WithStartAt(time.Now().Add(10 * time.Minute)),
+        
+        // Start immediately
+        cron.WithStartImmediately(),
+        
+        // Set stop time
+        cron.WithStopAt(time.Now().Add(24 * time.Hour)),
+        
+        // Limit number of runs
+        cron.WithLimitedRuns(100),
+        
+        // Custom context
+        cron.WithContext(context.Background()),
+    ),
+)
+```
+
+#### Job Management
+
+```go
+vef.Invoke(func(scheduler cron.Scheduler) {
+    // Create job
+    job, _ := scheduler.NewJob(
+        cron.NewDurationJob(
+            1*time.Minute,
+            cron.WithName("my-task"),
+            cron.WithTags("tag1", "tag2"),
+            cron.WithTask(func() {}),
+        ),
+    )
+    
+    // Get all jobs
+    allJobs := scheduler.Jobs()
+    
+    // Remove jobs by tags
+    scheduler.RemoveByTags("tag1", "tag2")
+    
+    // Remove job by ID
+    scheduler.RemoveJob(job.Id())
+    
+    // Update job definition
+    scheduler.Update(job.Id(), cron.NewDurationJob(
+        2*time.Minute,
+        cron.WithName("my-task-updated"),
+        cron.WithTask(func() {}),
+    ))
+    
+    // Run job immediately (doesn't affect schedule)
+    job.RunNow()
+    
+    // Get next run time
+    nextRun, _ := job.NextRun()
+    
+    // Get last run time
+    lastRun, _ := job.LastRun()
+    
+    // Stop all jobs
+    scheduler.StopJobs()
+})
+```
+
+### File Storage
+
+The framework provides built-in file storage functionality with support for MinIO and in-memory storage.
+
+#### Built-in Storage Resource
+
+The framework automatically registers the `base/storage` resource with the following API endpoints:
+
+| Action | Description |
+|--------|-------------|
+| `upload` | Upload file (auto-generates unique filename) |
+| `getPresignedUrl` | Get presigned URL (for direct access or upload) |
+| `stat` | Get file metadata |
+| `list` | List files |
+
+**Upload Example:**
+
+```bash
+# Using built-in upload API
+curl -X POST http://localhost:8080/api \
+  -H "Authorization: Bearer <token>" \
+  -F "resource=base/storage" \
+  -F "action=upload" \
+  -F "version=v1" \
+  -F "params[file]=@/path/to/file.jpg" \
+  -F "params[contentType]=image/jpeg" \
+  -F "params[metadata][key1]=value1"
+```
+
+**Upload Response:**
+
+```json
+{
+  "code": 0,
+  "message": "Success",
+  "data": {
+    "key": "temp/2025/01/15/550e8400-e29b-41d4-a716-446655440000.jpg",
+    "size": 1024000,
+    "contentType": "image/jpeg",
+    "etag": "\"d41d8cd98f00b204e9800998ecf8427e\"",
+    "lastModified": "2025-01-15T10:30:00Z",
+    "metadata": {
+      "Original-Filename": "file.jpg",
+      "key1": "value1"
+    }
+  }
+}
+```
+
+#### File Key Conventions
+
+The framework uses the following naming convention for uploaded files:
+
+- **Temporary files**: `temp/YYYY/MM/DD/{uuid}{extension}`
+  - Example: `temp/2025/01/15/550e8400-e29b-41d4-a716-446655440000.jpg`
+  - Original filename is preserved in `Original-Filename` metadata
+
+- **Permanent files**: Promote temporary files via `PromoteObject`
+  - Removes `temp/` prefix from the path
+  - Example: `temp/2025/01/15/xxx.jpg` → `2025/01/15/xxx.jpg`
+
+#### Custom File Upload
+
+Inject `storage.Provider` in custom resources for file uploads:
+
+```go
+import (
+    "mime/multipart"
+    
+    "github.com/gofiber/fiber/v3"
+    "github.com/ilxqx/vef-framework-go/api"
+    "github.com/ilxqx/vef-framework-go/result"
+    "github.com/ilxqx/vef-framework-go/storage"
+)
+
+// Define upload parameter struct
+type UploadAvatarParams struct {
+    api.In
+    
+    File *multipart.FileHeader `json:"file"`
+}
+
+func (r *UserResource) UploadAvatar(
+    ctx fiber.Ctx,
+    provider storage.Provider,
+    params UploadAvatarParams,
+) error {
+    // Check if file exists
+    if params.File == nil {
+        return result.Err("File is required")
+    }
+    
+    // Open uploaded file
+    reader, err := params.File.Open()
+    if err != nil {
+        return err
+    }
+    defer reader.Close()
+    
+    // Custom file path
+    info, err := provider.PutObject(ctx.Context(), storage.PutObjectOptions{
+        Key:         "avatars/" + params.File.Filename,
+        Reader:      reader,
+        Size:        params.File.Size,
+        ContentType: params.File.Header.Get("Content-Type"),
+        Metadata: map[string]string{
+            "userId": "12345",
+        },
+    })
+    if err != nil {
+        return err
+    }
+    
+    return result.Ok(info).Response(ctx)
+}
+```
+
+#### Promoting Temporary Files
+
+Use `PromoteObject` to convert temporary uploads to permanent files:
+
+```go
+// After business logic confirms, promote temporary file
+info, err := provider.PromoteObject(ctx.Context(), "temp/2025/01/15/xxx.jpg")
+// info.Key becomes: "2025/01/15/xxx.jpg"
+```
+
+#### Storage Configuration
+
+Configure storage in `application.toml`:
+
+```toml
+[vef.storage]
+provider = "minio"  # or "memory" (for testing)
+
+[vef.storage.minio]
+endpoint = "localhost:9000"
+access_key = "minioadmin"
+secret_key = "minioadmin"
+use_ssl = false
+region = "us-east-1"
+bucket = "mybucket"
+```
+
+### Data Validation
+
+Use [go-playground/validator](https://github.com/go-playground/validator) tags:
+
+```go
+type UserParams struct {
+    Username string `validate:"required,alphanum,min=3,max=32" label:"Username"`
+    Email    string `validate:"required,email" label:"Email"`
+    Age      int    `validate:"min=18,max=120" label:"Age"`
+    Website  string `validate:"omitempty,url" label:"Website"`
+    Password string `validate:"required,min=8,containsany=!@#$%^&*" label:"Password"`
+}
+```
+
+**Common Rules:**
+
+| Rule | Description |
+|------|-------------|
+| `required` | Required field |
+| `omitempty` | Optional field (skip validation if empty) |
+| `min` | Minimum value (number) or minimum length (string) |
+| `max` | Maximum value (number) or maximum length (string) |
+| `len` | Exact length |
+| `eq` | Equal to |
+| `ne` | Not equal to |
+| `gt` | Greater than |
+| `gte` | Greater than or equal to |
+| `lt` | Less than |
+| `lte` | Less than or equal to |
+| `alpha` | Alphabetic characters only |
+| `alphanum` | Alphanumeric characters |
+| `ascii` | ASCII characters |
+| `numeric` | Numeric string |
+| `email` | Email address |
+| `url` | URL |
+| `uuid` | UUID format |
+| `ip` | IP address |
+| `json` | JSON format |
+| `contains` | Contains substring |
+| `startswith` | Starts with string |
+| `endswith` | Ends with string |
+
+## Best Practices
+
+### Project Structure
+
+```
+my-app/
+├── cmd/
+│   └── main.go                 # Application entry point
+├── configs/
+│   └── application.toml        # Configuration file
+├── internal/
+│   ├── models/                 # Data models
+│   │   ├── user.go
+│   │   └── order.go
+│   ├── payloads/               # API parameters
+│   │   ├── user.go
+│   │   └── order.go
+│   ├── resources/              # API resources
+│   │   ├── user.go
+│   │   └── order.go
+│   └── services/               # Business services
+│       ├── user_service.go
+│       └── email_service.go
+└── go.mod
+```
+
+### Naming Conventions
+
+- **Models:** Singular PascalCase (e.g., `User`, `Order`)
+- **Resources:** Lowercase with slashes (e.g., `sys/user`, `shop/order`)
+- **Parameters:** `XxxParams` (Create/Update), `XxxSearch` (Query)
+- **Actions:** Lowercase camelCase (e.g., `findPage`, `createUser`)
+
+### Error Handling
+
+Use framework's Result type for consistent error responses:
+
+```go
+import "github.com/ilxqx/vef-framework-go/result"
+
+// Success
+return result.Ok(data).Response(ctx)
+
+// Error
+return result.Err("Operation failed")
+return result.ErrWithCode(result.ErrCodeBadRequest, "Invalid parameters")
+return result.Errf("User %s not found", username)
+```
+
+### Logging
+
+Inject logger and use:
+
+```go
+func (r *UserResource) Handler(
+    ctx fiber.Ctx,
+    logger log.Logger,
+) error {
+    logger.Infof("Processing request from %s", ctx.IP())
+    logger.Warnf("Unusual activity detected")
+    logger.Errorf("Operation failed: %v", err)
+    
+    return nil
+}
+```
+
+## Documentation & Resources
+
+- [Fiber Web Framework](https://gofiber.io/) - Underlying HTTP framework
+- [Bun ORM](https://bun.uptrace.dev/) - Database ORM
+- [Go Playground Validator](https://github.com/go-playground/validator) - Data validation
+- [Uber FX](https://uber-go.github.io/fx/) - Dependency injection
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).

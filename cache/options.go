@@ -37,8 +37,8 @@ func WithMemGCInterval(interval time.Duration) MemoryOption {
 // RedisOption configures Redis-backed cache instances.
 type RedisOption func(*redisConfig)
 
-// WithRedisDefaultTTL sets a fallback TTL applied when Set is invoked without explicit duration.
-func WithRedisDefaultTTL(ttl time.Duration) RedisOption {
+// WithRdsDefaultTTL sets a fallback TTL applied when Set is invoked without explicit duration.
+func WithRdsDefaultTTL(ttl time.Duration) RedisOption {
 	return func(cfg *redisConfig) {
 		cfg.defaultTTL = ttl
 	}

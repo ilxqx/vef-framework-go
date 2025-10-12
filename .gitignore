@@ -28,6 +28,7 @@ go.work.sum
 **/.DS_Store
 
 .claude/
+.factory/
 .mcp.json
 CLAUDE.md
 AGENTS.md

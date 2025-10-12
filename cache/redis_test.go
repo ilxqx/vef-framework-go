@@ -163,7 +163,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheTTL() {
 	})
 
 	suite.Run("DefaultTTL", func() {
-		cacheWithDefaultTTL := suite.setupRedisCache("test-default-ttl", WithRedisDefaultTTL(100*time.Millisecond))
+		cacheWithDefaultTTL := suite.setupRedisCache("test-default-ttl", WithRdsDefaultTTL(100*time.Millisecond))
 		defer cacheWithDefaultTTL.Close()
 
 		user := TestUser{ID: 6, Name: "Frank", Age: 32}
