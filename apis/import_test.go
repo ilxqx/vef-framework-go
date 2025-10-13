@@ -22,7 +22,7 @@ import (
 // ImportUser is the test model for import tests (uses tabular tags).
 type ImportUser struct {
 	bun.BaseModel `bun:"table:import_user,alias:iu"`
-	orm.Model     `bun:"extend"                     tabular:"-"`
+	orm.Model     `tabular:"-" bun:"extend"`
 
 	Name   string `json:"name"   tabular:"姓名,width=20" bun:",notnull"                  validate:"required"`
 	Email  string `json:"email"  tabular:"邮箱,width=25" bun:",notnull"                  validate:"required,email"`

@@ -3,6 +3,7 @@ package security
 import (
 	"context"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -38,8 +39,12 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 	// Delegate to the authenticator
 	principal, err := authenticator.Authenticate(ctx, authentication)
 	if err != nil {
-		logger.Warnf("Authentication failed for principal '%s' with type '%s': %v",
-			authentication.Principal, authentication.Type, err)
+		if _, ok := result.AsErr(err); !ok {
+			// Mask sensitive principal information for security
+			maskedPrincipal := maskPrincipal(authentication.Principal)
+			logger.Warnf("Authentication failed: type=%s, principal=%s, authenticator=%T, error=%v",
+				authentication.Type, maskedPrincipal, authenticator, err)
+		}
 
 		return nil, err
 	}
@@ -56,4 +61,20 @@ func (am *AuthenticatorAuthManager) findAuthenticator(authType string) security.
 	}
 
 	return nil
+}
+
+// maskPrincipal masks sensitive principal information for logging.
+// It shows the first 3 characters and masks the rest with asterisks.
+func maskPrincipal(principal string) string {
+	if principal == constants.Empty {
+		return "<empty>"
+	}
+
+	length := len(principal)
+	if length <= 3 {
+		return "***"
+	}
+
+	// Show first 3 characters, mask the rest
+	return principal[:3] + "***"
 }

@@ -33,8 +33,8 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 
 			return definition.IsPublic()
 		},
-		ErrorHandler: func(ctx fiber.Ctx, _ error) error {
-			return fiber.ErrUnauthorized
+		ErrorHandler: func(_ fiber.Ctx, err error) error {
+			return err
 		},
 		Validator: func(ctx fiber.Ctx, accessToken string) (bool, error) {
 			principal, err := auth.Authenticate(ctx.Context(), securityPkg.Authentication{

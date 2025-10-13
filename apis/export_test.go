@@ -17,7 +17,7 @@ import (
 // ExportUser is the test model for export tests (uses tabular tags).
 type ExportUser struct {
 	bun.BaseModel `bun:"table:export_user,alias:eu"`
-	orm.Model     `bun:"extend"                     tabular:"-"`
+	orm.Model     `tabular:"-" bun:"extend"`
 
 	Name   string `json:"name"   tabular:"姓名,width=20" bun:",notnull"`
 	Email  string `json:"email"  tabular:"邮箱,width=25" bun:",notnull"`

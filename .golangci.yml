@@ -173,7 +173,7 @@ formatters:
       max-len: 200
       tab-len: 8
       shorten-comments: false
-      reformat-tags: true
+      reformat-tags: false
       chain-split-dots: true
 
 issues:

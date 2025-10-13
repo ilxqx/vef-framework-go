@@ -24,11 +24,11 @@ const (
 // It consists of version, resource name, and action name.
 type Identifier struct {
 	// The version of the API endpoint
-	Version string `json:"version"  form:"version"  validate:"required,alphanum" label_i18n:"api_request_version"`
+	Version string `json:"version" form:"version" validate:"required,alphanum" label_i18n:"api_request_version"`
 	// The resource name of the API endpoint
-	Resource string `json:"resource" form:"resource" validate:"required,ascii"    label_i18n:"api_request_resource"`
+	Resource string `json:"resource" form:"resource" validate:"required,ascii" label_i18n:"api_request_resource"`
 	// The action name of the API endpoint
-	Action string `json:"action"   form:"action"   validate:"required,alphanum" label_i18n:"api_request_action"`
+	Action string `json:"action" form:"action" validate:"required,alphanum" label_i18n:"api_request_action"`
 }
 
 // String returns a string representation of the identifier.

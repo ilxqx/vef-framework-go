@@ -158,7 +158,7 @@ type GetPresignedUrlParams struct {
 	api.In
 
 	// Key is the unique identifier of the object
-	Key string `json:"key"     validate:"required"`
+	Key string `json:"key" validate:"required"`
 	// Expires specifies URL validity duration in seconds (default: 3600)
 	Expires int `json:"expires"`
 	// Method specifies the HTTP method (GET for download, PUT for upload)
@@ -264,7 +264,7 @@ type CopyParams struct {
 	// SourceKey is the identifier of the source object
 	SourceKey string `json:"sourceKey" validate:"required"`
 	// DestKey is the identifier for the copied object
-	DestKey string `json:"destKey"   validate:"required"`
+	DestKey string `json:"destKey" validate:"required"`
 }
 
 // Copy copies an object from source to destination.
@@ -287,7 +287,7 @@ type MoveParams struct {
 	// SourceKey is the identifier of the source object
 	SourceKey string `json:"sourceKey" validate:"required"`
 	// DestKey is the identifier for the moved object
-	DestKey string `json:"destKey"   validate:"required"`
+	DestKey string `json:"destKey" validate:"required"`
 }
 
 // Move moves an object from source to destination (implemented as Copy + Delete).

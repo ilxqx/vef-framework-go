@@ -4,29 +4,65 @@ import (
 	"errors"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/samber/lo"
 
+	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 )
+
+// fiberErrorMapping defines the mapping from Fiber HTTP status codes to application error codes and messages.
+type fiberErrorMapping struct {
+	code    int
+	message string
+}
+
+// fiberErrorMappings maps Fiber HTTP status codes to error codes and message keys.
+var fiberErrorMappings = map[int]fiberErrorMapping{
+	fiber.StatusNotFound: {
+		code:    result.ErrCodeNotFound,
+		message: result.ErrMessageNotFound,
+	},
+	fiber.StatusUnauthorized: {
+		code:    result.ErrCodeUnauthenticated,
+		message: result.ErrMessageUnauthenticated,
+	},
+	fiber.StatusForbidden: {
+		code:    result.ErrCodeAccessDenied,
+		message: result.ErrMessageAccessDenied,
+	},
+	fiber.StatusUnsupportedMediaType: {
+		code:    result.ErrCodeUnsupportedMediaType,
+		message: result.ErrMessageUnsupportedMediaType,
+	},
+	fiber.StatusRequestTimeout: {
+		code:    result.ErrCodeRequestTimeout,
+		message: result.ErrMessageRequestTimeout,
+	},
+}
 
 // handleError handles the error and returns the response.
 func handleError(ctx fiber.Ctx, err error) error {
 	var fiberErr *fiber.Error
 	if errors.As(err, &fiberErr) {
-		r := &result.Result{
-			Code: lo.If(fiberErr.Code == fiber.StatusNotFound, result.ErrCodeNotFound).
-				ElseIf(fiberErr.Code == fiber.StatusUnauthorized, result.ErrCodeUnauthenticated).
-				ElseIf(fiberErr.Code == fiber.StatusForbidden, result.ErrCodeAccessDenied).
-				ElseIf(fiberErr.Code == fiber.StatusUnsupportedMediaType, result.ErrCodeUnsupportedMediaType).
-				ElseIf(fiberErr.Code == fiber.StatusRequestTimeout, result.ErrCodeRequestTimeout).
-				Else(result.ErrCodeDefault),
-			Message: lo.If(fiberErr.Code == fiber.StatusNotFound, i18n.T(result.ErrMessageNotFound)).
-				ElseIf(fiberErr.Code == fiber.StatusUnauthorized, i18n.T(result.ErrMessageUnauthenticated)).
-				ElseIf(fiberErr.Code == fiber.StatusForbidden, i18n.T(result.ErrMessageAccessDenied)).
-				ElseIf(fiberErr.Code == fiber.StatusUnsupportedMediaType, i18n.T(result.ErrMessageUnsupportedMediaType)).
-				ElseIf(fiberErr.Code == fiber.StatusRequestTimeout, i18n.T(result.ErrMessageRequestTimeout)).
-				Else(fiberErr.Error()),
+		// Look up the error mapping for this status code
+		mapping, exists := fiberErrorMappings[fiberErr.Code]
+
+		var r result.Result
+		if exists {
+			r = result.Result{
+				Code:    mapping.code,
+				Message: i18n.T(mapping.message),
+			}
+		} else {
+			contextx.Logger(ctx).Errorf(
+				"Unmapped Fiber error: status=%d, message=%s",
+				fiberErr.Code, fiberErr.Message,
+			)
+
+			r = result.Result{
+				Code:    result.ErrCodeUnknown,
+				Message: i18n.T(result.ErrMessageUnknown),
+			}
 		}
 
 		return r.ResponseWithStatus(ctx, fiberErr.Code)
@@ -35,6 +71,11 @@ func handleError(ctx fiber.Ctx, err error) error {
 	if resultErr, ok := result.AsErr(err); ok {
 		return responseError(resultErr, ctx)
 	}
+
+	contextx.Logger(ctx).Errorf(
+		"Unhandled error: type=%T, error=%v",
+		err, err,
+	)
 
 	return responseError(result.ErrUnknown, ctx)
 }

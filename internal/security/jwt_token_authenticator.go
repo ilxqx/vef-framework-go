@@ -48,8 +48,6 @@ func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication 
 	// Parse the JWT access token
 	claimsAccessor, err := ja.jwt.Parse(token)
 	if err != nil {
-		logger.Warnf("JWT token validation failed: %v", err)
-
 		return nil, err
 	}
 

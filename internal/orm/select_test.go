@@ -2388,9 +2388,11 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 		suite.NotEmpty(post.Id, "Model column ID should be populated")
 		suite.NotEmpty(post.Title, "Explicit column Title should be populated")
 		suite.NotEmpty(post.Status, "Explicit column Status should be populated")
+
 		if post.UserName != "" {
 			suite.NotEmpty(post.UserEmail, "Joined column UserEmail should be populated when user exists")
 		}
+
 		suite.NotEmpty(post.UpperTitle, "SelectExpr column should be populated")
 		suite.T().Logf("Post: ID=%s, Title=%s, UpperTitle=%s, Author=%s",
 			post.Id, post.Title, post.UpperTitle, post.UserName)
