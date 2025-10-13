@@ -23,7 +23,7 @@ type CachedRolePermissionsLoaderTestSuite struct {
 func (s *CachedRolePermissionsLoaderTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	s.bus = event.NewMemoryBus(s.ctx, []eventPkg.Middleware{})
+	s.bus = event.NewMemoryBus([]eventPkg.Middleware{})
 	// Start the event bus
 	err := s.bus.(interface{ Start() error }).Start()
 	s.Require().NoError(err, "Failed to start event bus")

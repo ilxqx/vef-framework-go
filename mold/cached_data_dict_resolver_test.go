@@ -24,7 +24,7 @@ type CachedDataDictResolverTestSuite struct {
 func (s *CachedDataDictResolverTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	s.bus = event.NewMemoryBus(s.ctx, []eventPkg.Middleware{})
+	s.bus = event.NewMemoryBus([]eventPkg.Middleware{})
 
 	err := s.bus.Start()
 	s.Require().NoError(err)

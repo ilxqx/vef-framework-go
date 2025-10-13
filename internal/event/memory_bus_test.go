@@ -624,21 +624,13 @@ func (m *testMiddleware) Process(ctx context.Context, evt event.Event, next even
 }
 
 // createTestEventBus creates a memory event bus for testing.
-func createTestEventBus(t *testing.T) *MemoryBus {
+func createTestEventBus(t *testing.T) event.Bus {
 	return createTestEventBusWithMiddleware(t, []event.Middleware{})
 }
 
 // createTestEventBusWithMiddleware creates a memory event bus with custom middleware for testing.
-func createTestEventBusWithMiddleware(t *testing.T, middlewares []event.Middleware) *MemoryBus {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	bus := &MemoryBus{
-		middlewares: middlewares,
-		subscribers: make(map[string]map[string]*subscription),
-		eventCh:     make(chan *eventMessage, 1000),
-		ctx:         ctx,
-		cancel:      cancel,
-	}
+func createTestEventBusWithMiddleware(t *testing.T, middlewares []event.Middleware) event.Bus {
+	bus := NewMemoryBus(middlewares)
 
 	err := bus.Start()
 	require.NoError(t, err)

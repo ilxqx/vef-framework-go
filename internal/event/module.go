@@ -16,8 +16,8 @@ var (
 		"vef:event",
 		fx.Provide(
 			fx.Annotate(
-				func(lc fx.Lifecycle, ctx context.Context, middlewares []event.Middleware) event.Bus {
-					bus := NewMemoryBus(ctx, middlewares)
+				func(lc fx.Lifecycle, middlewares []event.Middleware) event.Bus {
+					bus := NewMemoryBus(middlewares)
 
 					lc.Append(
 						fx.StartStopHook(
@@ -33,8 +33,8 @@ var (
 
 								return nil
 							},
-							func(stopCtx context.Context) error {
-								if err := bus.Shutdown(stopCtx); err != nil {
+							func(ctx context.Context) error {
+								if err := bus.Shutdown(ctx); err != nil {
 									return fmt.Errorf("failed to stop event bus: %w", err)
 								}
 
@@ -47,13 +47,9 @@ var (
 
 					return bus
 				},
-				fx.ParamTags(``, ``, `group:"vef:event:middlewares"`),
-			),
-			// Also provide as Publisher for API audit middleware
-			fx.Annotate(
-				func(bus event.Bus) event.Publisher {
-					return bus
-				},
+				fx.ParamTags(``, `group:"vef:event:middlewares"`),
+				fx.As(fx.Self()),
+				fx.As(new(event.Subscriber)),
 				fx.As(new(event.Publisher)),
 			),
 		),

@@ -7,8 +7,8 @@ import (
 )
 
 // NewMemoryBus creates an in-memory event bus bound to the given context.
-func NewMemoryBus(c context.Context, middlewares []event.Middleware) event.Bus {
-	ctx, cancel := context.WithCancel(c)
+func NewMemoryBus(middlewares []event.Middleware) event.Bus {
+	ctx, cancel := context.WithCancel(context.Background())
 
 	bus := &MemoryBus{
 		middlewares: middlewares,
