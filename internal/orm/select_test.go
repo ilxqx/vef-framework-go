@@ -2221,6 +2221,182 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 	suite.NotEmpty(users3[0].Email, "All columns should be populated")
 }
 
+// TestSelectModelColumnsWithExplicitSelect tests that SelectModelColumns/SelectModelPKs can coexist with Select.
+func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
+	suite.T().Logf("Testing SelectModelColumns/SelectModelPKs coexistence with Select for %s", suite.dbType)
+
+	// Test 1: SelectModelColumns + Select should include both model columns and explicit columns
+	type UserWithExtra struct {
+		Id        string `bun:"id"`
+		CreatedAt string `bun:"created_at"`
+		CreatedBy string `bun:"created_by"`
+		UpdatedAt string `bun:"updated_at"`
+		UpdatedBy string `bun:"updated_by"`
+		Name      string `bun:"name"`
+		Email     string `bun:"email"`
+		Age       int16  `bun:"age"`
+		IsActive  bool   `bun:"is_active"`
+		UpperName string `bun:"upper_name"`
+	}
+
+	var users1 []UserWithExtra
+
+	err := suite.db.NewSelect().
+		Model((*User)(nil)).
+		SelectModelColumns().                        // Should select: id, created_at, created_by, updated_at, updated_by, deleted_at, deleted_by
+		Select("name", "email", "age", "is_active"). // Should also select these explicit columns
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Upper(eb.Column("name"))
+		}, "upper_name"). // SelectExpr should always be cumulative
+		OrderBy("name").
+		Scan(suite.ctx, &users1)
+	suite.NoError(err, "SelectModelColumns + Select should coexist")
+	suite.True(len(users1) > 0, "Should return results")
+
+	// Verify both model columns and explicit columns are populated
+	for _, user := range users1 {
+		suite.NotEmpty(user.Id, "Model column ID should be populated")
+		suite.NotEmpty(user.CreatedAt, "Model column CreatedAt should be populated")
+		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
+		suite.NotEmpty(user.Email, "Explicit column Email should be populated")
+		suite.True(user.Age > 0, "Explicit column Age should be populated")
+		suite.NotEmpty(user.UpperName, "SelectExpr column should be populated")
+		suite.T().Logf("User: ID=%s, Name=%s, UpperName=%s, CreatedAt=%s",
+			user.Id, user.Name, user.UpperName, user.CreatedAt)
+	}
+
+	// Test 2: Select + SelectModelColumns (reverse order) should also work
+	type UserWithExtra2 struct {
+		Id        string `bun:"id"`
+		CreatedAt string `bun:"created_at"`
+		Name      string `bun:"name"`
+		Email     string `bun:"email"`
+		UpperName string `bun:"upper_name"`
+	}
+
+	var users2 []UserWithExtra2
+
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		Select("name", "email"). // Explicit columns first
+		SelectModelColumns().    // Model columns second
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Upper(eb.Column("email"))
+		}, "upper_name").
+		OrderBy("name").
+		Scan(suite.ctx, &users2)
+	suite.NoError(err, "Select + SelectModelColumns should coexist (reverse order)")
+	suite.True(len(users2) > 0, "Should return results")
+
+	for _, user := range users2 {
+		suite.NotEmpty(user.Id, "Model column ID should be populated")
+		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
+		suite.NotEmpty(user.Email, "Explicit column Email should be populated")
+		suite.NotEmpty(user.UpperName, "SelectExpr column should be populated")
+	}
+
+	// Test 3: SelectModelPKs + Select should include both PKs and explicit columns
+	type UserWithPKsAndExtra struct {
+		Id    string `bun:"id"`
+		Name  string `bun:"name"`
+		Email string `bun:"email"`
+		Age   int16  `bun:"age"`
+	}
+
+	var users3 []UserWithPKsAndExtra
+
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		SelectModelPKs().               // Should select: id (primary key)
+		Select("name", "email", "age"). // Should also select these explicit columns
+		OrderBy("name").
+		Scan(suite.ctx, &users3)
+	suite.NoError(err, "SelectModelPKs + Select should coexist")
+	suite.True(len(users3) > 0, "Should return results")
+
+	for _, user := range users3 {
+		suite.NotEmpty(user.Id, "PK column ID should be populated")
+		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
+		suite.NotEmpty(user.Email, "Explicit column Email should be populated")
+		suite.True(user.Age > 0, "Explicit column Age should be populated")
+		suite.T().Logf("User: ID=%s, Name=%s, Age=%d", user.Id, user.Name, user.Age)
+	}
+
+	// Test 4: Select + SelectModelPKs (reverse order) should also work
+	type UserWithPKsAndExtra2 struct {
+		Id         string `bun:"id"`
+		Name       string `bun:"name"`
+		LowerEmail string `bun:"lower_email"`
+	}
+
+	var users4 []UserWithPKsAndExtra2
+
+	err = suite.db.NewSelect().
+		Model((*User)(nil)).
+		Select("name").   // Explicit column first
+		SelectModelPKs(). // PKs second
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Lower(eb.Column("email"))
+		}, "lower_email").
+		OrderBy("name").
+		Scan(suite.ctx, &users4)
+	suite.NoError(err, "Select + SelectModelPKs should coexist (reverse order)")
+	suite.True(len(users4) > 0, "Should return results")
+
+	for _, user := range users4 {
+		suite.NotEmpty(user.Id, "PK column ID should be populated")
+		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
+		suite.NotEmpty(user.LowerEmail, "SelectExpr column should be populated")
+	}
+
+	// Test 5: Complex scenario with JOIN, SelectModelColumns, Select, and SelectExpr
+	type PostWithUserInfo struct {
+		Id         string `bun:"id"`
+		CreatedAt  string `bun:"created_at"`
+		Title      string `bun:"title"`
+		Status     string `bun:"status"`
+		ViewCount  int64  `bun:"view_count"`
+		UserName   string `bun:"user_name"`
+		UserEmail  string `bun:"user_email"`
+		UpperTitle string `bun:"upper_title"`
+	}
+
+	var posts []PostWithUserInfo
+
+	err = suite.db.NewSelect().
+		Model((*Post)(nil)).
+		SelectModelColumns().                    // Post model columns
+		Select("title", "status", "view_count"). // Explicit post columns
+		SelectAs("u.name", "user_name").         // Joined user columns with alias
+		SelectAs("u.email", "user_email").
+		SelectExpr(func(eb ExprBuilder) any {
+			return eb.Upper(eb.Column("p.title"))
+		}, "upper_title").
+		LeftJoin((*User)(nil), func(cb ConditionBuilder) {
+			cb.EqualsColumn("u.id", "p.user_id")
+		}).
+		Where(func(cb ConditionBuilder) {
+			cb.Equals("status", "published")
+		}).
+		OrderBy("p.title").
+		Limit(5).
+		Scan(suite.ctx, &posts)
+	suite.NoError(err, "Complex query with SelectModelColumns + Select + JOIN should work")
+	suite.True(len(posts) > 0, "Should return posts")
+
+	for _, post := range posts {
+		suite.NotEmpty(post.Id, "Model column ID should be populated")
+		suite.NotEmpty(post.Title, "Explicit column Title should be populated")
+		suite.NotEmpty(post.Status, "Explicit column Status should be populated")
+		if post.UserName != "" {
+			suite.NotEmpty(post.UserEmail, "Joined column UserEmail should be populated when user exists")
+		}
+		suite.NotEmpty(post.UpperTitle, "SelectExpr column should be populated")
+		suite.T().Logf("Post: ID=%s, Title=%s, UpperTitle=%s, Author=%s",
+			post.Id, post.Title, post.UpperTitle, post.UserName)
+	}
+}
+
 // TestSelectInSubQuery tests that deferred select state is properly applied in subqueries.
 func (suite *SelectTestSuite) TestSelectInSubQuery() {
 	suite.T().Logf("Testing Select in subqueries for %s", suite.dbType)

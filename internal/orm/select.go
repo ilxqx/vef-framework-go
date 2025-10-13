@@ -619,13 +619,17 @@ func (q *BunSelectQuery) applySelectState() {
 
 	if q.hasSelectAll {
 		q.query.Column(columnAll)
-	} else if q.hasSelectModelColumns {
-		q.query.ColumnExpr(constants.ExprTableColumns)
-	} else if q.hasSelectModelPKs {
-		q.query.ColumnExpr(constants.ExprTablePKs)
-	} else if q.hasExplicitSelect {
-		for _, selectFn := range q.explicitSelects {
-			selectFn()
+	} else {
+		if q.hasSelectModelColumns {
+			q.query.ColumnExpr(constants.ExprTableColumns)
+		} else if q.hasSelectModelPKs {
+			q.query.ColumnExpr(constants.ExprTablePKs)
+		}
+
+		if q.hasExplicitSelect {
+			for _, selectFn := range q.explicitSelects {
+				selectFn()
+			}
 		}
 	}
 
