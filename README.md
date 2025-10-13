@@ -4,7 +4,7 @@
 
 A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 
-**Current Version:** v0.4.4
+**Current Version:** v0.5.0
 
 ## Features
 

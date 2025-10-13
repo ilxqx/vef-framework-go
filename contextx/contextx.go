@@ -45,7 +45,9 @@ func SetAPIRequest(ctx context.Context, request *api.Request) context.Context {
 
 // RequestId returns the request id from fiber context.
 func RequestId(ctx context.Context) string {
-	return ctx.Value(KeyRequestId).(string)
+	id, _ := ctx.Value(KeyRequestId).(string)
+
+	return id
 }
 
 // SetRequestId stores the request id into fiber context.

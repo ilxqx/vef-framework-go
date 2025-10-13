@@ -2,11 +2,13 @@ package api_test
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,6 +21,7 @@ import (
 	apiPkg "github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
 	"github.com/ilxqx/vef-framework-go/log"
@@ -466,6 +469,24 @@ func newTestApp(t *testing.T, resourceCtors ...any) (*app.App, func()) {
 	})
 
 	return appTest.NewTestApp(t, opts...)
+}
+
+func newTestAppWithBus(t *testing.T, resourceCtors ...any) (*app.App, event.Bus, func()) {
+	var bus event.Bus
+
+	opts := make([]fx.Option, len(resourceCtors)+2)
+	for i, ctor := range resourceCtors {
+		opts[i] = vef.ProvideAPIResource(ctor)
+	}
+
+	opts[len(opts)-2] = fx.Replace(&config.DatasourceConfig{
+		Type: constants.DbSQLite,
+	})
+	opts[len(opts)-1] = fx.Populate(&bus)
+
+	testApp, stop := appTest.NewTestApp(t, opts...)
+
+	return testApp, bus, stop
 }
 
 func makeAPIRequest(t *testing.T, app interface {
@@ -974,4 +995,179 @@ func (r *FileUploadResource) WithParams(ctx fiber.Ctx, params WithParamsParams) 
 	}
 
 	return result.Ok(response).Response(ctx)
+}
+
+// Audit Resource - tests audit log functionality
+
+type AuditResource struct {
+	apiPkg.Resource
+}
+
+func NewAuditResource() apiPkg.Resource {
+	return &AuditResource{
+		Resource: apiPkg.NewResource(
+			"test/audit",
+			apiPkg.WithAPIs(
+				apiPkg.Spec{Action: "success", EnableAudit: true, Public: true},
+				apiPkg.Spec{Action: "failure", EnableAudit: true, Public: true},
+				apiPkg.Spec{Action: "noAudit", EnableAudit: false, Public: true},
+			),
+		),
+	}
+}
+
+type AuditSuccessParams struct {
+	apiPkg.In
+
+	Name string `json:"name" validate:"required"`
+}
+
+func (r *AuditResource) Success(ctx fiber.Ctx, params AuditSuccessParams) error {
+	return result.Ok(fiber.Map{
+		"name":    params.Name,
+		"message": "success",
+	}).Response(ctx)
+}
+
+func (r *AuditResource) Failure(ctx fiber.Ctx) error {
+	return result.ErrWithCode(result.ErrCodeRecordNotFound, "Record not found")
+}
+
+func (r *AuditResource) NoAudit(ctx fiber.Ctx) error {
+	return result.Ok("no audit").Response(ctx)
+}
+
+// TestAPIAuditSuccess tests audit event for successful requests.
+func TestAPIAuditSuccess(t *testing.T) {
+	testApp, bus, stop := newTestAppWithBus(t, NewAuditResource)
+	defer stop()
+
+	// Capture audit events
+	var (
+		auditEvents []*apiPkg.AuditEvent
+		mu          sync.Mutex
+	)
+
+	unsubscribe := apiPkg.SubscribeAuditEvent(bus, func(ctx context.Context, evt *apiPkg.AuditEvent) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		auditEvents = append(auditEvents, evt)
+	})
+	defer unsubscribe()
+
+	// Make successful request
+	resp := makeAPIRequest(t, testApp, `{
+		"resource": "test/audit",
+		"action": "success",
+		"version": "v1",
+		"params": {"name": "test-user"}
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+
+	// Wait for async event processing
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify audit event was published
+	mu.Lock()
+	defer mu.Unlock()
+
+	require.Len(t, auditEvents, 1, "should receive exactly one audit event")
+
+	evt := auditEvents[0]
+	require.Equal(t, "test/audit", evt.Resource, "resource should match")
+	require.Equal(t, "success", evt.Action, "action should match")
+	require.Equal(t, "v1", evt.Version, "version should match")
+	require.Equal(t, result.OkCode, evt.ResultCode, "result code should be success")
+	require.NotEmpty(t, evt.RequestId, "request ID should be set")
+	require.NotEmpty(t, evt.RequestIP, "request IP should be set")
+	require.NotNil(t, evt.RequestParams, "request params should not be nil")
+	require.Equal(t, "test-user", evt.RequestParams["name"], "request params should contain name")
+	require.GreaterOrEqual(t, evt.ElapsedTime, 0, "elapsed time should be non-negative")
+}
+
+// TestAPIAuditFailure tests audit event for failed requests.
+func TestAPIAuditFailure(t *testing.T) {
+	testApp, bus, stop := newTestAppWithBus(t, NewAuditResource)
+	defer stop()
+
+	// Capture audit events
+	var (
+		auditEvents []*apiPkg.AuditEvent
+		mu          sync.Mutex
+	)
+
+	unsubscribe := apiPkg.SubscribeAuditEvent(bus, func(ctx context.Context, evt *apiPkg.AuditEvent) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		auditEvents = append(auditEvents, evt)
+	})
+	defer unsubscribe()
+
+	// Make failed request
+	resp := makeAPIRequest(t, testApp, `{
+		"resource": "test/audit",
+		"action": "failure",
+		"version": "v1"
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+
+	// Wait for async event processing
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify audit event was published
+	mu.Lock()
+	defer mu.Unlock()
+
+	require.Len(t, auditEvents, 1, "should receive exactly one audit event")
+
+	evt := auditEvents[0]
+	require.Equal(t, "test/audit", evt.Resource, "resource should match")
+	require.Equal(t, "failure", evt.Action, "action should match")
+	require.Equal(t, "v1", evt.Version, "version should match")
+	require.Equal(t, result.ErrCodeRecordNotFound, evt.ResultCode, "result code should be record not found")
+	require.Equal(t, "Record not found", evt.ResultMessage, "result message should match")
+	require.NotEmpty(t, evt.RequestId, "request ID should be set")
+	require.GreaterOrEqual(t, evt.ElapsedTime, 0, "elapsed time should be non-negative")
+}
+
+// TestAPIAuditDisabled tests that audit events are not published when disabled.
+func TestAPIAuditDisabled(t *testing.T) {
+	testApp, bus, stop := newTestAppWithBus(t, NewAuditResource)
+	defer stop()
+
+	// Capture audit events
+	var (
+		auditEvents []*apiPkg.AuditEvent
+		mu          sync.Mutex
+	)
+
+	unsubscribe := apiPkg.SubscribeAuditEvent(bus, func(ctx context.Context, evt *apiPkg.AuditEvent) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		auditEvents = append(auditEvents, evt)
+	})
+	defer unsubscribe()
+
+	// Make request to endpoint with audit disabled
+	resp := makeAPIRequest(t, testApp, `{
+		"resource": "test/audit",
+		"action": "noAudit",
+		"version": "v1"
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+
+	// Wait for potential async event processing
+	time.Sleep(100 * time.Millisecond)
+
+	// Verify no audit event was published
+	mu.Lock()
+	defer mu.Unlock()
+
+	require.Len(t, auditEvents, 0, "should not receive any audit events when audit is disabled")
 }

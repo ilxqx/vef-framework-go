@@ -91,6 +91,7 @@ func (q *BunSelectQuery) Select(columns ...string) SelectQuery {
 	if q.hasSelectAll {
 		q.hasSelectAll = false
 	}
+
 	q.hasExplicitSelect = true
 
 	for _, column := range columns {
@@ -106,6 +107,7 @@ func (q *BunSelectQuery) SelectAs(column, alias string) SelectQuery {
 	if q.hasSelectAll {
 		q.hasSelectAll = false
 	}
+
 	q.hasExplicitSelect = true
 
 	q.explicitSelects = append(q.explicitSelects, func() {
@@ -139,6 +141,7 @@ func (q *BunSelectQuery) SelectModelColumns() SelectQuery {
 	if q.hasSelectAll {
 		q.hasSelectAll = false
 	}
+
 	if q.hasSelectModelPKs {
 		q.hasSelectModelPKs = false
 	}
@@ -152,6 +155,7 @@ func (q *BunSelectQuery) SelectModelPKs() SelectQuery {
 	if q.hasSelectAll {
 		q.hasSelectAll = false
 	}
+
 	if q.hasSelectModelColumns {
 		q.hasSelectModelColumns = false
 	}

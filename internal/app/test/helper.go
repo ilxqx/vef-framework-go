@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"testing"
 
 	"go.uber.org/fx"
@@ -37,6 +38,10 @@ func NewTestApp(t testing.TB, options ...fx.Option) (*app.App, func()) {
 	// Build fx options
 	opts := []fx.Option{
 		fx.NopLogger,
+		// Provide context for event bus
+		fx.Provide(func() context.Context {
+			return context.Background()
+		}),
 		// Replace configs - must replace config.Config to avoid file reading
 		fx.Replace(
 			fx.Annotate(

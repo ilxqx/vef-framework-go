@@ -1950,6 +1950,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 	// Test 1: SelectAll overrides Select
 	var users1 []User
+
 	err := suite.db.NewSelect().
 		Model(&users1).
 		Select("name").
@@ -1964,7 +1965,9 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 	type UserNameOnly struct {
 		Name string `bun:"name"`
 	}
+
 	var users2 []UserNameOnly
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		SelectAll().
@@ -1976,6 +1979,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 	// Test 3: SelectModelColumns overrides SelectAll
 	var users3 []User
+
 	err = suite.db.NewSelect().
 		Model(&users3).
 		SelectAll().
@@ -1986,6 +1990,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 	// Test 4: SelectAll overrides SelectModelColumns
 	var users4 []User
+
 	err = suite.db.NewSelect().
 		Model(&users4).
 		SelectModelColumns().
@@ -1998,7 +2003,9 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 	type UserIDOnly struct {
 		Id string `bun:"id,pk"`
 	}
+
 	var users5 []UserIDOnly
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		SelectModelColumns().
@@ -2010,6 +2017,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 	// Test 6: SelectModelColumns overrides SelectModelPKs
 	var users6 []User
+
 	err = suite.db.NewSelect().
 		Model(&users6).
 		SelectModelPKs().
@@ -2032,7 +2040,9 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		Age      int16  `bun:"age"`
 		AgeGroup string `bun:"age_group"`
 	}
+
 	var users1 []UserWithComputed
+
 	err := suite.db.NewSelect().
 		Model((*User)(nil)).
 		SelectAll().
@@ -2057,7 +2067,9 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		Email  string `bun:"email"`
 		RowNum int    `bun:"row_num"`
 	}
+
 	var users2 []UserWithRowNum
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name", "email").
@@ -2079,7 +2091,9 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		UpperName string `bun:"upper_name"`
 		NameLen   int    `bun:"name_len"`
 	}
+
 	var users3 []UserWithMultipleComputed
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name").
@@ -2106,7 +2120,9 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		IsActive bool   `bun:"is_active"`
 		RowNum   int    `bun:"row_num"`
 	}
+
 	var users4 []UserAllWithComputed
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name").
@@ -2138,7 +2154,9 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 		Meta       string `bun:"meta"`
 		TotalCount int64  `bun:"total_count"`
 	}
+
 	var users5 []UserModelWithTotal
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		SelectModelColumns().
@@ -2161,6 +2179,7 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 
 	// Test 1: Multiple SelectModelColumns calls (should be idempotent)
 	var users1 []User
+
 	err := suite.db.NewSelect().
 		Model(&users1).
 		SelectModelColumns().
@@ -2175,7 +2194,9 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 	type UserIDOnly struct {
 		Id string `bun:"id,pk"`
 	}
+
 	var users2 []UserIDOnly
+
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		SelectModelPKs().
@@ -2188,6 +2209,7 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 
 	// Test 3: Multiple SelectAll calls (should be idempotent)
 	var users3 []User
+
 	err = suite.db.NewSelect().
 		Model(&users3).
 		SelectAll().
@@ -2205,6 +2227,7 @@ func (suite *SelectTestSuite) TestSelectInSubQuery() {
 
 	// Test 1: SelectModelColumns in subquery should only select model columns
 	var users []User
+
 	err := suite.db.NewSelect().
 		Model(&users).
 		Where(func(cb ConditionBuilder) {
@@ -2223,6 +2246,7 @@ func (suite *SelectTestSuite) TestSelectInSubQuery() {
 
 	// Test 2: SelectExpr in subquery with aggregation
 	var popularPosts []Post
+
 	err = suite.db.NewSelect().
 		Model(&popularPosts).
 		Where(func(cb ConditionBuilder) {
@@ -2244,7 +2268,9 @@ func (suite *SelectTestSuite) TestSelectInSubQuery() {
 		Email     string `bun:"email"`
 		PostCount int64  `bun:"post_count"`
 	}
+
 	var userSummaries []UserSummary
+
 	err = suite.db.NewSelect().
 		TableSubQuery("u", func(sq SelectQuery) {
 			sq.Model((*User)(nil)).

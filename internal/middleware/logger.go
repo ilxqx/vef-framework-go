@@ -20,6 +20,7 @@ func NewLoggerMiddleware() app.Middleware {
 			requestId := requestid.FromContext(ctx)
 			logger := log.Named(fmt.Sprintf("request_id:%s", requestId))
 			contextx.SetLogger(ctx, logger)
+			contextx.SetRequestId(ctx, requestId)
 
 			ctx.SetContext(
 				contextx.SetLogger(

@@ -49,6 +49,13 @@ var (
 				},
 				fx.ParamTags(``, ``, `group:"vef:event:middlewares"`),
 			),
+			// Also provide as Publisher for API audit middleware
+			fx.Annotate(
+				func(bus event.Bus) event.Publisher {
+					return bus
+				},
+				fx.As(new(event.Publisher)),
+			),
 		),
 		fx.Invoke(func() {
 			logger.Info("Event module initialized")

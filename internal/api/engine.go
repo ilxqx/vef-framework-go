@@ -5,6 +5,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -25,6 +26,7 @@ func NewEngine(
 	resolver security.DataPermissionResolver,
 	db orm.Db,
 	transformer mold.Transformer,
+	publisher event.Publisher,
 ) Engine {
 	return &DefaultEngine{
 		manager:     manager,
@@ -33,6 +35,7 @@ func NewEngine(
 		resolver:    resolver,
 		db:          db,
 		transformer: transformer,
+		publisher:   publisher,
 	}
 }
 
@@ -43,6 +46,7 @@ type DefaultEngine struct {
 	resolver    security.DataPermissionResolver
 	db          orm.Db
 	transformer mold.Transformer
+	publisher   event.Publisher
 }
 
 // Connect registers the API engine with the given router.
@@ -68,7 +72,7 @@ func (e *DefaultEngine) dispatch(ctx fiber.Ctx) error {
 }
 
 // buildMiddlewares constructs the middleware chain for the API engine.
-// The middleware order is important: request parsing, authentication, context setup, authorization, data permission, and rate limiting.
+// The middleware order is important: request parsing, authentication, context setup, authorization, data permission, rate limiting, and audit.
 func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
 	return []fiber.Handler{
 		requestMiddleware(e.manager),
@@ -77,5 +81,6 @@ func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
 		buildAuthorizationMiddleware(e.manager, e.checker),
 		buildDataPermMiddleware(e.manager, e.resolver),
 		buildRateLimiterMiddleware(e.manager),
+		buildAuditMiddleware(e.manager, e.publisher),
 	}
 }

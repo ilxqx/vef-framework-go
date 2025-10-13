@@ -42,6 +42,9 @@ var Module = fx.Module(
 				`name:"vef:api:policy"`,
 				`optional:"true"`, // PermissionChecker
 				`optional:"true"`, // DataPermissionResolver
+				``,                // orm.Db
+				``,                // mold.Transformer
+				``,                // event.Publisher
 			),
 			fx.ResultTags(`name:"vef:api:engine"`),
 		),
@@ -52,6 +55,9 @@ var Module = fx.Module(
 				`name:"vef:openapi:policy"`,
 				`optional:"true"`, // PermissionChecker
 				`optional:"true"`, // DataPermissionResolver
+				``,                // orm.Db
+				``,                // mold.Transformer
+				``,                // event.Publisher
 			),
 			fx.ResultTags(`name:"vef:openapi:engine"`),
 		),
