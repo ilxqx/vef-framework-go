@@ -4,7 +4,7 @@
 
 A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 
-**Current Version:** v0.5.5
+**Current Version:** v0.5.6
 
 ## Features
 
@@ -286,16 +286,19 @@ CreateAPI: apis.NewCreateAPI[User, UserParams]().
 Available hooks:
 
 **Single Record Operations:**
+
 - `PreCreate`, `PostCreate` - Before/after creation (PostCreate runs in transaction)
 - `PreUpdate`, `PostUpdate` - Before/after update (receives both old and new model, PostUpdate runs in transaction)
 - `PreDelete`, `PostDelete` - Before/after deletion (PostDelete runs in transaction)
 
 **Batch Operations:**
+
 - `PreCreateMany`, `PostCreateMany` - Before/after batch creation (PostCreateMany runs in transaction)
 - `PreUpdateMany`, `PostUpdateMany` - Before/after batch update (receives old and new model arrays, PostUpdateMany runs in transaction)
 - `PreDeleteMany`, `PostDeleteMany` - Before/after batch deletion (PostDeleteMany runs in transaction)
 
 **Import/Export Operations:**
+
 - `PreImport`, `PostImport` - Before/after import (PreImport for validation, PostImport runs in transaction)
 - `PreExport` - Before export (for data formatting)
 
@@ -443,6 +446,7 @@ type UserSearch struct {
 **Supported Operators:**
 
 **Comparison Operators:**
+
 | Tag | SQL Operator | Description |
 |-----|--------------|-------------|
 | `eq` | = | Equal |
@@ -453,24 +457,28 @@ type UserSearch struct {
 | `lte` | <= | Less than or equal |
 
 **Range Operators:**
+
 | Tag | SQL Operator | Description |
 |-----|--------------|-------------|
 | `between` | BETWEEN | Between range |
 | `notBetween` | NOT BETWEEN | Not between range |
 
 **Collection Operators:**
+
 | Tag | SQL Operator | Description |
 |-----|--------------|-------------|
 | `in` | IN | In list |
 | `notIn` | NOT IN | Not in list |
 
 **Null Check Operators:**
+
 | Tag | SQL Operator | Description |
 |-----|--------------|-------------|
 | `isNull` | IS NULL | Is null |
 | `isNotNull` | IS NOT NULL | Is not null |
 
 **String Matching (Case Sensitive):**
+
 | Tag | SQL Operator | Description |
 |-----|--------------|-------------|
 | `contains` | LIKE %?% | Contains |
@@ -481,6 +489,7 @@ type UserSearch struct {
 | `notEndsWith` | NOT LIKE %? | Does not end with |
 
 **String Matching (Case Insensitive):**
+
 | Tag | SQL Operator | Description |
 |-----|--------------|-------------|
 | `iContains` | ILIKE %?% | Contains (case insensitive) |
@@ -1369,7 +1378,7 @@ type UserParams struct {
 
 ### Project Structure
 
-```
+```txt
 my-app/
 ├── cmd/
 │   └── main.go                 # Application entry point
