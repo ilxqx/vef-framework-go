@@ -26,6 +26,13 @@ go get github.com/ilxqx/vef-framework-go
 
 **Requirements:** Go 1.25 or higher
 
+**Troubleshooting:** If you encounter ambiguous import errors with `google.golang.org/genproto` during `go mod tidy`, run:
+
+```bash
+go get google.golang.org/genproto@latest
+go mod tidy
+```
+
 ### Minimal Example
 
 Create `main.go`:

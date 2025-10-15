@@ -26,6 +26,13 @@ go get github.com/ilxqx/vef-framework-go
 
 **环境要求：** Go 1.25 或更高版本
 
+**问题排查：** 如果在执行 `go mod tidy` 时遇到 `google.golang.org/genproto` 的模糊依赖错误，请运行：
+
+```bash
+go get google.golang.org/genproto@latest
+go mod tidy
+```
+
 ### 最小示例
 
 创建 `main.go`：
