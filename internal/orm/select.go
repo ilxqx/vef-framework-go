@@ -20,7 +20,7 @@ func NewSelectQuery(db *BunDb) *BunSelectQuery {
 	sq := db.db.NewSelect()
 	dialect := db.db.Dialect()
 	query := &BunSelectQuery{
-		QueryBuilder: newQueryBuilder(dialect, sq, eb),
+		QueryBuilder: newQueryBuilder(db, dialect, sq, eb),
 
 		db:      db,
 		dialect: dialect,

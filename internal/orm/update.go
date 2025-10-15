@@ -22,7 +22,7 @@ func NewUpdateQuery(db *BunDb) *BunUpdateQuery {
 	uq := db.db.NewUpdate()
 	dialect := db.db.Dialect()
 	query := &BunUpdateQuery{
-		QueryBuilder: newQueryBuilder(dialect, uq, eb),
+		QueryBuilder: newQueryBuilder(db, dialect, uq, eb),
 
 		db:      db,
 		dialect: dialect,

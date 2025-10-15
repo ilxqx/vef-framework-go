@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
@@ -12,154 +13,143 @@ import (
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
-// MultiDatabaseORMTestSuite manages multiple database containers and runs ORMTestSuite against each.
-// This is the top-level test suite that orchestrates testing across PostgreSQL, MySQL, and SQLite.
-type MultiDatabaseORMTestSuite struct {
-	suite.Suite
-
-	ctx               context.Context
-	postgresContainer *testhelpers.PostgresContainer
-	mysqlContainer    *testhelpers.MySQLContainer
-}
-
-// SetupSuite initializes database containers.
-func (suite *MultiDatabaseORMTestSuite) SetupSuite() {
-	suite.ctx = context.Background()
-
-	// Start PostgreSQL container
-	suite.postgresContainer = testhelpers.NewPostgresContainer(suite.ctx, &suite.Suite)
-
-	// Start MySQL container
-	suite.mysqlContainer = testhelpers.NewMySQLContainer(suite.ctx, &suite.Suite)
-}
-
-// TearDownSuite cleans up database containers.
-func (suite *MultiDatabaseORMTestSuite) TearDownSuite() {
-	if suite.postgresContainer != nil {
-		suite.postgresContainer.Terminate(suite.ctx, &suite.Suite)
-	}
-
-	if suite.mysqlContainer != nil {
-		suite.mysqlContainer.Terminate(suite.ctx, &suite.Suite)
-	}
-}
-
-// TestPostgre runs all ORM tests against PostgreSQL.
-func (suite *MultiDatabaseORMTestSuite) TestPostgre() {
-	suite.runORMTests(suite.postgresContainer.DsConfig)
-}
-
-// TestMySQL runs all ORM tests against MySQL.
-func (suite *MultiDatabaseORMTestSuite) TestMySQL() {
-	suite.runORMTests(suite.mysqlContainer.DsConfig)
-}
-
-// TestSQLite runs all ORM tests against SQLite (in-memory).
-func (suite *MultiDatabaseORMTestSuite) TestSQLite() {
-	// Create SQLite in-memory database config
-	dsConfig := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
-	}
-
-	suite.runORMTests(dsConfig)
-}
-
-// runORMTests executes all ORM test methods on the given suite.
-func (st *MultiDatabaseORMTestSuite) runORMTests(dsConfig *config.DatasourceConfig) {
+// runAllORMTests executes all ORM test suites on the given database configuration.
+func runAllORMTests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
 	// Create database connection
-	db, err := database.CreateDb(dsConfig)
-	st.Require().NoError(err)
+	db, err := database.New(dsConfig)
+	require.NoError(t, err)
 
 	defer func() {
 		// Close the database connection after all tests are completed
 		if err := db.Close(); err != nil {
-			st.T().Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
+			t.Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
 		}
 
-		st.T().Logf("All ORM tests completed for %s", dsConfig.Type)
+		t.Logf("All ORM tests completed for %s", dsConfig.Type)
 	}()
+
+	ormDb := New(db)
 
 	// Create Select Suite
 	selectSuite := &SelectTestSuite{
 		ORMTestSuite: &ORMTestSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			dbType: dsConfig.Type,
-			db:     New(db),
+			db:     ormDb,
 		},
 	}
 
 	// Create Condition Suite
 	conditionSuite := &ConditionTestSuite{
 		ORMTestSuite: &ORMTestSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			dbType: dsConfig.Type,
-			db:     New(db),
+			db:     ormDb,
 		},
 	}
 
 	// Create Insert Suite
 	insertSuite := &InsertTestSuite{
 		ORMTestSuite: &ORMTestSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			dbType: dsConfig.Type,
-			db:     New(db),
+			db:     ormDb,
 		},
 	}
 
 	// Create Update Suite
 	updateSuite := &UpdateTestSuite{
 		ORMTestSuite: &ORMTestSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			dbType: dsConfig.Type,
-			db:     New(db),
+			db:     ormDb,
 		},
 	}
 
 	// Create Delete Suite
 	deleteSuite := &DeleteTestSuite{
 		ORMTestSuite: &ORMTestSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			dbType: dsConfig.Type,
-			db:     New(db),
+			db:     ormDb,
 		},
 	}
 
 	// Create Merge Suite
 	// mergeSuite := &MergeTestSuite{
 	// 	ORMTestSuite: &ORMTestSuite{
-	// 		ctx:    st.ctx,
+	// 		ctx:    ctx,
 	// 		dbType: dsConfig.Type,
-	// 		db:     New(db),
+	// 		db:     ormDb,
 	// 	},
 	// }
 
-	st.Run("TestSelect", func() {
-		suite.Run(st.T(), selectSuite)
+	t.Run("TestSelect", func(t *testing.T) {
+		suite.Run(t, selectSuite)
 	})
 
-	st.Run("TestCondition", func() {
-		suite.Run(st.T(), conditionSuite)
+	t.Run("TestCondition", func(t *testing.T) {
+		suite.Run(t, conditionSuite)
 	})
 
-	st.Run("TestInsert", func() {
-		suite.Run(st.T(), insertSuite)
+	t.Run("TestInsert", func(t *testing.T) {
+		suite.Run(t, insertSuite)
 	})
 
-	st.Run("TestUpdate", func() {
-		suite.Run(st.T(), updateSuite)
+	t.Run("TestUpdate", func(t *testing.T) {
+		suite.Run(t, updateSuite)
 	})
 
-	st.Run("TestDelete", func() {
-		suite.Run(st.T(), deleteSuite)
+	t.Run("TestDelete", func(t *testing.T) {
+		suite.Run(t, deleteSuite)
 	})
 
-	// st.Run("TestMerge", func() {
-	// 	suite.Run(st.T(), mergeSuite)
+	// t.Run("TestMerge", func(t *testing.T) {
+	// 	suite.Run(t, mergeSuite)
 	// })
 }
 
-// TestMultiDatabaseORM runs the complete ORM test suite against PostgreSQL, MySQL, and SQLite.
-// This is the main entry point for testing the ORM's cross-database compatibility.
-func TestMultiDatabaseORM(t *testing.T) {
-	suite.Run(t, new(MultiDatabaseORMTestSuite))
+// TestPostgres runs all ORM tests against PostgreSQL.
+func TestPostgres(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a dummy suite for container management
+	dummySuite := &suite.Suite{}
+	dummySuite.SetT(t)
+
+	// Start PostgreSQL container
+	postgresContainer := testhelpers.NewPostgresContainer(ctx, dummySuite)
+	defer postgresContainer.Terminate(ctx, dummySuite)
+
+	// Run all ORM tests
+	runAllORMTests(t, ctx, postgresContainer.DsConfig)
+}
+
+// TestMySQL runs all ORM tests against MySQL.
+func TestMySQL(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a dummy suite for container management
+	dummySuite := &suite.Suite{}
+	dummySuite.SetT(t)
+
+	// Start MySQL container
+	mysqlContainer := testhelpers.NewMySQLContainer(ctx, dummySuite)
+	defer mysqlContainer.Terminate(ctx, dummySuite)
+
+	// Run all ORM tests
+	runAllORMTests(t, ctx, mysqlContainer.DsConfig)
+}
+
+// TestSQLite runs all ORM tests against SQLite (in-memory).
+func TestSQLite(t *testing.T) {
+	ctx := context.Background()
+
+	// Create SQLite in-memory database config
+	dsConfig := &config.DatasourceConfig{
+		Type: constants.DbSQLite,
+	}
+
+	// Run all ORM tests
+	runAllORMTests(t, ctx, dsConfig)
 }

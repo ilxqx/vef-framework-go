@@ -24,6 +24,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// TestAuditUser is a test model for audit user.
+type TestAuditUser struct {
+	bun.BaseModel `bun:"table:test_audit_user,alias:tau"`
+	orm.Model     `bun:"extend"`
+
+	Name string `json:"name" bun:",notnull"`
+}
+
 // TestUser is a test model for all tests.
 type TestUser struct {
 	bun.BaseModel `bun:"table:test_user,alias:tu"`

@@ -68,6 +68,21 @@ func NewFilteredUserFindPageResource() api.Resource {
 	}
 }
 
+// AuditUser User Resource - with audit user names.
+type AuditUserTestUserFindPageResource struct {
+	api.Resource
+	apis.FindPageAPI[TestUser, TestUserSearch]
+}
+
+func NewAuditUserTestUserFindPageResource() api.Resource {
+	return &AuditUserTestUserFindPageResource{
+		Resource: api.NewResource("test/user_page_audit"),
+		FindPageAPI: apis.NewFindPageAPI[TestUser, TestUserSearch]().
+			Public().
+			WithAuditUserNames((*TestAuditUser)(nil)),
+	}
+}
+
 // FindPageTestSuite is the test suite for FindPage API tests.
 type FindPageTestSuite struct {
 	BaseSuite
@@ -79,6 +94,7 @@ func (suite *FindPageTestSuite) SetupSuite() {
 		NewTestUserFindPageResource,
 		NewProcessedUserFindPageResource,
 		NewFilteredUserFindPageResource,
+		NewAuditUserTestUserFindPageResource,
 	)
 }
 
@@ -369,4 +385,48 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 		items := suite.readDataAsSlice(page["items"])
 		suite.Len(items, 0)
 	})
+}
+
+// TestFindPageWithAuditUserNames tests FindPage with audit user names populated.
+func (suite *FindPageTestSuite) TestFindPageWithAuditUserNames() {
+	resp := suite.makeAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/user_page_audit",
+			Action:   "findPage",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"page":   1,
+			"size":   5,
+			"status": "active",
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.True(body.IsOk())
+	suite.NotNil(body.Data)
+
+	page := suite.readDataAsMap(body.Data)
+	suite.Equal(float64(7), page["total"]) // 7 active users
+	suite.Equal(float64(1), page["page"])
+	suite.Equal(float64(5), page["size"])
+
+	items := suite.readDataAsSlice(page["items"])
+	suite.Len(items, 5)
+
+	// Check first user has audit user names
+	firstUser := suite.readDataAsMap(items[0])
+	suite.NotNil(firstUser["createdByName"])
+	suite.NotNil(firstUser["updatedByName"])
+
+	// Verify all users have audit user names populated
+	for _, u := range items {
+		user := suite.readDataAsMap(u)
+		suite.NotNil(user["createdByName"], "User %s should have createdByName", user["id"])
+		suite.NotNil(user["updatedByName"], "User %s should have updatedByName", user["id"])
+		// Audit user names should be from TestAuditUser data
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["createdByName"])
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["updatedByName"])
+	}
 }

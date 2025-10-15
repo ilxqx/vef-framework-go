@@ -37,10 +37,11 @@ func WithConnectionPool(poolConfig *ConnectionPoolConfig) Option {
 	}
 }
 
-// WithQueryHook enables or disables the query hook.
-func WithQueryHook(enabled bool) Option {
+// DisableQueryHook disables the query hook.
+// By default, query hook is enabled for logging SQL queries.
+func DisableQueryHook() Option {
 	return func(opts *databaseOptions) {
-		opts.EnableQueryHook = enabled
+		opts.EnableQueryHook = false
 	}
 }
 

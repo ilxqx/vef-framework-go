@@ -87,6 +87,21 @@ func NewOrderedUserFindOneResource() api.Resource {
 	}
 }
 
+// AuditUser User Resource - with audit user names.
+type AuditUserTestUserFindOneResource struct {
+	api.Resource
+	apis.FindOneAPI[TestUser, TestUserSearch]
+}
+
+func NewAuditUserTestUserFindOneResource() api.Resource {
+	return &AuditUserTestUserFindOneResource{
+		Resource: api.NewResource("test/user_audit"),
+		FindOneAPI: apis.NewFindOneAPI[TestUser, TestUserSearch]().
+			Public().
+			WithAuditUserNames((*TestAuditUser)(nil)),
+	}
+}
+
 // FindOneTestSuite is the test suite for FindOne API tests.
 type FindOneTestSuite struct {
 	BaseSuite
@@ -99,6 +114,7 @@ func (suite *FindOneTestSuite) SetupSuite() {
 		NewProcessedUserFindOneResource,
 		NewFilteredUserFineOneResource,
 		NewOrderedUserFindOneResource,
+		NewAuditUserTestUserFindOneResource,
 	)
 }
 
@@ -429,4 +445,35 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 		suite.Equal(result.ErrCodeRecordNotFound, body.Code)
 		suite.Nil(body.Data)
 	})
+}
+
+// TestFindOneWithAuditUserNames tests FindOne with audit user names populated.
+func (suite *FindOneTestSuite) TestFindOneWithAuditUserNames() {
+	resp := suite.makeAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/user_audit",
+			Action:   "findOne",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"id": "user001",
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.True(body.IsOk())
+	suite.NotNil(body.Data)
+
+	user := suite.readDataAsMap(body.Data)
+	suite.Equal("user001", user["id"])
+	suite.Equal("Alice Johnson", user["name"])
+
+	// Verify audit user names are populated
+	suite.NotNil(user["createdByName"])
+	suite.NotNil(user["updatedByName"])
+
+	// user001 was created by audit001 (John Doe) and updated by audit002 (Jane Smith)
+	suite.Equal("John Doe", user["createdByName"])
+	suite.Equal("Jane Smith", user["updatedByName"])
 }

@@ -86,6 +86,21 @@ func NewOrderedUserFindAllResource() api.Resource {
 	}
 }
 
+// AuditUser User Resource - with audit user names.
+type AuditUserTestUserFindAllResource struct {
+	api.Resource
+	apis.FindAllAPI[TestUser, TestUserSearch]
+}
+
+func NewAuditUserTestUserFindAllResource() api.Resource {
+	return &AuditUserTestUserFindAllResource{
+		Resource: api.NewResource("test/user_all_audit"),
+		FindAllAPI: apis.NewFindAllAPI[TestUser, TestUserSearch]().
+			Public().
+			WithAuditUserNames((*TestAuditUser)(nil)),
+	}
+}
+
 // FindAllTestSuite is the test suite for FindAll API tests.
 type FindAllTestSuite struct {
 	BaseSuite
@@ -98,6 +113,7 @@ func (suite *FindAllTestSuite) SetupSuite() {
 		NewProcessedUserFindAllResource,
 		NewFilteredUserFindAllResource,
 		NewOrderedUserFindAllResource,
+		NewAuditUserTestUserFindAllResource,
 	)
 }
 
@@ -299,4 +315,41 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 		users := suite.readDataAsSlice(body.Data)
 		suite.Len(users, 0) // Empty array, not nil
 	})
+}
+
+// TestFindAllWithAuditUserNames tests FindAll with audit user names populated.
+func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
+	resp := suite.makeAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/user_all_audit",
+			Action:   "findAll",
+			Version:  "v1",
+		},
+		Params: map[string]any{
+			"status": "active",
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.True(body.IsOk())
+	suite.NotNil(body.Data)
+
+	users := suite.readDataAsSlice(body.Data)
+	suite.Len(users, 7) // 7 active users
+
+	// Check first user has audit user names
+	firstUser := suite.readDataAsMap(users[0])
+	suite.NotNil(firstUser["createdByName"])
+	suite.NotNil(firstUser["updatedByName"])
+
+	// Verify all users have audit user names populated
+	for _, u := range users {
+		user := suite.readDataAsMap(u)
+		suite.NotNil(user["createdByName"], "User %s should have createdByName", user["id"])
+		suite.NotNil(user["updatedByName"], "User %s should have updatedByName", user["id"])
+		// Audit user names should be from TestAuditUser data
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["createdByName"])
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["updatedByName"])
+	}
 }

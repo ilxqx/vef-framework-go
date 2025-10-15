@@ -20,7 +20,7 @@ func NewInsertQuery(db *BunDb) *BunInsertQuery {
 	iq := db.db.NewInsert()
 	dialect := db.db.Dialect()
 	query := &BunInsertQuery{
-		QueryBuilder: newQueryBuilder(dialect, iq, eb),
+		QueryBuilder: newQueryBuilder(db, dialect, iq, eb),
 
 		db:      db,
 		dialect: dialect,

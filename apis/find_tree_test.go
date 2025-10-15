@@ -92,6 +92,23 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 	}
 }
 
+// AuditUser Tree Resource - with audit user names.
+type AuditUserCategoryFindTreeResource struct {
+	api.Resource
+	apis.FindTreeAPI[TestCategory, TestCategorySearch]
+}
+
+func NewAuditUserCategoryFindTreeResource() api.Resource {
+	return &AuditUserCategoryFindTreeResource{
+		Resource: api.NewResource("test/category_tree_audit"),
+		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
+			Public().
+			IdColumn("id").
+			ParentIdColumn("parent_id").
+			WithAuditUserNames((*TestAuditUser)(nil)),
+	}
+}
+
 // FindTreeTestSuite is the test suite for FindTree API tests.
 type FindTreeTestSuite struct {
 	BaseSuite
@@ -103,6 +120,7 @@ func (suite *FindTreeTestSuite) SetupSuite() {
 		NewTestCategoryFindTreeResource,
 		NewFilteredCategoryFindTreeResource,
 		NewOrderedCategoryFindTreeResource,
+		NewAuditUserCategoryFindTreeResource,
 	)
 }
 
@@ -313,4 +331,42 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 		tree := suite.readDataAsSlice(body.Data)
 		suite.Len(tree, 3) // All root categories
 	})
+}
+
+// TestFindTreeWithAuditUserNames tests FindTree with audit user names populated.
+func (suite *FindTreeTestSuite) TestFindTreeWithAuditUserNames() {
+	resp := suite.makeAPIRequest(api.Request{
+		Identifier: api.Identifier{
+			Resource: "test/category_tree_audit",
+			Action:   "findTree",
+			Version:  "v1",
+		},
+	})
+
+	suite.Equal(200, resp.StatusCode)
+	body := suite.readBody(resp)
+	suite.True(body.IsOk())
+	suite.NotNil(body.Data)
+
+	tree := suite.readDataAsSlice(body.Data)
+	suite.Len(tree, 3) // 3 root categories
+
+	// Verify all categories have audit user names (they were all created/updated by 'test' user initially)
+	// But our fixture data has created_by and updated_by set to 'test', not actual audit user IDs
+	// So we'll verify the structure is correct
+	for _, c := range tree {
+		category := suite.readDataAsMap(c)
+		suite.NotNil(category["createdByName"], "Category %s should have createdByName", category["id"])
+		suite.NotNil(category["updatedByName"], "Category %s should have updatedByName", category["id"])
+
+		// Check children if they exist
+		if category["children"] != nil {
+			children := suite.readDataAsSlice(category["children"])
+			for _, ch := range children {
+				child := suite.readDataAsMap(ch)
+				suite.NotNil(child["createdByName"], "Child category %s should have createdByName", child["id"])
+				suite.NotNil(child["updatedByName"], "Child category %s should have updatedByName", child["id"])
+			}
+		}
+	}
 }

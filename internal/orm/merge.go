@@ -17,7 +17,7 @@ func NewMergeQuery(db *BunDb) *BunMergeQuery {
 	mq := db.db.NewMerge()
 	dialect := db.db.Dialect()
 	query := &BunMergeQuery{
-		QueryBuilder: newQueryBuilder(dialect, mq, eb),
+		QueryBuilder: newQueryBuilder(db, dialect, mq, eb),
 
 		db:      db,
 		dialect: dialect,

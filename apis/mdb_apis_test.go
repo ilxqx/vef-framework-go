@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dbfixture"
@@ -16,82 +17,30 @@ import (
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
-// MultiDatabaseAPIsTestSuite manages multiple database containers and runs API test suites against each.
-// This is the top-level test suite that orchestrates testing across PostgreSQL, MySQL, and SQLite.
-type MultiDatabaseAPIsTestSuite struct {
-	suite.Suite
-
-	ctx               context.Context
-	postgresContainer *testhelpers.PostgresContainer
-	mysqlContainer    *testhelpers.MySQLContainer
-}
-
-// SetupSuite initializes database containers.
-func (suite *MultiDatabaseAPIsTestSuite) SetupSuite() {
-	suite.ctx = context.Background()
-
-	// Start PostgreSQL container
-	suite.postgresContainer = testhelpers.NewPostgresContainer(suite.ctx, &suite.Suite)
-
-	// Start MySQL container
-	suite.mysqlContainer = testhelpers.NewMySQLContainer(suite.ctx, &suite.Suite)
-}
-
-// TearDownSuite cleans up database containers.
-func (suite *MultiDatabaseAPIsTestSuite) TearDownSuite() {
-	if suite.postgresContainer != nil {
-		suite.postgresContainer.Terminate(suite.ctx, &suite.Suite)
-	}
-
-	if suite.mysqlContainer != nil {
-		suite.mysqlContainer.Terminate(suite.ctx, &suite.Suite)
-	}
-}
-
-// TestPostgres runs all API tests against PostgreSQL.
-func (suite *MultiDatabaseAPIsTestSuite) TestPostgres() {
-	suite.runAPITests(suite.postgresContainer.DsConfig)
-}
-
-// TestMySQL runs all API tests against MySQL.
-func (suite *MultiDatabaseAPIsTestSuite) TestMySQL() {
-	suite.runAPITests(suite.mysqlContainer.DsConfig)
-}
-
-// TestSQLite runs all API tests against SQLite (in-memory).
-func (suite *MultiDatabaseAPIsTestSuite) TestSQLite() {
-	// Create SQLite in-memory database config
-	dsConfig := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
-	}
-
-	suite.runAPITests(dsConfig)
-}
-
-// runAPITests executes all API test suites on the given database configuration.
-func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceConfig) {
+// runAllAPITests executes all API test suites on the given database configuration.
+func runAllAPITests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
 	// Create database connection
-	db, err := database.CreateDb(dsConfig)
-	st.Require().NoError(err)
+	db, err := database.New(dsConfig)
+	require.NoError(t, err)
 
 	defer func() {
 		// Close the database connection after all tests are completed
 		if err := db.Close(); err != nil {
-			st.T().Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
+			t.Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
 		}
 
-		st.T().Logf("All API tests completed for %s", dsConfig.Type)
+		t.Logf("All API tests completed for %s", dsConfig.Type)
 	}()
 
 	// Setup test data using fixtures
-	st.setupTestFixtures(db, dsConfig.Type)
+	setupTestFixtures(t, ctx, db, dsConfig.Type)
 
 	ormDb := orm.New(db)
 
 	// Create FindAll Suite
 	findAllSuite := &FindAllTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -100,7 +49,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create FindPage Suite
 	findPageSuite := &FindPageTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -109,7 +58,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create FindOne Suite
 	findOneSuite := &FindOneTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -118,7 +67,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create FindOptions Suite
 	findOptionsSuite := &FindOptionsTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -127,7 +76,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create FindTree Suite
 	findTreeSuite := &FindTreeTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -136,7 +85,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create FindTreeOptions Suite
 	findTreeOptionsSuite := &FindTreeOptionsTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -145,14 +94,14 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create Suite
 	createSuite := &CreateTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
 	}
 	createManySuite := &CreateManyTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -161,14 +110,14 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create Update Suite
 	updateSuite := &UpdateTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
 	}
 	updateManySuite := &UpdateManyTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -177,14 +126,14 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create Delete Suite
 	deleteSuite := &DeleteTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
 	}
 	deleteManySuite := &DeleteManyTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -193,7 +142,7 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create Export Suite
 	exportSuite := &ExportTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
@@ -202,87 +151,88 @@ func (st *MultiDatabaseAPIsTestSuite) runAPITests(dsConfig *config.DatasourceCon
 	// Create Import Suite
 	importSuite := &ImportTestSuite{
 		BaseSuite{
-			ctx:    st.ctx,
+			ctx:    ctx,
 			db:     ormDb,
 			dbType: dsConfig.Type,
 		},
 	}
 
-	st.Run("TestFindAll", func() {
-		suite.Run(st.T(), findAllSuite)
+	t.Run("TestFindAll", func(t *testing.T) {
+		suite.Run(t, findAllSuite)
 	})
 
-	st.Run("TestFindPage", func() {
-		suite.Run(st.T(), findPageSuite)
+	t.Run("TestFindPage", func(t *testing.T) {
+		suite.Run(t, findPageSuite)
 	})
 
-	st.Run("TestFindOne", func() {
-		suite.Run(st.T(), findOneSuite)
+	t.Run("TestFindOne", func(t *testing.T) {
+		suite.Run(t, findOneSuite)
 	})
 
-	st.Run("TestFindOptions", func() {
-		suite.Run(st.T(), findOptionsSuite)
+	t.Run("TestFindOptions", func(t *testing.T) {
+		suite.Run(t, findOptionsSuite)
 	})
 
 	// TODO: SQLite doesn't support recursive CTE with parentheses generated by Bun framework
 	// This is a known issue with Bun's SQL generation. Skip these tests for SQLite until Bun fixes it.
 	// See: https://github.com/uptrace/bun/issues/xxx (placeholder for issue link)
 	if dsConfig.Type != constants.DbSQLite {
-		st.Run("TestFindTree", func() {
-			suite.Run(st.T(), findTreeSuite)
+		t.Run("TestFindTree", func(t *testing.T) {
+			suite.Run(t, findTreeSuite)
 		})
 
-		st.Run("TestFindTreeOptions", func() {
-			suite.Run(st.T(), findTreeOptionsSuite)
+		t.Run("TestFindTreeOptions", func(t *testing.T) {
+			suite.Run(t, findTreeOptionsSuite)
 		})
 	} else {
-		st.T().Logf("Skipping FindTree and FindTreeOptions tests for SQLite due to Bun recursive CTE syntax issue")
+		t.Logf("Skipping FindTree and FindTreeOptions tests for SQLite due to Bun recursive CTE syntax issue")
 	}
 
-	st.Run("TestCreate", func() {
-		suite.Run(st.T(), createSuite)
+	t.Run("TestCreate", func(t *testing.T) {
+		suite.Run(t, createSuite)
 	})
 
-	st.Run("TestCreateMany", func() {
-		suite.Run(st.T(), createManySuite)
+	t.Run("TestCreateMany", func(t *testing.T) {
+		suite.Run(t, createManySuite)
 	})
 
-	st.Run("TestUpdate", func() {
-		suite.Run(st.T(), updateSuite)
+	t.Run("TestUpdate", func(t *testing.T) {
+		suite.Run(t, updateSuite)
 	})
 
-	st.Run("TestUpdateMany", func() {
-		suite.Run(st.T(), updateManySuite)
+	t.Run("TestUpdateMany", func(t *testing.T) {
+		suite.Run(t, updateManySuite)
 	})
 
-	st.Run("TestDelete", func() {
-		suite.Run(st.T(), deleteSuite)
+	t.Run("TestDelete", func(t *testing.T) {
+		suite.Run(t, deleteSuite)
 	})
 
-	st.Run("TestDeleteMany", func() {
-		suite.Run(st.T(), deleteManySuite)
+	t.Run("TestDeleteMany", func(t *testing.T) {
+		suite.Run(t, deleteManySuite)
 	})
 
-	st.Run("TestExport", func() {
-		suite.Run(st.T(), exportSuite)
+	t.Run("TestExport", func(t *testing.T) {
+		suite.Run(t, exportSuite)
 	})
 
-	st.Run("TestImport", func() {
-		suite.Run(st.T(), importSuite)
+	t.Run("TestImport", func(t *testing.T) {
+		suite.Run(t, importSuite)
 	})
 }
 
 // setupTestFixtures loads test data from fixture files using dbfixture.
-func (st *MultiDatabaseAPIsTestSuite) setupTestFixtures(db bun.IDB, dbType constants.DbType) {
-	st.T().Logf("Setting up test fixtures for %s", dbType)
+func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType constants.DbType) {
+	t.Logf("Setting up test fixtures for %s", dbType)
 
 	bunDb, ok := db.(*bun.DB)
 	if !ok {
-		st.Require().Fail("Could not convert to *bun.DB")
+		require.Fail(t, "Could not convert to *bun.DB")
 	}
 
 	// Register models
 	bunDb.RegisterModel(
+		(*TestAuditUser)(nil),
 		(*TestUser)(nil),
 		(*TestCategory)(nil),
 		(*TestCompositePKItem)(nil),
@@ -297,14 +247,53 @@ func (st *MultiDatabaseAPIsTestSuite) setupTestFixtures(db bun.IDB, dbType const
 	)
 
 	// Load fixtures from testdata directory
-	err := fixture.Load(st.ctx, os.DirFS("testdata"), "fixture.yaml")
-	st.Require().NoError(err, "Failed to load fixtures for %s", dbType)
+	err := fixture.Load(ctx, os.DirFS("testdata"), "fixture.yaml")
+	require.NoError(t, err, "Failed to load fixtures for %s", dbType)
 
-	st.T().Logf("Test fixtures loaded for %s database", dbType)
+	t.Logf("Test fixtures loaded for %s database", dbType)
 }
 
-// TestMultiDatabaseAPIs runs the complete API test suite against PostgreSQL, MySQL, and SQLite.
-// This is the main entry point for testing the APIs' cross-database compatibility.
-func TestMultiDatabaseAPIs(t *testing.T) {
-	suite.Run(t, new(MultiDatabaseAPIsTestSuite))
+// TestPostgres runs all API tests against PostgreSQL.
+func TestPostgres(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a dummy suite for container management
+	dummySuite := &suite.Suite{}
+	dummySuite.SetT(t)
+
+	// Start PostgreSQL container
+	postgresContainer := testhelpers.NewPostgresContainer(ctx, dummySuite)
+	defer postgresContainer.Terminate(ctx, dummySuite)
+
+	// Run all API tests
+	runAllAPITests(t, ctx, postgresContainer.DsConfig)
+}
+
+// TestMySQL runs all API tests against MySQL.
+func TestMySQL(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a dummy suite for container management
+	dummySuite := &suite.Suite{}
+	dummySuite.SetT(t)
+
+	// Start MySQL container
+	mysqlContainer := testhelpers.NewMySQLContainer(ctx, dummySuite)
+	defer mysqlContainer.Terminate(ctx, dummySuite)
+
+	// Run all API tests
+	runAllAPITests(t, ctx, mysqlContainer.DsConfig)
+}
+
+// TestSQLite runs all API tests against SQLite (in-memory).
+func TestSQLite(t *testing.T) {
+	ctx := context.Background()
+
+	// Create SQLite in-memory database config
+	dsConfig := &config.DatasourceConfig{
+		Type: constants.DbSQLite,
+	}
+
+	// Run all API tests
+	runAllAPITests(t, ctx, dsConfig)
 }

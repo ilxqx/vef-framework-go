@@ -17,7 +17,7 @@ func NewDeleteQuery(db *BunDb) *BunDeleteQuery {
 	dq := db.db.NewDelete()
 	dialect := db.db.Dialect()
 	query := &BunDeleteQuery{
-		QueryBuilder: newQueryBuilder(dialect, dq, eb),
+		QueryBuilder: newQueryBuilder(db, dialect, dq, eb),
 
 		db:      db,
 		dialect: dialect,
