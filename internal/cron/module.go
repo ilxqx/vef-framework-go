@@ -12,7 +12,4 @@ var Module = fx.Module(
 	"vef:cron",
 	fx.Provide(newScheduler),
 	fx.Provide(cron.NewScheduler),
-	fx.Invoke(func() {
-		logger.Info("Cron module initialized")
-	}),
 )

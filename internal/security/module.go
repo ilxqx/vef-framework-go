@@ -69,7 +69,4 @@ var Module = fx.Module(
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),
 	),
-	fx.Invoke(func() {
-		logger.Info("Security module initialized")
-	}),
 )

@@ -7,7 +7,4 @@ import "go.uber.org/fx"
 var Module = fx.Module(
 	"vef:orm",
 	fx.Provide(New),
-	fx.Invoke(func() {
-		logger.Info("ORM module initialized")
-	}),
 )

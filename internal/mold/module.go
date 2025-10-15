@@ -45,8 +45,4 @@ var Module = fx.Module(
 			fx.ParamTags(`optional:"true"`),
 		),
 	),
-	// Initialize the mold module
-	fx.Invoke(func() {
-		logger.Info("Mold module initialized")
-	}),
 )

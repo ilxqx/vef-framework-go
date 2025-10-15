@@ -19,8 +19,5 @@ var (
 			newRedisConfig,
 			newStorageConfig,
 		),
-		fx.Invoke(func() {
-			logger.Info("Config module initialized")
-		}),
 	)
 )

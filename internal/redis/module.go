@@ -38,7 +38,4 @@ var Module = fx.Module(
 			}),
 		),
 	),
-	fx.Invoke(func() {
-		logger.Info("Redis module initialized")
-	}),
 )

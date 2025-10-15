@@ -53,8 +53,5 @@ var (
 				fx.As(new(event.Publisher)),
 			),
 		),
-		fx.Invoke(func() {
-			logger.Info("Event module initialized")
-		}),
 	)
 )
