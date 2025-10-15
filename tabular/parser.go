@@ -5,14 +5,14 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
-	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/strhelpers"
 )
 
-var baseModelType = reflect.TypeFor[bun.BaseModel]()
+var baseModelType = reflect.TypeFor[schema.BaseModel]()
 
 // parseStruct parses the tabular columns from a struct using visitor pattern.
 func parseStruct(t reflect.Type) []*Column {
@@ -54,7 +54,13 @@ func parseStruct(t reflect.Type) []*Column {
 				columns = append(columns, column)
 				columnOrder++
 			} else {
-				// No tag: use default configuration
+				// No tag found
+				// For anonymous (embedded) fields without tags, skip them to avoid exporting the struct itself
+				if field.Anonymous {
+					return reflectx.SkipChildren
+				}
+
+				// For regular fields without tags: use default configuration
 				column := buildColumn(field, make(map[string]string), columnOrder)
 				columns = append(columns, column)
 				columnOrder++
@@ -74,6 +80,7 @@ func parseStruct(t reflect.Type) []*Column {
 }
 
 // buildColumn builds a Column from a struct field and attributes.
+// Note: field.Index is expected to contain the complete path from root struct (provided by reflectx visitor).
 func buildColumn(field reflect.StructField, attrs map[string]string, autoOrder int) *Column {
 	// Get column name - support default value (name=用户ID or just 用户ID)
 	name := attrs[AttrName]

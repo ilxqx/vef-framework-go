@@ -179,7 +179,7 @@ func Visit(target reflect.Value, visitor Visitor, opts ...VisitorOption) {
 	visited := make(map[reflect.Type]bool)
 
 	if config.TraversalMode == DepthFirst {
-		visitDepthFirst(target, config, visitor, visited, 0)
+		visitDepthFirst(target, config, visitor, visited, 0, nil)
 	} else {
 		visitBreadthFirst(target, config, visitor, visited)
 	}
@@ -207,14 +207,15 @@ func VisitType(targetType reflect.Type, visitor TypeVisitor, opts ...VisitorOpti
 	visited := make(map[reflect.Type]bool)
 
 	if config.TraversalMode == DepthFirst {
-		visitTypeDepthFirst(targetType, config, visitor, visited, 0)
+		visitTypeDepthFirst(targetType, config, visitor, visited, 0, nil)
 	} else {
 		visitTypeBreadthFirst(targetType, config, visitor, visited)
 	}
 }
 
-// visitDepthFirst performs depth-first traversal of the struct.
-func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor, visited map[reflect.Type]bool, depth int) VisitAction {
+// visitDepthFirst performs depth-first traversal of the struct with index path tracking.
+// ParentIndexPath should be nil for the root struct and will be built up during recursion.
+func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor, visited map[reflect.Type]bool, depth int, parentIndexPath []int) VisitAction {
 	// Check max depth
 	if config.MaxDepth > 0 && depth >= config.MaxDepth {
 		return Continue
@@ -260,9 +261,12 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 			continue
 		}
 
+		// Create a new StructField with the complete index path
+		fieldTypeCopy := fieldWithAbsoluteIndex(fieldType, parentIndexPath)
+
 		// Visit the field
 		if visitor.VisitField != nil {
-			if action := visitor.VisitField(fieldType, field, depth); action == Stop {
+			if action := visitor.VisitField(fieldTypeCopy, field, depth); action == Stop {
 				return Stop
 			} else if action == SkipChildren {
 				continue
@@ -271,7 +275,7 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 
 		// Recursive traversal decision
 		if config.Recursive && shouldRecurse(fieldType, config.DiveTag) {
-			if action := visitDepthFirst(field, config, visitor, visited, depth+1); action == Stop {
+			if action := visitDepthFirst(field, config, visitor, visited, depth+1, fieldTypeCopy.Index); action == Stop {
 				return Stop
 			}
 		}
@@ -288,17 +292,19 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 // visitBreadthFirst performs breadth-first traversal of the struct.
 func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visitor, visited map[reflect.Type]bool) {
 	type queueItem struct {
-		value reflect.Value
-		depth int
+		value           reflect.Value
+		depth           int
+		parentIndexPath []int
 	}
 
 	queue := list.New()
-	queue.PushBack(queueItem{target, 0})
+	queue.PushBack(queueItem{target, 0, nil})
 
 	for queue.Len() > 0 {
 		item := queue.Remove(queue.Front()).(queueItem)
 		current := item.value
 		depth := item.depth
+		parentIndexPath := item.parentIndexPath
 
 		// Check max depth
 		if config.MaxDepth > 0 && depth >= config.MaxDepth {
@@ -347,11 +353,14 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 				continue
 			}
 
+			// Create a new StructField with the complete index path
+			fieldTypeCopy := fieldWithAbsoluteIndex(fieldType, parentIndexPath)
+
 			// Visit the field
 			skipChildren := false
 
 			if visitor.VisitField != nil {
-				if action := visitor.VisitField(fieldType, field, depth); action == Stop {
+				if action := visitor.VisitField(fieldTypeCopy, field, depth); action == Stop {
 					return
 				} else if action == SkipChildren {
 					skipChildren = true
@@ -360,7 +369,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 
 			// Add to next level if should recurse
 			if !skipChildren && config.Recursive && shouldRecurse(fieldType, config.DiveTag) {
-				childNodes = append(childNodes, queueItem{field, depth + 1})
+				childNodes = append(childNodes, queueItem{field, depth + 1, fieldTypeCopy.Index})
 			}
 		}
 
@@ -376,8 +385,9 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 	}
 }
 
-// visitTypeDepthFirst performs depth-first traversal of struct types.
-func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor TypeVisitor, visited map[reflect.Type]bool, depth int) VisitAction {
+// visitTypeDepthFirst performs depth-first traversal of struct types with index path tracking.
+// ParentIndexPath should be nil for the root struct and will be built up during recursion.
+func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor TypeVisitor, visited map[reflect.Type]bool, depth int, parentIndexPath []int) VisitAction {
 	// Check max depth
 	if config.MaxDepth > 0 && depth >= config.MaxDepth {
 		return Continue
@@ -406,9 +416,12 @@ func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor 
 			continue
 		}
 
+		// Create a new StructField with the complete index path
+		fieldCopy := fieldWithAbsoluteIndex(field, parentIndexPath)
+
 		// Visit the field type
 		if visitor.VisitFieldType != nil {
-			if action := visitor.VisitFieldType(field, depth); action == Stop {
+			if action := visitor.VisitFieldType(fieldCopy, depth); action == Stop {
 				return Stop
 			} else if action == SkipChildren {
 				continue
@@ -418,7 +431,8 @@ func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor 
 		// Recursive traversal decision
 		if config.Recursive && shouldRecurse(field, config.DiveTag) {
 			fieldType := Indirect(field.Type)
-			if action := visitTypeDepthFirst(fieldType, config, visitor, visited, depth+1); action == Stop {
+			// Pass the field's complete index path as parent path for children
+			if action := visitTypeDepthFirst(fieldType, config, visitor, visited, depth+1, fieldCopy.Index); action == Stop {
 				return Stop
 			}
 		}
@@ -435,17 +449,19 @@ func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor 
 // visitTypeBreadthFirst performs breadth-first traversal of struct types.
 func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visitor TypeVisitor, visited map[reflect.Type]bool) {
 	type queueItem struct {
-		structType reflect.Type
-		depth      int
+		structType      reflect.Type
+		depth           int
+		parentIndexPath []int
 	}
 
 	queue := list.New()
-	queue.PushBack(queueItem{targetType, 0})
+	queue.PushBack(queueItem{targetType, 0, nil})
 
 	for queue.Len() > 0 {
 		item := queue.Remove(queue.Front()).(queueItem)
 		current := Indirect(item.structType)
 		depth := item.depth
+		parentIndexPath := item.parentIndexPath
 
 		// Check max depth
 		if config.MaxDepth > 0 && depth >= config.MaxDepth {
@@ -482,11 +498,14 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 				continue
 			}
 
+			// Create a new StructField with the complete index path
+			fieldCopy := fieldWithAbsoluteIndex(field, parentIndexPath)
+
 			// Visit the field type
 			skipChildren := false
 
 			if visitor.VisitFieldType != nil {
-				if action := visitor.VisitFieldType(field, depth); action == Stop {
+				if action := visitor.VisitFieldType(fieldCopy, depth); action == Stop {
 					return
 				} else if action == SkipChildren {
 					skipChildren = true
@@ -496,7 +515,7 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 			// Add to next level if should recurse
 			if !skipChildren && config.Recursive && shouldRecurse(field, config.DiveTag) {
 				fieldType := field.Type
-				childTypes = append(childTypes, queueItem{fieldType, depth + 1})
+				childTypes = append(childTypes, queueItem{fieldType, depth + 1, fieldCopy.Index})
 			}
 		}
 
@@ -573,4 +592,26 @@ func shouldRecurse(field reflect.StructField, diveTag TagConfig) bool {
 	}
 
 	return false
+}
+
+// buildAbsoluteIndexPath builds the complete index path from root to the current field.
+// It concatenates parentIndexPath with the field's own Index.
+func buildAbsoluteIndexPath(parentIndexPath []int, field reflect.StructField) []int {
+	if len(parentIndexPath) > 0 {
+		fullIndexPath := make([]int, len(parentIndexPath)+len(field.Index))
+		copy(fullIndexPath, parentIndexPath)
+		copy(fullIndexPath[len(parentIndexPath):], field.Index)
+
+		return fullIndexPath
+	}
+	// Return a copy of field.Index to avoid unintended mutations
+	return append([]int(nil), field.Index...)
+}
+
+// fieldWithAbsoluteIndex creates a new StructField with the complete index path from root.
+func fieldWithAbsoluteIndex(field reflect.StructField, parentIndexPath []int) reflect.StructField {
+	fieldCopy := field
+	fieldCopy.Index = buildAbsoluteIndexPath(parentIndexPath, field)
+
+	return fieldCopy
 }

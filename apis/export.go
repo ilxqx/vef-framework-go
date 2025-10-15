@@ -113,7 +113,7 @@ func (a *exportAPI[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 
 		var models []TModel
 
-		query := a.BuildQuery(db, &models, search, ctx)
+		query := a.BuildQuery(db, &models, search, ctx).SelectModelColumns()
 		a.ApplyDefaultSort(query)
 
 		// Execute query with safety limit

@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"net"
 	"strings"
 
@@ -34,6 +35,10 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 			return definition.IsPublic()
 		},
 		ErrorHandler: func(_ fiber.Ctx, err error) error {
+			if errors.Is(err, keyauth.ErrMissingOrMalformedAPIKey) {
+				return fiber.ErrUnauthorized
+			}
+
 			return err
 		},
 		Validator: func(ctx fiber.Ctx, accessToken string) (bool, error) {

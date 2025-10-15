@@ -61,6 +61,10 @@ func parseStruct(t reflect.Type) []Condition {
 				// Handle regular search fields
 				conditions = append(conditions, buildCondition(field, attrs))
 			} else {
+				if field.Anonymous {
+					return reflectx.SkipChildren
+				}
+
 				// No tag: use default configuration (eq operator with snake_case column name)
 				conditions = append(conditions, buildCondition(field, make(map[string]string)))
 			}

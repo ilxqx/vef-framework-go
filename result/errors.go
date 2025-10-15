@@ -7,8 +7,16 @@ import (
 )
 
 var (
-	ErrTokenExpired     = ErrWithCodeAndStatus(ErrCodeTokenExpired, fiber.StatusUnauthorized, i18n.T(ErrMessageTokenExpired)) // ErrTokenExpired is the error for expired token
-	ErrTokenInvalid     = ErrWithCodeAndStatus(ErrCodeTokenInvalid, fiber.StatusUnauthorized, i18n.T(ErrMessageTokenInvalid)) // ErrTokenInvalid is the error for invalid token
+	ErrTokenExpired = ErrWithCodeAndStatus(
+		ErrCodeTokenExpired,
+		fiber.StatusUnauthorized,
+		i18n.T(ErrMessageTokenExpired),
+	) // ErrTokenExpired is the error for expired token
+	ErrTokenInvalid = ErrWithCodeAndStatus(
+		ErrCodeTokenInvalid,
+		fiber.StatusUnauthorized,
+		i18n.T(ErrMessageTokenInvalid),
+	) // ErrTokenInvalid is the error for invalid token
 	ErrTokenNotValidYet = ErrWithCodeAndStatus(
 		ErrCodeTokenNotValidYet,
 		fiber.StatusUnauthorized,
@@ -70,9 +78,11 @@ var (
 		fiber.StatusUnauthorized,
 		i18n.T(ErrMessageExternalAppDisabled),
 	) // ErrExternalAppDisabled is the error for app disabled
-	ErrIpNotAllowed   = ErrWithCodeAndStatus(ErrCodeIpNotAllowed, fiber.StatusUnauthorized, i18n.T(ErrMessageIpNotAllowed)) // ErrIpNotAllowed is the error for ip not allowed
-	ErrUnknown        = ErrWithCodeAndStatus(ErrCodeUnknown, fiber.StatusInternalServerError, i18n.T(ErrMessageUnknown))    // ErrUnknown is the error for unknown error
-	ErrRecordNotFound = ErrWithCode(
+	ErrIpNotAllowed    = ErrWithCodeAndStatus(ErrCodeIpNotAllowed, fiber.StatusUnauthorized, i18n.T(ErrMessageIpNotAllowed))       // ErrIpNotAllowed is the error for ip not allowed
+	ErrUnauthenticated = ErrWithCodeAndStatus(ErrCodeUnauthenticated, fiber.StatusUnauthorized, i18n.T(ErrMessageUnauthenticated)) // ErrUnauthenticated is the error for unauthenticated
+	ErrAccessDenied    = ErrWithCodeAndStatus(ErrCodeAccessDenied, fiber.StatusForbidden, i18n.T(ErrMessageAccessDenied))          // ErrAccessDenied is the error for access denied
+	ErrUnknown         = ErrWithCodeAndStatus(ErrCodeUnknown, fiber.StatusInternalServerError, i18n.T(ErrMessageUnknown))          // ErrUnknown is the error for unknown error
+	ErrRecordNotFound  = ErrWithCode(
 		ErrCodeRecordNotFound,
 		i18n.T(ErrMessageRecordNotFound),
 	) // ErrRecordNotFound is the error for record not found

@@ -68,8 +68,8 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 // Test params for update (includes id).
 type TestUserUpdateParams struct {
 	api.In
-	orm.ModelPK `json:",inline"`
 
+	Id          string `json:"id"`
 	Name        string `json:"name"        validate:"required"`
 	Email       string `json:"email"       validate:"required,email"`
 	Description string `json:"description"`

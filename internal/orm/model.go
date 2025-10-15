@@ -2,15 +2,10 @@ package orm
 
 import "github.com/ilxqx/vef-framework-go/datetime"
 
-// ModelPK is the primary key of the model.
-type ModelPK struct {
-	Id string `json:"id" bun:",pk"`
-}
-
 // Model is the base model for all models.
 type Model struct {
-	ModelPK `bun:"extend"`
-
+	// Id is the primary key of the model
+	Id string `json:"id" bun:",pk"`
 	// CreatedAt is the created at time of the model
 	CreatedAt datetime.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
 	// CreatedBy is the created by of the model

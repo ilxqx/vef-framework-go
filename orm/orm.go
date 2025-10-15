@@ -18,7 +18,6 @@ type (
 	JoinType                   = orm.JoinType
 	ColumnInfo                 = orm.ColumnInfo
 	Model                      = orm.Model
-	ModelPK                    = orm.ModelPK
 	PKField                    = orm.PKField
 	ExprBuilder                = orm.ExprBuilder
 	OrderBuilder               = orm.OrderBuilder

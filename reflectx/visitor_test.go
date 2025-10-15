@@ -876,3 +876,384 @@ func TestVisitType_WithNilVisitors(t *testing.T) {
 
 	assert.Equal(t, []string{"VisitorTestBase"}, visitedStructs)
 }
+
+// Tests for field index path tracking in embedded structures
+
+func TestVisit_FieldIndexPath_AnonymousEmbedded(t *testing.T) {
+	// Test that anonymous embedded fields have correct index paths
+	testStruct := VisitorTestNested{
+		VisitorTestEmbedded: VisitorTestEmbedded{
+			VisitorTestBase: VisitorTestBase{BaseValue: "test"},
+			EmbeddedValue:   42,
+		},
+		NestedValue: true,
+	}
+
+	fieldIndexMap := make(map[string][]int)
+
+	visitor := Visitor{
+		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
+			fieldIndexMap[field.Name] = field.Index
+
+			return Continue
+		},
+	}
+
+	Visit(reflect.ValueOf(testStruct), visitor)
+
+	// Verify nested field index paths
+	// BaseValue is in VisitorTestBase (embedded in VisitorTestEmbedded, which is embedded in VisitorTestNested)
+	assert.NotNil(t, fieldIndexMap["BaseValue"])
+	assert.Equal(t, []int{0, 0, 0}, fieldIndexMap["BaseValue"], "BaseValue should have path [0,0,0]")
+
+	// EmbeddedValue is in VisitorTestEmbedded (embedded in VisitorTestNested)
+	assert.NotNil(t, fieldIndexMap["EmbeddedValue"])
+	assert.Equal(t, []int{0, 1}, fieldIndexMap["EmbeddedValue"], "EmbeddedValue should have path [0,1]")
+
+	// NestedValue is a direct field of VisitorTestNested
+	assert.NotNil(t, fieldIndexMap["NestedValue"])
+	assert.Equal(t, []int{1}, fieldIndexMap["NestedValue"], "NestedValue should have path [1]")
+}
+
+func TestVisitType_FieldIndexPath_TaggedDive(t *testing.T) {
+	// Test that non-anonymous fields with dive tag have correct index paths
+	fieldIndexMap := make(map[string][]int)
+
+	visitor := TypeVisitor{
+		VisitFieldType: func(field reflect.StructField, depth int) VisitAction {
+			fieldIndexMap[field.Name] = field.Index
+
+			return Continue
+		},
+	}
+
+	VisitType(reflect.TypeOf(VisitorTestEmbedded{}), visitor)
+
+	// Services field is at [2] in VisitorTestEmbedded
+	assert.NotNil(t, fieldIndexMap["Services"])
+	assert.Equal(t, []int{2}, fieldIndexMap["Services"], "Services should have path [2]")
+
+	// Logger is inside Services, which has dive tag
+	assert.NotNil(t, fieldIndexMap["Logger"])
+	assert.Equal(t, []int{2, 0}, fieldIndexMap["Logger"], "Logger should have path [2,0]")
+
+	// Level is inside Logger
+	assert.NotNil(t, fieldIndexMap["Level"])
+	assert.Equal(t, []int{2, 0, 0}, fieldIndexMap["Level"], "Level should have path [2,0,0]")
+
+	// Cache is inside Services
+	assert.NotNil(t, fieldIndexMap["Cache"])
+	assert.Equal(t, []int{2, 1}, fieldIndexMap["Cache"], "Cache should have path [2,1]")
+
+	// Size is inside Cache
+	assert.NotNil(t, fieldIndexMap["Size"])
+	assert.Equal(t, []int{2, 1, 0}, fieldIndexMap["Size"], "Size should have path [2,1,0]")
+}
+
+func TestVisit_FieldIndexPath_CanAccessValues(t *testing.T) {
+	// Test that index paths can be used to access actual field values
+	testStruct := VisitorTestEmbedded{
+		VisitorTestBase: VisitorTestBase{BaseValue: "base_value"},
+		EmbeddedValue:   42,
+		Services: &VisitorTestServices{
+			Logger: VisitorTestLogger{Level: "debug"},
+			Cache:  &VisitorTestCache{Size: 1024},
+		},
+	}
+
+	type fieldInfo struct {
+		index []int
+		value reflect.Value
+	}
+
+	fieldMap := make(map[string]fieldInfo)
+
+	visitor := Visitor{
+		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
+			fieldMap[field.Name] = fieldInfo{
+				index: field.Index,
+				value: fieldValue,
+			}
+
+			return Continue
+		},
+	}
+
+	Visit(reflect.ValueOf(testStruct), visitor)
+
+	// Verify BaseValue
+	info := fieldMap["BaseValue"]
+	assert.Equal(t, []int{0, 0}, info.index)
+	assert.Equal(t, "base_value", info.value.String())
+	// Access via index path should match
+	actualValue := reflect.ValueOf(testStruct).FieldByIndex(info.index)
+	assert.Equal(t, "base_value", actualValue.String())
+
+	// Verify EmbeddedValue
+	info = fieldMap["EmbeddedValue"]
+	assert.Equal(t, []int{1}, info.index)
+	assert.Equal(t, int64(42), info.value.Int())
+	actualValue = reflect.ValueOf(testStruct).FieldByIndex(info.index)
+	assert.Equal(t, int64(42), actualValue.Int())
+
+	// Verify Level (deeply nested)
+	info = fieldMap["Level"]
+	assert.Equal(t, []int{2, 0, 0}, info.index)
+	assert.Equal(t, "debug", info.value.String())
+	actualValue = reflect.ValueOf(testStruct).FieldByIndex(info.index)
+	assert.Equal(t, "debug", actualValue.String())
+
+	// Verify Size (through pointer)
+	info = fieldMap["Size"]
+	assert.Equal(t, []int{2, 1, 0}, info.index)
+	assert.Equal(t, int64(1024), info.value.Int())
+	actualValue = reflect.ValueOf(testStruct).FieldByIndex(info.index)
+	assert.Equal(t, int64(1024), actualValue.Int())
+}
+
+func TestVisitType_FieldIndexPath_AllTraversalModes(t *testing.T) {
+	// Test that all four traversal modes produce correct index paths
+	testCases := []struct {
+		name      string
+		mode      TraversalMode
+		useValue  bool
+		fieldName string
+		expected  []int
+	}{
+		{"TypeDepthFirst - BaseValue", DepthFirst, false, "BaseValue", []int{0, 0}},
+		{"TypeDepthFirst - EmbeddedValue", DepthFirst, false, "EmbeddedValue", []int{1}},
+		{"TypeDepthFirst - Level", DepthFirst, false, "Level", []int{2, 0, 0}},
+		{"TypeBreadthFirst - BaseValue", BreadthFirst, false, "BaseValue", []int{0, 0}},
+		{"TypeBreadthFirst - EmbeddedValue", BreadthFirst, false, "EmbeddedValue", []int{1}},
+		{"TypeBreadthFirst - Level", BreadthFirst, false, "Level", []int{2, 0, 0}},
+		{"ValueDepthFirst - BaseValue", DepthFirst, true, "BaseValue", []int{0, 0}},
+		{"ValueDepthFirst - EmbeddedValue", DepthFirst, true, "EmbeddedValue", []int{1}},
+		{"ValueDepthFirst - Level", DepthFirst, true, "Level", []int{2, 0, 0}},
+		{"ValueBreadthFirst - BaseValue", BreadthFirst, true, "BaseValue", []int{0, 0}},
+		{"ValueBreadthFirst - EmbeddedValue", BreadthFirst, true, "EmbeddedValue", []int{1}},
+		{"ValueBreadthFirst - Level", BreadthFirst, true, "Level", []int{2, 0, 0}},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var foundIndex []int
+
+			if tc.useValue {
+				testValue := VisitorTestEmbedded{
+					VisitorTestBase: VisitorTestBase{BaseValue: "test"},
+					EmbeddedValue:   42,
+					Services: &VisitorTestServices{
+						Logger: VisitorTestLogger{Level: "info"},
+					},
+				}
+
+				visitor := Visitor{
+					VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
+						if field.Name == tc.fieldName {
+							foundIndex = field.Index
+
+							return Stop
+						}
+
+						return Continue
+					},
+				}
+
+				Visit(reflect.ValueOf(testValue), visitor, WithTraversalMode(tc.mode))
+			} else {
+				visitor := TypeVisitor{
+					VisitFieldType: func(field reflect.StructField, depth int) VisitAction {
+						if field.Name == tc.fieldName {
+							foundIndex = field.Index
+
+							return Stop
+						}
+
+						return Continue
+					},
+				}
+
+				VisitType(reflect.TypeOf(VisitorTestEmbedded{}), visitor, WithTraversalMode(tc.mode))
+			}
+
+			assert.Equal(t, tc.expected, foundIndex, "Field %s should have correct index path", tc.fieldName)
+		})
+	}
+}
+
+func TestVisit_FieldIndexPath_DeepNesting(t *testing.T) {
+	// Test deeply nested structures (4+ levels)
+	type Level4 struct {
+		DeepValue string
+	}
+
+	type Level3 struct {
+		Level4 `visit:"dive"`
+
+		L3Value int
+	}
+
+	type Level2 struct {
+		Level3 `visit:"dive"`
+
+		L2Value bool
+	}
+
+	type Level1 struct {
+		Level2
+
+		L1Value float64
+	}
+
+	fieldIndexMap := make(map[string][]int)
+
+	visitor := TypeVisitor{
+		VisitFieldType: func(field reflect.StructField, depth int) VisitAction {
+			fieldIndexMap[field.Name] = field.Index
+
+			return Continue
+		},
+	}
+
+	VisitType(reflect.TypeOf(Level1{}), visitor)
+
+	// Verify deep nesting paths
+	assert.Equal(t, []int{0, 0, 0, 0}, fieldIndexMap["DeepValue"], "DeepValue at level 4 should have 4-element path")
+	assert.Equal(t, []int{0, 0, 1}, fieldIndexMap["L3Value"], "L3Value at level 3 should have 3-element path")
+	assert.Equal(t, []int{0, 1}, fieldIndexMap["L2Value"], "L2Value at level 2 should have 2-element path")
+	assert.Equal(t, []int{1}, fieldIndexMap["L1Value"], "L1Value at level 1 should have 1-element path")
+}
+
+func TestVisit_FieldIndexPath_MixedEmbedding(t *testing.T) {
+	// Test mixed anonymous and tagged dive embedding
+	type Inner struct {
+		InnerField string
+	}
+
+	type Middle struct {
+		Inner // Anonymous embedding - always recursed
+
+		MiddleField int
+		Tagged      Inner `visit:"dive"` // Non-anonymous with dive tag - only recursed with WithDiveTag
+	}
+
+	type Outer struct {
+		Middle
+
+		OuterField bool
+	}
+
+	fieldIndexMap := make(map[string][]int)
+
+	// Test with dive tag enabled
+	visitor := TypeVisitor{
+		VisitFieldType: func(field reflect.StructField, depth int) VisitAction {
+			fieldIndexMap[field.Name] = field.Index
+
+			return Continue
+		},
+	}
+
+	VisitType(reflect.TypeOf(Outer{}), visitor, WithDiveTag("visit", "dive"))
+
+	// Anonymous InnerField should be at [0, 0, 0]
+	anonymousInnerIndex, found := fieldIndexMap["InnerField"]
+	assert.True(t, found, "Should find InnerField from anonymous embedding")
+	assert.Equal(t, []int{0, 0, 0}, anonymousInnerIndex, "Anonymous InnerField should have path [0,0,0]")
+
+	// MiddleField should be at [0, 1]
+	assert.NotNil(t, fieldIndexMap["MiddleField"])
+	assert.Equal(t, []int{0, 1}, fieldIndexMap["MiddleField"], "MiddleField should have path [0,1]")
+
+	// OuterField should be at [1]
+	assert.NotNil(t, fieldIndexMap["OuterField"])
+	assert.Equal(t, []int{1}, fieldIndexMap["OuterField"], "OuterField should have path [1]")
+}
+
+func TestVisit_FieldIndexPath_PointerFields(t *testing.T) {
+	// Test that index paths work correctly with pointer fields
+	testStruct := VisitorTestEmbedded{
+		Services: &VisitorTestServices{
+			Cache: &VisitorTestCache{Size: 512},
+		},
+	}
+
+	var (
+		cacheFieldIndex []int
+		sizeFieldIndex  []int
+	)
+
+	visitor := Visitor{
+		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
+			switch field.Name {
+			case "Cache":
+				cacheFieldIndex = field.Index
+			case "Size":
+				sizeFieldIndex = field.Index
+			}
+
+			return Continue
+		},
+	}
+
+	Visit(reflect.ValueOf(testStruct), visitor)
+
+	// Verify Cache pointer field index
+	assert.Equal(t, []int{2, 1}, cacheFieldIndex, "Cache pointer field should have path [2,1]")
+
+	// Verify Size field inside pointer
+	assert.Equal(t, []int{2, 1, 0}, sizeFieldIndex, "Size inside pointer should have path [2,1,0]")
+
+	// Verify we can access the value through the index path
+	cacheValue := reflect.ValueOf(testStruct).FieldByIndex(cacheFieldIndex)
+	assert.Equal(t, reflect.Ptr, cacheValue.Kind())
+	assert.False(t, cacheValue.IsNil())
+
+	sizeValue := reflect.ValueOf(testStruct).FieldByIndex(sizeFieldIndex)
+	assert.Equal(t, int64(512), sizeValue.Int())
+}
+
+func TestVisitType_FieldIndexPath_Consistency(t *testing.T) {
+	// Test that Type traversal and Value traversal produce the same index paths for non-nil fields
+	testValue := VisitorTestNested{
+		VisitorTestEmbedded: VisitorTestEmbedded{
+			VisitorTestBase: VisitorTestBase{BaseValue: "test"},
+			EmbeddedValue:   42,
+			Services: &VisitorTestServices{
+				Logger: VisitorTestLogger{Level: "info"},
+				Cache:  &VisitorTestCache{Size: 100},
+			},
+		},
+		NestedValue: true,
+	}
+
+	typeFieldIndices := make(map[string][]int)
+	valueFieldIndices := make(map[string][]int)
+
+	// Collect indices from Type traversal
+	typeVisitor := TypeVisitor{
+		VisitFieldType: func(field reflect.StructField, depth int) VisitAction {
+			typeFieldIndices[field.Name] = field.Index
+
+			return Continue
+		},
+	}
+	VisitType(reflect.TypeOf(testValue), typeVisitor)
+
+	// Collect indices from Value traversal
+	valueVisitor := Visitor{
+		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction {
+			valueFieldIndices[field.Name] = field.Index
+
+			return Continue
+		},
+	}
+	Visit(reflect.ValueOf(testValue), valueVisitor)
+
+	// Verify that all fields have the same indices in both traversals
+	for fieldName, typeIndex := range typeFieldIndices {
+		valueIndex, found := valueFieldIndices[fieldName]
+		assert.True(t, found, "Field %s should be found in value traversal", fieldName)
+		assert.Equal(t, typeIndex, valueIndex, "Field %s should have same index in both traversals", fieldName)
+	}
+}
