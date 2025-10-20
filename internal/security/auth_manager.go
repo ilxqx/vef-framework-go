@@ -31,7 +31,7 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 
 		return nil, result.ErrWithCodef(
 			result.ErrCodeUnsupportedAuthenticationType,
-			"Authentication type '%s' is not supported",
+			"Authentication type %q is not supported",
 			authentication.Type,
 		)
 	}

@@ -14,49 +14,43 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type deleteAPI[TModel any] struct {
-	APIBuilder[DeleteAPI[TModel]]
+type deleteApi[TModel any] struct {
+	ApiBuilder[DeleteApi[TModel]]
 
 	preDelete       PreDeleteProcessor[TModel]
 	postDelete      PostDeleteProcessor[TModel]
 	disableDataPerm bool
 }
 
-// Provide generates the final API specification for model deletion.
+// Provide generates the final Api specification for model deletion.
 // Returns a complete api.Spec that can be registered with the router.
-func (d *deleteAPI[TModel]) Provide() api.Spec {
-	return d.APIBuilder.Build(d.delete)
+func (d *deleteApi[TModel]) Provide() api.Spec {
+	return d.Build(d.delete)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (d *deleteAPI[TModel]) Build(handler any) api.Spec {
-	panic("apis: do not call APIBuilder.Build on deleteAPI; call Provide() instead")
-}
-
-func (d *deleteAPI[TModel]) PreDelete(processor PreDeleteProcessor[TModel]) DeleteAPI[TModel] {
+func (d *deleteApi[TModel]) PreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel] {
 	d.preDelete = processor
 
 	return d
 }
 
-func (d *deleteAPI[TModel]) PostDelete(processor PostDeleteProcessor[TModel]) DeleteAPI[TModel] {
+func (d *deleteApi[TModel]) PostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel] {
 	d.postDelete = processor
 
 	return d
 }
 
-func (d *deleteAPI[TModel]) DisableDataPerm() DeleteAPI[TModel] {
+func (d *deleteApi[TModel]) DisableDataPerm() DeleteApi[TModel] {
 	d.disableDataPerm = true
 
 	return d
 }
 
-func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) error, error) {
+func (d *deleteApi[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) error, error) {
 	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
 	// Pre-compute primary key fields
-	pks := db.ModelPKFields((*TModel)(nil))
+	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
 	if len(pks) == 0 {
@@ -67,7 +61,7 @@ func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 		var (
 			model      TModel
 			modelValue = reflect.ValueOf(&model).Elem()
-			req        = contextx.APIRequest(ctx)
+			req        = contextx.ApiRequest(ctx)
 		)
 
 		// Extract and set primary key values using pre-computed metadata
@@ -83,7 +77,7 @@ func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 		}
 
 		// Build query with data permission filtering
-		query := db.NewSelect().Model(&model).WherePK()
+		query := db.NewSelect().Model(&model).WherePk()
 		if !d.disableDataPerm {
 			if err := applyDataPermission(query, ctx); err != nil {
 				return err
@@ -104,7 +98,7 @@ func (d *deleteAPI[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 
 		// Execute delete operation within transaction
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
-			if _, err := tx.NewDelete().Model(&model).WherePK().Exec(txCtx); err != nil {
+			if _, err := tx.NewDelete().Model(&model).WherePk().Exec(txCtx); err != nil {
 				return err
 			}
 

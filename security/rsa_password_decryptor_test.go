@@ -19,7 +19,7 @@ func TestRSAPasswordDecryptor(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create decryptor
-	decryptor, err := NewRSAPasswordDecryptor(privateKey)
+	decryptor, err := NewRsaPasswordDecryptor(privateKey)
 	require.NoError(t, err, "Failed to create RSA password decryptor")
 
 	// Test password
@@ -51,7 +51,7 @@ func TestRSAPasswordDecryptor_FromPEM(t *testing.T) {
 		encoding.ToBase64(privateKeyBytes) +
 		"\n-----END RSA PRIVATE KEY-----")
 
-	decryptor, err := NewRSAPasswordDecryptorFromPEM(privatePEM)
+	decryptor, err := NewRsaPasswordDecryptorFromPEM(privatePEM)
 	require.NoError(t, err)
 
 	// Encrypt using crypto package
@@ -77,7 +77,7 @@ func TestRSAPasswordDecryptor_FromHex(t *testing.T) {
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privateKeyHex := encoding.ToHex(privateKeyBytes)
 
-	decryptor, err := NewRSAPasswordDecryptorFromHex(privateKeyHex)
+	decryptor, err := NewRsaPasswordDecryptorFromHex(privateKeyHex)
 	require.NoError(t, err)
 
 	// Encrypt using crypto package
@@ -103,7 +103,7 @@ func TestRSAPasswordDecryptor_FromBase64(t *testing.T) {
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	privateKeyBase64 := encoding.ToBase64(privateKeyBytes)
 
-	decryptor, err := NewRSAPasswordDecryptorFromBase64(privateKeyBase64)
+	decryptor, err := NewRsaPasswordDecryptorFromBase64(privateKeyBase64)
 	require.NoError(t, err)
 
 	// Encrypt using crypto package
@@ -121,7 +121,7 @@ func TestRSAPasswordDecryptor_FromBase64(t *testing.T) {
 }
 
 func TestRSAPasswordDecryptor_NilKey(t *testing.T) {
-	_, err := NewRSAPasswordDecryptor(nil)
+	_, err := NewRsaPasswordDecryptor(nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "private key cannot be nil")
 }
@@ -137,7 +137,7 @@ func TestRSAPasswordDecryptor_PKCS8Format(t *testing.T) {
 
 	privateKeyHex := encoding.ToHex(privateKeyBytes)
 
-	decryptor, err := NewRSAPasswordDecryptorFromHex(privateKeyHex)
+	decryptor, err := NewRsaPasswordDecryptorFromHex(privateKeyHex)
 	require.NoError(t, err)
 
 	// Encrypt using crypto package
@@ -159,7 +159,7 @@ func TestRSAPasswordDecryptor_LongPassword(t *testing.T) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	decryptor, err := NewRSAPasswordDecryptor(privateKey)
+	decryptor, err := NewRsaPasswordDecryptor(privateKey)
 	require.NoError(t, err)
 
 	// Encrypt using crypto package

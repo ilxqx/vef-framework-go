@@ -33,13 +33,13 @@ func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 // Test Resources.
 type TestCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeAPI[TestCategory, TestCategorySearch]
+	apis.FindTreeApi[TestCategory, TestCategorySearch]
 }
 
 func NewTestCategoryFindTreeResource() api.Resource {
 	return &TestCategoryFindTreeResource{
 		Resource: api.NewResource("test/category_tree"),
-		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
 			IdColumn("id").
 			ParentIdColumn("parent_id"),
@@ -49,13 +49,13 @@ func NewTestCategoryFindTreeResource() api.Resource {
 // Filtered Tree Resource.
 type FilteredCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeAPI[TestCategory, TestCategorySearch]
+	apis.FindTreeApi[TestCategory, TestCategorySearch]
 }
 
 func NewFilteredCategoryFindTreeResource() api.Resource {
 	return &FilteredCategoryFindTreeResource{
 		Resource: api.NewResource("test/category_tree_filtered"),
-		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
 			IdColumn("id").
 			ParentIdColumn("parent_id").
@@ -74,13 +74,13 @@ func NewFilteredCategoryFindTreeResource() api.Resource {
 // Ordered Tree Resource.
 type OrderedCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeAPI[TestCategory, TestCategorySearch]
+	apis.FindTreeApi[TestCategory, TestCategorySearch]
 }
 
 func NewOrderedCategoryFindTreeResource() api.Resource {
 	return &OrderedCategoryFindTreeResource{
 		Resource: api.NewResource("test/category_tree_ordered"),
-		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
 			IdColumn("id").
 			ParentIdColumn("parent_id").
@@ -95,13 +95,13 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 // AuditUser Tree Resource - with audit user names.
 type AuditUserCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeAPI[TestCategory, TestCategorySearch]
+	apis.FindTreeApi[TestCategory, TestCategorySearch]
 }
 
 func NewAuditUserCategoryFindTreeResource() api.Resource {
 	return &AuditUserCategoryFindTreeResource{
 		Resource: api.NewResource("test/category_tree_audit"),
-		FindTreeAPI: apis.NewFindTreeAPI[TestCategory, TestCategorySearch](buildCategoryTree).
+		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
 			IdColumn("id").
 			ParentIdColumn("parent_id").
@@ -109,7 +109,7 @@ func NewAuditUserCategoryFindTreeResource() api.Resource {
 	}
 }
 
-// FindTreeTestSuite is the test suite for FindTree API tests.
+// FindTreeTestSuite is the test suite for FindTree Api tests.
 type FindTreeTestSuite struct {
 	BaseSuite
 }
@@ -131,10 +131,10 @@ func (suite *FindTreeTestSuite) TearDownSuite() {
 
 // TestFindTreeBasic tests basic FindTree functionality.
 func (suite *FindTreeTestSuite) TestFindTreeBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree",
-			Action:   "findTree",
+			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})
@@ -168,10 +168,10 @@ func (suite *FindTreeTestSuite) TestFindTreeBasic() {
 // TestFindTreeWithSearch tests FindTree with search conditions.
 func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	suite.Run("SearchByCode", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
-				Action:   "findTree",
+				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -191,10 +191,10 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	})
 
 	suite.Run("SearchByParentId", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
-				Action:   "findTree",
+				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -219,10 +219,10 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
-				Action:   "findTree",
+				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -241,10 +241,10 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 
 // TestFindTreeWithFilterApplier tests FindTree with filter applier.
 func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_filtered",
-			Action:   "findTree",
+			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})
@@ -266,10 +266,10 @@ func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
 
 // TestFindTreeWithSortApplier tests FindTree with sort applier.
 func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_ordered",
-			Action:   "findTree",
+			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})
@@ -295,10 +295,10 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
 // TestFindTreeNegativeCases tests negative scenarios.
 func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
-				Action:   "findTree",
+				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -315,10 +315,10 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 	})
 
 	suite.Run("EmptySearchCriteria", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",
-				Action:   "findTree",
+				Action:   "find_tree",
 				Version:  "v1",
 			},
 			Params: map[string]any{},
@@ -335,10 +335,10 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 
 // TestFindTreeWithAuditUserNames tests FindTree with audit user names populated.
 func (suite *FindTreeTestSuite) TestFindTreeWithAuditUserNames() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_audit",
-			Action:   "findTree",
+			Action:   "find_tree",
 			Version:  "v1",
 		},
 	})

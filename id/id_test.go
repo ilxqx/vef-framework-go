@@ -7,12 +7,12 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
-	t.Run("should generate non-empty ID", func(t *testing.T) {
+	t.Run("Should generate non-empty ID", func(t *testing.T) {
 		id := Generate()
 		assert.NotEmpty(t, id, "Generated ID should not be empty")
 	})
 
-	t.Run("should generate unique IDs", func(t *testing.T) {
+	t.Run("Should generate unique IDs", func(t *testing.T) {
 		ids := make(map[string]bool)
 		iterations := 1000
 
@@ -25,7 +25,7 @@ func TestGenerate(t *testing.T) {
 		assert.Len(t, ids, iterations, "All generated IDs should be unique")
 	})
 
-	t.Run("should use XID generator by default", func(t *testing.T) {
+	t.Run("Should use XID generator by default", func(t *testing.T) {
 		id := Generate()
 
 		// XID format: 12 bytes encoded as 20-character string
@@ -41,7 +41,7 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateUuid(t *testing.T) {
-	t.Run("should generate valid UUID v7", func(t *testing.T) {
+	t.Run("Should generate valid UUID v7", func(t *testing.T) {
 		uuid := GenerateUuid()
 		assert.NotEmpty(t, uuid, "Generated UUID should not be empty")
 
@@ -54,7 +54,7 @@ func TestGenerateUuid(t *testing.T) {
 		assert.Equal(t, "7", string(uuid[14]), "UUID v7 should have version 7 at position 14")
 	})
 
-	t.Run("should generate unique UUIDs", func(t *testing.T) {
+	t.Run("Should generate unique UUIDs", func(t *testing.T) {
 		uuids := make(map[string]bool)
 		iterations := 1000
 
@@ -69,13 +69,13 @@ func TestGenerateUuid(t *testing.T) {
 }
 
 func TestDefaultGenerators(t *testing.T) {
-	t.Run("default generators should be initialized", func(t *testing.T) {
+	t.Run("Default generators should be initialized", func(t *testing.T) {
 		assert.NotNil(t, DefaultXidIdGenerator, "DefaultXidIdGenerator should be initialized")
 		assert.NotNil(t, DefaultUuidIdGenerator, "DefaultUuidIdGenerator should be initialized")
 		assert.NotNil(t, DefaultSnowflakeIdGenerator, "DefaultSnowflakeIdGenerator should be initialized")
 	})
 
-	t.Run("default generators should work correctly", func(t *testing.T) {
+	t.Run("Default generators should work correctly", func(t *testing.T) {
 		xid := DefaultXidIdGenerator.Generate()
 		assert.NotEmpty(t, xid, "XID generator should produce non-empty ID")
 
@@ -88,7 +88,7 @@ func TestDefaultGenerators(t *testing.T) {
 }
 
 func TestConcurrentGeneration(t *testing.T) {
-	t.Run("concurrent generation should be safe", func(t *testing.T) {
+	t.Run("Concurrent generation should be safe", func(t *testing.T) {
 		const (
 			numGoroutines   = 100
 			idsPerGoroutine = 100

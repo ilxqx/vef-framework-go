@@ -12,8 +12,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// SM2Cipher implements Cipher interface using SM2 encryption (国密算法).
-type SM2Cipher struct {
+// Sm2Cipher implements Cipher interface using SM2 encryption (国密算法).
+type Sm2Cipher struct {
 	privateKey *sm2.PrivateKey
 	publicKey  *sm2.PublicKey
 }
@@ -31,7 +31,7 @@ func NewSM2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (Cipher, error
 		publicKey = &privateKey.PublicKey
 	}
 
-	return &SM2Cipher{
+	return &Sm2Cipher{
 		privateKey: privateKey,
 		publicKey:  publicKey,
 	}, nil
@@ -134,7 +134,7 @@ func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (Cipher, error) 
 }
 
 // Encrypt encrypts the plaintext using SM2 public key and returns base64-encoded ciphertext.
-func (s *SM2Cipher) Encrypt(plaintext string) (string, error) {
+func (s *Sm2Cipher) Encrypt(plaintext string) (string, error) {
 	if s.publicKey == nil {
 		return constants.Empty, ErrPublicKeyRequiredForEncrypt
 	}
@@ -148,7 +148,7 @@ func (s *SM2Cipher) Encrypt(plaintext string) (string, error) {
 }
 
 // Decrypt decrypts the base64-encoded ciphertext using SM2 private key and returns plaintext.
-func (s *SM2Cipher) Decrypt(ciphertext string) (string, error) {
+func (s *Sm2Cipher) Decrypt(ciphertext string) (string, error) {
 	if s.privateKey == nil {
 		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
 	}

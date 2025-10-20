@@ -41,7 +41,7 @@ func (s *querySorter) OrderByExpr(builder func(orm.ExprBuilder) any) Sorter {
 }
 
 // newSorter creates a new Sorter instance that wraps the provided ORM query.
-// This factory function is used internally by the APIs package to create
+// This factory function is used internally by the Apis package to create
 // Sorter instances for use in SortApplier functions.
 func newSorter(query orm.SelectQuery) *querySorter {
 	return &querySorter{query: query}

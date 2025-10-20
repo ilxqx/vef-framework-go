@@ -1551,57 +1551,57 @@ func (cb *CriteriaBuilder) OrUpdatedAtNotBetween(start, end time.Time, alias ...
 	return cb
 }
 
-func (cb *CriteriaBuilder) PKEquals(pk any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("PKEquals", cb.qb.GetTable(), pk, alias...)
+func (cb *CriteriaBuilder) PkEquals(pk any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("PkEquals", cb.qb.GetTable(), pk, alias...)
 	cb.and("? = ?", pc, pv)
 
 	return cb
 }
 
-func (cb *CriteriaBuilder) OrPKEquals(pk any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("OrPKEquals", cb.qb.GetTable(), pk, alias...)
+func (cb *CriteriaBuilder) OrPkEquals(pk any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("OrPkEquals", cb.qb.GetTable(), pk, alias...)
 	cb.or("? = ?", pc, pv)
 
 	return cb
 }
 
-func (cb *CriteriaBuilder) PKNotEquals(pk any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("PKNotEquals", cb.qb.GetTable(), pk, alias...)
+func (cb *CriteriaBuilder) PkNotEquals(pk any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("PkNotEquals", cb.qb.GetTable(), pk, alias...)
 	cb.and("? <> ?", pc, pv)
 
 	return cb
 }
 
-func (cb *CriteriaBuilder) OrPKNotEquals(pk any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("OrPKNotEquals", cb.qb.GetTable(), pk, alias...)
+func (cb *CriteriaBuilder) OrPkNotEquals(pk any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("OrPkNotEquals", cb.qb.GetTable(), pk, alias...)
 	cb.or("? <> ?", pc, pv)
 
 	return cb
 }
 
-func (cb *CriteriaBuilder) PKIn(pks any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("PKIn", cb.qb.GetTable(), pks, alias...)
+func (cb *CriteriaBuilder) PkIn(pks any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("PkIn", cb.qb.GetTable(), pks, alias...)
 	cb.and("? IN (?)", pc, pv)
 
 	return cb
 }
 
-func (cb *CriteriaBuilder) OrPKIn(pks any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("OrPKIn", cb.qb.GetTable(), pks, alias...)
+func (cb *CriteriaBuilder) OrPkIn(pks any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("OrPkIn", cb.qb.GetTable(), pks, alias...)
 	cb.or("? IN (?)", pc, pv)
 
 	return cb
 }
 
-func (cb *CriteriaBuilder) PKNotIn(pks any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("PKNotIn", cb.qb.GetTable(), pks, alias...)
+func (cb *CriteriaBuilder) PkNotIn(pks any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("PkNotIn", cb.qb.GetTable(), pks, alias...)
 	cb.and("? NOT IN (?)", pc, pv)
 
 	return cb
 }
 
-func (cb *CriteriaBuilder) OrPKNotIn(pks any, alias ...string) ConditionBuilder {
-	pc, pv := parsePKColumnsAndValues("OrPKNotIn", cb.qb.GetTable(), pks, alias...)
+func (cb *CriteriaBuilder) OrPkNotIn(pks any, alias ...string) ConditionBuilder {
+	pc, pv := parsePkColumnsAndValues("OrPkNotIn", cb.qb.GetTable(), pks, alias...)
 	cb.or("? NOT IN (?)", pc, pv)
 
 	return cb

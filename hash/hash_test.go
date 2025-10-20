@@ -21,11 +21,11 @@ func TestMD5(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := MD5(tc.input)
+			result := Md5(tc.input)
 			assert.Equal(t, tc.expected, result)
 
 			// Test MD5Bytes
-			resultBytes := MD5Bytes([]byte(tc.input))
+			resultBytes := Md5Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
 	}
@@ -46,11 +46,11 @@ func TestSHA1(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := SHA1(tc.input)
+			result := Sha1(tc.input)
 			assert.Equal(t, tc.expected, result)
 
 			// Test SHA1Bytes
-			resultBytes := SHA1Bytes([]byte(tc.input))
+			resultBytes := Sha1Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
 	}
@@ -71,11 +71,11 @@ func TestSHA256(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := SHA256(tc.input)
+			result := Sha256(tc.input)
 			assert.Equal(t, tc.expected, result)
 
 			// Test SHA256Bytes
-			resultBytes := SHA256Bytes([]byte(tc.input))
+			resultBytes := Sha256Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
 	}
@@ -95,11 +95,11 @@ func TestSHA512(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := SHA512(tc.input)
+			result := Sha512(tc.input)
 			assert.Equal(t, tc.expected, result)
 
 			// Test SHA512Bytes
-			resultBytes := SHA512Bytes([]byte(tc.input))
+			resultBytes := Sha512Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
 	}
@@ -120,11 +120,11 @@ func TestSM3(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := SM3(tc.input)
+			result := Sm3(tc.input)
 			assert.Equal(t, tc.expected, result)
 
 			// Test SM3Bytes
-			resultBytes := SM3Bytes([]byte(tc.input))
+			resultBytes := Sm3Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
 	}
@@ -134,18 +134,18 @@ func TestMD5Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := MD5Hmac(key, data)
+	result := Md5Hmac(key, data)
 
 	// MD5 produces 16 bytes = 32 hex chars
 	assert.Len(t, result, 32)
 
 	// Test consistency
-	result2 := MD5Hmac(key, data)
+	result2 := Md5Hmac(key, data)
 	assert.Equal(t, result, result2, "MD5Hmac should produce consistent results")
 
 	// Test different key produces different result
 	differentKey := []byte("different-key")
-	result3 := MD5Hmac(differentKey, data)
+	result3 := Md5Hmac(differentKey, data)
 	assert.NotEqual(t, result, result3, "MD5Hmac with different keys should produce different results")
 }
 
@@ -153,7 +153,7 @@ func TestSHA1Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := SHA1Hmac(key, data)
+	result := Sha1Hmac(key, data)
 
 	// SHA-1 produces 20 bytes = 40 hex chars
 	assert.Len(t, result, 40)
@@ -163,7 +163,7 @@ func TestSHA256Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := SHA256Hmac(key, data)
+	result := Sha256Hmac(key, data)
 
 	// SHA-256 produces 32 bytes = 64 hex chars
 	assert.Len(t, result, 64)
@@ -185,7 +185,7 @@ func TestSHA256Hmac(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := SHA256Hmac([]byte(tc.key), []byte(tc.data))
+			result := Sha256Hmac([]byte(tc.key), []byte(tc.data))
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -195,7 +195,7 @@ func TestSHA512Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := SHA512Hmac(key, data)
+	result := Sha512Hmac(key, data)
 
 	// SHA-512 produces 64 bytes = 128 hex chars
 	assert.Len(t, result, 128)
@@ -205,47 +205,47 @@ func TestSM3Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := SM3Hmac(key, data)
+	result := Sm3Hmac(key, data)
 
 	// SM3 produces 32 bytes = 64 hex chars
 	assert.Len(t, result, 64)
 
 	// Test consistency
-	result2 := SM3Hmac(key, data)
+	result2 := Sm3Hmac(key, data)
 	assert.Equal(t, result, result2, "SM3Hmac should produce consistent results")
 }
 
 func TestHashFunctions_NilInput(t *testing.T) {
 	// Test that hash functions handle nil bytes gracefully
 	t.Run("MD5Bytes with nil", func(t *testing.T) {
-		result := MD5Bytes(nil)
+		result := Md5Bytes(nil)
 		assert.NotEmpty(t, result)
 	})
 
 	t.Run("SHA256Bytes with nil", func(t *testing.T) {
-		result := SHA256Bytes(nil)
+		result := Sha256Bytes(nil)
 		assert.NotEmpty(t, result)
 	})
 
 	t.Run("SM3Bytes with nil", func(t *testing.T) {
-		result := SM3Bytes(nil)
+		result := Sm3Bytes(nil)
 		assert.NotEmpty(t, result)
 	})
 }
 
 func TestHmacFunctions_EmptyKeyOrData(t *testing.T) {
 	t.Run("SHA256Hmac with empty key", func(t *testing.T) {
-		result := SHA256Hmac([]byte{}, []byte("data"))
+		result := Sha256Hmac([]byte{}, []byte("data"))
 		assert.Len(t, result, 64)
 	})
 
 	t.Run("SHA256Hmac with empty data", func(t *testing.T) {
-		result := SHA256Hmac([]byte("key"), []byte{})
+		result := Sha256Hmac([]byte("key"), []byte{})
 		assert.Len(t, result, 64)
 	})
 
 	t.Run("SHA256Hmac with both empty", func(t *testing.T) {
-		result := SHA256Hmac([]byte{}, []byte{})
+		result := Sha256Hmac([]byte{}, []byte{})
 		assert.Len(t, result, 64)
 	})
 }
@@ -255,17 +255,17 @@ func TestHashOutputFormat(t *testing.T) {
 	testData := "test"
 
 	t.Run("MD5 output is lowercase hex", func(t *testing.T) {
-		result := MD5(testData)
+		result := Md5(testData)
 		assert.Regexp(t, "^[0-9a-f]+$", result)
 	})
 
 	t.Run("SHA256 output is lowercase hex", func(t *testing.T) {
-		result := SHA256(testData)
+		result := Sha256(testData)
 		assert.Regexp(t, "^[0-9a-f]+$", result)
 	})
 
 	t.Run("SM3 output is lowercase hex", func(t *testing.T) {
-		result := SM3(testData)
+		result := Sm3(testData)
 		assert.Regexp(t, "^[0-9a-f]+$", result)
 	})
 }
@@ -274,7 +274,7 @@ func BenchmarkMD5(b *testing.B) {
 	data := "benchmark test data"
 
 	for b.Loop() {
-		MD5(data)
+		Md5(data)
 	}
 }
 
@@ -282,7 +282,7 @@ func BenchmarkSHA256(b *testing.B) {
 	data := "benchmark test data"
 
 	for b.Loop() {
-		SHA256(data)
+		Sha256(data)
 	}
 }
 
@@ -290,7 +290,7 @@ func BenchmarkSHA512(b *testing.B) {
 	data := "benchmark test data"
 
 	for b.Loop() {
-		SHA512(data)
+		Sha512(data)
 	}
 }
 
@@ -298,7 +298,7 @@ func BenchmarkSM3(b *testing.B) {
 	data := "benchmark test data"
 
 	for b.Loop() {
-		SM3(data)
+		Sm3(data)
 	}
 }
 
@@ -307,6 +307,6 @@ func BenchmarkSHA256Hmac(b *testing.B) {
 	data := []byte("benchmark test data")
 
 	for b.Loop() {
-		SHA256Hmac(key, data)
+		Sha256Hmac(key, data)
 	}
 }

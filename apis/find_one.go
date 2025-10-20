@@ -9,21 +9,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findOneAPI[TModel, TSearch any] struct {
-	FindAPI[TModel, TSearch, TModel, FindOneAPI[TModel, TSearch]]
+type findOneApi[TModel, TSearch any] struct {
+	FindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]]
 }
 
-func (a *findOneAPI[TModel, TSearch]) Provide() api.Spec {
-	return a.FindAPI.Build(a.findOne)
+func (a *findOneApi[TModel, TSearch]) Provide() api.Spec {
+	return a.Build(a.findOne)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (a *findOneAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call FindAPI.Build on findOneAPI; call Provide() instead")
-}
-
-func (a *findOneAPI[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
+func (a *findOneApi[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
 	if err := a.Init(db); err != nil {
 		return nil, err
 	}

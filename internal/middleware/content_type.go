@@ -14,7 +14,7 @@ func NewContentTypeMiddleware() app.Middleware {
 		handler: func(ctx fiber.Ctx) error {
 			method := ctx.Method()
 			if method != fiber.MethodPost && method != fiber.MethodPut ||
-				webhelpers.IsJSON(ctx) ||
+				webhelpers.IsJson(ctx) ||
 				webhelpers.IsMultipart(ctx) {
 				return ctx.Next()
 			}

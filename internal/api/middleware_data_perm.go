@@ -21,7 +21,7 @@ func buildDataPermMiddleware(
 			return ctx.Next()
 		}
 
-		request := contextx.APIRequest(ctx)
+		request := contextx.ApiRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
 
 		// Skip data permission for public endpoints or endpoints without permission requirements
@@ -53,7 +53,7 @@ func buildDataPermMiddleware(
 
 		// Log resolved data scope
 		if dataScope != nil {
-			logger.Debugf("Resolved data scope '%s' for principal %s",
+			logger.Debugf("Resolved data scope %q for principal %s",
 				dataScope.Key(), principal.Id)
 		} else {
 			logger.Debugf("No data scope resolved for principal %s on permission %s",

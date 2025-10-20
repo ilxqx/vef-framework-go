@@ -15,30 +15,30 @@ var logger = log.Named("security")
 var Module = fx.Module(
 	"vef:security",
 	fx.Provide(
-		// Provide JWT instance
+		// Provide Jwt instance
 		fx.Annotate(
-			func(config *config.AppConfig) (*security.JWT, error) {
-				return security.NewJWT(&security.JWTConfig{
+			func(config *config.AppConfig) (*security.Jwt, error) {
+				return security.NewJwt(&security.JwtConfig{
 					Audience: lo.SnakeCase(config.Name),
 				})
 			},
 		),
-		// Provide JWT authenticator
+		// Provide Jwt authenticator
 		fx.Annotate(
-			NewJWTAuthenticator,
+			NewJwtAuthenticator,
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
-		// Provide JWT refresh authenticator
+		// Provide Jwt refresh authenticator
 		fx.Annotate(
-			NewJWTRefreshAuthenticator,
+			NewJwtRefreshAuthenticator,
 			fx.ParamTags(``, `optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
-		// Provide JWT token generator
-		NewJWTTokenGenerator,
-		// Provide OpenAPI authenticator (requires ExternalAppLoader implementation from user)
+		// Provide Jwt token generator
+		NewJwtTokenGenerator,
+		// Provide OpenApi authenticator (requires ExternalAppLoader implementation from user)
 		fx.Annotate(
-			NewOpenAPIAuthenticator,
+			NewOpenApiAuthenticator,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
@@ -55,17 +55,18 @@ var Module = fx.Module(
 		),
 		// Provide RBAC permission checker (requires RolePermissionsLoader implementation from user)
 		fx.Annotate(
-			NewRBACPermissionChecker,
+			NewRbacPermissionChecker,
 			fx.ParamTags(`optional:"true"`),
 		),
 		// Provide RBAC data permission resolver (requires RolePermissionsLoader implementation from user)
 		fx.Annotate(
-			NewRBACDataPermResolver,
+			NewRbacDataPermResolver,
 			fx.ParamTags(`optional:"true"`),
 		),
 		// Provide auth resource
 		fx.Annotate(
 			NewAuthResource,
+			fx.ParamTags(``, ``, `optional:"true"`),
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),
 	),

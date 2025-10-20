@@ -7,12 +7,12 @@ import (
 )
 
 func TestXidIdGenerator(t *testing.T) {
-	t.Run("should create generator successfully", func(t *testing.T) {
+	t.Run("Should create generator successfully", func(t *testing.T) {
 		generator := NewXidIdGenerator()
 		assert.NotNil(t, generator, "XID generator should not be nil")
 	})
 
-	t.Run("should generate valid XID format", func(t *testing.T) {
+	t.Run("Should generate valid XID format", func(t *testing.T) {
 		generator := NewXidIdGenerator()
 		id := generator.Generate()
 
@@ -27,7 +27,7 @@ func TestXidIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("should generate unique IDs", func(t *testing.T) {
+	t.Run("Should generate unique IDs", func(t *testing.T) {
 		generator := NewXidIdGenerator()
 		ids := make(map[string]bool)
 		iterations := 10000
@@ -41,7 +41,7 @@ func TestXidIdGenerator(t *testing.T) {
 		assert.Len(t, ids, iterations, "All generated XIDs should be unique")
 	})
 
-	t.Run("should be thread-safe", func(t *testing.T) {
+	t.Run("Should be thread-safe", func(t *testing.T) {
 		generator := NewXidIdGenerator()
 
 		const (
@@ -72,7 +72,7 @@ func TestXidIdGenerator(t *testing.T) {
 		assert.Len(t, ids, numGoroutines*idsPerGoroutine, "All concurrent XIDs should be unique")
 	})
 
-	t.Run("should generate sortable IDs", func(t *testing.T) {
+	t.Run("Should generate sortable IDs", func(t *testing.T) {
 		generator := NewXidIdGenerator()
 
 		// Generate multiple IDs and verify they are roughly sortable by time
@@ -91,7 +91,7 @@ func TestXidIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("default generator should work", func(t *testing.T) {
+	t.Run("Default generator should work", func(t *testing.T) {
 		assert.NotNil(t, DefaultXidIdGenerator, "Default XID generator should be initialized")
 
 		id := DefaultXidIdGenerator.Generate()
@@ -99,7 +99,7 @@ func TestXidIdGenerator(t *testing.T) {
 		assert.Len(t, id, 20, "Default XID generator should produce 20-character IDs")
 	})
 
-	t.Run("should handle rapid generation", func(t *testing.T) {
+	t.Run("Should handle rapid generation", func(t *testing.T) {
 		generator := NewXidIdGenerator()
 		ids := make(map[string]bool)
 

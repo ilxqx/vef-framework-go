@@ -38,7 +38,7 @@ var Module = fx.Module(
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(
-			NewSPAMiddleware,
+			NewSpaMiddleware,
 			fx.ParamTags(`group:"vef:spa"`),
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),

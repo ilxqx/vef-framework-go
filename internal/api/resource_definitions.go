@@ -2,9 +2,9 @@ package api
 
 import "github.com/ilxqx/vef-framework-go/api"
 
-// ResourceDefinition represents a collection of API definitions that can be registered with a manager.
+// ResourceDefinition represents a collection of Api definitions that can be registered with a manager.
 type ResourceDefinition interface {
-	// Register registers all API definitions with the given manager.
+	// Register registers all Api definitions with the given manager.
 	Register(manager api.Manager)
 }
 
@@ -20,12 +20,12 @@ func (c compositeResourceDefinition) Register(manager api.Manager) {
 	}
 }
 
-// simpleResourceDefinition contains a collection of API definitions from a single resource.
+// simpleResourceDefinition contains a collection of Api definitions from a single resource.
 type simpleResourceDefinition struct {
 	apis []*api.Definition
 }
 
-// Register registers all API definitions with the manager.
+// Register registers all Api definitions with the manager.
 func (s simpleResourceDefinition) Register(manager api.Manager) {
 	for _, api := range s.apis {
 		manager.Register(api)

@@ -13,49 +13,43 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type deleteManyAPI[TModel any] struct {
-	APIBuilder[DeleteManyAPI[TModel]]
+type deleteManyApi[TModel any] struct {
+	ApiBuilder[DeleteManyApi[TModel]]
 
 	preDeleteMany   PreDeleteManyProcessor[TModel]
 	postDeleteMany  PostDeleteManyProcessor[TModel]
 	disableDataPerm bool
 }
 
-// Provide generates the final API specification for batch model deletion.
+// Provide generates the final Api specification for batch model deletion.
 // Returns a complete api.Spec that can be registered with the router.
-func (d *deleteManyAPI[TModel]) Provide() api.Spec {
-	return d.APIBuilder.Build(d.deleteMany)
+func (d *deleteManyApi[TModel]) Provide() api.Spec {
+	return d.Build(d.deleteMany)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (d *deleteManyAPI[TModel]) Build(handler any) api.Spec {
-	panic("apis: do not call APIBuilder.Build on deleteManyAPI; call Provide() instead")
-}
-
-func (d *deleteManyAPI[TModel]) PreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyAPI[TModel] {
+func (d *deleteManyApi[TModel]) PreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
 	d.preDeleteMany = processor
 
 	return d
 }
 
-func (d *deleteManyAPI[TModel]) PostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyAPI[TModel] {
+func (d *deleteManyApi[TModel]) PostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
 	d.postDeleteMany = processor
 
 	return d
 }
 
-func (d *deleteManyAPI[TModel]) DisableDataPerm() DeleteManyAPI[TModel] {
+func (d *deleteManyApi[TModel]) DisableDataPerm() DeleteManyApi[TModel] {
 	d.disableDataPerm = true
 
 	return d
 }
 
-func (d *deleteManyAPI[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error, error) {
+func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error, error) {
 	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
 	// Pre-compute primary key fields
-	pks := db.ModelPKFields((*TModel)(nil))
+	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
 	if len(pks) == 0 {
@@ -98,7 +92,7 @@ func (d *deleteManyAPI[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 			}
 
 			// Build query with data permission filtering
-			query := db.NewSelect().Model(&models[i]).WherePK()
+			query := db.NewSelect().Model(&models[i]).WherePk()
 			if !d.disableDataPerm {
 				if err := applyDataPermission(query, ctx); err != nil {
 					return err
@@ -121,7 +115,7 @@ func (d *deleteManyAPI[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 		// Execute delete operation within transaction
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 			for i := range models {
-				if _, err := tx.NewDelete().Model(&models[i]).WherePK().Exec(txCtx); err != nil {
+				if _, err := tx.NewDelete().Model(&models[i]).WherePk().Exec(txCtx); err != nil {
 					return err
 				}
 			}

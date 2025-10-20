@@ -10,7 +10,7 @@ import (
 )
 
 type DeleteTestSuite struct {
-	*ORMTestSuite
+	*OrmTestSuite
 }
 
 // TestBasicDelete tests basic DELETE functionality across all databases.
@@ -72,7 +72,7 @@ func (suite *DeleteTestSuite) TestBasicDelete() {
 	_, err = suite.db.NewDelete().
 		Model((*User)(nil)).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(testUsers[1].Id)
+			cb.PkEquals(testUsers[1].Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -81,7 +81,7 @@ func (suite *DeleteTestSuite) TestBasicDelete() {
 	err = suite.db.NewSelect().
 		Model(&deletedUser).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(testUsers[1].Id)
+			cb.PkEquals(testUsers[1].Id)
 		}).
 		Scan(suite.ctx)
 	suite.Error(err, "Deleted user should not exist")
@@ -433,7 +433,7 @@ func (suite *DeleteTestSuite) TestDeleteWithReturning() {
 	err = suite.db.NewSelect().
 		Model(&deletedUser).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(testUser.Id)
+			cb.PkEquals(testUser.Id)
 		}).
 		Scan(suite.ctx)
 	suite.Error(err, "User should not exist after delete")
@@ -536,7 +536,7 @@ func (suite *DeleteTestSuite) TestDeleteCascade() {
 	_, err = suite.db.NewDelete().
 		Model((*User)(nil)).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(testUser.Id)
+			cb.PkEquals(testUser.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -547,7 +547,7 @@ func (suite *DeleteTestSuite) TestDeleteCascade() {
 	err = suite.db.NewSelect().
 		Model(&deletedUser).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(testUser.Id)
+			cb.PkEquals(testUser.Id)
 		}).
 		Scan(suite.ctx)
 	suite.Error(err, "User should not exist after delete")
@@ -556,7 +556,7 @@ func (suite *DeleteTestSuite) TestDeleteCascade() {
 	_, err = suite.db.NewDelete().
 		Model((*Category)(nil)).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(testCategory.Id)
+			cb.PkEquals(testCategory.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)

@@ -1,7 +1,6 @@
 package orm
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/uptrace/bun"
@@ -23,9 +22,9 @@ func getTableSchema(model any, db *bun.DB) *schema.Table {
 		}
 	}
 
-	panic(
-		fmt.Sprintf("model must be a struct pointer, got %T", model),
-	)
+	logger.Panicf("model must be a struct pointer, got %T", model)
+
+	return nil
 }
 
 // getTableSchemaFromQuery extracts the table schema from a bun.Query instance.
@@ -63,7 +62,7 @@ func applyRelationSpec(spec RelationSpec, query SelectQuery) {
 	)
 
 	if len(table.PKs) != 1 {
-		panic(fmt.Sprintf("applyRelationSpec: model '%s' requires exactly one primary key, got %d primary key(s)", table.TypeName, len(table.PKs)))
+		logger.Panicf("applyRelationSpec: model %q requires exactly one primary key, got %d primary key(s)", table.TypeName, len(table.PKs))
 	}
 
 	pk = table.PKs[0].Name

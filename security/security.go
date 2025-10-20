@@ -3,7 +3,7 @@ package security
 // AuthTokens represents the authentication tokens for a user.
 // It contains both access token and refresh token for token-based authentication.
 type AuthTokens struct {
-	AccessToken  string `json:"accessToken"`  // AccessToken is the short-lived access token for API requests
+	AccessToken  string `json:"accessToken"`  // AccessToken is the short-lived access token for Api requests
 	RefreshToken string `json:"refreshToken"` // RefreshToken is the long-lived token used to refresh access tokens
 }
 

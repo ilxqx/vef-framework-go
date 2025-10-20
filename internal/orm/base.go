@@ -24,9 +24,9 @@ type QueryExecutor interface {
 	Scan(ctx context.Context, dest ...any) error
 }
 
-// CTE is an interface that defines the methods for creating Common Table Expressions (CTEs).
+// Cte is an interface that defines the methods for creating Common Table Expressions (CTEs).
 // CTEs allow you to define temporary result sets that exist only for the duration of a single query.
-type CTE[T QueryExecutor] interface {
+type Cte[T QueryExecutor] interface {
 	// With creates a common table expression.
 	With(name string, builder func(query SelectQuery)) T
 	// WithValues creates a common table expression with values.
@@ -81,8 +81,8 @@ type JoinOperations[T QueryExecutor] interface {
 type Filterable[T QueryExecutor] interface {
 	// Where adds a where clause to the query.
 	Where(func(ConditionBuilder)) T
-	// WherePK adds a where clause to the query using the primary key.
-	WherePK(columns ...string) T
+	// WherePk adds a where clause to the query using the primary key.
+	WherePk(columns ...string) T
 	// WhereDeleted adds a where clause to the query using the deleted column.
 	WhereDeleted() T
 	// IncludeDeleted includes soft-deleted records in the query results.
@@ -256,7 +256,7 @@ type QueryBuilder interface {
 }
 
 // ExprBuilder provides methods for building various SQL expressions and operations.
-// It offers a fluent API for constructing complex SQL expressions including aggregates, functions, and conditional logic.
+// It offers a fluent Api for constructing complex SQL expressions including aggregates, functions, and conditional logic.
 type ExprBuilder interface {
 	// Column builds a column expression with proper alias handling.
 	Column(column string) schema.QueryAppender
@@ -316,10 +316,10 @@ type ExprBuilder interface {
 	StringAgg(func(StringAggBuilder)) schema.QueryAppender
 	// ArrayAgg builds an ARRAY_AGG aggregate expression using a builder callback.
 	ArrayAgg(func(ArrayAggBuilder)) schema.QueryAppender
-	// JSONObjectAgg builds a JSON_OBJECT_AGG aggregate expression using a builder callback.
-	JSONObjectAgg(func(JSONObjectAggBuilder)) schema.QueryAppender
-	// JSONArrayAgg builds a JSON_ARRAY_AGG aggregate expression using a builder callback.
-	JSONArrayAgg(func(JSONArrayAggBuilder)) schema.QueryAppender
+	// JsonObjectAgg builds a JSON_OBJECT_AGG aggregate expression using a builder callback.
+	JsonObjectAgg(func(JsonObjectAggBuilder)) schema.QueryAppender
+	// JsonArrayAgg builds a JSON_ARRAY_AGG aggregate expression using a builder callback.
+	JsonArrayAgg(func(JsonArrayAggBuilder)) schema.QueryAppender
 	// BitOr builds a BIT_OR aggregate expression using a builder callback.
 	BitOr(func(BitOrBuilder)) schema.QueryAppender
 	// BitAnd builds a BIT_AND aggregate expression using a builder callback.
@@ -375,10 +375,10 @@ type ExprBuilder interface {
 	WStdDev(func(WindowStdDevBuilder)) schema.QueryAppender
 	// WVariance builds a VARIANCE window function expression.
 	WVariance(func(WindowVarianceBuilder)) schema.QueryAppender
-	// WJSONObjectAgg builds a JSON_OBJECT_AGG window function expression.
-	WJSONObjectAgg(func(WindowJSONObjectAggBuilder)) schema.QueryAppender
-	// WJSONArrayAgg builds a JSON_ARRAY_AGG window function expression.
-	WJSONArrayAgg(func(WindowJSONArrayAggBuilder)) schema.QueryAppender
+	// WJsonObjectAgg builds a JSON_OBJECT_AGG window function expression.
+	WJsonObjectAgg(func(WindowJsonObjectAggBuilder)) schema.QueryAppender
+	// WJsonArrayAgg builds a JSON_ARRAY_AGG window function expression.
+	WJsonArrayAgg(func(WindowJsonArrayAggBuilder)) schema.QueryAppender
 	// WBitOr builds a BIT_OR window function expression.
 	WBitOr(func(WindowBitOrBuilder)) schema.QueryAppender
 	// WBitAnd builds a BIT_AND window function expression.
@@ -540,34 +540,34 @@ type ExprBuilder interface {
 
 	// ========== JSON Functions ==========
 
-	// JSONExtract extracts value from JSON at specified path.
-	JSONExtract(json any, path string) schema.QueryAppender
-	// JSONUnquote removes quotes from JSON string.
-	JSONUnquote(expr any) schema.QueryAppender
-	// JSONArray creates a JSON array from arguments.
-	JSONArray(args ...any) schema.QueryAppender
-	// JSONObject creates a JSON object from key-value pairs.
-	JSONObject(keyValues ...any) schema.QueryAppender
-	// JSONContains checks if JSON contains a value.
-	JSONContains(json, value any) schema.QueryAppender
-	// JSONContainsPath checks if JSON contains a path.
-	JSONContainsPath(json any, path string) schema.QueryAppender
-	// JSONKeys returns the keys of a JSON object.
-	JSONKeys(json any, path ...string) schema.QueryAppender
-	// JSONLength returns the length of a JSON array or object.
-	JSONLength(json any, path ...string) schema.QueryAppender
-	// JSONType returns the type of JSON value.
-	JSONType(json any, path ...string) schema.QueryAppender
-	// JSONValid checks if a string is valid JSON.
-	JSONValid(expr any) schema.QueryAppender
-	// JSONSet sets value at path, creates if not exists, replaces if exists.
-	JSONSet(json any, path string, value any) schema.QueryAppender
-	// JSONInsert inserts value at path only if path doesn't exist.
-	JSONInsert(json any, path string, value any) schema.QueryAppender
-	// JSONReplace replaces value at path only if path exists.
-	JSONReplace(json any, path string, value any) schema.QueryAppender
-	// JSONArrayAppend appends value to JSON array at specified path.
-	JSONArrayAppend(json any, path string, value any) schema.QueryAppender
+	// JsonExtract extracts value from JSON at specified path.
+	JsonExtract(json any, path string) schema.QueryAppender
+	// JsonUnquote removes quotes from JSON string.
+	JsonUnquote(expr any) schema.QueryAppender
+	// JsonArray creates a JSON array from arguments.
+	JsonArray(args ...any) schema.QueryAppender
+	// JsonObject creates a JSON object from key-value pairs.
+	JsonObject(keyValues ...any) schema.QueryAppender
+	// JsonContains checks if JSON contains a value.
+	JsonContains(json, value any) schema.QueryAppender
+	// JsonContainsPath checks if JSON contains a path.
+	JsonContainsPath(json any, path string) schema.QueryAppender
+	// JsonKeys returns the keys of a JSON object.
+	JsonKeys(json any, path ...string) schema.QueryAppender
+	// JsonLength returns the length of a JSON array or object.
+	JsonLength(json any, path ...string) schema.QueryAppender
+	// JsonType returns the type of JSON value.
+	JsonType(json any, path ...string) schema.QueryAppender
+	// JsonValid checks if a string is valid JSON.
+	JsonValid(expr any) schema.QueryAppender
+	// JsonSet sets value at path, creates if not exists, replaces if exists.
+	JsonSet(json any, path string, value any) schema.QueryAppender
+	// JsonInsert inserts value at path only if path doesn't exist.
+	JsonInsert(json any, path string, value any) schema.QueryAppender
+	// JsonReplace replaces value at path only if path exists.
+	JsonReplace(json any, path string, value any) schema.QueryAppender
+	// JsonArrayAppend appends value to JSON array at specified path.
+	JsonArrayAppend(json any, path string, value any) schema.QueryAppender
 
 	// ========== Utility Functions ==========
 

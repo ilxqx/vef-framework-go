@@ -10,38 +10,32 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findTreeAPI[TModel, TSearch any] struct {
-	FindAPI[TModel, TSearch, []TModel, FindTreeAPI[TModel, TSearch]]
+type findTreeApi[TModel, TSearch any] struct {
+	FindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]]
 
 	idColumn       string
 	parentIdColumn string
 	treeBuilder    func(flatModels []TModel) []TModel
 }
 
-func (a *findTreeAPI[TModel, TSearch]) Provide() api.Spec {
-	return a.FindAPI.Build(a.findTree)
+func (a *findTreeApi[TModel, TSearch]) Provide() api.Spec {
+	return a.Build(a.findTree)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (a *findTreeAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call FindAPI.Build on findTreeAPI; call Provide() instead")
-}
-
-func (a *findTreeAPI[TModel, TSearch]) IdColumn(name string) FindTreeAPI[TModel, TSearch] {
+func (a *findTreeApi[TModel, TSearch]) IdColumn(name string) FindTreeApi[TModel, TSearch] {
 	a.idColumn = name
 
 	return a
 }
 
-func (a *findTreeAPI[TModel, TSearch]) ParentIdColumn(name string) FindTreeAPI[TModel, TSearch] {
+func (a *findTreeApi[TModel, TSearch]) ParentIdColumn(name string) FindTreeApi[TModel, TSearch] {
 	a.parentIdColumn = name
 
 	return a
 }
 
-func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
-	// Initialize FindAPI with database schema information
+func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
+	// Initialize FindApi with database schema information
 	// This pre-computes expensive operations like default sort configuration
 	if err := a.Init(db); err != nil {
 		// If initialization fails, return a handler that always returns the error
@@ -90,8 +84,8 @@ func (a *findTreeAPI[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 
 		// Transform models if there are any results
 		if len(flatModels) > 0 {
-			for _, model := range flatModels {
-				if err := transformer.Struct(ctx.Context(), &model); err != nil {
+			for i := range flatModels {
+				if err := transformer.Struct(ctx.Context(), &flatModels[i]); err != nil {
 					return err
 				}
 			}

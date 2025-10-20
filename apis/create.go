@@ -11,38 +11,32 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type createAPI[TModel, TParams any] struct {
-	APIBuilder[CreateAPI[TModel, TParams]]
+type createApi[TModel, TParams any] struct {
+	ApiBuilder[CreateApi[TModel, TParams]]
 
 	preCreate  PreCreateProcessor[TModel, TParams]
 	postCreate PostCreateProcessor[TModel, TParams]
 }
 
-// Provide generates the final API specification for model creation.
+// Provide generates the final Api specification for model creation.
 // Returns a complete api.Spec that can be registered with the router.
-func (c *createAPI[TModel, TParams]) Provide() api.Spec {
-	return c.APIBuilder.Build(c.create)
+func (c *createApi[TModel, TParams]) Provide() api.Spec {
+	return c.Build(c.create)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (c *createAPI[TModel, TParams]) Build(handler any) api.Spec {
-	panic("apis: do not call APIBuilder.Build on createAPI; call Provide() instead")
-}
-
-func (c *createAPI[TModel, TParams]) PreCreate(processor PreCreateProcessor[TModel, TParams]) CreateAPI[TModel, TParams] {
+func (c *createApi[TModel, TParams]) PreCreate(processor PreCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
 	c.preCreate = processor
 
 	return c
 }
 
-func (c *createAPI[TModel, TParams]) PostCreate(processor PostCreateProcessor[TModel, TParams]) CreateAPI[TModel, TParams] {
+func (c *createApi[TModel, TParams]) PostCreate(processor PostCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
 	c.postCreate = processor
 
 	return c
 }
 
-func (c *createAPI[TModel, TParams]) create(ctx fiber.Ctx, db orm.Db, params TParams) error {
+func (c *createApi[TModel, TParams]) create(ctx fiber.Ctx, db orm.Db, params TParams) error {
 	var model TModel
 	if err := copier.Copy(&params, &model); err != nil {
 		return err
@@ -65,6 +59,6 @@ func (c *createAPI[TModel, TParams]) create(ctx fiber.Ctx, db orm.Db, params TPa
 			}
 		}
 
-		return result.Ok(db.ModelPKs(&model)).Response(ctx)
+		return result.Ok(db.ModelPks(&model)).Response(ctx)
 	})
 }

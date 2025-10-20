@@ -11,10 +11,10 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// Engine defines the interface for API engines that can connect to a router.
-// It provides the ability to register API endpoints with a Fiber router.
+// Engine defines the interface for Api engines that can connect to a router.
+// It provides the ability to register Api endpoints with a Fiber router.
 type Engine interface {
-	// Connect registers the API engine with the given router.
+	// Connect registers the Api engine with the given router.
 	Connect(router fiber.Router)
 }
 
@@ -49,8 +49,8 @@ type DefaultEngine struct {
 	publisher   event.Publisher
 }
 
-// Connect registers the API engine with the given router.
-// It sets up the middleware chain and registers the API endpoint.
+// Connect registers the Api engine with the given router.
+// It sets up the middleware chain and registers the Api endpoint.
 func (e *DefaultEngine) Connect(router fiber.Router) {
 	middlewares := e.buildMiddlewares()
 	middlewares = append(middlewares, e.dispatch)
@@ -62,16 +62,16 @@ func (e *DefaultEngine) Connect(router fiber.Router) {
 	)
 }
 
-// dispatch handles the API request by looking up the definition and calling its handler.
+// dispatch handles the Api request by looking up the definition and calling its handler.
 // The definition lookup is guaranteed to succeed as requestMiddleware already validates it exists.
 func (e *DefaultEngine) dispatch(ctx fiber.Ctx) error {
-	request := contextx.APIRequest(ctx)
+	request := contextx.ApiRequest(ctx)
 	definition := e.manager.Lookup(request.Identifier)
 
 	return definition.Handler(ctx)
 }
 
-// buildMiddlewares constructs the middleware chain for the API engine.
+// buildMiddlewares constructs the middleware chain for the Api engine.
 // The middleware order is important: request parsing, authentication, context setup, authorization, data permission, rate limiting, and audit.
 func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
 	return []fiber.Handler{

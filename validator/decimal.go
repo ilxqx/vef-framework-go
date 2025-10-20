@@ -8,23 +8,24 @@ import (
 
 // newDecimalMinRule creates a validation rule that ensures decimal values meet minimum threshold.
 func newDecimalMinRule() ValidationRule {
-	return newDecimalComparisonRule("dec_min", "{0}最小只能为{1}", func(dec, threshold decimal.Decimal) bool {
+	return newDecimalComparisonRule("dec_min", "{0}最小只能为{1}", "validator_decimal_min", func(dec, threshold decimal.Decimal) bool {
 		return dec.GreaterThanOrEqual(threshold)
 	})
 }
 
 // newDecimalMaxRule creates a validation rule that ensures decimal values don't exceed maximum threshold.
 func newDecimalMaxRule() ValidationRule {
-	return newDecimalComparisonRule("dec_max", "{0}必须小于或等于{1}", func(dec, threshold decimal.Decimal) bool {
+	return newDecimalComparisonRule("dec_max", "{0}必须小于或等于{1}", "validator_decimal_max", func(dec, threshold decimal.Decimal) bool {
 		return dec.LessThanOrEqual(threshold)
 	})
 }
 
 // newDecimalComparisonRule creates a validation rule for decimal comparison operations.
-func newDecimalComparisonRule(ruleTag, errMessageTemplate string, compareFn func(decimal.Decimal, decimal.Decimal) bool) ValidationRule {
+func newDecimalComparisonRule(ruleTag, errMessageTemplate, errMessageI18nKey string, compareFn func(decimal.Decimal, decimal.Decimal) bool) ValidationRule {
 	return ValidationRule{
 		RuleTag:                  ruleTag,
 		ErrMessageTemplate:       errMessageTemplate,
+		ErrMessageI18nKey:        errMessageI18nKey,
 		CallValidationEvenIfNull: false,
 		Validate: func(fl v.FieldLevel) bool {
 			dec, ok := fl.Field().Interface().(decimal.Decimal)

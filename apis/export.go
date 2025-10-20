@@ -21,8 +21,8 @@ const (
 	defaultFilenameCSV   = "data.csv"
 )
 
-type exportAPI[TModel, TSearch any] struct {
-	FindAPI[TModel, TSearch, []TModel, ExportAPI[TModel, TSearch]]
+type exportApi[TModel, TSearch any] struct {
+	FindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]]
 
 	format          TabularFormat
 	excelOpts       []excel.ExportOption
@@ -31,43 +31,37 @@ type exportAPI[TModel, TSearch any] struct {
 	filenameBuilder FilenameBuilder[TSearch]
 }
 
-// Provide generates the final API specification for export.
+// Provide generates the final Api specification for export.
 // Returns a complete api.Spec that can be registered with the router.
-func (a *exportAPI[TModel, TSearch]) Provide() api.Spec {
-	return a.FindAPI.Build(a.exportData)
+func (a *exportApi[TModel, TSearch]) Provide() api.Spec {
+	return a.Build(a.exportData)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (a *exportAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call FindAPI.Build on exportAPI; call Provide() instead")
-}
-
-func (a *exportAPI[TModel, TSearch]) Format(format TabularFormat) ExportAPI[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) Format(format TabularFormat) ExportApi[TModel, TSearch] {
 	a.format = format
 
 	return a
 }
 
-func (a *exportAPI[TModel, TSearch]) ExcelOptions(opts ...excel.ExportOption) ExportAPI[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) ExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch] {
 	a.excelOpts = opts
 
 	return a
 }
 
-func (a *exportAPI[TModel, TSearch]) CSVOptions(opts ...csv.ExportOption) ExportAPI[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) CSVOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch] {
 	a.csvOpts = opts
 
 	return a
 }
 
-func (a *exportAPI[TModel, TSearch]) PreExport(processor PreExportProcessor[TModel, TSearch]) ExportAPI[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) PreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch] {
 	a.preExport = processor
 
 	return a
 }
 
-func (a *exportAPI[TModel, TSearch]) FilenameBuilder(builder FilenameBuilder[TSearch]) ExportAPI[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) FilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch] {
 	a.filenameBuilder = builder
 
 	return a
@@ -79,7 +73,7 @@ type exportParams struct {
 	Format TabularFormat `json:"format"` // Optional: override default format
 }
 
-func (a *exportAPI[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch, params exportParams) error, error) {
+func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch, params exportParams) error, error) {
 	if err := a.Init(db); err != nil {
 		return nil, err
 	}

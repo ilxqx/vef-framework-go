@@ -22,7 +22,7 @@ func TestRSACipher_OAEP(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Failed to generate RSA key pair")
 
-	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, RSAModeOAEP)
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher")
 
 	testCases := []string{
@@ -52,7 +52,7 @@ func TestRSACipher_PKCS1v15(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Failed to generate RSA key pair")
 
-	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, RSAModePKCS1v15)
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, RsaModePKCS1v15)
 	require.NoError(t, err, "Failed to create RSA cipher")
 
 	testCases := []string{
@@ -97,7 +97,7 @@ func TestRSACipher_FromPEM(t *testing.T) {
 		Bytes: publicKeyBytes,
 	})
 
-	cipher, err := NewRSAFromPEM(privatePEM, publicPEM, RSAModeOAEP)
+	cipher, err := NewRSAFromPEM(privatePEM, publicPEM, RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher from PEM")
 
 	plaintext := "Test message"
@@ -115,7 +115,7 @@ func TestRSACipher_PublicKeyOnly(t *testing.T) {
 	require.NoError(t, err, "Failed to generate RSA key pair")
 
 	// Create cipher with only public key
-	cipher, err := NewRSA(nil, &privateKey.PublicKey, RSAModeOAEP)
+	cipher, err := NewRSA(nil, &privateKey.PublicKey, RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher")
 
 	plaintext := "Test message"
@@ -132,7 +132,7 @@ func TestRSACipher_PrivateKeyOnly(t *testing.T) {
 	require.NoError(t, err, "Failed to generate RSA key pair")
 
 	// Create cipher with only private key (public key should be derived)
-	cipher, err := NewRSA(privateKey, nil, RSAModeOAEP)
+	cipher, err := NewRSA(privateKey, nil, RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher")
 
 	plaintext := "Test message"
@@ -146,7 +146,7 @@ func TestRSACipher_PrivateKeyOnly(t *testing.T) {
 }
 
 func TestRSACipher_NoKeys(t *testing.T) {
-	_, err := NewRSA(nil, nil, RSAModeOAEP)
+	_, err := NewRSA(nil, nil, RsaModeOAEP)
 	assert.Error(t, err, "Expected error when creating cipher without any keys")
 }
 
@@ -163,7 +163,7 @@ func TestRSACipher_PKCS8PrivateKey(t *testing.T) {
 		Bytes: privateKeyBytes,
 	})
 
-	cipher, err := NewRSAFromPEM(privatePEM, nil, RSAModeOAEP)
+	cipher, err := NewRSAFromPEM(privatePEM, nil, RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher from PKCS8 PEM")
 
 	plaintext := "Test message"
@@ -190,7 +190,7 @@ func TestRSACipher_FromHex(t *testing.T) {
 
 	publicKeyHex := hex.EncodeToString(publicKeyBytes)
 
-	cipher, err := NewRSAFromHex(privateKeyHex, publicKeyHex, RSAModeOAEP)
+	cipher, err := NewRSAFromHex(privateKeyHex, publicKeyHex, RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher from hex")
 
 	plaintext := "Test message"
@@ -213,7 +213,7 @@ func TestRSACipher_FromHex_PKCS8(t *testing.T) {
 
 	privateKeyHex := hex.EncodeToString(privateKeyBytes)
 
-	cipher, err := NewRSAFromHex(privateKeyHex, "", RSAModeOAEP)
+	cipher, err := NewRSAFromHex(privateKeyHex, "", RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher from hex (PKCS8)")
 
 	plaintext := "Test message"
@@ -240,7 +240,7 @@ func TestRSACipher_FromBase64(t *testing.T) {
 
 	publicKeyBase64 := base64.StdEncoding.EncodeToString(publicKeyBytes)
 
-	cipher, err := NewRSAFromBase64(privateKeyBase64, publicKeyBase64, RSAModeOAEP)
+	cipher, err := NewRSAFromBase64(privateKeyBase64, publicKeyBase64, RsaModeOAEP)
 	require.NoError(t, err, "Failed to create RSA cipher from base64")
 
 	plaintext := "Test message with base64 encoded keys"
@@ -271,9 +271,9 @@ func TestRSACipher_DefaultMode(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted)
 
 	// Verify it's using OAEP
-	rsaCipher, ok := cipher.(*RSACipher)
+	rsaCipher, ok := cipher.(*RsaCipher)
 	require.True(t, ok)
-	assert.Equal(t, RSAModeOAEP, rsaCipher.mode)
+	assert.Equal(t, RsaModeOAEP, rsaCipher.mode)
 }
 
 func TestRSACipher_KeySizes(t *testing.T) {
@@ -284,7 +284,7 @@ func TestRSACipher_KeySizes(t *testing.T) {
 			privateKey, err := generateRSAKeyPair(size)
 			require.NoError(t, err, "Failed to generate %d-bit RSA key", size)
 
-			cipher, err := NewRSA(privateKey, &privateKey.PublicKey, RSAModeOAEP)
+			cipher, err := NewRSA(privateKey, &privateKey.PublicKey, RsaModeOAEP)
 			require.NoError(t, err, "Failed to create RSA cipher")
 
 			plaintext := "Test message"

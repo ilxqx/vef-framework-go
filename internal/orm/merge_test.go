@@ -9,7 +9,7 @@ import (
 )
 
 type MergeTestSuite struct {
-	*ORMTestSuite
+	*OrmTestSuite
 }
 
 // TestBasicMerge tests basic MERGE functionality.

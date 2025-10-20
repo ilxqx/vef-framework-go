@@ -2,5 +2,9 @@ package i18n
 
 import "errors"
 
-// ErrMessageIdEmpty indicates messageId is empty.
-var ErrMessageIdEmpty = errors.New("messageId cannot be empty")
+var (
+	// ErrUnsupportedLanguage is returned when an unsupported language code is provided.
+	ErrUnsupportedLanguage = errors.New("unsupported language code")
+	// ErrMessageIdEmpty is returned when a translation message ID is empty.
+	ErrMessageIdEmpty = errors.New("messageId cannot be empty")
+)

@@ -13,7 +13,7 @@ import (
 )
 
 func TestNewStorageProvider(t *testing.T) {
-	t.Run("memory provider", func(t *testing.T) {
+	t.Run("Memory provider", func(t *testing.T) {
 		cfg := &config.StorageConfig{
 			Provider: constants.StorageMemory,
 		}
@@ -27,7 +27,7 @@ func TestNewStorageProvider(t *testing.T) {
 		assert.True(t, ok, "provider should be a MemoryProvider")
 	})
 
-	t.Run("unsupported provider", func(t *testing.T) {
+	t.Run("Unsupported provider", func(t *testing.T) {
 		cfg := &config.StorageConfig{
 			Provider: "unsupported",
 		}

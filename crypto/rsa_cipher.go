@@ -12,34 +12,34 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// RSAMode defines the RSA encryption mode.
-type RSAMode string
+// RsaMode defines the RSA encryption mode.
+type RsaMode string
 
 const (
-	// RSAModeOAEP uses RSA-OAEP mode with SHA-256 (recommended).
-	RSAModeOAEP RSAMode = "OAEP"
-	// RSAModePKCS1v15 uses RSA-PKCS1v15 mode (legacy, less secure).
-	RSAModePKCS1v15 RSAMode = "PKCS1v15"
+	// RsaModeOAEP uses RSA-OAEP mode with SHA-256 (recommended).
+	RsaModeOAEP RsaMode = "OAEP"
+	// RsaModePKCS1v15 uses RSA-PKCS1v15 mode (legacy, less secure).
+	RsaModePKCS1v15 RsaMode = "PKCS1v15"
 )
 
-// RSACipher implements Cipher interface using RSA encryption.
-type RSACipher struct {
+// RsaCipher implements Cipher interface using RSA encryption.
+type RsaCipher struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
-	mode       RSAMode
+	mode       RsaMode
 }
 
 // NewRSA creates a new RSA cipher with the given private and public keys and optional mode.
 // For encryption-only operations, privateKey can be nil.
 // For decryption-only operations, publicKey can be nil.
-// If mode is not specified, defaults to RSAModeOAEP (recommended).
-func NewRSA(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, mode ...RSAMode) (Cipher, error) {
+// If mode is not specified, defaults to RsaModeOAEP (recommended).
+func NewRSA(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, mode ...RsaMode) (Cipher, error) {
 	if privateKey == nil && publicKey == nil {
 		return nil, ErrAtLeastOneKeyRequired
 	}
 
 	// Default to OAEP mode if not specified
-	selectedMode := RSAModeOAEP
+	selectedMode := RsaModeOAEP
 	if len(mode) > 0 {
 		selectedMode = mode[0]
 	}
@@ -49,7 +49,7 @@ func NewRSA(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, mode ...RSAMod
 		publicKey = &privateKey.PublicKey
 	}
 
-	return &RSACipher{
+	return &RsaCipher{
 		privateKey: privateKey,
 		publicKey:  publicKey,
 		mode:       selectedMode,
@@ -103,8 +103,8 @@ func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 
 // NewRSAFromPEM creates a new RSA cipher from PEM-encoded keys.
 // Either privatePEM or publicPEM can be nil, but not both.
-// If mode is not specified, defaults to RSAModeOAEP (recommended).
-func NewRSAFromPEM(privatePEM, publicPEM []byte, mode ...RSAMode) (Cipher, error) {
+// If mode is not specified, defaults to RsaModeOAEP (recommended).
+func NewRSAFromPEM(privatePEM, publicPEM []byte, mode ...RsaMode) (Cipher, error) {
 	var (
 		privateKey *rsa.PrivateKey
 		publicKey  *rsa.PublicKey
@@ -130,8 +130,8 @@ func NewRSAFromPEM(privatePEM, publicPEM []byte, mode ...RSAMode) (Cipher, error
 
 // NewRSAFromHex creates a new RSA cipher from hex-encoded DER keys.
 // Either privateKeyHex or publicKeyHex can be empty, but not both.
-// If mode is not specified, defaults to RSAModeOAEP (recommended).
-func NewRSAFromHex(privateKeyHex, publicKeyHex string, mode ...RSAMode) (Cipher, error) {
+// If mode is not specified, defaults to RsaModeOAEP (recommended).
+func NewRSAFromHex(privateKeyHex, publicKeyHex string, mode ...RsaMode) (Cipher, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -160,8 +160,8 @@ func NewRSAFromHex(privateKeyHex, publicKeyHex string, mode ...RSAMode) (Cipher,
 
 // NewRSAFromBase64 creates a new RSA cipher from base64-encoded DER keys.
 // Either privateKeyBase64 or publicKeyBase64 can be empty, but not both.
-// If mode is not specified, defaults to RSAModeOAEP (recommended).
-func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, mode ...RSAMode) (Cipher, error) {
+// If mode is not specified, defaults to RsaModeOAEP (recommended).
+func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, mode ...RsaMode) (Cipher, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -189,7 +189,7 @@ func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, mode ...RSAMode)
 }
 
 // Encrypt encrypts the plaintext using RSA public key and returns base64-encoded ciphertext.
-func (r *RSACipher) Encrypt(plaintext string) (string, error) {
+func (r *RsaCipher) Encrypt(plaintext string) (string, error) {
 	if r.publicKey == nil {
 		return constants.Empty, ErrPublicKeyRequiredForEncrypt
 	}
@@ -199,7 +199,7 @@ func (r *RSACipher) Encrypt(plaintext string) (string, error) {
 		err        error
 	)
 
-	if r.mode == RSAModeOAEP {
+	if r.mode == RsaModeOAEP {
 		hash := sha256.New()
 		ciphertext, err = rsa.EncryptOAEP(hash, rand.Reader, r.publicKey, []byte(plaintext), nil)
 	} else {
@@ -214,7 +214,7 @@ func (r *RSACipher) Encrypt(plaintext string) (string, error) {
 }
 
 // Decrypt decrypts the base64-encoded ciphertext using RSA private key and returns plaintext.
-func (r *RSACipher) Decrypt(ciphertext string) (string, error) {
+func (r *RsaCipher) Decrypt(ciphertext string) (string, error) {
 	if r.privateKey == nil {
 		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
 	}
@@ -225,7 +225,7 @@ func (r *RSACipher) Decrypt(ciphertext string) (string, error) {
 	}
 
 	var plaintext []byte
-	if r.mode == RSAModeOAEP {
+	if r.mode == RsaModeOAEP {
 		hash := sha256.New()
 		plaintext, err = rsa.DecryptOAEP(hash, rand.Reader, r.privateKey, encryptedData, nil)
 	} else {

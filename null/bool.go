@@ -96,7 +96,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 func (b *Bool) UnmarshalText(text []byte) error {
 	str := string(text)
 	switch str {
-	case constants.Empty, constants.JSONNull:
+	case constants.Empty, constants.JsonNull:
 		b.Valid = false
 
 		return nil
@@ -117,7 +117,7 @@ func (b *Bool) UnmarshalText(text []byte) error {
 // It will encode null if this Bool is null.
 func (b Bool) MarshalJSON() ([]byte, error) {
 	if !b.Valid {
-		return constants.JSONNullBytes, nil
+		return constants.JsonNullBytes, nil
 	}
 
 	if !b.Bool {

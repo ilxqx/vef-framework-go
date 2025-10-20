@@ -101,7 +101,7 @@ type AppParams struct {
 }
 
 // New creates a new VEF application instance with the provided dependencies.
-// It initializes the Fiber application, applies middlewares, and registers API routes.
+// It initializes the Fiber application, applies middlewares, and registers Api routes.
 // Returns an error if the application cannot be configured properly.
 func New(params AppParams) (*App, error) {
 	logger.Info("Initializing VEF application...")

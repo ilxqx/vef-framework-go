@@ -17,7 +17,7 @@ type Authenticator interface {
 }
 
 // TokenGenerator defines the interface for generating authentication tokens.
-// Different implementations can support various token types (JWT, opaque tokens, etc.).
+// Different implementations can support various token types (Jwt, opaque tokens, etc.).
 type TokenGenerator interface {
 	// Generate creates authentication tokens for the given principal.
 	// Returns both access and refresh tokens, or an error if generation fails.
@@ -84,6 +84,16 @@ type RolePermissionsLoader interface {
 	// LoadPermissions loads all permissions associated with the given role.
 	// Returns a map of permission token to DataScope, allowing O(1) permission checks.
 	LoadPermissions(ctx context.Context, role string) (map[string]DataScope, error)
+}
+
+// UserInfoLoader defines a strategy for loading detailed user information.
+// Users of the framework should implement this interface and provide it via the fx container.
+// This interface is used by the auth resource to load user info when requested.
+type UserInfoLoader interface {
+	// LoadUserInfo loads detailed information for the authenticated user.
+	// The params parameter contains additional request parameters from the API request.
+	// Returns UserInfo or an error if loading fails.
+	LoadUserInfo(ctx context.Context, principal *Principal, params map[string]any) (*UserInfo, error)
 }
 
 // DataScope represents an abstract data permission scope that defines access boundaries.

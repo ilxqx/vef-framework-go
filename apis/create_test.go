@@ -13,26 +13,26 @@ import (
 // Test Resources.
 type TestUserCreateResource struct {
 	api.Resource
-	apis.CreateAPI[TestUser, TestUserCreateParams]
+	apis.CreateApi[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateResource() api.Resource {
 	return &TestUserCreateResource{
 		Resource:  api.NewResource("test/user_create"),
-		CreateAPI: apis.NewCreateAPI[TestUser, TestUserCreateParams]().Public(),
+		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().Public(),
 	}
 }
 
 // Resource with PreCreate hook.
 type TestUserCreateWithPreHookResource struct {
 	api.Resource
-	apis.CreateAPI[TestUser, TestUserCreateParams]
+	apis.CreateApi[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateWithPreHookResource() api.Resource {
 	return &TestUserCreateWithPreHookResource{
 		Resource: api.NewResource("test/user_create_prehook"),
-		CreateAPI: apis.NewCreateAPI[TestUser, TestUserCreateParams]().
+		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().
 			Public().
 			PreCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Add prefix to name
@@ -46,13 +46,13 @@ func NewTestUserCreateWithPreHookResource() api.Resource {
 // Resource with PostCreate hook.
 type TestUserCreateWithPostHookResource struct {
 	api.Resource
-	apis.CreateAPI[TestUser, TestUserCreateParams]
+	apis.CreateApi[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateWithPostHookResource() api.Resource {
 	return &TestUserCreateWithPostHookResource{
 		Resource: api.NewResource("test/user_create_posthook"),
-		CreateAPI: apis.NewCreateAPI[TestUser, TestUserCreateParams]().
+		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().
 			Public().
 			PostCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Log or perform additional operations
@@ -74,7 +74,7 @@ type TestUserCreateParams struct {
 	Status      string `json:"status"      validate:"required,oneof=active inactive"`
 }
 
-// CreateTestSuite is the test suite for Create API tests.
+// CreateTestSuite is the test suite for Create Api tests.
 type CreateTestSuite struct {
 	BaseSuite
 }
@@ -95,7 +95,7 @@ func (suite *CreateTestSuite) TearDownSuite() {
 
 // TestCreateBasic tests basic Create functionality.
 func (suite *CreateTestSuite) TestCreateBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create",
 			Action:   "create",
@@ -116,14 +116,14 @@ func (suite *CreateTestSuite) TestCreateBasic() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 	suite.NotNil(body.Data)
 
-	// CreateAPI returns primary key(s) only
+	// CreateApi returns primary key(s) only
 	pk := suite.readDataAsMap(body.Data)
 	suite.NotEmpty(pk["id"])
 }
 
 // TestCreateWithPreHook tests Create with PreCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPreHook() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_prehook",
 			Action:   "create",
@@ -141,7 +141,7 @@ func (suite *CreateTestSuite) TestCreateWithPreHook() {
 	body := suite.readBody(resp)
 	suite.True(body.IsOk())
 
-	// CreateAPI returns primary key(s) only, we can't verify the name directly
+	// CreateApi returns primary key(s) only, we can't verify the name directly
 	// The PreCreate hook was executed if the insert succeeded
 	pk := suite.readDataAsMap(body.Data)
 	suite.NotEmpty(pk["id"])
@@ -149,7 +149,7 @@ func (suite *CreateTestSuite) TestCreateWithPreHook() {
 
 // TestCreateWithPostHook tests Create with PostCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPostHook() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_posthook",
 			Action:   "create",
@@ -169,7 +169,7 @@ func (suite *CreateTestSuite) TestCreateWithPostHook() {
 	body := suite.readBody(resp)
 	suite.True(body.IsOk())
 
-	// CreateAPI returns primary key(s) only
+	// CreateApi returns primary key(s) only
 	pk := suite.readDataAsMap(body.Data)
 	suite.NotEmpty(pk["id"])
 }
@@ -177,7 +177,7 @@ func (suite *CreateTestSuite) TestCreateWithPostHook() {
 // TestCreateNegativeCases tests negative scenarios.
 func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	suite.Run("MissingRequiredField", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -197,7 +197,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	})
 
 	suite.Run("InvalidEmail", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -217,7 +217,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	})
 
 	suite.Run("InvalidAge", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -237,7 +237,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 	})
 
 	suite.Run("InvalidStatus", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -258,7 +258,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 
 	suite.Run("DuplicateEmail", func() {
 		// First create
-		suite.makeAPIRequest(api.Request{
+		suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",
@@ -273,7 +273,7 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 		})
 
 		// Try to create with same email
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
 				Action:   "create",

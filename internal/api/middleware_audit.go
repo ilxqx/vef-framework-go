@@ -16,11 +16,11 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// buildAuditMiddleware creates middleware that captures API request/response information
+// buildAuditMiddleware creates middleware that captures Api request/response information
 // and publishes audit events to the event bus for enabled endpoints.
 func buildAuditMiddleware(manager api.Manager, publisher event.Publisher) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
-		request := contextx.APIRequest(ctx)
+		request := contextx.ApiRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
 
 		// Skip if audit is not enabled for this endpoint
@@ -63,7 +63,7 @@ func buildAuditEvent(ctx fiber.Ctx, request *api.Request, elapsed int, handlerEr
 
 	// Extract request information
 	requestId := contextx.RequestId(ctx)
-	requestIP := webhelpers.GetIP(ctx)
+	requestIP := webhelpers.GetIp(ctx)
 	userAgent := utils.CopyString(ctx.Get(fiber.HeaderUserAgent))
 
 	// Extract response information

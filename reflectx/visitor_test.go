@@ -342,7 +342,7 @@ func TestVisit_NonStruct(t *testing.T) {
 	assert.Empty(t, visitedStructs)
 }
 
-// Tests for type-only visitor API
+// Tests for type-only visitor Api
 
 func TestVisitType_DepthFirst(t *testing.T) {
 	var (

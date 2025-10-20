@@ -6,29 +6,29 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-// Manager defines the interface for managing API definitions.
-// It provides methods to register, remove, and lookup API definitions by their identifiers.
+// Manager defines the interface for managing Api definitions.
+// It provides methods to register, remove, and lookup Api definitions by their identifiers.
 type Manager interface {
-	// Register adds a new API definition to the manager.
+	// Register adds a new Api definition to the manager.
 	Register(api *Definition)
-	// Remove removes an API definition by its identifier.
+	// Remove removes an Api definition by its identifier.
 	Remove(id Identifier)
-	// Lookup retrieves an API definition by its identifier.
+	// Lookup retrieves an Api definition by its identifier.
 	// Returns nil if the definition is not found.
 	Lookup(id Identifier) *Definition
-	// List returns all registered API definitions.
+	// List returns all registered Api definitions.
 	List() []*Definition
 }
 
-// Resource represents an API resource that contains multiple API specifications.
-// It defines the version, name, and list of API specifications for a resource.
+// Resource represents an Api resource that contains multiple Api specifications.
+// It defines the version, name, and list of Api specifications for a resource.
 type Resource interface {
 	// Version returns the version of the resource.
 	Version() string
 	// Name returns the name of the resource.
 	Name() string
-	// APIs returns the list of API specifications for this resource.
-	APIs() []Spec
+	// Apis returns the list of Api specifications for this resource.
+	Apis() []Spec
 }
 
 // HandlerParamResolver declares a pluggable strategy to resolve a single handler
@@ -50,9 +50,9 @@ type HandlerParamResolver interface {
 	Resolve(ctx fiber.Ctx) (reflect.Value, error)
 }
 
-// Provider defines the interface for providing API specifications.
-// It provides a method to generate or retrieve API specifications.
+// Provider defines the interface for providing Api specifications.
+// It provides a method to generate or retrieve Api specifications.
 type Provider interface {
-	// Provide returns an API specification.
+	// Provide returns an Api specification.
 	Provide() Spec
 }

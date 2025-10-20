@@ -29,13 +29,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// TestAPIBasicFlow tests the basic API request flow.
-func TestAPIBasicFlow(t *testing.T) {
+// TestApiBasicFlow tests the basic Api request flow.
+func TestApiBasicFlow(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
 
 	// Test simple action
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "get",
 		"version": "v1",
@@ -47,12 +47,12 @@ func TestAPIBasicFlow(t *testing.T) {
 	require.Contains(t, body, `"data":{"id":"123","name":"User 123"}`)
 }
 
-// TestAPIWithDatabaseAccess tests API with database parameter injection.
-func TestAPIWithDatabaseAccess(t *testing.T) {
+// TestApiWithDatabaseAccess tests Api with database parameter injection.
+func TestApiWithDatabaseAccess(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "list",
 		"version": "v1"
@@ -63,12 +63,12 @@ func TestAPIWithDatabaseAccess(t *testing.T) {
 	require.Contains(t, body, `"data":"db access works"`)
 }
 
-// TestAPIWithLogger tests API with logger parameter injection.
-func TestAPIWithLogger(t *testing.T) {
+// TestApiWithLogger tests Api with logger parameter injection.
+func TestApiWithLogger(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "log",
 		"version": "v1"
@@ -79,8 +79,8 @@ func TestAPIWithLogger(t *testing.T) {
 	require.Contains(t, body, `"data":"logged"`)
 }
 
-// TestAPIMultipleResources tests multiple resources.
-func TestAPIMultipleResources(t *testing.T) {
+// TestApiMultipleResources tests multiple resources.
+func TestApiMultipleResources(t *testing.T) {
 	testApp, stop := newTestApp(t,
 		NewTestResource,
 		NewProductResource,
@@ -88,7 +88,7 @@ func TestAPIMultipleResources(t *testing.T) {
 	defer stop()
 
 	// Test user resource
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "get",
 		"version": "v1",
@@ -100,7 +100,7 @@ func TestAPIMultipleResources(t *testing.T) {
 	require.Contains(t, body, `"id":"123"`)
 
 	// Test product resource
-	resp = makeAPIRequest(t, testApp, `{
+	resp = makeApiRequest(t, testApp, `{
 		"resource": "test/product",
 		"action": "list",
 		"version": "v1"
@@ -111,12 +111,12 @@ func TestAPIMultipleResources(t *testing.T) {
 	require.Contains(t, body, `"data":"products"`)
 }
 
-// TestAPIWithCustomParams tests API with custom parameter struct.
-func TestAPIWithCustomParams(t *testing.T) {
+// TestApiWithCustomParams tests Api with custom parameter struct.
+func TestApiWithCustomParams(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "create",
 		"version": "v1",
@@ -132,12 +132,12 @@ func TestAPIWithCustomParams(t *testing.T) {
 	require.Contains(t, body, `"email":"john@example.com"`)
 }
 
-// TestAPINotFound tests non-existent API.
-func TestAPINotFound(t *testing.T) {
+// TestApiNotFound tests non-existent Api.
+func TestApiNotFound(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "nonexistent",
 		"version": "v1"
@@ -146,12 +146,12 @@ func TestAPINotFound(t *testing.T) {
 	require.Equal(t, 404, resp.StatusCode)
 }
 
-// TestAPIInvalidRequest tests invalid request format.
-func TestAPIInvalidRequest(t *testing.T) {
+// TestApiInvalidRequest tests invalid request format.
+func TestApiInvalidRequest(t *testing.T) {
 	testApp, stop := newTestApp(t)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"invalid": "request"
 	}`)
 
@@ -161,8 +161,8 @@ func TestAPIInvalidRequest(t *testing.T) {
 	require.Contains(t, body, `"code":1400`)
 }
 
-// TestAPIVersioning tests API versioning.
-func TestAPIVersioning(t *testing.T) {
+// TestApiVersioning tests Api versioning.
+func TestApiVersioning(t *testing.T) {
 	testApp, stop := newTestApp(t,
 		NewVersionedResource,
 		NewVersionedResourceV2,
@@ -170,7 +170,7 @@ func TestAPIVersioning(t *testing.T) {
 	defer stop()
 
 	// Test v1
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/versioned",
 		"action": "info",
 		"version": "v1"
@@ -181,7 +181,7 @@ func TestAPIVersioning(t *testing.T) {
 	require.Contains(t, body, `"version":"v1"`)
 
 	// Test v2
-	resp = makeAPIRequest(t, testApp, `{
+	resp = makeApiRequest(t, testApp, `{
 		"resource": "test/versioned",
 		"action": "info",
 		"version": "v2"
@@ -192,13 +192,13 @@ func TestAPIVersioning(t *testing.T) {
 	require.Contains(t, body, `"version":"v2"`)
 }
 
-// TestAPIParamValidation tests parameter validation.
-func TestAPIParamValidation(t *testing.T) {
+// TestApiParamValidation tests parameter validation.
+func TestApiParamValidation(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
 
 	// Missing required parameter
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "get",
 		"version": "v1",
@@ -211,13 +211,13 @@ func TestAPIParamValidation(t *testing.T) {
 	require.Contains(t, body, `"code":1400`)
 }
 
-// TestAPIEmailValidation tests email format validation.
-func TestAPIEmailValidation(t *testing.T) {
+// TestApiEmailValidation tests email format validation.
+func TestApiEmailValidation(t *testing.T) {
 	testApp, stop := newTestApp(t, NewTestResource)
 	defer stop()
 
 	// Invalid email format
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/user",
 		"action": "create",
 		"version": "v1",
@@ -233,12 +233,12 @@ func TestAPIEmailValidation(t *testing.T) {
 	require.Contains(t, body, `"code":1400`)
 }
 
-// TestAPIExplicitHandler tests Spec.Handler field.
-func TestAPIExplicitHandler(t *testing.T) {
+// TestApiExplicitHandler tests Api.Handler field.
+func TestApiExplicitHandler(t *testing.T) {
 	testApp, stop := newTestApp(t, NewExplicitHandlerResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/explicit",
 		"action": "custom",
 		"version": "v1"
@@ -249,12 +249,12 @@ func TestAPIExplicitHandler(t *testing.T) {
 	require.Contains(t, body, `"data":"explicit handler"`)
 }
 
-// TestAPIHandlerFactory tests handler factory pattern with db parameter.
-func TestAPIHandlerFactory(t *testing.T) {
+// TestApiHandlerFactory tests handler factory pattern with db parameter.
+func TestApiHandlerFactory(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFactoryResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/factory",
 		"action": "query",
 		"version": "v1"
@@ -265,12 +265,12 @@ func TestAPIHandlerFactory(t *testing.T) {
 	require.Contains(t, body, `"data":"factory handler with db"`)
 }
 
-// TestAPIHandlerFactoryNoParam tests handler factory pattern without parameters.
-func TestAPIHandlerFactoryNoParam(t *testing.T) {
+// TestApiHandlerFactoryNoParam tests handler factory pattern without parameters.
+func TestApiHandlerFactoryNoParam(t *testing.T) {
 	testApp, stop := newTestApp(t, NewNoParamFactoryResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/noparam",
 		"action": "static",
 		"version": "v1"
@@ -281,12 +281,12 @@ func TestAPIHandlerFactoryNoParam(t *testing.T) {
 	require.Contains(t, body, `"data":"factory handler without params"`)
 }
 
-// TestAPINoReturnValue tests handler without return value.
-func TestAPINoReturnValue(t *testing.T) {
+// TestApiNoReturnValue tests handler without return value.
+func TestApiNoReturnValue(t *testing.T) {
 	testApp, stop := newTestApp(t, NewNoReturnResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/noreturn",
 		"action": "ping",
 		"version": "v1"
@@ -295,12 +295,12 @@ func TestAPINoReturnValue(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 }
 
-// TestAPIFieldInjection tests parameter injection from resource fields.
-func TestAPIFieldInjection(t *testing.T) {
+// TestApiFieldInjection tests parameter injection from resource fields.
+func TestApiFieldInjection(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFieldInjectionResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/field",
 		"action": "check",
 		"version": "v1"
@@ -311,12 +311,12 @@ func TestAPIFieldInjection(t *testing.T) {
 	require.Contains(t, body, `"service":"injected"`)
 }
 
-// TestAPIEmbeddedProvider tests API from embedded Provider.
-func TestAPIEmbeddedProvider(t *testing.T) {
+// TestApiEmbeddedProvider tests Api from embedded Provider.
+func TestApiEmbeddedProvider(t *testing.T) {
 	testApp, stop := newTestApp(t, NewEmbeddedProviderResource)
 	defer stop()
 
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/embedded",
 		"action": "provided",
 		"version": "v1"
@@ -327,12 +327,12 @@ func TestAPIEmbeddedProvider(t *testing.T) {
 	require.Contains(t, body, `"data":"from provider"`)
 }
 
-// TestAPIMultipartFormData tests API request with multipart/form-data format.
-func TestAPIMultipartFormData(t *testing.T) {
+// TestApiMultipartFormData tests Api request with multipart/form-data format.
+func TestApiMultipartFormData(t *testing.T) {
 	testApp, stop := newTestApp(t, NewMultipartResource)
 	defer stop()
 
-	resp := makeAPIRequestMultipart(t, testApp, map[string]string{
+	resp := makeApiRequestMultipart(t, testApp, map[string]string{
 		"resource": "test/multipart",
 		"action":   "import",
 		"version":  "v1",
@@ -345,13 +345,13 @@ func TestAPIMultipartFormData(t *testing.T) {
 	require.Contains(t, body, `"email":"john@example.com"`)
 }
 
-// TestAPIRequestFormats tests both JSON and multipart/form-data request formats.
-func TestAPIRequestFormats(t *testing.T) {
+// TestApiRequestFormats tests both JSON and multipart/form-data request formats.
+func TestApiRequestFormats(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFormatsResource)
 	defer stop()
 
 	// Test JSON format
-	jsonResp := makeAPIRequest(t, testApp, `{
+	jsonResp := makeApiRequest(t, testApp, `{
 		"resource": "test/formats",
 		"action": "echo",
 		"version": "v1"
@@ -363,7 +363,7 @@ func TestAPIRequestFormats(t *testing.T) {
 	require.Contains(t, jsonBody, `"data":"application/json`)
 
 	// Test multipart/form-data format
-	formResp := makeAPIRequestMultipart(t, testApp, map[string]string{
+	formResp := makeApiRequestMultipart(t, testApp, map[string]string{
 		"resource": "test/formats",
 		"action":   "echo",
 		"version":  "v1",
@@ -375,8 +375,8 @@ func TestAPIRequestFormats(t *testing.T) {
 	require.Contains(t, formBody, `"data":"multipart/form-data`)
 }
 
-// TestAPIMultipartWithMultipleFiles tests uploading multiple files with different keys.
-func TestAPIMultipartWithMultipleFiles(t *testing.T) {
+// TestApiMultipartWithMultipleFiles tests uploading multiple files with different keys.
+func TestApiMultipartWithMultipleFiles(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFileUploadResource)
 	defer stop()
 
@@ -389,9 +389,9 @@ func TestAPIMultipartWithMultipleFiles(t *testing.T) {
 		},
 	}
 
-	resp := makeAPIRequestWithFiles(t, testApp, map[string]string{
+	resp := makeApiRequestWithFiles(t, testApp, map[string]string{
 		"resource": "test/upload",
-		"action":   "multipleKeys",
+		"action":   "multiple_keys",
 		"version":  "v1",
 		"params":   `{"userId":"123"}`,
 	}, files)
@@ -403,8 +403,8 @@ func TestAPIMultipartWithMultipleFiles(t *testing.T) {
 	require.Contains(t, body, `"document":"resume.pdf"`)
 }
 
-// TestAPIMultipartWithSameKeyFiles tests uploading multiple files with the same key.
-func TestAPIMultipartWithSameKeyFiles(t *testing.T) {
+// TestApiMultipartWithSameKeyFiles tests uploading multiple files with the same key.
+func TestApiMultipartWithSameKeyFiles(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFileUploadResource)
 	defer stop()
 
@@ -416,9 +416,9 @@ func TestAPIMultipartWithSameKeyFiles(t *testing.T) {
 		},
 	}
 
-	resp := makeAPIRequestWithFiles(t, testApp, map[string]string{
+	resp := makeApiRequestWithFiles(t, testApp, map[string]string{
 		"resource": "test/upload",
-		"action":   "sameKey",
+		"action":   "same_key",
 		"version":  "v1",
 		"params":   `{"category":"documents"}`,
 	}, files)
@@ -430,8 +430,8 @@ func TestAPIMultipartWithSameKeyFiles(t *testing.T) {
 	require.Contains(t, body, `"attachments":["file1.txt","file2.txt","file3.txt"]`)
 }
 
-// TestAPIMultipartFilesWithParams tests uploading files along with other parameters.
-func TestAPIMultipartFilesWithParams(t *testing.T) {
+// TestApiMultipartFilesWithParams tests uploading files along with other parameters.
+func TestApiMultipartFilesWithParams(t *testing.T) {
 	testApp, stop := newTestApp(t, NewFileUploadResource)
 	defer stop()
 
@@ -441,9 +441,9 @@ func TestAPIMultipartFilesWithParams(t *testing.T) {
 		},
 	}
 
-	resp := makeAPIRequestWithFiles(t, testApp, map[string]string{
+	resp := makeApiRequestWithFiles(t, testApp, map[string]string{
 		"resource": "test/upload",
-		"action":   "withParams",
+		"action":   "with_params",
 		"version":  "v1",
 		"params":   `{"title":"My Photo","description":"A beautiful sunset","tags":["nature","sunset"]}`,
 	}, files)
@@ -461,7 +461,7 @@ func TestAPIMultipartFilesWithParams(t *testing.T) {
 func newTestApp(t *testing.T, resourceCtors ...any) (*app.App, func()) {
 	opts := make([]fx.Option, len(resourceCtors)+1)
 	for i, ctor := range resourceCtors {
-		opts[i] = vef.ProvideAPIResource(ctor)
+		opts[i] = vef.ProvideApiResource(ctor)
 	}
 
 	opts[len(opts)-1] = fx.Replace(&config.DatasourceConfig{
@@ -476,7 +476,7 @@ func newTestAppWithBus(t *testing.T, resourceCtors ...any) (*app.App, event.Bus,
 
 	opts := make([]fx.Option, len(resourceCtors)+2)
 	for i, ctor := range resourceCtors {
-		opts[i] = vef.ProvideAPIResource(ctor)
+		opts[i] = vef.ProvideApiResource(ctor)
 	}
 
 	opts[len(opts)-2] = fx.Replace(&config.DatasourceConfig{
@@ -489,7 +489,7 @@ func newTestAppWithBus(t *testing.T, resourceCtors ...any) (*app.App, event.Bus,
 	return testApp, bus, stop
 }
 
-func makeAPIRequest(t *testing.T, app interface {
+func makeApiRequest(t *testing.T, app interface {
 	Test(req *http.Request, timeout ...time.Duration) (*http.Response, error)
 }, body string,
 ) *http.Response {
@@ -502,7 +502,7 @@ func makeAPIRequest(t *testing.T, app interface {
 	return resp
 }
 
-func makeAPIRequestMultipart(t *testing.T, app interface {
+func makeApiRequestMultipart(t *testing.T, app interface {
 	Test(req *http.Request, timeout ...time.Duration) (*http.Response, error)
 }, fields map[string]string,
 ) *http.Response {
@@ -534,7 +534,7 @@ type FileContent struct {
 	Content  []byte
 }
 
-func makeAPIRequestWithFiles(t *testing.T, app interface {
+func makeApiRequestWithFiles(t *testing.T, app interface {
 	Test(req *http.Request, timeout ...time.Duration) (*http.Response, error)
 }, fields map[string]string, files map[string][]FileContent,
 ) *http.Response {
@@ -590,7 +590,7 @@ func NewTestResource() apiPkg.Resource {
 	return &TestUserResource{
 		Resource: apiPkg.NewResource(
 			"test/user",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "get", Public: true},
 				apiPkg.Spec{Action: "list", Public: true},
 				apiPkg.Spec{Action: "create", Public: true},
@@ -652,7 +652,7 @@ func NewProductResource() apiPkg.Resource {
 	return &ProductResource{
 		Resource: apiPkg.NewResource(
 			"test/product",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "list", Public: true},
 			),
 		),
@@ -674,7 +674,7 @@ func NewVersionedResource() apiPkg.Resource {
 		Resource: apiPkg.NewResource(
 			"test/versioned",
 			apiPkg.WithVersion(apiPkg.VersionV1),
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "info", Public: true},
 			),
 		),
@@ -698,7 +698,7 @@ func NewVersionedResourceV2() apiPkg.Resource {
 		Resource: apiPkg.NewResource(
 			"test/versioned",
 			apiPkg.WithVersion(apiPkg.VersionV2),
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "info", Public: true},
 			),
 		),
@@ -721,7 +721,7 @@ func NewExplicitHandlerResource() apiPkg.Resource {
 	return &ExplicitHandlerResource{
 		Resource: apiPkg.NewResource(
 			"test/explicit",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{
 					Action: "custom",
 					Public: true,
@@ -744,7 +744,7 @@ func NewFactoryResource() apiPkg.Resource {
 	return &FactoryResource{
 		Resource: apiPkg.NewResource(
 			"test/factory",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "query", Public: true},
 			),
 		),
@@ -772,7 +772,7 @@ func NewNoParamFactoryResource() apiPkg.Resource {
 	return &NoParamFactoryResource{
 		Resource: apiPkg.NewResource(
 			"test/noparam",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "static", Public: true},
 			),
 		),
@@ -796,7 +796,7 @@ func NewNoReturnResource() apiPkg.Resource {
 	return &NoReturnResource{
 		Resource: apiPkg.NewResource(
 			"test/noreturn",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "ping", Public: true},
 			),
 		),
@@ -826,7 +826,7 @@ func NewFieldInjectionResource() apiPkg.Resource {
 	return &FieldInjectionResource{
 		Resource: apiPkg.NewResource(
 			"test/field",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "check", Public: true},
 			),
 		),
@@ -844,11 +844,11 @@ func (r *FieldInjectionResource) Check(ctx fiber.Ctx, service *TestService) erro
 	return result.Err("service not injected")
 }
 
-// Embedded Provider Resource - tests API from embedded Provider
+// Embedded Provider Resource - tests Api from embedded Provider
 
-type ProvidedAPI struct{}
+type ProvidedApi struct{}
 
-func (p *ProvidedAPI) Provide() apiPkg.Spec {
+func (p *ProvidedApi) Provide() apiPkg.Spec {
 	return apiPkg.Spec{
 		Action: "provided",
 		Public: true,
@@ -860,13 +860,13 @@ func (p *ProvidedAPI) Provide() apiPkg.Spec {
 
 type EmbeddedProviderResource struct {
 	apiPkg.Resource
-	*ProvidedAPI
+	*ProvidedApi
 }
 
 func NewEmbeddedProviderResource() apiPkg.Resource {
 	return &EmbeddedProviderResource{
 		Resource:    apiPkg.NewResource("test/embedded"),
-		ProvidedAPI: &ProvidedAPI{},
+		ProvidedApi: &ProvidedApi{},
 	}
 }
 
@@ -880,7 +880,7 @@ func NewMultipartResource() apiPkg.Resource {
 	return &MultipartResource{
 		Resource: apiPkg.NewResource(
 			"test/multipart",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "import", Public: true},
 			),
 		),
@@ -908,7 +908,7 @@ func NewFormatsResource() apiPkg.Resource {
 	return &FormatsResource{
 		Resource: apiPkg.NewResource(
 			"test/formats",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "echo", Public: true},
 			),
 		),
@@ -931,10 +931,10 @@ func NewFileUploadResource() apiPkg.Resource {
 	return &FileUploadResource{
 		Resource: apiPkg.NewResource(
 			"test/upload",
-			apiPkg.WithAPIs(
-				apiPkg.Spec{Action: "multipleKeys", Public: true},
-				apiPkg.Spec{Action: "sameKey", Public: true},
-				apiPkg.Spec{Action: "withParams", Public: true},
+			apiPkg.WithApis(
+				apiPkg.Spec{Action: "multiple_keys", Public: true},
+				apiPkg.Spec{Action: "same_key", Public: true},
+				apiPkg.Spec{Action: "with_params", Public: true},
 			),
 		),
 	}
@@ -1007,10 +1007,10 @@ func NewAuditResource() apiPkg.Resource {
 	return &AuditResource{
 		Resource: apiPkg.NewResource(
 			"test/audit",
-			apiPkg.WithAPIs(
+			apiPkg.WithApis(
 				apiPkg.Spec{Action: "success", EnableAudit: true, Public: true},
 				apiPkg.Spec{Action: "failure", EnableAudit: true, Public: true},
-				apiPkg.Spec{Action: "noAudit", EnableAudit: false, Public: true},
+				apiPkg.Spec{Action: "no_audit", EnableAudit: false, Public: true},
 			),
 		),
 	}
@@ -1037,8 +1037,8 @@ func (r *AuditResource) NoAudit(ctx fiber.Ctx) error {
 	return result.Ok("no audit").Response(ctx)
 }
 
-// TestAPIAuditSuccess tests audit event for successful requests.
-func TestAPIAuditSuccess(t *testing.T) {
+// TestApiAuditSuccess tests audit event for successful requests.
+func TestApiAuditSuccess(t *testing.T) {
 	testApp, bus, stop := newTestAppWithBus(t, NewAuditResource)
 	defer stop()
 
@@ -1057,7 +1057,7 @@ func TestAPIAuditSuccess(t *testing.T) {
 	defer unsubscribe()
 
 	// Make successful request
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/audit",
 		"action": "success",
 		"version": "v1",
@@ -1087,8 +1087,8 @@ func TestAPIAuditSuccess(t *testing.T) {
 	require.GreaterOrEqual(t, evt.ElapsedTime, 0, "elapsed time should be non-negative")
 }
 
-// TestAPIAuditFailure tests audit event for failed requests.
-func TestAPIAuditFailure(t *testing.T) {
+// TestApiAuditFailure tests audit event for failed requests.
+func TestApiAuditFailure(t *testing.T) {
 	testApp, bus, stop := newTestAppWithBus(t, NewAuditResource)
 	defer stop()
 
@@ -1107,7 +1107,7 @@ func TestAPIAuditFailure(t *testing.T) {
 	defer unsubscribe()
 
 	// Make failed request
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/audit",
 		"action": "failure",
 		"version": "v1"
@@ -1134,8 +1134,8 @@ func TestAPIAuditFailure(t *testing.T) {
 	require.GreaterOrEqual(t, evt.ElapsedTime, 0, "elapsed time should be non-negative")
 }
 
-// TestAPIAuditDisabled tests that audit events are not published when disabled.
-func TestAPIAuditDisabled(t *testing.T) {
+// TestApiAuditDisabled tests that audit events are not published when disabled.
+func TestApiAuditDisabled(t *testing.T) {
 	testApp, bus, stop := newTestAppWithBus(t, NewAuditResource)
 	defer stop()
 
@@ -1154,9 +1154,9 @@ func TestAPIAuditDisabled(t *testing.T) {
 	defer unsubscribe()
 
 	// Make request to endpoint with audit disabled
-	resp := makeAPIRequest(t, testApp, `{
+	resp := makeApiRequest(t, testApp, `{
 		"resource": "test/audit",
-		"action": "noAudit",
+		"action": "no_audit",
 		"version": "v1"
 	}`)
 

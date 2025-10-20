@@ -11,16 +11,16 @@ const (
 	eventTypeAudit = constants.VEFName + ".api.request.audit"
 )
 
-// AuditEvent represents an API audit log event.
-// It captures comprehensive information about API requests including
+// AuditEvent represents an Api audit log event.
+// It captures comprehensive information about Api requests including
 // request details, user identity, response status, and performance metrics.
 type AuditEvent struct {
 	event.BaseEvent
 
-	// API identification
-	Resource string `json:"resource"` // API resource name
-	Action   string `json:"action"`   // API action name
-	Version  string `json:"version"`  // API version
+	// Api identification
+	Resource string `json:"resource"` // Api resource name
+	Action   string `json:"action"`   // Api action name
+	Version  string `json:"version"`  // Api version
 
 	// User identification
 	UserId    string `json:"userId"`    // Operating user id

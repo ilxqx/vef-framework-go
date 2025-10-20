@@ -13,8 +13,8 @@ import (
 
 var (
 	timeType           = reflect.TypeFor[time.Time]()
-	restrictedAliasErr = "mold: alias '%s' either contains restricted characters or is the same as a restricted tag needed for normal operation"
-	restrictedTagErr   = "mold: tag '%s' either contains restricted characters or is the same as a restricted tag needed for normal operation"
+	restrictedAliasErr = "mold: alias %q either contains restricted characters or is the same as a restricted tag needed for normal operation"
+	restrictedTagErr   = "mold: tag %q either contains restricted characters or is the same as a restricted tag needed for normal operation"
 )
 
 // MoldTransformer is the base controlling object which contains

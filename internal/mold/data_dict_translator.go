@@ -38,7 +38,7 @@ func (t *DataDictTranslator) Translate(ctx context.Context, kind, value string) 
 
 	result, err := t.resolver.Resolve(ctx, dictKey, value)
 	if err != nil {
-		t.logger.Errorf("Failed to resolve dictionary '%s' for code '%s': %v", dictKey, value, err)
+		t.logger.Errorf("Failed to resolve dictionary %q for code %q: %v", dictKey, value, err)
 
 		return constants.Empty, err
 	}

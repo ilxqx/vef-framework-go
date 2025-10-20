@@ -27,7 +27,7 @@ type ParamResolverFunc func(ctx fiber.Ctx) (reflect.Value, error)
 
 // HandlerParamResolverManager aggregates all handler parameter resolvers.
 // Resolution uses exact type matching. If needed in the future, assignable/interface
-// matching (e.g., Implements/AssignableTo) can be added without changing the public API.
+// matching (e.g., Implements/AssignableTo) can be added without changing the public Api.
 type HandlerParamResolverManager struct {
 	// resolvers is a map from concrete type to its resolver function.
 	resolvers map[reflect.Type]ParamResolverFunc
@@ -67,7 +67,7 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 	}
 
 	// Try resolve params from api request if paramType is struct and embeds api.In
-	if hasAPIInEmbedded(paramType) {
+	if hasApiInEmbedded(paramType) {
 		return buildParamsResolver(paramType), nil
 	}
 
@@ -182,8 +182,8 @@ func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.
 	return foundField
 }
 
-// hasAPIInEmbedded checks if the given struct type embeds api.In.
-func hasAPIInEmbedded(t reflect.Type) bool {
+// hasApiInEmbedded checks if the given struct type embeds api.In.
+func hasApiInEmbedded(t reflect.Type) bool {
 	t = reflectx.Indirect(t)
 	if t.Kind() != reflect.Struct {
 		return false
@@ -220,7 +220,7 @@ func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 	t := reflectx.Indirect(paramType)
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
-		request := contextx.APIRequest(ctx)
+		request := contextx.ApiRequest(ctx)
 		// Create a new instance of the param type
 		paramValue := reflect.New(t)
 		if err := unmarshalParams(request.Params, paramValue.Interface()); err != nil {

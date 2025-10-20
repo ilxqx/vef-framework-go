@@ -37,25 +37,25 @@ type ExportUserSearch struct {
 
 type TestUserExportResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportResource() api.Resource {
 	return &TestUserExportResource{
 		Resource:  api.NewResource("test/user_export"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().Public(),
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().Public(),
 	}
 }
 
 type TestUserExportWithOptionsResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithOptionsResource() api.Resource {
 	return &TestUserExportWithOptionsResource{
 		Resource: api.NewResource("test/user_export_opts"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
 			ExcelOptions(excel.WithSheetName("用户列表")),
 	}
@@ -63,13 +63,13 @@ func NewTestUserExportWithOptionsResource() api.Resource {
 
 type TestUserExportWithFilenameResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithFilenameResource() api.Resource {
 	return &TestUserExportWithFilenameResource{
 		Resource: api.NewResource("test/user_export_filename"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
 			FilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
 				return "custom_users.xlsx"
@@ -79,13 +79,13 @@ func NewTestUserExportWithFilenameResource() api.Resource {
 
 type TestUserExportWithPreProcessorResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithPreProcessorResource() api.Resource {
 	return &TestUserExportWithPreProcessorResource{
 		Resource: api.NewResource("test/user_export_preproc"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
 			PreExport(func(models []ExportUser, search ExportUserSearch, ctx fiber.Ctx, db orm.Db) error {
 				// Add custom header with count
@@ -98,13 +98,13 @@ func NewTestUserExportWithPreProcessorResource() api.Resource {
 
 type TestUserExportWithFilterResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithFilterResource() api.Resource {
 	return &TestUserExportWithFilterResource{
 		Resource: api.NewResource("test/user_export_filter"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
 			FilterApplier(func(search ExportUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
 				return func(cb orm.ConditionBuilder) {
@@ -116,13 +116,13 @@ func NewTestUserExportWithFilterResource() api.Resource {
 
 type TestUserExportCSVResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVResource() api.Resource {
 	return &TestUserExportCSVResource{
 		Resource: api.NewResource("test/user_export_csv"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
 			Format(apis.FormatCSV),
 	}
@@ -130,13 +130,13 @@ func NewTestUserExportCSVResource() api.Resource {
 
 type TestUserExportCSVWithOptionsResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVWithOptionsResource() api.Resource {
 	return &TestUserExportCSVWithOptionsResource{
 		Resource: api.NewResource("test/user_export_csv_opts"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
 			Format(apis.FormatCSV).
 			CSVOptions(csv.WithExportDelimiter(';')),
@@ -145,13 +145,13 @@ func NewTestUserExportCSVWithOptionsResource() api.Resource {
 
 type TestUserExportCSVWithFilenameResource struct {
 	api.Resource
-	apis.ExportAPI[ExportUser, ExportUserSearch]
+	apis.ExportApi[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVWithFilenameResource() api.Resource {
 	return &TestUserExportCSVWithFilenameResource{
 		Resource: api.NewResource("test/user_export_csv_filename"),
-		ExportAPI: apis.NewExportAPI[ExportUser, ExportUserSearch]().
+		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
 			Format(apis.FormatCSV).
 			FilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
@@ -160,7 +160,7 @@ func NewTestUserExportCSVWithFilenameResource() api.Resource {
 	}
 }
 
-// ExportTestSuite is the test suite for Export API tests.
+// ExportTestSuite is the test suite for Export Api tests.
 type ExportTestSuite struct {
 	BaseSuite
 }
@@ -187,7 +187,7 @@ func (suite *ExportTestSuite) TearDownSuite() {
 // Export Tests
 
 func (suite *ExportTestSuite) TestExportBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export",
 			Action:   "export",
@@ -216,7 +216,7 @@ func (suite *ExportTestSuite) TestExportBasic() {
 func (suite *ExportTestSuite) TestExportWithSearchFilter() {
 	suite.Run("FilterByStatus", func() {
 		status := "active"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_export",
 				Action:   "export",
@@ -238,7 +238,7 @@ func (suite *ExportTestSuite) TestExportWithSearchFilter() {
 
 	suite.Run("FilterByKeyword", func() {
 		keyword := "Engineer"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_export",
 				Action:   "export",
@@ -260,7 +260,7 @@ func (suite *ExportTestSuite) TestExportWithSearchFilter() {
 }
 
 func (suite *ExportTestSuite) TestExportWithCustomFilename() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_filename",
 			Action:   "export",
@@ -277,7 +277,7 @@ func (suite *ExportTestSuite) TestExportWithCustomFilename() {
 }
 
 func (suite *ExportTestSuite) TestExportWithPreProcessor() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_preproc",
 			Action:   "export",
@@ -294,7 +294,7 @@ func (suite *ExportTestSuite) TestExportWithPreProcessor() {
 }
 
 func (suite *ExportTestSuite) TestExportWithFilterApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_filter",
 			Action:   "export",
@@ -325,7 +325,7 @@ func (suite *ExportTestSuite) TestExportWithFilterApplier() {
 }
 
 func (suite *ExportTestSuite) TestExportEmptyResult() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export",
 			Action:   "export",
@@ -351,7 +351,7 @@ func (suite *ExportTestSuite) TestExportEmptyResult() {
 }
 
 func (suite *ExportTestSuite) TestExportWithOptions() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_opts",
 			Action:   "export",
@@ -379,7 +379,7 @@ func (suite *ExportTestSuite) TestExportWithOptions() {
 func (suite *ExportTestSuite) TestExportNegativeCases() {
 	suite.Run("InvalidSearchParameter", func() {
 		// Export should handle invalid search parameters gracefully
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_export",
 				Action:   "export",
@@ -401,7 +401,7 @@ func (suite *ExportTestSuite) TestExportNegativeCases() {
 }
 
 func (suite *ExportTestSuite) TestExportContentType() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export",
 			Action:   "export",
@@ -422,7 +422,7 @@ func (suite *ExportTestSuite) TestExportContentType() {
 }
 
 func (suite *ExportTestSuite) TestExportResponseHeaders() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export",
 			Action:   "export",
@@ -446,7 +446,7 @@ func (suite *ExportTestSuite) TestExportResponseHeaders() {
 // CSV Export Tests
 
 func (suite *ExportTestSuite) TestExportCSVBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_csv",
 			Action:   "export",
@@ -474,7 +474,7 @@ func (suite *ExportTestSuite) TestExportCSVBasic() {
 func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
 	suite.Run("FilterByStatus", func() {
 		status := "active"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_export_csv",
 				Action:   "export",
@@ -496,7 +496,7 @@ func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
 
 	suite.Run("FilterByKeyword", func() {
 		keyword := "Engineer"
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_export_csv",
 				Action:   "export",
@@ -518,7 +518,7 @@ func (suite *ExportTestSuite) TestExportCSVWithSearchFilter() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVWithCustomFilename() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_csv_filename",
 			Action:   "export",
@@ -535,7 +535,7 @@ func (suite *ExportTestSuite) TestExportCSVWithCustomFilename() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVWithOptions() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_csv_opts",
 			Action:   "export",
@@ -561,7 +561,7 @@ func (suite *ExportTestSuite) TestExportCSVWithOptions() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVEmptyResult() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_csv",
 			Action:   "export",
@@ -588,7 +588,7 @@ func (suite *ExportTestSuite) TestExportCSVEmptyResult() {
 
 func (suite *ExportTestSuite) TestExportFormatOverride() {
 	// Test format parameter override - use Excel endpoint but override to CSV
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export",
 			Action:   "export",
@@ -612,7 +612,7 @@ func (suite *ExportTestSuite) TestExportFormatOverride() {
 }
 
 func (suite *ExportTestSuite) TestExportCSVContentType() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_export_csv",
 			Action:   "export",

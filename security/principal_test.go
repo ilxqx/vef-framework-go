@@ -25,7 +25,7 @@ type TestExternalAppDetails struct {
 }
 
 func TestNewUser(t *testing.T) {
-	t.Run("create user without roles", func(t *testing.T) {
+	t.Run("Create user without roles", func(t *testing.T) {
 		user := NewUser("user123", "John Doe")
 		assert.Equal(t, PrincipalTypeUser, user.Type)
 		assert.Equal(t, "user123", user.Id)
@@ -34,7 +34,7 @@ func TestNewUser(t *testing.T) {
 		assert.Nil(t, user.Details)
 	})
 
-	t.Run("create user with roles", func(t *testing.T) {
+	t.Run("Create user with roles", func(t *testing.T) {
 		user := NewUser("user456", "Jane Smith", "admin", "editor")
 		assert.Equal(t, PrincipalTypeUser, user.Type)
 		assert.Equal(t, "user456", user.Id)
@@ -44,7 +44,7 @@ func TestNewUser(t *testing.T) {
 }
 
 func TestNewExternalApp(t *testing.T) {
-	t.Run("create external app without roles", func(t *testing.T) {
+	t.Run("Create external app without roles", func(t *testing.T) {
 		app := NewExternalApp("app123", "Payment Service")
 		assert.Equal(t, PrincipalTypeExternalApp, app.Type)
 		assert.Equal(t, "app123", app.Id)
@@ -53,7 +53,7 @@ func TestNewExternalApp(t *testing.T) {
 		assert.Nil(t, app.Details)
 	})
 
-	t.Run("create external app with roles", func(t *testing.T) {
+	t.Run("Create external app with roles", func(t *testing.T) {
 		app := NewExternalApp("app456", "Auth Service", "service", "trusted")
 		assert.Equal(t, PrincipalTypeExternalApp, app.Type)
 		assert.Equal(t, "app456", app.Id)
@@ -63,13 +63,13 @@ func TestNewExternalApp(t *testing.T) {
 }
 
 func TestPrincipalWithRoles(t *testing.T) {
-	t.Run("add roles to principal", func(t *testing.T) {
+	t.Run("Add roles to principal", func(t *testing.T) {
 		user := NewUser("user123", "Test User")
 		user.WithRoles("admin", "moderator")
 		assert.Equal(t, []string{"admin", "moderator"}, user.Roles)
 	})
 
-	t.Run("add roles multiple times", func(t *testing.T) {
+	t.Run("Add roles multiple times", func(t *testing.T) {
 		user := NewUser("user123", "Test User", "viewer")
 		user.WithRoles("admin").WithRoles("editor")
 		assert.Equal(t, []string{"viewer", "admin", "editor"}, user.Roles)
@@ -77,7 +77,7 @@ func TestPrincipalWithRoles(t *testing.T) {
 }
 
 func TestPrincipalSystem(t *testing.T) {
-	t.Run("system principal has correct values", func(t *testing.T) {
+	t.Run("System principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeSystem, PrincipalSystem.Type)
 		assert.Equal(t, constants.OperatorSystem, PrincipalSystem.Id)
 		assert.Equal(t, "系统", PrincipalSystem.Name)
@@ -85,7 +85,7 @@ func TestPrincipalSystem(t *testing.T) {
 }
 
 func TestPrincipalAnonymous(t *testing.T) {
-	t.Run("anonymous principal has correct values", func(t *testing.T) {
+	t.Run("Anonymous principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeUser, PrincipalAnonymous.Type)
 		assert.Equal(t, constants.OperatorAnonymous, PrincipalAnonymous.Id)
 		assert.Equal(t, "匿名", PrincipalAnonymous.Name)
@@ -93,7 +93,7 @@ func TestPrincipalAnonymous(t *testing.T) {
 }
 
 func TestPrincipalJSONMarshal(t *testing.T) {
-	t.Run("marshal user with map details", func(t *testing.T) {
+	t.Run("Marshal user with map details", func(t *testing.T) {
 		user := NewUser("user123", "Test User", "admin")
 		user.Details = map[string]any{
 			"email": "test@example.com",
@@ -114,7 +114,7 @@ func TestPrincipalJSONMarshal(t *testing.T) {
 		assert.Contains(t, result, "details")
 	})
 
-	t.Run("marshal user without details", func(t *testing.T) {
+	t.Run("Marshal user without details", func(t *testing.T) {
 		user := NewUser("user123", "Test User")
 
 		data, err := json.Marshal(user)
@@ -131,7 +131,7 @@ func TestPrincipalJSONMarshal(t *testing.T) {
 }
 
 func TestPrincipalJSONUnmarshal(t *testing.T) {
-	t.Run("unmarshal user with map details", func(t *testing.T) {
+	t.Run("Unmarshal user with map details", func(t *testing.T) {
 		jsonData := `{
 			"type": "user",
 			"id": "user123",
@@ -162,7 +162,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		assert.Equal(t, float64(30), details["age"])
 	})
 
-	t.Run("unmarshal user with struct details", func(t *testing.T) {
+	t.Run("Unmarshal user with struct details", func(t *testing.T) {
 		// Set user details type
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
@@ -193,7 +193,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		assert.Equal(t, 25, details.Age)
 	})
 
-	t.Run("unmarshal external app with struct details", func(t *testing.T) {
+	t.Run("Unmarshal external app with struct details", func(t *testing.T) {
 		// Set external app details type
 		originalType := externalAppDetailsType
 		defer func() { externalAppDetailsType = originalType }() // Reset at end
@@ -224,7 +224,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		assert.Equal(t, []string{"read", "write"}, details.Scopes)
 	})
 
-	t.Run("unmarshal system principal", func(t *testing.T) {
+	t.Run("Unmarshal system principal", func(t *testing.T) {
 		jsonData := `{
 			"type": "system",
 			"id": "system",
@@ -242,7 +242,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		assert.Nil(t, principal.Details)
 	})
 
-	t.Run("unmarshal invalid json", func(t *testing.T) {
+	t.Run("Unmarshal invalid json", func(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var principal Principal
@@ -253,7 +253,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 }
 
 func TestAttemptUnmarshalDetails(t *testing.T) {
-	t.Run("unmarshal user details from map", func(t *testing.T) {
+	t.Run("Unmarshal user details from map", func(t *testing.T) {
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
 
@@ -275,7 +275,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		assert.Equal(t, 30, details.Age)
 	})
 
-	t.Run("unmarshal external app details from map", func(t *testing.T) {
+	t.Run("Unmarshal external app details from map", func(t *testing.T) {
 		originalType := externalAppDetailsType
 		defer func() { externalAppDetailsType = originalType }() // Reset at end
 
@@ -296,7 +296,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		assert.Equal(t, "secret", details.AppSecret)
 	})
 
-	t.Run("details type is map, keep as is", func(t *testing.T) {
+	t.Run("Details type is map, keep as is", func(t *testing.T) {
 		// Default type is already map[string]any, no need to set
 		user := NewUser("user123", "Test User")
 		detailsMap := map[string]any{
@@ -308,7 +308,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		assert.Equal(t, detailsMap, user.Details)
 	})
 
-	t.Run("non-map details for user type", func(t *testing.T) {
+	t.Run("Non-map details for user type", func(t *testing.T) {
 		user := NewUser("user123", "Test User")
 		stringDetails := "string details"
 
@@ -316,7 +316,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		assert.Equal(t, stringDetails, user.Details)
 	})
 
-	t.Run("system principal keeps details as is", func(t *testing.T) {
+	t.Run("System principal keeps details as is", func(t *testing.T) {
 		principal := &Principal{
 			Type: PrincipalTypeSystem,
 			Id:   "system",
@@ -328,7 +328,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		assert.Equal(t, details, principal.Details)
 	})
 
-	t.Run("decode with partial fields creates struct", func(t *testing.T) {
+	t.Run("Decode with partial fields creates struct", func(t *testing.T) {
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
 
@@ -351,7 +351,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 }
 
 func TestSetUserDetailsType(t *testing.T) {
-	t.Run("set valid struct type", func(t *testing.T) {
+	t.Run("Set valid struct type", func(t *testing.T) {
 		originalType := userDetailsType
 		defer func() { userDetailsType = originalType }() // Reset at end
 
@@ -359,7 +359,7 @@ func TestSetUserDetailsType(t *testing.T) {
 		assert.Equal(t, "TestUserDetails", userDetailsType.Name())
 	})
 
-	t.Run("panic on non-struct type", func(t *testing.T) {
+	t.Run("Panic on non-struct type", func(t *testing.T) {
 		assert.Panics(t, func() {
 			SetUserDetailsType[string]()
 		})
@@ -367,7 +367,7 @@ func TestSetUserDetailsType(t *testing.T) {
 }
 
 func TestSetExternalAppDetailsType(t *testing.T) {
-	t.Run("set valid struct type", func(t *testing.T) {
+	t.Run("Set valid struct type", func(t *testing.T) {
 		originalType := externalAppDetailsType
 		defer func() { externalAppDetailsType = originalType }() // Reset at end
 
@@ -375,7 +375,7 @@ func TestSetExternalAppDetailsType(t *testing.T) {
 		assert.Equal(t, "TestExternalAppDetails", externalAppDetailsType.Name())
 	})
 
-	t.Run("panic on non-struct type", func(t *testing.T) {
+	t.Run("Panic on non-struct type", func(t *testing.T) {
 		assert.Panics(t, func() {
 			SetExternalAppDetailsType[int]()
 		})
@@ -383,7 +383,7 @@ func TestSetExternalAppDetailsType(t *testing.T) {
 }
 
 func TestPrincipalRoundTrip(t *testing.T) {
-	t.Run("marshal and unmarshal user", func(t *testing.T) {
+	t.Run("Marshal and unmarshal user", func(t *testing.T) {
 		original := NewUser("user123", "Test User", "admin", "editor")
 		original.Details = map[string]any{
 			"email": "test@example.com",
@@ -406,7 +406,7 @@ func TestPrincipalRoundTrip(t *testing.T) {
 		assert.Equal(t, original.Roles, restored.Roles)
 	})
 
-	t.Run("marshal and unmarshal external app", func(t *testing.T) {
+	t.Run("Marshal and unmarshal external app", func(t *testing.T) {
 		original := NewExternalApp("app123", "Auth Service", "service")
 		original.Details = map[string]any{
 			"appId":  "123",

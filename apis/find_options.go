@@ -9,23 +9,23 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findOptionsAPI[TModel, TSearch any] struct {
-	FindAPI[TModel, TSearch, []Option, FindOptionsAPI[TModel, TSearch]]
+type findOptionsApi[TModel, TSearch any] struct {
+	FindApi[TModel, TSearch, []Option, FindOptionsApi[TModel, TSearch]]
 
 	columnMapping *OptionColumnMapping
 }
 
-func (a *findOptionsAPI[TModel, TSearch]) Provide() api.Spec {
+func (a *findOptionsApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findOptions)
 }
 
-func (a *findOptionsAPI[TModel, TSearch]) ColumnMapping(mapping *OptionColumnMapping) FindOptionsAPI[TModel, TSearch] {
+func (a *findOptionsApi[TModel, TSearch]) ColumnMapping(mapping *OptionColumnMapping) FindOptionsApi[TModel, TSearch] {
 	a.columnMapping = mapping
 
 	return a
 }
 
-func (a *findOptionsAPI[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params OptionParams, search TSearch) error, error) {
+func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params OptionParams, search TSearch) error, error) {
 	if err := a.Init(db); err != nil {
 		return nil, err
 	}

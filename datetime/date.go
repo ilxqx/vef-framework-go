@@ -51,9 +51,9 @@ func (d Date) String() string {
 // MarshalJSON implements the json.Marshaler interface for JSON serialization.
 func (d Date) MarshalJSON() ([]byte, error) {
 	bs := make([]byte, 0, datePatternLength+2)
-	bs = append(bs, constants.JSONQuote)
+	bs = append(bs, constants.JsonQuote)
 	bs = time.Time(d).AppendFormat(bs, time.DateOnly)
-	bs = append(bs, constants.JSONQuote)
+	bs = append(bs, constants.JsonQuote)
 
 	return bs, nil
 }
@@ -61,7 +61,7 @@ func (d Date) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface for JSON deserialization.
 func (d *Date) UnmarshalJSON(bs []byte) error {
 	value := utils.UnsafeString(bs)
-	if value == constants.JSONNull {
+	if value == constants.JsonNull {
 		return nil
 	}
 

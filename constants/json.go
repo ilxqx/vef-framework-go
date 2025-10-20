@@ -1,11 +1,11 @@
 package constants
 
 const (
-	// JSONNull is the string representation of the null value in JSON.
-	JSONNull = "null"
-	// JSONQuote is the quote character used in JSON strings.
-	JSONQuote byte = '"'
+	// JsonNull is the string representation of the null value in JSON.
+	JsonNull = "null"
+	// JsonQuote is the quote character used in JSON strings.
+	JsonQuote byte = '"'
 )
 
-// JSONNullBytes is the byte representation of JSON null.
-var JSONNullBytes = []byte(JSONNull)
+// JsonNullBytes is the byte representation of JSON null.
+var JsonNullBytes = []byte(JsonNull)

@@ -15,26 +15,26 @@ import (
 // Test Resources.
 type TestUserUpdateManyResource struct {
 	api.Resource
-	apis.UpdateManyAPI[TestUser, TestUserUpdateParams]
+	apis.UpdateManyApi[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyResource() api.Resource {
 	return &TestUserUpdateManyResource{
 		Resource:      api.NewResource("test/user_update_many"),
-		UpdateManyAPI: apis.NewUpdateManyAPI[TestUser, TestUserUpdateParams]().Public(),
+		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().Public(),
 	}
 }
 
 // Resource with PreUpdateMany hook.
 type TestUserUpdateManyWithPreHookResource struct {
 	api.Resource
-	apis.UpdateManyAPI[TestUser, TestUserUpdateParams]
+	apis.UpdateManyApi[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 	return &TestUserUpdateManyWithPreHookResource{
 		Resource: api.NewResource("test/user_update_many_prehook"),
-		UpdateManyAPI: apis.NewUpdateManyAPI[TestUser, TestUserUpdateParams]().
+		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().
 			Public().
 			PreUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Add suffix to all descriptions
@@ -52,13 +52,13 @@ func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 // Resource with PostUpdateMany hook.
 type TestUserUpdateManyWithPostHookResource struct {
 	api.Resource
-	apis.UpdateManyAPI[TestUser, TestUserUpdateParams]
+	apis.UpdateManyApi[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyWithPostHookResource() api.Resource {
 	return &TestUserUpdateManyWithPostHookResource{
 		Resource: api.NewResource("test/user_update_many_posthook"),
-		UpdateManyAPI: apis.NewUpdateManyAPI[TestUser, TestUserUpdateParams]().
+		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().
 			Public().
 			PostUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header with count
@@ -69,7 +69,7 @@ func NewTestUserUpdateManyWithPostHookResource() api.Resource {
 	}
 }
 
-// UpdateManyTestSuite is the test suite for UpdateMany API tests.
+// UpdateManyTestSuite is the test suite for UpdateMany Api tests.
 type UpdateManyTestSuite struct {
 	BaseSuite
 }
@@ -90,10 +90,10 @@ func (suite *UpdateManyTestSuite) TearDownSuite() {
 
 // TestUpdateManyBasic tests basic UpdateMany functionality.
 func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many",
-			Action:   "updateMany",
+			Action:   "update_many",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -121,15 +121,15 @@ func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 	body := suite.readBody(resp)
 	suite.True(body.IsOk())
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	// UpdateManyAPI returns no data, just success status
+	// UpdateManyApi returns no data, just success status
 }
 
 // TestUpdateManyWithPreHook tests UpdateMany with PreUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many_prehook",
-			Action:   "updateMany",
+			Action:   "update_many",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -162,10 +162,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
 
 // TestUpdateManyWithPostHook tests UpdateMany with PostUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many_posthook",
-			Action:   "updateMany",
+			Action:   "update_many",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -199,10 +199,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
 // TestUpdateManyNegativeCases tests negative scenarios.
 func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	suite.Run("EmptyArray", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{"list": []any{}},
@@ -214,10 +214,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("NonExistentUser", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -247,10 +247,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("MissingId", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -280,10 +280,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("InvalidEmail", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -312,10 +312,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("InvalidAge", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -344,10 +344,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("DuplicateEmailInBatch", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -377,10 +377,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 	})
 
 	suite.Run("DuplicateEmailWithExisting", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -407,10 +407,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to update a batch where the second item will fail
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",
-				Action:   "updateMany",
+				Action:   "update_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -450,10 +450,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 
 // TestUpdateManyPartialUpdate tests updating only some fields.
 func (suite *UpdateManyTestSuite) TestUpdateManyPartialUpdate() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many",
-			Action:   "updateMany",
+			Action:   "update_many",
 			Version:  "v1",
 		},
 		Params: map[string]any{

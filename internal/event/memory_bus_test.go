@@ -13,7 +13,7 @@ import (
 )
 
 func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
-	t.Run("single subscriber receives event", func(t *testing.T) {
+	t.Run("Single subscriber receives event", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -53,7 +53,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		}
 	})
 
-	t.Run("multiple subscribers receive same event", func(t *testing.T) {
+	t.Run("Multiple subscribers receive same event", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -117,7 +117,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		}
 	})
 
-	t.Run("subscribers for different event types", func(t *testing.T) {
+	t.Run("Subscribers for different event types", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -180,7 +180,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 }
 
 func TestMemoryEventBus_Unsubscribe(t *testing.T) {
-	t.Run("unsubscribe prevents further event delivery", func(t *testing.T) {
+	t.Run("Unsubscribe prevents further event delivery", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -218,7 +218,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		mu.Unlock()
 	})
 
-	t.Run("unsubscribe one of multiple subscribers", func(t *testing.T) {
+	t.Run("Unsubscribe one of multiple subscribers", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -265,7 +265,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		mu.Unlock()
 	})
 
-	t.Run("unsubscribe function is idempotent", func(t *testing.T) {
+	t.Run("Unsubscribe function is idempotent", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -298,7 +298,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 }
 
 func TestMemoryEventBus_Lifecycle(t *testing.T) {
-	t.Run("start and shutdown", func(t *testing.T) {
+	t.Run("Start and shutdown", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		bus := &MemoryBus{
@@ -329,7 +329,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("shutdown without start", func(t *testing.T) {
+	t.Run("Shutdown without start", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		bus := &MemoryBus{
@@ -345,7 +345,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("events are processed after start", func(t *testing.T) {
+	t.Run("Events are processed after start", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -382,7 +382,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 }
 
 func TestMemoryEventBus_Middleware(t *testing.T) {
-	t.Run("middleware processes events", func(t *testing.T) {
+	t.Run("Middleware processes events", func(t *testing.T) {
 		var (
 			processedEvents []event.Event
 			mu              sync.Mutex
@@ -439,7 +439,7 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		}
 	})
 
-	t.Run("middleware chain processes in order", func(t *testing.T) {
+	t.Run("Middleware chain processes in order", func(t *testing.T) {
 		var (
 			processingOrder []string
 			mu              sync.Mutex
@@ -501,7 +501,7 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 }
 
 func TestMemoryEventBus_Concurrency(t *testing.T) {
-	t.Run("concurrent publish and subscribe", func(t *testing.T) {
+	t.Run("Concurrent publish and subscribe", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		const (
@@ -573,7 +573,7 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 		}
 	})
 
-	t.Run("concurrent subscribe and unsubscribe", func(t *testing.T) {
+	t.Run("Concurrent subscribe and unsubscribe", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		const numRoutines = 50

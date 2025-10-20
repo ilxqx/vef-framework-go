@@ -4,14 +4,14 @@
 
 A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 
-**Current Version:** v0.5.6
+**Current Version:** v0.6.0
 
 ## Features
 
-- **Single-Endpoint API Architecture** - All API requests through `POST /api` with unified request/response format
-- **Generic CRUD APIs** - Pre-built type-safe CRUD operations with minimal boilerplate
+- **Single-Endpoint Api Architecture** - All Api requests through `POST /api` with unified request/response format
+- **Generic CRUD Apis** - Pre-built type-safe CRUD operations with minimal boilerplate
 - **Type-Safe ORM** - Bun-based ORM with fluent query builder and automatic audit tracking
-- **Multi-Strategy Authentication** - JWT, OpenAPI signature, and password authentication out of the box
+- **Multi-Strategy Authentication** - Jwt, OpenApi signature, and password authentication out of the box
 - **Modular Design** - Uber FX dependency injection with pluggable modules
 - **Built-in Features** - Cache, event bus, cron scheduler, object storage, data validation, i18n
 - **RBAC & Data Permissions** - Row-level security with customizable data scopes
@@ -70,20 +70,20 @@ Run the application:
 go run main.go
 ```
 
-Your API server is now running at `http://localhost:8080`.
+Your Api server is now running at `http://localhost:8080`.
 
 ## Architecture
 
 ### Single-Endpoint Design
 
-VEF uses a single-endpoint approach where all API requests go through `POST /api` (or `POST /openapi` for external integrations).
+VEF uses a single-endpoint approach where all Api requests go through `POST /api` (or `POST /openapi` for external integrations).
 
 **Request Format:**
 
 ```json
 {
   "resource": "sys/user",
-  "action": "findPage",
+  "action": "find_page",
   "version": "v1",
   "params": {
     "page": 1,
@@ -115,7 +115,7 @@ VEF leverages Uber FX for dependency injection. Register components using helper
 
 ```go
 vef.Run(
-    vef.ProvideAPIResource(NewUserResource),
+    vef.ProvideApiResource(NewUserResource),
     vef.Provide(NewUserService),
 )
 ```
@@ -153,11 +153,13 @@ type User struct {
 
 - `id` - Primary key (20-character XID in base32 encoding)
 - `created_at`, `created_by` - Creation timestamp and user ID
+- `created_by_name` - Creator name (scan-only, not stored in database)
 - `updated_at`, `updated_by` - Last update timestamp and user ID
+- `updated_by_name` - Updater name (scan-only, not stored in database)
 
 **Null Types:** Use `null.String`, `null.Int`, `null.Bool`, etc. for nullable fields.
 
-## Building CRUD APIs
+## Building CRUD Apis
 
 ### Step 1: Define Parameter Structures
 
@@ -180,15 +182,15 @@ type UserSearch struct {
 ```go
 type UserParams struct {
     api.In
-    orm.ModelPK `json:",inline"` // For updates
-    
+    Id       string      `json:"id"` // Required for updates
+
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
     Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"Email"`
     IsActive bool        `json:"isActive"`
 }
 ```
 
-### Step 2: Create API Resource
+### Step 2: Create Api Resource
 
 ```go
 package resources
@@ -200,21 +202,21 @@ import (
 
 type UserResource struct {
     api.Resource
-    *apis.FindAllAPI[models.User, payloads.UserSearch]
-    *apis.FindPageAPI[models.User, payloads.UserSearch]
-    *apis.CreateAPI[models.User, payloads.UserParams]
-    *apis.UpdateAPI[models.User, payloads.UserParams]
-    *apis.DeleteAPI[models.User]
+    *apis.FindAllApi[models.User, payloads.UserSearch]
+    *apis.FindPageApi[models.User, payloads.UserSearch]
+    *apis.CreateApi[models.User, payloads.UserParams]
+    *apis.UpdateApi[models.User, payloads.UserParams]
+    *apis.DeleteApi[models.User]
 }
 
 func NewUserResource() api.Resource {
     return &UserResource{
         Resource: api.NewResource("sys/user"),
-        FindAllAPI: apis.NewFindAllAPI[models.User, payloads.UserSearch](),
-        FindPageAPI: apis.NewFindPageAPI[models.User, payloads.UserSearch](),
-        CreateAPI: apis.NewCreateAPI[models.User, payloads.UserParams](),
-        UpdateAPI: apis.NewUpdateAPI[models.User, payloads.UserParams](),
-        DeleteAPI: apis.NewDeleteAPI[models.User](),
+        FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
+        FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
+        CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
+        UpdateApi: apis.NewUpdateApi[models.User, payloads.UserParams](),
+        DeleteApi: apis.NewDeleteApi[models.User](),
     }
 }
 ```
@@ -224,37 +226,37 @@ func NewUserResource() api.Resource {
 ```go
 func main() {
     vef.Run(
-        vef.ProvideAPIResource(resources.NewUserResource),
+        vef.ProvideApiResource(resources.NewUserResource),
     )
 }
 ```
 
-### Pre-built APIs
+### Pre-built Apis
 
-| API | Description | Action |
+| Api | Description | Action |
 |-----|-------------|--------|
-| FindOneAPI | Find single record | findOne |
-| FindAllAPI | Find all records | findAll |
-| FindPageAPI | Paginated query | findPage |
-| CreateAPI | Create record | create |
-| UpdateAPI | Update record | update |
-| DeleteAPI | Delete record | delete |
-| CreateManyAPI | Batch create | createMany |
-| UpdateManyAPI | Batch update | updateMany |
-| DeleteManyAPI | Batch delete | deleteMany |
-| FindTreeAPI | Hierarchical query | findTree |
-| FindOptionsAPI | Options list (label/value) | findOptions |
-| FindTreeOptionsAPI | Tree options | findTreeOptions |
-| ImportAPI | Import from Excel/CSV | import |
-| ExportAPI | Export to Excel/CSV | export |
+| FindOneApi | Find single record | find_one |
+| FindAllApi | Find all records | find_all |
+| FindPageApi | Paginated query | find_page |
+| CreateApi | Create record | create |
+| UpdateApi | Update record | update |
+| DeleteApi | Delete record | delete |
+| CreateManyApi | Batch create | create_many |
+| UpdateManyApi | Batch update | update_many |
+| DeleteManyApi | Batch delete | delete_many |
+| FindTreeApi | Hierarchical query | find_tree |
+| FindOptionsApi | Options list (label/value) | find_options |
+| FindTreeOptionsApi | Tree options | find_tree_options |
+| ImportApi | Import from Excel/CSV | import |
+| ExportApi | Export to Excel/CSV | export |
 
-### API Builder Methods
+### Api Builder Methods
 
-Configure API behavior with fluent builder methods:
+Configure Api behavior with fluent builder methods:
 
 ```go
-CreateAPI: apis.NewCreateAPI[User, UserParams]().
-    Action("createUser").              // Custom action name
+CreateApi: apis.NewCreateApi[User, UserParams]().
+    Action("create_user").             // Custom action name
     Public().                          // No authentication required
     PermToken("sys.user.create").      // Permission token
     EnableAudit().                     // Enable audit logging
@@ -267,7 +269,7 @@ CreateAPI: apis.NewCreateAPI[User, UserParams]().
 Add custom business logic before/after CRUD operations:
 
 ```go
-CreateAPI: apis.NewCreateAPI[User, UserParams]().
+CreateApi: apis.NewCreateApi[User, UserParams]().
     PreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
         // Hash password before creating user
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
@@ -510,9 +512,9 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
     if err != nil {
         return err // Auto-rollback
     }
-    
+
     // Update related records
-    _, err = tx.NewUpdate().Model(&profile).WherePK().Exec(txCtx)
+    _, err = tx.NewUpdate().Model(&profile).WherePk().Exec(txCtx)
     return err // Auto-commit on nil, rollback on error
 })
 ```
@@ -523,8 +525,8 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 
 VEF supports multiple authentication strategies:
 
-1. **JWT Authentication** (default) - Bearer token or query parameter `?__accessToken=xxx`
-2. **OpenAPI Signature** - For external applications using HMAC signature
+1. **Jwt Authentication** (default) - Bearer token or query parameter `?__accessToken=xxx`
+2. **OpenApi Signature** - For external applications using HMAC signature
 3. **Password Authentication** - Username/password login
 
 ### Implementing User Loader
@@ -583,10 +585,10 @@ func main() {
 
 ### Permission Control
 
-Set permission tokens on APIs:
+Set permission tokens on Apis:
 
 ```go
-CreateAPI: apis.NewCreateAPI[User, UserParams]().
+CreateApi: apis.NewCreateApi[User, UserParams]().
     PermToken("sys.user.create"),
 ```
 
@@ -679,9 +681,9 @@ func NewMyCustomPermissionChecker() security.PermissionChecker {
 func main() {
     vef.Run(
         vef.Provide(NewMyCustomPermissionChecker),
-        vef.Replace(fx.Annotate(
+        vef.Replace(vef.Annotate(
             NewMyCustomPermissionChecker,
-            fx.As(new(security.PermissionChecker)),
+            vef.As(new(security.PermissionChecker)),
         )),
     )
 }
@@ -824,9 +826,9 @@ func NewMyCustomDataPermResolver() security.DataPermissionResolver {
 func main() {
     vef.Run(
         vef.Provide(NewMyCustomDataPermResolver),
-        vef.Replace(fx.Annotate(
+        vef.Replace(vef.Annotate(
             NewMyCustomDataPermResolver,
-            fx.As(new(security.DataPermissionResolver)),
+            vef.As(new(security.DataPermissionResolver)),
         )),
     )
 }
@@ -857,7 +859,7 @@ schema = "public"        # PostgreSQL schema
 # path = "./data.db"    # SQLite database file path
 
 [vef.security]
-token_expires = "2h"     # JWT token expiration time
+token_expires = "2h"     # Jwt token expiration time
 
 [vef.storage]
 provider = "minio"       # Storage provider: memory, minio
@@ -906,15 +908,15 @@ import (
 
 // In-memory cache
 memCache := cache.NewMemory[models.User](
-    cache.WithMemoryMaxSize(1000),
-    cache.WithMemoryDefaultTTL(5 * time.Minute),
+    cache.WithMemMaxSize(1000),
+    cache.WithMemDefaultTTL(5 * time.Minute),
 )
 
 // Redis cache
 redisCache := cache.NewRedis[models.User](
     redisClient,
     "users",
-    cache.WithRedisDefaultTTL(10 * time.Minute),
+    cache.WithRdsDefaultTTL(10 * time.Minute),
 )
 
 // Usage
@@ -1194,7 +1196,7 @@ The framework provides built-in file storage functionality with support for MinI
 
 #### Built-in Storage Resource
 
-The framework automatically registers the `base/storage` resource with the following API endpoints:
+The framework automatically registers the `base/storage` resource with the following Api endpoints:
 
 | Action | Description |
 |--------|-------------|
@@ -1206,7 +1208,7 @@ The framework automatically registers the `base/storage` resource with the follo
 **Upload Example:**
 
 ```bash
-# Using built-in upload API
+# Using built-in upload Api
 curl -X POST http://localhost:8080/api \
   -H "Authorization: Bearer <token>" \
   -F "resource=base/storage" \
@@ -1388,10 +1390,10 @@ my-app/
 │   ├── models/                 # Data models
 │   │   ├── user.go
 │   │   └── order.go
-│   ├── payloads/               # API parameters
+│   ├── payloads/               # Api parameters
 │   │   ├── user.go
 │   │   └── order.go
-│   ├── resources/              # API resources
+│   ├── resources/              # Api resources
 │   │   ├── user.go
 │   │   └── order.go
 │   └── services/               # Business services
@@ -1403,9 +1405,9 @@ my-app/
 ### Naming Conventions
 
 - **Models:** Singular PascalCase (e.g., `User`, `Order`)
-- **Resources:** Lowercase with slashes (e.g., `sys/user`, `shop/order`)
+- **Resources:** Lowercase with slashes (e.g., `sys/user`, `shop/order`, `auth/user_role`)
 - **Parameters:** `XxxParams` (Create/Update), `XxxSearch` (Query)
-- **Actions:** Lowercase camelCase (e.g., `findPage`, `createUser`)
+- **Actions:** Lowercase snake_case (e.g., `find_page`, `create_user`)
 
 ### Error Handling
 

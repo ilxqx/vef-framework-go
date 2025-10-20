@@ -30,7 +30,7 @@ type OptionColumnMapping struct {
 	SortColumn string `json:"sortColumn"`
 }
 
-// OptionParams is the API request parameter for querying options.
+// OptionParams is the Api request parameter for querying options.
 type OptionParams struct {
 	api.In
 	OptionColumnMapping
@@ -59,7 +59,7 @@ type TreeOptionColumnMapping struct {
 	ParentIdColumn string `json:"parentIdColumn"`
 }
 
-// TreeOptionParams is the API request parameter for querying tree options.
+// TreeOptionParams is the Api request parameter for querying tree options.
 type TreeOptionParams struct {
 	api.In
 	TreeOptionColumnMapping

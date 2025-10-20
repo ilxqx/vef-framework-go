@@ -19,7 +19,7 @@ func TestAESCipher_CBC(t *testing.T) {
 	_, err = rand.Read(iv)
 	require.NoError(t, err)
 
-	cipher, err := NewAES(key, iv, AESModeCBC)
+	cipher, err := NewAES(key, iv, AesModeCBC)
 	require.NoError(t, err, "Failed to create AES cipher")
 
 	testCases := []string{
@@ -52,7 +52,7 @@ func TestAESCipher_GCM(t *testing.T) {
 	_, err := rand.Read(key)
 	require.NoError(t, err)
 
-	cipher, err := NewAES(key, nil, AESModeGCM)
+	cipher, err := NewAES(key, nil, AesModeGCM)
 	require.NoError(t, err, "Failed to create AES cipher")
 
 	testCases := []string{
@@ -83,7 +83,7 @@ func TestAESCipher_FromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" // 32 bytes
 	ivHex := "0123456789abcdef0123456789abcdef"                                  // 16 bytes
 
-	cipher, err := NewAESFromHex(keyHex, ivHex, AESModeCBC)
+	cipher, err := NewAESFromHex(keyHex, ivHex, AesModeCBC)
 	require.NoError(t, err, "Failed to create AES cipher from hex")
 
 	plaintext := "Test message"
@@ -108,7 +108,7 @@ func TestAESCipher_FromBase64(t *testing.T) {
 	keyBase64 := base64.StdEncoding.EncodeToString(key)
 	ivBase64 := base64.StdEncoding.EncodeToString(iv)
 
-	cipher, err := NewAESFromBase64(keyBase64, ivBase64, AESModeCBC)
+	cipher, err := NewAESFromBase64(keyBase64, ivBase64, AesModeCBC)
 	require.NoError(t, err, "Failed to create AES cipher from base64")
 
 	plaintext := "Test message with base64 encoded key"
@@ -125,7 +125,7 @@ func TestAESCipher_InvalidKeySize(t *testing.T) {
 	invalidKey := make([]byte, 15) // Invalid key size
 	iv := make([]byte, 16)
 
-	_, err := NewAES(invalidKey, iv, AESModeCBC)
+	_, err := NewAES(invalidKey, iv, AesModeCBC)
 	assert.Error(t, err, "Expected error for invalid key size")
 }
 
@@ -133,7 +133,7 @@ func TestAESCipher_InvalidIVSize(t *testing.T) {
 	key := make([]byte, 32)
 	invalidIV := make([]byte, 8) // Invalid IV size
 
-	_, err := NewAES(key, invalidIV, AESModeCBC)
+	_, err := NewAES(key, invalidIV, AesModeCBC)
 	assert.Error(t, err, "Expected error for invalid IV size")
 }
 
@@ -142,7 +142,7 @@ func TestAESCipher_GCM_Authentication(t *testing.T) {
 	_, err := rand.Read(key)
 	require.NoError(t, err)
 
-	cipher, err := NewAES(key, nil, AESModeGCM)
+	cipher, err := NewAES(key, nil, AesModeGCM)
 	require.NoError(t, err, "Failed to create AES cipher")
 
 	plaintext := "Test message"
@@ -168,7 +168,7 @@ func TestAESCipher_KeySizes(t *testing.T) {
 			_, err = rand.Read(iv)
 			require.NoError(t, err)
 
-			cipher, err := NewAES(key, iv, AESModeCBC)
+			cipher, err := NewAES(key, iv, AesModeCBC)
 			require.NoError(t, err, "Failed to create AES cipher with %d-byte key", size)
 
 			plaintext := "Test message"
@@ -201,10 +201,10 @@ func TestAESCipher_DefaultMode(t *testing.T) {
 
 	assert.Equal(t, plaintext, decrypted)
 
-	// Verify it's using GCM by checking that the cipher is an AESCipher with GCM mode
-	aesCipher, ok := cipher.(*AESCipher)
+	// Verify it's using GCM by checking that the cipher is an AesCipher with GCM mode
+	aesCipher, ok := cipher.(*AesCipher)
 	require.True(t, ok)
-	assert.Equal(t, AESModeGCM, aesCipher.mode)
+	assert.Equal(t, AesModeGCM, aesCipher.mode)
 }
 
 func TestPKCS7Padding(t *testing.T) {

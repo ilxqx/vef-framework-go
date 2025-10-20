@@ -14,49 +14,43 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type updateAPI[TModel, TParams any] struct {
-	APIBuilder[UpdateAPI[TModel, TParams]]
+type updateApi[TModel, TParams any] struct {
+	ApiBuilder[UpdateApi[TModel, TParams]]
 
 	preUpdate       PreUpdateProcessor[TModel, TParams]
 	postUpdate      PostUpdateProcessor[TModel, TParams]
 	disableDataPerm bool
 }
 
-// Provide generates the final API specification for model updates.
+// Provide generates the final Api specification for model updates.
 // Returns a complete api.Spec that can be registered with the router.
-func (u *updateAPI[TModel, TParams]) Provide() api.Spec {
-	return u.APIBuilder.Build(u.update)
+func (u *updateApi[TModel, TParams]) Provide() api.Spec {
+	return u.Build(u.update)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (u *updateAPI[TModel, TParams]) Build(handler any) api.Spec {
-	panic("apis: do not call APIBuilder.Build on updateAPI; call Provide() instead")
-}
-
-func (u *updateAPI[TModel, TParams]) PreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateAPI[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) PreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
 	u.preUpdate = processor
 
 	return u
 }
 
-func (u *updateAPI[TModel, TParams]) PostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateAPI[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) PostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
 	u.postUpdate = processor
 
 	return u
 }
 
-func (u *updateAPI[TModel, TParams]) DisableDataPerm() UpdateAPI[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) DisableDataPerm() UpdateApi[TModel, TParams] {
 	u.disableDataPerm = true
 
 	return u
 }
 
-func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
+func (u *updateApi[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
 	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
 	// Pre-compute primary key fields
-	pks := db.ModelPKFields((*TModel)(nil))
+	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
 	if len(pks) == 0 {
@@ -87,7 +81,7 @@ func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 		}
 
 		// Build query with data permission filtering
-		query := db.NewSelect().Model(&model).WherePK()
+		query := db.NewSelect().Model(&model).WherePk()
 		if !u.disableDataPerm {
 			if err := applyDataPermission(query, ctx); err != nil {
 				return err
@@ -109,7 +103,7 @@ func (u *updateAPI[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
-			if _, err := tx.NewUpdate().Model(&oldModel).WherePK().Exec(txCtx); err != nil {
+			if _, err := tx.NewUpdate().Model(&oldModel).WherePk().Exec(txCtx); err != nil {
 				return err
 			}
 

@@ -17,16 +17,16 @@ const (
 	accessTokenExpires = time.Hour // Access token expires
 )
 
-// JWTTokenGenerator implements the TokenGenerator interface for JWT tokens.
-// It generates both access and refresh tokens using the JWT helper.
-type JWTTokenGenerator struct {
-	jwt          *security.JWT
+// JwtTokenGenerator implements the TokenGenerator interface for Jwt tokens.
+// It generates both access and refresh tokens using the Jwt helper.
+type JwtTokenGenerator struct {
+	jwt          *security.Jwt
 	tokenExpires time.Duration
 }
 
-// NewJWTTokenGenerator creates a new JWT token generator.
-func NewJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConfig) security.TokenGenerator {
-	return &JWTTokenGenerator{
+// NewJwtTokenGenerator creates a new Jwt token generator.
+func NewJwtTokenGenerator(jwt *security.Jwt, securityConfig *config.SecurityConfig) security.TokenGenerator {
+	return &JwtTokenGenerator{
 		jwt:          jwt,
 		tokenExpires: securityConfig.TokenExpires,
 	}
@@ -34,20 +34,20 @@ func NewJWTTokenGenerator(jwt *security.JWT, securityConfig *config.SecurityConf
 
 // Generate creates authentication tokens for the given principal.
 // It generates both access and refresh tokens.
-func (g *JWTTokenGenerator) Generate(principal *security.Principal) (*security.AuthTokens, error) {
+func (g *JwtTokenGenerator) Generate(principal *security.Principal) (*security.AuthTokens, error) {
 	jwtId := id.GenerateUuid()
 	// Generate access token
 	accessToken, err := g.generateAccessToken(jwtId, principal)
 	if err != nil {
-		logger.Errorf("Failed to generate access token for principal '%s': %v", principal.Id, err)
+		logger.Errorf("Failed to generate access token for principal %q: %v", principal.Id, err)
 
 		return nil, err
 	}
 
-	// Generate refresh token using the access token's JWT ID
+	// Generate refresh token using the access token's Jwt ID
 	refreshToken, err := g.generateRefreshToken(jwtId, principal)
 	if err != nil {
-		logger.Errorf("Failed to generate refresh token for principal '%s': %v", principal.Id, err)
+		logger.Errorf("Failed to generate refresh token for principal %q: %v", principal.Id, err)
 
 		return nil, err
 	}
@@ -58,9 +58,9 @@ func (g *JWTTokenGenerator) Generate(principal *security.Principal) (*security.A
 	}, nil
 }
 
-func (g *JWTTokenGenerator) generateAccessToken(jwtId string, principal *security.Principal) (string, error) {
+func (g *JwtTokenGenerator) generateAccessToken(jwtId string, principal *security.Principal) (string, error) {
 	// Subject format: id@name for quick identity recovery in authenticator
-	claimsBuilder := security.NewJWTClaimsBuilder().
+	claimsBuilder := security.NewJwtClaimsBuilder().
 		WithId(jwtId).
 		WithSubject(fmt.Sprintf("%s@%s", principal.Id, principal.Name)).
 		WithRoles(principal.Roles).
@@ -75,8 +75,8 @@ func (g *JWTTokenGenerator) generateAccessToken(jwtId string, principal *securit
 	return accessToken, nil
 }
 
-func (g *JWTTokenGenerator) generateRefreshToken(jwtId string, principal *security.Principal) (string, error) {
-	claimsBuilder := security.NewJWTClaimsBuilder().
+func (g *JwtTokenGenerator) generateRefreshToken(jwtId string, principal *security.Principal) (string, error) {
+	claimsBuilder := security.NewJwtClaimsBuilder().
 		WithId(jwtId).
 		WithSubject(fmt.Sprintf("%s@%s", principal.Id, principal.Name)).
 		WithType(tokenTypeRefresh)

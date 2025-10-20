@@ -13,18 +13,18 @@ type apiManager struct {
 	apis *xsync.Map[apiPkg.Identifier, *apiPkg.Definition]
 }
 
-// Register adds a new API definition to the manager.
+// Register adds a new Api definition to the manager.
 // The handler will be wrapped with timeout middleware.
 func (m *apiManager) Register(api *apiPkg.Definition) {
 	m.apis.Store(api.Identifier, wrapHandler(api))
 }
 
-// Remove removes an API definition by its identifier.
+// Remove removes an Api definition by its identifier.
 func (m *apiManager) Remove(id apiPkg.Identifier) {
 	m.apis.Delete(id)
 }
 
-// Lookup retrieves an API definition by its identifier.
+// Lookup retrieves an Api definition by its identifier.
 // Returns nil if the definition is not found.
 func (m *apiManager) Lookup(id apiPkg.Identifier) *apiPkg.Definition {
 	if api, ok := m.apis.Load(id); ok {
@@ -34,7 +34,7 @@ func (m *apiManager) Lookup(id apiPkg.Identifier) *apiPkg.Definition {
 	return nil
 }
 
-// List returns all registered API definitions.
+// List returns all registered Api definitions.
 func (m *apiManager) List() []*apiPkg.Definition {
 	var definitions []*apiPkg.Definition
 	m.apis.Range(func(key apiPkg.Identifier, value *apiPkg.Definition) bool {
@@ -61,7 +61,7 @@ func wrapHandler(api *apiPkg.Definition) *apiPkg.Definition {
 	return api
 }
 
-// NewManager creates a new API manager and registers all provided resources.
+// NewManager creates a new Api manager and registers all provided resources.
 func NewManager(resources []apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (apiPkg.Manager, error) {
 	manager := &apiManager{
 		apis: xsync.NewMap[apiPkg.Identifier, *apiPkg.Definition](),

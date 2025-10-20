@@ -16,7 +16,7 @@ import (
 )
 
 type spaMiddleware struct {
-	configs []*middleware.SPAConfig
+	configs []*middleware.SpaConfig
 }
 
 func (*spaMiddleware) Name() string {
@@ -29,7 +29,7 @@ func (*spaMiddleware) Order() int {
 
 func (s *spaMiddleware) Apply(router fiber.Router) {
 	for _, config := range s.configs {
-		applySPA(router, config)
+		applySpa(router, config)
 	}
 
 	router.Use(func(ctx fiber.Ctx) error {
@@ -48,8 +48,8 @@ func (s *spaMiddleware) Apply(router fiber.Router) {
 	})
 }
 
-// applySPA applies the SPA middleware to the router.
-func applySPA(router fiber.Router, config *middleware.SPAConfig) {
+// applySpa applies the SPA middleware to the router.
+func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 	group := router.Group(
 		config.Path,
 		etag.New(etag.Config{
@@ -90,8 +90,8 @@ func applySPA(router fiber.Router, config *middleware.SPAConfig) {
 	}))
 }
 
-// NewSPAMiddleware creates a new SPA middleware.
-func NewSPAMiddleware(configs []*middleware.SPAConfig) app.Middleware {
+// NewSpaMiddleware creates a new SPA middleware.
+func NewSpaMiddleware(configs []*middleware.SpaConfig) app.Middleware {
 	if len(configs) == 0 {
 		return nil
 	}

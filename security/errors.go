@@ -39,8 +39,8 @@ var (
 	// ErrCreateSM4CipherFromBase64Failed indicates SM4 cipher creation from base64 failed.
 	ErrCreateSM4CipherFromBase64Failed = errors.New("failed to create SM4 cipher from base64")
 
-	// ErrDecodeJWTSecretFailed indicates decoding JWT secret failed.
-	ErrDecodeJWTSecretFailed = errors.New("failed to decode jwt secret")
+	// ErrDecodeJwtSecretFailed indicates decoding Jwt secret failed.
+	ErrDecodeJwtSecretFailed = errors.New("failed to decode jwt secret")
 
 	// ErrUserDetailsTypeMustBeStruct indicates user details type must be a struct.
 	ErrUserDetailsTypeMustBeStruct = errors.New("user details type must be a struct")

@@ -28,6 +28,7 @@
   "request_timeout": "Request timeout",
   "primary_key_required": "Primary key parameter '{{.field}}' is required",
   "user_loader_not_implemented": "Please provide a 'security.UserLoader' implementation",
+  "user_info_loader_not_implemented": "Please provide a 'security.UserInfoLoader' implementation",
   "username_required": "Username cannot be empty",
   "password_required": "Password cannot be empty",
   "invalid_credentials": "Invalid username or password",
@@ -52,5 +53,11 @@
   "batch_delete_pks": "Delete primary keys list",
   "upload_requires_multipart": "Upload request must use 'multipart/form-data' format",
   "upload_requires_file": "Upload file is required",
-  "object_not_found": "Object not found"
+  "object_not_found": "Object not found",
+  "validator_phone_number": "{0} format is invalid",
+  "validator_decimal_min": "{0} must be at least {1}",
+  "validator_decimal_max": "{0} must be less than or equal to {1}",
+  "validator_alphanum_us": "{0} can only contain letters, numbers and underscores",
+  "validator_alphanum_us_slash": "{0} can only contain letters, numbers, underscores and slashes",
+  "validator_alphanum_us_dot": "{0} can only contain letters, numbers, underscores and dots"
 }

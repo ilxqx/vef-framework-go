@@ -24,15 +24,15 @@ const (
 	KeyDataPermApplier
 )
 
-// APIRequest returns the api.APIRequest from fiber context.
-func APIRequest(ctx context.Context) *api.Request {
+// ApiRequest returns the api.ApiRequest from fiber context.
+func ApiRequest(ctx context.Context) *api.Request {
 	req, _ := ctx.Value(KeyRequest).(*api.Request)
 
 	return req
 }
 
-// SetAPIRequest stores the api.Request into fiber context.
-func SetAPIRequest(ctx context.Context, request *api.Request) context.Context {
+// SetApiRequest stores the api.Request into fiber context.
+func SetApiRequest(ctx context.Context, request *api.Request) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
 		c.Locals(KeyRequest, request)

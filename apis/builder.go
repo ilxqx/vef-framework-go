@@ -6,7 +6,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 )
 
-type baseAPIBuilder[T any] struct {
+type baseApiBuilder[T any] struct {
 	action      string
 	version     string
 	enableAudit bool
@@ -18,37 +18,41 @@ type baseAPIBuilder[T any] struct {
 	self T
 }
 
-func (b *baseAPIBuilder[T]) Action(action string) T {
+func (b *baseApiBuilder[T]) Action(action string) T {
+	if err := api.ValidateActionName(action); err != nil {
+		panic(err)
+	}
+
 	b.action = action
 
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) EnableAudit() T {
+func (b *baseApiBuilder[T]) EnableAudit() T {
 	b.enableAudit = true
 
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) Timeout(timeout time.Duration) T {
+func (b *baseApiBuilder[T]) Timeout(timeout time.Duration) T {
 	b.timeout = timeout
 
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) Public() T {
+func (b *baseApiBuilder[T]) Public() T {
 	b.public = true
 
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) PermToken(token string) T {
+func (b *baseApiBuilder[T]) PermToken(token string) T {
 	b.permToken = token
 
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) RateLimit(max int, expiration time.Duration) T {
+func (b *baseApiBuilder[T]) RateLimit(max int, expiration time.Duration) T {
 	b.rateLimit = api.RateLimit{
 		Max:        max,
 		Expiration: expiration,
@@ -57,7 +61,7 @@ func (b *baseAPIBuilder[T]) RateLimit(max int, expiration time.Duration) T {
 	return b.self
 }
 
-func (b *baseAPIBuilder[T]) Build(handler any) api.Spec {
+func (b *baseApiBuilder[T]) Build(handler any) api.Spec {
 	return api.Spec{
 		Action:      b.action,
 		Version:     b.version,

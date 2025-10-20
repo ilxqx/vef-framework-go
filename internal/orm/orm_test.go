@@ -115,9 +115,9 @@ type ComplexModel struct {
 	ArrayField  []string       `json:"arrayField"  bun:"array_field"` // PostgreSQL only
 }
 
-// ORMTestSuite contains all the actual test methods and works with orm.Db interface.
+// OrmTestSuite contains all the actual test methods and works with orm.Db interface.
 // This suite will be run against multiple databases to verify cross-database compatibility.
-type ORMTestSuite struct {
+type OrmTestSuite struct {
 	suite.Suite
 
 	ctx    context.Context
@@ -126,7 +126,7 @@ type ORMTestSuite struct {
 }
 
 // SetupSuite initializes the test suite (called once per database).
-func (suite *ORMTestSuite) SetupSuite() {
+func (suite *OrmTestSuite) SetupSuite() {
 	suite.T().Logf("Setting up ORM test suite for %s", suite.dbType)
 
 	db := suite.getBunDb()
@@ -165,7 +165,7 @@ func (suite *ORMTestSuite) SetupSuite() {
 }
 
 // getBunDb extracts the underlying bun.DB from orm.Db interface.
-func (suite *ORMTestSuite) getBunDb() *bun.DB {
+func (suite *OrmTestSuite) getBunDb() *bun.DB {
 	if db, ok := suite.db.(*BunDb); ok {
 		if bunDB, ok := db.db.(*bun.DB); ok {
 			return bunDB
@@ -180,21 +180,21 @@ func (suite *ORMTestSuite) getBunDb() *bun.DB {
 // Helper methods for common test patterns
 
 // AssertCount verifies the count result of a select query.
-func (suite *ORMTestSuite) AssertCount(query SelectQuery, expectedCount int64) {
+func (suite *OrmTestSuite) AssertCount(query SelectQuery, expectedCount int64) {
 	count, err := query.Count(suite.ctx)
 	suite.NoError(err)
 	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.dbType)
 }
 
 // AssertExists verifies that a query returns at least one result.
-func (suite *ORMTestSuite) AssertExists(query SelectQuery) {
+func (suite *OrmTestSuite) AssertExists(query SelectQuery) {
 	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
 	suite.True(exists, "Query should return results for %s", suite.dbType)
 }
 
 // AssertNotExists verifies that a query returns no results.
-func (suite *ORMTestSuite) AssertNotExists(query SelectQuery) {
+func (suite *OrmTestSuite) AssertNotExists(query SelectQuery) {
 	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
 	suite.False(exists, "Query should not return results for %s", suite.dbType)

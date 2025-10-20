@@ -13,20 +13,20 @@ import (
 // Test Resources.
 type TestUserFindAllResource struct {
 	api.Resource
-	apis.FindAllAPI[TestUser, TestUserSearch]
+	apis.FindAllApi[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindAllResource() api.Resource {
 	return &TestUserFindAllResource{
 		Resource:   api.NewResource("test/user_all"),
-		FindAllAPI: apis.NewFindAllAPI[TestUser, TestUserSearch]().Public(),
+		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindAllResource struct {
 	api.Resource
-	apis.FindAllAPI[TestUser, TestUserSearch]
+	apis.FindAllApi[TestUser, TestUserSearch]
 }
 
 type ProcessedUserList struct {
@@ -37,7 +37,7 @@ type ProcessedUserList struct {
 func NewProcessedUserFindAllResource() api.Resource {
 	return &ProcessedUserFindAllResource{
 		Resource: api.NewResource("test/user_all_processed"),
-		FindAllAPI: apis.NewFindAllAPI[TestUser, TestUserSearch]().
+		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
 			Public().
 			Processor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				return ProcessedUserList{
@@ -51,13 +51,13 @@ func NewProcessedUserFindAllResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFindAllResource struct {
 	api.Resource
-	apis.FindAllAPI[TestUser, TestUserSearch]
+	apis.FindAllApi[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFindAllResource() api.Resource {
 	return &FilteredUserFindAllResource{
 		Resource: api.NewResource("test/user_all_filtered"),
-		FindAllAPI: apis.NewFindAllAPI[TestUser, TestUserSearch]().
+		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
 			Public().
 			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
 				return func(cb orm.ConditionBuilder) {
@@ -70,13 +70,13 @@ func NewFilteredUserFindAllResource() api.Resource {
 // Ordered User Resource - with order applier.
 type OrderedUserFindAllResource struct {
 	api.Resource
-	apis.FindAllAPI[TestUser, TestUserSearch]
+	apis.FindAllApi[TestUser, TestUserSearch]
 }
 
 func NewOrderedUserFindAllResource() api.Resource {
 	return &OrderedUserFindAllResource{
 		Resource: api.NewResource("test/user_all_ordered"),
-		FindAllAPI: apis.NewFindAllAPI[TestUser, TestUserSearch]().
+		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
 			Public().
 			SortApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[apis.Sorter] {
 				return func(s apis.Sorter) {
@@ -89,19 +89,19 @@ func NewOrderedUserFindAllResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindAllResource struct {
 	api.Resource
-	apis.FindAllAPI[TestUser, TestUserSearch]
+	apis.FindAllApi[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindAllResource() api.Resource {
 	return &AuditUserTestUserFindAllResource{
 		Resource: api.NewResource("test/user_all_audit"),
-		FindAllAPI: apis.NewFindAllAPI[TestUser, TestUserSearch]().
+		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
 			Public().
 			WithAuditUserNames((*TestAuditUser)(nil)),
 	}
 }
 
-// FindAllTestSuite is the test suite for FindAll API tests.
+// FindAllTestSuite is the test suite for FindAll Api tests.
 type FindAllTestSuite struct {
 	BaseSuite
 }
@@ -124,10 +124,10 @@ func (suite *FindAllTestSuite) TearDownSuite() {
 
 // TestFindAllBasic tests basic FindAll functionality.
 func (suite *FindAllTestSuite) TestFindAllBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all",
-			Action:   "findAll",
+			Action:   "find_all",
 			Version:  "v1",
 		},
 	})
@@ -146,10 +146,10 @@ func (suite *FindAllTestSuite) TestFindAllBasic() {
 // TestFindAllWithSearchApplier tests FindAll with custom search conditions.
 func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	suite.Run("SearchByStatus", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
-				Action:   "findAll",
+				Action:   "find_all",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -167,10 +167,10 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
-				Action:   "findAll",
+				Action:   "find_all",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -188,10 +188,10 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 	})
 
 	suite.Run("SearchByAgeRange", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
-				Action:   "findAll",
+				Action:   "find_all",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -211,10 +211,10 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 
 // TestFindAllWithProcessor tests FindAll with post-processing.
 func (suite *FindAllTestSuite) TestFindAllWithProcessor() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_processed",
-			Action:   "findAll",
+			Action:   "find_all",
 			Version:  "v1",
 		},
 	})
@@ -234,10 +234,10 @@ func (suite *FindAllTestSuite) TestFindAllWithProcessor() {
 
 // TestFindAllWithFilterApplier tests FindAll with filter applier.
 func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_filtered",
-			Action:   "findAll",
+			Action:   "find_all",
 			Version:  "v1",
 		},
 	})
@@ -253,10 +253,10 @@ func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
 
 // TestFindAllWithSortApplier tests FindAll with sort applier.
 func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_ordered",
-			Action:   "findAll",
+			Action:   "find_all",
 			Version:  "v1",
 		},
 	})
@@ -277,10 +277,10 @@ func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
 // TestFindAllNegativeCases tests negative scenarios.
 func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 	suite.Run("EmptySearchCriteria", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
-				Action:   "findAll",
+				Action:   "find_all",
 				Version:  "v1",
 			},
 			Params: map[string]any{},
@@ -296,10 +296,10 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 	})
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
-				Action:   "findAll",
+				Action:   "find_all",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -319,10 +319,10 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 
 // TestFindAllWithAuditUserNames tests FindAll with audit user names populated.
 func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_audit",
-			Action:   "findAll",
+			Action:   "find_all",
 			Version:  "v1",
 		},
 		Params: map[string]any{

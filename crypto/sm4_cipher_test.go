@@ -20,7 +20,7 @@ func TestSM4Cipher_CBC(t *testing.T) {
 	_, err = rand.Read(iv)
 	require.NoError(t, err)
 
-	cipher, err := NewSM4(key, iv, SM4ModeCBC)
+	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
 	require.NoError(t, err, "Failed to create SM4 cipher")
 
 	testCases := []string{
@@ -53,7 +53,7 @@ func TestSM4Cipher_ECB(t *testing.T) {
 	_, err := rand.Read(key)
 	require.NoError(t, err)
 
-	cipher, err := NewSM4(key, nil, SM4ModeECB)
+	cipher, err := NewSM4(key, nil, Sm4ModeECB)
 	require.NoError(t, err, "Failed to create SM4 cipher")
 
 	testCases := []string{
@@ -84,7 +84,7 @@ func TestSM4Cipher_FromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef" // 16 bytes
 	ivHex := "fedcba9876543210fedcba9876543210"  // 16 bytes
 
-	cipher, err := NewSM4FromHex(keyHex, ivHex, SM4ModeCBC)
+	cipher, err := NewSM4FromHex(keyHex, ivHex, Sm4ModeCBC)
 	require.NoError(t, err, "Failed to create SM4 cipher from hex")
 
 	plaintext := "Test message"
@@ -109,7 +109,7 @@ func TestSM4Cipher_FromBase64(t *testing.T) {
 	keyBase64 := base64.StdEncoding.EncodeToString(key)
 	ivBase64 := base64.StdEncoding.EncodeToString(iv)
 
-	cipher, err := NewSM4FromBase64(keyBase64, ivBase64, SM4ModeCBC)
+	cipher, err := NewSM4FromBase64(keyBase64, ivBase64, Sm4ModeCBC)
 	require.NoError(t, err, "Failed to create SM4 cipher from base64")
 
 	plaintext := "Test message with base64 encoded key"
@@ -126,7 +126,7 @@ func TestSM4Cipher_InvalidKeySize(t *testing.T) {
 	invalidKey := make([]byte, 8) // Invalid key size (must be 16)
 	iv := make([]byte, sm4.BlockSize)
 
-	_, err := NewSM4(invalidKey, iv, SM4ModeCBC)
+	_, err := NewSM4(invalidKey, iv, Sm4ModeCBC)
 	assert.Error(t, err, "Expected error for invalid key size")
 }
 
@@ -134,7 +134,7 @@ func TestSM4Cipher_InvalidIVSize(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	invalidIV := make([]byte, 8) // Invalid IV size (must be 16)
 
-	_, err := NewSM4(key, invalidIV, SM4ModeCBC)
+	_, err := NewSM4(key, invalidIV, Sm4ModeCBC)
 	assert.Error(t, err, "Expected error for invalid IV size")
 }
 
@@ -144,7 +144,7 @@ func TestSM4Cipher_ECB_NoIVRequired(t *testing.T) {
 	require.NoError(t, err)
 
 	// ECB mode doesn't require IV
-	cipher, err := NewSM4(key, nil, SM4ModeECB)
+	cipher, err := NewSM4(key, nil, Sm4ModeECB)
 	require.NoError(t, err, "Failed to create SM4 cipher in ECB mode without IV")
 
 	plaintext := "Test message"
@@ -162,7 +162,7 @@ func TestSM4Cipher_ECB_Deterministic(t *testing.T) {
 	_, err := rand.Read(key)
 	require.NoError(t, err)
 
-	cipher, err := NewSM4(key, nil, SM4ModeECB)
+	cipher, err := NewSM4(key, nil, Sm4ModeECB)
 	require.NoError(t, err, "Failed to create SM4 cipher")
 
 	plaintext := "Test message"
@@ -185,7 +185,7 @@ func TestSM4Cipher_CBC_NonDeterministic(t *testing.T) {
 	_, err = rand.Read(iv)
 	require.NoError(t, err)
 
-	cipher, err := NewSM4(key, iv, SM4ModeCBC)
+	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
 	require.NoError(t, err, "Failed to create SM4 cipher")
 
 	plaintext := "Test message"
@@ -219,7 +219,7 @@ func TestSM4Cipher_LongMessage(t *testing.T) {
 	_, err = rand.Read(iv)
 	require.NoError(t, err)
 
-	cipher, err := NewSM4(key, iv, SM4ModeCBC)
+	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
 	require.NoError(t, err, "Failed to create SM4 cipher")
 
 	// Create a long message (multiple blocks)
@@ -242,7 +242,7 @@ func TestSM4Cipher_EmptyString(t *testing.T) {
 	_, err = rand.Read(iv)
 	require.NoError(t, err)
 
-	cipher, err := NewSM4(key, iv, SM4ModeCBC)
+	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
 	require.NoError(t, err, "Failed to create SM4 cipher")
 
 	plaintext := ""
@@ -277,7 +277,7 @@ func TestSM4Cipher_DefaultMode(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted)
 
 	// Verify it's using CBC
-	sm4Cipher, ok := cipher.(*SM4Cipher)
+	sm4Cipher, ok := cipher.(*Sm4Cipher)
 	require.True(t, ok)
-	assert.Equal(t, SM4ModeCBC, sm4Cipher.mode)
+	assert.Equal(t, Sm4ModeCBC, sm4Cipher.mode)
 }

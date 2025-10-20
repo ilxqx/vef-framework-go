@@ -129,7 +129,7 @@ func parseTimeWithFallback(value, layout string) (time.Time, error) {
 
 // validateJSONFormat checks if the JSON bytes have the expected format for time types.
 func validateJSONFormat(bs []byte, expectedLength int) error {
-	if len(bs) != expectedLength+2 || bs[0] != constants.JSONQuote || bs[len(bs)-1] != constants.JSONQuote {
+	if len(bs) != expectedLength+2 || bs[0] != constants.JsonQuote || bs[len(bs)-1] != constants.JsonQuote {
 		return fmt.Errorf("%w: expected length %d with quotes", ErrInvalidJSONFormat, expectedLength)
 	}
 

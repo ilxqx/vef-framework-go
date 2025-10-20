@@ -25,7 +25,7 @@ func buildContextMiddleware(db orm.Db, transformer mold.Transformer) fiber.Handl
 			contextx.SetDb(ctx.Context(), contextualDb),
 		)
 
-		request := contextx.APIRequest(ctx)
+		request := contextx.ApiRequest(ctx)
 		logger := contextx.Logger(ctx)
 		contextx.SetLogger(
 			ctx,

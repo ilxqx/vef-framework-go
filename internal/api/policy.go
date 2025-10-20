@@ -7,16 +7,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// Policy defines how a specific API kind should behave.
+// Policy defines how a specific Api kind should behave.
 // It encapsulates authentication, permission, limiter and path strategy.
 type Policy interface {
-	// Path returns the mount path for this API kind, e.g. "/api" or "/openapi".
+	// Path returns the mount path for this Api kind, e.g. "/api" or "/openapi".
 	Path() string
-	// BuildAuthenticationMiddleware returns the authentication middleware for this API kind.
+	// BuildAuthenticationMiddleware returns the authentication middleware for this Api kind.
 	BuildAuthenticationMiddleware(manager api.Manager) fiber.Handler
 }
 
-// defaultApiPolicy is the policy for regular authenticated APIs.
+// defaultApiPolicy is the policy for regular authenticated Apis.
 type defaultApiPolicy struct {
 	auth security.AuthManager
 }
@@ -30,14 +30,14 @@ func NewDefaultApiPolicy(auth security.AuthManager) Policy {
 	return &defaultApiPolicy{auth: auth}
 }
 
-// openApiPolicy is the policy for OpenAPI style endpoints.
+// openApiPolicy is the policy for OpenApi style endpoints.
 type openApiPolicy struct {
 	auth security.AuthManager
 }
 
 func (*openApiPolicy) Path() string { return "/openapi" }
 func (p *openApiPolicy) BuildAuthenticationMiddleware(manager api.Manager) fiber.Handler {
-	return buildOpenAPIAuthenticationMiddleware(manager, p.auth)
+	return buildOpenApiAuthenticationMiddleware(manager, p.auth)
 }
 
 func NewOpenApiPolicy(auth security.AuthManager) Policy {

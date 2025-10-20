@@ -22,14 +22,14 @@ func TestSM4PasswordDecryptor_CBC(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create decryptor
-	decryptor, err := NewSM4PasswordDecryptor(key, iv, crypto.SM4ModeCBC)
+	decryptor, err := NewSm4PasswordDecryptor(key, iv, crypto.Sm4ModeCBC)
 	require.NoError(t, err, "Failed to create SM4 password decryptor")
 
 	// Test password
 	password := "MySecurePassword123!@#"
 
 	// Encrypt using crypto package
-	cipher, err := crypto.NewSM4(key, iv, crypto.SM4ModeCBC)
+	cipher, err := crypto.NewSM4(key, iv, crypto.Sm4ModeCBC)
 	require.NoError(t, err)
 
 	encryptedPassword, err := cipher.Encrypt(password)
@@ -50,14 +50,14 @@ func TestSM4PasswordDecryptor_ECB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create decryptor (ECB mode doesn't use IV)
-	decryptor, err := NewSM4PasswordDecryptor(key, key[:sm4.BlockSize], crypto.SM4ModeECB)
+	decryptor, err := NewSm4PasswordDecryptor(key, key[:sm4.BlockSize], crypto.Sm4ModeECB)
 	require.NoError(t, err, "Failed to create SM4 password decryptor")
 
 	// Test password
 	password := "MySecurePassword123!@#"
 
 	// Encrypt using crypto package
-	cipher, err := crypto.NewSM4(key, nil, crypto.SM4ModeECB)
+	cipher, err := crypto.NewSM4(key, nil, crypto.Sm4ModeECB)
 	require.NoError(t, err)
 
 	encryptedPassword, err := cipher.Encrypt(password)
@@ -81,13 +81,13 @@ func TestSM4PasswordDecryptor_DefaultMode(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create decryptor without specifying mode (should default to CBC)
-	decryptor, err := NewSM4PasswordDecryptor(key, iv)
+	decryptor, err := NewSm4PasswordDecryptor(key, iv)
 	require.NoError(t, err)
 
 	password := "TestPassword"
 
 	// Encrypt using crypto package with CBC mode
-	cipher, err := crypto.NewSM4(key, iv, crypto.SM4ModeCBC)
+	cipher, err := crypto.NewSM4(key, iv, crypto.Sm4ModeCBC)
 	require.NoError(t, err)
 
 	encryptedPassword, err := cipher.Encrypt(password)
@@ -103,7 +103,7 @@ func TestSM4PasswordDecryptor_FromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef" // 16 bytes
 	ivHex := "fedcba9876543210fedcba9876543210"  // 16 bytes
 
-	decryptor, err := NewSM4PasswordDecryptorFromHex(keyHex, ivHex)
+	decryptor, err := NewSm4PasswordDecryptorFromHex(keyHex, ivHex)
 	require.NoError(t, err)
 
 	// Encrypt using the same key/iv
@@ -131,7 +131,7 @@ func TestSM4PasswordDecryptor_FromBase64(t *testing.T) {
 	keyBase64 := encoding.ToBase64(key)
 	ivBase64 := encoding.ToBase64(iv)
 
-	decryptor, err := NewSM4PasswordDecryptorFromBase64(keyBase64, ivBase64)
+	decryptor, err := NewSm4PasswordDecryptorFromBase64(keyBase64, ivBase64)
 	require.NoError(t, err)
 
 	// Encrypt using the same key/iv
@@ -152,7 +152,7 @@ func TestSM4PasswordDecryptor_InvalidKeySize(t *testing.T) {
 	invalidKey := make([]byte, 8) // Invalid key size (must be 16)
 	iv := make([]byte, sm4.BlockSize)
 
-	_, err := NewSM4PasswordDecryptor(invalidKey, iv)
+	_, err := NewSm4PasswordDecryptor(invalidKey, iv)
 	assert.Error(t, err, "Should return error for invalid key size")
 	assert.Contains(t, err.Error(), "invalid SM4 key length")
 }
@@ -161,7 +161,7 @@ func TestSM4PasswordDecryptor_InvalidIVSize(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	invalidIV := make([]byte, 8) // Invalid IV size (must be 16)
 
-	_, err := NewSM4PasswordDecryptor(key, invalidIV)
+	_, err := NewSm4PasswordDecryptor(key, invalidIV)
 	assert.Error(t, err, "Should return error for invalid IV size")
 	assert.Contains(t, err.Error(), "invalid IV length")
 }
@@ -172,7 +172,7 @@ func TestSM4PasswordDecryptor_NilIV(t *testing.T) {
 	require.NoError(t, err)
 
 	// Should use first 16 bytes of key as IV
-	decryptor, err := NewSM4PasswordDecryptor(key, nil)
+	decryptor, err := NewSm4PasswordDecryptor(key, nil)
 	require.NoError(t, err)
 
 	// Encrypt using the same key as IV

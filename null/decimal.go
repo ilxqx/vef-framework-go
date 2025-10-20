@@ -75,7 +75,7 @@ func (d *Decimal) SetValid(v decimal.Decimal) {
 }
 
 // Ptr returns a pointer to the decimal value if valid, or nil if null.
-// This is useful when you need to pass the value to APIs that expect *decimal.Decimal,
+// This is useful when you need to pass the value to Apis that expect *decimal.Decimal,
 // with nil representing the absence of a value.
 func (d Decimal) Ptr() *decimal.Decimal {
 	if !d.Valid {

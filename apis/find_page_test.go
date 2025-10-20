@@ -13,26 +13,26 @@ import (
 // Test Resources.
 type TestUserFindPageResource struct {
 	api.Resource
-	apis.FindPageAPI[TestUser, TestUserSearch]
+	apis.FindPageApi[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindPageResource() api.Resource {
 	return &TestUserFindPageResource{
 		Resource:    api.NewResource("test/user_page"),
-		FindPageAPI: apis.NewFindPageAPI[TestUser, TestUserSearch]().Public(),
+		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindPageResource struct {
 	api.Resource
-	apis.FindPageAPI[TestUser, TestUserSearch]
+	apis.FindPageApi[TestUser, TestUserSearch]
 }
 
 func NewProcessedUserFindPageResource() api.Resource {
 	return &ProcessedUserFindPageResource{
 		Resource: api.NewResource("test/user_page_processed"),
-		FindPageAPI: apis.NewFindPageAPI[TestUser, TestUserSearch]().
+		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
 			Public().
 			Processor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				// Processor must return a slice - convert each user to a processed version
@@ -52,13 +52,13 @@ func NewProcessedUserFindPageResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFindPageResource struct {
 	api.Resource
-	apis.FindPageAPI[TestUser, TestUserSearch]
+	apis.FindPageApi[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFindPageResource() api.Resource {
 	return &FilteredUserFindPageResource{
 		Resource: api.NewResource("test/user_page_filtered"),
-		FindPageAPI: apis.NewFindPageAPI[TestUser, TestUserSearch]().
+		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
 			Public().
 			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
 				return func(cb orm.ConditionBuilder) {
@@ -71,19 +71,19 @@ func NewFilteredUserFindPageResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindPageResource struct {
 	api.Resource
-	apis.FindPageAPI[TestUser, TestUserSearch]
+	apis.FindPageApi[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindPageResource() api.Resource {
 	return &AuditUserTestUserFindPageResource{
 		Resource: api.NewResource("test/user_page_audit"),
-		FindPageAPI: apis.NewFindPageAPI[TestUser, TestUserSearch]().
+		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
 			Public().
 			WithAuditUserNames((*TestAuditUser)(nil)),
 	}
 }
 
-// FindPageTestSuite is the test suite for FindPage API tests.
+// FindPageTestSuite is the test suite for FindPage Api tests.
 type FindPageTestSuite struct {
 	BaseSuite
 }
@@ -105,10 +105,10 @@ func (suite *FindPageTestSuite) TearDownSuite() {
 
 // TestFindPageBasic tests basic FindPage functionality.
 func (suite *FindPageTestSuite) TestFindPageBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page",
-			Action:   "findPage",
+			Action:   "find_page",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -135,10 +135,10 @@ func (suite *FindPageTestSuite) TestFindPageBasic() {
 // TestFindPagePagination tests pagination functionality.
 func (suite *FindPageTestSuite) TestFindPagePagination() {
 	suite.Run("FirstPage", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
-				Action:   "findPage",
+				Action:   "find_page",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -161,10 +161,10 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	})
 
 	suite.Run("SecondPage", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
-				Action:   "findPage",
+				Action:   "find_page",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -187,10 +187,10 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	})
 
 	suite.Run("LastPage", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
-				Action:   "findPage",
+				Action:   "find_page",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -212,10 +212,10 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 	})
 
 	suite.Run("EmptyPage", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
-				Action:   "findPage",
+				Action:   "find_page",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -238,10 +238,10 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 
 // TestFindPageWithSearch tests FindPage with search conditions.
 func (suite *FindPageTestSuite) TestFindPageWithSearch() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page",
-			Action:   "findPage",
+			Action:   "find_page",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -264,10 +264,10 @@ func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 
 // TestFindPageWithProcessor tests FindPage with post-processing.
 func (suite *FindPageTestSuite) TestFindPageWithProcessor() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_processed",
-			Action:   "findPage",
+			Action:   "find_page",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -294,10 +294,10 @@ func (suite *FindPageTestSuite) TestFindPageWithProcessor() {
 
 // TestFindPageWithFilterApplier tests FindPage with filter applier.
 func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_filtered",
-			Action:   "findPage",
+			Action:   "find_page",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -320,10 +320,10 @@ func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
 // TestFindPageNegativeCases tests negative scenarios.
 func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 	suite.Run("InvalidPageNumber", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
-				Action:   "findPage",
+				Action:   "find_page",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -341,10 +341,10 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 	})
 
 	suite.Run("InvalidPageSize", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
-				Action:   "findPage",
+				Action:   "find_page",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -362,10 +362,10 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 	})
 
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_page",
-				Action:   "findPage",
+				Action:   "find_page",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -389,10 +389,10 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 
 // TestFindPageWithAuditUserNames tests FindPage with audit user names populated.
 func (suite *FindPageTestSuite) TestFindPageWithAuditUserNames() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_audit",
-			Action:   "findPage",
+			Action:   "find_page",
 			Version:  "v1",
 		},
 		Params: map[string]any{

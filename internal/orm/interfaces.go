@@ -24,12 +24,12 @@ type SelectQueryExecutor interface {
 }
 
 // SelectQuery is an interface that defines the methods for building and executing SELECT queries.
-// It provides a fluent API for constructing complex database queries with support for joins, conditions, ordering, and more.
+// It provides a fluent Api for constructing complex database queries with support for joins, conditions, ordering, and more.
 type SelectQuery interface {
 	QueryBuilder
 	SelectQueryExecutor
 	DbAccessor
-	CTE[SelectQuery]
+	Cte[SelectQuery]
 	Selectable[SelectQuery]
 	TableSource[SelectQuery]
 	JoinOperations[SelectQuery]
@@ -43,8 +43,8 @@ type SelectQuery interface {
 	// SelectModelColumns selects the columns of a model.
 	// By default, all columns of the model are selected if no select-related methods are called.
 	SelectModelColumns() SelectQuery
-	// SelectModelPKs selects the primary keys of a model.
-	SelectModelPKs() SelectQuery
+	// SelectModelPks selects the primary keys of a model.
+	SelectModelPks() SelectQuery
 	// SelectExpr selects a column with an expression.
 	SelectExpr(builder func(ExprBuilder) any, alias ...string) SelectQuery
 	// Distinct returns a distinct query.
@@ -122,7 +122,7 @@ type InsertQuery interface {
 	QueryBuilder
 	QueryExecutor
 	DbAccessor
-	CTE[InsertQuery]
+	Cte[InsertQuery]
 	TableSource[InsertQuery]
 	Selectable[InsertQuery]
 	ColumnUpdatable[InsertQuery]
@@ -139,7 +139,7 @@ type UpdateQuery interface {
 	QueryBuilder
 	QueryExecutor
 	DbAccessor
-	CTE[UpdateQuery]
+	Cte[UpdateQuery]
 	TableSource[UpdateQuery]
 	JoinOperations[UpdateQuery]
 	Selectable[UpdateQuery]
@@ -166,7 +166,7 @@ type DeleteQuery interface {
 	QueryBuilder
 	QueryExecutor
 	DbAccessor
-	CTE[DeleteQuery]
+	Cte[DeleteQuery]
 	TableSource[DeleteQuery]
 	Filterable[DeleteQuery]
 	Orderable[DeleteQuery]
@@ -184,7 +184,7 @@ type MergeQuery interface {
 	QueryBuilder
 	QueryExecutor
 	DbAccessor
-	CTE[MergeQuery]
+	Cte[MergeQuery]
 	TableSource[MergeQuery]
 	Returnable[MergeQuery]
 	Applier[MergeQuery]
@@ -232,10 +232,10 @@ type Db interface {
 	RunInReadOnlyTx(ctx context.Context, fn func(ctx context.Context, tx Db) error) error
 	// WithNamedArg returns a new Db with the named arg.
 	WithNamedArg(name string, value any) Db
-	// ModelPKs returns the primary keys of a model.
-	ModelPKs(model any) (map[string]any, error)
-	// ModelPKFields returns the primary key fields of a model.
-	ModelPKFields(model any) []*PKField
+	// ModelPks returns the primary keys of a model.
+	ModelPks(model any) (map[string]any, error)
+	// ModelPkFields returns the primary key fields of a model.
+	ModelPkFields(model any) []*PkField
 	// TableOf returns the table information for a model.
 	TableOf(model any) *schema.Table
 }

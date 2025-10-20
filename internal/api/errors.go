@@ -17,8 +17,8 @@ var (
 	ErrHandlerFactoryRequireDB = errors.New("handler factory function requires database connection but none provided")
 	// ErrHandlerFactoryMethodRequireDB indicates handler factory method requires db.
 	ErrHandlerFactoryMethodRequireDB = errors.New("handler factory method requires database connection but none provided")
-	// ErrAPIMethodNotFound indicates api action method not found.
-	ErrAPIMethodNotFound = errors.New("api action method not found in resource")
+	// ErrApiMethodNotFound indicates api action method not found.
+	ErrApiMethodNotFound = errors.New("api action method not found in resource")
 	// ErrHandlerMethodInvalidReturn indicates handler method invalid return type.
 	ErrHandlerMethodInvalidReturn = errors.New("handler method has invalid return type, must be 'error'")
 	// ErrHandlerMethodTooManyReturns indicates handler method has too many returns.

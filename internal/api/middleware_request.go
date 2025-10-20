@@ -10,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// requestMiddleware parses the request body and validates the API definition exists.
+// requestMiddleware parses the request body and validates the Api definition exists.
 // It stores the parsed request in the context for use by subsequent middlewares.
 func requestMiddleware(manager api.Manager) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
@@ -19,7 +19,7 @@ func requestMiddleware(manager api.Manager) fiber.Handler {
 			Meta:   api.Meta{},
 		}
 
-		if webhelpers.IsJSON(ctx) {
+		if webhelpers.IsJson(ctx) {
 			if err := ctx.Bind().Body(&request); err != nil {
 				return err
 			}
@@ -54,7 +54,7 @@ func requestMiddleware(manager api.Manager) fiber.Handler {
 			return fiber.ErrNotFound
 		}
 
-		contextx.SetAPIRequest(ctx, &request)
+		contextx.SetApiRequest(ctx, &request)
 
 		return ctx.Next()
 	}

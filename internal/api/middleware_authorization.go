@@ -12,7 +12,7 @@ import (
 // It validates that the user has the required permissions for the requested endpoint.
 func buildAuthorizationMiddleware(manager api.Manager, checker security.PermissionChecker) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
-		request := contextx.APIRequest(ctx)
+		request := contextx.ApiRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
 
 		if definition.RequiresPermission() {

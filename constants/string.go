@@ -11,6 +11,8 @@ const (
 	Semicolon = ";"
 	// Slash is the slash character.
 	Slash = "/"
+	// DoubleSlash is the double slash character.
+	DoubleSlash = "//"
 	// Asterisk is the asterisk character.
 	Asterisk = "*"
 	// Dot is the dot character.

@@ -112,7 +112,7 @@ func (q *BunDeleteQuery) Where(builder func(ConditionBuilder)) DeleteQuery {
 	return q
 }
 
-func (q *BunDeleteQuery) WherePK(columns ...string) DeleteQuery {
+func (q *BunDeleteQuery) WherePk(columns ...string) DeleteQuery {
 	q.query.WherePK(columns...)
 
 	return q

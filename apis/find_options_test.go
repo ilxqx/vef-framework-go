@@ -13,13 +13,13 @@ import (
 // Test Resources.
 type TestUserFindOptionsResource struct {
 	api.Resource
-	apis.FindOptionsAPI[TestUser, TestUserSearch]
+	apis.FindOptionsApi[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindOptionsResource() api.Resource {
 	return &TestUserFindOptionsResource{
 		Resource: api.NewResource("test/user_options"),
-		FindOptionsAPI: apis.NewFindOptionsAPI[TestUser, TestUserSearch]().
+		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
 			Public().
 			ColumnMapping(&apis.OptionColumnMapping{
 				LabelColumn: "name",
@@ -31,13 +31,13 @@ func NewTestUserFindOptionsResource() api.Resource {
 // Resource with custom field mapping.
 type CustomFieldUserFindOptionsResource struct {
 	api.Resource
-	apis.FindOptionsAPI[TestUser, TestUserSearch]
+	apis.FindOptionsApi[TestUser, TestUserSearch]
 }
 
 func NewCustomFieldUserFindOptionsResource() api.Resource {
 	return &CustomFieldUserFindOptionsResource{
 		Resource: api.NewResource("test/user_options_custom"),
-		FindOptionsAPI: apis.NewFindOptionsAPI[TestUser, TestUserSearch]().
+		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
 			Public().
 			ColumnMapping(&apis.OptionColumnMapping{
 				LabelColumn:       "email",
@@ -50,13 +50,13 @@ func NewCustomFieldUserFindOptionsResource() api.Resource {
 // Filtered Options Resource.
 type FilteredUserFindOptionsResource struct {
 	api.Resource
-	apis.FindOptionsAPI[TestUser, TestUserSearch]
+	apis.FindOptionsApi[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFindOptionsResource() api.Resource {
 	return &FilteredUserFindOptionsResource{
 		Resource: api.NewResource("test/user_options_filtered"),
-		FindOptionsAPI: apis.NewFindOptionsAPI[TestUser, TestUserSearch]().
+		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
 			Public().
 			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
 				return func(cb orm.ConditionBuilder) {
@@ -66,7 +66,7 @@ func NewFilteredUserFindOptionsResource() api.Resource {
 	}
 }
 
-// FindOptionsTestSuite is the test suite for FindOptions API tests.
+// FindOptionsTestSuite is the test suite for FindOptions Api tests.
 type FindOptionsTestSuite struct {
 	BaseSuite
 }
@@ -87,10 +87,10 @@ func (suite *FindOptionsTestSuite) TearDownSuite() {
 
 // TestFindOptionsBasic tests basic FindOptions functionality.
 func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_options",
-			Action:   "findOptions",
+			Action:   "find_options",
 			Version:  "v1",
 		},
 	})
@@ -113,10 +113,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
 // TestFindOptionsWithConfig tests FindOptions with custom config.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	suite.Run("DefaultConfig", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
-				Action:   "findOptions",
+				Action:   "find_options",
 				Version:  "v1",
 			},
 		})
@@ -130,10 +130,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	})
 
 	suite.Run("CustomConfig", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
-				Action:   "findOptions",
+				Action:   "find_options",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -157,10 +157,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 	})
 
 	suite.Run("WithDescription", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options_custom",
-				Action:   "findOptions",
+				Action:   "find_options",
 				Version:  "v1",
 			},
 		})
@@ -181,10 +181,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 // TestFindOptionsWithSearch tests FindOptions with search conditions.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 	suite.Run("SearchByStatus", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
-				Action:   "findOptions",
+				Action:   "find_options",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -201,10 +201,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 	})
 
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
-				Action:   "findOptions",
+				Action:   "find_options",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -223,10 +223,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 
 // TestFindOptionsWithFilterApplier tests FindOptions with filter applier.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_options_filtered",
-			Action:   "findOptions",
+			Action:   "find_options",
 			Version:  "v1",
 		},
 	})
@@ -242,10 +242,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
 // TestFindOptionsNegativeCases tests negative scenarios.
 func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 	suite.Run("NoMatchingRecords", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
-				Action:   "findOptions",
+				Action:   "find_options",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -262,10 +262,10 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 	})
 
 	suite.Run("InvalidFieldName", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_options",
-				Action:   "findOptions",
+				Action:   "find_options",
 				Version:  "v1",
 			},
 			Params: map[string]any{

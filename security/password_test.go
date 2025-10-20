@@ -9,7 +9,7 @@ import (
 )
 
 func TestHashPassword(t *testing.T) {
-	t.Run("hashes password successfully", func(t *testing.T) {
+	t.Run("Hashes password successfully", func(t *testing.T) {
 		password := "testpassword123"
 
 		hashedPassword, err := HashPassword(password)
@@ -19,7 +19,7 @@ func TestHashPassword(t *testing.T) {
 		assert.NotEqual(t, password, hashedPassword)
 	})
 
-	t.Run("different passwords produce different hashes", func(t *testing.T) {
+	t.Run("Different passwords produce different hashes", func(t *testing.T) {
 		password1 := "password123"
 		password2 := "password456"
 
@@ -31,7 +31,7 @@ func TestHashPassword(t *testing.T) {
 		assert.NotEqual(t, hash1, hash2)
 	})
 
-	t.Run("same password produces different hashes due to salt", func(t *testing.T) {
+	t.Run("Same password produces different hashes due to salt", func(t *testing.T) {
 		password := "samepassword"
 
 		hash1, err1 := HashPassword(password)
@@ -42,7 +42,7 @@ func TestHashPassword(t *testing.T) {
 		assert.NotEqual(t, hash1, hash2)
 	})
 
-	t.Run("handles empty password", func(t *testing.T) {
+	t.Run("Handles empty password", func(t *testing.T) {
 		password := ""
 
 		hashedPassword, err := HashPassword(password)
@@ -51,7 +51,7 @@ func TestHashPassword(t *testing.T) {
 		assert.NotEmpty(t, hashedPassword)
 	})
 
-	t.Run("handles long password", func(t *testing.T) {
+	t.Run("Handles long password", func(t *testing.T) {
 		password := strings.Repeat("a", 1000)
 
 		hashedPassword, err := HashPassword(password)
@@ -61,7 +61,7 @@ func TestHashPassword(t *testing.T) {
 		assert.Empty(t, hashedPassword)
 	})
 
-	t.Run("handles special characters", func(t *testing.T) {
+	t.Run("Handles special characters", func(t *testing.T) {
 		password := "!@#$%^&*()_+-=[]{}|;:,.<>?"
 
 		hashedPassword, err := HashPassword(password)
@@ -71,7 +71,7 @@ func TestHashPassword(t *testing.T) {
 		assert.NotEqual(t, password, hashedPassword)
 	})
 
-	t.Run("handles unicode characters", func(t *testing.T) {
+	t.Run("Handles unicode characters", func(t *testing.T) {
 		password := "密码测试123🔒"
 
 		hashedPassword, err := HashPassword(password)
@@ -81,7 +81,7 @@ func TestHashPassword(t *testing.T) {
 		assert.NotEqual(t, password, hashedPassword)
 	})
 
-	t.Run("hash format is bcrypt", func(t *testing.T) {
+	t.Run("Hash format is bcrypt", func(t *testing.T) {
 		password := "testpassword"
 
 		hashedPassword, err := HashPassword(password)
@@ -95,7 +95,7 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestVerifyPassword(t *testing.T) {
-	t.Run("verifies correct password", func(t *testing.T) {
+	t.Run("Verifies correct password", func(t *testing.T) {
 		password := "testpassword123"
 		hashedPassword, err := HashPassword(password)
 		require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.True(t, result)
 	})
 
-	t.Run("rejects incorrect password", func(t *testing.T) {
+	t.Run("Rejects incorrect password", func(t *testing.T) {
 		correctPassword := "correctpassword"
 		incorrectPassword := "incorrectpassword"
 		hashedPassword, err := HashPassword(correctPassword)
@@ -116,7 +116,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.False(t, result)
 	})
 
-	t.Run("handles empty password", func(t *testing.T) {
+	t.Run("Handles empty password", func(t *testing.T) {
 		password := ""
 		hashedPassword, err := HashPassword(password)
 		require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.True(t, result)
 	})
 
-	t.Run("rejects empty password against non-empty hash", func(t *testing.T) {
+	t.Run("Rejects empty password against non-empty hash", func(t *testing.T) {
 		originalPassword := "nonemptypassword"
 		hashedPassword, err := HashPassword(originalPassword)
 		require.NoError(t, err)
@@ -136,7 +136,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.False(t, result)
 	})
 
-	t.Run("handles long password verification", func(t *testing.T) {
+	t.Run("Handles long password verification", func(t *testing.T) {
 		password := strings.Repeat("a", 1000)
 		hashedPassword, err := HashPassword(password)
 
@@ -145,7 +145,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.Empty(t, hashedPassword)
 	})
 
-	t.Run("handles special characters verification", func(t *testing.T) {
+	t.Run("Handles special characters verification", func(t *testing.T) {
 		password := "!@#$%^&*()_+-=[]{}|;:,.<>?"
 		hashedPassword, err := HashPassword(password)
 		require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.True(t, result)
 	})
 
-	t.Run("handles unicode characters verification", func(t *testing.T) {
+	t.Run("Handles unicode characters verification", func(t *testing.T) {
 		password := "密码测试123🔒"
 		hashedPassword, err := HashPassword(password)
 		require.NoError(t, err)
@@ -165,7 +165,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.True(t, result)
 	})
 
-	t.Run("rejects invalid hash format", func(t *testing.T) {
+	t.Run("Rejects invalid hash format", func(t *testing.T) {
 		password := "testpassword"
 		invalidHash := "invalid_hash_format"
 
@@ -174,7 +174,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.False(t, result)
 	})
 
-	t.Run("case sensitive verification", func(t *testing.T) {
+	t.Run("Case sensitive verification", func(t *testing.T) {
 		password := "TestPassword"
 		hashedPassword, err := HashPassword(password)
 		require.NoError(t, err)
@@ -188,7 +188,7 @@ func TestVerifyPassword(t *testing.T) {
 		assert.True(t, correctResult)
 	})
 
-	t.Run("cross verification between different hashes", func(t *testing.T) {
+	t.Run("Cross verification between different hashes", func(t *testing.T) {
 		password1 := "password1"
 		password2 := "password2"
 

@@ -6,8 +6,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-// IsJSON checks if the request content type is JSON.
-func IsJSON(ctx fiber.Ctx) bool {
+// IsJson checks if the request content type is JSON.
+func IsJson(ctx fiber.Ctx) bool {
 	return ctx.Is("json")
 }
 

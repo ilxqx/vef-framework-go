@@ -11,29 +11,23 @@ import (
 	"github.com/ilxqx/vef-framework-go/treebuilder"
 )
 
-type findTreeOptionsAPI[TModel, TSearch any] struct {
-	FindAPI[TModel, TSearch, []TreeOption, FindTreeOptionsAPI[TModel, TSearch]]
+type findTreeOptionsApi[TModel, TSearch any] struct {
+	FindApi[TModel, TSearch, []TreeOption, FindTreeOptionsApi[TModel, TSearch]]
 
 	columnMapping *TreeOptionColumnMapping
 }
 
-func (a *findTreeOptionsAPI[TModel, TSearch]) Provide() api.Spec {
-	return a.FindAPI.Build(a.findTreeOptions)
+func (a *findTreeOptionsApi[TModel, TSearch]) Provide() api.Spec {
+	return a.Build(a.findTreeOptions)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (a *findTreeOptionsAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call FindAPI.Build on findTreeOptionsAPI; call Provide() instead")
-}
-
-func (a *findTreeOptionsAPI[TModel, TSearch]) ColumnMapping(mapping *TreeOptionColumnMapping) FindTreeOptionsAPI[TModel, TSearch] {
+func (a *findTreeOptionsApi[TModel, TSearch]) ColumnMapping(mapping *TreeOptionColumnMapping) FindTreeOptionsApi[TModel, TSearch] {
 	a.columnMapping = mapping
 
 	return a
 }
 
-func (a *findTreeOptionsAPI[TModel, TSearch]) findTreeOptions(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TreeOptionParams, search TSearch) error, error) {
+func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TreeOptionParams, search TSearch) error, error) {
 	if err := a.Init(db); err != nil {
 		return nil, err
 	}

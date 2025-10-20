@@ -380,8 +380,8 @@ func TestPageWithDifferentTypes(t *testing.T) {
 }
 
 func TestPaginationScenarios(t *testing.T) {
-	// Scenario: API pagination
-	t.Run("API pagination workflow", func(t *testing.T) {
+	// Scenario: Api pagination
+	t.Run("Api pagination workflow", func(t *testing.T) {
 		// Client sends request for page 2, size 10
 		pageable := Pageable{Page: 2, Size: 10, Sort: []sort.OrderSpec{{Column: "created_at", Direction: sort.OrderDesc}}}
 		pageable.Normalize()

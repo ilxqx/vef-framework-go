@@ -10,59 +10,59 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-func TestNewJWT(t *testing.T) {
-	t.Run("valid hex secret", func(t *testing.T) {
-		config := &JWTConfig{
+func TestNewJwt(t *testing.T) {
+	t.Run("Valid hex secret", func(t *testing.T) {
+		config := &JwtConfig{
 			Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
 			Audience: "test_app",
 		}
-		jwt, err := NewJWT(config)
+		jwt, err := NewJwt(config)
 		require.NoError(t, err)
 		assert.NotNil(t, jwt)
 		assert.Equal(t, "test_app", jwt.config.Audience)
 	})
 
-	t.Run("invalid hex secret", func(t *testing.T) {
-		config := &JWTConfig{
+	t.Run("Invalid hex secret", func(t *testing.T) {
+		config := &JwtConfig{
 			Secret: "invalid-hex",
 		}
-		jwt, err := NewJWT(config)
+		jwt, err := NewJwt(config)
 		assert.Error(t, err)
 		assert.Nil(t, jwt)
 		assert.Contains(t, err.Error(), "failed to decode jwt secret")
 	})
 
-	t.Run("empty secret uses default", func(t *testing.T) {
-		config := &JWTConfig{
+	t.Run("Empty secret uses default", func(t *testing.T) {
+		config := &JwtConfig{
 			Secret: "",
 		}
-		jwt, err := NewJWT(config)
+		jwt, err := NewJwt(config)
 		require.NoError(t, err)
 		assert.NotNil(t, jwt)
 		assert.Equal(t, 32, len(jwt.secret)) // Default secret is 64 hex chars = 32 bytes
 	})
 
-	t.Run("empty audience uses default", func(t *testing.T) {
-		config := &JWTConfig{
+	t.Run("Empty audience uses default", func(t *testing.T) {
+		config := &JwtConfig{
 			Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
 			Audience: "",
 		}
-		jwt, err := NewJWT(config)
+		jwt, err := NewJwt(config)
 		require.NoError(t, err)
 		assert.Equal(t, defaultJwtAudience, jwt.config.Audience)
 	})
 }
 
-func TestJWTGenerate(t *testing.T) {
-	config := &JWTConfig{
+func TestJwtGenerate(t *testing.T) {
+	config := &JwtConfig{
 		Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
 		Audience: "test_app",
 	}
-	jwt, err := NewJWT(config)
+	jwt, err := NewJwt(config)
 	require.NoError(t, err)
 
-	t.Run("generate valid token", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder().
+	t.Run("Generate valid token", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder().
 			WithClaim("user_id", "123").
 			WithClaim("username", "testuser")
 
@@ -77,8 +77,8 @@ func TestJWTGenerate(t *testing.T) {
 		assert.Equal(t, "testuser", claims.Claim("username"))
 	})
 
-	t.Run("generate token with not before", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder().WithClaim("test", "value")
+	t.Run("Generate token with not before", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder().WithClaim("test", "value")
 
 		// Set nbf to 2 minutes in future (beyond the 1 minute leeway)
 		token, err := jwt.Generate(builder, 1*time.Hour, 2*time.Minute)
@@ -89,8 +89,8 @@ func TestJWTGenerate(t *testing.T) {
 		assert.ErrorIs(t, err, result.ErrTokenNotValidYet)
 	})
 
-	t.Run("standard claims are set correctly", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder()
+	t.Run("Standard claims are set correctly", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder()
 		token, err := jwt.Generate(builder, 1*time.Hour, 0)
 		require.NoError(t, err)
 
@@ -108,16 +108,16 @@ func TestJWTGenerate(t *testing.T) {
 	})
 }
 
-func TestJWTParse(t *testing.T) {
-	config := &JWTConfig{
+func TestJwtParse(t *testing.T) {
+	config := &JwtConfig{
 		Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
 		Audience: "test_app",
 	}
-	jwt, err := NewJWT(config)
+	jwt, err := NewJwt(config)
 	require.NoError(t, err)
 
-	t.Run("parse valid token", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder().
+	t.Run("Parse valid token", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder().
 			WithClaim("user_id", "456").
 			WithClaim("role", "admin")
 
@@ -130,8 +130,8 @@ func TestJWTParse(t *testing.T) {
 		assert.Equal(t, "admin", claims.Claim("role"))
 	})
 
-	t.Run("parse expired token", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder().WithClaim("test", "value")
+	t.Run("Parse expired token", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder().WithClaim("test", "value")
 		token, err := jwt.Generate(builder, -1*time.Hour, 0) // Already expired
 		require.NoError(t, err)
 
@@ -139,57 +139,57 @@ func TestJWTParse(t *testing.T) {
 		assert.ErrorIs(t, err, result.ErrTokenExpired)
 	})
 
-	t.Run("parse token with wrong audience", func(t *testing.T) {
-		wrongConfig := &JWTConfig{
+	t.Run("Parse token with wrong audience", func(t *testing.T) {
+		wrongConfig := &JwtConfig{
 			Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
 			Audience: "wrong_app",
 		}
-		wrongJWT, err := NewJWT(wrongConfig)
+		wrongJwt, err := NewJwt(wrongConfig)
 		require.NoError(t, err)
 
-		builder := NewJWTClaimsBuilder().WithClaim("test", "value")
-		token, err := wrongJWT.Generate(builder, 1*time.Hour, 0)
+		builder := NewJwtClaimsBuilder().WithClaim("test", "value")
+		token, err := wrongJwt.Generate(builder, 1*time.Hour, 0)
 		require.NoError(t, err)
 
-		// Try to parse with original JWT (different audience)
+		// Try to parse with original Jwt (different audience)
 		_, err = jwt.Parse(token)
 		assert.ErrorIs(t, err, result.ErrTokenInvalidAudience)
 	})
 
-	t.Run("parse token with wrong secret", func(t *testing.T) {
-		wrongConfig := &JWTConfig{
+	t.Run("Parse token with wrong secret", func(t *testing.T) {
+		wrongConfig := &JwtConfig{
 			Secret:   "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 			Audience: "test_app",
 		}
-		wrongJWT, err := NewJWT(wrongConfig)
+		wrongJwt, err := NewJwt(wrongConfig)
 		require.NoError(t, err)
 
-		builder := NewJWTClaimsBuilder().WithClaim("test", "value")
-		token, err := wrongJWT.Generate(builder, 1*time.Hour, 0)
+		builder := NewJwtClaimsBuilder().WithClaim("test", "value")
+		token, err := wrongJwt.Generate(builder, 1*time.Hour, 0)
 		require.NoError(t, err)
 
-		// Try to parse with original JWT (different secret)
+		// Try to parse with original Jwt (different secret)
 		_, err = jwt.Parse(token)
 		assert.ErrorIs(t, err, result.ErrTokenInvalid)
 	})
 
-	t.Run("parse malformed token", func(t *testing.T) {
+	t.Run("Parse malformed token", func(t *testing.T) {
 		_, err := jwt.Parse("malformed.token.string")
 		assert.ErrorIs(t, err, result.ErrTokenInvalid)
 	})
 
-	t.Run("parse empty token", func(t *testing.T) {
+	t.Run("Parse empty token", func(t *testing.T) {
 		_, err := jwt.Parse("")
 		assert.ErrorIs(t, err, result.ErrTokenInvalid)
 	})
 }
 
-func TestJWTErrorMapping(t *testing.T) {
-	config := &JWTConfig{
+func TestJwtErrorMapping(t *testing.T) {
+	config := &JwtConfig{
 		Secret:   "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2",
 		Audience: "test_app",
 	}
-	jwt, err := NewJWT(config)
+	jwt, err := NewJwt(config)
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -200,7 +200,7 @@ func TestJWTErrorMapping(t *testing.T) {
 		{
 			name: "expired token",
 			tokenGen: func() string {
-				builder := NewJWTClaimsBuilder()
+				builder := NewJwtClaimsBuilder()
 				token, _ := jwt.Generate(builder, -1*time.Hour, 0)
 
 				return token
@@ -210,7 +210,7 @@ func TestJWTErrorMapping(t *testing.T) {
 		{
 			name: "not yet valid token",
 			tokenGen: func() string {
-				builder := NewJWTClaimsBuilder()
+				builder := NewJwtClaimsBuilder()
 				token, _ := jwt.Generate(builder, 1*time.Hour, 2*time.Minute)
 
 				return token
@@ -228,9 +228,9 @@ func TestJWTErrorMapping(t *testing.T) {
 	}
 }
 
-func TestJWTClaimsBuilder(t *testing.T) {
-	t.Run("build claims with various types", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder().
+func TestJwtClaimsBuilder(t *testing.T) {
+	t.Run("Build claims with various types", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder().
 			WithClaim("string_val", "test").
 			WithClaim("int_val", 123).
 			WithClaim("bool_val", true).
@@ -245,8 +245,8 @@ func TestJWTClaimsBuilder(t *testing.T) {
 		assert.Equal(t, map[string]any{"key": "value"}, claims["map_val"])
 	})
 
-	t.Run("overwrite existing claim", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder().
+	t.Run("Overwrite existing claim", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder().
 			WithClaim("key", "value1").
 			WithClaim("key", "value2")
 
@@ -254,8 +254,8 @@ func TestJWTClaimsBuilder(t *testing.T) {
 		assert.Equal(t, "value2", claims["key"])
 	})
 
-	t.Run("use specialized claim methods", func(t *testing.T) {
-		builder := NewJWTClaimsBuilder().
+	t.Run("Use specialized claim methods", func(t *testing.T) {
+		builder := NewJwtClaimsBuilder().
 			WithId("jwt123").
 			WithSubject("user456").
 			WithType("access").

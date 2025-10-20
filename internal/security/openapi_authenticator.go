@@ -15,31 +15,31 @@ import (
 )
 
 const (
-	// OpenAPI authentication type.
-	AuthTypeOpenAPI = "openapi"
+	// OpenApi authentication type.
+	AuthTypeOpenApi = "openapi"
 )
 
-// OpenapiAuthenticator implements Authenticator for simple HMAC based OpenAPI authentication.
+// OpenApiAuthenticator implements Authenticator for simple HMAC based OpenApi authentication.
 // Contract in this framework:
 //   - Authentication.Principal: appId
 //   - Authentication.Credentials: "<signatureHex>@<timestamp>@<bodySha256Base64>"
 //   - SignatureHex is computed as hex(HMAC-SHA256(secret, appId + "\n" + timestamp + "\n" + bodySha256Base64))
 //     where bodySha256Base64 is the Base64(SHA256(raw request body)), timestamp is unix seconds string.
 //   - We only consider appId, timestamp and body hash because the framework uses unified POST with Request body.
-type OpenapiAuthenticator struct {
+type OpenApiAuthenticator struct {
 	loader security.ExternalAppLoader // loader loads external app principal and secret by appId
 }
 
-// NewOpenAPIAuthenticator creates a new OpenAPI authenticator with the given loader.
-func NewOpenAPIAuthenticator(loader security.ExternalAppLoader) security.Authenticator {
-	return &OpenapiAuthenticator{loader: loader}
+// NewOpenApiAuthenticator creates a new OpenApi authenticator with the given loader.
+func NewOpenApiAuthenticator(loader security.ExternalAppLoader) security.Authenticator {
+	return &OpenApiAuthenticator{loader: loader}
 }
 
-// Supports checks if this authenticator can handle OpenAPI authentication.
-func (*OpenapiAuthenticator) Supports(authType string) bool { return authType == AuthTypeOpenAPI }
+// Supports checks if this authenticator can handle OpenApi authentication.
+func (*OpenApiAuthenticator) Supports(authType string) bool { return authType == AuthTypeOpenApi }
 
-// Authenticate validates the provided OpenAPI authentication information.
-func (a *OpenapiAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
+// Authenticate validates the provided OpenApi authentication information.
+func (a *OpenApiAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if a.loader == nil {
 		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("external_app_loader_not_implemented"))
 	}
@@ -92,7 +92,7 @@ func (a *OpenapiAuthenticator) Authenticate(ctx context.Context, authentication 
 	}
 
 	// Use hash package's HMAC-SHA256 function
-	expectedSignatureHex := hash.SHA256Hmac(secretBytes, []byte(sb.String()))
+	expectedSignatureHex := hash.Sha256Hmac(secretBytes, []byte(sb.String()))
 
 	// Compare signatures using constant-time comparison
 	providedMac, err := encoding.FromHex(signatureHex)
@@ -109,7 +109,7 @@ func (a *OpenapiAuthenticator) Authenticate(ctx context.Context, authentication 
 		return nil, result.ErrSignatureInvalid
 	}
 
-	logger.Infof("Openapi authentication successful for principal '%s'", principal.Id)
+	logger.Infof("Openapi authentication successful for principal %q", principal.Id)
 
 	return principal, nil
 }

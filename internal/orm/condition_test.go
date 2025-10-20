@@ -5,7 +5,7 @@ import (
 )
 
 type ConditionTestSuite struct {
-	*ORMTestSuite
+	*OrmTestSuite
 }
 
 // TestBasicConditions tests basic condition builders.
@@ -783,26 +783,26 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 
-	// Test 1: PKEquals
+	// Test 1: PkEquals
 	var userByPK []User
 
 	err = suite.db.NewSelect().
 		Model(&userByPK).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(firstUser.Id)
+			cb.PkEquals(firstUser.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(userByPK, 1)
 	suite.Equal(firstUser.Id, userByPK[0].Id)
 
-	// Test 2: PKNotEquals
+	// Test 2: PkNotEquals
 	var otherUsers []User
 
 	err = suite.db.NewSelect().
 		Model(&otherUsers).
 		Where(func(cb ConditionBuilder) {
-			cb.PKNotEquals(firstUser.Id)
+			cb.PkNotEquals(firstUser.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -821,26 +821,26 @@ func (suite *ConditionTestSuite) TestPrimaryKeyConditions() {
 		Scan(suite.ctx)
 	suite.NoError(err)
 
-	// Test 3: PKIn
+	// Test 3: PkIn
 	var twoUsers []User
 
 	err = suite.db.NewSelect().
 		Model(&twoUsers).
 		Where(func(cb ConditionBuilder) {
-			cb.PKIn([]string{allUsers[0].Id, allUsers[1].Id})
+			cb.PkIn([]string{allUsers[0].Id, allUsers[1].Id})
 		}).
 		OrderBy("name").
 		Scan(suite.ctx)
 	suite.NoError(err)
 	suite.Len(twoUsers, 2)
 
-	// Test 4: PKNotIn
+	// Test 4: PkNotIn
 	var excludedUser []User
 
 	err = suite.db.NewSelect().
 		Model(&excludedUser).
 		Where(func(cb ConditionBuilder) {
-			cb.PKNotIn([]string{allUsers[0].Id, allUsers[1].Id})
+			cb.PkNotIn([]string{allUsers[0].Id, allUsers[1].Id})
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)

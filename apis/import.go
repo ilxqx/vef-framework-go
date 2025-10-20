@@ -18,8 +18,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-type importAPI[TModel, TSearch any] struct {
-	APIBuilder[ImportAPI[TModel, TSearch]]
+type importApi[TModel, TSearch any] struct {
+	ApiBuilder[ImportApi[TModel, TSearch]]
 
 	format     TabularFormat
 	excelOpts  []excel.ImportOption
@@ -28,43 +28,37 @@ type importAPI[TModel, TSearch any] struct {
 	postImport PostImportProcessor[TModel, TSearch]
 }
 
-// Provide generates the final API specification for import.
+// Provide generates the final Api specification for import.
 // Returns a complete api.Spec that can be registered with the router.
-func (i *importAPI[TModel, TSearch]) Provide() api.Spec {
-	return i.APIBuilder.Build(i.importData)
+func (i *importApi[TModel, TSearch]) Provide() api.Spec {
+	return i.Build(i.importData)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (i *importAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call APIBuilder.Build on importAPI; call Provide() instead")
-}
-
-func (i *importAPI[TModel, TSearch]) Format(format TabularFormat) ImportAPI[TModel, TSearch] {
+func (i *importApi[TModel, TSearch]) Format(format TabularFormat) ImportApi[TModel, TSearch] {
 	i.format = format
 
 	return i
 }
 
-func (i *importAPI[TModel, TSearch]) ExcelOptions(opts ...excel.ImportOption) ImportAPI[TModel, TSearch] {
+func (i *importApi[TModel, TSearch]) ExcelOptions(opts ...excel.ImportOption) ImportApi[TModel, TSearch] {
 	i.excelOpts = opts
 
 	return i
 }
 
-func (i *importAPI[TModel, TSearch]) CSVOptions(opts ...csv.ImportOption) ImportAPI[TModel, TSearch] {
+func (i *importApi[TModel, TSearch]) CSVOptions(opts ...csv.ImportOption) ImportApi[TModel, TSearch] {
 	i.csvOpts = opts
 
 	return i
 }
 
-func (i *importAPI[TModel, TSearch]) PreImport(processor PreImportProcessor[TModel, TSearch]) ImportAPI[TModel, TSearch] {
+func (i *importApi[TModel, TSearch]) PreImport(processor PreImportProcessor[TModel, TSearch]) ImportApi[TModel, TSearch] {
 	i.preImport = processor
 
 	return i
 }
 
-func (i *importAPI[TModel, TSearch]) PostImport(processor PostImportProcessor[TModel, TSearch]) ImportAPI[TModel, TSearch] {
+func (i *importApi[TModel, TSearch]) PostImport(processor PostImportProcessor[TModel, TSearch]) ImportApi[TModel, TSearch] {
 	i.postImport = processor
 
 	return i
@@ -77,14 +71,14 @@ type importParams struct {
 	File   *multipart.FileHeader `json:"file"`
 }
 
-func (i *importAPI[TModel, TSearch]) importData() func(ctx fiber.Ctx, db orm.Db, logger log.Logger, search TSearch, params importParams) error {
+func (i *importApi[TModel, TSearch]) importData() func(ctx fiber.Ctx, db orm.Db, logger log.Logger, search TSearch, params importParams) error {
 	// Pre-create importers for both formats
 	excelImporter := excel.NewImporterFor[TModel](i.excelOpts...)
 	csvImporter := csv.NewImporterFor[TModel](i.csvOpts...)
 
 	return func(ctx fiber.Ctx, db orm.Db, logger log.Logger, search TSearch, params importParams) error {
 		// Import requests must use multipart/form-data format
-		if webhelpers.IsJSON(ctx) {
+		if webhelpers.IsJson(ctx) {
 			return result.Err(i18n.T("import_requires_multipart"))
 		}
 

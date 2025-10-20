@@ -43,7 +43,7 @@ func TestNoOpEvictionHandler(t *testing.T) {
 // TestLRUHandler tests the LRU eviction handler.
 func TestLRUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 		require.NotNil(t, handler)
 
 		handler.OnInsert("key1")
@@ -56,7 +56,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("AccessUpdatesRecency", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -71,7 +71,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("EvictionRemovesEntry", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -86,7 +86,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("MultipleAccessesMaintainOrder", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -103,7 +103,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("ResetClearsAllEntries", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -116,14 +116,14 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		candidate := handler.SelectEvictionCandidate()
 		assert.Equal(t, constants.Empty, candidate)
 	})
 
 	t.Run("SingleEntry", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 
@@ -132,7 +132,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("EvictNonExistentKey", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -146,7 +146,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("AccessNonExistentKeyCreatesEntry", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 		handler.OnAccess("key2") // This creates a new entry
@@ -157,7 +157,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("ConcurrentOperations", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		var wg sync.WaitGroup
 
@@ -182,7 +182,7 @@ func TestLRUHandler(t *testing.T) {
 	})
 
 	t.Run("StressTestWithManyEntries", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		// Insert many entries
 		for i := range 1000 {
@@ -203,7 +203,7 @@ func TestLRUHandler(t *testing.T) {
 // TestFIFOHandler tests the FIFO eviction handler.
 func TestFIFOHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 		require.NotNil(t, handler)
 
 		handler.OnInsert("key1")
@@ -216,7 +216,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 
 	t.Run("AccessDoesNotAffectOrder", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -233,7 +233,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 
 	t.Run("EvictionRemovesEntry", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -248,7 +248,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 
 	t.Run("ResetClearsAllEntries", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -261,14 +261,14 @@ func TestFIFOHandler(t *testing.T) {
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		candidate := handler.SelectEvictionCandidate()
 		assert.Equal(t, constants.Empty, candidate)
 	})
 
 	t.Run("SingleEntry", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 
@@ -277,7 +277,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 
 	t.Run("DuplicateInsertIgnored", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -289,7 +289,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 
 	t.Run("EvictNonExistentKey", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -303,7 +303,7 @@ func TestFIFOHandler(t *testing.T) {
 	})
 
 	t.Run("ConcurrentOperations", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		var wg sync.WaitGroup
 
@@ -331,7 +331,7 @@ func TestFIFOHandler(t *testing.T) {
 // TestLFUHandler tests the LFU eviction handler.
 func TestLFUHandler(t *testing.T) {
 	t.Run("BasicInsertionAndEviction", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 		require.NotNil(t, handler)
 
 		handler.OnInsert("key1")
@@ -344,7 +344,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("AccessIncreasesFrequency", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -361,7 +361,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("EvictionRemovesEntry", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -381,7 +381,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("TieBreakingByInsertionOrder", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -394,7 +394,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("FrequencyOrderingMaintained", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -414,7 +414,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("ResetClearsAllEntries", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -427,14 +427,14 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("EmptyHandlerReturnsEmptyCandidate", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		candidate := handler.SelectEvictionCandidate()
 		assert.Equal(t, constants.Empty, candidate)
 	})
 
 	t.Run("SingleEntry", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 
@@ -443,7 +443,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("EvictNonExistentKey", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -457,7 +457,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("AccessNonExistentKeyCreatesEntry", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -471,7 +471,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("ConcurrentOperations", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		var wg sync.WaitGroup
 
@@ -500,7 +500,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("StressTestWithManyEntries", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		// Insert many keys
 		n := 1000
@@ -524,7 +524,7 @@ func TestLFUHandler(t *testing.T) {
 	})
 
 	t.Run("FrequencyBucketsWorkCorrectly", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		// Create entries with specific frequencies
 		handler.OnInsert("key1") // freq 1
@@ -562,9 +562,9 @@ func TestEvictionHandlerFactory(t *testing.T) {
 		expectedType string
 	}{
 		{EvictionPolicyNone, "*cache.NoOpEvictionHandler"},
-		{EvictionPolicyLRU, "*cache.LRUHandler"},
-		{EvictionPolicyLFU, "*cache.LFUHandler"},
-		{EvictionPolicyFIFO, "*cache.FIFOHandler"},
+		{EvictionPolicyLRU, "*cache.LruHandler"},
+		{EvictionPolicyLFU, "*cache.LfuHandler"},
+		{EvictionPolicyFIFO, "*cache.FifoHandler"},
 	}
 
 	for _, tc := range testCases {
@@ -590,7 +590,7 @@ func TestEvictionHandlerFactory(t *testing.T) {
 // without causing duplicate entries or other issues.
 func TestLRUHandlerUpdateBehavior(t *testing.T) {
 	t.Run("UpdateMoveKeyToFront", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		// Insert 3 keys
 		handler.OnInsert("key1")
@@ -610,7 +610,7 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 	})
 
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 
@@ -625,7 +625,7 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 	})
 
 	t.Run("InterleavedInsertsAndAccesses", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		// Simulate mixed insert and access patterns
 		handler.OnInsert("key1") // key1 at front
@@ -648,7 +648,7 @@ func TestLRUHandlerUpdateBehavior(t *testing.T) {
 // TestLFUHandlerUpdateBehavior tests LFU handler update scenarios.
 func TestLFUHandlerUpdateBehavior(t *testing.T) {
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 
@@ -663,7 +663,7 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 	})
 
 	t.Run("FrequencyIncrementsCorrectly", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -692,7 +692,7 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 	})
 
 	t.Run("FrequencyBucketMovement", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -722,7 +722,7 @@ func TestLFUHandlerUpdateBehavior(t *testing.T) {
 // TestFIFOHandlerUpdateBehavior tests FIFO handler update scenarios.
 func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 	t.Run("RepeatedUpdatesDoNotCauseDuplicates", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 
@@ -737,7 +737,7 @@ func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 	})
 
 	t.Run("AccessDoesNotChangeOrder", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -757,7 +757,7 @@ func TestFIFOHandlerUpdateBehavior(t *testing.T) {
 // TestEvictionHandlerInternalConsistency verifies that eviction handlers maintain internal consistency.
 func TestEvictionHandlerInternalConsistency(t *testing.T) {
 	t.Run("LRUHandlerConsistency", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		// Perform mixed operations
 		for range 100 {
@@ -773,7 +773,7 @@ func TestEvictionHandlerInternalConsistency(t *testing.T) {
 	})
 
 	t.Run("LFUHandlerConsistency", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		// Perform mixed operations
 		for range 100 {
@@ -789,7 +789,7 @@ func TestEvictionHandlerInternalConsistency(t *testing.T) {
 	})
 
 	t.Run("FIFOHandlerConsistency", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		// Perform mixed operations
 		for range 100 {
@@ -808,7 +808,7 @@ func TestEvictionHandlerInternalConsistency(t *testing.T) {
 // TestEvictionHandlerEdgeCases tests edge cases for eviction handlers.
 func TestEvictionHandlerEdgeCases(t *testing.T) {
 	t.Run("LRUHandlerEvictAndReinsert", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -827,7 +827,7 @@ func TestEvictionHandlerEdgeCases(t *testing.T) {
 	})
 
 	t.Run("LFUHandlerEvictAndReinsert", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		handler.OnInsert("key1")
 		handler.OnAccess("key1")
@@ -852,7 +852,7 @@ func TestEvictionHandlerEdgeCases(t *testing.T) {
 	})
 
 	t.Run("FIFOHandlerEvictAndReinsert", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		handler.OnInsert("key1")
 		handler.OnInsert("key2")
@@ -876,7 +876,7 @@ func TestEvictionHandlerEdgeCases(t *testing.T) {
 // TestEvictionHandlerLargeScale tests eviction handlers with large number of entries.
 func TestEvictionHandlerLargeScale(t *testing.T) {
 	t.Run("LRUHandlerLargeScale", func(t *testing.T) {
-		handler := NewLRUHandler()
+		handler := NewLruHandler()
 
 		// Insert 10000 keys
 		for i := range 10000 {
@@ -901,7 +901,7 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 	})
 
 	t.Run("LFUHandlerLargeScale", func(t *testing.T) {
-		handler := NewLFUHandler()
+		handler := NewLfuHandler()
 
 		// Insert 10000 keys
 		for i := range 10000 {
@@ -927,7 +927,7 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 	})
 
 	t.Run("FIFOHandlerLargeScale", func(t *testing.T) {
-		handler := NewFIFOHandler()
+		handler := NewFifoHandler()
 
 		// Insert 10000 keys
 		for i := range 10000 {
@@ -949,7 +949,7 @@ func TestEvictionHandlerLargeScale(t *testing.T) {
 
 // Benchmark tests.
 func BenchmarkLRUHandler(b *testing.B) {
-	handler := NewLRUHandler()
+	handler := NewLruHandler()
 
 	// Pre-populate
 	for i := range 1000 {
@@ -973,7 +973,7 @@ func BenchmarkLRUHandler(b *testing.B) {
 }
 
 func BenchmarkLFUHandler(b *testing.B) {
-	handler := NewLFUHandler()
+	handler := NewLfuHandler()
 
 	// Pre-populate
 	for i := range 1000 {
@@ -997,7 +997,7 @@ func BenchmarkLFUHandler(b *testing.B) {
 }
 
 func BenchmarkFIFOHandler(b *testing.B) {
-	handler := NewFIFOHandler()
+	handler := NewFifoHandler()
 
 	// Pre-populate
 	for i := range 1000 {
@@ -1021,7 +1021,7 @@ func BenchmarkFIFOHandler(b *testing.B) {
 }
 
 func BenchmarkLFUHandlerConcurrent(b *testing.B) {
-	handler := NewLFUHandler()
+	handler := NewLfuHandler()
 
 	// Pre-populate
 	for i := range 1000 {

@@ -13,14 +13,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// PKField describes a model's primary key field with common aliases.
-// It provides helpers to get/set the PK value on a concrete model instance.
-type PKField struct {
+// PkField describes a model's primary key field with common aliases.
+// It provides helpers to get/set the Pk value on a concrete model instance.
+type PkField struct {
 	// Field is the Go struct field name, e.g. "UserId".
 	Field string
 	// Column is the database column name as defined in schema, e.g. "user_id".
 	Column string
-	// Name is the lower camel-case alias, usually used in params or API payloads, e.g. "userId".
+	// Name is the lower camel-case alias, usually used in params or Api payloads, e.g. "userId".
 	Name string
 
 	f *schema.Field
@@ -29,7 +29,7 @@ type PKField struct {
 // Value returns the primary key value from the given model instance.
 // The model must be a pointer to struct; otherwise an error is returned.
 // It leverages bun's schema.Field to read the concrete field value safely.
-func (p *PKField) Value(model any) (any, error) {
+func (p *PkField) Value(model any) (any, error) {
 	value, err := p.validateModel(model)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (p *PKField) Value(model any) (any, error) {
 // - string (and *string)
 // - int/int32/int64 (and their pointer forms)
 // For unsupported kinds, an error is returned.
-func (p *PKField) Set(model, value any) error {
+func (p *PkField) Set(model, value any) error {
 	modelValue, err := p.validateModel(model)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (p *PKField) Set(model, value any) error {
 	return nil
 }
 
-func (p *PKField) validateModel(model any) (reflect.Value, error) {
+func (p *PkField) validateModel(model any) (reflect.Value, error) {
 	if value, ok := model.(reflect.Value); ok {
 		if value.Kind() == reflect.Pointer {
 			value = value.Elem()
@@ -111,11 +111,11 @@ func (p *PKField) validateModel(model any) (reflect.Value, error) {
 	return value, nil
 }
 
-// NewPKField constructs a PKField helper from a bun schema.Field.
+// NewPkField constructs a PkField helper from a bun schema.Field.
 // Field is the Go struct field name; Column is the DB column name;
-// Name is a lower-camel alias commonly used in params or API payloads.
-func NewPKField(field *schema.Field) *PKField {
-	return &PKField{
+// Name is a lower-camel alias commonly used in params or Api payloads.
+func NewPkField(field *schema.Field) *PkField {
+	return &PkField{
 		Field:  field.GoName,
 		Column: field.Name,
 		Name:   lo.CamelCase(field.Name),
@@ -123,8 +123,8 @@ func NewPKField(field *schema.Field) *PKField {
 	}
 }
 
-// parsePKColumnsAndValues parses the primary key columns and values from the given table and primary key value.
-func parsePKColumnsAndValues(method string, table *schema.Table, pk any, alias ...string) (*pkColumns, *pkValues) {
+// parsePkColumnsAndValues parses the primary key columns and values from the given table and primary key value.
+func parsePkColumnsAndValues(method string, table *schema.Table, pk any, alias ...string) (*pkColumns, *pkValues) {
 	if table == nil {
 		panic(fmt.Sprintf(
 			"method %s failed: table schema is nil. "+

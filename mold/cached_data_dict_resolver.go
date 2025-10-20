@@ -84,7 +84,7 @@ func (r *CachedDataDictResolver) Resolve(ctx context.Context, key, code string) 
 
 	entries, err := r.getEntries(ctx, key)
 	if err != nil {
-		return constants.Empty, fmt.Errorf("failed to load dictionary '%s': %w", key, err)
+		return constants.Empty, fmt.Errorf("failed to load dictionary %q: %w", key, err)
 	}
 
 	name, ok := entries[code]
@@ -136,9 +136,9 @@ func (r *CachedDataDictResolver) handleInvalidation(ctx context.Context, evt eve
 
 	for _, dictKey := range changeEvent.Keys {
 		if err := r.dictCache.Delete(ctx, dictKey); err != nil {
-			r.logger.Errorf("Failed to delete cache for dictionary '%s': %v", dictKey, err)
+			r.logger.Errorf("Failed to delete cache for dictionary %q: %v", dictKey, err)
 		} else {
-			r.logger.Infof("Cleared cache for dictionary '%s'", dictKey)
+			r.logger.Infof("Cleared cache for dictionary %q", dictKey)
 		}
 	}
 }

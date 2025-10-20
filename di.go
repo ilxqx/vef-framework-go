@@ -54,9 +54,9 @@ func StartStopHook[T1, T2 HookFunc](start T1, stop T2) Hook {
 	return fx.StartStopHook(start, stop)
 }
 
-// ProvideAPIResource provides an API resource to the dependency injection container.
+// ProvideApiResource provides an Api resource to the dependency injection container.
 // The resource will be registered in the "vef:api:resources" group.
-func ProvideAPIResource(constructor any, paramTags ...string) fx.Option {
+func ProvideApiResource(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -67,9 +67,9 @@ func ProvideAPIResource(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// ProvideOpenAPIResource provides an OpenAPI resource to the dependency injection container.
+// ProvideOpenApiResource provides an OpenApi resource to the dependency injection container.
 // The resource will be registered in the "vef:openapi:resources" group.
-func ProvideOpenAPIResource(constructor any, paramTags ...string) fx.Option {
+func ProvideOpenApiResource(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -93,9 +93,9 @@ func ProvideMiddleware(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// ProvideSPAConfig provides a Single Page Application configuration to the dependency injection container.
+// ProvideSpaConfig provides a Single Page Application configuration to the dependency injection container.
 // The config will be registered in the "vef:spa" group.
-func ProvideSPAConfig(constructor any, paramTags ...string) fx.Option {
+func ProvideSpaConfig(constructor any, paramTags ...string) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
 			constructor,
@@ -105,9 +105,9 @@ func ProvideSPAConfig(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// SupplySPAConfigs supplies multiple Single Page Application configurations to the dependency injection container.
+// SupplySpaConfigs supplies multiple Single Page Application configurations to the dependency injection container.
 // All configs will be registered in the "vef:spa" group.
-func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPAConfig) fx.Option {
+func SupplySpaConfigs(config *middleware.SpaConfig, configs ...*middleware.SpaConfig) fx.Option {
 	spaConfigs := make([]any, 0, len(configs)+1)
 
 	spaConfigs = append(
@@ -120,7 +120,7 @@ func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPACo
 	if len(configs) > 0 {
 		spaConfigs = append(
 			spaConfigs,
-			lo.Map(configs, func(item *middleware.SPAConfig, _ int) any {
+			lo.Map(configs, func(item *middleware.SpaConfig, _ int) any {
 				return fx.Annotate(
 					item,
 					fx.ResultTags(`group:"vef:spa"`),

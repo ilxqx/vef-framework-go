@@ -12,21 +12,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findPageAPI[TModel, TSearch any] struct {
-	FindAPI[TModel, TSearch, []TModel, FindPageAPI[TModel, TSearch]]
+type findPageApi[TModel, TSearch any] struct {
+	FindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]]
 }
 
-func (a *findPageAPI[TModel, TSearch]) Provide() api.Spec {
-	return a.FindAPI.Build(a.findPage)
+func (a *findPageApi[TModel, TSearch]) Provide() api.Spec {
+	return a.Build(a.findPage)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (a *findPageAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call FindAPI.Build on findPageAPI; call Provide() instead")
-}
-
-func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error, error) {
+func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error, error) {
 	if err := a.Init(db); err != nil {
 		return nil, err
 	}
@@ -52,8 +46,8 @@ func (a *findPageAPI[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 
 		if total > 0 {
 			// Apply transformation to each model
-			for _, model := range models {
-				if err := transformer.Struct(ctx.Context(), &model); err != nil {
+			for i := range models {
+				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
 					return err
 				}
 			}

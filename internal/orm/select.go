@@ -46,7 +46,7 @@ type BunSelectQuery struct {
 	// State tracking for deferred select operations
 	hasSelectAll          bool
 	hasSelectModelColumns bool
-	hasSelectModelPKs     bool
+	hasSelectModelPks     bool
 	hasExplicitSelect     bool
 	explicitSelects       []func()
 	exprSelects           []func()
@@ -142,8 +142,8 @@ func (q *BunSelectQuery) SelectModelColumns() SelectQuery {
 		q.hasSelectAll = false
 	}
 
-	if q.hasSelectModelPKs {
-		q.hasSelectModelPKs = false
+	if q.hasSelectModelPks {
+		q.hasSelectModelPks = false
 	}
 
 	q.hasSelectModelColumns = true
@@ -151,7 +151,7 @@ func (q *BunSelectQuery) SelectModelColumns() SelectQuery {
 	return q
 }
 
-func (q *BunSelectQuery) SelectModelPKs() SelectQuery {
+func (q *BunSelectQuery) SelectModelPks() SelectQuery {
 	if q.hasSelectAll {
 		q.hasSelectAll = false
 	}
@@ -160,7 +160,7 @@ func (q *BunSelectQuery) SelectModelPKs() SelectQuery {
 		q.hasSelectModelColumns = false
 	}
 
-	q.hasSelectModelPKs = true
+	q.hasSelectModelPks = true
 
 	return q
 }
@@ -403,7 +403,7 @@ func (q *BunSelectQuery) Where(builder func(ConditionBuilder)) SelectQuery {
 	return q
 }
 
-func (q *BunSelectQuery) WherePK(columns ...string) SelectQuery {
+func (q *BunSelectQuery) WherePk(columns ...string) SelectQuery {
 	q.query.WherePK(columns...)
 
 	return q
@@ -606,7 +606,7 @@ func (q *BunSelectQuery) ApplyIf(condition bool, fns ...ApplyFunc[SelectQuery]) 
 func (q *BunSelectQuery) clearSelectState() {
 	q.hasSelectAll = false
 	q.hasSelectModelColumns = false
-	q.hasSelectModelPKs = false
+	q.hasSelectModelPks = false
 	q.hasExplicitSelect = false
 	q.explicitSelects = nil
 }
@@ -622,7 +622,7 @@ func (q *BunSelectQuery) applySelectState() {
 	} else {
 		if q.hasSelectModelColumns {
 			q.query.ColumnExpr(constants.ExprTableColumns)
-		} else if q.hasSelectModelPKs {
+		} else if q.hasSelectModelPks {
 			q.query.ColumnExpr(constants.ExprTablePKs)
 		}
 

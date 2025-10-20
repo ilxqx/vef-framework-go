@@ -8,12 +8,12 @@ import (
 )
 
 func TestUuidIdGenerator(t *testing.T) {
-	t.Run("should create generator successfully", func(t *testing.T) {
+	t.Run("Should create generator successfully", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 		assert.NotNil(t, generator, "UUID generator should not be nil")
 	})
 
-	t.Run("should generate valid UUID v7 format", func(t *testing.T) {
+	t.Run("Should generate valid UUID v7 format", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 		id := generator.Generate()
 
@@ -37,7 +37,7 @@ func TestUuidIdGenerator(t *testing.T) {
 			"UUID variant should be 8, 9, a, or b, got: %s", variantChar)
 	})
 
-	t.Run("should generate unique UUIDs", func(t *testing.T) {
+	t.Run("Should generate unique UUIDs", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 		uuids := make(map[string]bool)
 		iterations := 10000
@@ -51,7 +51,7 @@ func TestUuidIdGenerator(t *testing.T) {
 		assert.Len(t, uuids, iterations, "All generated UUIDs should be unique")
 	})
 
-	t.Run("should be thread-safe", func(t *testing.T) {
+	t.Run("Should be thread-safe", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 
 		const (
@@ -82,7 +82,7 @@ func TestUuidIdGenerator(t *testing.T) {
 		assert.Len(t, uuids, numGoroutines*uuidsPerGoroutine, "All concurrent UUIDs should be unique")
 	})
 
-	t.Run("should generate time-ordered UUIDs", func(t *testing.T) {
+	t.Run("Should generate time-ordered UUIDs", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 
 		// Generate multiple UUIDs and verify they are roughly time-ordered
@@ -102,7 +102,7 @@ func TestUuidIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("default generator should work", func(t *testing.T) {
+	t.Run("Default generator should work", func(t *testing.T) {
 		assert.NotNil(t, DefaultUuidIdGenerator, "Default UUID generator should be initialized")
 
 		uuid := DefaultUuidIdGenerator.Generate()
@@ -114,7 +114,7 @@ func TestUuidIdGenerator(t *testing.T) {
 		assert.True(t, uuidRegex.MatchString(uuid), "Default generator should produce valid UUID v7")
 	})
 
-	t.Run("should handle rapid generation", func(t *testing.T) {
+	t.Run("Should handle rapid generation", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 		uuids := make(map[string]bool)
 
@@ -128,7 +128,7 @@ func TestUuidIdGenerator(t *testing.T) {
 		assert.Len(t, uuids, 1000, "All rapidly generated UUIDs should be unique")
 	})
 
-	t.Run("should contain valid hex characters only", func(t *testing.T) {
+	t.Run("Should contain valid hex characters only", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 		uuid := generator.Generate()
 

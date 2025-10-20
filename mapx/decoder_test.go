@@ -40,7 +40,7 @@ type StructWithEmbedding struct {
 }
 
 func TestNewDecoder(t *testing.T) {
-	t.Run("create decoder with default options", func(t *testing.T) {
+	t.Run("Create decoder with default options", func(t *testing.T) {
 		var result TestStruct
 
 		decoder, err := NewDecoder(&result)
@@ -48,7 +48,7 @@ func TestNewDecoder(t *testing.T) {
 		assert.NotNil(t, decoder)
 	})
 
-	t.Run("create decoder with custom options", func(t *testing.T) {
+	t.Run("Create decoder with custom options", func(t *testing.T) {
 		var result TestStruct
 
 		decoder, err := NewDecoder(&result, WithTagName("custom"), WithErrorUnused())
@@ -58,7 +58,7 @@ func TestNewDecoder(t *testing.T) {
 }
 
 func TestToMap(t *testing.T) {
-	t.Run("valid struct", func(t *testing.T) {
+	t.Run("Valid struct", func(t *testing.T) {
 		testTime := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 		testURL, _ := url.Parse("https://example.com")
 		input := TestStruct{
@@ -87,7 +87,7 @@ func TestToMap(t *testing.T) {
 		assert.Contains(t, result, "ip")
 	})
 
-	t.Run("pointer to struct", func(t *testing.T) {
+	t.Run("Pointer to struct", func(t *testing.T) {
 		input := &TestStruct{
 			Name: "Jane Doe",
 			Age:  25,
@@ -100,7 +100,7 @@ func TestToMap(t *testing.T) {
 		assert.Equal(t, 25, result["age"])
 	})
 
-	t.Run("struct with embedding", func(t *testing.T) {
+	t.Run("Struct with embedding", func(t *testing.T) {
 		input := StructWithEmbedding{
 			Name: "Test",
 			Embedded: EmbeddedStruct{
@@ -118,7 +118,7 @@ func TestToMap(t *testing.T) {
 		assert.Equal(t, "example", result["type"])
 	})
 
-	t.Run("non-struct value", func(t *testing.T) {
+	t.Run("Non-struct value", func(t *testing.T) {
 		input := "not a struct"
 
 		result, err := ToMap(input)
@@ -127,7 +127,7 @@ func TestToMap(t *testing.T) {
 		assert.Contains(t, err.Error(), "must be a struct")
 	})
 
-	t.Run("slice input", func(t *testing.T) {
+	t.Run("Slice input", func(t *testing.T) {
 		input := []int{1, 2, 3}
 
 		result, err := ToMap(input)
@@ -136,7 +136,7 @@ func TestToMap(t *testing.T) {
 		assert.Contains(t, err.Error(), "must be a struct")
 	})
 
-	t.Run("with custom tag name", func(t *testing.T) {
+	t.Run("With custom tag name", func(t *testing.T) {
 		type CustomTagStruct struct {
 			Name string `custom:"full_name"`
 			Age  int    `custom:"years"`
@@ -152,7 +152,7 @@ func TestToMap(t *testing.T) {
 }
 
 func TestFromMap(t *testing.T) {
-	t.Run("valid map to struct", func(t *testing.T) {
+	t.Run("Valid map to struct", func(t *testing.T) {
 		testTime := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 		input := map[string]any{
 			"name":     "John Doe",
@@ -181,7 +181,7 @@ func TestFromMap(t *testing.T) {
 		assert.Equal(t, "192.168.1.1", result.IP.String())
 	})
 
-	t.Run("partial map", func(t *testing.T) {
+	t.Run("Partial map", func(t *testing.T) {
 		input := map[string]any{
 			"name": "Jane Doe",
 			"age":  25,
@@ -197,7 +197,7 @@ func TestFromMap(t *testing.T) {
 		assert.Equal(t, false, result.Active)
 	})
 
-	t.Run("empty map", func(t *testing.T) {
+	t.Run("Empty map", func(t *testing.T) {
 		input := map[string]any{}
 
 		result, err := FromMap[TestStruct](input)
@@ -208,7 +208,7 @@ func TestFromMap(t *testing.T) {
 		assert.Equal(t, 0, result.Age)
 	})
 
-	t.Run("map with embedding", func(t *testing.T) {
+	t.Run("Map with embedding", func(t *testing.T) {
 		input := map[string]any{
 			"name": "Test",
 			"id":   123,
@@ -224,7 +224,7 @@ func TestFromMap(t *testing.T) {
 		assert.Equal(t, "example", result.Embedded.Type)
 	})
 
-	t.Run("non-struct type parameter", func(t *testing.T) {
+	t.Run("Non-struct type parameter", func(t *testing.T) {
 		input := map[string]any{"value": "test"}
 
 		result, err := FromMap[string](input)
@@ -233,7 +233,7 @@ func TestFromMap(t *testing.T) {
 		assert.Contains(t, err.Error(), "must be a struct")
 	})
 
-	t.Run("with custom tag name", func(t *testing.T) {
+	t.Run("With custom tag name", func(t *testing.T) {
 		type CustomTagStruct struct {
 			Name string `custom:"full_name"`
 			Age  int    `custom:"years"`
@@ -332,7 +332,7 @@ func TestDecoderOptions(t *testing.T) {
 }
 
 func TestComplexTypeConversions(t *testing.T) {
-	t.Run("time conversion", func(t *testing.T) {
+	t.Run("Time conversion", func(t *testing.T) {
 		type TimeStruct struct {
 			Created time.Time `json:"created"`
 		}
@@ -348,7 +348,7 @@ func TestComplexTypeConversions(t *testing.T) {
 		assert.Equal(t, expectedTime, result.Created)
 	})
 
-	t.Run("duration conversion", func(t *testing.T) {
+	t.Run("Duration conversion", func(t *testing.T) {
 		type DurationStruct struct {
 			Timeout time.Duration `json:"timeout"`
 		}
@@ -394,7 +394,7 @@ func TestComplexTypeConversions(t *testing.T) {
 }
 
 func TestRoundTripConversion(t *testing.T) {
-	t.Run("struct to map and back", func(t *testing.T) {
+	t.Run("Struct to map and back", func(t *testing.T) {
 		testTime := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 		original := TestStruct{
 			Name:     "John Doe",
@@ -424,7 +424,7 @@ func TestRoundTripConversion(t *testing.T) {
 }
 
 func TestNullBoolDecodeHook(t *testing.T) {
-	t.Run("null.Bool to bool conversion", func(t *testing.T) {
+	t.Run("Null.Bool to bool conversion", func(t *testing.T) {
 		type StructWithBool struct {
 			Active bool `json:"active"`
 		}
@@ -438,7 +438,7 @@ func TestNullBoolDecodeHook(t *testing.T) {
 		assert.True(t, result.Active)
 	})
 
-	t.Run("bool to null.Bool conversion", func(t *testing.T) {
+	t.Run("Bool to null.Bool conversion", func(t *testing.T) {
 		type StructWithNullBool struct {
 			Active null.Bool `json:"active"`
 		}
@@ -453,7 +453,7 @@ func TestNullBoolDecodeHook(t *testing.T) {
 		assert.True(t, result.Active.Bool)
 	})
 
-	t.Run("invalid null.Bool to bool", func(t *testing.T) {
+	t.Run("Invalid null.Bool to bool", func(t *testing.T) {
 		type StructWithBool struct {
 			Active bool `json:"active"`
 		}
@@ -496,7 +496,7 @@ func TestNullBoolDecodeHook(t *testing.T) {
 }
 
 func TestNullValueDecodeHook(t *testing.T) {
-	t.Run("null.Value[string] to string conversion", func(t *testing.T) {
+	t.Run("Null.Value[string] to string conversion", func(t *testing.T) {
 		type StructWithString struct {
 			Name string `json:"name"`
 		}
@@ -510,7 +510,7 @@ func TestNullValueDecodeHook(t *testing.T) {
 		assert.Equal(t, "John Doe", result.Name)
 	})
 
-	t.Run("string to null.Value[string] conversion", func(t *testing.T) {
+	t.Run("String to null.Value[string] conversion", func(t *testing.T) {
 		type StructWithNullString struct {
 			Name null.Value[string] `json:"name"`
 		}
@@ -525,7 +525,7 @@ func TestNullValueDecodeHook(t *testing.T) {
 		assert.Equal(t, "John Doe", result.Name.V)
 	})
 
-	t.Run("null.Value[int] to int conversion", func(t *testing.T) {
+	t.Run("Null.Value[int] to int conversion", func(t *testing.T) {
 		type StructWithInt struct {
 			Age int `json:"age"`
 		}
@@ -539,7 +539,7 @@ func TestNullValueDecodeHook(t *testing.T) {
 		assert.Equal(t, 30, result.Age)
 	})
 
-	t.Run("int to null.Value[int] conversion", func(t *testing.T) {
+	t.Run("Int to null.Value[int] conversion", func(t *testing.T) {
 		type StructWithNullInt struct {
 			Age null.Value[int] `json:"age"`
 		}
@@ -554,7 +554,7 @@ func TestNullValueDecodeHook(t *testing.T) {
 		assert.Equal(t, 30, result.Age.V)
 	})
 
-	t.Run("invalid null.Value to primitive", func(t *testing.T) {
+	t.Run("Invalid null.Value to primitive", func(t *testing.T) {
 		type StructWithString struct {
 			Name string `json:"name"`
 		}
@@ -601,7 +601,7 @@ func TestNullValueDecodeHook(t *testing.T) {
 }
 
 func TestNullTypesIntegration(t *testing.T) {
-	t.Run("complex struct with various null types", func(t *testing.T) {
+	t.Run("Complex struct with various null types", func(t *testing.T) {
 		type ComplexStruct struct {
 			Name          null.Value[string]  `json:"name"`
 			Age           null.Value[int]     `json:"age"`
@@ -635,7 +635,7 @@ func TestNullTypesIntegration(t *testing.T) {
 		assert.False(t, result.OptionalField.Valid) // Not provided in input
 	})
 
-	t.Run("round trip with null types", func(t *testing.T) {
+	t.Run("Round trip with null types", func(t *testing.T) {
 		// Note: Round trip with null types has limitations because ToMap converts
 		// null.Value and null.Bool to map structures rather than primitives.
 		// This is expected behavior due to how mapstructure handles struct decomposition.
@@ -676,7 +676,7 @@ func TestNullTypesIntegration(t *testing.T) {
 		// This is a known limitation when using nested struct types.
 	})
 
-	t.Run("mixed null and regular types", func(t *testing.T) {
+	t.Run("Mixed null and regular types", func(t *testing.T) {
 		type MixedStruct struct {
 			RegularName string             `json:"regularName"`
 			NullName    null.Value[string] `json:"nullName"`
@@ -790,7 +790,7 @@ func TestNullValueBasicOperations(t *testing.T) {
 		assert.Equal(t, "", invalidValue.ValueOrZero()) // Should return zero value for invalid
 	})
 
-	t.Run("null.Value with different types", func(t *testing.T) {
+	t.Run("Null.Value with different types", func(t *testing.T) {
 		intVal := null.ValueFrom(42)
 		assert.True(t, intVal.Valid)
 		assert.Equal(t, 42, intVal.V)
@@ -809,7 +809,7 @@ func TestNullValueBasicOperations(t *testing.T) {
 }
 
 func TestNullSpecificTypesDecodeHook(t *testing.T) {
-	t.Run("null.String decode hook", func(t *testing.T) {
+	t.Run("Null.String decode hook", func(t *testing.T) {
 		// Test string to null.String conversion
 		type StructWithNullString struct {
 			Name null.String `json:"name"`
@@ -847,7 +847,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, "", result3.Name) // Should be zero value for invalid
 	})
 
-	t.Run("null.Int decode hook", func(t *testing.T) {
+	t.Run("Null.Int decode hook", func(t *testing.T) {
 		// Test int64 to null.Int conversion
 		type StructWithNullInt struct {
 			Age null.Int `json:"age"`
@@ -876,7 +876,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, int64(25), result2.Age)
 	})
 
-	t.Run("null.Int16 decode hook", func(t *testing.T) {
+	t.Run("Null.Int16 decode hook", func(t *testing.T) {
 		// Test int16 to null.Int16 conversion
 		type StructWithNullInt16 struct {
 			Count null.Int16 `json:"count"`
@@ -905,7 +905,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, int16(200), result2.Count)
 	})
 
-	t.Run("null.Int32 decode hook", func(t *testing.T) {
+	t.Run("Null.Int32 decode hook", func(t *testing.T) {
 		// Test int32 to null.Int32 conversion
 		type StructWithNullInt32 struct {
 			ID null.Int32 `json:"id"`
@@ -934,7 +934,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, int32(54321), result2.ID)
 	})
 
-	t.Run("null.Float decode hook", func(t *testing.T) {
+	t.Run("Null.Float decode hook", func(t *testing.T) {
 		// Test float64 to null.Float conversion
 		type StructWithNullFloat struct {
 			Score null.Float `json:"score"`
@@ -963,7 +963,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, 87.3, result2.Score)
 	})
 
-	t.Run("null.Byte decode hook", func(t *testing.T) {
+	t.Run("Null.Byte decode hook", func(t *testing.T) {
 		// Test byte to null.Byte conversion
 		type StructWithNullByte struct {
 			Flag null.Byte `json:"flag"`
@@ -992,7 +992,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, byte(128), result2.Flag)
 	})
 
-	t.Run("null.DateTime decode hook", func(t *testing.T) {
+	t.Run("Null.DateTime decode hook", func(t *testing.T) {
 		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 
 		// Test datetime.DateTime to null.DateTime conversion
@@ -1023,7 +1023,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, testDateTime, result2.Created)
 	})
 
-	t.Run("null.Date decode hook", func(t *testing.T) {
+	t.Run("Null.Date decode hook", func(t *testing.T) {
 		testDate := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 
 		// Test datetime.Date to null.Date conversion
@@ -1054,7 +1054,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, testDate, result2.Birthday)
 	})
 
-	t.Run("null.Time decode hook", func(t *testing.T) {
+	t.Run("Null.Time decode hook", func(t *testing.T) {
 		testTime := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 
 		// Test datetime.Time to null.Time conversion
@@ -1085,7 +1085,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		assert.Equal(t, testTime, result2.MeetingTime)
 	})
 
-	t.Run("null.Decimal decode hook", func(t *testing.T) {
+	t.Run("Null.Decimal decode hook", func(t *testing.T) {
 		testDecimal := decimal.NewFromFloat(123.456)
 
 		// Test decimal.Decimal to null.Decimal conversion
@@ -1118,7 +1118,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 }
 
 func TestNullTypesWithPointersDecodeHook(t *testing.T) {
-	t.Run("pointer types conversion", func(t *testing.T) {
+	t.Run("Pointer types conversion", func(t *testing.T) {
 		// Test *string to null.String
 		type StructWithNullString struct {
 			Name null.String `json:"name"`
@@ -1169,7 +1169,7 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 		assert.Nil(t, result4.Name)
 	})
 
-	t.Run("integer pointer types", func(t *testing.T) {
+	t.Run("Integer pointer types", func(t *testing.T) {
 		// Test *int64 to null.Int
 		type StructWithNullInt struct {
 			Age null.Int `json:"age"`
@@ -1202,7 +1202,7 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 }
 
 func TestFileHeaderConversion(t *testing.T) {
-	t.Run("slice with single file to single file pointer", func(t *testing.T) {
+	t.Run("Slice with single file to single file pointer", func(t *testing.T) {
 		type StructWithSingleFile struct {
 			Avatar *multipart.FileHeader `json:"avatar"`
 		}
@@ -1223,7 +1223,7 @@ func TestFileHeaderConversion(t *testing.T) {
 		assert.Equal(t, int64(1024), result.Avatar.Size)
 	})
 
-	t.Run("slice with multiple files remains slice", func(t *testing.T) {
+	t.Run("Slice with multiple files remains slice", func(t *testing.T) {
 		type StructWithMultipleFiles struct {
 			Attachments []*multipart.FileHeader `json:"attachments"`
 		}
@@ -1244,7 +1244,7 @@ func TestFileHeaderConversion(t *testing.T) {
 		assert.Equal(t, "file2.pdf", result.Attachments[1].Filename)
 	})
 
-	t.Run("empty slice to single file pointer", func(t *testing.T) {
+	t.Run("Empty slice to single file pointer", func(t *testing.T) {
 		type StructWithSingleFile struct {
 			Avatar *multipart.FileHeader `json:"avatar"`
 		}
@@ -1259,7 +1259,7 @@ func TestFileHeaderConversion(t *testing.T) {
 		assert.Contains(t, err.Error(), "expected a map or struct")
 	})
 
-	t.Run("slice to slice remains unchanged", func(t *testing.T) {
+	t.Run("Slice to slice remains unchanged", func(t *testing.T) {
 		type StructWithFileSlice struct {
 			Files []*multipart.FileHeader `json:"files"`
 		}
@@ -1280,7 +1280,7 @@ func TestFileHeaderConversion(t *testing.T) {
 		assert.Equal(t, int64(4096), result.Files[0].Size)
 	})
 
-	t.Run("nil slice to single file pointer", func(t *testing.T) {
+	t.Run("Nil slice to single file pointer", func(t *testing.T) {
 		type StructWithSingleFile struct {
 			Avatar *multipart.FileHeader `json:"avatar"`
 		}
@@ -1296,7 +1296,7 @@ func TestFileHeaderConversion(t *testing.T) {
 }
 
 func TestNullTypesIntegrationAdvanced(t *testing.T) {
-	t.Run("comprehensive struct with all null types", func(t *testing.T) {
+	t.Run("Comprehensive struct with all null types", func(t *testing.T) {
 		type ComprehensiveStruct struct {
 			Name        null.String   `json:"name"`
 			Age         null.Int      `json:"age"`
@@ -1368,7 +1368,7 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 		assert.True(t, result.Active.Bool)
 	})
 
-	t.Run("partial input with some null fields", func(t *testing.T) {
+	t.Run("Partial input with some null fields", func(t *testing.T) {
 		type PartialStruct struct {
 			Name   null.String `json:"name"`
 			Age    null.Int    `json:"age"`

@@ -7,7 +7,7 @@ import (
 )
 
 type UpdateTestSuite struct {
-	*ORMTestSuite
+	*OrmTestSuite
 }
 
 // TestBasicUpdate tests basic UPDATE functionality across all databases.
@@ -88,7 +88,7 @@ func (suite *UpdateTestSuite) TestBasicUpdate() {
 		Column("name", userToUpdate.Name).
 		Column("age", userToUpdate.Age).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(userToUpdate.Id)
+			cb.PkEquals(userToUpdate.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -97,7 +97,7 @@ func (suite *UpdateTestSuite) TestBasicUpdate() {
 	err = suite.db.NewSelect().
 		Model(&updatedUser).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(user.Id)
+			cb.PkEquals(user.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -111,7 +111,7 @@ func (suite *UpdateTestSuite) TestBasicUpdate() {
 		Set("age", originalAge).
 		Set("is_active", true).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(user.Id)
+			cb.PkEquals(user.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -252,7 +252,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 			return eb.Expr("view_count + ?", 10)
 		}).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -263,7 +263,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 	err = suite.db.NewSelect().
 		Model(&updatedPost).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -276,7 +276,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 			return eb.Concat("title", "' - Updated'")
 		}).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -285,7 +285,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 	err = suite.db.NewSelect().
 		Model(&updatedPost).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -327,7 +327,7 @@ func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
 		Set("title", "Introduction to Go").
 		Set("status", "published").
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -373,7 +373,7 @@ func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 		err = suite.db.NewSelect().
 			Model(&user).
 			Where(func(cb ConditionBuilder) {
-				cb.PKEquals(post.UserId)
+				cb.PkEquals(post.UserId)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err)
@@ -414,7 +414,7 @@ func (suite *UpdateTestSuite) TestUpdateWithJoins() {
 		err = suite.db.NewSelect().
 			Model(&user).
 			Where(func(cb ConditionBuilder) {
-				cb.PKEquals(post.UserId)
+				cb.PkEquals(post.UserId)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err)
@@ -563,7 +563,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 		Set("bool_field", true).
 		Set("time_field", now).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -574,7 +574,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 	err = suite.db.NewSelect().
 		Model(&updatedComplex).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -594,7 +594,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 		Model((*ComplexModel)(nil)).
 		Set("json_field", jsonData).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Exec(suite.ctx)
 	if err != nil {
@@ -606,7 +606,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 		err = suite.db.NewSelect().
 			Model(&jsonUpdated).
 			Where(func(cb ConditionBuilder) {
-				cb.PKEquals(complexModel.Id)
+				cb.PkEquals(complexModel.Id)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err)
@@ -628,7 +628,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 		Set("null_int", &nullInt).
 		Set("null_time", &nullTime).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -637,7 +637,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 	err = suite.db.NewSelect().
 		Model(&updatedComplex).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -654,7 +654,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 		Set("null_int", nil).
 		Set("null_time", nil).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -663,7 +663,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 	err = suite.db.NewSelect().
 		Model(&updatedComplex).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -688,7 +688,7 @@ func (suite *UpdateTestSuite) TestUpdateComplexModel() {
 	_, err = suite.db.NewDelete().
 		Model((*ComplexModel)(nil)).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(complexModel.Id)
+			cb.PkEquals(complexModel.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -855,7 +855,7 @@ func (suite *UpdateTestSuite) TestUpdateErrorHandling() {
 		Model((*User)(nil)).
 		Set("non_existent_field", "value").
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(testUser.Id)
+			cb.PkEquals(testUser.Id)
 		}).
 		Exec(suite.ctx)
 	suite.Error(err, "UPDATE with invalid field should error")
@@ -894,7 +894,7 @@ func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 		Model((*Post)(nil)).
 		Set("description", newDescription).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -905,7 +905,7 @@ func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 	err = suite.db.NewSelect().
 		Model(&updatedPost).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -917,7 +917,7 @@ func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 		Model((*Post)(nil)).
 		Set("description", nil).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -927,7 +927,7 @@ func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 	err = suite.db.NewSelect().
 		Model(&updatedPost).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)
@@ -938,7 +938,7 @@ func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 		Model((*Post)(nil)).
 		Set("description", originalDescription).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Exec(suite.ctx)
 	suite.NoError(err)
@@ -948,7 +948,7 @@ func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
 	err = suite.db.NewSelect().
 		Model(&updatedPost).
 		Where(func(cb ConditionBuilder) {
-			cb.PKEquals(post.Id)
+			cb.PkEquals(post.Id)
 		}).
 		Scan(suite.ctx)
 	suite.NoError(err)

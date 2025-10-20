@@ -20,7 +20,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// buildAuthenticationMiddleware creates a keyauth middleware for API authentication.
+// buildAuthenticationMiddleware creates a keyauth middleware for Api authentication.
 // It extracts tokens from Authorization header or query parameter and validates them.
 func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthManager) fiber.Handler {
 	return keyauth.New(keyauth.Config{
@@ -29,7 +29,7 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 			extractors.FromQuery(constants.QueryKeyAccessToken),
 		),
 		Next: func(ctx fiber.Ctx) bool {
-			request := contextx.APIRequest(ctx)
+			request := contextx.ApiRequest(ctx)
 			definition := manager.Lookup(request.Identifier)
 
 			return definition.IsPublic()
@@ -60,11 +60,11 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 	})
 }
 
-// buildOpenAPIAuthenticationMiddleware creates middleware for OpenAPI authentication.
-// It allows public endpoints to pass through and validates OpenAPI tokens for protected endpoints.
-func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthManager) fiber.Handler {
+// buildOpenApiAuthenticationMiddleware creates middleware for OpenApi authentication.
+// It allows public endpoints to pass through and validates OpenApi tokens for protected endpoints.
+func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthManager) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
-		request := contextx.APIRequest(ctx)
+		request := contextx.ApiRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
 
 		if definition.IsPublic() {
@@ -85,7 +85,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 		credentials := signatureHex + constants.At + timestamp + constants.At + bodySha256Base64
 
 		principal, err := auth.Authenticate(ctx.Context(), securityPkg.Authentication{
-			Type:        security.AuthTypeOpenAPI,
+			Type:        security.AuthTypeOpenApi,
 			Principal:   appId,
 			Credentials: credentials,
 		})
@@ -102,7 +102,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 				}
 
 				if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
-					if !ipAllowed(webhelpers.GetIP(ctx), cfg.IpWhitelist) {
+					if !ipAllowed(webhelpers.GetIp(ctx), cfg.IpWhitelist) {
 						return result.ErrIpNotAllowed
 					}
 				}
@@ -114,7 +114,7 @@ func buildOpenAPIAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 					}
 
 					if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
-						if !ipAllowed(webhelpers.GetIP(ctx), cfg.IpWhitelist) {
+						if !ipAllowed(webhelpers.GetIp(ctx), cfg.IpWhitelist) {
 							return result.ErrIpNotAllowed
 						}
 					}

@@ -52,12 +52,12 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 
 	translatedField, ok := fl.SiblingField(name + translatedFieldNameSuffix)
 	if !ok {
-		return fmt.Errorf("%w: failed to get field '%s%s' for field '%s' with value '%s'", ErrTranslatedFieldNotFound, name, translatedFieldNameSuffix, name, value)
+		return fmt.Errorf("%w: failed to get field %q for field %q with value %q", ErrTranslatedFieldNotFound, name+translatedFieldNameSuffix, name, value)
 	}
 
 	kind := fl.Param()
 	if kind == constants.Empty {
-		return fmt.Errorf("%w: field '%s' with value '%s'", ErrTranslationKindEmpty, name, value)
+		return fmt.Errorf("%w: field %q with value %q", ErrTranslationKindEmpty, name, value)
 	}
 
 	// Find the translator that supports the translation kind
@@ -71,7 +71,7 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 			if translatedField.CanSet() {
 				translatedField.SetString(translated)
 			} else {
-				return fmt.Errorf("%w: field '%s%s' for field '%s' with value '%s'", ErrTranslatedFieldNotSettable, name, translatedFieldNameSuffix, name, value)
+				return fmt.Errorf("%w: field %q for field %q with value %q", ErrTranslatedFieldNotSettable, name+translatedFieldNameSuffix, name, value)
 			}
 
 			return nil
@@ -82,7 +82,7 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 		return nil
 	}
 
-	return fmt.Errorf("%w: kind '%s' for field '%s' with value '%s'", ErrNoTranslatorSupportsKind, kind, name, value)
+	return fmt.Errorf("%w: kind %q for field %q with value %q", ErrNoTranslatorSupportsKind, kind, name, value)
 }
 
 // NewTranslateTransformer creates a translate transformer instance.

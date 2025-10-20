@@ -75,11 +75,13 @@ func (d *BunDb) WithNamedArg(name string, value any) Db {
 		return New(db.WithNamedArg(name, value))
 	}
 
-	panic("'WithNamedArg' is not supported within a transaction context")
+	logger.Panic("'WithNamedArg' is not supported within a transaction context")
+
+	return d
 }
 
-func (d *BunDb) ModelPKs(model any) (map[string]any, error) {
-	pks := d.ModelPKFields(model)
+func (d *BunDb) ModelPks(model any) (map[string]any, error) {
+	pks := d.ModelPkFields(model)
 	pkValues := make(map[string]any, len(pks))
 
 	for _, pk := range pks {
@@ -94,7 +96,7 @@ func (d *BunDb) ModelPKs(model any) (map[string]any, error) {
 	return pkValues, nil
 }
 
-func (d *BunDb) ModelPKFields(model any) []*PKField {
+func (d *BunDb) ModelPkFields(model any) []*PkField {
 	var db *bun.DB
 	if bd, ok := d.db.(*bun.DB); ok {
 		db = bd
@@ -103,10 +105,10 @@ func (d *BunDb) ModelPKFields(model any) []*PKField {
 	}
 
 	table := getTableSchema(model, db)
-	pks := make([]*PKField, len(table.PKs))
+	pks := make([]*PkField, len(table.PKs))
 
 	for i, pk := range table.PKs {
-		pks[i] = NewPKField(pk)
+		pks[i] = NewPkField(pk)
 	}
 
 	return pks

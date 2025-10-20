@@ -14,49 +14,43 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type updateManyAPI[TModel, TParams any] struct {
-	APIBuilder[UpdateManyAPI[TModel, TParams]]
+type updateManyApi[TModel, TParams any] struct {
+	ApiBuilder[UpdateManyApi[TModel, TParams]]
 
 	preUpdateMany   PreUpdateManyProcessor[TModel, TParams]
 	postUpdateMany  PostUpdateManyProcessor[TModel, TParams]
 	disableDataPerm bool
 }
 
-// Provide generates the final API specification for batch model updates.
+// Provide generates the final Api specification for batch model updates.
 // Returns a complete api.Spec that can be registered with the router.
-func (u *updateManyAPI[TModel, TParams]) Provide() api.Spec {
-	return u.APIBuilder.Build(u.updateMany)
+func (u *updateManyApi[TModel, TParams]) Provide() api.Spec {
+	return u.Build(u.updateMany)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (u *updateManyAPI[TModel, TParams]) Build(handler any) api.Spec {
-	panic("apis: do not call APIBuilder.Build on updateManyAPI; call Provide() instead")
-}
-
-func (u *updateManyAPI[TModel, TParams]) PreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyAPI[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) PreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
 	u.preUpdateMany = processor
 
 	return u
 }
 
-func (u *updateManyAPI[TModel, TParams]) PostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyAPI[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) PostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
 	u.postUpdateMany = processor
 
 	return u
 }
 
-func (u *updateManyAPI[TModel, TParams]) DisableDataPerm() UpdateManyAPI[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) DisableDataPerm() UpdateManyApi[TModel, TParams] {
 	u.disableDataPerm = true
 
 	return u
 }
 
-func (u *updateManyAPI[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params UpdateManyParams[TParams]) error, error) {
+func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params UpdateManyParams[TParams]) error, error) {
 	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
 	// Pre-compute primary key fields
-	pks := db.ModelPKFields((*TModel)(nil))
+	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
 	if len(pks) == 0 {
@@ -91,7 +85,7 @@ func (u *updateManyAPI[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.C
 			}
 
 			// Build query with data permission filtering
-			query := db.NewSelect().Model(&models[i]).WherePK()
+			query := db.NewSelect().Model(&models[i]).WherePk()
 			if !u.disableDataPerm {
 				if err := applyDataPermission(query, ctx); err != nil {
 					return err
@@ -119,7 +113,7 @@ func (u *updateManyAPI[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.C
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 			for i := range oldModels {
-				if _, err := tx.NewUpdate().Model(&oldModels[i]).WherePK().Exec(txCtx); err != nil {
+				if _, err := tx.NewUpdate().Model(&oldModels[i]).WherePk().Exec(txCtx); err != nil {
 					return err
 				}
 			}

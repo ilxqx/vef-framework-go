@@ -143,7 +143,7 @@ func mergeTreeOptionColumnMapping(mapping, defaultMapping *TreeOptionColumnMappi
 }
 
 // applyDataPermission is a helper function that applies data permission filtering to a SelectQuery.
-// This function is designed to be reused across different API types (Update, Delete, etc.).
+// This function is designed to be reused across different Api types (Update, Delete, etc.).
 // The caller is responsible for checking if data permission should be applied.
 // Returns an error if data permission application fails.
 func applyDataPermission(query orm.SelectQuery, ctx fiber.Ctx) error {

@@ -127,7 +127,7 @@ func (s *CachedDataDictResolverTestSuite) TestLoaderError() {
 	result, err := resolver.Resolve(s.ctx, "status", "draft")
 	s.Error(err)
 	s.True(errors.Is(err, expectedErr), "Error should wrap the original error")
-	s.Contains(err.Error(), "failed to load dictionary 'status'")
+	s.Contains(err.Error(), "failed to load dictionary \"status\"")
 	s.Equal("", result)
 
 	loader.AssertExpectations(s.T())

@@ -10,7 +10,7 @@ import (
 )
 
 type InsertTestSuite struct {
-	*ORMTestSuite
+	*OrmTestSuite
 }
 
 // TestBasicInsert tests basic INSERT functionality across all databases.
@@ -278,7 +278,7 @@ func (suite *InsertTestSuite) TestInsertComplexModel() {
 		_, err = suite.db.NewDelete().
 			Model((*ComplexModel)(nil)).
 			Where(func(cb ConditionBuilder) {
-				cb.PKEquals(simpleComplexModel.Id)
+				cb.PkEquals(simpleComplexModel.Id)
 			}).
 			Exec(suite.ctx)
 		suite.NoError(err)
@@ -291,7 +291,7 @@ func (suite *InsertTestSuite) TestInsertComplexModel() {
 		err = suite.db.NewSelect().
 			Model(&retrievedModel).
 			Where(func(cb ConditionBuilder) {
-				cb.PKEquals(complexModel.Id)
+				cb.PkEquals(complexModel.Id)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err)
@@ -303,7 +303,7 @@ func (suite *InsertTestSuite) TestInsertComplexModel() {
 		_, err = suite.db.NewDelete().
 			Model((*ComplexModel)(nil)).
 			Where(func(cb ConditionBuilder) {
-				cb.PKEquals(complexModel.Id)
+				cb.PkEquals(complexModel.Id)
 			}).
 			Exec(suite.ctx)
 		suite.NoError(err)

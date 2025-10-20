@@ -28,7 +28,7 @@ type Translator interface {
 	//   T("unknown_key") -> "unknown_key" (fallback)
 	T(messageId string, templateData ...map[string]any) string
 
-	// TE translates a message ID to a localized string and returns explicit error information.
+	// Te translates a message ID to a localized string and returns explicit error information.
 	// This method is suitable for programmatic scenarios where error handling is important.
 	// Use this when you need to distinguish between successful translation and failure.
 	//
@@ -41,9 +41,9 @@ type Translator interface {
 	//   - error: Error describing why translation failed (message not found, template error, etc.)
 	//
 	// Example:
-	//   message, err := TE("user_welcome", map[string]any{"name": "John"})
+	//   message, err := Te("user_welcome", map[string]any{"name": "John"})
 	//   if err != nil { /* handle translation error */ }
-	TE(messageId string, templateData ...map[string]any) (string, error)
+	Te(messageId string, templateData ...map[string]any) (string, error)
 }
 
 // i18nTranslator is the concrete implementation of the Translator interface.
@@ -55,11 +55,11 @@ type i18nTranslator struct {
 // T implements the Translator interface with graceful error handling.
 // It internally calls TE and provides fallback behavior for translation failures.
 func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) string {
-	message, err := t.TE(messageId, templateData...)
+	message, err := t.Te(messageId, templateData...)
 	if err != nil {
 		// Log the warning but don't fail - return the original messageId as fallback
 		// This ensures the application continues to work even with missing translations
-		logger.Warnf("Translation failed for messageId '%s': %v", messageId, err)
+		logger.Warnf("Translation failed for messageId %q: %v", messageId, err)
 
 		return messageId
 	}
@@ -67,9 +67,9 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 	return message
 }
 
-// TE implements the Translator interface with explicit error reporting.
+// Te implements the Translator interface with explicit error reporting.
 // It attempts to localize the message using the underlying go-i18n library.
-func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (string, error) {
+func (t *i18nTranslator) Te(messageId string, templateData ...map[string]any) (string, error) {
 	// Validate messageId is not empty
 	if messageId == constants.Empty {
 		return constants.Empty, ErrMessageIdEmpty
@@ -87,7 +87,7 @@ func (t *i18nTranslator) TE(messageId string, templateData ...map[string]any) (s
 		TemplateData: data,
 	})
 	if err != nil {
-		return constants.Empty, fmt.Errorf("translation failed for messageId '%s': %w", messageId, err)
+		return constants.Empty, fmt.Errorf("translation failed for messageId %q: %w", messageId, err)
 	}
 
 	return result, nil

@@ -14,6 +14,7 @@ func newPhoneNumberRule() ValidationRule {
 	return ValidationRule{
 		RuleTag:                  "phone_number",
 		ErrMessageTemplate:       "{0}格式不正确",
+		ErrMessageI18nKey:        "validator_phone_number",
 		CallValidationEvenIfNull: false,
 		Validate: func(fl v.FieldLevel) bool {
 			return phoneNumberRegex.MatchString(fl.Field().String())

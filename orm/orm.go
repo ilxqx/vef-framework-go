@@ -18,7 +18,7 @@ type (
 	JoinType                   = orm.JoinType
 	ColumnInfo                 = orm.ColumnInfo
 	Model                      = orm.Model
-	PKField                    = orm.PKField
+	PkField                    = orm.PkField
 	ExprBuilder                = orm.ExprBuilder
 	OrderBuilder               = orm.OrderBuilder
 	CaseBuilder                = orm.CaseBuilder
@@ -37,8 +37,8 @@ type (
 	ArrayAggBuilder            = orm.ArrayAggBuilder
 	StdDevBuilder              = orm.StdDevBuilder
 	VarianceBuilder            = orm.VarianceBuilder
-	JSONObjectAggBuilder       = orm.JSONObjectAggBuilder
-	JSONArrayAggBuilder        = orm.JSONArrayAggBuilder
+	JSONObjectAggBuilder       = orm.JsonObjectAggBuilder
+	JSONArrayAggBuilder        = orm.JsonArrayAggBuilder
 	BitOrBuilder               = orm.BitOrBuilder
 	BitAndBuilder              = orm.BitAndBuilder
 	BoolOrBuilder              = orm.BoolOrBuilder
@@ -52,8 +52,8 @@ type (
 	WindowArrayAggBuilder      = orm.WindowArrayAggBuilder
 	WindowStdDevBuilder        = orm.WindowStdDevBuilder
 	WindowVarianceBuilder      = orm.WindowVarianceBuilder
-	WindowJSONObjectAggBuilder = orm.WindowJSONObjectAggBuilder
-	WindowJSONArrayAggBuilder  = orm.WindowJSONArrayAggBuilder
+	WindowJSONObjectAggBuilder = orm.WindowJsonObjectAggBuilder
+	WindowJSONArrayAggBuilder  = orm.WindowJsonArrayAggBuilder
 	WindowBitOrBuilder         = orm.WindowBitOrBuilder
 	WindowBitAndBuilder        = orm.WindowBitAndBuilder
 	WindowBoolOrBuilder        = orm.WindowBoolOrBuilder

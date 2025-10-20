@@ -6,16 +6,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// RBACPermissionChecker implements role-based access control (RBAC) permission checking.
+// RbacPermissionChecker implements role-based access control (RBAC) permission checking.
 // It delegates role permissions loading to a RolePermissionsLoader implementation.
-type RBACPermissionChecker struct {
+type RbacPermissionChecker struct {
 	loader security.RolePermissionsLoader
 }
 
-// NewRBACPermissionChecker creates a new RBAC permission checker.
+// NewRbacPermissionChecker creates a new RBAC permission checker.
 // loader: The strategy for loading role permissions.
-func NewRBACPermissionChecker(loader security.RolePermissionsLoader) security.PermissionChecker {
-	return &RBACPermissionChecker{
+func NewRbacPermissionChecker(loader security.RolePermissionsLoader) security.PermissionChecker {
+	return &RbacPermissionChecker{
 		loader: loader,
 	}
 }
@@ -24,7 +24,7 @@ func NewRBACPermissionChecker(loader security.RolePermissionsLoader) security.Pe
 // System principals always have all permissions.
 // For user and external app principals, it loads role permissions sequentially.
 // Sequential loading is more efficient for typical use cases (1-3 roles per user).
-func (c *RBACPermissionChecker) HasPermission(
+func (c *RbacPermissionChecker) HasPermission(
 	ctx context.Context,
 	principal *security.Principal,
 	permissionToken string,

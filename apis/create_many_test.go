@@ -15,26 +15,26 @@ import (
 // Test Resources.
 type TestUserCreateManyResource struct {
 	api.Resource
-	apis.CreateManyAPI[TestUser, TestUserCreateParams]
+	apis.CreateManyApi[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyResource() api.Resource {
 	return &TestUserCreateManyResource{
 		Resource:      api.NewResource("test/user_create_many"),
-		CreateManyAPI: apis.NewCreateManyAPI[TestUser, TestUserCreateParams]().Public(),
+		CreateManyApi: apis.NewCreateManyApi[TestUser, TestUserCreateParams]().Public(),
 	}
 }
 
 // Resource with PreCreateMany hook.
 type TestUserCreateManyWithPreHookResource struct {
 	api.Resource
-	apis.CreateManyAPI[TestUser, TestUserCreateParams]
+	apis.CreateManyApi[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyWithPreHookResource() api.Resource {
 	return &TestUserCreateManyWithPreHookResource{
 		Resource: api.NewResource("test/user_create_many_prehook"),
-		CreateManyAPI: apis.NewCreateManyAPI[TestUser, TestUserCreateParams]().
+		CreateManyApi: apis.NewCreateManyApi[TestUser, TestUserCreateParams]().
 			Public().
 			PreCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Add prefix to all names
@@ -50,13 +50,13 @@ func NewTestUserCreateManyWithPreHookResource() api.Resource {
 // Resource with PostCreateMany hook.
 type TestUserCreateManyWithPostHookResource struct {
 	api.Resource
-	apis.CreateManyAPI[TestUser, TestUserCreateParams]
+	apis.CreateManyApi[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyWithPostHookResource() api.Resource {
 	return &TestUserCreateManyWithPostHookResource{
 		Resource: api.NewResource("test/user_create_many_posthook"),
-		CreateManyAPI: apis.NewCreateManyAPI[TestUser, TestUserCreateParams]().
+		CreateManyApi: apis.NewCreateManyApi[TestUser, TestUserCreateParams]().
 			Public().
 			PostCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header with count
@@ -67,7 +67,7 @@ func NewTestUserCreateManyWithPostHookResource() api.Resource {
 	}
 }
 
-// CreateManyTestSuite is the test suite for CreateMany API tests.
+// CreateManyTestSuite is the test suite for CreateMany Api tests.
 type CreateManyTestSuite struct {
 	BaseSuite
 }
@@ -88,10 +88,10 @@ func (suite *CreateManyTestSuite) TearDownSuite() {
 
 // TestCreateManyBasic tests basic CreateMany functionality.
 func (suite *CreateManyTestSuite) TestCreateManyBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_many",
-			Action:   "createMany",
+			Action:   "create_many",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -126,7 +126,7 @@ func (suite *CreateManyTestSuite) TestCreateManyBasic() {
 	suite.Equal(body.Message, i18n.T(result.OkMessage))
 	suite.NotNil(body.Data)
 
-	// CreateManyAPI returns array of primary keys
+	// CreateManyApi returns array of primary keys
 	pks := suite.readDataAsSlice(body.Data)
 	suite.Len(pks, 3)
 
@@ -138,10 +138,10 @@ func (suite *CreateManyTestSuite) TestCreateManyBasic() {
 
 // TestCreateManyWithPreHook tests CreateMany with PreCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_many_prehook",
-			Action:   "createMany",
+			Action:   "create_many",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -166,17 +166,17 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
 	body := suite.readBody(resp)
 	suite.True(body.IsOk())
 
-	// CreateManyAPI returns array of primary keys
+	// CreateManyApi returns array of primary keys
 	pks := suite.readDataAsSlice(body.Data)
 	suite.Len(pks, 2)
 }
 
 // TestCreateManyWithPostHook tests CreateMany with PostCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_many_posthook",
-			Action:   "createMany",
+			Action:   "create_many",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -210,10 +210,10 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
 // TestCreateManyNegativeCases tests negative scenarios.
 func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 	suite.Run("EmptyArray", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -227,10 +227,10 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 	})
 
 	suite.Run("MissingRequiredField", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -257,10 +257,10 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 	})
 
 	suite.Run("InvalidEmailInBatch", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -287,10 +287,10 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 	})
 
 	suite.Run("InvalidAgeInBatch", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -317,10 +317,10 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 	})
 
 	suite.Run("DuplicateEmailInSameBatch", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -348,10 +348,10 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 
 	suite.Run("DuplicateWithExistingRecord", func() {
 		// First create a user
-		suite.makeAPIRequest(api.Request{
+		suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -367,10 +367,10 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 		})
 
 		// Try to create batch with duplicate email
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -401,10 +401,10 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 func (suite *CreateManyTestSuite) TestCreateManyTransactionRollback() {
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to create a batch where the second item will fail
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create_many",
-				Action:   "createMany",
+				Action:   "create_many",
 				Version:  "v1",
 			},
 			Params: map[string]any{

@@ -27,16 +27,16 @@ const (
 
 // NewStorageResource creates a new storage resource with the provided storage provider.
 func NewStorageResource(provider storage.Provider) api.Resource {
-	// In test environment, make all APIs public (no authentication required)
+	// In test environment, make all Apis public (no authentication required)
 	isPublic := testhelpers.IsTestEnv()
 
 	return &StorageResource{
 		provider: provider,
 		Resource: api.NewResource(
 			"base/storage",
-			api.WithAPIs(
+			api.WithApis(
 				api.Spec{Action: "upload", Public: isPublic},
-				api.Spec{Action: "getPresignedUrl", Public: isPublic},
+				api.Spec{Action: "get_presigned_url", Public: isPublic},
 				api.Spec{Action: "stat", Public: isPublic},
 				api.Spec{Action: "list", Public: isPublic},
 			),
@@ -44,7 +44,7 @@ func NewStorageResource(provider storage.Provider) api.Resource {
 	}
 }
 
-// StorageResource handles storage-related API endpoints.
+// StorageResource handles storage-related Api endpoints.
 type StorageResource struct {
 	api.Resource
 
@@ -70,7 +70,7 @@ type UploadParams struct {
 //
 // The file should be uploaded via multipart form with field name "file".
 func (r *StorageResource) Upload(ctx fiber.Ctx, params UploadParams) error {
-	if webhelpers.IsJSON(ctx) {
+	if webhelpers.IsJson(ctx) {
 		return result.Err(i18n.T("upload_requires_multipart"))
 	}
 

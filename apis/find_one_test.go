@@ -13,20 +13,20 @@ import (
 // Test Resources.
 type TestUserFindOneResource struct {
 	api.Resource
-	apis.FindOneAPI[TestUser, TestUserSearch]
+	apis.FindOneApi[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindOneResource() api.Resource {
 	return &TestUserFindOneResource{
 		Resource:   api.NewResource("test/user"),
-		FindOneAPI: apis.NewFindOneAPI[TestUser, TestUserSearch]().Public(),
+		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindOneResource struct {
 	api.Resource
-	apis.FindOneAPI[TestUser, TestUserSearch]
+	apis.FindOneApi[TestUser, TestUserSearch]
 }
 
 type ProcessedUser struct {
@@ -38,7 +38,7 @@ type ProcessedUser struct {
 func NewProcessedUserFindOneResource() api.Resource {
 	return &ProcessedUserFindOneResource{
 		Resource: api.NewResource("test/user_processed"),
-		FindOneAPI: apis.NewFindOneAPI[TestUser, TestUserSearch]().
+		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
 			Public().
 			Processor(func(user TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				return ProcessedUser{
@@ -52,13 +52,13 @@ func NewProcessedUserFindOneResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFineOneResource struct {
 	api.Resource
-	apis.FindOneAPI[TestUser, TestUserSearch]
+	apis.FindOneApi[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFineOneResource() api.Resource {
 	return &FilteredUserFineOneResource{
 		Resource: api.NewResource("test/user_filtered"),
-		FindOneAPI: apis.NewFindOneAPI[TestUser, TestUserSearch]().
+		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
 			Public().
 			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
 				return func(cb orm.ConditionBuilder) {
@@ -71,13 +71,13 @@ func NewFilteredUserFineOneResource() api.Resource {
 // Ordered User Resource - with order applier.
 type OrderedUserFindOneResource struct {
 	api.Resource
-	apis.FindOneAPI[TestUser, TestUserSearch]
+	apis.FindOneApi[TestUser, TestUserSearch]
 }
 
 func NewOrderedUserFindOneResource() api.Resource {
 	return &OrderedUserFindOneResource{
 		Resource: api.NewResource("test/user_ordered"),
-		FindOneAPI: apis.NewFindOneAPI[TestUser, TestUserSearch]().
+		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
 			Public().
 			SortApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[apis.Sorter] {
 				return func(s apis.Sorter) {
@@ -90,19 +90,19 @@ func NewOrderedUserFindOneResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindOneResource struct {
 	api.Resource
-	apis.FindOneAPI[TestUser, TestUserSearch]
+	apis.FindOneApi[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindOneResource() api.Resource {
 	return &AuditUserTestUserFindOneResource{
 		Resource: api.NewResource("test/user_audit"),
-		FindOneAPI: apis.NewFindOneAPI[TestUser, TestUserSearch]().
+		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
 			Public().
 			WithAuditUserNames((*TestAuditUser)(nil)),
 	}
 }
 
-// FindOneTestSuite is the test suite for FindOne API tests.
+// FindOneTestSuite is the test suite for FindOne Api tests.
 type FindOneTestSuite struct {
 	BaseSuite
 }
@@ -125,10 +125,10 @@ func (suite *FindOneTestSuite) TearDownSuite() {
 
 // TestFindOneBasic tests basic FindOne functionality.
 func (suite *FindOneTestSuite) TestFindOneBasic() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user",
-			Action:   "findOne",
+			Action:   "find_one",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -153,10 +153,10 @@ func (suite *FindOneTestSuite) TestFindOneBasic() {
 
 // TestFindOneNotFound tests FindOne when record doesn't exist.
 func (suite *FindOneTestSuite) TestFindOneNotFound() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user",
-			Action:   "findOne",
+			Action:   "find_one",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -174,10 +174,10 @@ func (suite *FindOneTestSuite) TestFindOneNotFound() {
 // TestFindOneWithSearchApplier tests FindOne with custom search conditions.
 func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 	suite.Run("SearchByKeyword", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -200,10 +200,10 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 	})
 
 	suite.Run("SearchByEmail", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -226,10 +226,10 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 	})
 
 	suite.Run("SearchByAgeRange", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -252,10 +252,10 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 	})
 
 	suite.Run("SearchByMultipleConditions", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -281,10 +281,10 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 
 // TestFindOneWithProcessor tests FindOne with post-processing.
 func (suite *FindOneTestSuite) TestFindOneWithProcessor() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_processed",
-			Action:   "findOne",
+			Action:   "find_one",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -309,10 +309,10 @@ func (suite *FindOneTestSuite) TestFindOneWithProcessor() {
 
 // TestFindOneWithFilterApplier tests FindOne with filter applier.
 func (suite *FindOneTestSuite) TestFindOneWithFilterApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_filtered",
-			Action:   "findOne",
+			Action:   "find_one",
 			Version:  "v1",
 		},
 	})
@@ -333,10 +333,10 @@ func (suite *FindOneTestSuite) TestFindOneWithFilterApplier() {
 
 // TestFindOneWithSortApplier tests FindOne with sort applier.
 func (suite *FindOneTestSuite) TestFindOneWithSortApplier() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_ordered",
-			Action:   "findOne",
+			Action:   "find_one",
 			Version:  "v1",
 		},
 	})
@@ -358,10 +358,10 @@ func (suite *FindOneTestSuite) TestFindOneWithSortApplier() {
 // TestFindOneNegativeCases tests negative scenarios.
 func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	suite.Run("InvalidResource", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/nonexistent",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 		})
@@ -370,7 +370,7 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("InvalidAction", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
 				Action:   "nonexistentAction",
@@ -382,10 +382,10 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("InvalidVersion", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v999",
 			},
 		})
@@ -394,10 +394,10 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("EmptySearchCriteria", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{},
@@ -410,10 +410,10 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("InvalidRangeValue", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -428,10 +428,10 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 	})
 
 	suite.Run("MultipleConditionsNoMatch", func() {
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user",
-				Action:   "findOne",
+				Action:   "find_one",
 				Version:  "v1",
 			},
 			Params: map[string]any{
@@ -449,10 +449,10 @@ func (suite *FindOneTestSuite) TestFindOneNegativeCases() {
 
 // TestFindOneWithAuditUserNames tests FindOne with audit user names populated.
 func (suite *FindOneTestSuite) TestFindOneWithAuditUserNames() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_audit",
-			Action:   "findOne",
+			Action:   "find_one",
 			Version:  "v1",
 		},
 		Params: map[string]any{

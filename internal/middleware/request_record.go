@@ -18,7 +18,7 @@ import (
 func NewRequestRecordMiddleware() app.Middleware {
 	handler := loggerMiddleware.New(loggerMiddleware.Config{
 		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, config loggerMiddleware.Config) error {
-			ip := webhelpers.GetIP(ctx)
+			ip := webhelpers.GetIp(ctx)
 			latency := data.Stop.Sub(data.Start)
 
 			logger := contextx.Logger(ctx)

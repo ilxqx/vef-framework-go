@@ -25,21 +25,21 @@ func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
 		// TODO: There seem to be some bugs here.
 		Max: 20,
 		MaxFunc: func(ctx fiber.Ctx) int {
-			request := contextx.APIRequest(ctx)
+			request := contextx.ApiRequest(ctx)
 			definition := manager.Lookup(request.Identifier)
 
 			return lo.Ternary(definition.HasRateLimit(), definition.Limit.Max, 20)
 		},
 		Expiration: 2 * time.Minute,
 		// ExpirationFunc: func(ctx fiber.Ctx) time.Duration {
-		// 	request := contextx.APIRequest(ctx)
+		// 	request := contextx.ApiRequest(ctx)
 		// 	definition := manager.Lookup(request.Identifier)
 		// 	return lo.Ternary(definition.HasRateLimit(), definition.RateExpiration, 30*time.Second)
 		// },
 		SkipFailedRequests:     false,
 		SkipSuccessfulRequests: false,
 		KeyGenerator: func(ctx fiber.Ctx) string {
-			request := contextx.APIRequest(ctx)
+			request := contextx.ApiRequest(ctx)
 
 			var sb strings.Builder
 
@@ -49,7 +49,7 @@ func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
 			_ = sb.WriteByte(constants.ByteColon)
 			_, _ = sb.WriteString(request.Action)
 			_ = sb.WriteByte(constants.ByteColon)
-			_, _ = sb.WriteString(webhelpers.GetIP(ctx))
+			_, _ = sb.WriteString(webhelpers.GetIp(ctx))
 			_ = sb.WriteByte(constants.ByteColon)
 
 			principal := contextx.Principal(ctx)

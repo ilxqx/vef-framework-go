@@ -15,23 +15,23 @@ const (
 	AuthTypeRefresh = "refresh"
 )
 
-type JWTRefreshAuthenticator struct {
-	jwt        *security.JWT
+type JwtRefreshAuthenticator struct {
+	jwt        *security.Jwt
 	userLoader security.UserLoader
 }
 
-func NewJWTRefreshAuthenticator(jwt *security.JWT, userLoader security.UserLoader) security.Authenticator {
-	return &JWTRefreshAuthenticator{
+func NewJwtRefreshAuthenticator(jwt *security.Jwt, userLoader security.UserLoader) security.Authenticator {
+	return &JwtRefreshAuthenticator{
 		jwt:        jwt,
 		userLoader: userLoader,
 	}
 }
 
-func (j *JWTRefreshAuthenticator) Supports(authType string) bool {
+func (j *JwtRefreshAuthenticator) Supports(authType string) bool {
 	return authType == AuthTypeRefresh
 }
 
-func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
+func (j *JwtRefreshAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if j.userLoader == nil {
 		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("user_loader_not_implemented"))
 	}
@@ -44,10 +44,10 @@ func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 		)
 	}
 
-	// Parse the JWT refresh token
+	// Parse the Jwt refresh token
 	claimsAccessor, err := j.jwt.Parse(token)
 	if err != nil {
-		logger.Warnf("JWT refresh token validation failed: %v", err)
+		logger.Warnf("Jwt refresh token validation failed: %v", err)
 
 		return nil, err
 	}
@@ -66,13 +66,13 @@ func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 	// Reload the latest user data by ID to ensure current user state (permissions, status, etc.)
 	principal, err := j.userLoader.LoadById(ctx, userId)
 	if err != nil {
-		logger.Warnf("Failed to reload user by Id '%s': %v", userId, err)
+		logger.Warnf("Failed to reload user by Id %q: %v", userId, err)
 
 		return nil, err
 	}
 
 	if principal == nil {
-		logger.Warnf("User not found by Id '%s'", userId)
+		logger.Warnf("User not found by Id %q", userId)
 
 		return nil, result.ErrWithCode(result.ErrCodeRecordNotFound, i18n.T("record_not_found"))
 	}

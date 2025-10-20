@@ -55,7 +55,7 @@ func (a *RequestScopedDataPermApplier) Apply(query orm.SelectQuery) error {
 	// Check if the data scope supports this table
 	if !a.dataScope.Supports(a.principal, table) {
 		a.logger.Debugf(
-			"Data scope '%s' is not applicable to table '%s', skipping data permission",
+			"Data scope %q is not applicable to table %q, skipping data permission",
 			a.dataScope.Key(), table.TypeName)
 
 		return nil
@@ -63,10 +63,10 @@ func (a *RequestScopedDataPermApplier) Apply(query orm.SelectQuery) error {
 
 	// Apply the data scope
 	if err := a.dataScope.Apply(a.principal, query); err != nil {
-		return fmt.Errorf("failed to apply data scope '%s': %w", a.dataScope.Key(), err)
+		return fmt.Errorf("failed to apply data scope %q: %w", a.dataScope.Key(), err)
 	}
 
-	a.logger.Debugf("Applied data scope '%s' to table '%s'", a.dataScope.Key(), table.TypeName)
+	a.logger.Debugf("Applied data scope %q to table %q", a.dataScope.Key(), table.TypeName)
 
 	return nil
 }

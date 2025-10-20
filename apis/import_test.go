@@ -39,25 +39,25 @@ type ImportUserSearch struct {
 
 type TestUserImportResource struct {
 	api.Resource
-	apis.ImportAPI[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser, ImportUserSearch]
 }
 
 func NewTestUserImportResource() api.Resource {
 	return &TestUserImportResource{
 		Resource:  api.NewResource("test/user_import"),
-		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().Public(),
+		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().Public(),
 	}
 }
 
 type TestUserImportWithOptionsResource struct {
 	api.Resource
-	apis.ImportAPI[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser, ImportUserSearch]
 }
 
 func NewTestUserImportWithOptionsResource() api.Resource {
 	return &TestUserImportWithOptionsResource{
 		Resource: api.NewResource("test/user_import_opts"),
-		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
 			Public().
 			ExcelOptions(excel.WithImportSheetName("用户列表")),
 	}
@@ -65,13 +65,13 @@ func NewTestUserImportWithOptionsResource() api.Resource {
 
 type TestUserImportWithPreProcessorResource struct {
 	api.Resource
-	apis.ImportAPI[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser, ImportUserSearch]
 }
 
 func NewTestUserImportWithPreProcessorResource() api.Resource {
 	return &TestUserImportWithPreProcessorResource{
 		Resource: api.NewResource("test/user_import_preproc"),
-		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
 			Public().
 			PreImport(func(models []ImportUser, search ImportUserSearch, ctx fiber.Ctx, db orm.Db) error {
 				// Pre-process all models - change inactive to pending
@@ -88,13 +88,13 @@ func NewTestUserImportWithPreProcessorResource() api.Resource {
 
 type TestUserImportWithPostProcessorResource struct {
 	api.Resource
-	apis.ImportAPI[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser, ImportUserSearch]
 }
 
 func NewTestUserImportWithPostProcessorResource() api.Resource {
 	return &TestUserImportWithPostProcessorResource{
 		Resource: api.NewResource("test/user_import_postproc"),
-		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
 			Public().
 			PostImport(func(models []ImportUser, search ImportUserSearch, ctx fiber.Ctx, db orm.Db) error {
 				// Set custom header with count
@@ -107,13 +107,13 @@ func NewTestUserImportWithPostProcessorResource() api.Resource {
 
 type TestUserImportCSVResource struct {
 	api.Resource
-	apis.ImportAPI[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser, ImportUserSearch]
 }
 
 func NewTestUserImportCSVResource() api.Resource {
 	return &TestUserImportCSVResource{
 		Resource: api.NewResource("test/user_import_csv"),
-		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
 			Public().
 			Format(apis.FormatCSV),
 	}
@@ -121,20 +121,20 @@ func NewTestUserImportCSVResource() api.Resource {
 
 type TestUserImportCSVWithOptionsResource struct {
 	api.Resource
-	apis.ImportAPI[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser, ImportUserSearch]
 }
 
 func NewTestUserImportCSVWithOptionsResource() api.Resource {
 	return &TestUserImportCSVWithOptionsResource{
 		Resource: api.NewResource("test/user_import_csv_opts"),
-		ImportAPI: apis.NewImportAPI[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
 			Public().
 			Format(apis.FormatCSV).
 			CSVOptions(csv.WithImportDelimiter(';')),
 	}
 }
 
-// ImportTestSuite is the test suite for Import API tests.
+// ImportTestSuite is the test suite for Import Api tests.
 type ImportTestSuite struct {
 	BaseSuite
 }
@@ -171,7 +171,7 @@ func (suite *ImportTestSuite) TestImportBasic() {
 	suite.NoError(err)
 
 	// Create multipart request
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -203,7 +203,7 @@ func (suite *ImportTestSuite) TestImportWithValidationErrors() {
 	suite.NoError(err)
 
 	// Import should detect validation errors
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -233,7 +233,7 @@ func (suite *ImportTestSuite) TestImportWithMissingRequiredFields() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err)
 
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -261,7 +261,7 @@ func (suite *ImportTestSuite) TestImportWithPreProcessor() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err)
 
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_preproc",
 			Action:   "import",
@@ -290,7 +290,7 @@ func (suite *ImportTestSuite) TestImportWithPostProcessor() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err)
 
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_postproc",
 			Action:   "import",
@@ -317,7 +317,7 @@ func (suite *ImportTestSuite) TestImportEmptyFile() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err)
 
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -354,7 +354,7 @@ func (suite *ImportTestSuite) TestImportLargeFile() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err)
 
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -373,7 +373,7 @@ func (suite *ImportTestSuite) TestImportLargeFile() {
 func (suite *ImportTestSuite) TestImportNegativeCases() {
 	suite.Run("MissingFile", func() {
 		// Try to import without providing a file
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -388,7 +388,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 
 	suite.Run("InvalidFileFormat", func() {
 		// Try to import a non-Excel file
-		resp := suite.makeMultipartAPIRequest(api.Request{
+		resp := suite.makeMultipartApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -408,7 +408,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 
 	suite.Run("JSONRequest", func() {
 		// Import requires multipart/form-data, not JSON
-		resp := suite.makeAPIRequest(api.Request{
+		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -433,7 +433,7 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 		// Try to import corrupted Excel file
 		corruptedData := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10} // Invalid Excel data
 
-		resp := suite.makeMultipartAPIRequest(api.Request{
+		resp := suite.makeMultipartApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_import",
 				Action:   "import",
@@ -467,7 +467,7 @@ func (suite *ImportTestSuite) TestImportCSVBasic() {
 	suite.NoError(err)
 
 	// Create multipart request
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_csv",
 			Action:   "import",
@@ -499,7 +499,7 @@ func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
 	suite.NoError(err)
 
 	// Import should detect validation errors
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_csv",
 			Action:   "import",
@@ -529,7 +529,7 @@ func (suite *ImportTestSuite) TestImportCSVWithOptions() {
 	buf, err := exporter.Export(testUsers)
 	suite.NoError(err)
 
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import_csv_opts",
 			Action:   "import",
@@ -556,7 +556,7 @@ func (suite *ImportTestSuite) TestImportFormatOverride() {
 	suite.NoError(err)
 
 	// Use Excel endpoint but override format to CSV via parameter
-	resp := suite.makeMultipartAPIRequest(api.Request{
+	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_import",
 			Action:   "import",
@@ -576,12 +576,12 @@ func (suite *ImportTestSuite) TestImportFormatOverride() {
 }
 
 // Helper method for multipart requests.
-func (suite *ImportTestSuite) makeMultipartAPIRequest(req api.Request, filename string, fileContent []byte) *http.Response {
+func (suite *ImportTestSuite) makeMultipartApiRequest(req api.Request, filename string, fileContent []byte) *http.Response {
 	var buf bytes.Buffer
 
 	writer := multipart.NewWriter(&buf)
 
-	// Add API request fields
+	// Add Api request fields
 	_ = writer.WriteField("resource", req.Resource)
 	_ = writer.WriteField("action", req.Action)
 	_ = writer.WriteField("version", req.Version)

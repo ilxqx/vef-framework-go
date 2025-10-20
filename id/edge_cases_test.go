@@ -13,7 +13,7 @@ import (
 // Test edge cases and error conditions
 
 func TestSnowflakeEdgeCases(t *testing.T) {
-	t.Run("should handle maximum node ID", func(t *testing.T) {
+	t.Run("Should handle maximum node ID", func(t *testing.T) {
 		// Maximum node ID for 6-bit node field is 63 (2^6 - 1)
 		generator, err := NewSnowflakeIdGenerator(63)
 		require.NoError(t, err)
@@ -22,20 +22,20 @@ func TestSnowflakeEdgeCases(t *testing.T) {
 		assert.NotEmpty(t, id, "Max node ID should generate valid IDs")
 	})
 
-	t.Run("should fail with node ID exceeding maximum", func(t *testing.T) {
+	t.Run("Should fail with node ID exceeding maximum", func(t *testing.T) {
 		// Node ID 64 should fail (exceeds 6-bit limit)
 		_, err := NewSnowflakeIdGenerator(64)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create snowflake node")
 	})
 
-	t.Run("should fail with negative node ID", func(t *testing.T) {
+	t.Run("Should fail with negative node ID", func(t *testing.T) {
 		_, err := NewSnowflakeIdGenerator(-1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create snowflake node")
 	})
 
-	t.Run("should handle rapid sequence generation", func(t *testing.T) {
+	t.Run("Should handle rapid sequence generation", func(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
@@ -53,7 +53,7 @@ func TestSnowflakeEdgeCases(t *testing.T) {
 }
 
 func TestRandomIdGeneratorEdgeCases(t *testing.T) {
-	t.Run("should handle empty alphabet", func(t *testing.T) {
+	t.Run("Should handle empty alphabet", func(t *testing.T) {
 		// This should panic when trying to generate, which is expected behavior
 		// for invalid input
 		generator := NewRandomIdGenerator("", 10)
@@ -65,7 +65,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 		}, "Empty alphabet should panic when generating")
 	})
 
-	t.Run("should handle zero length", func(t *testing.T) {
+	t.Run("Should handle zero length", func(t *testing.T) {
 		generator := NewRandomIdGenerator("abc", 0)
 
 		// nanoid panics with zero length, which is expected behavior
@@ -74,13 +74,13 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 		}, "Zero length should panic with nanoid")
 	})
 
-	t.Run("should handle single character alphabet", func(t *testing.T) {
+	t.Run("Should handle single character alphabet", func(t *testing.T) {
 		generator := NewRandomIdGenerator("X", 10)
 		id := generator.Generate()
 		assert.Equal(t, "XXXXXXXXXX", id, "Single character alphabet should repeat character")
 	})
 
-	t.Run("should handle very long IDs", func(t *testing.T) {
+	t.Run("Should handle very long IDs", func(t *testing.T) {
 		generator := NewRandomIdGenerator("0123456789", 1000)
 		id := generator.Generate()
 		assert.Len(t, id, 1000, "Should handle very long ID generation")
@@ -91,7 +91,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 		}
 	})
 
-	t.Run("should handle unicode characters", func(t *testing.T) {
+	t.Run("Should handle unicode characters", func(t *testing.T) {
 		generator := NewRandomIdGenerator("αβγδε", 5)
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Should handle unicode alphabet")
@@ -106,7 +106,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 }
 
 func TestUuidEdgeCases(t *testing.T) {
-	t.Run("should handle rapid generation without collision", func(t *testing.T) {
+	t.Run("Should handle rapid generation without collision", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 		uuids := make(map[string]bool)
 
@@ -120,7 +120,7 @@ func TestUuidEdgeCases(t *testing.T) {
 		assert.Len(t, uuids, 100000, "All rapid UUIDs should be unique")
 	})
 
-	t.Run("should maintain version and variant bits under load", func(t *testing.T) {
+	t.Run("Should maintain version and variant bits under load", func(t *testing.T) {
 		generator := NewUuidIdGenerator()
 
 		for range 1000 {
@@ -138,7 +138,7 @@ func TestUuidEdgeCases(t *testing.T) {
 }
 
 func TestXidEdgeCases(t *testing.T) {
-	t.Run("should handle concurrent generation from multiple generators", func(t *testing.T) {
+	t.Run("Should handle concurrent generation from multiple generators", func(t *testing.T) {
 		const (
 			numGenerators   = 10
 			idsPerGenerator = 1000
@@ -168,7 +168,7 @@ func TestXidEdgeCases(t *testing.T) {
 		assert.Len(t, ids, numGenerators*idsPerGenerator, "All IDs from multiple generators should be unique")
 	})
 
-	t.Run("should maintain format consistency", func(t *testing.T) {
+	t.Run("Should maintain format consistency", func(t *testing.T) {
 		generator := NewXidIdGenerator()
 
 		for range 1000 {
@@ -186,7 +186,7 @@ func TestXidEdgeCases(t *testing.T) {
 }
 
 func TestEnvironmentVariables(t *testing.T) {
-	t.Run("should handle invalid NODE_ID environment variable", func(t *testing.T) {
+	t.Run("Should handle invalid NODE_ID environment variable", func(t *testing.T) {
 		// This test verifies that invalid NODE_ID causes panic during init
 		// Since init already ran, we can't test this directly in the same process
 
@@ -209,7 +209,7 @@ func TestEnvironmentVariables(t *testing.T) {
 }
 
 func TestInterfaceCompliance(t *testing.T) {
-	t.Run("all generators should implement IdGenerator interface", func(t *testing.T) {
+	t.Run("All generators should implement IdGenerator interface", func(t *testing.T) {
 		generators := []IdGenerator{
 			NewXidIdGenerator(),
 			NewUuidIdGenerator(),
@@ -227,7 +227,7 @@ func TestInterfaceCompliance(t *testing.T) {
 		}
 	})
 
-	t.Run("snowflake generator from constructor should implement interface", func(t *testing.T) {
+	t.Run("Snowflake generator from constructor should implement interface", func(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
@@ -239,7 +239,7 @@ func TestInterfaceCompliance(t *testing.T) {
 }
 
 func TestMemoryUsage(t *testing.T) {
-	t.Run("generators should not leak memory", func(t *testing.T) {
+	t.Run("Generators should not leak memory", func(t *testing.T) {
 		// Create and discard many generators to test for memory leaks
 		for i := range 1000 {
 			_ = NewXidIdGenerator()
@@ -260,7 +260,7 @@ func TestMemoryUsage(t *testing.T) {
 }
 
 func TestStringManipulation(t *testing.T) {
-	t.Run("generated IDs should be safe for common string operations", func(t *testing.T) {
+	t.Run("Generated IDs should be safe for common string operations", func(t *testing.T) {
 		generators := []IdGenerator{
 			DefaultXidIdGenerator,
 			DefaultUuidIdGenerator,

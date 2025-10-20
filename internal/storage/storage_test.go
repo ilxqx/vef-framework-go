@@ -48,7 +48,7 @@ func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.testBucketName = testhelpers.TestMinioBucket
 	suite.testObjectKey = "test-upload.txt"
-	suite.testObjectData = []byte("Hello, Storage API Test!")
+	suite.testObjectData = []byte("Hello, Storage Api Test!")
 	suite.testContentType = "text/plain"
 
 	// Start MinIO container
@@ -104,7 +104,7 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 
 // Helper methods
 
-func (suite *StorageResourceTestSuite) makeAPIRequest(body api.Request) *http.Response {
+func (suite *StorageResourceTestSuite) makeApiRequest(body api.Request) *http.Response {
 	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err)
 
@@ -167,7 +167,7 @@ func (suite *StorageResourceTestSuite) readDataAsMap(data any) map[string]any {
 // Test Cases
 
 func (suite *StorageResourceTestSuite) TestUploadSuccess() {
-	uploadData := []byte("Uploaded via API")
+	uploadData := []byte("Uploaded via Api")
 
 	params := map[string]string{
 		"resource": "base/storage",
@@ -236,7 +236,7 @@ func (suite *StorageResourceTestSuite) TestUploadMissingFile() {
 
 func (suite *StorageResourceTestSuite) TestUploadWithJSON() {
 	// Upload requires multipart form, should fail with JSON
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
 			Action:   "upload",
@@ -254,10 +254,10 @@ func (suite *StorageResourceTestSuite) TestUploadWithJSON() {
 }
 
 func (suite *StorageResourceTestSuite) TestGetPresignedUrlForDownload() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
-			Action:   "getPresignedUrl",
+			Action:   "get_presigned_url",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -295,10 +295,10 @@ func (suite *StorageResourceTestSuite) TestGetPresignedUrlForDownload() {
 }
 
 func (suite *StorageResourceTestSuite) TestGetPresignedUrlForUpload() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
-			Action:   "getPresignedUrl",
+			Action:   "get_presigned_url",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -333,10 +333,10 @@ func (suite *StorageResourceTestSuite) TestGetPresignedUrlForUpload() {
 }
 
 func (suite *StorageResourceTestSuite) TestGetPresignedUrlDefaultExpires() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
-			Action:   "getPresignedUrl",
+			Action:   "get_presigned_url",
 			Version:  "v1",
 		},
 		Params: map[string]any{
@@ -356,7 +356,7 @@ func (suite *StorageResourceTestSuite) TestGetPresignedUrlDefaultExpires() {
 }
 
 func (suite *StorageResourceTestSuite) TestStatObjectSuccess() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
 			Action:   "stat",
@@ -383,7 +383,7 @@ func (suite *StorageResourceTestSuite) TestStatObjectSuccess() {
 }
 
 func (suite *StorageResourceTestSuite) TestStatObjectNotFound() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
 			Action:   "stat",
@@ -420,7 +420,7 @@ func (suite *StorageResourceTestSuite) TestListObjectsSuccess() {
 	}
 
 	// List all objects
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
 			Action:   "list",
@@ -463,7 +463,7 @@ func (suite *StorageResourceTestSuite) TestListObjectsWithPrefix() {
 	}
 
 	// List with prefix
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
 			Action:   "list",
@@ -493,7 +493,7 @@ func (suite *StorageResourceTestSuite) TestListObjectsWithPrefix() {
 }
 
 func (suite *StorageResourceTestSuite) TestListObjectsWithMaxKeys() {
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
 			Action:   "list",
@@ -584,10 +584,10 @@ func (suite *StorageResourceTestSuite) TestGetPresignedUrlExpiration() {
 	// Test with custom expiration
 	customExpires := 7200 // 2 hours
 
-	resp := suite.makeAPIRequest(api.Request{
+	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "base/storage",
-			Action:   "getPresignedUrl",
+			Action:   "get_presigned_url",
 			Version:  "v1",
 		},
 		Params: map[string]any{

@@ -6,7 +6,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 )
 
-// The Result is a struct that represents a result of an API call.
+// The Result is a struct that represents a result of an Api call.
 type Result struct {
 	Code    int    `json:"code"`    // Code is the response code
 	Message string `json:"message"` // Message is the response message

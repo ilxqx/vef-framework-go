@@ -88,31 +88,31 @@ func TestIndirect(t *testing.T) {
 }
 
 func TestIsSimilarType(t *testing.T) {
-	t.Run("identical types", func(t *testing.T) {
+	t.Run("Identical types", func(t *testing.T) {
 		t1 := reflect.TypeOf(int(0))
 		t2 := reflect.TypeOf(int(0))
 		assert.True(t, IsSimilarType(t1, t2))
 	})
 
-	t.Run("different basic types", func(t *testing.T) {
+	t.Run("Different basic types", func(t *testing.T) {
 		t1 := reflect.TypeOf(int(0))
 		t2 := reflect.TypeOf(string(""))
 		assert.False(t, IsSimilarType(t1, t2))
 	})
 
-	t.Run("generic types with same base", func(t *testing.T) {
+	t.Run("Generic types with same base", func(t *testing.T) {
 		t1 := reflect.TypeOf(GenericStruct[int]{})
 		t2 := reflect.TypeOf(GenericStruct[string]{})
 		assert.True(t, IsSimilarType(t1, t2))
 	})
 
-	t.Run("different package path", func(t *testing.T) {
+	t.Run("Different package path", func(t *testing.T) {
 		t1 := reflect.TypeOf(BaseStruct{})
 		t2 := reflect.TypeOf(reflect.Value{})
 		assert.False(t, IsSimilarType(t1, t2))
 	})
 
-	t.Run("non-generic types", func(t *testing.T) {
+	t.Run("Non-generic types", func(t *testing.T) {
 		t1 := reflect.TypeOf(BaseStruct{})
 		t2 := reflect.TypeOf(EmbeddedStruct{})
 		assert.False(t, IsSimilarType(t1, t2))
@@ -120,14 +120,14 @@ func TestIsSimilarType(t *testing.T) {
 }
 
 func TestApplyIfString(t *testing.T) {
-	t.Run("string value", func(t *testing.T) {
+	t.Run("String value", func(t *testing.T) {
 		result := ApplyIfString("hello", func(s string) int {
 			return len(s)
 		})
 		assert.Equal(t, 5, result)
 	})
 
-	t.Run("reflect.Value string", func(t *testing.T) {
+	t.Run("Reflect.Value string", func(t *testing.T) {
 		rv := reflect.ValueOf("world")
 		result := ApplyIfString(rv, func(s string) int {
 			return len(s)
@@ -135,7 +135,7 @@ func TestApplyIfString(t *testing.T) {
 		assert.Equal(t, 5, result)
 	})
 
-	t.Run("pointer to string", func(t *testing.T) {
+	t.Run("Pointer to string", func(t *testing.T) {
 		str := "test"
 		result := ApplyIfString(&str, func(s string) int {
 			return len(s)
@@ -143,21 +143,21 @@ func TestApplyIfString(t *testing.T) {
 		assert.Equal(t, 4, result)
 	})
 
-	t.Run("non-string value with default", func(t *testing.T) {
+	t.Run("Non-string value with default", func(t *testing.T) {
 		result := ApplyIfString(123, func(s string) int {
 			return len(s)
 		}, 999)
 		assert.Equal(t, 999, result)
 	})
 
-	t.Run("non-string value without default", func(t *testing.T) {
+	t.Run("Non-string value without default", func(t *testing.T) {
 		result := ApplyIfString(123, func(s string) int {
 			return len(s)
 		})
 		assert.Equal(t, 0, result) // empty value for int
 	})
 
-	t.Run("nil pointer", func(t *testing.T) {
+	t.Run("Nil pointer", func(t *testing.T) {
 		var str *string
 
 		result := ApplyIfString(str, func(s string) int {
@@ -168,7 +168,7 @@ func TestApplyIfString(t *testing.T) {
 }
 
 func TestFindMethod(t *testing.T) {
-	t.Run("direct method on value", func(t *testing.T) {
+	t.Run("Direct method on value", func(t *testing.T) {
 		base := BaseStruct{Value: "test"}
 		rv := reflect.ValueOf(base)
 
@@ -179,7 +179,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "base method", result[0].String())
 	})
 
-	t.Run("pointer receiver method", func(t *testing.T) {
+	t.Run("Pointer receiver method", func(t *testing.T) {
 		base := BaseStruct{Value: "test"}
 		rv := reflect.ValueOf(base)
 
@@ -190,7 +190,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "base pointer method", result[0].String())
 	})
 
-	t.Run("promoted method from embedded struct", func(t *testing.T) {
+	t.Run("Promoted method from embedded struct", func(t *testing.T) {
 		embedded := EmbeddedStruct{
 			BaseStruct: BaseStruct{Value: "test"},
 			Name:       "embedded",
@@ -205,7 +205,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "base method", result[0].String())
 	})
 
-	t.Run("promoted pointer method from embedded struct", func(t *testing.T) {
+	t.Run("Promoted pointer method from embedded struct", func(t *testing.T) {
 		embedded := EmbeddedStruct{
 			BaseStruct: BaseStruct{Value: "test"},
 			Name:       "embedded",
@@ -220,7 +220,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "base pointer method", result[0].String())
 	})
 
-	t.Run("method on embedded struct", func(t *testing.T) {
+	t.Run("Method on embedded struct", func(t *testing.T) {
 		embedded := EmbeddedStruct{
 			BaseStruct: BaseStruct{Value: "test"},
 			Name:       "embedded",
@@ -234,7 +234,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "embedded method", result[0].String())
 	})
 
-	t.Run("nested embedded struct methods", func(t *testing.T) {
+	t.Run("Nested embedded struct methods", func(t *testing.T) {
 		nested := NestedStruct{
 			EmbeddedStruct: EmbeddedStruct{
 				BaseStruct: BaseStruct{Value: "test"},
@@ -252,7 +252,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "base method", result[0].String())
 	})
 
-	t.Run("pointer receiver method on nested struct", func(t *testing.T) {
+	t.Run("Pointer receiver method on nested struct", func(t *testing.T) {
 		nested := NestedStruct{
 			EmbeddedStruct: EmbeddedStruct{
 				BaseStruct: BaseStruct{Value: "test"},
@@ -269,7 +269,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "nested pointer method", result[0].String())
 	})
 
-	t.Run("method with pointer value", func(t *testing.T) {
+	t.Run("Method with pointer value", func(t *testing.T) {
 		base := &BaseStruct{Value: "test"}
 		rv := reflect.ValueOf(base)
 
@@ -280,7 +280,7 @@ func TestFindMethod(t *testing.T) {
 		assert.Equal(t, "base method", result[0].String())
 	})
 
-	t.Run("non-existent method", func(t *testing.T) {
+	t.Run("Non-existent method", func(t *testing.T) {
 		base := BaseStruct{Value: "test"}
 		rv := reflect.ValueOf(base)
 
@@ -288,14 +288,14 @@ func TestFindMethod(t *testing.T) {
 		assert.False(t, method.IsValid())
 	})
 
-	t.Run("method on non-struct type", func(t *testing.T) {
+	t.Run("Method on non-struct type", func(t *testing.T) {
 		rv := reflect.ValueOf(42)
 
 		method := FindMethod(rv, "SomeMethod")
 		assert.False(t, method.IsValid())
 	})
 
-	t.Run("method on non-addressable value", func(t *testing.T) {
+	t.Run("Method on non-addressable value", func(t *testing.T) {
 		getValue := func() BaseStruct {
 			return BaseStruct{Value: "test"}
 		}
@@ -361,12 +361,12 @@ type AnotherStruct struct {
 }
 
 func TestIsTypeCompatible(t *testing.T) {
-	t.Run("exact type match", func(t *testing.T) {
+	t.Run("Exact type match", func(t *testing.T) {
 		stringType := reflect.TypeOf("")
 		assert.True(t, IsTypeCompatible(stringType, stringType))
 	})
 
-	t.Run("assignable types", func(t *testing.T) {
+	t.Run("Assignable types", func(t *testing.T) {
 		intType := reflect.TypeOf(int(0))
 		int32Type := reflect.TypeOf(int32(0))
 
@@ -377,7 +377,7 @@ func TestIsTypeCompatible(t *testing.T) {
 		assert.True(t, IsTypeCompatible(intType, intType))
 	})
 
-	t.Run("interface implementation", func(t *testing.T) {
+	t.Run("Interface implementation", func(t *testing.T) {
 		testStructType := reflect.TypeOf(TestStruct{})
 		testInterfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
 
@@ -389,7 +389,7 @@ func TestIsTypeCompatible(t *testing.T) {
 		assert.False(t, IsTypeCompatible(anotherStructType, testInterfaceType))
 	})
 
-	t.Run("pointer to pointer compatibility", func(t *testing.T) {
+	t.Run("Pointer to pointer compatibility", func(t *testing.T) {
 		stringPtrType := reflect.TypeOf((*string)(nil))
 		stringPtrType2 := reflect.TypeOf((*string)(nil))
 		intPtrType := reflect.TypeOf((*int)(nil))
@@ -401,7 +401,7 @@ func TestIsTypeCompatible(t *testing.T) {
 		assert.False(t, IsTypeCompatible(stringPtrType, intPtrType))
 	})
 
-	t.Run("value to pointer compatibility", func(t *testing.T) {
+	t.Run("Value to pointer compatibility", func(t *testing.T) {
 		stringType := reflect.TypeOf("")
 		stringPtrType := reflect.TypeOf((*string)(nil))
 		intType := reflect.TypeOf(int(0))
@@ -413,7 +413,7 @@ func TestIsTypeCompatible(t *testing.T) {
 		assert.False(t, IsTypeCompatible(intType, stringPtrType))
 	})
 
-	t.Run("pointer to value compatibility", func(t *testing.T) {
+	t.Run("Pointer to value compatibility", func(t *testing.T) {
 		stringType := reflect.TypeOf("")
 		stringPtrType := reflect.TypeOf((*string)(nil))
 		intPtrType := reflect.TypeOf((*int)(nil))
@@ -425,7 +425,7 @@ func TestIsTypeCompatible(t *testing.T) {
 		assert.False(t, IsTypeCompatible(intPtrType, stringType))
 	})
 
-	t.Run("interface pointer compatibility", func(t *testing.T) {
+	t.Run("Interface pointer compatibility", func(t *testing.T) {
 		testStructPtrType := reflect.TypeOf((*TestStruct)(nil))
 		testInterfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
 
@@ -435,7 +435,7 @@ func TestIsTypeCompatible(t *testing.T) {
 }
 
 func TestConvertValue(t *testing.T) {
-	t.Run("same types - no conversion needed", func(t *testing.T) {
+	t.Run("Same types - no conversion needed", func(t *testing.T) {
 		original := reflect.ValueOf("hello")
 		result, err := ConvertValue(original, reflect.TypeOf(""))
 
@@ -443,7 +443,7 @@ func TestConvertValue(t *testing.T) {
 		assert.Equal(t, "hello", result.String())
 	})
 
-	t.Run("pointer to value conversion", func(t *testing.T) {
+	t.Run("Pointer to value conversion", func(t *testing.T) {
 		str := "test"
 		ptrValue := reflect.ValueOf(&str)
 		stringType := reflect.TypeOf("")
@@ -454,7 +454,7 @@ func TestConvertValue(t *testing.T) {
 		assert.Equal(t, "test", result.String())
 	})
 
-	t.Run("nil pointer to value conversion", func(t *testing.T) {
+	t.Run("Nil pointer to value conversion", func(t *testing.T) {
 		var str *string
 
 		ptrValue := reflect.ValueOf(str)
@@ -466,7 +466,7 @@ func TestConvertValue(t *testing.T) {
 		assert.Equal(t, "", result.String()) // zero value
 	})
 
-	t.Run("value to pointer conversion", func(t *testing.T) {
+	t.Run("Value to pointer conversion", func(t *testing.T) {
 		original := reflect.ValueOf("hello")
 		stringPtrType := reflect.TypeOf((*string)(nil))
 
@@ -477,7 +477,7 @@ func TestConvertValue(t *testing.T) {
 		assert.Equal(t, "hello", result.Elem().String())
 	})
 
-	t.Run("pointer to pointer conversion", func(t *testing.T) {
+	t.Run("Pointer to pointer conversion", func(t *testing.T) {
 		str := "test"
 		ptrValue := reflect.ValueOf(&str)
 		stringPtrType := reflect.TypeOf((*string)(nil))
@@ -489,7 +489,7 @@ func TestConvertValue(t *testing.T) {
 		assert.Equal(t, "test", result.Elem().String())
 	})
 
-	t.Run("nil pointer to pointer conversion", func(t *testing.T) {
+	t.Run("Nil pointer to pointer conversion", func(t *testing.T) {
 		var str *string
 
 		ptrValue := reflect.ValueOf(str)
@@ -501,7 +501,7 @@ func TestConvertValue(t *testing.T) {
 		assert.True(t, result.IsZero()) // nil pointer
 	})
 
-	t.Run("interface implementation conversion", func(t *testing.T) {
+	t.Run("Interface implementation conversion", func(t *testing.T) {
 		testStruct := TestStruct{Value: "interface test"}
 		original := reflect.ValueOf(testStruct)
 		interfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
@@ -514,7 +514,7 @@ func TestConvertValue(t *testing.T) {
 		assert.Equal(t, "interface test", testInterface.TestMethod())
 	})
 
-	t.Run("incompatible type conversion", func(t *testing.T) {
+	t.Run("Incompatible type conversion", func(t *testing.T) {
 		intValue := reflect.ValueOf(42)
 		stringType := reflect.TypeOf("")
 
@@ -524,7 +524,7 @@ func TestConvertValue(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot convert source type")
 	})
 
-	t.Run("struct conversion", func(t *testing.T) {
+	t.Run("Struct conversion", func(t *testing.T) {
 		testStruct := TestStruct{Value: "test"}
 		original := reflect.ValueOf(testStruct)
 		testStructType := reflect.TypeOf(TestStruct{})

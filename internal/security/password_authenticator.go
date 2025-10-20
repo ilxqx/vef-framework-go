@@ -61,7 +61,7 @@ func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication
 	if p.decryptor != nil {
 		plaintextPassword, err := p.decryptor.Decrypt(password)
 		if err != nil {
-			logger.Errorf("failed to decrypt password for principal '%s': %v", username, err)
+			logger.Errorf("failed to decrypt password for principal %q: %v", username, err)
 
 			return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
 		}
@@ -73,9 +73,9 @@ func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication
 	principal, passwordHash, err := p.loader.LoadByUsername(ctx, username)
 	if err != nil {
 		if result.IsErrRecordNotFound(err) {
-			logger.Infof("user loader returned record not found for username '%s'", username)
+			logger.Infof("user loader returned record not found for username %q", username)
 		} else {
-			logger.Warnf("failed to load user by username '%s': %v", username, err)
+			logger.Warnf("failed to load user by username %q: %v", username, err)
 		}
 
 		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
@@ -90,7 +90,7 @@ func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication
 		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
 	}
 
-	logger.Infof("Password authentication successful for principal '%s'", principal.Id)
+	logger.Infof("Password authentication successful for principal %q", principal.Id)
 
 	return principal, nil
 }

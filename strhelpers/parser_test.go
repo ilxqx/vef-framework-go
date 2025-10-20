@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseTagAttrs(t *testing.T) {
-	t.Run("single attribute without key", func(t *testing.T) {
+	t.Run("Single attribute without key", func(t *testing.T) {
 		tag := "required"
 
 		result := ParseTagAttrs(tag)
@@ -16,7 +16,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Equal(t, "required", result[TagAttrDefaultKey])
 	})
 
-	t.Run("single attribute with key", func(t *testing.T) {
+	t.Run("Single attribute with key", func(t *testing.T) {
 		tag := "min=10"
 
 		result := ParseTagAttrs(tag)
@@ -25,7 +25,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Equal(t, "10", result["min"])
 	})
 
-	t.Run("multiple attributes", func(t *testing.T) {
+	t.Run("Multiple attributes", func(t *testing.T) {
 		tag := "required,min=5,max=100"
 
 		result := ParseTagAttrs(tag)
@@ -36,7 +36,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Equal(t, "100", result["max"])
 	})
 
-	t.Run("attributes with spaces", func(t *testing.T) {
+	t.Run("Attributes with spaces", func(t *testing.T) {
 		tag := " required , min=5 , max=100 "
 
 		result := ParseTagAttrs(tag)
@@ -47,7 +47,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Equal(t, "100", result["max"])
 	})
 
-	t.Run("empty tag", func(t *testing.T) {
+	t.Run("Empty tag", func(t *testing.T) {
 		tag := ""
 
 		result := ParseTagAttrs(tag)
@@ -55,7 +55,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Len(t, result, 0)
 	})
 
-	t.Run("tag with empty attributes", func(t *testing.T) {
+	t.Run("Tag with empty attributes", func(t *testing.T) {
 		tag := "required,,min=5"
 
 		result := ParseTagAttrs(tag)
@@ -65,7 +65,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Equal(t, "5", result["min"])
 	})
 
-	t.Run("duplicate default attributes", func(t *testing.T) {
+	t.Run("Duplicate default attributes", func(t *testing.T) {
 		tag := "required,optional"
 
 		result := ParseTagAttrs(tag)
@@ -75,7 +75,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Equal(t, "required", result[TagAttrDefaultKey])
 	})
 
-	t.Run("attribute with empty value", func(t *testing.T) {
+	t.Run("Attribute with empty value", func(t *testing.T) {
 		tag := "min=,max=100"
 
 		result := ParseTagAttrs(tag)
@@ -85,7 +85,7 @@ func TestParseTagAttrs(t *testing.T) {
 		assert.Equal(t, "100", result["max"])
 	})
 
-	t.Run("complex tag", func(t *testing.T) {
+	t.Run("Complex tag", func(t *testing.T) {
 		tag := "required,min=1,max=255,pattern=^[a-zA-Z0-9]+$"
 
 		result := ParseTagAttrs(tag)
@@ -99,7 +99,7 @@ func TestParseTagAttrs(t *testing.T) {
 }
 
 func TestParseTagArgs(t *testing.T) {
-	t.Run("single argument without key", func(t *testing.T) {
+	t.Run("Single argument without key", func(t *testing.T) {
 		args := "search"
 
 		result := ParseTagArgs(args)
@@ -108,7 +108,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "search", result[TagAttrDefaultKey])
 	})
 
-	t.Run("single argument with key", func(t *testing.T) {
+	t.Run("Single argument with key", func(t *testing.T) {
 		args := "q:golang"
 
 		result := ParseTagArgs(args)
@@ -117,7 +117,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "golang", result["q"])
 	})
 
-	t.Run("multiple arguments", func(t *testing.T) {
+	t.Run("Multiple arguments", func(t *testing.T) {
 		args := "q:golang page:1 limit:10"
 
 		result := ParseTagArgs(args)
@@ -128,7 +128,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "10", result["limit"])
 	})
 
-	t.Run("arguments with spaces", func(t *testing.T) {
+	t.Run("Arguments with spaces", func(t *testing.T) {
 		args := " q:golang page:1 limit:10 "
 
 		result := ParseTagArgs(args)
@@ -139,7 +139,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "10", result["limit"])
 	})
 
-	t.Run("empty args", func(t *testing.T) {
+	t.Run("Empty args", func(t *testing.T) {
 		args := ""
 
 		result := ParseTagArgs(args)
@@ -147,7 +147,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Len(t, result, 0)
 	})
 
-	t.Run("args with mixed separators", func(t *testing.T) {
+	t.Run("Args with mixed separators", func(t *testing.T) {
 		args := "q:golang page:1"
 
 		result := ParseTagArgs(args)
@@ -157,7 +157,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "1", result["page"])
 	})
 
-	t.Run("duplicate default arguments", func(t *testing.T) {
+	t.Run("Duplicate default arguments", func(t *testing.T) {
 		args := "search filter"
 
 		result := ParseTagArgs(args)
@@ -167,7 +167,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "search", result[TagAttrDefaultKey])
 	})
 
-	t.Run("args with empty value", func(t *testing.T) {
+	t.Run("Args with empty value", func(t *testing.T) {
 		args := "q: page:1"
 
 		result := ParseTagArgs(args)
@@ -177,7 +177,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "1", result["page"])
 	})
 
-	t.Run("complex args", func(t *testing.T) {
+	t.Run("Complex args", func(t *testing.T) {
 		args := "q:web+framework category:backend sort:popularity order:desc"
 
 		result := ParseTagArgs(args)
@@ -189,7 +189,7 @@ func TestParseTagArgs(t *testing.T) {
 		assert.Equal(t, "desc", result["order"])
 	})
 
-	t.Run("args with encoded characters", func(t *testing.T) {
+	t.Run("Args with encoded characters", func(t *testing.T) {
 		args := "q:hello%20world filter:type%3Darticle"
 
 		result := ParseTagArgs(args)

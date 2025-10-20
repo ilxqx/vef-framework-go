@@ -7,7 +7,7 @@ import (
 )
 
 type SelectTestSuite struct {
-	*ORMTestSuite
+	*OrmTestSuite
 }
 
 // TestBasicSelect tests basic SELECT functionality across all databases.
@@ -1250,7 +1250,7 @@ func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONArray(eb.Column("id"), eb.Column("title"), eb.Column("status"))
+			return eb.JsonArray(eb.Column("id"), eb.Column("title"), eb.Column("status"))
 		}, "simple_array").
 		Limit(1).
 		Scan(suite.ctx, &jsonResult)
@@ -1356,7 +1356,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*User)(nil)).
 		Select("id", "name").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONObject("user_id", eb.Column("id"), "user_name", eb.Column("name"), "user_age", eb.Column("age"), "is_active", eb.Column("is_active"))
+			return eb.JsonObject("user_id", eb.Column("id"), "user_name", eb.Column("name"), "user_age", eb.Column("age"), "is_active", eb.Column("is_active"))
 		}, "user_object").
 		OrderBy("name").
 		Scan(suite.ctx, &jsonObjectResults)
@@ -1382,7 +1382,7 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("id").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count"))
+			return eb.JsonArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count"))
 		}, "json_array").
 		OrderBy("title").
 		Limit(3).
@@ -1408,10 +1408,10 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("title").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONObject("post_id", eb.Column("id"), "title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
+			return eb.JsonObject("post_id", eb.Column("id"), "title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
 		}, "meta_json").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONExtract(eb.JSONObject("id", eb.Column("id")), "$.id")
+			return eb.JsonExtract(eb.JsonObject("id", eb.Column("id")), "$.id")
 		}, "extracted_id").
 		OrderBy("title").
 		Limit(3).
@@ -1438,10 +1438,10 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("title").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
+			return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
 		}, "json_data").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONValid(eb.JSONObject("test", eb.Column("title")))
+			return eb.JsonValid(eb.JsonObject("test", eb.Column("title")))
 		}, "is_valid").
 		OrderBy("title").
 		Limit(2).
@@ -1470,13 +1470,13 @@ func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
 		Model((*Post)(nil)).
 		Select("title").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count"))
+			return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"))
 		}, "original").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONInsert(eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.status", eb.Column("status"))
+			return eb.JsonInsert(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.status", eb.Column("status"))
 		}, "with_insert").
 		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JSONReplace(eb.JSONObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.views", 9999)
+			return eb.JsonReplace(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.views", 9999)
 		}, "with_replace").
 		OrderBy("title").
 		Limit(2).
@@ -1999,7 +1999,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 	suite.NoError(err, "SelectAll should override SelectModelColumns")
 	suite.True(len(users4) > 0, "Should return results")
 
-	// Test 5: SelectModelPKs overrides SelectModelColumns
+	// Test 5: SelectModelPks overrides SelectModelColumns
 	type UserIDOnly struct {
 		Id string `bun:"id,pk"`
 	}
@@ -2009,21 +2009,21 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		SelectModelColumns().
-		SelectModelPKs().
+		SelectModelPks().
 		Scan(suite.ctx, &users5)
-	suite.NoError(err, "SelectModelPKs should override SelectModelColumns")
+	suite.NoError(err, "SelectModelPks should override SelectModelColumns")
 	suite.True(len(users5) > 0, "Should return results")
 	suite.NotEmpty(users5[0].Id, "ID should be populated")
 
-	// Test 6: SelectModelColumns overrides SelectModelPKs
+	// Test 6: SelectModelColumns overrides SelectModelPks
 	var users6 []User
 
 	err = suite.db.NewSelect().
 		Model(&users6).
-		SelectModelPKs().
+		SelectModelPks().
 		SelectModelColumns().
 		Scan(suite.ctx)
-	suite.NoError(err, "SelectModelColumns should override SelectModelPKs")
+	suite.NoError(err, "SelectModelColumns should override SelectModelPks")
 	suite.True(len(users6) > 0, "Should return results")
 	suite.NotEmpty(users6[0].Name, "Name should be populated when SelectModelColumns is used")
 }
@@ -2173,7 +2173,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 	suite.True(users5[0].TotalCount > 0, "Total count should be populated")
 }
 
-// TestSelectIdempotency tests that SelectModelColumns and SelectModelPKs are idempotent.
+// TestSelectIdempotency tests that SelectModelColumns and SelectModelPks are idempotent.
 func (suite *SelectTestSuite) TestSelectIdempotency() {
 	suite.T().Logf("Testing Select method idempotency for %s", suite.dbType)
 
@@ -2190,7 +2190,7 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 	suite.True(len(users1) > 0, "Should return results")
 	suite.NotEmpty(users1[0].Name, "Name should be populated")
 
-	// Test 2: Multiple SelectModelPKs calls (should be idempotent)
+	// Test 2: Multiple SelectModelPks calls (should be idempotent)
 	type UserIDOnly struct {
 		Id string `bun:"id,pk"`
 	}
@@ -2199,11 +2199,11 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
-		SelectModelPKs().
-		SelectModelPKs().
-		SelectModelPKs().
+		SelectModelPks().
+		SelectModelPks().
+		SelectModelPks().
 		Scan(suite.ctx, &users2)
-	suite.NoError(err, "Multiple SelectModelPKs should not cause errors")
+	suite.NoError(err, "Multiple SelectModelPks should not cause errors")
 	suite.True(len(users2) > 0, "Should return results")
 	suite.NotEmpty(users2[0].Id, "ID should be populated")
 
@@ -2221,9 +2221,9 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 	suite.NotEmpty(users3[0].Email, "All columns should be populated")
 }
 
-// TestSelectModelColumnsWithExplicitSelect tests that SelectModelColumns/SelectModelPKs can coexist with Select.
+// TestSelectModelColumnsWithExplicitSelect tests that SelectModelColumns/SelectModelPks can coexist with Select.
 func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
-	suite.T().Logf("Testing SelectModelColumns/SelectModelPKs coexistence with Select for %s", suite.dbType)
+	suite.T().Logf("Testing SelectModelColumns/SelectModelPks coexistence with Select for %s", suite.dbType)
 
 	// Test 1: SelectModelColumns + Select should include both model columns and explicit columns
 	type UserWithExtra struct {
@@ -2295,7 +2295,7 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 		suite.NotEmpty(user.UpperName, "SelectExpr column should be populated")
 	}
 
-	// Test 3: SelectModelPKs + Select should include both PKs and explicit columns
+	// Test 3: SelectModelPks + Select should include both PKs and explicit columns
 	type UserWithPKsAndExtra struct {
 		Id    string `bun:"id"`
 		Name  string `bun:"name"`
@@ -2307,11 +2307,11 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
-		SelectModelPKs().               // Should select: id (primary key)
+		SelectModelPks().               // Should select: id (primary key)
 		Select("name", "email", "age"). // Should also select these explicit columns
 		OrderBy("name").
 		Scan(suite.ctx, &users3)
-	suite.NoError(err, "SelectModelPKs + Select should coexist")
+	suite.NoError(err, "SelectModelPks + Select should coexist")
 	suite.True(len(users3) > 0, "Should return results")
 
 	for _, user := range users3 {
@@ -2322,7 +2322,7 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 		suite.T().Logf("User: ID=%s, Name=%s, Age=%d", user.Id, user.Name, user.Age)
 	}
 
-	// Test 4: Select + SelectModelPKs (reverse order) should also work
+	// Test 4: Select + SelectModelPks (reverse order) should also work
 	type UserWithPKsAndExtra2 struct {
 		Id         string `bun:"id"`
 		Name       string `bun:"name"`
@@ -2334,13 +2334,13 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name").   // Explicit column first
-		SelectModelPKs(). // PKs second
+		SelectModelPks(). // PKs second
 		SelectExpr(func(eb ExprBuilder) any {
 			return eb.Lower(eb.Column("email"))
 		}, "lower_email").
 		OrderBy("name").
 		Scan(suite.ctx, &users4)
-	suite.NoError(err, "Select + SelectModelPKs should coexist (reverse order)")
+	suite.NoError(err, "Select + SelectModelPks should coexist (reverse order)")
 	suite.True(len(users4) > 0, "Should return results")
 
 	for _, user := range users4 {

@@ -4,14 +4,14 @@
 
 一个基于 Uber FX 依赖注入和 Fiber 构建的现代化 Go Web 开发框架，采用约定优于配置的设计理念，为企业级应用快速开发提供开箱即用的完整功能。
 
-**当前版本：** v0.5.6
+**当前版本：** v0.6.0
 
 ## 核心特性
 
-- **单一端点 API 架构** - 所有 API 请求通过 `POST /api` 统一处理，请求响应格式一致
-- **泛型 CRUD API** - 预置类型安全的增删改查操作，极少样板代码
+- **单一端点 Api 架构** - 所有 Api 请求通过 `POST /api` 统一处理，请求响应格式一致
+- **泛型 CRUD Api** - 预置类型安全的增删改查操作，极少样板代码
 - **类型安全的 ORM** - 基于 Bun 的流式查询构建器，自动审计字段维护
-- **多策略认证** - 内置 JWT、OpenAPI 签名、密码认证，开箱即用
+- **多策略认证** - 内置 Jwt、OpenApi 签名、密码认证，开箱即用
 - **模块化设计** - Uber FX 依赖注入，可插拔模块化架构
 - **内置功能齐全** - 缓存、事件总线、定时任务、对象存储、数据验证、国际化
 - **RBAC 与数据权限** - 行级安全控制，可自定义数据范围
@@ -70,20 +70,20 @@ schema = "public"
 go run main.go
 ```
 
-您的 API 服务现已运行在 `http://localhost:8080`。
+您的 Api 服务现已运行在 `http://localhost:8080`。
 
 ## 架构设计
 
 ### 单一端点设计
 
-VEF 采用单一端点方式，所有 API 请求通过 `POST /api`（或 `POST /openapi` 用于外部集成）。
+VEF 采用单一端点方式，所有 Api 请求通过 `POST /api`（或 `POST /openapi` 用于外部集成）。
 
 **请求格式：**
 
 ```json
 {
   "resource": "sys/user",
-  "action": "findPage",
+  "action": "find_page",
   "version": "v1",
   "params": {
     "page": 1,
@@ -115,7 +115,7 @@ VEF 使用 Uber FX 进行依赖注入。通过辅助函数注册组件：
 
 ```go
 vef.Run(
-    vef.ProvideAPIResource(NewUserResource),
+    vef.ProvideApiResource(NewUserResource),
     vef.Provide(NewUserService),
 )
 ```
@@ -153,11 +153,13 @@ type User struct {
 
 - `id` - 主键（20 字符的 XID，base32 编码）
 - `created_at`, `created_by` - 创建时间戳和用户 ID
+- `created_by_name` - 创建者名称（仅扫描，不存储到数据库）
 - `updated_at`, `updated_by` - 最后更新时间戳和用户 ID
+- `updated_by_name` - 更新者名称（仅扫描，不存储到数据库）
 
 **可空类型：** 使用 `null.String`、`null.Int`、`null.Bool` 等处理可空字段。
 
-## 构建 CRUD API
+## 构建 CRUD Api
 
 ### 第一步：定义参数结构
 
@@ -180,15 +182,15 @@ type UserSearch struct {
 ```go
 type UserParams struct {
     api.In
-    orm.ModelPK `json:",inline"` // 用于更新操作
-    
+    Id       string      `json:"id"` // 更新操作时必需
+
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"用户名"`
     Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"邮箱"`
     IsActive bool        `json:"isActive"`
 }
 ```
 
-### 第二步：创建 API 资源
+### 第二步：创建 Api 资源
 
 ```go
 package resources
@@ -200,21 +202,21 @@ import (
 
 type UserResource struct {
     api.Resource
-    *apis.FindAllAPI[models.User, payloads.UserSearch]
-    *apis.FindPageAPI[models.User, payloads.UserSearch]
-    *apis.CreateAPI[models.User, payloads.UserParams]
-    *apis.UpdateAPI[models.User, payloads.UserParams]
-    *apis.DeleteAPI[models.User]
+    *apis.FindAllApi[models.User, payloads.UserSearch]
+    *apis.FindPageApi[models.User, payloads.UserSearch]
+    *apis.CreateApi[models.User, payloads.UserParams]
+    *apis.UpdateApi[models.User, payloads.UserParams]
+    *apis.DeleteApi[models.User]
 }
 
 func NewUserResource() api.Resource {
     return &UserResource{
         Resource: api.NewResource("sys/user"),
-        FindAllAPI: apis.NewFindAllAPI[models.User, payloads.UserSearch](),
-        FindPageAPI: apis.NewFindPageAPI[models.User, payloads.UserSearch](),
-        CreateAPI: apis.NewCreateAPI[models.User, payloads.UserParams](),
-        UpdateAPI: apis.NewUpdateAPI[models.User, payloads.UserParams](),
-        DeleteAPI: apis.NewDeleteAPI[models.User](),
+        FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
+        FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
+        CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
+        UpdateApi: apis.NewUpdateApi[models.User, payloads.UserParams](),
+        DeleteApi: apis.NewDeleteApi[models.User](),
     }
 }
 ```
@@ -224,37 +226,37 @@ func NewUserResource() api.Resource {
 ```go
 func main() {
     vef.Run(
-        vef.ProvideAPIResource(resources.NewUserResource),
+        vef.ProvideApiResource(resources.NewUserResource),
     )
 }
 ```
 
-### 预置 API 列表
+### 预置 Api 列表
 
-| API | 说明 | Action |
+| 接口 | 描述 | Action |
 |-----|------|--------|
-| FindOneAPI | 查询单条记录 | findOne |
-| FindAllAPI | 查询全部记录 | findAll |
-| FindPageAPI | 分页查询 | findPage |
-| CreateAPI | 创建记录 | create |
-| UpdateAPI | 更新记录 | update |
-| DeleteAPI | 删除记录 | delete |
-| CreateManyAPI | 批量创建 | createMany |
-| UpdateManyAPI | 批量更新 | updateMany |
-| DeleteManyAPI | 批量删除 | deleteMany |
-| FindTreeAPI | 树形查询 | findTree |
-| FindOptionsAPI | 选项列表（label/value） | findOptions |
-| FindTreeOptionsAPI | 树形选项 | findTreeOptions |
-| ImportAPI | 从 Excel/CSV 导入 | import |
-| ExportAPI | 导出到 Excel/CSV | export |
+| FindOneApi | 查询单条记录 | find_one |
+| FindAllApi | 查询全部记录 | find_all |
+| FindPageApi | 分页查询 | find_page |
+| CreateApi | 创建记录 | create |
+| UpdateApi | 更新记录 | update |
+| DeleteApi | 删除记录 | delete |
+| CreateManyApi | 批量创建 | create_many |
+| UpdateManyApi | 批量更新 | update_many |
+| DeleteManyApi | 批量删除 | delete_many |
+| FindTreeApi | 树形查询 | find_tree |
+| FindOptionsApi | 选项列表(label/value) | find_options |
+| FindTreeOptionsApi | 树形选项 | find_tree_options |
+| ImportApi | 导入 Excel/CSV | import |
+| ExportApi | 导出 Excel/CSV | export |
 
-### API Builder 方法
+### Api Builder 方法
 
-使用流式构建器方法配置 API 行为：
+使用流式构建器方法配置 Api 行为：
 
 ```go
-CreateAPI: apis.NewCreateAPI[User, UserParams]().
-    Action("createUser").              // 自定义操作名
+CreateApi: apis.NewCreateApi[User, UserParams]().
+    Action("create_user").             // 自定义操作名
     Public().                          // 无需认证
     PermToken("sys.user.create").      // 权限令牌
     EnableAudit().                     // 启用审计日志
@@ -267,7 +269,7 @@ CreateAPI: apis.NewCreateAPI[User, UserParams]().
 在 CRUD 操作前后添加自定义业务逻辑：
 
 ```go
-CreateAPI: apis.NewCreateAPI[User, UserParams]().
+CreateApi: apis.NewCreateApi[User, UserParams]().
     PreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
         // 创建用户前对密码进行哈希
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
@@ -501,9 +503,9 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
     if err != nil {
         return err // 自动回滚
     }
-    
+
     // 更新关联记录
-    _, err = tx.NewUpdate().Model(&profile).WherePK().Exec(txCtx)
+    _, err = tx.NewUpdate().Model(&profile).WherePk().Exec(txCtx)
     return err // 返回 nil 自动提交，返回错误自动回滚
 })
 ```
@@ -514,8 +516,8 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 
 VEF 支持多种认证策略：
 
-1. **JWT 认证**（默认）- Bearer token 或查询参数 `?__accessToken=xxx`
-2. **OpenAPI 签名认证** - 用于外部应用，使用 HMAC 签名
+1. **Jwt 认证**（默认）- Bearer token 或查询参数 `?__accessToken=xxx`
+2. **OpenApi 签名认证** - 用于外部应用，使用 HMAC 签名
 3. **密码认证** - 用户名密码登录
 
 ### 实现用户加载器
@@ -574,10 +576,10 @@ func main() {
 
 ### 权限控制
 
-在 API 上设置权限令牌：
+在 Api 上设置权限令牌：
 
 ```go
-CreateAPI: apis.NewCreateAPI[User, UserParams]().
+CreateApi: apis.NewCreateApi[User, UserParams]().
     PermToken("sys.user.create"),
 ```
 
@@ -848,7 +850,7 @@ schema = "public"        # PostgreSQL schema
 # path = "./data.db"    # SQLite 数据库文件路径
 
 [vef.security]
-token_expires = "2h"     # JWT token 过期时间
+token_expires = "2h"     # Jwt token 过期时间
 
 [vef.storage]
 provider = "minio"       # 存储提供者：memory、minio
@@ -1185,7 +1187,7 @@ vef.Invoke(func(scheduler cron.Scheduler) {
 
 #### 内置存储资源
 
-框架自动注册了 `base/storage` 资源，提供以下 API 端点：
+框架自动注册了 `base/storage` 资源，提供以下 Api 端点：
 
 | Action | 说明 |
 |--------|------|
@@ -1197,7 +1199,7 @@ vef.Invoke(func(scheduler cron.Scheduler) {
 **上传文件示例：**
 
 ```bash
-# 使用内置的 upload API
+# 使用内置的 upload Api
 curl -X POST http://localhost:8080/api \
   -H "Authorization: Bearer <token>" \
   -F "resource=base/storage" \
@@ -1379,10 +1381,10 @@ my-app/
 │   ├── models/                 # 数据模型
 │   │   ├── user.go
 │   │   └── order.go
-│   ├── payloads/               # API 参数
+│   ├── payloads/               # Api 参数
 │   │   ├── user.go
 │   │   └── order.go
-│   ├── resources/              # API 资源
+│   ├── resources/              # Api 资源
 │   │   ├── user.go
 │   │   └── order.go
 │   └── services/               # 业务服务
@@ -1396,7 +1398,7 @@ my-app/
 - **模型：** 单数大驼峰（如 `User`、`Order`）
 - **资源：** 小写斜杠分隔（如 `sys/user`、`shop/order`）
 - **参数：** `XxxParams`（创建/更新）、`XxxSearch`（查询）
-- **Action：** 小写驼峰（如 `findPage`、`createUser`）
+- **Action：** 小写下划线分隔（如 `find_page`、`create_user`）
 
 ### 错误处理
 

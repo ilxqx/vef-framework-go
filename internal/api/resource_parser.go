@@ -20,25 +20,25 @@ var (
 	logger       = log.Named("api")
 )
 
-// parseResource processes a single resource and extracts all its API definitions.
-// It creates handlers for each API action and builds a complete resource definition.
+// parseResource processes a single resource and extracts all its Api definitions.
+// It creates handlers for each Api action and builds a complete resource definition.
 func parseResource(resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (ResourceDefinition, error) {
-	resourceAPIs := collectAllAPIs(resource)
-	apiDefinitions := make([]*apiPkg.Definition, 0, len(resourceAPIs))
+	resourceApis := collectAllApis(resource)
+	apiDefinitions := make([]*apiPkg.Definition, 0, len(resourceApis))
 	defaultVersion := resource.Version()
 	resourceName := resource.Name()
 
-	for _, api := range resourceAPIs {
-		// Parse the handler for this API specification
-		handler, err := resolveAPIHandler(api, resource, db, paramResolver)
+	for _, api := range resourceApis {
+		// Parse the handler for this Api specification
+		handler, err := resolveApiHandler(api, resource, db, paramResolver)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"failed to resolve handler for resource '%s' action '%s': %w",
+				"failed to resolve handler for resource %q action %q: %w",
 				resourceName, api.Action, err,
 			)
 		}
 
-		// Determine the API version (API-specific version overrides resource default)
+		// Determine the Api version (Api-specific version overrides resource default)
 		apiVersion, _ := lo.Coalesce(api.Version, defaultVersion, apiPkg.VersionV1)
 
 		definition := &apiPkg.Definition{
@@ -56,7 +56,7 @@ func parseResource(resource apiPkg.Resource, db orm.Db, paramResolver *HandlerPa
 		}
 
 		logger.Infof(
-			"Registered API | Resource: %s, Action: %s, Version: %s, Type: %s",
+			"Registered Api | Resource: %s, Action: %s, Version: %s, Type: %s",
 			resourceName,
 			api.Action,
 			apiVersion,
@@ -71,24 +71,24 @@ func parseResource(resource apiPkg.Resource, db orm.Db, paramResolver *HandlerPa
 	}, nil
 }
 
-// collectAllAPIs collects all API specs from a resource, including those from embedded anonymous structs
+// collectAllApis collects all Api specs from a resource, including those from embedded anonymous structs
 // that implement the api.Provider interface.
-func collectAllAPIs(resource apiPkg.Resource) []apiPkg.Spec {
+func collectAllApis(resource apiPkg.Resource) []apiPkg.Spec {
 	var allSpecs []apiPkg.Spec
 
 	// First, collect specs from embedded anonymous structs that implement api.Provider
 	embeddedSpecs := collectEmbeddedProviderSpecs(resource)
 	allSpecs = append(allSpecs, embeddedSpecs...)
 
-	// Then, collect specs from the resource's own APIs() method
-	resourceSpecs := resource.APIs()
+	// Then, collect specs from the resource's own Apis() method
+	resourceSpecs := resource.Apis()
 	allSpecs = append(allSpecs, resourceSpecs...)
 
 	return allSpecs
 }
 
 // collectEmbeddedProviderSpecs recursively scans for embedded anonymous structs that implement api.Provider
-// and collects their API specifications using the visitor pattern.
+// and collects their Api specifications using the visitor pattern.
 func collectEmbeddedProviderSpecs(resource apiPkg.Resource) []apiPkg.Spec {
 	var specs []apiPkg.Spec
 
@@ -105,7 +105,7 @@ func collectEmbeddedProviderSpecs(resource apiPkg.Resource) []apiPkg.Spec {
 					spec := provider.Provide()
 					specs = append(specs, spec)
 					logger.Infof(
-						"Collected API spec from embedded provider: %s.%s",
+						"Collected Api spec from embedded provider: %s.%s",
 						field.Type.String(), spec.Action,
 					)
 				}
@@ -130,9 +130,9 @@ func isProviderImplementation(value reflect.Value) bool {
 	return valueType.Implements(providerType)
 }
 
-// resolveAPIHandler resolves the appropriate handler for an API specification.
+// resolveApiHandler resolves the appropriate handler for an Api specification.
 // It prioritizes the Handler field if provided, otherwise falls back to Action-based method lookup.
-func resolveAPIHandler(api apiPkg.Spec, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
+func resolveApiHandler(api apiPkg.Spec, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
 	if api.Handler != nil {
 		// Use provided Handler field
 		return parseProvidedHandler(api.Handler, resource, db, paramResolver)
@@ -202,7 +202,7 @@ func parseHandler(methodName string, resource apiPkg.Resource, db orm.Db, paramR
 
 		handler, err := createHandler(method, db)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create handler for method '%s': %w", methodName, err)
+			return nil, fmt.Errorf("failed to create handler for method %q: %w", methodName, err)
 		}
 
 		return buildHandler(target, handler, paramResolver)
@@ -224,7 +224,7 @@ func findHandlerMethod(target reflect.Value, methodName string) (reflect.Value, 
 		return method, nil
 	}
 
-	return method, fmt.Errorf("%w '%s' in resource '%s'", ErrAPIMethodNotFound, methodName, target.Type().String())
+	return method, fmt.Errorf("%w %q in resource %q", ErrApiMethodNotFound, methodName, target.Type().String())
 }
 
 // checkHandlerMethod validates that a method conforms to the framework's handler signature.
@@ -244,12 +244,12 @@ func checkHandlerMethod(method reflect.Type) error {
 			return nil
 		}
 
-		return fmt.Errorf("%w: '%s' -> '%s'",
+		return fmt.Errorf("%w: %q -> %q",
 			ErrHandlerMethodInvalidReturn, method.String(), method.Out(0).String())
 	}
 
 	// Multiple return values are not allowed
-	return fmt.Errorf("%w: '%s' has %d returns",
+	return fmt.Errorf("%w: %q has %d returns",
 		ErrHandlerMethodTooManyReturns, method.String(), numOut)
 }
 

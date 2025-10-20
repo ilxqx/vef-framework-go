@@ -17,8 +17,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
-// runAllAPITests executes all API test suites on the given database configuration.
-func runAllAPITests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
+// runAllApiTests executes all Api test suites on the given database configuration.
+func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
 	// Create database connection
 	db, err := database.New(dsConfig)
 	require.NoError(t, err)
@@ -29,7 +29,7 @@ func runAllAPITests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 			t.Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
 		}
 
-		t.Logf("All API tests completed for %s", dsConfig.Type)
+		t.Logf("All Api tests completed for %s", dsConfig.Type)
 	}()
 
 	// Setup test data using fixtures
@@ -253,7 +253,7 @@ func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType con
 	t.Logf("Test fixtures loaded for %s database", dbType)
 }
 
-// TestPostgres runs all API tests against PostgreSQL.
+// TestPostgres runs all Api tests against PostgreSQL.
 func TestPostgres(t *testing.T) {
 	ctx := context.Background()
 
@@ -265,11 +265,11 @@ func TestPostgres(t *testing.T) {
 	postgresContainer := testhelpers.NewPostgresContainer(ctx, dummySuite)
 	defer postgresContainer.Terminate(ctx, dummySuite)
 
-	// Run all API tests
-	runAllAPITests(t, ctx, postgresContainer.DsConfig)
+	// Run all Api tests
+	runAllApiTests(t, ctx, postgresContainer.DsConfig)
 }
 
-// TestMySQL runs all API tests against MySQL.
+// TestMySQL runs all Api tests against MySQL.
 func TestMySQL(t *testing.T) {
 	ctx := context.Background()
 
@@ -281,11 +281,11 @@ func TestMySQL(t *testing.T) {
 	mysqlContainer := testhelpers.NewMySQLContainer(ctx, dummySuite)
 	defer mysqlContainer.Terminate(ctx, dummySuite)
 
-	// Run all API tests
-	runAllAPITests(t, ctx, mysqlContainer.DsConfig)
+	// Run all Api tests
+	runAllApiTests(t, ctx, mysqlContainer.DsConfig)
 }
 
-// TestSQLite runs all API tests against SQLite (in-memory).
+// TestSQLite runs all Api tests against SQLite (in-memory).
 func TestSQLite(t *testing.T) {
 	ctx := context.Background()
 
@@ -294,6 +294,6 @@ func TestSQLite(t *testing.T) {
 		Type: constants.DbSQLite,
 	}
 
-	// Run all API tests
-	runAllAPITests(t, ctx, dsConfig)
+	// Run all Api tests
+	runAllApiTests(t, ctx, dsConfig)
 }

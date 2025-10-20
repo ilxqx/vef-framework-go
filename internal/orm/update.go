@@ -163,7 +163,7 @@ func (q *BunUpdateQuery) Where(builder func(ConditionBuilder)) UpdateQuery {
 	return q
 }
 
-func (q *BunUpdateQuery) WherePK(columns ...string) UpdateQuery {
+func (q *BunUpdateQuery) WherePk(columns ...string) UpdateQuery {
 	q.query.WherePK(columns...)
 
 	return q

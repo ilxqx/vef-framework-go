@@ -32,7 +32,7 @@ func runAllORMTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 
 	// Create Select Suite
 	selectSuite := &SelectTestSuite{
-		ORMTestSuite: &ORMTestSuite{
+		OrmTestSuite: &OrmTestSuite{
 			ctx:    ctx,
 			dbType: dsConfig.Type,
 			db:     ormDb,
@@ -41,7 +41,7 @@ func runAllORMTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 
 	// Create Condition Suite
 	conditionSuite := &ConditionTestSuite{
-		ORMTestSuite: &ORMTestSuite{
+		OrmTestSuite: &OrmTestSuite{
 			ctx:    ctx,
 			dbType: dsConfig.Type,
 			db:     ormDb,
@@ -50,7 +50,7 @@ func runAllORMTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 
 	// Create Insert Suite
 	insertSuite := &InsertTestSuite{
-		ORMTestSuite: &ORMTestSuite{
+		OrmTestSuite: &OrmTestSuite{
 			ctx:    ctx,
 			dbType: dsConfig.Type,
 			db:     ormDb,
@@ -59,7 +59,7 @@ func runAllORMTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 
 	// Create Update Suite
 	updateSuite := &UpdateTestSuite{
-		ORMTestSuite: &ORMTestSuite{
+		OrmTestSuite: &OrmTestSuite{
 			ctx:    ctx,
 			dbType: dsConfig.Type,
 			db:     ormDb,
@@ -68,7 +68,7 @@ func runAllORMTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 
 	// Create Delete Suite
 	deleteSuite := &DeleteTestSuite{
-		ORMTestSuite: &ORMTestSuite{
+		OrmTestSuite: &OrmTestSuite{
 			ctx:    ctx,
 			dbType: dsConfig.Type,
 			db:     ormDb,
@@ -77,7 +77,7 @@ func runAllORMTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 
 	// Create Merge Suite
 	// mergeSuite := &MergeTestSuite{
-	// 	ORMTestSuite: &ORMTestSuite{
+	// 	OrmTestSuite: &OrmTestSuite{
 	// 		ctx:    ctx,
 	// 		dbType: dsConfig.Type,
 	// 		db:     ormDb,

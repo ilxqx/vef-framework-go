@@ -9,21 +9,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-type findAllAPI[TModel, TSearch any] struct {
-	FindAPI[TModel, TSearch, []TModel, FindAllAPI[TModel, TSearch]]
+type findAllApi[TModel, TSearch any] struct {
+	FindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]]
 }
 
-func (a *findAllAPI[TModel, TSearch]) Provide() api.Spec {
-	return a.FindAPI.Build(a.findAll)
+func (a *findAllApi[TModel, TSearch]) Provide() api.Spec {
+	return a.Build(a.findAll)
 }
 
-// Build should not be called directly on concrete API types.
-// Use Provide() to generate api.Spec with the correct handler instead.
-func (a *findAllAPI[TModel, TSearch]) Build(handler any) api.Spec {
-	panic("apis: do not call FindAPI.Build on findAllAPI; call Provide() instead")
-}
-
-func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
+func (a *findAllApi[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
 	if err := a.Init(db); err != nil {
 		return nil, err
 	}
@@ -43,8 +37,8 @@ func (a *findAllAPI[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db
 
 		if len(models) > 0 {
 			// Apply transformation to each model
-			for _, model := range models {
-				if err := transformer.Struct(ctx.Context(), &model); err != nil {
+			for i := range models {
+				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
 					return err
 				}
 			}

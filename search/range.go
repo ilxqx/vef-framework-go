@@ -63,7 +63,7 @@ func parseStringRange(value string, conditionParams map[string]string) (any, any
 
 	values := strings.SplitN(value, delimiter, 2)
 	if len(values) != 2 {
-		logger.Warnf("Invalid range value, expected value delimited by '%s', got '%v'", delimiter, value)
+		logger.Warnf("Invalid range value, expected value delimited by %q, got %q", delimiter, value)
 
 		return nil, nil, false
 	}

@@ -14,7 +14,7 @@ func TestIsJSON(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJSON(c)
+			result := IsJson(c)
 			assert.True(t, result)
 
 			return c.SendStatus(fiber.StatusOK)
@@ -32,7 +32,7 @@ func TestIsJSON(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJSON(c)
+			result := IsJson(c)
 			assert.True(t, result)
 
 			return c.SendStatus(fiber.StatusOK)
@@ -50,7 +50,7 @@ func TestIsJSON(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJSON(c)
+			result := IsJson(c)
 			assert.False(t, result)
 
 			return c.SendStatus(fiber.StatusOK)
@@ -67,7 +67,7 @@ func TestIsJSON(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJSON(c)
+			result := IsJson(c)
 			assert.False(t, result)
 
 			return c.SendStatus(fiber.StatusOK)

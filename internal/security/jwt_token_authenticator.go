@@ -15,27 +15,27 @@ const (
 	AuthTypeToken = "token"
 )
 
-// JWTTokenAuthenticator implements the Authenticator interface for JWT token authentication.
-// It validates JWT tokens and extracts principal information from them.
-type JWTTokenAuthenticator struct {
-	jwt *security.JWT
+// JwtTokenAuthenticator implements the Authenticator interface for Jwt token authentication.
+// It validates Jwt tokens and extracts principal information from them.
+type JwtTokenAuthenticator struct {
+	jwt *security.Jwt
 }
 
-// NewJWTAuthenticator creates a new JWT authenticator.
-func NewJWTAuthenticator(jwt *security.JWT) security.Authenticator {
-	return &JWTTokenAuthenticator{
+// NewJwtAuthenticator creates a new Jwt authenticator.
+func NewJwtAuthenticator(jwt *security.Jwt) security.Authenticator {
+	return &JwtTokenAuthenticator{
 		jwt: jwt,
 	}
 }
 
-// Supports checks if this authenticator can handle JWT authentication.
-func (*JWTTokenAuthenticator) Supports(authType string) bool {
+// Supports checks if this authenticator can handle Jwt authentication.
+func (*JwtTokenAuthenticator) Supports(authType string) bool {
 	return authType == AuthTypeToken
 }
 
-// Authenticate validates the JWT token and returns the principal.
-// The credentials field should contain the JWT access token.
-func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication security.Authentication) (*security.Principal, error) {
+// Authenticate validates the Jwt token and returns the principal.
+// The credentials field should contain the Jwt access token.
+func (ja *JwtTokenAuthenticator) Authenticate(_ context.Context, authentication security.Authentication) (*security.Principal, error) {
 	// Extract the token from credentials
 	token := authentication.Principal
 	if token == constants.Empty {
@@ -45,7 +45,7 @@ func (ja *JWTTokenAuthenticator) Authenticate(_ context.Context, authentication 
 		)
 	}
 
-	// Parse the JWT access token
+	// Parse the Jwt access token
 	claimsAccessor, err := ja.jwt.Parse(token)
 	if err != nil {
 		return nil, err

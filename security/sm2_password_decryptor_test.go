@@ -18,7 +18,7 @@ func TestSM2PasswordDecryptor(t *testing.T) {
 	require.NoError(t, err, "Failed to generate SM2 key pair")
 
 	// Create decryptor
-	decryptor, err := NewSM2PasswordDecryptor(privateKey)
+	decryptor, err := NewSm2PasswordDecryptor(privateKey)
 	require.NoError(t, err, "Failed to create SM2 password decryptor")
 
 	// Test password
@@ -40,7 +40,7 @@ func TestSM2PasswordDecryptor(t *testing.T) {
 }
 
 func TestSM2PasswordDecryptor_NilKey(t *testing.T) {
-	_, err := NewSM2PasswordDecryptor(nil)
+	_, err := NewSm2PasswordDecryptor(nil)
 	assert.Error(t, err, "Should return error for nil private key")
 	assert.Contains(t, err.Error(), "private key cannot be nil")
 }
@@ -51,7 +51,7 @@ func TestSM2PasswordDecryptor_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create decryptor
-	decryptor, err := NewSM2PasswordDecryptor(privateKey)
+	decryptor, err := NewSm2PasswordDecryptor(privateKey)
 	require.NoError(t, err)
 
 	// Use crypto package to encrypt
