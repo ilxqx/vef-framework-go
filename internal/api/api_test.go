@@ -1201,9 +1201,9 @@ type RequestMeta struct {
 
 func (r *MetaResource) WithMeta(ctx fiber.Ctx, meta RequestMeta) error {
 	return result.Ok(fiber.Map{
-		"request_id": meta.RequestId,
-		"client_ip":  meta.ClientIP,
-		"user_agent": meta.UserAgent,
+		"requestId": meta.RequestId,
+		"clientIp":  meta.ClientIP,
+		"userAgent": meta.UserAgent,
 	}).Response(ctx)
 }
 
@@ -1243,7 +1243,7 @@ type ValidatedMeta struct {
 
 func (r *MetaResource) MetaValidation(ctx fiber.Ctx, meta ValidatedMeta) error {
 	return result.Ok(fiber.Map{
-		"api_key": meta.ApiKey,
+		"apiKey":  meta.ApiKey,
 		"version": meta.Version,
 	}).Response(ctx)
 }
@@ -1258,17 +1258,17 @@ func TestApiWithMeta(t *testing.T) {
 		"action": "with_meta",
 		"version": "v1",
 		"meta": {
-			"request_id": "req-12345",
-			"client_ip": "192.168.1.1",
-			"user_agent": "TestClient/1.0"
+			"requestId": "req-12345",
+			"clientIp": "192.168.1.1",
+			"userAgent": "TestClient/1.0"
 		}
 	}`)
 
 	require.Equal(t, 200, resp.StatusCode)
 	body := readBody(t, resp)
-	require.Contains(t, body, `"request_id":"req-12345"`)
-	require.Contains(t, body, `"client_ip":"192.168.1.1"`)
-	require.Contains(t, body, `"user_agent":"TestClient/1.0"`)
+	require.Contains(t, body, `"requestId":"req-12345"`)
+	require.Contains(t, body, `"clientIp":"192.168.1.1"`)
+	require.Contains(t, body, `"userAgent":"TestClient/1.0"`)
 }
 
 // TestApiWithParamsAndMeta tests Api with both params and meta injection.
@@ -1309,23 +1309,23 @@ func TestApiMetaValidation(t *testing.T) {
 		"action": "meta_validation",
 		"version": "v1",
 		"meta": {
-			"api_key": "valid-key-12345",
+			"apiKey": "valid-key-12345",
 			"version": "v2"
 		}
 	}`)
 
 	require.Equal(t, 200, resp.StatusCode)
 	body := readBody(t, resp)
-	require.Contains(t, body, `"api_key":"valid-key-12345"`)
+	require.Contains(t, body, `"apiKey":"valid-key-12345"`)
 	require.Contains(t, body, `"version":"v2"`)
 
-	// Test with invalid meta (api_key too short)
+	// Test with invalid meta (apiKey too short)
 	resp = makeApiRequest(t, testApp, `{
 		"resource": "test/meta",
 		"action": "meta_validation",
 		"version": "v1",
 		"meta": {
-			"api_key": "short",
+			"apiKey": "short",
 			"version": "v2"
 		}
 	}`)
@@ -1340,7 +1340,7 @@ func TestApiMetaValidation(t *testing.T) {
 		"action": "meta_validation",
 		"version": "v1",
 		"meta": {
-			"api_key": "valid-key-12345",
+			"apiKey": "valid-key-12345",
 			"version": "v99"
 		}
 	}`)
@@ -1365,7 +1365,7 @@ func TestApiMissingMeta(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 	body := readBody(t, resp)
 	// Should return empty values for meta fields
-	require.Contains(t, body, `"request_id":""`)
-	require.Contains(t, body, `"client_ip":""`)
-	require.Contains(t, body, `"user_agent":""`)
+	require.Contains(t, body, `"requestId":""`)
+	require.Contains(t, body, `"clientIp":""`)
+	require.Contains(t, body, `"userAgent":""`)
 }
