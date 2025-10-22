@@ -5,8 +5,6 @@ import "errors"
 var (
 	// ErrResolveParamType indicates failing to resolve handler parameter type.
 	ErrResolveParamType = errors.New("failed to resolve api handler parameter type")
-	// ErrUnmarshalParamsMustPointerStruct indicates unmarshal target must be pointer to struct.
-	ErrUnmarshalParamsMustPointerStruct = errors.New("the parameter of UnmarshalParams function must be a pointer to a struct")
 	// ErrProvidedHandlerNil indicates provided handler is nil.
 	ErrProvidedHandlerNil = errors.New("provided handler cannot be nil")
 	// ErrProvidedHandlerMustFunc indicates provided handler must be a function.

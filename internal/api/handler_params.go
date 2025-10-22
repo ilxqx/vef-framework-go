@@ -11,13 +11,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/mapx"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/validator"
 )
 
 var (
-	apiInType        = reflect.TypeFor[api.In]()
+	apiPType         = reflect.TypeFor[api.P]()
+	apiMType         = reflect.TypeFor[api.M]()
 	loggerType       = reflect.TypeFor[log.Logger]()
 	withLoggerMethod = "WithLogger"
 )
@@ -66,9 +66,14 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 		// }
 	}
 
-	// Try resolve params from api request if paramType is struct and embeds api.In
-	if hasApiInEmbedded(paramType) {
+	// Try resolve params from api request if paramType is struct and embeds api.P
+	if embedsApiP(paramType) {
 		return buildParamsResolver(paramType), nil
+	}
+
+	// Try resolve meta from api request if paramType is struct and embeds api.M
+	if embedsApiM(paramType) {
+		return buildMetaResolver(paramType), nil
 	}
 
 	// Try resolve params from target struct fields (including embedded structs)
@@ -83,7 +88,7 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 // including embedded anonymous structs and tagged fields using multiple targeted visitor passes.
 // Search strategy (in order of priority):
 // 1. Direct fields (non-embedded) with matching types
-// 2. Fields with api:"params" tag (deep search into tagged structs)
+// 2. Fields with api:"in" tag (deep search into tagged structs)
 // 3. Embedded anonymous structs (traditional embedding).
 func findFieldInStruct(target reflect.Value, paramType reflect.Type) reflect.Value {
 	// Priority 1: Search direct fields first (non-recursive, non-embedded only)
@@ -91,7 +96,7 @@ func findFieldInStruct(target reflect.Value, paramType reflect.Type) reflect.Val
 		return found
 	}
 
-	// Priority 2: Search in fields with api:"params" tag (recursive)
+	// Priority 2: Search in fields with api:"in" tag (recursive)
 	if found := searchTaggedFields(target, paramType); found.IsValid() {
 		return found
 	}
@@ -126,7 +131,7 @@ func searchDirectFields(target reflect.Value, paramType reflect.Type) reflect.Va
 	return foundField
 }
 
-// searchTaggedFields searches recursively in fields with api:"params" tag.
+// searchTaggedFields searches recursively in fields with api:"in" tag.
 func searchTaggedFields(target reflect.Value, paramType reflect.Type) reflect.Value {
 	var foundField reflect.Value
 
@@ -148,8 +153,8 @@ func searchTaggedFields(target reflect.Value, paramType reflect.Type) reflect.Va
 		},
 	}
 
-	// Use dive tag to recurse into api:"params" tagged fields
-	reflectx.Visit(target, visitor, reflectx.WithDiveTag("api", "params"))
+	// Use dive tag to recurse into api:"in" tagged fields
+	reflectx.Visit(target, visitor, reflectx.WithDiveTag("api", "in"))
 
 	return foundField
 }
@@ -182,8 +187,18 @@ func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.
 	return foundField
 }
 
-// hasApiInEmbedded checks if the given struct type embeds api.In.
-func hasApiInEmbedded(t reflect.Type) bool {
+// embedsApiP checks if the given struct type embeds api.P.
+func embedsApiP(t reflect.Type) bool {
+	return embedsSentinelType(t, apiPType)
+}
+
+// embedsApiM checks if the given struct type embeds api.M.
+func embedsApiM(t reflect.Type) bool {
+	return embedsSentinelType(t, apiMType)
+}
+
+// embedsSentinelType checks if the given struct type embeds a sentinel type (api.P or api.M).
+func embedsSentinelType(t, sentinelType reflect.Type) bool {
 	t = reflectx.Indirect(t)
 	if t.Kind() != reflect.Struct {
 		return false
@@ -200,7 +215,7 @@ func hasApiInEmbedded(t reflect.Type) bool {
 			continue
 		}
 
-		if t == apiInType {
+		if t == sentinelType {
 			return true
 		}
 
@@ -215,7 +230,7 @@ func hasApiInEmbedded(t reflect.Type) bool {
 	return false
 }
 
-// buildParamsResolver constructs a parameter resolver for parameter structs that embed api.In.
+// buildParamsResolver constructs a parameter resolver for parameter structs that embed api.P.
 func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 	t := reflectx.Indirect(paramType)
 
@@ -223,7 +238,7 @@ func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 		request := contextx.ApiRequest(ctx)
 		// Create a new instance of the param type
 		paramValue := reflect.New(t)
-		if err := unmarshalParams(request.Params, paramValue.Interface()); err != nil {
+		if err := request.Params.Decode(paramValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err
 		}
 
@@ -236,6 +251,30 @@ func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 		}
 
 		return paramValue.Elem(), nil
+	}
+}
+
+// buildMetaResolver constructs a meta resolver for meta structs that embed api.M.
+func buildMetaResolver(metaType reflect.Type) ParamResolverFunc {
+	t := reflectx.Indirect(metaType)
+
+	return func(ctx fiber.Ctx) (reflect.Value, error) {
+		request := contextx.ApiRequest(ctx)
+		// Create a new instance of the meta type
+		metaValue := reflect.New(t)
+		if err := request.Meta.Decode(metaValue.Interface()); err != nil {
+			return lo.Empty[reflect.Value](), err
+		}
+
+		if err := validator.Validate(metaValue.Interface()); err != nil {
+			return lo.Empty[reflect.Value](), err
+		}
+
+		if metaType.Kind() == reflect.Pointer {
+			return metaValue, nil
+		}
+
+		return metaValue.Elem(), nil
 	}
 }
 
@@ -300,23 +339,4 @@ func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
 	}
 
 	return field
-}
-
-// unmarshalParams unmarshals the request params into the given struct.
-func unmarshalParams(params map[string]any, out any) error {
-	t := reflect.TypeOf(out)
-	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("%w, but got %s", ErrUnmarshalParamsMustPointerStruct, t.Kind().String())
-	}
-
-	decoder, err := mapx.NewDecoder(out)
-	if err != nil {
-		return err
-	}
-
-	if err = decoder.Decode(params); err != nil {
-		return err
-	}
-
-	return nil
 }

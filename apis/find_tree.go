@@ -1,7 +1,10 @@
 package apis
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v3"
+	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
@@ -22,46 +25,114 @@ func (a *findTreeApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findTree)
 }
 
-func (a *findTreeApi[TModel, TSearch]) IdColumn(name string) FindTreeApi[TModel, TSearch] {
+// WithIdColumn sets the column name used as the node ID in tree structures.
+// This column is used to identify individual nodes and establish parent-child relationships.
+func (a *findTreeApi[TModel, TSearch]) WithIdColumn(name string) FindTreeApi[TModel, TSearch] {
 	a.idColumn = name
 
 	return a
 }
 
-func (a *findTreeApi[TModel, TSearch]) ParentIdColumn(name string) FindTreeApi[TModel, TSearch] {
+// WithParentIdColumn sets the column name used to reference parent nodes in tree structures.
+// This column establishes the hierarchical relationship between parent and child nodes.
+func (a *findTreeApi[TModel, TSearch]) WithParentIdColumn(name string) FindTreeApi[TModel, TSearch] {
 	a.parentIdColumn = name
 
 	return a
 }
 
-func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
-	// Initialize FindApi with database schema information
-	// This pre-computes expensive operations like default sort configuration
-	if err := a.Init(db); err != nil {
-		// If initialization fails, return a handler that always returns the error
-		return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
-			return err
-		}
+// WithSelect adds a column to the SELECT clause.
+// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+func (a *findTreeApi[TModel, TSearch]) WithSelect(column string, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
+	a.FindApi.WithSelect(column, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
+
+	return a
+}
+
+// WithSelectAs adds a column with an alias to the SELECT clause.
+// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+func (a *findTreeApi[TModel, TSearch]) WithSelectAs(column, alias string, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
+	a.FindApi.WithSelectAs(column, alias, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
+
+	return a
+}
+
+// WithCondition adds a WHERE condition using ConditionBuilder.
+// Applies to root query only by default (QueryRoot) unless specific parts are provided.
+func (a *findTreeApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTreeApi[TModel, TSearch] {
+	a.FindApi.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
+
+	return a
+}
+
+// WithRelation adds a relation join to the query.
+// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+func (a *findTreeApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
+	a.FindApi.WithRelation(relation, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
+
+	return a
+}
+
+// WithQueryApplier adds a custom query applier function.
+// Applies to root query only by default (QueryRoot) unless specific parts are provided.
+func (a *findTreeApi[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
+	a.FindApi.WithQueryApplier(applier, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
+
+	return a
+}
+
+func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
+	if err := a.Setup(db, &FindApiConfig{
+		QueryParts: &QueryPartsConfig{
+			Condition:         []QueryPart{QueryBase},
+			Sort:              []QueryPart{QueryRoot},
+			AuditUserRelation: []QueryPart{QueryBase, QueryRecursive},
+		},
+	}); err != nil {
+		return nil, err
+	}
+
+	table := db.TableOf((*TModel)(nil))
+	if !table.HasField(a.idColumn) {
+		return nil, fmt.Errorf("%w: column %q does not exist in model %T (tree node id)", ErrColumnNotFound, a.idColumn, (*TModel)(nil))
+	}
+
+	if !table.HasField(a.parentIdColumn) {
+		return nil, fmt.Errorf("%w: column %q does not exist in model %T (parent reference)", ErrColumnNotFound, a.parentIdColumn, (*TModel)(nil))
 	}
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
-		var flatModels []TModel
+		var (
+			flatModels []TModel
+			query      = db.NewSelect()
+		)
 
-		query := db.NewSelect().
-			WithRecursive("tmp_tree", func(query orm.SelectQuery) {
-				// Base query
-				a.ApplyDataPermission(query.Model((*TModel)(nil)).SelectModelColumns(), ctx)
-				a.ApplyConditions(query, search, ctx)
-				a.ApplyRelations(query, search, ctx)
-				a.ApplyAuditUserRelations(query)
-				a.ApplyQuery(query, search, ctx)
+		query.WithRecursive(
+			"tmp_tree", func(cteQuery orm.SelectQuery) {
+				// Base query - the starting point of the tree traversal
+				baseQuery := cteQuery.Model((*TModel)(nil)).SelectModelColumns()
 
-				// Recursive part: find all ancestor nodes
-				query.UnionAll(func(query orm.SelectQuery) {
-					a.ApplyRelations(query.Model((*TModel)(nil)).SelectModelColumns(), search, ctx)
-					a.ApplyAuditUserRelations(query)
-					a.ApplyQuery(query, search, ctx)
-					query.JoinTable(
+				// Apply QueryBase and QueryAll options (including search conditions and data permissions)
+				if err := a.ConfigureQuery(baseQuery, search, ctx, QueryBase); err != nil {
+					// Store error for later return
+					SetQueryError(ctx, err)
+
+					return
+				}
+
+				// Recursive part: find all ancestor/descendant nodes
+				cteQuery.UnionAll(func(recursiveQuery orm.SelectQuery) {
+					recursiveQuery.Model((*TModel)(nil)).SelectModelColumns()
+
+					// Apply QueryRecursive and QueryAll options
+					if err := a.ConfigureQuery(recursiveQuery, search, ctx, QueryRecursive); err != nil {
+						SetQueryError(ctx, err)
+
+						return
+					}
+
+					// Join with CTE to traverse the tree
+					recursiveQuery.JoinTable(
 						"tmp_tree",
 						func(cb orm.ConditionBuilder) {
 							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "tt"))
@@ -73,12 +144,18 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 			Distinct().
 			Table("tmp_tree")
 
-		a.ApplySort(query, search, ctx)
+		// Check for errors during query building
+		if queryErr := QueryError(ctx); queryErr != nil {
+			return queryErr
+		}
 
-		// Apply default sort if configured
-		a.ApplyDefaultSort(query)
+		// Apply QueryRoot and QueryAll options to the outer query (sorting, etc.)
+		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+			return err
+		}
 
-		if err := query.Limit(maxQueryLimit).Scan(ctx.Context(), &flatModels); err != nil {
+		if err := query.Limit(maxQueryLimit).
+			Scan(ctx.Context(), &flatModels); err != nil {
 			return err
 		}
 
@@ -93,9 +170,8 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) func(ctx fiber.Ctx, d
 			flatModels = make([]TModel, 0)
 		}
 
-		// Build tree structure using the configured TreeBuilder
 		models := a.treeBuilder(flatModels)
 
 		return result.Ok(a.Process(models, search, ctx)).Response(ctx)
-	}
+	}, nil
 }

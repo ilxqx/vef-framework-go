@@ -24,7 +24,7 @@ func newExporter(typ reflect.Type, opts ...ExportOption) *exporter {
 	options := exportOptions{
 		delimiter:   constants.ByteComma,
 		writeHeader: true,
-		useCRLF:     false,
+		useCrlf:     false,
 	}
 	for _, opt := range opts {
 		opt(&options)
@@ -74,7 +74,7 @@ func (e *exporter) Export(data any) (*bytes.Buffer, error) {
 func (e *exporter) writeToWriter(csvWriter *csv.Writer, data any) error {
 	// Configure CSV writer
 	csvWriter.Comma = e.options.delimiter
-	csvWriter.UseCRLF = e.options.useCRLF
+	csvWriter.UseCRLF = e.options.useCrlf
 
 	// Write data
 	if err := e.doExport(csvWriter, data); err != nil {

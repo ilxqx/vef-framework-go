@@ -17,9 +17,9 @@ import (
 type updateApi[TModel, TParams any] struct {
 	ApiBuilder[UpdateApi[TModel, TParams]]
 
-	preUpdate       PreUpdateProcessor[TModel, TParams]
-	postUpdate      PostUpdateProcessor[TModel, TParams]
-	disableDataPerm bool
+	preUpdate        PreUpdateProcessor[TModel, TParams]
+	postUpdate       PostUpdateProcessor[TModel, TParams]
+	dataPermDisabled bool
 }
 
 // Provide generates the final Api specification for model updates.
@@ -28,28 +28,26 @@ func (u *updateApi[TModel, TParams]) Provide() api.Spec {
 	return u.Build(u.update)
 }
 
-func (u *updateApi[TModel, TParams]) PreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
 	u.preUpdate = processor
 
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) PostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
 	u.postUpdate = processor
 
 	return u
 }
 
 func (u *updateApi[TModel, TParams]) DisableDataPerm() UpdateApi[TModel, TParams] {
-	u.disableDataPerm = true
+	u.dataPermDisabled = true
 
 	return u
 }
 
 func (u *updateApi[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
-	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
-	// Pre-compute primary key fields
 	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
@@ -82,8 +80,8 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 
 		// Build query with data permission filtering
 		query := db.NewSelect().Model(&model).WherePk()
-		if !u.disableDataPerm {
-			if err := applyDataPermission(query, ctx); err != nil {
+		if !u.dataPermDisabled {
+			if err := ApplyDataPermission(query, ctx); err != nil {
 				return err
 			}
 		}

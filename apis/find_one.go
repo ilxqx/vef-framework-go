@@ -18,18 +18,30 @@ func (a *findOneApi[TModel, TSearch]) Provide() api.Spec {
 }
 
 func (a *findOneApi[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
-	if err := a.Init(db); err != nil {
+	if err := a.Setup(db, &FindApiConfig{
+		QueryParts: &QueryPartsConfig{
+			Condition:         []QueryPart{QueryRoot},
+			Sort:              []QueryPart{QueryRoot},
+			AuditUserRelation: []QueryPart{QueryRoot},
+		},
+	}); err != nil {
 		return nil, err
 	}
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
 		var (
 			model TModel
-			query = a.BuildQuery(db, &model, search, ctx).SelectModelColumns()
+			query = db.NewSelect().Model(&model)
 		)
 
+		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+			return err
+		}
+
 		// Limit to 1 record for efficiency
-		if err := query.Limit(1).Scan(ctx.Context()); err != nil {
+		if err := query.SelectModelColumns().
+			Limit(1).
+			Scan(ctx.Context()); err != nil {
 			return err
 		}
 

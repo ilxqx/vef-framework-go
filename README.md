@@ -264,6 +264,359 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
     RateLimit(10, 1*time.Minute).      // 10 requests per minute
 ```
 
+**Note:** FindApi types (FindOneApi, FindAllApi, FindPageApi, FindTreeApi, FindOptionsApi, FindTreeOptionsApi, ExportApi) have additional configuration methods. See [FindApi Configuration Methods](#findapi-configuration-methods) for details.
+
+### FindApi Configuration Methods
+
+All FindApi types (FindOneApi, FindAllApi, FindPageApi, FindTreeApi, FindOptionsApi, FindTreeOptionsApi, ExportApi) support a unified query configuration system using fluent methods. These methods allow you to customize query behavior, add conditions, configure sorting, and process results.
+
+#### Common Configuration Methods
+
+| Method | Description | Default QueryPart | Applicable APIs |
+|--------|-------------|-------------------|-----------------|
+| `WithProcessor` | Set post-processing function for query results | N/A | All FindApi |
+| `WithOptions` | Add multiple FindApiOptions | N/A | All FindApi |
+| `WithSelect` | Add column to SELECT clause | QueryAll | All FindApi |
+| `WithSelectAs` | Add column with alias to SELECT clause | QueryAll | All FindApi |
+| `WithDefaultSort` | Set default sorting specifications | QueryRoot | All FindApi |
+| `WithCondition` | Add WHERE condition using ConditionBuilder | QueryRoot | All FindApi |
+| `WithRelation` | Add relation join | QueryAll | All FindApi |
+| `WithAuditUserNames` | Fetch audit user names (created_by_name, updated_by_name) | QueryRoot | All FindApi |
+| `WithQueryApplier` | Add custom query applier function | QueryRoot | All FindApi |
+| `DisableDataPerm` | Disable data permission filtering | N/A | All FindApi |
+
+**WithProcessor Example:**
+
+The `Processor` function is executed after the database query completes but before returning results to the client. This allows you to transform, enrich, or filter the query results.
+
+Common use cases:
+- **Data masking**: Hide sensitive information (passwords, tokens)
+- **Computed fields**: Add calculated values based on existing data
+- **Nested structure transformation**: Convert flat data to hierarchical structures
+- **Aggregation**: Compute statistics or summaries
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
+        // Data masking
+        for i := range users {
+            users[i].Password = "***"
+            users[i].ApiToken = ""
+        }
+        return users
+    }),
+
+// Example: Adding computed fields
+FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
+    WithProcessor(func(page page.Page[Order], search OrderSearch, ctx fiber.Ctx) any {
+        for i := range page.Items {
+            // Calculate total amount
+            page.Items[i].TotalAmount = page.Items[i].Quantity * page.Items[i].UnitPrice
+        }
+        return page
+    }),
+
+// Example: Nested structure transformation
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
+        // Group users by department
+        type DepartmentUsers struct {
+            DepartmentName string `json:"departmentName"`
+            Users          []User `json:"users"`
+        }
+        
+        grouped := make(map[string]*DepartmentUsers)
+        for _, user := range users {
+            if _, exists := grouped[user.DepartmentId]; !exists {
+                grouped[user.DepartmentId] = &DepartmentUsers{
+                    DepartmentName: user.DepartmentName,
+                    Users:          []User{},
+                }
+            }
+            grouped[user.DepartmentId].Users = append(grouped[user.DepartmentId].Users, user)
+        }
+        
+        result := make([]DepartmentUsers, 0, len(grouped))
+        for _, dept := range grouped {
+            result = append(result, *dept)
+        }
+        return result
+    }),
+```
+
+**WithSelect / WithSelectAs Example:**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithSelect("username").
+    WithSelectAs("email_address", "email"),
+```
+
+**WithDefaultSort Example:**
+
+```go
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "created_at",
+        Direction: sort.OrderDesc,
+    }),
+```
+
+Pass empty arguments to disable default sorting:
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithDefaultSort(), // Disable default sorting
+```
+
+**WithCondition Example:**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_deleted", false)
+        cb.Equals("is_active", true)
+    }),
+```
+
+**WithRelation Example:**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithRelation(&orm.RelationSpec{
+        Name: "Profile",
+    }),
+```
+
+**WithAuditUserNames Example:**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithAuditUserNames(&User{}), // Uses "name" column by default
+    
+// Or specify custom column name
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithAuditUserNames(&User{}, "username"),
+```
+
+**WithQueryApplier Example:**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithQueryApplier(func(query orm.SelectQuery, search UserSearch, ctx fiber.Ctx) error {
+        // Custom query logic
+        if search.IncludeInactive {
+            query.Where(func(cb orm.ConditionBuilder) {
+                cb.Or(
+                    cb.Equals("is_active", true),
+                    cb.Equals("is_active", false),
+                )
+            })
+        }
+        return nil
+    }),
+```
+
+**DisableDataPerm Example:**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    DisableDataPerm(), // Must be called before API registration
+```
+
+**Important:** `DisableDataPerm()` must be called before the API is registered (before the `Setup` method is executed). It should be chained immediately after `NewFindXxxApi()`. By default, data permission filtering is enabled and automatically applied during `Setup`.
+
+#### QueryPart System
+
+The `parts` parameter in configuration methods specifies which part(s) of the query the option applies to. This is particularly important for tree APIs that use recursive CTEs (Common Table Expressions).
+
+| QueryPart | Description | Use Case |
+|-----------|-------------|----------|
+| `QueryRoot` | Outer/root query | Sorting, limiting, final filtering |
+| `QueryBase` | Base query (in CTE) | Initial conditions, starting nodes |
+| `QueryRecursive` | Recursive query (in CTE) | Recursive traversal configuration |
+| `QueryAll` | All query parts | Column selection, relations |
+
+**Default Behavior:**
+
+- `WithSelect`, `WithSelectAs`, `WithRelation`: Default to `QueryAll` (applies to all parts)
+- `WithCondition`, `WithQueryApplier`, `WithDefaultSort`: Default to `QueryRoot` (applies to root query only)
+
+**Normal Query Example:**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithSelect("username").              // Applies to QueryAll (main query)
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)     // Applies to QueryRoot (main query)
+    }),
+```
+
+**Tree Query Example:**
+
+```go
+FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+    // Select columns for both base and recursive queries
+    WithSelect("sort", apis.QueryBase, apis.QueryRecursive).
+    
+    // Filter only starting nodes
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.IsNull("parent_id")           // Only applies to QueryBase
+    }, apis.QueryBase).
+    
+    // Add condition to recursive traversal
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)     // Applies to QueryRecursive
+    }, apis.QueryRecursive),
+```
+
+#### Tree Query Configuration
+
+`FindTreeApi` and `FindTreeOptionsApi` use recursive CTEs (Common Table Expressions) to query hierarchical data. Understanding how QueryPart applies to different parts of the recursive query is essential for proper configuration.
+
+**Recursive CTE Structure:**
+
+```sql
+WITH RECURSIVE tree AS (
+    -- QueryBase: Initial query for root nodes
+    SELECT * FROM categories WHERE parent_id IS NULL
+    
+    UNION ALL
+    
+    -- QueryRecursive: Recursive query joining with CTE
+    SELECT c.* FROM categories c
+    INNER JOIN tree t ON c.parent_id = t.id
+)
+-- QueryRoot: Final SELECT from CTE
+SELECT * FROM tree ORDER BY sort
+```
+
+**QueryPart Behavior in Tree Queries:**
+
+- `WithSelect` / `WithSelectAs`: Default to `QueryBase` and `QueryRecursive` (columns must be consistent in both parts of UNION)
+- `WithCondition` / `WithQueryApplier`: Default to `QueryBase` only (filter starting nodes)
+- `WithRelation`: Default to `QueryBase` and `QueryRecursive` (joins needed in both parts)
+- `WithDefaultSort`: Applies to `QueryRoot` (sort final results)
+
+**Complete Tree Query Example:**
+
+```go
+FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
+    func(categories []Category) []Category {
+        // Build tree structure from flat list
+        return buildCategoryTree(categories)
+    },
+).
+    // Add custom columns to both base and recursive queries
+    WithSelect("sort", apis.QueryBase, apis.QueryRecursive).
+    WithSelect("icon", apis.QueryBase, apis.QueryRecursive).
+    
+    // Filter starting nodes (only active root categories)
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)
+        cb.IsNull("parent_id")
+    }, apis.QueryBase).
+    
+    // Add relation to both queries
+    WithRelation(&orm.RelationSpec{
+        Name: "Metadata",
+    }, apis.QueryBase, apis.QueryRecursive).
+    
+    // Fetch audit user names
+    WithAuditUserNames(&User{}).
+    
+    // Sort final results
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "sort",
+        Direction: sort.OrderAsc,
+    }),
+```
+
+**FindTreeOptionsApi Configuration:**
+
+`FindTreeOptionsApi` follows the same configuration pattern as `FindTreeApi`:
+
+```go
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](
+    buildCategoryTree,
+).
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn: "name",
+        ValueColumn: "id",
+    }).
+    WithIdColumn("id").
+    WithParentIdColumn("parent_id").
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)
+    }, apis.QueryBase),
+```
+
+#### API-Specific Configuration Methods
+
+**FindPageApi:**
+
+```go
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithDefaultPageSize(20), // Set default page size (used when request doesn't specify or is invalid)
+```
+
+**FindOptionsApi:**
+
+```go
+FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn:       "name",        // Column for option label (default: "name")
+        ValueColumn:       "id",          // Column for option value (default: "id")
+        DescriptionColumn: "description", // Optional description column
+    }),
+```
+
+**FindTreeApi:**
+
+```go
+FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+    WithIdColumn("id").              // ID column name (default: "id")
+    WithParentIdColumn("parent_id"), // Parent ID column name (default: "parent_id")
+```
+
+**FindTreeOptionsApi:**
+
+Combines both options and tree configuration:
+
+```go
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](buildTree).
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn: "name",
+        ValueColumn: "id",
+    }).
+    WithIdColumn("id").
+    WithParentIdColumn("parent_id"),
+```
+
+**ExportApi:**
+
+```go
+ExportApi: apis.NewExportApi[User, UserSearch]().
+    WithDefaultFormat("xlsx").                    // Default export format: "xlsx" or "csv"
+    WithExcelOptions(&excel.ExportOptions{        // Excel-specific options
+        SheetName: "Users",
+    }).
+    WithCsvOptions(&csv.ExportOptions{            // CSV-specific options
+        Delimiter: ',',
+    }).
+    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx) ([]User, error) {
+        // Modify data before export (e.g., data masking)
+        for i := range users {
+            users[i].Password = "***"
+        }
+        return users, nil
+    }).
+    WithFilenameBuilder(func(search UserSearch, ctx fiber.Ctx) string {
+        // Generate dynamic filename
+        return fmt.Sprintf("users_%s", time.Now().Format("20060102"))
+    }),
+```
+
 ### Pre/Post Hooks
 
 Add custom business logic before/after CRUD operations:
@@ -344,8 +697,8 @@ func (r *UserResource) ResetPassword(
 - `mold.Transformer` - Data transformer
 - `*security.Principal` - Current authenticated user
 - `page.Pageable` - Pagination parameters
-- Custom structs embedding `api.In`
-- Resource struct fields (direct fields, `api:"params"` tagged fields, or embedded structs)
+- Custom structs embedding `api.P`
+- Resource struct fields (direct fields, `api:"in"` tagged fields, or embedded structs)
 
 **Example of Resource Field Injection:**
 

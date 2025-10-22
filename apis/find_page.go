@@ -14,33 +14,48 @@ import (
 
 type findPageApi[TModel, TSearch any] struct {
 	FindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]]
+
+	defaultPageSize int
 }
 
 func (a *findPageApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findPage)
 }
 
+// WithDefaultPageSize sets the default page size when not specified in the request.
+// This value is used when the request's page size is zero or invalid.
+func (a *findPageApi[TModel, TSearch]) WithDefaultPageSize(size int) FindPageApi[TModel, TSearch] {
+	a.defaultPageSize = size
+
+	return a
+}
+
 func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error, error) {
-	if err := a.Init(db); err != nil {
+	if err := a.Setup(db, &FindApiConfig{
+		QueryParts: &QueryPartsConfig{
+			Condition:         []QueryPart{QueryRoot},
+			Sort:              []QueryPart{QueryRoot},
+			AuditUserRelation: []QueryPart{QueryRoot},
+		},
+	}); err != nil {
 		return nil, err
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error {
-		var models []TModel
+	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) (err error) {
+		pageable.Normalize(a.defaultPageSize)
 
-		query := a.BuildQuery(db, (*TModel)(nil), search, ctx).SelectModelColumns()
+		var (
+			models []TModel
+			query  = db.NewSelect().Model(&models).SelectModelColumns().Paginate(pageable)
+			total  int64
+		)
 
-		// Normalize pagination parameters
-		pageable.Normalize()
-
-		// Apply default sort only if user hasn't specified custom sorting
-		if len(pageable.Sort) == 0 {
-			a.ApplyDefaultSort(query)
+		if err = a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+			return err
 		}
 
 		// Execute paginated query and get total count
-		total, err := query.Paginate(pageable).ScanAndCount(ctx.Context(), &models)
-		if err != nil {
+		if total, err = query.ScanAndCount(ctx.Context()); err != nil {
 			return err
 		}
 

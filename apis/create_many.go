@@ -24,13 +24,13 @@ func (c *createManyApi[TModel, TParams]) Provide() api.Spec {
 	return c.Build(c.createMany)
 }
 
-func (c *createManyApi[TModel, TParams]) PreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams] {
+func (c *createManyApi[TModel, TParams]) WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams] {
 	c.preCreateMany = processor
 
 	return c
 }
 
-func (c *createManyApi[TModel, TParams]) PostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams] {
+func (c *createManyApi[TModel, TParams]) WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams] {
 	c.postCreateMany = processor
 
 	return c

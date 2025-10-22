@@ -4,7 +4,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/search"
 )
 
 // NewApiBuilder creates a new base Api builder instance.
@@ -70,93 +69,114 @@ func NewDeleteManyApi[TModel any](version ...string) DeleteManyApi[TModel] {
 
 func NewFindApi[TModel, TSearch, TProcessor, TApi any](self TApi, version ...string) FindApi[TModel, TSearch, TProcessor, TApi] {
 	return &baseFindApi[TModel, TSearch, TProcessor, TApi]{
-		ApiBuilder: NewApiBuilder(self, version...),
+		ApiBuilder: NewApiBuilder(self),
 
-		searchApplier: search.Applier[TSearch](),
-		self:          self,
+		self: self,
 	}
 }
 
-// NewFindOneApi creates a new FindOneApi instance.
+// NewFindOneApi creates a new FindOneApi instance with optional configurations.
 func NewFindOneApi[TModel, TSearch any](version ...string) FindOneApi[TModel, TSearch] {
 	api := new(findOneApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]](api, version...)
+	api.FindApi = NewFindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]](
+		api,
+		version...,
+	)
 
 	return api.Action(ActionFindOne)
 }
 
-// NewFindAllApi creates a new FindAllApi instance.
+// NewFindAllApi creates a new FindAllApi instance with optional configurations.
 func NewFindAllApi[TModel, TSearch any](version ...string) FindAllApi[TModel, TSearch] {
 	api := new(findAllApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]](api, version...)
+	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]](
+		api,
+		version...,
+	)
 
 	return api.Action(ActionFindAll)
 }
 
-// NewFindPageApi creates a new FindPageApi instance.
+// NewFindPageApi creates a new FindPageApi instance with optional configurations.
 func NewFindPageApi[TModel, TSearch any](version ...string) FindPageApi[TModel, TSearch] {
 	api := new(findPageApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]](api, version...)
+	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]](
+		api,
+		version...,
+	)
 
 	return api.Action(ActionFindPage)
 }
 
-// NewFindOptionsApi creates a new FindOptionsApi with the specified options.
+// NewFindOptionsApi creates a new FindOptionsApi with optional configurations.
 func NewFindOptionsApi[TModel, TSearch any](version ...string) FindOptionsApi[TModel, TSearch] {
 	api := &findOptionsApi[TModel, TSearch]{
-		columnMapping: &OptionColumnMapping{
+		defaultColumnMapping: &DataOptionColumnMapping{
 			LabelColumn: defaultLabelColumn,
 			ValueColumn: defaultValueColumn,
 		},
 	}
-	api.FindApi = NewFindApi[TModel, TSearch, []Option, FindOptionsApi[TModel, TSearch]](api, version...)
+	api.FindApi = NewFindApi[TModel, TSearch, []DataOption, FindOptionsApi[TModel, TSearch]](
+		api,
+		version...,
+	)
 
 	return api.Action(ActionFindOptions)
 }
 
-// NewFindTreeApi creates a new FindTreeApi for hierarchical data retrieval.
+// NewFindTreeApi creates a new FindTreeApi for hierarchical data retrieval with optional configurations.
 // The treeBuilder function converts flat database records into nested tree structures.
 // Requires models to have id and parent_id columns for parent-child relationships.
-func NewFindTreeApi[TModel, TSearch any](treeBuilder func(flatModels []TModel) []TModel, version ...string) FindTreeApi[TModel, TSearch] {
+func NewFindTreeApi[TModel, TSearch any](
+	treeBuilder func(flatModels []TModel) []TModel,
+	version ...string,
+) FindTreeApi[TModel, TSearch] {
 	api := &findTreeApi[TModel, TSearch]{
 		idColumn:       idColumn,
 		parentIdColumn: parentIdColumn,
 		treeBuilder:    treeBuilder,
 	}
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]](api, version...)
+	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]](
+		api,
+		version...,
+	)
 
 	return api.Action(ActionFindTree)
 }
 
-// NewFindTreeOptionsApi creates a new FindTreeOptionsApi with the specified options.
+// NewFindTreeOptionsApi creates a new FindTreeOptionsApi with optional configurations.
 func NewFindTreeOptionsApi[TModel, TSearch any](version ...string) FindTreeOptionsApi[TModel, TSearch] {
 	api := &findTreeOptionsApi[TModel, TSearch]{
-		columnMapping: &TreeOptionColumnMapping{
-			OptionColumnMapping: OptionColumnMapping{
-				LabelColumn: defaultLabelColumn,
-				ValueColumn: defaultValueColumn,
-			},
-			IdColumn:       idColumn,
-			ParentIdColumn: parentIdColumn,
+		defaultColumnMapping: &DataOptionColumnMapping{
+			LabelColumn: defaultLabelColumn,
+			ValueColumn: defaultValueColumn,
 		},
+		idColumn:       idColumn,
+		parentIdColumn: parentIdColumn,
 	}
-	api.FindApi = NewFindApi[TModel, TSearch, []TreeOption, FindTreeOptionsApi[TModel, TSearch]](api, version...)
+	api.FindApi = NewFindApi[TModel, TSearch, []TreeDataOption, FindTreeOptionsApi[TModel, TSearch]](
+		api,
+		version...,
+	)
 
 	return api.Action(ActionFindTreeOptions)
 }
 
-// NewExportApi creates a new ExportApi instance.
+// NewExportApi creates a new ExportApi instance with optional configurations.
 func NewExportApi[TModel, TSearch any](version ...string) ExportApi[TModel, TSearch] {
 	api := new(exportApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]](api, version...)
+	api.FindApi = NewFindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]](
+		api,
+		version...,
+	)
 
 	return api.Action(ActionExport)
 }
 
 // NewImportApi creates a new ImportApi instance.
-func NewImportApi[TModel, TSearch any](version ...string) ImportApi[TModel, TSearch] {
-	api := new(importApi[TModel, TSearch])
-	api.ApiBuilder = NewApiBuilder[ImportApi[TModel, TSearch]](api, version...)
+func NewImportApi[TModel any](version ...string) ImportApi[TModel] {
+	api := new(importApi[TModel])
+	api.ApiBuilder = NewApiBuilder[ImportApi[TModel]](api, version...)
 
 	return api.Action(ActionImport)
 }

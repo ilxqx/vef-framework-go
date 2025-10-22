@@ -2,7 +2,6 @@ package page
 
 import (
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/sort"
 )
 
 const (
@@ -16,22 +15,25 @@ const (
 
 // Pageable represents pagination parameters for querying data.
 type Pageable struct {
-	api.In
+	api.M
 
-	Page int              `json:"page"` // Page is the page number (1-based)
-	Size int              `json:"size"` // Size is the number of items per page
-	Sort []sort.OrderSpec `json:"sort"` // Sort is the sort field names
+	Page int `json:"page"` // 1-based
+	Size int `json:"size"`
 }
 
 // Normalize normalizes the pageable parameters.
 // It sets default values and enforces limits.
-func (p *Pageable) Normalize() {
+func (p *Pageable) Normalize(size ...int) {
 	if p.Page < 1 {
 		p.Page = DefaultPageNumber
 	}
 
 	if p.Size < 1 {
-		p.Size = DefaultPageSize
+		if len(size) > 0 {
+			p.Size = size[0]
+		} else {
+			p.Size = DefaultPageSize
+		}
 	}
 
 	if p.Size > MaxPageSize {
@@ -46,10 +48,10 @@ func (p Pageable) Offset() int {
 
 // Page represents a paginated response with metadata and items.
 type Page[T any] struct {
-	Page  int   `json:"page"`  // Page is the current page number (1-based)
-	Size  int   `json:"size"`  // Size is the number of items per page
-	Total int64 `json:"total"` // Total is the total number of items across all pages
-	Items []T   `json:"items"` // Items contains the data for the current page
+	Page  int   `json:"page"`
+	Size  int   `json:"size"`
+	Total int64 `json:"total"`
+	Items []T   `json:"items"`
 }
 
 // TotalPages returns the total number of pages based on the total count.

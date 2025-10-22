@@ -24,13 +24,13 @@ func (c *createApi[TModel, TParams]) Provide() api.Spec {
 	return c.Build(c.create)
 }
 
-func (c *createApi[TModel, TParams]) PreCreate(processor PreCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
+func (c *createApi[TModel, TParams]) WithPreCreate(processor PreCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
 	c.preCreate = processor
 
 	return c
 }
 
-func (c *createApi[TModel, TParams]) PostCreate(processor PostCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
+func (c *createApi[TModel, TParams]) WithPostCreate(processor PostCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
 	c.postCreate = processor
 
 	return c

@@ -264,6 +264,359 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
     RateLimit(10, 1*time.Minute).      // 每分钟 10 次请求
 ```
 
+**注意：** FindApi 类型（FindOneApi、FindAllApi、FindPageApi、FindTreeApi、FindOptionsApi、FindTreeOptionsApi、ExportApi）具有额外的配置方法。详见 [FindApi 配置方法](#findapi-配置方法)。
+
+### FindApi 配置方法
+
+所有 FindApi 类型（FindOneApi、FindAllApi、FindPageApi、FindTreeApi、FindOptionsApi、FindTreeOptionsApi、ExportApi）都支持使用流式方法的统一查询配置系统。这些方法允许您自定义查询行为、添加条件、配置排序和处理结果。
+
+#### 通用配置方法
+
+| 方法 | 说明 | 默认 QueryPart | 适用 API |
+|------|------|---------------|----------|
+| `WithProcessor` | 设置查询结果的后处理函数 | N/A | 所有 FindApi |
+| `WithOptions` | 添加多个 FindApiOptions | N/A | 所有 FindApi |
+| `WithSelect` | 添加列到 SELECT 子句 | QueryAll | 所有 FindApi |
+| `WithSelectAs` | 添加带别名的列到 SELECT 子句 | QueryAll | 所有 FindApi |
+| `WithDefaultSort` | 设置默认排序规范 | QueryRoot | 所有 FindApi |
+| `WithCondition` | 使用 ConditionBuilder 添加 WHERE 条件 | QueryRoot | 所有 FindApi |
+| `WithRelation` | 添加关联查询 | QueryAll | 所有 FindApi |
+| `WithAuditUserNames` | 获取审计用户名（created_by_name、updated_by_name） | QueryRoot | 所有 FindApi |
+| `WithQueryApplier` | 添加自定义查询应用函数 | QueryRoot | 所有 FindApi |
+| `DisableDataPerm` | 禁用数据权限过滤 | N/A | 所有 FindApi |
+
+**WithProcessor 示例：**
+
+`Processor` 函数在数据库查询完成后、将结果返回给客户端之前执行。这允许您转换、丰富或过滤查询结果。
+
+常见用例：
+- **数据脱敏**：隐藏敏感信息（密码、令牌）
+- **计算字段**：基于现有数据添加计算值
+- **嵌套结构转换**：将扁平数据转换为层次结构
+- **聚合计算**：计算统计信息或摘要
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
+        // 数据脱敏
+        for i := range users {
+            users[i].Password = "***"
+            users[i].ApiToken = ""
+        }
+        return users
+    }),
+
+// 示例：添加计算字段
+FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
+    WithProcessor(func(page page.Page[Order], search OrderSearch, ctx fiber.Ctx) any {
+        for i := range page.Items {
+            // 计算总金额
+            page.Items[i].TotalAmount = page.Items[i].Quantity * page.Items[i].UnitPrice
+        }
+        return page
+    }),
+
+// 示例：嵌套结构转换
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
+        // 按部门分组用户
+        type DepartmentUsers struct {
+            DepartmentName string `json:"departmentName"`
+            Users          []User `json:"users"`
+        }
+        
+        grouped := make(map[string]*DepartmentUsers)
+        for _, user := range users {
+            if _, exists := grouped[user.DepartmentId]; !exists {
+                grouped[user.DepartmentId] = &DepartmentUsers{
+                    DepartmentName: user.DepartmentName,
+                    Users:          []User{},
+                }
+            }
+            grouped[user.DepartmentId].Users = append(grouped[user.DepartmentId].Users, user)
+        }
+        
+        result := make([]DepartmentUsers, 0, len(grouped))
+        for _, dept := range grouped {
+            result = append(result, *dept)
+        }
+        return result
+    }),
+```
+
+**WithSelect / WithSelectAs 示例：**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithSelect("username").
+    WithSelectAs("email_address", "email"),
+```
+
+**WithDefaultSort 示例：**
+
+```go
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "created_at",
+        Direction: sort.OrderDesc,
+    }),
+```
+
+传入空参数可禁用默认排序：
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithDefaultSort(), // 禁用默认排序
+```
+
+**WithCondition 示例：**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_deleted", false)
+        cb.Equals("is_active", true)
+    }),
+```
+
+**WithRelation 示例：**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithRelation(&orm.RelationSpec{
+        Name: "Profile",
+    }),
+```
+
+**WithAuditUserNames 示例：**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithAuditUserNames(&User{}), // 默认使用 "name" 列
+    
+// 或指定自定义列名
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithAuditUserNames(&User{}, "username"),
+```
+
+**WithQueryApplier 示例：**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithQueryApplier(func(query orm.SelectQuery, search UserSearch, ctx fiber.Ctx) error {
+        // 自定义查询逻辑
+        if search.IncludeInactive {
+            query.Where(func(cb orm.ConditionBuilder) {
+                cb.Or(
+                    cb.Equals("is_active", true),
+                    cb.Equals("is_active", false),
+                )
+            })
+        }
+        return nil
+    }),
+```
+
+**DisableDataPerm 示例：**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    DisableDataPerm(), // 必须在 API 注册前调用
+```
+
+**重要提示：** `DisableDataPerm()` 必须在 API 注册之前调用（在 `Setup` 方法执行之前）。它应该在 `NewFindXxxApi()` 之后立即链式调用。默认情况下，数据权限过滤是启用的，并在 `Setup` 期间自动应用。
+
+#### QueryPart 系统
+
+配置方法中的 `parts` 参数指定选项应用于查询的哪个部分。这对于使用递归 CTE（公用表表达式）的树形 API 尤为重要。
+
+| QueryPart | 说明 | 使用场景 |
+|-----------|------|----------|
+| `QueryRoot` | 外层/根查询 | 排序、限制、最终过滤 |
+| `QueryBase` | 基础查询（在 CTE 中） | 初始条件、起始节点 |
+| `QueryRecursive` | 递归查询（在 CTE 中） | 递归遍历配置 |
+| `QueryAll` | 所有查询部分 | 列选择、关联 |
+
+**默认行为：**
+
+- `WithSelect`、`WithSelectAs`、`WithRelation`：默认为 `QueryAll`（应用于所有部分）
+- `WithCondition`、`WithQueryApplier`、`WithDefaultSort`：默认为 `QueryRoot`（仅应用于根查询）
+
+**普通查询示例：**
+
+```go
+FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+    WithSelect("username").              // 应用于 QueryAll（主查询）
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)     // 应用于 QueryRoot（主查询）
+    }),
+```
+
+**树形查询示例：**
+
+```go
+FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+    // 为基础查询和递归查询选择列
+    WithSelect("sort", apis.QueryBase, apis.QueryRecursive).
+    
+    // 仅过滤起始节点
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.IsNull("parent_id")           // 仅应用于 QueryBase
+    }, apis.QueryBase).
+    
+    // 向递归遍历添加条件
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)     // 应用于 QueryRecursive
+    }, apis.QueryRecursive),
+```
+
+#### 树形查询配置
+
+`FindTreeApi` 和 `FindTreeOptionsApi` 使用递归 CTE（公用表表达式）查询层次数据。理解 QueryPart 如何应用于递归查询的不同部分对于正确配置至关重要。
+
+**递归 CTE 结构：**
+
+```sql
+WITH RECURSIVE tree AS (
+    -- QueryBase：根节点的初始查询
+    SELECT * FROM categories WHERE parent_id IS NULL
+    
+    UNION ALL
+    
+    -- QueryRecursive：与 CTE 连接的递归查询
+    SELECT c.* FROM categories c
+    INNER JOIN tree t ON c.parent_id = t.id
+)
+-- QueryRoot：从 CTE 的最终 SELECT
+SELECT * FROM tree ORDER BY sort
+```
+
+**树形查询中的 QueryPart 行为：**
+
+- `WithSelect` / `WithSelectAs`：默认为 `QueryBase` 和 `QueryRecursive`（UNION 两部分的列必须一致）
+- `WithCondition` / `WithQueryApplier`：默认仅为 `QueryBase`（过滤起始节点）
+- `WithRelation`：默认为 `QueryBase` 和 `QueryRecursive`（两部分都需要连接）
+- `WithDefaultSort`：应用于 `QueryRoot`（排序最终结果）
+
+**完整的树形查询示例：**
+
+```go
+FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
+    func(categories []Category) []Category {
+        // 从扁平列表构建树结构
+        return buildCategoryTree(categories)
+    },
+).
+    // 向基础查询和递归查询添加自定义列
+    WithSelect("sort", apis.QueryBase, apis.QueryRecursive).
+    WithSelect("icon", apis.QueryBase, apis.QueryRecursive).
+    
+    // 过滤起始节点（仅活动的根分类）
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)
+        cb.IsNull("parent_id")
+    }, apis.QueryBase).
+    
+    // 向两个查询添加关联
+    WithRelation(&orm.RelationSpec{
+        Name: "Metadata",
+    }, apis.QueryBase, apis.QueryRecursive).
+    
+    // 获取审计用户名
+    WithAuditUserNames(&User{}).
+    
+    // 排序最终结果
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "sort",
+        Direction: sort.OrderAsc,
+    }),
+```
+
+**FindTreeOptionsApi 配置：**
+
+`FindTreeOptionsApi` 遵循与 `FindTreeApi` 相同的配置模式：
+
+```go
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](
+    buildCategoryTree,
+).
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn: "name",
+        ValueColumn: "id",
+    }).
+    WithIdColumn("id").
+    WithParentIdColumn("parent_id").
+    WithCondition(func(cb orm.ConditionBuilder) {
+        cb.Equals("is_active", true)
+    }, apis.QueryBase),
+```
+
+#### API 特定配置方法
+
+**FindPageApi：**
+
+```go
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithDefaultPageSize(20), // 设置默认分页大小（当请求未指定或无效时使用）
+```
+
+**FindOptionsApi：**
+
+```go
+FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn:       "name",        // 选项标签列（默认："name"）
+        ValueColumn:       "id",          // 选项值列（默认："id"）
+        DescriptionColumn: "description", // 可选描述列
+    }),
+```
+
+**FindTreeApi：**
+
+```go
+FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+    WithIdColumn("id").              // ID 列名（默认："id"）
+    WithParentIdColumn("parent_id"), // 父 ID 列名（默认："parent_id"）
+```
+
+**FindTreeOptionsApi：**
+
+结合选项和树形配置：
+
+```go
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](buildTree).
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn: "name",
+        ValueColumn: "id",
+    }).
+    WithIdColumn("id").
+    WithParentIdColumn("parent_id"),
+```
+
+**ExportApi：**
+
+```go
+ExportApi: apis.NewExportApi[User, UserSearch]().
+    WithDefaultFormat("xlsx").                    // 默认导出格式："xlsx" 或 "csv"
+    WithExcelOptions(&excel.ExportOptions{        // Excel 特定选项
+        SheetName: "Users",
+    }).
+    WithCsvOptions(&csv.ExportOptions{            // CSV 特定选项
+        Delimiter: ',',
+    }).
+    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx) ([]User, error) {
+        // 导出前修改数据（例如数据脱敏）
+        for i := range users {
+            users[i].Password = "***"
+        }
+        return users, nil
+    }).
+    WithFilenameBuilder(func(search UserSearch, ctx fiber.Ctx) string {
+        // 生成动态文件名
+        return fmt.Sprintf("users_%s", time.Now().Format("20060102"))
+    }),
+```
+
 ### Pre/Post 钩子
 
 在 CRUD 操作前后添加自定义业务逻辑：
@@ -341,8 +694,8 @@ func (r *UserResource) ResetPassword(
 - `mold.Transformer` - 数据转换器
 - `*security.Principal` - 当前认证用户
 - `page.Pageable` - 分页参数
-- 嵌入 `api.In` 的自定义结构体
-- Resource 结构体字段（直接字段、带 `api:"params"` 标签的字段或嵌入的结构体）
+- 嵌入 `api.P` 的自定义结构体
+- Resource 结构体字段（直接字段、带 `api:"in"` 标签的字段或嵌入的结构体）
 
 **Resource 字段注入示例：**
 

@@ -371,7 +371,7 @@ func (q *BunSelectQuery) RightJoinExpr(alias string, eBuilder func(ExprBuilder) 
 	return q
 }
 
-func (q *BunSelectQuery) JoinRelations(specs ...RelationSpec) SelectQuery {
+func (q *BunSelectQuery) JoinRelations(specs ...*RelationSpec) SelectQuery {
 	for _, spec := range specs {
 		applyRelationSpec(spec, q)
 	}
@@ -478,10 +478,6 @@ func (q *BunSelectQuery) Offset(offset int) SelectQuery {
 }
 
 func (q *BunSelectQuery) Paginate(pageable page.Pageable) SelectQuery {
-	if len(pageable.Sort) > 0 {
-		applySort(pageable.Sort, q)
-	}
-
 	pageable.Normalize()
 
 	return q.Offset(pageable.Offset()).Limit(pageable.Size)
@@ -623,7 +619,7 @@ func (q *BunSelectQuery) applySelectState() {
 		if q.hasSelectModelColumns {
 			q.query.ColumnExpr(constants.ExprTableColumns)
 		} else if q.hasSelectModelPks {
-			q.query.ColumnExpr(constants.ExprTablePKs)
+			q.query.ColumnExpr(constants.ExprTablePks)
 		}
 
 		if q.hasExplicitSelect {

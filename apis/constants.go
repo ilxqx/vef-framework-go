@@ -24,7 +24,7 @@ const (
 
 	// Tabular format types for import/export.
 	FormatExcel TabularFormat = "excel"
-	FormatCSV   TabularFormat = "csv"
+	FormatCsv   TabularFormat = "csv"
 
 	// Internal configuration constants.
 
@@ -33,13 +33,16 @@ const (
 	maxQueryLimit = 10000
 	// MaxOptionsLimit is the maximum number of options that can be returned in a single query.
 	maxOptionsLimit = 10000
+	// DefaultAuditUserNameColumn is the default column name for audit user names.
+	defaultAuditUserNameColumn = "name"
 	// DefaultLabelColumn is the default column name for option labels.
 	defaultLabelColumn = "name"
 	// DefaultValueColumn is the default column name for option values.
 	defaultValueColumn = constants.ColumnId
-	idColumn           = constants.ColumnId
-	parentIdColumn     = "parent_id"
-	labelColumn        = "label"
-	valueColumn        = "value"
-	descriptionColumn  = "description"
+
+	idColumn          = constants.ColumnId
+	parentIdColumn    = "parent_id"
+	labelColumn       = "label"
+	valueColumn       = "value"
+	descriptionColumn = "description"
 )

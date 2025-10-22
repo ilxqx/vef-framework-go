@@ -60,8 +60,8 @@ type exportOptions struct {
 	delimiter rune
 	// writeHeader indicates whether to write the header row (default: true)
 	writeHeader bool
-	// useCRLF indicates whether to use \r\n as line terminator (default: false)
-	useCRLF bool
+	// useCrlf indicates whether to use \r\n as line terminator (default: false)
+	useCrlf bool
 }
 
 // ExportOption is a function that configures exportOptions.
@@ -82,10 +82,10 @@ func WithoutWriteHeader() ExportOption {
 	}
 }
 
-// WithCRLF enables using \r\n as line terminator instead of \n.
+// WithCrlf enables using \r\n as line terminator instead of \n.
 // By default, useCRLF is false, so calling this function sets it to true.
-func WithCRLF() ExportOption {
+func WithCrlf() ExportOption {
 	return func(o *exportOptions) {
-		o.useCRLF = true
+		o.useCrlf = true
 	}
 }

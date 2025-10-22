@@ -79,3 +79,5 @@ const (
 	// RightJoin performs a RIGHT JOIN.
 	RightJoin = orm.JoinRight
 )
+
+var ApplySort = orm.ApplySort

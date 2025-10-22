@@ -18,65 +18,74 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-type importApi[TModel, TSearch any] struct {
-	ApiBuilder[ImportApi[TModel, TSearch]]
+type importApi[TModel any] struct {
+	ApiBuilder[ImportApi[TModel]]
 
-	format     TabularFormat
-	excelOpts  []excel.ImportOption
-	csvOpts    []csv.ImportOption
-	preImport  PreImportProcessor[TModel, TSearch]
-	postImport PostImportProcessor[TModel, TSearch]
+	defaultFormat TabularFormat
+	excelOpts     []excel.ImportOption
+	csvOpts       []csv.ImportOption
+	preImport     PreImportProcessor[TModel]
+	postImport    PostImportProcessor[TModel]
 }
 
 // Provide generates the final Api specification for import.
 // Returns a complete api.Spec that can be registered with the router.
-func (i *importApi[TModel, TSearch]) Provide() api.Spec {
+func (i *importApi[TModel]) Provide() api.Spec {
 	return i.Build(i.importData)
 }
 
-func (i *importApi[TModel, TSearch]) Format(format TabularFormat) ImportApi[TModel, TSearch] {
-	i.format = format
+// WithDefaultFormat sets the default import format (Excel or Csv). Default is Excel.
+func (i *importApi[TModel]) WithDefaultFormat(format TabularFormat) ImportApi[TModel] {
+	i.defaultFormat = format
 
 	return i
 }
 
-func (i *importApi[TModel, TSearch]) ExcelOptions(opts ...excel.ImportOption) ImportApi[TModel, TSearch] {
+// WithExcelOptions sets Excel importer configuration options.
+func (i *importApi[TModel]) WithExcelOptions(opts ...excel.ImportOption) ImportApi[TModel] {
 	i.excelOpts = opts
 
 	return i
 }
 
-func (i *importApi[TModel, TSearch]) CSVOptions(opts ...csv.ImportOption) ImportApi[TModel, TSearch] {
+// WithCsvOptions sets Csv importer configuration options.
+func (i *importApi[TModel]) WithCsvOptions(opts ...csv.ImportOption) ImportApi[TModel] {
 	i.csvOpts = opts
 
 	return i
 }
 
-func (i *importApi[TModel, TSearch]) PreImport(processor PreImportProcessor[TModel, TSearch]) ImportApi[TModel, TSearch] {
+// WithPreImport sets a processor to validate or modify data before saving.
+func (i *importApi[TModel]) WithPreImport(processor PreImportProcessor[TModel]) ImportApi[TModel] {
 	i.preImport = processor
 
 	return i
 }
 
-func (i *importApi[TModel, TSearch]) PostImport(processor PostImportProcessor[TModel, TSearch]) ImportApi[TModel, TSearch] {
+// WithPostImport sets a processor to perform additional actions after import.
+func (i *importApi[TModel]) WithPostImport(processor PostImportProcessor[TModel]) ImportApi[TModel] {
 	i.postImport = processor
 
 	return i
 }
 
 type importParams struct {
-	api.In
+	api.P
 
-	Format TabularFormat         `json:"format"` // Optional: override default format
-	File   *multipart.FileHeader `json:"file"`
+	File *multipart.FileHeader `json:"file"`
 }
 
-func (i *importApi[TModel, TSearch]) importData() func(ctx fiber.Ctx, db orm.Db, logger log.Logger, search TSearch, params importParams) error {
-	// Pre-create importers for both formats
+type importConfig struct {
+	api.M
+
+	Format TabularFormat `json:"format"`
+}
+
+func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger log.Logger, config importConfig, params importParams) error {
 	excelImporter := excel.NewImporterFor[TModel](i.excelOpts...)
 	csvImporter := csv.NewImporterFor[TModel](i.csvOpts...)
 
-	return func(ctx fiber.Ctx, db orm.Db, logger log.Logger, search TSearch, params importParams) error {
+	return func(ctx fiber.Ctx, db orm.Db, logger log.Logger, config importConfig, params importParams) error {
 		// Import requests must use multipart/form-data format
 		if webhelpers.IsJson(ctx) {
 			return result.Err(i18n.T("import_requires_multipart"))
@@ -87,7 +96,7 @@ func (i *importApi[TModel, TSearch]) importData() func(ctx fiber.Ctx, db orm.Db,
 		}
 
 		// Determine format: use param format if provided, otherwise use default
-		format := lo.CoalesceOrEmpty(params.Format, i.format, FormatExcel)
+		format := lo.CoalesceOrEmpty(config.Format, i.defaultFormat, FormatExcel)
 
 		// Select pre-created importer based on format
 		var importer tabular.Importer
@@ -95,7 +104,7 @@ func (i *importApi[TModel, TSearch]) importData() func(ctx fiber.Ctx, db orm.Db,
 		switch format {
 		case FormatExcel:
 			importer = excelImporter
-		case FormatCSV:
+		case FormatCsv:
 			importer = csvImporter
 		default:
 			return result.Err(i18n.T("unsupported_import_format"))
@@ -134,7 +143,7 @@ func (i *importApi[TModel, TSearch]) importData() func(ctx fiber.Ctx, db orm.Db,
 
 		// Apply pre-import processor
 		if i.preImport != nil {
-			if err := i.preImport(models, search, ctx, db); err != nil {
+			if err := i.preImport(models, ctx, db); err != nil {
 				return err
 			}
 		}
@@ -149,14 +158,16 @@ func (i *importApi[TModel, TSearch]) importData() func(ctx fiber.Ctx, db orm.Db,
 
 			// Apply post-import processor
 			if i.postImport != nil {
-				if err := i.postImport(models, search, ctx, tx); err != nil {
+				if err := i.postImport(models, ctx, tx); err != nil {
 					return err
 				}
 			}
 
-			return result.Ok(fiber.Map{
-				"total": len(models),
-			}).Response(ctx)
+			return result.Ok(
+				fiber.Map{
+					"total": len(models),
+				}).
+				Response(ctx)
 		})
 	}
 }

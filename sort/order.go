@@ -1,6 +1,12 @@
 package sort
 
-import "github.com/ilxqx/vef-framework-go/constants"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/ilxqx/vef-framework-go/constants"
+)
 
 // OrderDirection represents the direction of ordering in SQL queries.
 // It defines whether results should be sorted in ascending or descending order.
@@ -21,6 +27,50 @@ func (od OrderDirection) String() string {
 	default:
 		return "ASC"
 	}
+}
+
+// MarshalText implements encoding.TextMarshaler interface for OrderDirection.
+// It marshals OrderDirection as a lowercase string ("asc" or "desc").
+func (od OrderDirection) MarshalText() ([]byte, error) {
+	return []byte(strings.ToLower(od.String())), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler interface for OrderDirection.
+// It accepts string values "asc", "ASC", "desc", "DESC" (case-insensitive).
+func (od *OrderDirection) UnmarshalText(text []byte) error {
+	switch strings.ToUpper(strings.TrimSpace(string(text))) {
+	case "ASC":
+		*od = OrderAsc
+	case "DESC":
+		*od = OrderDesc
+	default:
+		return fmt.Errorf("%w: %q (expected \"asc\" or \"desc\")", ErrInvalidOrderDirection, string(text))
+	}
+
+	return nil
+}
+
+// MarshalJSON implements json.Marshaler interface for OrderDirection.
+// It delegates to MarshalText and wraps the result as a JSON string.
+func (od OrderDirection) MarshalJSON() ([]byte, error) {
+	text, err := od.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(string(text))
+}
+
+// UnmarshalJSON implements json.Unmarshaler interface for OrderDirection.
+// It accepts string values "asc", "ASC", "desc", "DESC" (case-insensitive).
+// This method delegates to UnmarshalText for the actual conversion logic.
+func (od *OrderDirection) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return fmt.Errorf("OrderDirection must be a JSON string: %w", err)
+	}
+
+	return od.UnmarshalText([]byte(str))
 }
 
 // NullsOrder represents how to handle NULL values in ordering.

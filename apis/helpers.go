@@ -36,9 +36,9 @@ func validateColumnsExist(schema *schema.Table, columns ...struct {
 	return nil
 }
 
-// validateOptionColumns validates columns for OptionColumnMapping.
+// validateOptionColumns validates columns for DataOptionColumnMapping.
 // Ensures that all specified column names exist in the database model schema.
-func validateOptionColumns(schema *schema.Table, mapping *OptionColumnMapping) error {
+func validateOptionColumns(schema *schema.Table, mapping *DataOptionColumnMapping) error {
 	columns := []struct {
 		name   string
 		column string
@@ -52,43 +52,6 @@ func validateOptionColumns(schema *schema.Table, mapping *OptionColumnMapping) e
 			name   string
 			column string
 		}{"descriptionColumn", mapping.DescriptionColumn})
-	}
-
-	if mapping.SortColumn != constants.Empty {
-		columns = append(columns, struct {
-			name   string
-			column string
-		}{"sortColumn", mapping.SortColumn})
-	}
-
-	return validateColumnsExist(schema, columns...)
-}
-
-// validateTreeOptionColumns validates columns for TreeOptionColumnMapping.
-// Ensures that all specified column names exist in the database model schema.
-func validateTreeOptionColumns(schema *schema.Table, mapping *TreeOptionColumnMapping) error {
-	columns := []struct {
-		name   string
-		column string
-	}{
-		{"labelColumn", mapping.LabelColumn},
-		{"valueColumn", mapping.ValueColumn},
-		{"idColumn", mapping.IdColumn},
-		{"parentIdColumn", mapping.ParentIdColumn},
-	}
-
-	if mapping.DescriptionColumn != constants.Empty {
-		columns = append(columns, struct {
-			name   string
-			column string
-		}{"descriptionColumn", mapping.DescriptionColumn})
-	}
-
-	if mapping.SortColumn != constants.Empty {
-		columns = append(columns, struct {
-			name   string
-			column string
-		}{"sortColumn", mapping.SortColumn})
 	}
 
 	return validateColumnsExist(schema, columns...)
@@ -96,7 +59,7 @@ func validateTreeOptionColumns(schema *schema.Table, mapping *TreeOptionColumnMa
 
 // mergeOptionColumnMapping merges the provided mapping with default mapping.
 // Uses fallback values for empty columns based on the provided default mapping or system defaults.
-func mergeOptionColumnMapping(mapping, defaultMapping *OptionColumnMapping) {
+func mergeOptionColumnMapping(mapping, defaultMapping *DataOptionColumnMapping) {
 	if mapping.LabelColumn == constants.Empty {
 		mapping.LabelColumn = lo.CoalesceOrEmpty(defaultMapping.LabelColumn, defaultLabelColumn)
 	}
@@ -108,53 +71,54 @@ func mergeOptionColumnMapping(mapping, defaultMapping *OptionColumnMapping) {
 	if mapping.DescriptionColumn == constants.Empty {
 		mapping.DescriptionColumn = defaultMapping.DescriptionColumn
 	}
-
-	if mapping.SortColumn == constants.Empty {
-		mapping.SortColumn = defaultMapping.SortColumn
-	}
 }
 
-// mergeTreeOptionColumnMapping merges the provided mapping with default mapping.
-// Uses fallback values for empty columns based on the provided default mapping or system defaults.
-func mergeTreeOptionColumnMapping(mapping, defaultMapping *TreeOptionColumnMapping) {
-	if mapping.LabelColumn == constants.Empty {
-		mapping.LabelColumn = lo.CoalesceOrEmpty(defaultMapping.LabelColumn, defaultLabelColumn)
-	}
-
-	if mapping.ValueColumn == constants.Empty {
-		mapping.ValueColumn = lo.CoalesceOrEmpty(defaultMapping.ValueColumn, defaultValueColumn)
-	}
-
-	if mapping.DescriptionColumn == constants.Empty {
-		mapping.DescriptionColumn = defaultMapping.DescriptionColumn
-	}
-
-	if mapping.SortColumn == constants.Empty {
-		mapping.SortColumn = defaultMapping.SortColumn
-	}
-
-	if mapping.IdColumn == constants.Empty {
-		mapping.IdColumn = lo.CoalesceOrEmpty(defaultMapping.IdColumn, idColumn)
-	}
-
-	if mapping.ParentIdColumn == constants.Empty {
-		mapping.ParentIdColumn = lo.CoalesceOrEmpty(defaultMapping.ParentIdColumn, parentIdColumn)
-	}
-}
-
-// applyDataPermission is a helper function that applies data permission filtering to a SelectQuery.
-// This function is designed to be reused across different Api types (Update, Delete, etc.).
-// The caller is responsible for checking if data permission should be applied.
+// ApplyDataPermission is a helper function that applies data permission filtering to a SelectQuery.
 // Returns an error if data permission application fails.
-func applyDataPermission(query orm.SelectQuery, ctx fiber.Ctx) error {
-	applier := contextx.DataPermApplier(ctx)
-	if applier == nil {
-		return nil
-	}
-
-	if err := applier.Apply(query); err != nil {
-		return fmt.Errorf("failed to apply data permission: %w", err)
+func ApplyDataPermission(query orm.SelectQuery, ctx fiber.Ctx) error {
+	if applier := contextx.DataPermApplier(ctx); applier != nil {
+		if err := applier.Apply(query); err != nil {
+			return fmt.Errorf("failed to apply data permission: %w", err)
+		}
 	}
 
 	return nil
+}
+
+// GetAuditUserNameRelations returns RelationSpecs for creator and updater joins.
+func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.RelationSpec {
+	nc := defaultAuditUserNameColumn
+	if len(nameColumn) > 0 {
+		nc = nameColumn[0]
+	}
+
+	// Create RelationSpecs for creator and updater
+	relations := []*orm.RelationSpec{
+		{
+			Model:         userModel,
+			Alias:         "creator",
+			JoinType:      orm.LeftJoin,
+			ForeignColumn: "created_by",
+			SelectedColumns: []orm.ColumnInfo{
+				{
+					Name:  nc,
+					Alias: constants.ColumnCreatedByName,
+				},
+			},
+		},
+		{
+			Model:         userModel,
+			Alias:         "updater",
+			JoinType:      orm.LeftJoin,
+			ForeignColumn: "updated_by",
+			SelectedColumns: []orm.ColumnInfo{
+				{
+					Name:  nc,
+					Alias: constants.ColumnUpdatedByName,
+				},
+			},
+		},
+	}
+
+	return relations
 }

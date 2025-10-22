@@ -235,7 +235,7 @@
       updated_at: '2025-01-01 09:10:00'
       updated_by: test
 
-- model: TestCompositePKItem
+- model: TestCompositePkItem
   rows:
     - tenant_id: tenant001
       item_code: item001

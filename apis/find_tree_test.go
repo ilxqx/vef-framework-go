@@ -1,7 +1,6 @@
 package apis_test
 
 import (
-	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -10,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/sort"
 	"github.com/ilxqx/vef-framework-go/treebuilder"
 )
 
@@ -41,8 +41,8 @@ func NewTestCategoryFindTreeResource() api.Resource {
 		Resource: api.NewResource("test/category_tree"),
 		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
-			IdColumn("id").
-			ParentIdColumn("parent_id"),
+			WithIdColumn("id").
+			WithParentIdColumn("parent_id"),
 	}
 }
 
@@ -56,18 +56,16 @@ func NewFilteredCategoryFindTreeResource() api.Resource {
 	return &FilteredCategoryFindTreeResource{
 		Resource: api.NewResource("test/category_tree_filtered"),
 		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
+			WithCondition(func(cb orm.ConditionBuilder) {
+				// Only show Electronics and its children
+				cb.Group(func(cb orm.ConditionBuilder) {
+					cb.OrEquals("id", "cat001")
+					cb.OrEquals("parent_id", "cat001")
+				})
+			}).
 			Public().
-			IdColumn("id").
-			ParentIdColumn("parent_id").
-			FilterApplier(func(search TestCategorySearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
-				return func(cb orm.ConditionBuilder) {
-					// Only show Electronics and its children
-					cb.Group(func(cb orm.ConditionBuilder) {
-						cb.OrEquals("id", "cat001")
-						cb.OrEquals("parent_id", "cat001")
-					})
-				}
-			}),
+			WithIdColumn("id").
+			WithParentIdColumn("parent_id"),
 	}
 }
 
@@ -81,14 +79,12 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 	return &OrderedCategoryFindTreeResource{
 		Resource: api.NewResource("test/category_tree_ordered"),
 		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
+			WithDefaultSort(&sort.OrderSpec{
+				Column: "sort",
+			}).
 			Public().
-			IdColumn("id").
-			ParentIdColumn("parent_id").
-			SortApplier(func(search TestCategorySearch, ctx fiber.Ctx) orm.ApplyFunc[apis.Sorter] {
-				return func(s apis.Sorter) {
-					s.OrderBy("sort")
-				}
-			}),
+			WithIdColumn("id").
+			WithParentIdColumn("parent_id"),
 	}
 }
 
@@ -103,8 +99,8 @@ func NewAuditUserCategoryFindTreeResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_audit"),
 		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
-			IdColumn("id").
-			ParentIdColumn("parent_id").
+			WithIdColumn("id").
+			WithParentIdColumn("parent_id").
 			WithAuditUserNames((*TestAuditUser)(nil)),
 	}
 }

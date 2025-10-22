@@ -8,6 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/sort"
 )
 
 // Test Resources.
@@ -39,7 +40,7 @@ func NewProcessedUserFindAllResource() api.Resource {
 		Resource: api.NewResource("test/user_all_processed"),
 		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
 			Public().
-			Processor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
+			WithProcessor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				return ProcessedUserList{
 					Users:     users,
 					Processed: true,
@@ -58,12 +59,10 @@ func NewFilteredUserFindAllResource() api.Resource {
 	return &FilteredUserFindAllResource{
 		Resource: api.NewResource("test/user_all_filtered"),
 		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
-			Public().
-			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
-				return func(cb orm.ConditionBuilder) {
-					cb.Equals("status", "active")
-				}
-			}),
+			WithCondition(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "active")
+			}).
+			Public(),
 	}
 }
 
@@ -77,12 +76,10 @@ func NewOrderedUserFindAllResource() api.Resource {
 	return &OrderedUserFindAllResource{
 		Resource: api.NewResource("test/user_all_ordered"),
 		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
-			Public().
-			SortApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[apis.Sorter] {
-				return func(s apis.Sorter) {
-					s.OrderBy("age")
-				}
-			}),
+			WithDefaultSort(&sort.OrderSpec{
+				Column: "age",
+			}).
+			Public(),
 	}
 }
 
@@ -96,8 +93,47 @@ func NewAuditUserTestUserFindAllResource() api.Resource {
 	return &AuditUserTestUserFindAllResource{
 		Resource: api.NewResource("test/user_all_audit"),
 		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
-			Public().
-			WithAuditUserNames((*TestAuditUser)(nil)),
+			WithAuditUserNames((*TestAuditUser)(nil)).
+			Public(),
+	}
+}
+
+// NoDefaultSort User Resource - explicitly disable default sorting.
+type NoDefaultSortUserFindAllResource struct {
+	api.Resource
+	apis.FindAllApi[TestUser, TestUserSearch]
+}
+
+func NewNoDefaultSortUserFindAllResource() api.Resource {
+	return &NoDefaultSortUserFindAllResource{
+		Resource: api.NewResource("test/user_all_no_default_sort"),
+		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+			WithDefaultSort(). // Empty call to disable default sorting
+			Public(),
+	}
+}
+
+// MultipleDefaultSort User Resource - with multiple default sort columns.
+type MultipleDefaultSortUserFindAllResource struct {
+	api.Resource
+	apis.FindAllApi[TestUser, TestUserSearch]
+}
+
+func NewMultipleDefaultSortUserFindAllResource() api.Resource {
+	return &MultipleDefaultSortUserFindAllResource{
+		Resource: api.NewResource("test/user_all_multi_sort"),
+		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+			WithDefaultSort(
+				&sort.OrderSpec{
+					Column:    "status",
+					Direction: sort.OrderAsc,
+				},
+				&sort.OrderSpec{
+					Column:    "age",
+					Direction: sort.OrderDesc,
+				},
+			).
+			Public(),
 	}
 }
 
@@ -114,6 +150,8 @@ func (suite *FindAllTestSuite) SetupSuite() {
 		NewFilteredUserFindAllResource,
 		NewOrderedUserFindAllResource,
 		NewAuditUserTestUserFindAllResource,
+		NewNoDefaultSortUserFindAllResource,
+		NewMultipleDefaultSortUserFindAllResource,
 	)
 }
 
@@ -210,7 +248,7 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 }
 
 // TestFindAllWithProcessor tests FindAll with post-processing.
-func (suite *FindAllTestSuite) TestFindAllWithProcessor() {
+func (suite *FindAllTestSuite) TestFindAllWithWithProcessor() {
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_processed",
@@ -352,4 +390,254 @@ func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
 		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["createdByName"])
 		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["updatedByName"])
 	}
+}
+
+// TestFindAllDefaultSorting tests default sorting behavior.
+func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
+	suite.Run("DefaultSortByPrimaryKey", func() {
+		// TestUserFindAllResource has no explicit default sort, should sort by id DESC
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_all",
+				Action:   "find_all",
+				Version:  "v1",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+		body := suite.readBody(resp)
+		suite.True(body.IsOk())
+
+		users := suite.readDataAsSlice(body.Data)
+		suite.Len(users, 10)
+
+		// First user should have the highest id (user010)
+		firstUser := suite.readDataAsMap(users[0])
+		suite.Equal("user010", firstUser["id"])
+
+		// Last user should have the lowest id (user001)
+		lastUser := suite.readDataAsMap(users[len(users)-1])
+		suite.Equal("user001", lastUser["id"])
+	})
+
+	suite.Run("CustomDefaultSort", func() {
+		// OrderedUserFindAllResource has default sort by age ASC
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_all_ordered",
+				Action:   "find_all",
+				Version:  "v1",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+		body := suite.readBody(resp)
+		suite.True(body.IsOk())
+
+		users := suite.readDataAsSlice(body.Data)
+		suite.Len(users, 10)
+
+		// First user should be youngest (Alice, age 25)
+		firstUser := suite.readDataAsMap(users[0])
+		suite.Equal(float64(25), firstUser["age"])
+		suite.Equal("Alice Johnson", firstUser["name"])
+
+		// Last user should be oldest (Frank, age 35)
+		lastUser := suite.readDataAsMap(users[len(users)-1])
+		suite.Equal(float64(35), lastUser["age"])
+		suite.Equal("Frank Miller", lastUser["name"])
+	})
+
+	suite.Run("DisableDefaultSort", func() {
+		// NoDefaultSortUserFindAllResource explicitly disables default sorting
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_all_no_default_sort",
+				Action:   "find_all",
+				Version:  "v1",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+		body := suite.readBody(resp)
+		suite.True(body.IsOk())
+
+		users := suite.readDataAsSlice(body.Data)
+		suite.Len(users, 10)
+		// Without sorting, order is database-dependent, just verify we got all users
+	})
+
+	suite.Run("MultipleDefaultSortColumns", func() {
+		// MultipleDefaultSortUserFindAllResource sorts by status ASC, then age DESC
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_all_multi_sort",
+				Action:   "find_all",
+				Version:  "v1",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+		body := suite.readBody(resp)
+		suite.True(body.IsOk())
+
+		users := suite.readDataAsSlice(body.Data)
+		suite.Len(users, 10)
+
+		// First user should be active with highest age (Frank is inactive, so Diana age 32)
+		firstUser := suite.readDataAsMap(users[0])
+		suite.Equal("active", firstUser["status"])
+		// Among active users, should be sorted by age DESC
+
+		// Verify sorting: all active users should come before inactive users
+		var lastActiveIndex int
+		for i, u := range users {
+			user := suite.readDataAsMap(u)
+			if user["status"] == "active" {
+				lastActiveIndex = i
+			}
+		}
+
+		// Check that all active users come before inactive users
+		for i := 0; i <= lastActiveIndex; i++ {
+			user := suite.readDataAsMap(users[i])
+			suite.Equal("active", user["status"])
+		}
+
+		// Check that inactive users come after active users
+		for i := lastActiveIndex + 1; i < len(users); i++ {
+			user := suite.readDataAsMap(users[i])
+			suite.Equal("inactive", user["status"])
+		}
+	})
+}
+
+// TestFindAllRequestSortOverride tests that request-specified sorting overrides default sorting.
+func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
+	suite.Run("OverrideDefaultSortWithRequestSort", func() {
+		// OrderedUserFindAllResource has default sort by age ASC
+		// Override with name DESC via request
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_all_ordered",
+				Action:   "find_all",
+				Version:  "v1",
+			},
+			Meta: map[string]any{
+				"sort": []map[string]any{
+					{
+						"column":    "name",
+						"direction": "desc",
+					},
+				},
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+		body := suite.readBody(resp)
+		suite.True(body.IsOk())
+
+		users := suite.readDataAsSlice(body.Data)
+		suite.Len(users, 10)
+
+		// First user should have name starting with highest letter
+		firstUser := suite.readDataAsMap(users[0])
+		firstName := firstUser["name"].(string)
+
+		// Last user should have name starting with lowest letter
+		lastUser := suite.readDataAsMap(users[len(users)-1])
+		lastName := lastUser["name"].(string)
+
+		// Verify descending order
+		suite.True(firstName > lastName, "First name %s should be > last name %s", firstName, lastName)
+	})
+
+	suite.Run("OverrideWithMultipleSortColumns", func() {
+		// Override default sort with multiple columns: status ASC, name ASC
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_all_ordered",
+				Action:   "find_all",
+				Version:  "v1",
+			},
+			Meta: map[string]any{
+				"sort": []map[string]any{
+					{
+						"column":    "status",
+						"direction": "asc",
+					},
+					{
+						"column":    "name",
+						"direction": "asc",
+					},
+				},
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+		body := suite.readBody(resp)
+		suite.True(body.IsOk())
+
+		users := suite.readDataAsSlice(body.Data)
+		suite.Len(users, 10)
+
+		// Verify all active users come before inactive users
+		var lastActiveIndex int
+		for i, u := range users {
+			user := suite.readDataAsMap(u)
+			if user["status"] == "active" {
+				lastActiveIndex = i
+			}
+		}
+
+		for i := 0; i <= lastActiveIndex; i++ {
+			user := suite.readDataAsMap(users[i])
+			suite.Equal("active", user["status"])
+		}
+
+		for i := lastActiveIndex + 1; i < len(users); i++ {
+			user := suite.readDataAsMap(users[i])
+			suite.Equal("inactive", user["status"])
+		}
+	})
+
+	suite.Run("OverrideDisabledDefaultSort", func() {
+		// NoDefaultSortUserFindAllResource has no default sort
+		// Add sorting via request
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_all_no_default_sort",
+				Action:   "find_all",
+				Version:  "v1",
+			},
+			Meta: map[string]any{
+				"sort": []map[string]any{
+					{
+						"column":    "email",
+						"direction": "asc",
+					},
+				},
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode)
+		body := suite.readBody(resp)
+		suite.True(body.IsOk())
+
+		users := suite.readDataAsSlice(body.Data)
+		suite.Len(users, 10)
+
+		// Verify emails are in ascending order
+		var prevEmail string
+		for i, u := range users {
+			user := suite.readDataAsMap(u)
+
+			email := user["email"].(string)
+			if i > 0 {
+				suite.True(email >= prevEmail, "Email %s should be >= previous email %s", email, prevEmail)
+			}
+
+			prevEmail = email
+		}
+	})
 }

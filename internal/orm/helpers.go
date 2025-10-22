@@ -51,7 +51,7 @@ func buildColumnExpr(column string, alias ...string) schema.QueryWithArgs {
 
 // applyRelationSpec applies a RelationSpec to a SelectQuery by creating the appropriate JOIN.
 // It automatically determines foreign and referenced columns based on table schema and conventions.
-func applyRelationSpec(spec RelationSpec, query SelectQuery) {
+func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 	var (
 		table            = query.Db().TableOf(spec.Model)
 		pk               string
@@ -123,8 +123,8 @@ func applyRelationSpec(spec RelationSpec, query SelectQuery) {
 	}
 }
 
-// applySort applies the sort orders to the query.
-func applySort(orders []sort.OrderSpec, query SelectQuery) {
+// ApplySort applies the sort orders to the query.
+func ApplySort(query SelectQuery, orders []sort.OrderSpec) {
 	for _, order := range orders {
 		if !order.IsValid() {
 			continue
@@ -134,10 +134,11 @@ func applySort(orders []sort.OrderSpec, query SelectQuery) {
 			return eb.Order(func(ob OrderBuilder) {
 				ob.Column(order.Column)
 
-				if order.Direction == sort.OrderDesc {
-					ob.Desc()
-				} else {
+				switch order.Direction {
+				case sort.OrderAsc:
 					ob.Asc()
+				case sort.OrderDesc:
+					ob.Desc()
 				}
 
 				switch order.NullsOrder {

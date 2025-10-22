@@ -12,7 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/strhelpers"
 )
 
-var apiInType = reflect.TypeFor[api.In]()
+var apiInType = reflect.TypeFor[api.P]()
 
 // New creates a Search instance by parsing struct fields with search tags from the given reflect.Type.
 // Returns an empty Search if the type is not a struct.

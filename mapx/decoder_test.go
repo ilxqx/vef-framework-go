@@ -13,6 +13,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/sort"
 )
 
 // Test struct for encoding/decoding tests.
@@ -1395,5 +1396,231 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 		// Unprovided fields should be invalid
 		assert.False(t, result.Score.Valid)
 		assert.False(t, result.Active.Valid)
+	})
+}
+
+func TestDecodeOrderDirection(t *testing.T) {
+	t.Run("Decode string to OrderDirection in struct", func(t *testing.T) {
+		type SortSpec struct {
+			Column    string              `json:"column"`
+			Direction sort.OrderDirection `json:"direction"`
+		}
+
+		input := map[string]any{
+			"column":    "name",
+			"direction": "asc",
+		}
+
+		var result SortSpec
+
+		decoder, err := NewDecoder(&result)
+		require.NoError(t, err)
+
+		err = decoder.Decode(input)
+		require.NoError(t, err)
+
+		assert.Equal(t, "name", result.Column)
+		assert.Equal(t, sort.OrderAsc, result.Direction)
+	})
+
+	t.Run("Decode uppercase string to OrderDirection", func(t *testing.T) {
+		type SortSpec struct {
+			Direction sort.OrderDirection `json:"direction"`
+		}
+
+		input := map[string]any{
+			"direction": "DESC",
+		}
+
+		var result SortSpec
+
+		decoder, err := NewDecoder(&result)
+		require.NoError(t, err)
+
+		err = decoder.Decode(input)
+		require.NoError(t, err)
+
+		assert.Equal(t, sort.OrderDesc, result.Direction)
+	})
+
+	t.Run("Decode mixed case string to OrderDirection", func(t *testing.T) {
+		type SortSpec struct {
+			Direction sort.OrderDirection `json:"direction"`
+		}
+
+		tests := []struct {
+			name     string
+			input    string
+			expected sort.OrderDirection
+		}{
+			{"Asc", "Asc", sort.OrderAsc},
+			{"AsC", "AsC", sort.OrderAsc},
+			{"Desc", "Desc", sort.OrderDesc},
+			{"DeSc", "DeSc", sort.OrderDesc},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				input := map[string]any{
+					"direction": tt.input,
+				}
+
+				var result SortSpec
+
+				decoder, err := NewDecoder(&result)
+				require.NoError(t, err)
+
+				err = decoder.Decode(input)
+				require.NoError(t, err)
+
+				assert.Equal(t, tt.expected, result.Direction)
+			})
+		}
+	})
+
+	t.Run("Decode OrderDirection with spaces", func(t *testing.T) {
+		type SortSpec struct {
+			Direction sort.OrderDirection `json:"direction"`
+		}
+
+		input := map[string]any{
+			"direction": " asc ",
+		}
+
+		var result SortSpec
+
+		decoder, err := NewDecoder(&result)
+		require.NoError(t, err)
+
+		err = decoder.Decode(input)
+		require.NoError(t, err)
+
+		assert.Equal(t, sort.OrderAsc, result.Direction)
+	})
+
+	t.Run("Decode invalid OrderDirection value", func(t *testing.T) {
+		type SortSpec struct {
+			Direction sort.OrderDirection `json:"direction"`
+		}
+
+		input := map[string]any{
+			"direction": "invalid",
+		}
+
+		var result SortSpec
+
+		decoder, err := NewDecoder(&result)
+		require.NoError(t, err)
+
+		err = decoder.Decode(input)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid OrderDirection value")
+	})
+
+	t.Run("Decode multiple OrderDirection values in slice", func(t *testing.T) {
+		type SortRequest struct {
+			Sort []sort.OrderSpec `json:"sort"`
+		}
+
+		input := map[string]any{
+			"sort": []map[string]any{
+				{"column": "name", "direction": "asc"},
+				{"column": "age", "direction": "desc"},
+			},
+		}
+
+		var result SortRequest
+
+		decoder, err := NewDecoder(&result)
+		require.NoError(t, err)
+
+		err = decoder.Decode(input)
+		require.NoError(t, err)
+
+		require.Len(t, result.Sort, 2)
+		assert.Equal(t, "name", result.Sort[0].Column)
+		assert.Equal(t, sort.OrderAsc, result.Sort[0].Direction)
+		assert.Equal(t, "age", result.Sort[1].Column)
+		assert.Equal(t, sort.OrderDesc, result.Sort[1].Direction)
+	})
+
+	t.Run("Decode nested OrderDirection in complex struct", func(t *testing.T) {
+		type FilterSpec struct {
+			Field    string `json:"field"`
+			Operator string `json:"operator"`
+			Value    any    `json:"value"`
+		}
+
+		type QueryRequest struct {
+			Filters []FilterSpec     `json:"filters"`
+			Sort    []sort.OrderSpec `json:"sort"`
+			Page    int              `json:"page"`
+			Size    int              `json:"size"`
+		}
+
+		input := map[string]any{
+			"filters": []map[string]any{
+				{"field": "status", "operator": "eq", "value": "active"},
+			},
+			"sort": []map[string]any{
+				{"column": "created_at", "direction": "desc"},
+				{"column": "name", "direction": "asc"},
+			},
+			"page": 1,
+			"size": 20,
+		}
+
+		var result QueryRequest
+
+		decoder, err := NewDecoder(&result)
+		require.NoError(t, err)
+
+		err = decoder.Decode(input)
+		require.NoError(t, err)
+
+		assert.Equal(t, 1, result.Page)
+		assert.Equal(t, 20, result.Size)
+		require.Len(t, result.Sort, 2)
+		assert.Equal(t, "created_at", result.Sort[0].Column)
+		assert.Equal(t, sort.OrderDesc, result.Sort[0].Direction)
+		assert.Equal(t, "name", result.Sort[1].Column)
+		assert.Equal(t, sort.OrderAsc, result.Sort[1].Direction)
+	})
+
+	t.Run("FromMap with OrderDirection", func(t *testing.T) {
+		type SortSpec struct {
+			Column    string              `json:"column"`
+			Direction sort.OrderDirection `json:"direction"`
+		}
+
+		input := map[string]any{
+			"column":    "email",
+			"direction": "desc",
+		}
+
+		result, err := FromMap[SortSpec](input)
+		require.NoError(t, err)
+
+		assert.Equal(t, "email", result.Column)
+		assert.Equal(t, sort.OrderDesc, result.Direction)
+	})
+
+	t.Run("ToMap with OrderDirection", func(t *testing.T) {
+		type SortSpec struct {
+			Column    string              `json:"column"`
+			Direction sort.OrderDirection `json:"direction"`
+		}
+
+		input := SortSpec{
+			Column:    "username",
+			Direction: sort.OrderAsc,
+		}
+
+		result, err := ToMap(input)
+		require.NoError(t, err)
+
+		assert.Equal(t, "username", result["column"])
+		// OrderDirection is stored as its underlying int value in the map
+		assert.Equal(t, sort.OrderAsc, result["direction"])
 	})
 }

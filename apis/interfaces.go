@@ -9,6 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/sort"
 )
 
 // ApiBuilder defines the interface for building Api endpoint.
@@ -38,10 +39,10 @@ type CreateApi[TModel, TParams any] interface {
 
 	// PreCreate sets the pre-create processor for the CreateApi.
 	// This processor is called before the model is saved to the database.
-	PreCreate(processor PreCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams]
+	WithPreCreate(processor PreCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams]
 	// PostCreate sets the post-create processor for the CreateApi.
 	// This processor is called after the model is successfully saved within the same transaction.
-	PostCreate(processor PostCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams]
+	WithPostCreate(processor PostCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams]
 }
 
 // UpdateApi provides a fluent interface for building update endpoints.
@@ -52,10 +53,10 @@ type UpdateApi[TModel, TParams any] interface {
 
 	// PreUpdate sets the pre-update processor for the UpdateApi.
 	// This processor is called before the model is updated in the database.
-	PreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
+	WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
 	// PostUpdate sets the post-update processor for the UpdateApi.
 	// This processor is called after the model is successfully updated within the same transaction.
-	PostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
+	WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
 	// DisableDataPerm disables data permission filtering for this endpoint.
 	// By default, data permission filtering is enabled when loading the existing model for update.
 	DisableDataPerm() UpdateApi[TModel, TParams]
@@ -69,10 +70,10 @@ type DeleteApi[TModel any] interface {
 
 	// PreDelete sets the pre-delete processor for the DeleteApi.
 	// This processor is called before the model is deleted from the database.
-	PreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel]
+	WithPreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel]
 	// PostDelete sets the post-delete processor for the DeleteApi.
 	// This processor is called after the model is successfully deleted within the same transaction.
-	PostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel]
+	WithPostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel]
 	// DisableDataPerm disables data permission filtering for this endpoint.
 	// By default, data permission filtering is enabled when loading the existing model for deletion.
 	DisableDataPerm() DeleteApi[TModel]
@@ -86,10 +87,10 @@ type CreateManyApi[TModel, TParams any] interface {
 
 	// PreCreateMany sets the pre-create processor for batch creation.
 	// This processor is called before the models are saved to the database.
-	PreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams]
+	WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams]
 	// PostCreateMany sets the post-create processor for batch creation.
 	// This processor is called after the models are successfully saved within the same transaction.
-	PostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams]
+	WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams]
 }
 
 // UpdateManyApi provides a fluent interface for building batch update endpoints.
@@ -100,10 +101,10 @@ type UpdateManyApi[TModel, TParams any] interface {
 
 	// PreUpdateMany sets the pre-update processor for batch update.
 	// This processor is called before the models are updated in the database.
-	PreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
+	WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
 	// PostUpdateMany sets the post-update processor for batch update.
 	// This processor is called after the models are successfully updated within the same transaction.
-	PostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
+	WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
 	// DisableDataPerm disables data permission filtering for this endpoint.
 	// By default, data permission filtering is enabled when loading existing models for batch update.
 	DisableDataPerm() UpdateManyApi[TModel, TParams]
@@ -117,214 +118,149 @@ type DeleteManyApi[TModel any] interface {
 
 	// PreDeleteMany sets the pre-delete processor for batch deletion.
 	// This processor is called before the models are deleted from the database.
-	PreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
+	WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
 	// PostDeleteMany sets the post-delete processor for batch deletion.
 	// This processor is called after the models are successfully deleted within the same transaction.
-	PostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
+	WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
 	// DisableDataPerm disables data permission filtering for this endpoint.
 	// By default, data permission filtering is enabled when loading existing models for batch deletion.
 	DisableDataPerm() DeleteManyApi[TModel]
 }
 
 // FindApi provides a fluent interface for building find endpoints.
-// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
+// All configuration is done through FindApiOptions passed to NewFindXxxApi constructors.
 type FindApi[TModel, TSearch, TProcessorIn, TApi any] interface {
 	ApiBuilder[TApi]
 
-	// QueryApplier sets a custom query applier function for additional query modifications.
-	QueryApplier(applier QueryApplier[TSearch]) TApi
-	// FilterApplier sets a custom filter applier function for additional filtering logic.
-	FilterApplier(applier FilterApplier[TSearch]) TApi
-	// SortApplier sets a custom sort applier function for additional order modifications.
-	SortApplier(applier SortApplier[TSearch]) TApi
-	// Relations adds RelationSpec configurations to be included in the query.
-	Relations(relations ...orm.RelationSpec) TApi
-	// Processor sets a post-processing function to transform query results.
-	Processor(processor Processor[TProcessorIn, TSearch]) TApi
-	// DisableDataPerm disables data permission filtering for this endpoint.
-	// By default, data permission filtering is enabled for all Find operations.
-	DisableDataPerm() TApi
-	// WithAuditUserNames enables querying audit user names (created_by_name, updated_by_name).
-	// The userModel parameter specifies the user table model (e.g., (*User)(nil)).
-	// The optional nameColumn parameter specifies the name column in user table (default: "name").
-	// This method performs LEFT JOINs with the user table to populate audit user names.
-	// Note: Only single primary key is supported; composite primary keys will result in an error.
-	WithAuditUserNames(userModel any, nameColumn ...string) TApi
-
-	// Init initializes the FindApi with database schema information.
-	// This method should be called once in factory functions to pre-compute
-	// and cache expensive operations (e.g., schema analysis, default sort configuration).
-	// It's safe to call multiple times - subsequent calls are no-ops.
-	// Returns error if initialization fails (e.g., schema validation errors).
-	Init(db orm.Db) error
-	// BuildQuery creates a new SelectQuery with the given model and applies all query configurations.
-	// This is the main entry point for constructing a complete query with search conditions, filters,
-	// relations, sorting, and data permissions. It delegates to ConfigureQuery for the actual setup.
-	BuildQuery(db orm.Db, model any, search TSearch, ctx fiber.Ctx) orm.SelectQuery
-	// ConfigureQuery applies all query configuration steps to an existing SelectQuery in the correct order.
-	// This method orchestrates the query building pipeline:
-	//   1. Sets the model (required for data permission)
-	//   2. Applies data permission filtering (if enabled)
-	//   3. Applies search conditions and custom filters (via ApplyConditions)
-	//   4. Applies relation joins (via ApplyRelations)
-	//   5. Applies audit user relations for created_by_name/updated_by_name (if configured)
-	//   6. Applies custom query modifications (via ApplyQuery)
-	//   7. Applies sorting logic (via ApplySort)
-	// Note: Default sorting (ORDER BY created_at DESC) must be applied separately via ApplyDefaultSort.
-	ConfigureQuery(query orm.SelectQuery, model any, search TSearch, ctx fiber.Ctx)
-	// Process applies post-query processing to transform or enrich the query results.
-	// This method is called after data is fetched from the database but before returning to the client.
-	// If no Processor is configured via Processor(), it returns the input unchanged.
-	// Common use cases: data masking, computed fields, nested structure transformation, aggregation.
+	// Setup initializes the FindApi with framework-level options and validates configuration.
+	// Must be called before query execution. Config specifies which QueryParts framework options apply to.
+	Setup(db orm.Db, config *FindApiConfig, opts ...*FindApiOption) error
+	// ConfigureQuery applies FindApiOptions for the specified QueryPart to the query.
+	// Returns error if any option applier fails.
+	ConfigureQuery(query orm.SelectQuery, search TSearch, ctx fiber.Ctx, part QueryPart) error
+	// Process applies post-query processing to transform results.
+	// Returns input unchanged if no Processor is configured.
 	Process(input TProcessorIn, search TSearch, ctx fiber.Ctx) any
-	// ApplySearch applies search conditions from the SearchApplier to the query.
-	// This method wraps the search applier in a WHERE clause using the ConditionBuilder.
-	// SearchApplier typically handles struct-tagged search conditions (e.g., `search:"eq"`, `search:"contains"`).
-	// Note: This method is rarely called directly; use ApplyConditions instead which combines search and filter logic.
-	ApplySearch(query orm.SelectQuery, search TSearch, ctx fiber.Ctx)
-	// ApplyFilter applies custom filter conditions from the FilterApplier to the query.
-	// This method wraps the filter applier in a WHERE clause using the ConditionBuilder.
-	// FilterApplier is typically used for dynamic business logic filters (e.g., user-specific filtering).
-	// Note: This method is rarely called directly; use ApplyConditions instead which combines search and filter logic.
-	ApplyFilter(query orm.SelectQuery, search TSearch, ctx fiber.Ctx)
-	// ApplyConditions applies both search conditions and custom filters to the query in a single WHERE clause.
-	// This is the primary method for applying filtering logic, combining:
-	//   - Search conditions from struct tags (always applied)
-	//   - Custom filter logic from FilterApplier (applied if configured)
-	// Both are wrapped in a single ConditionBuilder to ensure proper SQL generation (AND/OR logic).
-	ApplyConditions(query orm.SelectQuery, search TSearch, ctx fiber.Ctx)
-	// ApplyQuery applies custom query modifications via the QueryApplier if configured.
-	// This provides a flexible extension point for advanced query customization that doesn't fit
-	// into the standard search/filter/sort pipeline (e.g., custom subqueries, DISTINCT, GROUP BY, HAVING).
-	// If no QueryApplier is set via QueryApplier(), this is a no-op.
-	ApplyQuery(query orm.SelectQuery, search TSearch, ctx fiber.Ctx)
-	// ApplySort applies sorting logic to the query via the SortApplier if configured.
-	// If a custom SortApplier is set via SortApplier(), it will be called to modify the query's ORDER BY clause.
-	// If no SortApplier is configured, this is a no-op (rely on ApplyDefaultSort or pagination sorting).
-	ApplySort(query orm.SelectQuery, search TSearch, ctx fiber.Ctx)
-	// ApplyRelations applies relation joins to the query based on the Relations configuration.
-	// This method calls JoinRelations with all RelationSpecs configured via Relations().
-	// Each RelationSpec defines a join (INNER/LEFT/RIGHT) with another table, including selected columns and aliases.
-	// If no relations are configured, this is a no-op.
-	ApplyRelations(query orm.SelectQuery, search TSearch, ctx fiber.Ctx)
-	// ApplyAuditUserRelations applies RelationSpec configurations to query audit user names.
-	// This method creates LEFT JOIN relations with the user model to populate:
-	//   - created_by_name (creator's name)
-	//   - updated_by_name (updater's name)
-	// It is called automatically during query building if WithAuditUserNames was configured.
-	// The user model must have a single primary key; composite primary keys are not supported.
-	// If no audit user model is configured via WithAuditUserNames(), this is a no-op.
-	ApplyAuditUserRelations(query orm.SelectQuery)
-	// ApplyDataPermission applies data permission filtering to the query if enabled.
-	// This method retrieves the DataPermissionApplier from context and applies row-level security rules.
-	// Data permission filtering is enabled by default and can be disabled via DisableDataPerm().
-	// The applier is typically injected by middleware and defines which records the current user can access.
-	// If data permission is disabled or no applier is available in context, this is a no-op.
-	// Errors during permission application are logged but do not fail the request.
-	ApplyDataPermission(query orm.SelectQuery, ctx fiber.Ctx)
-	// ShouldApplyDefaultSort returns whether default sorting should be applied to the query.
-	// Default sorting (ORDER BY created_at DESC) is enabled when:
-	//   1. No custom SortApplier is configured
-	//   2. The model has a created_at field
-	// This is pre-computed during Init() for efficiency and used by ApplyDefaultSort.
-	ShouldApplyDefaultSort() bool
-	// ApplyDefaultSort applies default sorting to the query if applicable.
-	// This method checks if default sorting should be applied (based on SortApplier and model schema)
-	// and adds ORDER BY created_at DESC if applicable.
-	ApplyDefaultSort(query orm.SelectQuery)
+
+	// WithProcessor sets a custom processor to transform query results before response serialization.
+	WithProcessor(processor Processor[TProcessorIn, TSearch]) TApi
+	// WithOptions appends custom FindApiOptions to the query configuration.
+	WithOptions(opts ...*FindApiOption) TApi
+	// WithSelect adds a column to the SELECT clause for specified query parts.
+	WithSelect(column string, parts ...QueryPart) TApi
+	// WithSelectAs adds a column with an alias to the SELECT clause for specified query parts.
+	WithSelectAs(column, alias string, parts ...QueryPart) TApi
+	// WithDefaultSort sets default sorting order. Pass no args to disable, pass specs to customize.
+	WithDefaultSort(sort ...*sort.OrderSpec) TApi
+	// WithCondition adds a WHERE condition using ConditionBuilder for specified query parts.
+	WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) TApi
+	// DisableDataPerm disables automatic data permission filtering for this endpoint.
+	// IMPORTANT: Must be called before the API is registered (before Setup() is invoked).
+	DisableDataPerm() TApi
+	// WithRelation adds a relation join to the query for specified query parts.
+	WithRelation(relation *orm.RelationSpec, parts ...QueryPart) TApi
+	// WithAuditUserNames joins audit user model to populate creator/updater name fields.
+	WithAuditUserNames(userModel any, nameColumn ...string) TApi
+	// WithQueryApplier adds a custom query modification function for specified query parts.
+	WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) TApi
 }
 
 // FindOneApi provides a fluent interface for building find one endpoints.
-// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
+// Returns a single record matching the search criteria.
 type FindOneApi[TModel, TSearch any] interface {
 	api.Provider
 	FindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]]
 }
 
 // FindAllApi provides a fluent interface for building find all endpoints.
-// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
+// Returns all records matching the search criteria (with a safety limit).
 type FindAllApi[TModel, TSearch any] interface {
 	api.Provider
 	FindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]]
 }
 
 // FindPageApi provides a fluent interface for building find page endpoints.
-// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
+// Returns paginated results with total count.
 type FindPageApi[TModel, TSearch any] interface {
 	api.Provider
 	FindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]]
+
+	// WithDefaultPageSize sets the default page size when not specified in the request.
+	WithDefaultPageSize(size int) FindPageApi[TModel, TSearch]
 }
 
 // FindTreeApi provides a fluent interface for building find tree endpoints.
-// Supports custom query modifications, search conditions, filtering, sorting, and post-processing.
+// Returns hierarchical data using recursive CTEs.
 type FindTreeApi[TModel, TSearch any] interface {
 	api.Provider
 	FindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]]
 
 	// IdColumn sets the column name used as the node Id in tree structures.
 	// This column is used to identify individual nodes and establish parent-child relationships.
-	IdColumn(name string) FindTreeApi[TModel, TSearch]
+	WithIdColumn(name string) FindTreeApi[TModel, TSearch]
 	// ParentIdColumn sets the column name used to reference parent nodes in tree structures.
 	// This column establishes the hierarchical relationship between parent and child nodes.
-	ParentIdColumn(name string) FindTreeApi[TModel, TSearch]
+	WithParentIdColumn(name string) FindTreeApi[TModel, TSearch]
 }
 
 // FindOptionsApi provides a fluent interface for building find options endpoints.
-// Supports custom query modifications, search conditions, filtering, and post-processing.
-// Note: sorting is controlled by OptionColumnMapping.SortColumn, not by SortApplier.
+// Returns a simplified list of options (value, label, description) for dropdowns and selects.
 type FindOptionsApi[TModel, TSearch any] interface {
 	api.Provider
-	FindApi[TModel, TSearch, []Option, FindOptionsApi[TModel, TSearch]]
+	FindApi[TModel, TSearch, []DataOption, FindOptionsApi[TModel, TSearch]]
 
 	// ColumnMapping sets the default column mapping for options queries.
 	// This mapping provides fallback values for column mapping when not explicitly specified in queries.
-	ColumnMapping(mapping *OptionColumnMapping) FindOptionsApi[TModel, TSearch]
+	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptionsApi[TModel, TSearch]
 }
 
 // FindTreeOptionsApi provides a fluent interface for building find tree options endpoints.
-// Supports custom query modifications, search conditions, filtering, and post-processing.
-// Note: sorting is primarily controlled by TreeOptionColumnMapping.SortColumn; SortApplier is used only when SortColumn is empty.
+// Returns hierarchical options using recursive CTEs for tree-structured dropdowns.
 type FindTreeOptionsApi[TModel, TSearch any] interface {
 	api.Provider
-	FindApi[TModel, TSearch, []TreeOption, FindTreeOptionsApi[TModel, TSearch]]
+	FindApi[TModel, TSearch, []TreeDataOption, FindTreeOptionsApi[TModel, TSearch]]
 
-	// ColumnMapping sets the default column mapping for tree options queries.
-	// This mapping provides fallback values for column mapping when not explicitly specified in queries.
-	ColumnMapping(mapping *TreeOptionColumnMapping) FindTreeOptionsApi[TModel, TSearch]
+	// WithDefaultColumnMapping sets the default column mapping for data option fields.
+	// This mapping provides fallback values for label, value, description, and sort columns.
+	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptionsApi[TModel, TSearch]
+	// WithIdColumn sets the column name used as the node Id in tree structures.
+	WithIdColumn(name string) FindTreeOptionsApi[TModel, TSearch]
+	// WithParentIdColumn sets the column name used to reference parent nodes in tree structures.
+	WithParentIdColumn(name string) FindTreeOptionsApi[TModel, TSearch]
 }
 
 // ExportApi provides a fluent interface for building export endpoints.
-// Queries data based on search conditions and exports to Excel or CSV file.
+// Queries data based on search conditions and exports to Excel or Csv file.
 type ExportApi[TModel, TSearch any] interface {
 	api.Provider
 	FindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]]
 
-	// Format sets the export format (Excel or CSV). Default is Excel.
-	Format(format TabularFormat) ExportApi[TModel, TSearch]
+	// WithDefaultFormat sets the default export format (Excel or Csv). Default is Excel.
+	WithDefaultFormat(format TabularFormat) ExportApi[TModel, TSearch]
 	// ExcelOptions sets Excel exporter configuration options.
-	ExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch]
-	// CSVOptions sets CSV exporter configuration options.
-	CSVOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch]
+	WithExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch]
+	// CsvOptions sets Csv exporter configuration options.
+	WithCsvOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch]
 	// PreExport sets a processor to modify data before exporting.
-	PreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch]
+	WithPreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch]
 	// FilenameBuilder sets a function to generate the export filename dynamically.
-	FilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch]
+	WithFilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch]
 }
 
 // ImportApi provides a fluent interface for building import endpoints.
-// Parses uploaded Excel or CSV file and creates records in database.
-type ImportApi[TModel, TSearch any] interface {
+// Parses uploaded Excel or Csv file and creates records in database.
+type ImportApi[TModel any] interface {
 	api.Provider
-	ApiBuilder[ImportApi[TModel, TSearch]]
+	ApiBuilder[ImportApi[TModel]]
 
-	// Format sets the import format (Excel or CSV). Default is Excel.
-	Format(format TabularFormat) ImportApi[TModel, TSearch]
+	// WithDefaultFormat sets the default import format (Excel or Csv). Default is Excel.
+	WithDefaultFormat(format TabularFormat) ImportApi[TModel]
 	// ExcelOptions sets Excel importer configuration options.
-	ExcelOptions(opts ...excel.ImportOption) ImportApi[TModel, TSearch]
-	// CSVOptions sets CSV importer configuration options.
-	CSVOptions(opts ...csv.ImportOption) ImportApi[TModel, TSearch]
+	WithExcelOptions(opts ...excel.ImportOption) ImportApi[TModel]
+	// CsvOptions sets Csv importer configuration options.
+	WithCsvOptions(opts ...csv.ImportOption) ImportApi[TModel]
 	// PreImport sets a processor to validate or modify data before saving.
-	PreImport(processor PreImportProcessor[TModel, TSearch]) ImportApi[TModel, TSearch]
+	WithPreImport(processor PreImportProcessor[TModel]) ImportApi[TModel]
 	// PostImport sets a processor to perform additional actions after import.
-	PostImport(processor PostImportProcessor[TModel, TSearch]) ImportApi[TModel, TSearch]
+	WithPostImport(processor PostImportProcessor[TModel]) ImportApi[TModel]
 }

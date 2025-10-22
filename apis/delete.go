@@ -17,9 +17,9 @@ import (
 type deleteApi[TModel any] struct {
 	ApiBuilder[DeleteApi[TModel]]
 
-	preDelete       PreDeleteProcessor[TModel]
-	postDelete      PostDeleteProcessor[TModel]
-	disableDataPerm bool
+	preDelete        PreDeleteProcessor[TModel]
+	postDelete       PostDeleteProcessor[TModel]
+	dataPermDisabled bool
 }
 
 // Provide generates the final Api specification for model deletion.
@@ -28,28 +28,26 @@ func (d *deleteApi[TModel]) Provide() api.Spec {
 	return d.Build(d.delete)
 }
 
-func (d *deleteApi[TModel]) PreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel] {
+func (d *deleteApi[TModel]) WithPreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel] {
 	d.preDelete = processor
 
 	return d
 }
 
-func (d *deleteApi[TModel]) PostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel] {
+func (d *deleteApi[TModel]) WithPostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel] {
 	d.postDelete = processor
 
 	return d
 }
 
 func (d *deleteApi[TModel]) DisableDataPerm() DeleteApi[TModel] {
-	d.disableDataPerm = true
+	d.dataPermDisabled = true
 
 	return d
 }
 
 func (d *deleteApi[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) error, error) {
-	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
-	// Pre-compute primary key fields
 	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
@@ -78,8 +76,8 @@ func (d *deleteApi[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 
 		// Build query with data permission filtering
 		query := db.NewSelect().Model(&model).WherePk()
-		if !d.disableDataPerm {
-			if err := applyDataPermission(query, ctx); err != nil {
+		if !d.dataPermDisabled {
+			if err := ApplyDataPermission(query, ctx); err != nil {
 				return err
 			}
 		}

@@ -27,7 +27,7 @@ type ExportUser struct {
 
 // ExportUserSearch is the search parameters for ExportUser.
 type ExportUserSearch struct {
-	api.In
+	api.P
 
 	Keyword *string `json:"keyword" search:"contains,column=name|email"`
 	Status  *string `json:"status"  search:"eq"`
@@ -57,7 +57,7 @@ func NewTestUserExportWithOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_export_opts"),
 		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
-			ExcelOptions(excel.WithSheetName("用户列表")),
+			WithExcelOptions(excel.WithSheetName("用户列表")),
 	}
 }
 
@@ -71,7 +71,7 @@ func NewTestUserExportWithFilenameResource() api.Resource {
 		Resource: api.NewResource("test/user_export_filename"),
 		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
-			FilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
+			WithFilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
 				return "custom_users.xlsx"
 			}),
 	}
@@ -87,7 +87,7 @@ func NewTestUserExportWithPreProcessorResource() api.Resource {
 		Resource: api.NewResource("test/user_export_preproc"),
 		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
-			PreExport(func(models []ExportUser, search ExportUserSearch, ctx fiber.Ctx, db orm.Db) error {
+			WithPreExport(func(models []ExportUser, search ExportUserSearch, ctx fiber.Ctx, db orm.Db) error {
 				// Add custom header with count
 				ctx.Set("X-Export-Count", string(rune('0'+len(models))))
 
@@ -105,12 +105,10 @@ func NewTestUserExportWithFilterResource() api.Resource {
 	return &TestUserExportWithFilterResource{
 		Resource: api.NewResource("test/user_export_filter"),
 		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
-			Public().
-			FilterApplier(func(search ExportUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
-				return func(cb orm.ConditionBuilder) {
-					cb.Equals("status", "active")
-				}
-			}),
+			WithCondition(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "active")
+			}).
+			Public(),
 	}
 }
 
@@ -124,7 +122,7 @@ func NewTestUserExportCSVResource() api.Resource {
 		Resource: api.NewResource("test/user_export_csv"),
 		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
-			Format(apis.FormatCSV),
+			WithDefaultFormat(apis.FormatCsv),
 	}
 }
 
@@ -138,8 +136,8 @@ func NewTestUserExportCSVWithOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_export_csv_opts"),
 		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
-			Format(apis.FormatCSV).
-			CSVOptions(csv.WithExportDelimiter(';')),
+			WithDefaultFormat(apis.FormatCsv).
+			WithCsvOptions(csv.WithExportDelimiter(';')),
 	}
 }
 
@@ -153,8 +151,8 @@ func NewTestUserExportCSVWithFilenameResource() api.Resource {
 		Resource: api.NewResource("test/user_export_csv_filename"),
 		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
 			Public().
-			Format(apis.FormatCSV).
-			FilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
+			WithDefaultFormat(apis.FormatCsv).
+			WithFilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
 				return "custom_users.csv"
 			}),
 	}
@@ -208,7 +206,7 @@ func (suite *ExportTestSuite) TestExportBasic() {
 	suite.NotEmpty(body)
 
 	// Verify it's a valid Excel file by checking signature
-	// Excel files start with PK (ZIP signature)
+	// Excel files start with Pk (ZIP signature)
 	suite.Equal(byte('P'), body[0])
 	suite.Equal(byte('K'), body[1])
 }
@@ -594,7 +592,7 @@ func (suite *ExportTestSuite) TestExportFormatOverride() {
 			Action:   "export",
 			Version:  "v1",
 		},
-		Params: map[string]any{
+		Meta: map[string]any{
 			"format": "csv",
 		},
 	})

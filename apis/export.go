@@ -16,15 +16,15 @@ import (
 
 const (
 	contentTypeExcel     = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-	contentTypeCSV       = "text/csv; charset=utf-8"
+	contentTypeCsv       = "text/csv; charset=utf-8"
 	defaultFilenameExcel = "data.xlsx"
-	defaultFilenameCSV   = "data.csv"
+	defaultFilenameCsv   = "data.csv"
 )
 
 type exportApi[TModel, TSearch any] struct {
 	FindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]]
 
-	format          TabularFormat
+	defaultFormat   TabularFormat
 	excelOpts       []excel.ExportOption
 	csvOpts         []csv.ExportOption
 	preExport       PreExportProcessor[TModel, TSearch]
@@ -37,57 +37,65 @@ func (a *exportApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.exportData)
 }
 
-func (a *exportApi[TModel, TSearch]) Format(format TabularFormat) ExportApi[TModel, TSearch] {
-	a.format = format
+// WithDefaultFormat sets the default export format (Excel or Csv). Default is Excel.
+func (a *exportApi[TModel, TSearch]) WithDefaultFormat(format TabularFormat) ExportApi[TModel, TSearch] {
+	a.defaultFormat = format
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) ExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch] {
+// WithExcelOptions sets Excel exporter configuration options.
+func (a *exportApi[TModel, TSearch]) WithExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch] {
 	a.excelOpts = opts
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) CSVOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch] {
+// WithCsvOptions sets Csv exporter configuration options.
+func (a *exportApi[TModel, TSearch]) WithCsvOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch] {
 	a.csvOpts = opts
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) PreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch] {
+// WithPreExport sets a processor to modify data before exporting.
+func (a *exportApi[TModel, TSearch]) WithPreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch] {
 	a.preExport = processor
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) FilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch] {
+// WithFilenameBuilder sets a function to generate the export filename dynamically.
+func (a *exportApi[TModel, TSearch]) WithFilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch] {
 	a.filenameBuilder = builder
 
 	return a
 }
 
-type exportParams struct {
-	api.In
+type exportConfig struct {
+	api.M
 
-	Format TabularFormat `json:"format"` // Optional: override default format
+	Format TabularFormat `json:"format"`
 }
 
-func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch, params exportParams) error, error) {
-	if err := a.Init(db); err != nil {
+func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, config exportConfig, search TSearch) error, error) {
+	if err := a.Setup(db, &FindApiConfig{
+		QueryParts: &QueryPartsConfig{
+			Condition:         []QueryPart{QueryRoot},
+			Sort:              []QueryPart{QueryRoot},
+			AuditUserRelation: []QueryPart{QueryRoot},
+		},
+	}); err != nil {
 		return nil, err
 	}
 
-	// Pre-create exporters for both formats
 	excelExporter := excel.NewExporterFor[TModel](a.excelOpts...)
 	csvExporter := csv.NewExporterFor[TModel](a.csvOpts...)
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch, params exportParams) error {
-		// Determine format: use param format if provided, otherwise use default
-		format := lo.CoalesceOrEmpty(params.Format, a.format, FormatExcel)
-
-		// Select pre-created exporter based on format
+	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, config exportConfig, search TSearch) error {
 		var (
+			// Determine format: use param format if provided, otherwise use default
+			format                       = lo.CoalesceOrEmpty(config.Format, a.defaultFormat, FormatExcel)
 			exporter                     tabular.Exporter
 			contentType, defaultFilename string
 		)
@@ -97,21 +105,25 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 			exporter = excelExporter
 			contentType = contentTypeExcel
 			defaultFilename = defaultFilenameExcel
-		case FormatCSV:
+		case FormatCsv:
 			exporter = csvExporter
-			contentType = contentTypeCSV
-			defaultFilename = defaultFilenameCSV
+			contentType = contentTypeCsv
+			defaultFilename = defaultFilenameCsv
 		default:
 			return result.Err(i18n.T("unsupported_export_format"))
 		}
 
-		var models []TModel
+		var (
+			models []TModel
+			query  = db.NewSelect().Model(&models).SelectModelColumns()
+		)
 
-		query := a.BuildQuery(db, &models, search, ctx).SelectModelColumns()
-		a.ApplyDefaultSort(query)
-
+		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+			return err
+		}
 		// Execute query with safety limit
-		if err := query.Limit(maxQueryLimit).Scan(ctx.Context()); err != nil {
+		if err := query.Limit(maxQueryLimit).
+			Scan(ctx.Context()); err != nil {
 			return err
 		}
 

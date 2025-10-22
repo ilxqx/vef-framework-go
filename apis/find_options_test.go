@@ -1,8 +1,6 @@
 package apis_test
 
 import (
-	"github.com/gofiber/fiber/v3"
-
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -21,7 +19,7 @@ func NewTestUserFindOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_options"),
 		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
 			Public().
-			ColumnMapping(&apis.OptionColumnMapping{
+			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn: "name",
 				ValueColumn: "id",
 			}),
@@ -39,7 +37,7 @@ func NewCustomFieldUserFindOptionsResource() api.Resource {
 		Resource: api.NewResource("test/user_options_custom"),
 		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
 			Public().
-			ColumnMapping(&apis.OptionColumnMapping{
+			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn:       "email",
 				ValueColumn:       "id",
 				DescriptionColumn: "description",
@@ -57,12 +55,10 @@ func NewFilteredUserFindOptionsResource() api.Resource {
 	return &FilteredUserFindOptionsResource{
 		Resource: api.NewResource("test/user_options_filtered"),
 		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
-			Public().
-			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
-				return func(cb orm.ConditionBuilder) {
-					cb.Equals("status", "active")
-				}
-			}),
+			WithCondition(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "active")
+			}).
+			Public(),
 	}
 }
 
@@ -136,7 +132,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 				Action:   "find_options",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"labelColumn": "email",
 				"valueColumn": "id",
 			},
@@ -268,7 +264,7 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 				Action:   "find_options",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"labelColumn": "nonexistent_field",
 				"valueColumn": "id",
 			},

@@ -34,7 +34,7 @@ func NewProcessedUserFindPageResource() api.Resource {
 		Resource: api.NewResource("test/user_page_processed"),
 		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
 			Public().
-			Processor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
+			WithProcessor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				// Processor must return a slice - convert each user to a processed version
 				processed := make([]ProcessedUser, len(users))
 				for i, user := range users {
@@ -59,12 +59,10 @@ func NewFilteredUserFindPageResource() api.Resource {
 	return &FilteredUserFindPageResource{
 		Resource: api.NewResource("test/user_page_filtered"),
 		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
-			Public().
-			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
-				return func(cb orm.ConditionBuilder) {
-					cb.Equals("status", "active")
-				}
-			}),
+			WithCondition(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "active")
+			}).
+			Public(),
 	}
 }
 
@@ -78,8 +76,8 @@ func NewAuditUserTestUserFindPageResource() api.Resource {
 	return &AuditUserTestUserFindPageResource{
 		Resource: api.NewResource("test/user_page_audit"),
 		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
-			Public().
-			WithAuditUserNames((*TestAuditUser)(nil)),
+			WithAuditUserNames((*TestAuditUser)(nil)).
+			Public(),
 	}
 }
 
@@ -111,7 +109,7 @@ func (suite *FindPageTestSuite) TestFindPageBasic() {
 			Action:   "find_page",
 			Version:  "v1",
 		},
-		Params: map[string]any{
+		Meta: map[string]any{
 			"page": 1,
 			"size": 5,
 		},
@@ -141,7 +139,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 				Action:   "find_page",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"page": 1,
 				"size": 3,
 			},
@@ -167,7 +165,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 				Action:   "find_page",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"page": 2,
 				"size": 3,
 			},
@@ -193,7 +191,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 				Action:   "find_page",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"page": 4,
 				"size": 3,
 			},
@@ -218,7 +216,7 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 				Action:   "find_page",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"page": 100,
 				"size": 10,
 			},
@@ -244,9 +242,11 @@ func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 			Action:   "find_page",
 			Version:  "v1",
 		},
+		Meta: map[string]any{
+			"page": 1,
+			"size": 10,
+		},
 		Params: map[string]any{
-			"page":   1,
-			"size":   10,
 			"status": "active",
 		},
 	})
@@ -263,14 +263,14 @@ func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 }
 
 // TestFindPageWithProcessor tests FindPage with post-processing.
-func (suite *FindPageTestSuite) TestFindPageWithProcessor() {
+func (suite *FindPageTestSuite) TestFindPageWithWithProcessor() {
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_processed",
 			Action:   "find_page",
 			Version:  "v1",
 		},
-		Params: map[string]any{
+		Meta: map[string]any{
 			"page": 1,
 			"size": 5,
 		},
@@ -300,7 +300,7 @@ func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
 			Action:   "find_page",
 			Version:  "v1",
 		},
-		Params: map[string]any{
+		Meta: map[string]any{
 			"page": 1,
 			"size": 10,
 		},
@@ -326,7 +326,7 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 				Action:   "find_page",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"page": 0, // Should be normalized to 1
 				"size": 10,
 			},
@@ -347,7 +347,7 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 				Action:   "find_page",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"page": 1,
 				"size": 0, // Should be normalized to default
 			},
@@ -357,8 +357,11 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 		body := suite.readBody(resp)
 		suite.True(body.IsOk())
 
+		// Data should still be returned even with invalid page size
 		page := suite.readDataAsMap(body.Data)
-		suite.Greater(page["size"], float64(0)) // Should have default size
+		suite.Equal(float64(10), page["total"])
+		items := suite.readDataAsSlice(page["items"])
+		suite.Greater(len(items), 0) // Should return items with default page size
 	})
 
 	suite.Run("NoMatchingRecords", func() {
@@ -368,9 +371,11 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 				Action:   "find_page",
 				Version:  "v1",
 			},
+			Meta: map[string]any{
+				"page": 1,
+				"size": 10,
+			},
 			Params: map[string]any{
-				"page":    1,
-				"size":    10,
 				"keyword": "NonexistentKeyword",
 			},
 		})
@@ -395,9 +400,11 @@ func (suite *FindPageTestSuite) TestFindPageWithAuditUserNames() {
 			Action:   "find_page",
 			Version:  "v1",
 		},
+		Meta: map[string]any{
+			"page": 1,
+			"size": 5,
+		},
 		Params: map[string]any{
-			"page":   1,
-			"size":   5,
 			"status": "active",
 		},
 	})

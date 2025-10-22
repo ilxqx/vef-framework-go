@@ -18,20 +18,29 @@ func (a *findAllApi[TModel, TSearch]) Provide() api.Spec {
 }
 
 func (a *findAllApi[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
-	if err := a.Init(db); err != nil {
+	if err := a.Setup(db, &FindApiConfig{
+		QueryParts: &QueryPartsConfig{
+			Condition:         []QueryPart{QueryRoot},
+			Sort:              []QueryPart{QueryRoot},
+			AuditUserRelation: []QueryPart{QueryRoot},
+		},
+	}); err != nil {
 		return nil, err
 	}
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
-		var models []TModel
+		var (
+			models []TModel
+			query  = db.NewSelect().Model(&models)
+		)
 
-		query := a.BuildQuery(db, &models, search, ctx).SelectModelColumns()
+		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+			return err
+		}
 
-		// Apply default sort if configured
-		a.ApplyDefaultSort(query)
-
-		// Execute query with safety limit
-		if err := query.Limit(maxQueryLimit).Scan(ctx.Context()); err != nil {
+		if err := query.SelectModelColumns().
+			Limit(maxQueryLimit).
+			Scan(ctx.Context()); err != nil {
 			return err
 		}
 

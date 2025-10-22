@@ -71,7 +71,7 @@ type SelectQuery interface {
 	RightJoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) SelectQuery
 	// JoinRelations applies RelationSpec configurations to perform JOIN operations with automatic column resolution.
 	// It provides a declarative way to join related models with minimal configuration.
-	JoinRelations(specs ...RelationSpec) SelectQuery
+	JoinRelations(specs ...*RelationSpec) SelectQuery
 	// Relation joins a relation.
 	Relation(name string, apply ...func(query SelectQuery)) SelectQuery
 	// GroupBy groups the query by a column.

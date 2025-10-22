@@ -2,10 +2,7 @@ package page
 
 import (
 	"encoding/json"
-	"reflect"
 	"testing"
-
-	"github.com/ilxqx/vef-framework-go/sort"
 )
 
 func TestPageableNormalize(t *testing.T) {
@@ -16,38 +13,38 @@ func TestPageableNormalize(t *testing.T) {
 	}{
 		{
 			"Normal values",
-			Pageable{Page: 2, Size: 10, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
-			Pageable{Page: 2, Size: 10, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
+			Pageable{Page: 2, Size: 10},
+			Pageable{Page: 2, Size: 10},
 		},
 		{
 			"Page less than 1",
-			Pageable{Page: 0, Size: 10, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
-			Pageable{Page: DefaultPageNumber, Size: 10, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
+			Pageable{Page: 0, Size: 10},
+			Pageable{Page: DefaultPageNumber, Size: 10},
 		},
 		{
 			"Negative page",
-			Pageable{Page: -1, Size: 10, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
-			Pageable{Page: DefaultPageNumber, Size: 10, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
+			Pageable{Page: -1, Size: 10},
+			Pageable{Page: DefaultPageNumber, Size: 10},
 		},
 		{
 			"Size less than 1",
-			Pageable{Page: 1, Size: 0, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
-			Pageable{Page: 1, Size: DefaultPageSize, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
+			Pageable{Page: 1, Size: 0},
+			Pageable{Page: 1, Size: DefaultPageSize},
 		},
 		{
 			"Negative size",
-			Pageable{Page: 1, Size: -5, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
-			Pageable{Page: 1, Size: DefaultPageSize, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
+			Pageable{Page: 1, Size: -5},
+			Pageable{Page: 1, Size: DefaultPageSize},
 		},
 		{
 			"Size exceeds maximum",
-			Pageable{Page: 1, Size: 2000, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
-			Pageable{Page: 1, Size: MaxPageSize, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
+			Pageable{Page: 1, Size: 2000},
+			Pageable{Page: 1, Size: MaxPageSize},
 		},
 		{
 			"All invalid values",
-			Pageable{Page: -1, Size: -1, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
-			Pageable{Page: DefaultPageNumber, Size: DefaultPageSize, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}},
+			Pageable{Page: -1, Size: -1},
+			Pageable{Page: DefaultPageNumber, Size: DefaultPageSize},
 		},
 	}
 
@@ -61,10 +58,6 @@ func TestPageableNormalize(t *testing.T) {
 
 			if tt.input.Size != tt.expected.Size {
 				t.Errorf("Expected Size %d, got %d", tt.expected.Size, tt.input.Size)
-			}
-
-			if !reflect.DeepEqual(tt.input.Sort, tt.expected.Sort) {
-				t.Errorf("Expected Sort %+v, got %+v", tt.expected.Sort, tt.input.Sort)
 			}
 		})
 	}
@@ -94,7 +87,7 @@ func TestPageableOffset(t *testing.T) {
 }
 
 func TestNewPage(t *testing.T) {
-	pageable := Pageable{Page: 2, Size: 10, Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}}}
+	pageable := Pageable{Page: 2, Size: 10}
 	items := []string{"item1", "item2", "item3"}
 	total := int64(25)
 
@@ -269,7 +262,6 @@ func TestPageableJSONMarshaling(t *testing.T) {
 	pageable := Pageable{
 		Page: 2,
 		Size: 15,
-		Sort: []sort.OrderSpec{{Column: "name", Direction: sort.OrderAsc}},
 	}
 
 	// Marshal
@@ -293,10 +285,6 @@ func TestPageableJSONMarshaling(t *testing.T) {
 
 	if result.Size != pageable.Size {
 		t.Errorf("Expected Size %d, got %d", pageable.Size, result.Size)
-	}
-
-	if !reflect.DeepEqual(result.Sort, pageable.Sort) {
-		t.Errorf("Expected Sort %+v, got %+v", pageable.Sort, result.Sort)
 	}
 }
 
@@ -383,7 +371,7 @@ func TestPaginationScenarios(t *testing.T) {
 	// Scenario: Api pagination
 	t.Run("Api pagination workflow", func(t *testing.T) {
 		// Client sends request for page 2, size 10
-		pageable := Pageable{Page: 2, Size: 10, Sort: []sort.OrderSpec{{Column: "created_at", Direction: sort.OrderDesc}}}
+		pageable := Pageable{Page: 2, Size: 10}
 		pageable.Normalize()
 
 		// Database query would use offset

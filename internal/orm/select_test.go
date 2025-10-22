@@ -1597,7 +1597,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 	err := suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:         (*User)(nil),
 			Alias:         "u",
 			ForeignColumn: "user_id",
@@ -1628,7 +1628,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:         (*Category)(nil),
 			Alias:         "c",
 			JoinType:      JoinInner,
@@ -1663,7 +1663,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
 		JoinRelations(
-			RelationSpec{
+			&RelationSpec{
 				Model:         (*User)(nil),
 				Alias:         "u",
 				ForeignColumn: "user_id",
@@ -1672,7 +1672,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 					{Name: "email", Alias: "user_email"},
 				},
 			},
-			RelationSpec{
+			&RelationSpec{
 				Model:         (*Category)(nil),
 				Alias:         "c",
 				ForeignColumn: "category_id",
@@ -1709,7 +1709,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:         (*User)(nil),
 			Alias:         "u",
 			ForeignColumn: "user_id",
@@ -1744,7 +1744,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:         (*User)(nil),
 			Alias:         "u",
 			ForeignColumn: "user_id",
@@ -1781,7 +1781,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 		SelectExpr(func(eb ExprBuilder) any {
 			return eb.CountColumn("p.id")
 		}, "post_count").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:            (*Post)(nil),
 			Alias:            "p",
 			JoinType:         JoinInner,
@@ -1810,7 +1810,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:         (*User)(nil),
 			Alias:         "u",
 			ForeignColumn: "user_id",
@@ -1837,7 +1837,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model: (*User)(nil),
 			// Alias omitted - should use model's default alias
 			ForeignColumn: "user_id",
@@ -1869,7 +1869,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:         (*Category)(nil),
 			Alias:         "c",
 			JoinType:      JoinInner,
@@ -1920,7 +1920,7 @@ func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
 	err = suite.db.NewSelect().
 		Model((*Post)(nil)).
 		Select("p.id", "p.title").
-		JoinRelations(RelationSpec{
+		JoinRelations(&RelationSpec{
 			Model:         (*Category)(nil),
 			Alias:         "c",
 			ForeignColumn: "category_id",
@@ -2295,15 +2295,15 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 		suite.NotEmpty(user.UpperName, "SelectExpr column should be populated")
 	}
 
-	// Test 3: SelectModelPks + Select should include both PKs and explicit columns
-	type UserWithPKsAndExtra struct {
+	// Test 3: SelectModelPks + Select should include both Pks and explicit columns
+	type UserWithPksAndExtra struct {
 		Id    string `bun:"id"`
 		Name  string `bun:"name"`
 		Email string `bun:"email"`
 		Age   int16  `bun:"age"`
 	}
 
-	var users3 []UserWithPKsAndExtra
+	var users3 []UserWithPksAndExtra
 
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
@@ -2315,7 +2315,7 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 	suite.True(len(users3) > 0, "Should return results")
 
 	for _, user := range users3 {
-		suite.NotEmpty(user.Id, "PK column ID should be populated")
+		suite.NotEmpty(user.Id, "Pk column ID should be populated")
 		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
 		suite.NotEmpty(user.Email, "Explicit column Email should be populated")
 		suite.True(user.Age > 0, "Explicit column Age should be populated")
@@ -2323,18 +2323,18 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 	}
 
 	// Test 4: Select + SelectModelPks (reverse order) should also work
-	type UserWithPKsAndExtra2 struct {
+	type UserWithPksAndExtra2 struct {
 		Id         string `bun:"id"`
 		Name       string `bun:"name"`
 		LowerEmail string `bun:"lower_email"`
 	}
 
-	var users4 []UserWithPKsAndExtra2
+	var users4 []UserWithPksAndExtra2
 
 	err = suite.db.NewSelect().
 		Model((*User)(nil)).
 		Select("name").   // Explicit column first
-		SelectModelPks(). // PKs second
+		SelectModelPks(). // Pks second
 		SelectExpr(func(eb ExprBuilder) any {
 			return eb.Lower(eb.Column("email"))
 		}, "lower_email").
@@ -2344,7 +2344,7 @@ func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
 	suite.True(len(users4) > 0, "Should return results")
 
 	for _, user := range users4 {
-		suite.NotEmpty(user.Id, "PK column ID should be populated")
+		suite.NotEmpty(user.Id, "Pk column Id should be populated")
 		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
 		suite.NotEmpty(user.LowerEmail, "SelectExpr column should be populated")
 	}

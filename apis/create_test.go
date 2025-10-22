@@ -34,7 +34,7 @@ func NewTestUserCreateWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_create_prehook"),
 		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().
 			Public().
-			PreCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPreCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Add prefix to name
 				model.Name = "Mr. " + model.Name
 
@@ -54,7 +54,7 @@ func NewTestUserCreateWithPostHookResource() api.Resource {
 		Resource: api.NewResource("test/user_create_posthook"),
 		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().
 			Public().
-			PostCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPostCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Log or perform additional operations
 				ctx.Set("X-Created-User-Id", model.Id)
 
@@ -65,7 +65,7 @@ func NewTestUserCreateWithPostHookResource() api.Resource {
 
 // Test params for create.
 type TestUserCreateParams struct {
-	api.In
+	api.P
 
 	Name        string `json:"name"        validate:"required"`
 	Email       string `json:"email"       validate:"required,email"`

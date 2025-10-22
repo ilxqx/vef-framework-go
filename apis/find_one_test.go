@@ -8,6 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/sort"
 )
 
 // Test Resources.
@@ -40,7 +41,7 @@ func NewProcessedUserFindOneResource() api.Resource {
 		Resource: api.NewResource("test/user_processed"),
 		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
 			Public().
-			Processor(func(user TestUser, search TestUserSearch, ctx fiber.Ctx) any {
+			WithProcessor(func(user TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				return ProcessedUser{
 					TestUser:  user,
 					Processed: true,
@@ -59,12 +60,10 @@ func NewFilteredUserFineOneResource() api.Resource {
 	return &FilteredUserFineOneResource{
 		Resource: api.NewResource("test/user_filtered"),
 		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
-			Public().
-			FilterApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
-				return func(cb orm.ConditionBuilder) {
-					cb.Equals("status", "active").GreaterThan("age", 32)
-				}
-			}),
+			WithCondition(func(cb orm.ConditionBuilder) {
+				cb.Equals("status", "active").GreaterThan("age", 32)
+			}).
+			Public(),
 	}
 }
 
@@ -78,12 +77,11 @@ func NewOrderedUserFindOneResource() api.Resource {
 	return &OrderedUserFindOneResource{
 		Resource: api.NewResource("test/user_ordered"),
 		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
-			Public().
-			SortApplier(func(search TestUserSearch, ctx fiber.Ctx) orm.ApplyFunc[apis.Sorter] {
-				return func(s apis.Sorter) {
-					s.OrderByDesc("age")
-				}
-			}),
+			WithDefaultSort(&sort.OrderSpec{
+				Column:    "age",
+				Direction: sort.OrderDesc,
+			}).
+			Public(),
 	}
 }
 
@@ -97,8 +95,8 @@ func NewAuditUserTestUserFindOneResource() api.Resource {
 	return &AuditUserTestUserFindOneResource{
 		Resource: api.NewResource("test/user_audit"),
 		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
-			Public().
-			WithAuditUserNames((*TestAuditUser)(nil)),
+			WithAuditUserNames((*TestAuditUser)(nil)).
+			Public(),
 	}
 }
 
@@ -280,7 +278,7 @@ func (suite *FindOneTestSuite) TestFindOneWithSearchApplier() {
 }
 
 // TestFindOneWithProcessor tests FindOne with post-processing.
-func (suite *FindOneTestSuite) TestFindOneWithProcessor() {
+func (suite *FindOneTestSuite) TestFindOneWithWithProcessor() {
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_processed",

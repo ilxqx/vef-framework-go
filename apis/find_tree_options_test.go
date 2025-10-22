@@ -1,8 +1,6 @@
 package apis_test
 
 import (
-	"github.com/gofiber/fiber/v3"
-
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/apis"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -21,14 +19,12 @@ func NewTestCategoryFindTreeOptionsResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_options"),
 		FindTreeOptionsApi: apis.NewFindTreeOptionsApi[TestCategory, TestCategorySearch]().
 			Public().
-			ColumnMapping(&apis.TreeOptionColumnMapping{
-				OptionColumnMapping: apis.OptionColumnMapping{
-					LabelColumn: "name",
-					ValueColumn: "id",
-				},
-				IdColumn:       "id",
-				ParentIdColumn: "parent_id",
-			}),
+			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+				LabelColumn: "name",
+				ValueColumn: "id",
+			}).
+			WithIdColumn("id").
+			WithParentIdColumn("parent_id"),
 	}
 }
 
@@ -43,15 +39,13 @@ func NewCustomFieldCategoryFindTreeOptionsResource() api.Resource {
 		Resource: api.NewResource("test/category_tree_options_custom"),
 		FindTreeOptionsApi: apis.NewFindTreeOptionsApi[TestCategory, TestCategorySearch]().
 			Public().
-			ColumnMapping(&apis.TreeOptionColumnMapping{
-				OptionColumnMapping: apis.OptionColumnMapping{
-					LabelColumn:       "code",
-					ValueColumn:       "id",
-					DescriptionColumn: "description",
-				},
-				IdColumn:       "id",
-				ParentIdColumn: "parent_id",
-			}),
+			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+				LabelColumn:       "code",
+				ValueColumn:       "id",
+				DescriptionColumn: "description",
+			}).
+			WithIdColumn("id").
+			WithParentIdColumn("parent_id"),
 	}
 }
 
@@ -65,16 +59,14 @@ func NewFilteredCategoryFindTreeOptionsResource() api.Resource {
 	return &FilteredCategoryFindTreeOptionsResource{
 		Resource: api.NewResource("test/category_tree_options_filtered"),
 		FindTreeOptionsApi: apis.NewFindTreeOptionsApi[TestCategory, TestCategorySearch]().
-			Public().
-			FilterApplier(func(search TestCategorySearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder] {
-				return func(cb orm.ConditionBuilder) {
-					// Only show Books and its children
-					cb.Group(func(cb orm.ConditionBuilder) {
-						cb.OrEquals("id", "cat002")
-						cb.OrEquals("parent_id", "cat002")
-					})
-				}
-			}),
+			WithCondition(func(cb orm.ConditionBuilder) {
+				// Only show Books and its children
+				cb.Group(func(cb orm.ConditionBuilder) {
+					cb.OrEquals("id", "cat002")
+					cb.OrEquals("parent_id", "cat002")
+				})
+			}).
+			Public(),
 	}
 }
 
@@ -117,11 +109,10 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 	// Should return 3 root categories
 	suite.Len(tree, 3)
 
-	// Verify default ordering by created_at DESC - Clothing (latest) should be first
+	// Verify default ordering by id DESC - Clothing (latest) should be first
 	first := suite.readDataAsMap(tree[0])
 	suite.Equal("Clothing", first["label"])
 	suite.NotEmpty(first["value"])
-	suite.NotEmpty(first["id"])
 
 	second := suite.readDataAsMap(tree[1])
 	suite.Equal("Books", second["label"])
@@ -137,7 +128,6 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsBasic() {
 	childOption := suite.readDataAsMap(children[0])
 	suite.NotEmpty(childOption["label"])
 	suite.NotEmpty(childOption["value"])
-	suite.NotEmpty(childOption["parentId"])
 }
 
 // TestFindTreeOptionsWithConfig tests FindTreeOptions with custom config.
@@ -166,7 +156,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsWithConfig() {
 				Action:   "find_tree_options",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"labelColumn": "code",
 				"valueColumn": "id",
 			},
@@ -312,7 +302,7 @@ func (suite *FindTreeOptionsTestSuite) TestFindTreeOptionsNegativeCases() {
 				Action:   "find_tree_options",
 				Version:  "v1",
 			},
-			Params: map[string]any{
+			Meta: map[string]any{
 				"labelColumn": "nonexistent_field",
 				"valueColumn": "id",
 			},

@@ -16,9 +16,9 @@ import (
 type deleteManyApi[TModel any] struct {
 	ApiBuilder[DeleteManyApi[TModel]]
 
-	preDeleteMany   PreDeleteManyProcessor[TModel]
-	postDeleteMany  PostDeleteManyProcessor[TModel]
-	disableDataPerm bool
+	preDeleteMany    PreDeleteManyProcessor[TModel]
+	postDeleteMany   PostDeleteManyProcessor[TModel]
+	dataPermDisabled bool
 }
 
 // Provide generates the final Api specification for batch model deletion.
@@ -27,28 +27,26 @@ func (d *deleteManyApi[TModel]) Provide() api.Spec {
 	return d.Build(d.deleteMany)
 }
 
-func (d *deleteManyApi[TModel]) PreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
+func (d *deleteManyApi[TModel]) WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
 	d.preDeleteMany = processor
 
 	return d
 }
 
-func (d *deleteManyApi[TModel]) PostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
+func (d *deleteManyApi[TModel]) WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
 	d.postDeleteMany = processor
 
 	return d
 }
 
 func (d *deleteManyApi[TModel]) DisableDataPerm() DeleteManyApi[TModel] {
-	d.disableDataPerm = true
+	d.dataPermDisabled = true
 
 	return d
 }
 
 func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error, error) {
-	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
-	// Pre-compute primary key fields
 	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
@@ -57,19 +55,19 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 	}
 
 	return func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error {
-		if len(params.PKs) == 0 {
+		if len(params.Pks) == 0 {
 			return result.Ok().Response(ctx)
 		}
 
-		models := make([]TModel, len(params.PKs))
+		models := make([]TModel, len(params.Pks))
 
 		// Process each primary key value
-		for i, pkValue := range params.PKs {
+		for i, pkValue := range params.Pks {
 			modelValue := reflect.ValueOf(&models[i]).Elem()
 
-			// Try to interpret pkValue as a map first (works for both single and composite PKs)
+			// Try to interpret pkValue as a map first (works for both single and composite Pks)
 			if pkMap, ok := pkValue.(map[string]any); ok {
-				// Map format - set each PK field from the map
+				// Map format - set each Pk field from the map
 				for _, pk := range pks {
 					value, ok := pkMap[pk.Name]
 					if !ok {
@@ -93,8 +91,8 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 
 			// Build query with data permission filtering
 			query := db.NewSelect().Model(&models[i]).WherePk()
-			if !d.disableDataPerm {
-				if err := applyDataPermission(query, ctx); err != nil {
+			if !d.dataPermDisabled {
+				if err := ApplyDataPermission(query, ctx); err != nil {
 					return err
 				}
 			}

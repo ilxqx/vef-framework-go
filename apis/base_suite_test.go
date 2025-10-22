@@ -46,7 +46,7 @@ type TestUser struct {
 
 // TestUserSearch is the search parameters for TestUser.
 type TestUserSearch struct {
-	api.In
+	api.P
 
 	Id      null.String `json:"id"      search:"eq"`
 	Keyword null.String `json:"keyword" search:"contains,column=name|description"`
@@ -70,7 +70,7 @@ type TestCategory struct {
 
 // TestCategorySearch is the search parameters for TestCategory.
 type TestCategorySearch struct {
-	api.In
+	api.P
 
 	Id       null.String `json:"id"       search:"eq"`
 	Keyword  null.String `json:"keyword"  search:"contains,column=name|description"`
@@ -78,8 +78,8 @@ type TestCategorySearch struct {
 	ParentId null.String `json:"parentId" search:"eq"`
 }
 
-// TestCompositePKItem is a test model with composite primary keys.
-type TestCompositePKItem struct {
+// TestCompositePkItem is a test model with composite primary keys.
+type TestCompositePkItem struct {
 	bun.BaseModel `bun:"table:test_composite_pk_item,alias:tcpi"`
 
 	TenantId  string `json:"tenantId"  bun:",pk,notnull"`

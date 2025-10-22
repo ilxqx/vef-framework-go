@@ -32,48 +32,48 @@ type ImportUser struct {
 
 // ImportUserSearch is the search parameters for ImportUser.
 type ImportUserSearch struct {
-	api.In
+	api.P
 }
 
 // Test Resources for Import
 
 type TestUserImportResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser]
 }
 
 func NewTestUserImportResource() api.Resource {
 	return &TestUserImportResource{
 		Resource:  api.NewResource("test/user_import"),
-		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().Public(),
+		ImportApi: apis.NewImportApi[ImportUser]().Public(),
 	}
 }
 
 type TestUserImportWithOptionsResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser]
 }
 
 func NewTestUserImportWithOptionsResource() api.Resource {
 	return &TestUserImportWithOptionsResource{
 		Resource: api.NewResource("test/user_import_opts"),
-		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser]().
 			Public().
-			ExcelOptions(excel.WithImportSheetName("用户列表")),
+			WithExcelOptions(excel.WithImportSheetName("用户列表")),
 	}
 }
 
 type TestUserImportWithPreProcessorResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser]
 }
 
 func NewTestUserImportWithPreProcessorResource() api.Resource {
 	return &TestUserImportWithPreProcessorResource{
 		Resource: api.NewResource("test/user_import_preproc"),
-		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser]().
 			Public().
-			PreImport(func(models []ImportUser, search ImportUserSearch, ctx fiber.Ctx, db orm.Db) error {
+			WithPreImport(func(models []ImportUser, ctx fiber.Ctx, db orm.Db) error {
 				// Pre-process all models - change inactive to pending
 				for i := range models {
 					if models[i].Status == "inactive" {
@@ -88,15 +88,15 @@ func NewTestUserImportWithPreProcessorResource() api.Resource {
 
 type TestUserImportWithPostProcessorResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser]
 }
 
 func NewTestUserImportWithPostProcessorResource() api.Resource {
 	return &TestUserImportWithPostProcessorResource{
 		Resource: api.NewResource("test/user_import_postproc"),
-		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser]().
 			Public().
-			PostImport(func(models []ImportUser, search ImportUserSearch, ctx fiber.Ctx, db orm.Db) error {
+			WithPostImport(func(models []ImportUser, ctx fiber.Ctx, db orm.Db) error {
 				// Set custom header with count
 				ctx.Set("X-Import-Count", string(rune('0'+len(models))))
 
@@ -107,30 +107,30 @@ func NewTestUserImportWithPostProcessorResource() api.Resource {
 
 type TestUserImportCSVResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser]
 }
 
 func NewTestUserImportCSVResource() api.Resource {
 	return &TestUserImportCSVResource{
 		Resource: api.NewResource("test/user_import_csv"),
-		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser]().
 			Public().
-			Format(apis.FormatCSV),
+			WithDefaultFormat(apis.FormatCsv),
 	}
 }
 
 type TestUserImportCSVWithOptionsResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser, ImportUserSearch]
+	apis.ImportApi[ImportUser]
 }
 
 func NewTestUserImportCSVWithOptionsResource() api.Resource {
 	return &TestUserImportCSVWithOptionsResource{
 		Resource: api.NewResource("test/user_import_csv_opts"),
-		ImportApi: apis.NewImportApi[ImportUser, ImportUserSearch]().
+		ImportApi: apis.NewImportApi[ImportUser]().
 			Public().
-			Format(apis.FormatCSV).
-			CSVOptions(csv.WithImportDelimiter(';')),
+			WithDefaultFormat(apis.FormatCsv).
+			WithCsvOptions(csv.WithImportDelimiter(';')),
 	}
 }
 
@@ -562,7 +562,7 @@ func (suite *ImportTestSuite) TestImportFormatOverride() {
 			Action:   "import",
 			Version:  "v1",
 		},
-		Params: map[string]any{
+		Meta: map[string]any{
 			"format": "csv",
 		},
 	}, "test_import_override.csv", buf.Bytes())
@@ -592,6 +592,14 @@ func (suite *ImportTestSuite) makeMultipartApiRequest(req api.Request, filename 
 		suite.NoError(err)
 
 		_ = writer.WriteField("params", paramsJSON)
+	}
+
+	// Add meta as JSON string if present
+	if req.Meta != nil {
+		metaJSON, err := encoding.ToJSON(req.Meta)
+		suite.NoError(err)
+
+		_ = writer.WriteField("meta", metaJSON)
 	}
 
 	// Add file

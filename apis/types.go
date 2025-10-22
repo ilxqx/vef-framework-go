@@ -5,12 +5,26 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/sort"
 )
+
+// FindApiConfig contains all configuration for FindApi Setup phase.
+type FindApiConfig struct {
+	// QueryParts configures which query parts options should apply to
+	QueryParts *QueryPartsConfig
+}
+
+// QueryPartsConfig defines which query parts each type of query operation should apply to.
+type QueryPartsConfig struct {
+	Condition         []QueryPart
+	Sort              []QueryPart
+	AuditUserRelation []QueryPart
+}
 
 // CreateManyParams is a wrapper type for batch create parameters.
 // It contains a List field holding the slice of individual item parameters.
 type CreateManyParams[TParams any] struct {
-	api.In
+	api.P
 
 	List []TParams `json:"list" validate:"required,min=1,dive" label_i18n:"batch_create_list"`
 }
@@ -18,36 +32,26 @@ type CreateManyParams[TParams any] struct {
 // UpdateManyParams is a wrapper type for batch update parameters.
 // It contains a List field holding the slice of individual item parameters.
 type UpdateManyParams[TParams any] struct {
-	api.In
+	api.P
 
 	List []TParams `json:"list" validate:"required,min=1,dive" label_i18n:"batch_update_list"`
 }
 
 // DeleteManyParams is a wrapper type for batch delete parameters.
-// It contains a PKs field holding the slice of primary key values.
-// For single primary key models: PKs can be []any with direct values (e.g., ["id1", "id2"])
-// For composite primary key models: PKs should be []map[string]any with each map containing all PK fields.
+// It contains a Pks field holding the slice of primary key values.
+// For single primary key models: Pks can be []any with direct values (e.g., ["id1", "id2"])
+// For composite primary key models: Pks should be []map[string]any with each map containing all Pk fields.
 type DeleteManyParams struct {
-	api.In
+	api.P
 
-	PKs []any `json:"pks" validate:"required,min=1" label_i18n:"batch_delete_pks"`
+	Pks []any `json:"pks" validate:"required,min=1" label_i18n:"batch_delete_pks"`
 }
 
-// QueryApplier applies additional query modifications like joins, subqueries, etc.
-// Used for complex query customization beyond basic filtering and sorting.
-type QueryApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.SelectQuery]
+type Sortable struct {
+	api.M
 
-// SearchApplier applies search conditions based on the search parameters.
-// This is the primary mechanism for converting search inputs to database conditions.
-type SearchApplier[TSearch any] func(search TSearch) orm.ApplyFunc[orm.ConditionBuilder]
-
-// FilterApplier applies additional filtering logic with access to request context.
-// Useful for context-dependent filters like user permissions or tenant isolation.
-type FilterApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFunc[orm.ConditionBuilder]
-
-// SortApplier applies custom ordering logic to query results.
-// Provides access to both search parameters and request context for dynamic sorting.
-type SortApplier[TSearch any] func(search TSearch, ctx fiber.Ctx) orm.ApplyFunc[Sorter]
+	Sort []sort.OrderSpec `json:"sort"`
+}
 
 // Processor transforms query results after execution but before JSON serialization.
 // Commonly used for data formatting, field selection, or computed properties.
@@ -111,8 +115,8 @@ type FilenameBuilder[TSearch any] func(search TSearch, ctx fiber.Ctx) string
 
 // PreImportProcessor handles validation and transformation before saving imported data.
 // Common uses: data validation, default values, duplicate checking.
-type PreImportProcessor[TModel, TSearch any] func(models []TModel, search TSearch, ctx fiber.Ctx, db orm.Db) error
+type PreImportProcessor[TModel any] func(models []TModel, ctx fiber.Ctx, db orm.Db) error
 
 // PostImportProcessor handles side effects after successful import.
 // Runs within the same transaction. Uses: audit logging, notifications, cache updates.
-type PostImportProcessor[TModel, TSearch any] func(models []TModel, search TSearch, ctx fiber.Ctx, tx orm.Db) error
+type PostImportProcessor[TModel any] func(models []TModel, ctx fiber.Ctx, tx orm.Db) error

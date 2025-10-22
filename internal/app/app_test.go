@@ -73,6 +73,7 @@ func (r *TestResource) Ping(ctx fiber.Ctx) error {
 func TestAppWithCustomResource(t *testing.T) {
 	// Save and clear the environment variable to test with default language (zh-CN)
 	originalEnv := os.Getenv("VEF_I18N_LANGUAGE")
+
 	os.Unsetenv("VEF_I18N_LANGUAGE")
 	defer func() {
 		if originalEnv != "" {

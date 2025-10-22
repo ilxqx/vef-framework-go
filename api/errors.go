@@ -15,4 +15,8 @@ var (
 	ErrActionNameEmpty = errors.New("action name cannot be empty")
 	// ErrActionNameInvalidFormat is returned when the action name is not in snake_case format.
 	ErrActionNameInvalidFormat = errors.New("action name must be in snake_case format")
+	// ErrParamsDecodeTypeMismatch is returned when Params.Decode receives a non-pointer or non-struct type.
+	ErrParamsDecodeTypeMismatch = errors.New("Params.Decode requires a pointer to struct")
+	// ErrMetaDecodeTypeMismatch is returned when Meta.Decode receives a non-pointer or non-struct type.
+	ErrMetaDecodeTypeMismatch = errors.New("Meta.Decode requires a pointer to struct")
 )

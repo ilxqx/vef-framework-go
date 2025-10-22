@@ -1,11 +1,14 @@
 package api
 
 import (
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/mapx"
 )
 
 const (
@@ -52,7 +55,35 @@ func (id Identifier) Equals(other Identifier) bool {
 
 type Params map[string]any
 
+func (p *Params) Decode(out any) error {
+	t := reflect.TypeOf(out)
+	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("%w, got %T", ErrParamsDecodeTypeMismatch, out)
+	}
+
+	decoder, err := mapx.NewDecoder(out)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(p)
+}
+
 type Meta map[string]any
+
+func (m *Meta) Decode(out any) error {
+	t := reflect.TypeOf(out)
+	if t.Kind() != reflect.Pointer || t.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("%w, got %T", ErrMetaDecodeTypeMismatch, out)
+	}
+
+	decoder, err := mapx.NewDecoder(out)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(m)
+}
 
 // Request represents an Api request with identifier, params, and metadata.
 type Request struct {
@@ -163,7 +194,14 @@ func (d *Definition) GetTimeout() time.Duration {
 
 type paramsSentinel struct{}
 
-// In is a struct that can be used to inject parameters into an Api handler.
-type In struct {
+// P is a struct that can be used to inject parameters into an Api handler.
+type P struct {
 	_ paramsSentinel `bun:"-"`
+}
+
+type metaSentinel struct{}
+
+// M is a struct that can be used to inject meta into an Api handler.
+type M struct {
+	_ metaSentinel `bun:"-"`
 }

@@ -21,7 +21,7 @@ func TestAction_ValidActionNames(t *testing.T) {
 	for _, action := range validActions {
 		t.Run(action, func(t *testing.T) {
 			assert.NotPanics(t, func() {
-				_ = apis.NewCreateApi[orm.Model, orm.Model]("v1").Action(action)
+				_ = apis.NewCreateApi[orm.Model, orm.Model]().Action(action)
 			})
 		})
 	}
@@ -49,7 +49,7 @@ func TestAction_InvalidActionNames(t *testing.T) {
 	for _, tc := range invalidActions {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Panics(t, func() {
-				_ = apis.NewCreateApi[orm.Model, orm.Model]("v1").Action(tc.action)
+				_ = apis.NewCreateApi[orm.Model, orm.Model]().Action(tc.action)
 			})
 		})
 	}

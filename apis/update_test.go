@@ -34,7 +34,7 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_update_prehook"),
 		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().
 			Public().
-			PreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Add suffix to description
 				if params.Description != "" {
 					model.Description = params.Description + " [Updated]"
@@ -56,7 +56,7 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 		Resource: api.NewResource("test/user_update_posthook"),
 		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().
 			Public().
-			PostUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
+			WithPostUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header
 				ctx.Set("X-Updated-User-Name", model.Name)
 
@@ -67,7 +67,7 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 
 // Test params for update (includes id).
 type TestUserUpdateParams struct {
-	api.In
+	api.P
 
 	Id          string `json:"id"`
 	Name        string `json:"name"        validate:"required"`

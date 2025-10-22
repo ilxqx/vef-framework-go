@@ -601,7 +601,7 @@ func NewTestResource() apiPkg.Resource {
 }
 
 type GetUserParams struct {
-	apiPkg.In
+	apiPkg.P
 
 	ID string `json:"id" validate:"required"`
 }
@@ -623,7 +623,7 @@ func (r *TestUserResource) List(ctx fiber.Ctx, db orm.Db) error {
 }
 
 type CreateUserParams struct {
-	apiPkg.In
+	apiPkg.P
 
 	Name  string `json:"name"  validate:"required"`
 	Email string `json:"email" validate:"required,email"`
@@ -888,7 +888,7 @@ func NewMultipartResource() apiPkg.Resource {
 }
 
 type ImportParams struct {
-	apiPkg.In
+	apiPkg.P
 
 	Name  string `json:"name"  validate:"required"`
 	Email string `json:"email" validate:"required,email"`
@@ -941,7 +941,7 @@ func NewFileUploadResource() apiPkg.Resource {
 }
 
 type MultipleKeysParams struct {
-	apiPkg.In
+	apiPkg.P
 
 	UserId   string `json:"userId" validate:"required"`
 	Avatar   *multipart.FileHeader
@@ -959,7 +959,7 @@ func (r *FileUploadResource) MultipleKeys(ctx fiber.Ctx, params MultipleKeysPara
 }
 
 type SameKeyParams struct {
-	apiPkg.In
+	apiPkg.P
 
 	Category    string `json:"category" validate:"required"`
 	Attachments []*multipart.FileHeader
@@ -978,7 +978,7 @@ func (r *FileUploadResource) SameKey(ctx fiber.Ctx, params SameKeyParams) error 
 }
 
 type WithParamsParams struct {
-	apiPkg.In
+	apiPkg.P
 
 	Title       string   `json:"title"       validate:"required"`
 	Description string   `json:"description"`
@@ -1017,7 +1017,7 @@ func NewAuditResource() apiPkg.Resource {
 }
 
 type AuditSuccessParams struct {
-	apiPkg.In
+	apiPkg.P
 
 	Name string `json:"name" validate:"required"`
 }
@@ -1170,4 +1170,202 @@ func TestApiAuditDisabled(t *testing.T) {
 	defer mu.Unlock()
 
 	require.Len(t, auditEvents, 0, "should not receive any audit events when audit is disabled")
+}
+
+// Meta Resource - tests meta parameter injection
+
+type MetaResource struct {
+	apiPkg.Resource
+}
+
+func NewMetaResource() apiPkg.Resource {
+	return &MetaResource{
+		Resource: apiPkg.NewResource(
+			"test/meta",
+			apiPkg.WithApis(
+				apiPkg.Spec{Action: "with_meta", Public: true},
+				apiPkg.Spec{Action: "with_both", Public: true},
+				apiPkg.Spec{Action: "meta_validation", Public: true},
+			),
+		),
+	}
+}
+
+type RequestMeta struct {
+	apiPkg.M
+
+	RequestId string `json:"requestId"`
+	ClientIP  string `json:"clientIp"`
+	UserAgent string `json:"userAgent"`
+}
+
+func (r *MetaResource) WithMeta(ctx fiber.Ctx, meta RequestMeta) error {
+	return result.Ok(fiber.Map{
+		"request_id": meta.RequestId,
+		"client_ip":  meta.ClientIP,
+		"user_agent": meta.UserAgent,
+	}).Response(ctx)
+}
+
+type CreateItemParams struct {
+	apiPkg.P
+
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description"`
+}
+
+type CreateItemMeta struct {
+	apiPkg.M
+
+	Source    string `json:"source" validate:"required"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+func (r *MetaResource) WithBoth(ctx fiber.Ctx, params CreateItemParams, meta CreateItemMeta) error {
+	return result.Ok(fiber.Map{
+		"params": fiber.Map{
+			"name":        params.Name,
+			"description": params.Description,
+		},
+		"meta": fiber.Map{
+			"source":    meta.Source,
+			"timestamp": meta.Timestamp,
+		},
+	}).Response(ctx)
+}
+
+type ValidatedMeta struct {
+	apiPkg.M
+
+	ApiKey  string `json:"apiKey" validate:"required,min=10"`
+	Version string `json:"version" validate:"required,oneof=v1 v2 v3"`
+}
+
+func (r *MetaResource) MetaValidation(ctx fiber.Ctx, meta ValidatedMeta) error {
+	return result.Ok(fiber.Map{
+		"api_key": meta.ApiKey,
+		"version": meta.Version,
+	}).Response(ctx)
+}
+
+// TestApiWithMeta tests Api with meta parameter injection.
+func TestApiWithMeta(t *testing.T) {
+	testApp, stop := newTestApp(t, NewMetaResource)
+	defer stop()
+
+	resp := makeApiRequest(t, testApp, `{
+		"resource": "test/meta",
+		"action": "with_meta",
+		"version": "v1",
+		"meta": {
+			"request_id": "req-12345",
+			"client_ip": "192.168.1.1",
+			"user_agent": "TestClient/1.0"
+		}
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+	body := readBody(t, resp)
+	require.Contains(t, body, `"request_id":"req-12345"`)
+	require.Contains(t, body, `"client_ip":"192.168.1.1"`)
+	require.Contains(t, body, `"user_agent":"TestClient/1.0"`)
+}
+
+// TestApiWithParamsAndMeta tests Api with both params and meta injection.
+func TestApiWithParamsAndMeta(t *testing.T) {
+	testApp, stop := newTestApp(t, NewMetaResource)
+	defer stop()
+
+	resp := makeApiRequest(t, testApp, `{
+		"resource": "test/meta",
+		"action": "with_both",
+		"version": "v1",
+		"params": {
+			"name": "Test Item",
+			"description": "This is a test item"
+		},
+		"meta": {
+			"source": "web-app",
+			"timestamp": 1234567890
+		}
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+	body := readBody(t, resp)
+	require.Contains(t, body, `"name":"Test Item"`)
+	require.Contains(t, body, `"description":"This is a test item"`)
+	require.Contains(t, body, `"source":"web-app"`)
+	require.Contains(t, body, `"timestamp":1234567890`)
+}
+
+// TestApiMetaValidation tests meta parameter validation.
+func TestApiMetaValidation(t *testing.T) {
+	testApp, stop := newTestApp(t, NewMetaResource)
+	defer stop()
+
+	// Test with valid meta
+	resp := makeApiRequest(t, testApp, `{
+		"resource": "test/meta",
+		"action": "meta_validation",
+		"version": "v1",
+		"meta": {
+			"api_key": "valid-key-12345",
+			"version": "v2"
+		}
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+	body := readBody(t, resp)
+	require.Contains(t, body, `"api_key":"valid-key-12345"`)
+	require.Contains(t, body, `"version":"v2"`)
+
+	// Test with invalid meta (api_key too short)
+	resp = makeApiRequest(t, testApp, `{
+		"resource": "test/meta",
+		"action": "meta_validation",
+		"version": "v1",
+		"meta": {
+			"api_key": "short",
+			"version": "v2"
+		}
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+	body = readBody(t, resp)
+	require.Contains(t, body, `"code":1400`)
+
+	// Test with invalid version
+	resp = makeApiRequest(t, testApp, `{
+		"resource": "test/meta",
+		"action": "meta_validation",
+		"version": "v1",
+		"meta": {
+			"api_key": "valid-key-12345",
+			"version": "v99"
+		}
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+	body = readBody(t, resp)
+	require.Contains(t, body, `"code":1400`)
+}
+
+// TestApiMissingMeta tests Api when meta is not provided.
+func TestApiMissingMeta(t *testing.T) {
+	testApp, stop := newTestApp(t, NewMetaResource)
+	defer stop()
+
+	// Request without meta field
+	resp := makeApiRequest(t, testApp, `{
+		"resource": "test/meta",
+		"action": "with_meta",
+		"version": "v1"
+	}`)
+
+	require.Equal(t, 200, resp.StatusCode)
+	body := readBody(t, resp)
+	// Should return empty values for meta fields
+	require.Contains(t, body, `"request_id":""`)
+	require.Contains(t, body, `"client_ip":""`)
+	require.Contains(t, body, `"user_agent":""`)
 }

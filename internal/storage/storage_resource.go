@@ -53,7 +53,7 @@ type StorageResource struct {
 
 // UploadParams represents the request parameters for file upload.
 type UploadParams struct {
-	api.In
+	api.P
 
 	// File is the file to upload
 	File *multipart.FileHeader
@@ -155,7 +155,7 @@ func (r *StorageResource) generateObjectKey(filename string) string {
 
 // GetPresignedUrlParams represents the request parameters for getting presigned URL.
 type GetPresignedUrlParams struct {
-	api.In
+	api.P
 
 	// Key is the unique identifier of the object
 	Key string `json:"key" validate:"required"`
@@ -193,7 +193,7 @@ func (r *StorageResource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlP
 
 // DeleteParams represents the request parameters for deleting an object.
 type DeleteParams struct {
-	api.In
+	api.P
 
 	// Key is the unique identifier of the object to delete
 	Key string `json:"key" validate:"required"`
@@ -213,7 +213,7 @@ func (r *StorageResource) Delete(ctx fiber.Ctx, params DeleteParams) error {
 
 // DeleteManyParams represents the request parameters for batch deleting objects.
 type DeleteManyParams struct {
-	api.In
+	api.P
 
 	// Keys is the list of object identifiers to delete
 	Keys []string `json:"keys" validate:"required,min=1"`
@@ -233,7 +233,7 @@ func (r *StorageResource) DeleteMany(ctx fiber.Ctx, params DeleteManyParams) err
 
 // ListParams represents the request parameters for listing objects.
 type ListParams struct {
-	api.In
+	api.P
 
 	// Prefix filters objects by key prefix
 	Prefix string `json:"prefix"`
@@ -259,7 +259,7 @@ func (r *StorageResource) List(ctx fiber.Ctx, params ListParams) error {
 
 // CopyParams represents the request parameters for copying an object.
 type CopyParams struct {
-	api.In
+	api.P
 
 	// SourceKey is the identifier of the source object
 	SourceKey string `json:"sourceKey" validate:"required"`
@@ -282,7 +282,7 @@ func (r *StorageResource) Copy(ctx fiber.Ctx, params CopyParams) error {
 
 // MoveParams represents the request parameters for moving an object.
 type MoveParams struct {
-	api.In
+	api.P
 
 	// SourceKey is the identifier of the source object
 	SourceKey string `json:"sourceKey" validate:"required"`
@@ -307,7 +307,7 @@ func (r *StorageResource) Move(ctx fiber.Ctx, params MoveParams) error {
 
 // StatParams represents the request parameters for getting object metadata.
 type StatParams struct {
-	api.In
+	api.P
 
 	// Key is the unique identifier of the object
 	Key string `json:"key" validate:"required"`

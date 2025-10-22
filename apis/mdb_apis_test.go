@@ -235,7 +235,7 @@ func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType con
 		(*TestAuditUser)(nil),
 		(*TestUser)(nil),
 		(*TestCategory)(nil),
-		(*TestCompositePKItem)(nil),
+		(*TestCompositePkItem)(nil),
 		(*ExportUser)(nil),
 		(*ImportUser)(nil),
 	)

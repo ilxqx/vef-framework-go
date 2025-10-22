@@ -34,7 +34,7 @@ func NewTestUserDeleteWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_delete_prehook"),
 		DeleteApi: apis.NewDeleteApi[TestUser]().
 			Public().
-			PreDelete(func(model *TestUser, ctx fiber.Ctx, db orm.Db) error {
+			WithPreDelete(func(model *TestUser, ctx fiber.Ctx, db orm.Db) error {
 				// Log or check conditions before delete
 				if model.Status == "active" {
 					ctx.Set("X-Delete-Warning", "Deleting active user")
@@ -56,7 +56,7 @@ func NewTestUserDeleteWithPostHookResource() api.Resource {
 		Resource: api.NewResource("test/user_delete_posthook"),
 		DeleteApi: apis.NewDeleteApi[TestUser]().
 			Public().
-			PostDelete(func(model *TestUser, ctx fiber.Ctx, tx orm.Db) error {
+			WithPostDelete(func(model *TestUser, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header after deletion
 				ctx.Set("X-Deleted-User-Id", model.Id)
 

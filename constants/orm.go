@@ -10,8 +10,8 @@ const (
 	ExprOperator     = "?Operator"     // ExprOperator is the operator placeholder
 	ExprTableColumns = "?TableColumns" // ExprTableColumns is the table columns placeholder
 	ExprColumns      = "?Columns"      // ExprColumns is the columns' placeholder
-	ExprTablePKs     = "?TablePKs"     // ExprTablePKs is the table primary keys' placeholder
-	ExprPKs          = "?PKs"          // ExprPKs is the primary keys placeholder
+	ExprTablePks     = "?TablePKs"     // ExprTablePks is the table primary keys' placeholder
+	ExprPks          = "?PKs"          // ExprPks is the primary keys placeholder
 	ExprTableName    = "?TableName"    // ExprTableName is the table name placeholder
 	ExprTableAlias   = "?TableAlias"   // ExprTableAlias is the table alias placeholder
 

@@ -36,7 +36,7 @@ func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_update_many_prehook"),
 		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().
 			Public().
-			PreUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPreUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
 				// Add suffix to all descriptions
 				for i := range models {
 					if paramsList[i].Description != "" {
@@ -60,7 +60,7 @@ func NewTestUserUpdateManyWithPostHookResource() api.Resource {
 		Resource: api.NewResource("test/user_update_many_posthook"),
 		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().
 			Public().
-			PostUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
+			WithPostUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
 				// Set custom header with count
 				ctx.Set("X-Updated-Count", strconv.Itoa(len(models)))
 

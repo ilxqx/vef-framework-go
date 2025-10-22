@@ -17,9 +17,9 @@ import (
 type updateManyApi[TModel, TParams any] struct {
 	ApiBuilder[UpdateManyApi[TModel, TParams]]
 
-	preUpdateMany   PreUpdateManyProcessor[TModel, TParams]
-	postUpdateMany  PostUpdateManyProcessor[TModel, TParams]
-	disableDataPerm bool
+	preUpdateMany    PreUpdateManyProcessor[TModel, TParams]
+	postUpdateMany   PostUpdateManyProcessor[TModel, TParams]
+	dataPermDisabled bool
 }
 
 // Provide generates the final Api specification for batch model updates.
@@ -28,28 +28,26 @@ func (u *updateManyApi[TModel, TParams]) Provide() api.Spec {
 	return u.Build(u.updateMany)
 }
 
-func (u *updateManyApi[TModel, TParams]) PreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
 	u.preUpdateMany = processor
 
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) PostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
 	u.postUpdateMany = processor
 
 	return u
 }
 
 func (u *updateManyApi[TModel, TParams]) DisableDataPerm() UpdateManyApi[TModel, TParams] {
-	u.disableDataPerm = true
+	u.dataPermDisabled = true
 
 	return u
 }
 
 func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params UpdateManyParams[TParams]) error, error) {
-	// Pre-compute schema information
 	schema := db.TableOf((*TModel)(nil))
-	// Pre-compute primary key fields
 	pks := db.ModelPkFields((*TModel)(nil))
 
 	// Validate schema has primary keys
@@ -86,8 +84,8 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.C
 
 			// Build query with data permission filtering
 			query := db.NewSelect().Model(&models[i]).WherePk()
-			if !u.disableDataPerm {
-				if err := applyDataPermission(query, ctx); err != nil {
+			if !u.dataPermDisabled {
+				if err := ApplyDataPermission(query, ctx); err != nil {
 					return err
 				}
 			}

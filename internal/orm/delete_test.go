@@ -77,7 +77,7 @@ func (suite *DeleteTestSuite) TestBasicDelete() {
 		Exec(suite.ctx)
 	suite.NoError(err)
 
-	// Verify PK deletion
+	// Verify Pk deletion
 	err = suite.db.NewSelect().
 		Model(&deletedUser).
 		Where(func(cb ConditionBuilder) {
