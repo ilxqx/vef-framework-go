@@ -1,5 +1,3 @@
-// Package null provides nullable versions of Go types that integrate with SQL databases.
-// The Decimal type wraps shopspring/decimal.NullDecimal with additional convenience methods.
 package null
 
 import (

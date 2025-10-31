@@ -5,6 +5,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
+// Default column mapping for DataOption.
+var defaultDataOptionColumnMapping = &DataOptionColumnMapping{
+	LabelColumn: defaultLabelColumn,
+	ValueColumn: defaultValueColumn,
+}
+
 // DataOption represents a selectable item with display text and underlying value.
 // Commonly used for dropdown lists, radio buttons, and select components.
 type DataOption struct {

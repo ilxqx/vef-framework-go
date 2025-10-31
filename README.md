@@ -5,6 +5,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
+[![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
 
 A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 

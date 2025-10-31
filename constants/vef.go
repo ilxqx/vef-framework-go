@@ -5,5 +5,5 @@ const (
 	VEFName = "vef"
 	// VEFVersion represents the current version of the VEF Framework.
 	// This version number follows semantic versioning (semver) format.
-	VEFVersion = "v0.7.1"
+	VEFVersion = "v0.7.2"
 )

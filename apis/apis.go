@@ -110,12 +110,7 @@ func NewFindPageApi[TModel, TSearch any](version ...string) FindPageApi[TModel, 
 
 // NewFindOptionsApi creates a new FindOptionsApi with optional configurations.
 func NewFindOptionsApi[TModel, TSearch any](version ...string) FindOptionsApi[TModel, TSearch] {
-	api := &findOptionsApi[TModel, TSearch]{
-		defaultColumnMapping: &DataOptionColumnMapping{
-			LabelColumn: defaultLabelColumn,
-			ValueColumn: defaultValueColumn,
-		},
-	}
+	api := new(findOptionsApi[TModel, TSearch])
 	api.FindApi = NewFindApi[TModel, TSearch, []DataOption, FindOptionsApi[TModel, TSearch]](
 		api,
 		version...,
@@ -147,10 +142,6 @@ func NewFindTreeApi[TModel, TSearch any](
 // NewFindTreeOptionsApi creates a new FindTreeOptionsApi with optional configurations.
 func NewFindTreeOptionsApi[TModel, TSearch any](version ...string) FindTreeOptionsApi[TModel, TSearch] {
 	api := &findTreeOptionsApi[TModel, TSearch]{
-		defaultColumnMapping: &DataOptionColumnMapping{
-			LabelColumn: defaultLabelColumn,
-			ValueColumn: defaultValueColumn,
-		},
 		idColumn:       idColumn,
 		parentIdColumn: parentIdColumn,
 	}

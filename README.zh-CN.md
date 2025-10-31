@@ -5,6 +5,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
+[![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
 
 一个基于 Uber FX 依赖注入和 Fiber 构建的现代化 Go Web 开发框架，采用约定优于配置的设计理念，为企业级应用快速开发提供开箱即用的完整功能。
 

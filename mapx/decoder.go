@@ -1,5 +1,3 @@
-// Package mapx provides utilities for map and struct conversion using mapstructure.
-// It offers flexible decoding options and type-safe conversions between maps and structs.
 package mapx
 
 import (

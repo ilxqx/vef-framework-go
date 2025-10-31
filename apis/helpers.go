@@ -62,6 +62,10 @@ func validateOptionColumns(schema *schema.Table, mapping *DataOptionColumnMappin
 // mergeOptionColumnMapping merges the provided mapping with default mapping.
 // Uses fallback values for empty columns based on the provided default mapping or system defaults.
 func mergeOptionColumnMapping(mapping, defaultMapping *DataOptionColumnMapping) {
+	if defaultMapping == nil {
+		defaultMapping = defaultDataOptionColumnMapping
+	}
+
 	if mapping.LabelColumn == constants.Empty {
 		mapping.LabelColumn = lo.CoalesceOrEmpty(defaultMapping.LabelColumn, defaultLabelColumn)
 	}
@@ -74,8 +78,7 @@ func mergeOptionColumnMapping(mapping, defaultMapping *DataOptionColumnMapping) 
 		mapping.DescriptionColumn = defaultMapping.DescriptionColumn
 	}
 
-	// Merge MetaColumns if not specified
-	if len(mapping.MetaColumns) == 0 && defaultMapping != nil {
+	if len(mapping.MetaColumns) == 0 {
 		mapping.MetaColumns = defaultMapping.MetaColumns
 	}
 }
