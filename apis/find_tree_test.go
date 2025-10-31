@@ -105,7 +105,8 @@ func NewAuditUserCategoryFindTreeResource() api.Resource {
 	}
 }
 
-// FindTreeTestSuite is the test suite for FindTree Api tests.
+// FindTreeTestSuite tests the FindTree API functionality
+// including basic tree building, search filters, filter appliers, sort appliers, audit user names, and negative cases.
 type FindTreeTestSuite struct {
 	BaseSuite
 }
@@ -127,6 +128,8 @@ func (suite *FindTreeTestSuite) TearDownSuite() {
 
 // TestFindTreeBasic tests basic FindTree functionality.
 func (suite *FindTreeTestSuite) TestFindTreeBasic() {
+	suite.T().Logf("Testing FindTree API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree",
@@ -135,34 +138,37 @@ func (suite *FindTreeTestSuite) TestFindTreeBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	tree := suite.readDataAsSlice(body.Data)
-	// Should return 3 root categories
-	suite.Len(tree, 3)
+	suite.Len(tree, 3, "Should return 3 root categories")
 
 	// Verify default ordering by created_at DESC - Clothing (latest) should be first
 	first := suite.readDataAsMap(tree[0])
-	suite.Equal("Clothing", first["name"])
+	suite.Equal("Clothing", first["name"], "First category should be Clothing (latest created_at)")
 
 	second := suite.readDataAsMap(tree[1])
-	suite.Equal("Books", second["name"])
+	suite.Equal("Books", second["name"], "Second category should be Books")
 
 	third := suite.readDataAsMap(tree[2])
-	suite.Equal("Electronics", third["name"])
+	suite.Equal("Electronics", third["name"], "Third category should be Electronics (earliest created_at)")
 
 	// Check Electronics has children (it's the third item due to DESC ordering)
 	electronics := third
 	children := suite.readDataAsSlice(electronics["children"])
-	suite.Len(children, 2) // Computers and Phones
+	suite.Len(children, 2, "Electronics should have 2 children (Computers and Phones)")
+
+	suite.T().Logf("Found %d root categories with default ordering (DESC by created_at)", len(tree))
 }
 
 // TestFindTreeWithSearch tests FindTree with search conditions.
 func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
+	suite.T().Logf("Testing FindTree API with search filters for %s", suite.dbType)
+
 	suite.Run("SearchByCode", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -175,15 +181,17 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		tree := suite.readDataAsSlice(body.Data)
-		suite.Len(tree, 1) // Only Electronics
+		suite.Len(tree, 1, "Should return only Electronics category")
 
 		electronics := suite.readDataAsMap(tree[0])
-		suite.Equal("Electronics", electronics["name"])
+		suite.Equal("Electronics", electronics["name"], "Category name should be Electronics")
+
+		suite.T().Logf("Found 1 category matching code 'electronics': %s", electronics["name"])
 	})
 
 	suite.Run("SearchByParentId", func() {
@@ -198,20 +206,21 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		tree := suite.readDataAsSlice(body.Data)
-		// Should return 1 tree with Electronics as root (because recursive CTE finds ancestors)
-		suite.Len(tree, 1)
+		suite.Len(tree, 1, "Should return 1 tree with Electronics as root (recursive CTE finds ancestors)")
 
 		electronics := suite.readDataAsMap(tree[0])
-		suite.Equal("Electronics", electronics["name"])
+		suite.Equal("Electronics", electronics["name"], "Root should be Electronics")
 
 		// Electronics should have 2 children: Computers and Phones
 		children := suite.readDataAsSlice(electronics["children"])
-		suite.Len(children, 2)
+		suite.Len(children, 2, "Electronics should have 2 children (Computers and Phones)")
+
+		suite.T().Logf("Found tree rooted at Electronics with %d children", len(children))
 	})
 
 	suite.Run("SearchByKeyword", func() {
@@ -226,17 +235,21 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		tree := suite.readDataAsSlice(body.Data)
-		suite.GreaterOrEqual(len(tree), 1) // At least Computers category
+		suite.GreaterOrEqual(len(tree), 1, "Should return at least 1 category matching keyword 'Computer'")
+
+		suite.T().Logf("Found %d categories matching keyword 'Computer'", len(tree))
 	})
 }
 
 // TestFindTreeWithFilterApplier tests FindTree with filter applier.
 func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
+	suite.T().Logf("Testing FindTree API with filter applier for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_filtered",
@@ -245,23 +258,26 @@ func (suite *FindTreeTestSuite) TestFindTreeWithFilterApplier() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	tree := suite.readDataAsSlice(body.Data)
-	// Should only return Electronics and its direct children
-	suite.Len(tree, 1) // Only Electronics root
+	suite.Len(tree, 1, "Should return only Electronics root (filtered to Electronics and its children)")
 
 	electronics := suite.readDataAsMap(tree[0])
-	suite.Equal("Electronics", electronics["name"])
+	suite.Equal("Electronics", electronics["name"], "Root category should be Electronics")
 
 	children := suite.readDataAsSlice(electronics["children"])
-	suite.Len(children, 2) // Computers and Phones
+	suite.Len(children, 2, "Electronics should have 2 children (Computers and Phones)")
+
+	suite.T().Logf("Found 1 filtered tree rooted at Electronics with %d children", len(children))
 }
 
 // TestFindTreeWithSortApplier tests FindTree with sort applier.
 func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
+	suite.T().Logf("Testing FindTree API with sort applier for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_ordered",
@@ -270,26 +286,30 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSortApplier() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	tree := suite.readDataAsSlice(body.Data)
-	suite.Len(tree, 3)
+	suite.Len(tree, 3, "Should return 3 root categories")
 
 	// Verify ordering by sort field
 	first := suite.readDataAsMap(tree[0])
-	suite.Equal("Electronics", first["name"]) // sort = 1
+	suite.Equal("Electronics", first["name"], "First category should be Electronics (sort=1)")
 
 	second := suite.readDataAsMap(tree[1])
-	suite.Equal("Books", second["name"]) // sort = 2
+	suite.Equal("Books", second["name"], "Second category should be Books (sort=2)")
 
 	third := suite.readDataAsMap(tree[2])
-	suite.Equal("Clothing", third["name"]) // sort = 3
+	suite.Equal("Clothing", third["name"], "Third category should be Clothing (sort=3)")
+
+	suite.T().Logf("Found 3 root categories ordered by sort field: Electronics, Books, Clothing")
 }
 
 // TestFindTreeNegativeCases tests negative scenarios.
 func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
+	suite.T().Logf("Testing FindTree API negative cases for %s", suite.dbType)
+
 	suite.Run("NoMatchingRecords", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -302,12 +322,14 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		tree := suite.readDataAsSlice(body.Data)
-		suite.Len(tree, 0)
+		suite.Len(tree, 0, "Should return empty tree when no records match")
+
+		suite.T().Logf("No matching records found as expected for keyword 'NonexistentCategory'")
 	})
 
 	suite.Run("EmptySearchCriteria", func() {
@@ -320,17 +342,21 @@ func (suite *FindTreeTestSuite) TestFindTreeNegativeCases() {
 			Params: map[string]any{},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		tree := suite.readDataAsSlice(body.Data)
-		suite.Len(tree, 3) // All root categories
+		suite.Len(tree, 3, "Should return all 3 root categories with empty search criteria")
+
+		suite.T().Logf("Empty search criteria returned %d root categories", len(tree))
 	})
 }
 
 // TestFindTreeWithAuditUserNames tests FindTree with audit user names populated.
 func (suite *FindTreeTestSuite) TestFindTreeWithAuditUserNames() {
+	suite.T().Logf("Testing FindTree API with audit user names for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/category_tree_audit",
@@ -339,21 +365,26 @@ func (suite *FindTreeTestSuite) TestFindTreeWithAuditUserNames() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	tree := suite.readDataAsSlice(body.Data)
-	suite.Len(tree, 3) // 3 root categories
+	suite.Len(tree, 3, "Should return 3 root categories")
 
 	// Verify all categories have audit user names (they were all created/updated by 'test' user initially)
 	// But our fixture data has created_by and updated_by set to 'test', not actual audit user IDs
 	// So we'll verify the structure is correct
+	rootCategoriesWithAudit := 0
+
+	childCategoriesWithAudit := 0
 	for _, c := range tree {
 		category := suite.readDataAsMap(c)
 		suite.NotNil(category["createdByName"], "Category %s should have createdByName", category["id"])
 		suite.NotNil(category["updatedByName"], "Category %s should have updatedByName", category["id"])
+
+		rootCategoriesWithAudit++
 
 		// Check children if they exist
 		if category["children"] != nil {
@@ -362,7 +393,11 @@ func (suite *FindTreeTestSuite) TestFindTreeWithAuditUserNames() {
 				child := suite.readDataAsMap(ch)
 				suite.NotNil(child["createdByName"], "Child category %s should have createdByName", child["id"])
 				suite.NotNil(child["updatedByName"], "Child category %s should have updatedByName", child["id"])
+
+				childCategoriesWithAudit++
 			}
 		}
 	}
+
+	suite.T().Logf("Verified audit user names for %d root categories and %d child categories", rootCategoriesWithAudit, childCategoriesWithAudit)
 }

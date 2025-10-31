@@ -11,18 +11,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// createTestScheduler creates a gocron.Scheduler instance for testing
-// Similar to the production configuration but simplified for tests.
 func createTestScheduler() (gocron.Scheduler, error) {
 	return gocron.NewScheduler(
 		gocron.WithLocation(time.Local),
-		gocron.WithStopTimeout(5*time.Second), // Shorter timeout for tests
+		gocron.WithStopTimeout(5*time.Second),
 	)
 }
 
+// TestNewScheduler tests scheduler creation with a gocron scheduler.
 func TestNewScheduler(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -31,12 +30,13 @@ func TestNewScheduler(t *testing.T) {
 	}()
 
 	scheduler := NewScheduler(gocronScheduler)
-	assert.NotNil(t, scheduler)
+	assert.NotNil(t, scheduler, "Scheduler should not be nil")
 }
 
+// TestScheduler_NewJob_OneTime tests creating and executing a one-time job.
 func TestScheduler_NewJob_OneTime(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -52,7 +52,6 @@ func TestScheduler_NewJob_OneTime(t *testing.T) {
 		atomic.AddInt32(&executed, 1)
 	}
 
-	// Create a one-time job that runs immediately
 	jobDef := NewOneTimeJob(nil,
 		WithName("test-one-time"),
 		WithTags("test", "one-time"),
@@ -60,22 +59,22 @@ func TestScheduler_NewJob_OneTime(t *testing.T) {
 	)
 
 	job, err := scheduler.NewJob(jobDef)
-	require.NoError(t, err)
-	assert.NotNil(t, job)
-	assert.Equal(t, "test-one-time", job.Name())
-	assert.Contains(t, job.Tags(), "test")
-	assert.Contains(t, job.Tags(), "one-time")
+	require.NoError(t, err, "Should create one-time job")
+	assert.NotNil(t, job, "Job should not be nil")
+	assert.Equal(t, "test-one-time", job.Name(), "Job name should match")
+	assert.Contains(t, job.Tags(), "test", "Job should have 'test' tag")
+	assert.Contains(t, job.Tags(), "one-time", "Job should have 'one-time' tag")
 
-	// Start scheduler and wait for execution
 	scheduler.Start()
 	time.Sleep(100 * time.Millisecond)
 
-	assert.Equal(t, int32(1), atomic.LoadInt32(&executed))
+	assert.Equal(t, int32(1), atomic.LoadInt32(&executed), "One-time job should execute exactly once")
 }
 
+// TestScheduler_NewJob_Duration tests creating and executing a duration-based job with limited runs.
 func TestScheduler_NewJob_Duration(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -91,7 +90,6 @@ func TestScheduler_NewJob_Duration(t *testing.T) {
 		atomic.AddInt32(&executed, 1)
 	}
 
-	// Create a duration-based job with limited runs
 	jobDef := NewDurationJob(50*time.Millisecond,
 		WithName("test-duration"),
 		WithTags("test", "duration"),
@@ -100,21 +98,20 @@ func TestScheduler_NewJob_Duration(t *testing.T) {
 	)
 
 	job, err := scheduler.NewJob(jobDef)
-	require.NoError(t, err)
-	assert.NotNil(t, job)
-	assert.Equal(t, "test-duration", job.Name())
+	require.NoError(t, err, "Should create duration job")
+	assert.NotNil(t, job, "Job should not be nil")
+	assert.Equal(t, "test-duration", job.Name(), "Job name should match")
 
-	// Start scheduler and wait for multiple executions
 	scheduler.Start()
 	time.Sleep(200 * time.Millisecond)
 
-	// Should have executed 3 times due to limit
-	assert.Equal(t, int32(3), atomic.LoadInt32(&executed))
+	assert.Equal(t, int32(3), atomic.LoadInt32(&executed), "Duration job should execute exactly 3 times")
 }
 
+// TestScheduler_NewJob_Cron tests creating and executing a cron-based job with limited runs.
 func TestScheduler_NewJob_Cron(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -130,8 +127,7 @@ func TestScheduler_NewJob_Cron(t *testing.T) {
 		atomic.AddInt32(&executed, 1)
 	}
 
-	// Create a cron job that runs every second
-	jobDef := NewCronJob("* * * * * *", true, // every second with seconds field
+	jobDef := NewCronJob("* * * * * *", true,
 		WithName("test-cron"),
 		WithTags("test", "cron"),
 		WithLimitedRuns(2),
@@ -139,21 +135,20 @@ func TestScheduler_NewJob_Cron(t *testing.T) {
 	)
 
 	job, err := scheduler.NewJob(jobDef)
-	require.NoError(t, err)
-	assert.NotNil(t, job)
-	assert.Equal(t, "test-cron", job.Name())
+	require.NoError(t, err, "Should create cron job")
+	assert.NotNil(t, job, "Job should not be nil")
+	assert.Equal(t, "test-cron", job.Name(), "Job name should match")
 
-	// Start scheduler and wait for executions
 	scheduler.Start()
-	time.Sleep(2500 * time.Millisecond) // Wait for 2+ seconds
+	time.Sleep(2500 * time.Millisecond)
 
-	// Should have executed 2 times due to limit
-	assert.Equal(t, int32(2), atomic.LoadInt32(&executed))
+	assert.Equal(t, int32(2), atomic.LoadInt32(&executed), "Cron job should execute exactly 2 times")
 }
 
+// TestScheduler_NewJob_DurationRandom tests creating and executing a random duration job.
 func TestScheduler_NewJob_DurationRandom(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -169,7 +164,6 @@ func TestScheduler_NewJob_DurationRandom(t *testing.T) {
 		atomic.AddInt32(&executed, 1)
 	}
 
-	// Create a random duration job
 	jobDef := NewDurationRandomJob(10*time.Millisecond, 50*time.Millisecond,
 		WithName("test-random"),
 		WithTags("test", "random"),
@@ -178,23 +172,22 @@ func TestScheduler_NewJob_DurationRandom(t *testing.T) {
 	)
 
 	job, err := scheduler.NewJob(jobDef)
-	require.NoError(t, err)
-	assert.NotNil(t, job)
-	assert.Equal(t, "test-random", job.Name())
+	require.NoError(t, err, "Should create random duration job")
+	assert.NotNil(t, job, "Job should not be nil")
+	assert.Equal(t, "test-random", job.Name(), "Job name should match")
 
-	// Start scheduler and wait for executions
 	scheduler.Start()
 	time.Sleep(200 * time.Millisecond)
 
-	// Should have executed at least once, possibly twice
 	executions := atomic.LoadInt32(&executed)
-	assert.GreaterOrEqual(t, executions, int32(1))
-	assert.LessOrEqual(t, executions, int32(2))
+	assert.GreaterOrEqual(t, executions, int32(1), "Random duration job should execute at least once")
+	assert.LessOrEqual(t, executions, int32(2), "Random duration job should not exceed limit")
 }
 
+// TestScheduler_Jobs tests retrieving all scheduled jobs.
 func TestScheduler_Jobs(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -204,28 +197,26 @@ func TestScheduler_Jobs(t *testing.T) {
 
 	scheduler := NewScheduler(gocronScheduler)
 
-	// Initially no jobs
 	jobs := scheduler.Jobs()
-	assert.Len(t, jobs, 0)
+	assert.Len(t, jobs, 0, "Scheduler should have no jobs initially")
 
-	// Add a job
 	jobDef := NewOneTimeJob(nil,
 		WithName("test-job"),
 		WithTask(func() {}),
 	)
 
 	_, err = scheduler.NewJob(jobDef)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job")
 
-	// Should now have one job
 	jobs = scheduler.Jobs()
-	assert.Len(t, jobs, 1)
-	assert.Equal(t, "test-job", jobs[0].Name())
+	assert.Len(t, jobs, 1, "Scheduler should have exactly 1 job")
+	assert.Equal(t, "test-job", jobs[0].Name(), "Job name should match")
 }
 
+// TestScheduler_RemoveJob tests removing a job by ID.
 func TestScheduler_RemoveJob(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -235,31 +226,28 @@ func TestScheduler_RemoveJob(t *testing.T) {
 
 	scheduler := NewScheduler(gocronScheduler)
 
-	// Add a job
 	jobDef := NewOneTimeJob(nil,
 		WithName("test-job"),
 		WithTask(func() {}),
 	)
 
 	job, err := scheduler.NewJob(jobDef)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job")
 
-	// Verify job exists
 	jobs := scheduler.Jobs()
-	assert.Len(t, jobs, 1)
+	assert.Len(t, jobs, 1, "Scheduler should have 1 job before removal")
 
-	// Remove job by ID
 	err = scheduler.RemoveJob(job.Id())
-	require.NoError(t, err)
+	require.NoError(t, err, "Should remove job")
 
-	// Verify job is removed
 	jobs = scheduler.Jobs()
-	assert.Len(t, jobs, 0)
+	assert.Len(t, jobs, 0, "Scheduler should have no jobs after removal")
 }
 
+// TestScheduler_RemoveByTags tests removing jobs by tag.
 func TestScheduler_RemoveByTags(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -269,7 +257,6 @@ func TestScheduler_RemoveByTags(t *testing.T) {
 
 	scheduler := NewScheduler(gocronScheduler)
 
-	// Add jobs with different tags
 	job1Def := NewOneTimeJob(nil,
 		WithName("job1"),
 		WithTags("group1", "test"),
@@ -289,28 +276,26 @@ func TestScheduler_RemoveByTags(t *testing.T) {
 	)
 
 	_, err = scheduler.NewJob(job1Def)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job1")
 	_, err = scheduler.NewJob(job2Def)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job2")
 	_, err = scheduler.NewJob(job3Def)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job3")
 
-	// Verify all jobs exist
 	jobs := scheduler.Jobs()
-	assert.Len(t, jobs, 3)
+	assert.Len(t, jobs, 3, "Scheduler should have 3 jobs before removal")
 
-	// Remove jobs with "test" tag
 	scheduler.RemoveByTags("test")
 
-	// Should have removed job1 and job2, leaving job3
 	jobs = scheduler.Jobs()
-	assert.Len(t, jobs, 1)
-	assert.Equal(t, "job3", jobs[0].Name())
+	assert.Len(t, jobs, 1, "Scheduler should have 1 job after removing by tag")
+	assert.Equal(t, "job3", jobs[0].Name(), "Remaining job should be job3")
 }
 
+// TestScheduler_UpdateJob tests updating an existing job.
 func TestScheduler_UpdateJob(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -329,39 +314,36 @@ func TestScheduler_UpdateJob(t *testing.T) {
 		atomic.AddInt32(&executed2, 1)
 	}
 
-	// Create initial job
 	jobDef1 := NewOneTimeJob(nil,
 		WithName("test-job"),
 		WithTask(testFunc1),
 	)
 
 	job, err := scheduler.NewJob(jobDef1)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create original job")
 
 	originalID := job.Id()
 
-	// Update with new definition
 	jobDef2 := NewOneTimeJob(nil,
 		WithName("updated-job"),
 		WithTask(testFunc2),
 	)
 
 	updatedJob, err := scheduler.Update(originalID, jobDef2)
-	require.NoError(t, err)
-	assert.Equal(t, "updated-job", updatedJob.Name())
+	require.NoError(t, err, "Should update job")
+	assert.Equal(t, "updated-job", updatedJob.Name(), "Updated job name should match")
 
-	// Start scheduler
 	scheduler.Start()
 	time.Sleep(100 * time.Millisecond)
 
-	// Only the updated function should have executed
-	assert.Equal(t, int32(0), atomic.LoadInt32(&executed1))
-	assert.Equal(t, int32(1), atomic.LoadInt32(&executed2))
+	assert.Equal(t, int32(0), atomic.LoadInt32(&executed1), "Original task should not execute")
+	assert.Equal(t, int32(1), atomic.LoadInt32(&executed2), "Updated task should execute once")
 }
 
+// TestScheduler_WithContext tests job cancellation via context.
 func TestScheduler_WithContext(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -378,14 +360,12 @@ func TestScheduler_WithContext(t *testing.T) {
 	testFunc := func(jobCtx context.Context) {
 		select {
 		case <-jobCtx.Done():
-			// Context was canceled
 			return
 		case <-time.After(100 * time.Millisecond):
 			atomic.AddInt32(&executed, 1)
 		}
 	}
 
-	// Create job with context
 	jobDef := NewDurationJob(50*time.Millisecond,
 		WithName("test-context"),
 		WithContext(ctx),
@@ -393,23 +373,21 @@ func TestScheduler_WithContext(t *testing.T) {
 	)
 
 	_, err = scheduler.NewJob(jobDef)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job with context")
 
-	// Start scheduler
 	scheduler.Start()
-	time.Sleep(25 * time.Millisecond) // Let it start
+	time.Sleep(25 * time.Millisecond)
 
-	// Cancel context before job can complete
 	cancel()
 	time.Sleep(200 * time.Millisecond)
 
-	// Job should not have executed due to context cancellation
-	assert.Equal(t, int32(0), atomic.LoadInt32(&executed))
+	assert.Equal(t, int32(0), atomic.LoadInt32(&executed), "Job should not execute after context cancellation")
 }
 
+// TestScheduler_StopJobs tests stopping all jobs.
 func TestScheduler_StopJobs(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -425,27 +403,22 @@ func TestScheduler_StopJobs(t *testing.T) {
 		atomic.AddInt32(&executed, 1)
 	}
 
-	// Create a recurring job
 	jobDef := NewDurationJob(50*time.Millisecond,
 		WithName("test-stop"),
 		WithTask(testFunc),
 	)
 
 	_, err = scheduler.NewJob(jobDef)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job")
 
-	// Start scheduler and let it run
 	scheduler.Start()
 	time.Sleep(100 * time.Millisecond)
 
-	// Stop jobs
 	err = scheduler.StopJobs()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should stop jobs")
 
-	// Record executions after stop
 	executedAfterStop := atomic.LoadInt32(&executed)
 
-	// Wait and verify no more executions
 	time.Sleep(150 * time.Millisecond)
 
 	finalExecuted := atomic.LoadInt32(&executed)
@@ -453,9 +426,10 @@ func TestScheduler_StopJobs(t *testing.T) {
 	assert.Equal(t, executedAfterStop, finalExecuted, "Jobs should not execute after being stopped")
 }
 
+// TestJob_RunNow tests triggering a job immediately.
 func TestJob_RunNow(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -471,7 +445,6 @@ func TestJob_RunNow(t *testing.T) {
 		atomic.AddInt32(&executed, 1)
 	}
 
-	// Create a job that would normally run later
 	futureTime := time.Now().Add(1 * time.Hour)
 	jobDef := NewOneTimeJob([]time.Time{futureTime},
 		WithName("test-run-now"),
@@ -479,25 +452,24 @@ func TestJob_RunNow(t *testing.T) {
 	)
 
 	job, err := scheduler.NewJob(jobDef)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job")
 
 	scheduler.Start()
 
-	// Job shouldn't have executed yet
 	time.Sleep(50 * time.Millisecond)
-	assert.Equal(t, int32(0), atomic.LoadInt32(&executed))
+	assert.Equal(t, int32(0), atomic.LoadInt32(&executed), "Job should not execute before scheduled time")
 
-	// Run now
 	err = job.RunNow()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should trigger job immediately")
 
 	time.Sleep(50 * time.Millisecond)
-	assert.Equal(t, int32(1), atomic.LoadInt32(&executed))
+	assert.Equal(t, int32(1), atomic.LoadInt32(&executed), "Job should execute immediately after RunNow")
 }
 
+// TestJob_NextRuns tests retrieving future run times.
 func TestJob_NextRuns(t *testing.T) {
 	gocronScheduler, err := createTestScheduler()
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create gocron scheduler")
 
 	defer func() {
 		if err := gocronScheduler.Shutdown(); err != nil {
@@ -507,25 +479,21 @@ func TestJob_NextRuns(t *testing.T) {
 
 	scheduler := NewScheduler(gocronScheduler)
 
-	// Create a job that runs every minute
-	jobDef := NewCronJob("0 * * * * *", true, // every minute at second 0
+	jobDef := NewCronJob("0 * * * * *", true,
 		WithName("test-next-runs"),
 		WithTask(func() {}),
 	)
 
 	job, err := scheduler.NewJob(jobDef)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create job")
 
-	// Start scheduler so the job can be scheduled
 	scheduler.Start()
-	time.Sleep(10 * time.Millisecond) // Give it a moment to start
+	time.Sleep(10 * time.Millisecond)
 
-	// Get next 3 run times
 	nextRuns, err := job.NextRuns(3)
-	require.NoError(t, err)
-	assert.Len(t, nextRuns, 3)
+	require.NoError(t, err, "Should get next runs")
+	assert.Len(t, nextRuns, 3, "Should return 3 next run times")
 
-	// Verify times are in ascending order and roughly 1 minute apart
 	for i := 1; i < len(nextRuns); i++ {
 		diff := nextRuns[i].Sub(nextRuns[i-1])
 		assert.InDelta(t, time.Minute, diff, float64(time.Second), "Next runs should be ~1 minute apart")

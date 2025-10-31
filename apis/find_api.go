@@ -164,7 +164,6 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Process(input TProces
 	return a.processor(input, search, ctx)
 }
 
-// WithProcessor sets a post-processing function to transform query results.
 // This function is called after data is fetched from the database but before returning to the client.
 // Common use cases: data masking, computed fields, nested structure transformation, aggregation.
 func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithProcessor(processor Processor[TProcessorIn, TSearch]) TApi {
@@ -197,7 +196,6 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelectAs(column, 
 	return a.self
 }
 
-// WithDefaultSort sets default sorting specifications for the query.
 // This is applied when no dynamic sorting is provided in the request.
 // The orderSpecs are stored and applied during Setup() to allow framework-level defaults.
 func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithDefaultSort(orderSpecs ...*sort.OrderSpec) TApi {

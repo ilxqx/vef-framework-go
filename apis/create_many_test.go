@@ -67,7 +67,8 @@ func NewTestUserCreateManyWithPostHookResource() api.Resource {
 	}
 }
 
-// CreateManyTestSuite is the test suite for CreateMany Api tests.
+// CreateManyTestSuite tests the CreateMany API functionality
+// including basic batch creation, PreCreateMany/PostCreateMany hooks, negative cases, and transaction rollback.
 type CreateManyTestSuite struct {
 	BaseSuite
 }
@@ -88,6 +89,8 @@ func (suite *CreateManyTestSuite) TearDownSuite() {
 
 // TestCreateManyBasic tests basic CreateMany functionality.
 func (suite *CreateManyTestSuite) TestCreateManyBasic() {
+	suite.T().Logf("Testing CreateMany API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_many",
@@ -120,24 +123,27 @@ func (suite *CreateManyTestSuite) TestCreateManyBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+	suite.NotNil(body.Data, "Should return data")
 
 	// CreateManyApi returns array of primary keys
 	pks := suite.readDataAsSlice(body.Data)
-	suite.Len(pks, 3)
+	suite.Len(pks, 3, "Should create 3 users")
 
-	for _, pk := range pks {
+	for i, pk := range pks {
 		pkMap := suite.readDataAsMap(pk)
-		suite.NotEmpty(pkMap["id"])
+		suite.NotEmpty(pkMap["id"], "Should return created user id for user %d", i+1)
+		suite.T().Logf("Created user %d with id: %v", i+1, pkMap["id"])
 	}
 }
 
 // TestCreateManyWithPreHook tests CreateMany with PreCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
+	suite.T().Logf("Testing CreateMany API with PreCreateMany hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_many_prehook",
@@ -162,17 +168,24 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPreHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	// CreateManyApi returns array of primary keys
 	pks := suite.readDataAsSlice(body.Data)
-	suite.Len(pks, 2)
+	suite.Len(pks, 2, "Should create 2 users with PreCreateMany hook")
+
+	for i, pk := range pks {
+		pkMap := suite.readDataAsMap(pk)
+		suite.T().Logf("Created user %d with PreCreateMany hook, id: %v", i+1, pkMap["id"])
+	}
 }
 
 // TestCreateManyWithPostHook tests CreateMany with PostCreateMany hook.
 func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
+	suite.T().Logf("Testing CreateMany API with PostCreateMany hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_many_posthook",
@@ -197,18 +210,28 @@ func (suite *CreateManyTestSuite) TestCreateManyWithPostHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
-	suite.NotEmpty(resp.Header.Get("X-Created-Count"))
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+	suite.NotEmpty(resp.Header.Get("X-Created-Count"), "Should set X-Created-Count header via PostCreateMany hook")
 
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	pks := suite.readDataAsSlice(body.Data)
-	suite.Len(pks, 2)
+	suite.Len(pks, 2, "Should create 2 users with PostCreateMany hook")
+
+	createdCount := resp.Header.Get("X-Created-Count")
+	suite.T().Logf("Created %s users with PostCreateMany hook", createdCount)
+
+	for i, pk := range pks {
+		pkMap := suite.readDataAsMap(pk)
+		suite.T().Logf("Created user %d with id: %v", i+1, pkMap["id"])
+	}
 }
 
 // TestCreateManyNegativeCases tests negative scenarios.
 func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
+	suite.T().Logf("Testing CreateMany API negative cases for %s", suite.dbType)
+
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -221,9 +244,11 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail - list must have at least 1 item
+		suite.False(body.IsOk(), "Should fail when list is empty")
+
+		suite.T().Logf("Validation failed as expected for empty list")
 	})
 
 	suite.Run("MissingRequiredField", func() {
@@ -251,9 +276,11 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when required field 'name' is missing in batch")
+
+		suite.T().Logf("Validation failed as expected for missing required field")
 	})
 
 	suite.Run("InvalidEmailInBatch", func() {
@@ -281,9 +308,11 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when email format is invalid in batch")
+
+		suite.T().Logf("Validation failed as expected for invalid email format")
 	})
 
 	suite.Run("InvalidAgeInBatch", func() {
@@ -311,9 +340,11 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when age is greater than 120 in batch")
+
+		suite.T().Logf("Validation failed as expected for invalid age")
 	})
 
 	suite.Run("DuplicateEmailInSameBatch", func() {
@@ -341,9 +372,11 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail due to unique constraint
+		suite.False(body.IsOk(), "Should fail due to duplicate email in same batch")
+
+		suite.T().Logf("Validation failed as expected for duplicate email in batch")
 	})
 
 	suite.Run("DuplicateWithExistingRecord", func() {
@@ -391,14 +424,18 @@ func (suite *CreateManyTestSuite) TestCreateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail due to unique constraint
+		suite.False(body.IsOk(), "Should fail due to duplicate email with existing record")
+
+		suite.T().Logf("Validation failed as expected for duplicate with existing record")
 	})
 }
 
 // TestCreateManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *CreateManyTestSuite) TestCreateManyTransactionRollback() {
+	suite.T().Logf("Testing CreateMany API transaction rollback for %s", suite.dbType)
+
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to create a batch where the second item will fail
 		resp := suite.makeApiRequest(api.Request{
@@ -425,9 +462,9 @@ func (suite *CreateManyTestSuite) TestCreateManyTransactionRollback() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when one item in batch is invalid")
 
 		// Verify that the first user was not created (transaction rolled back)
 		count, err := suite.db.NewSelect().
@@ -436,7 +473,9 @@ func (suite *CreateManyTestSuite) TestCreateManyTransactionRollback() {
 				cb.Equals("email", "rollback1@example.com")
 			}).
 			Count(suite.ctx)
-		suite.NoError(err)
+		suite.NoError(err, "Should successfully query database")
 		suite.Equal(int64(0), count, "First user should not exist - transaction should have rolled back")
+
+		suite.T().Logf("Transaction rollback verified: first user was not created")
 	})
 }

@@ -1,7 +1,8 @@
 package api
 
 import (
-	"github.com/goccy/go-json"
+	"encoding/json"
+
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"

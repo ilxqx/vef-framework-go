@@ -7,157 +7,158 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// ==================== Version Tests ====================
-
+// TestWithVersion_ValidFormats tests version validation with valid format inputs.
 func TestWithVersion_ValidFormats(t *testing.T) {
 	tests := []struct {
 		name    string
 		version string
 	}{
-		{"single digit", "v1"},
-		{"two digits", "v10"},
-		{"three digits", "v100"},
-		{"large version", "v999"},
+		{"SingleDigit", "v1"},
+		{"TwoDigits", "v10"},
+		{"ThreeDigits", "v100"},
+		{"LargeVersion", "v999"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource := NewResource("test_resource", WithVersion(tt.version))
-			assert.Equal(t, tt.version, resource.Version())
+			assert.Equal(t, tt.version, resource.Version(), "Version should match the provided value")
 		})
 	}
 }
 
+// TestWithVersion_InvalidFormats tests version validation rejects invalid format inputs.
 func TestWithVersion_InvalidFormats(t *testing.T) {
 	tests := []struct {
 		name    string
 		version string
 	}{
-		{"no v prefix", "1"},
-		{"uppercase V", "V1"},
-		{"with dot", "v1.0"},
-		{"with dash", "v1-beta"},
-		{"with letters", "v1a"},
-		{"only v", "v"},
-		{"empty string", ""},
-		{"version word", "version1"},
-		{"decimal", "v1.2.3"},
+		{"NoVPrefix", "1"},
+		{"UppercaseV", "V1"},
+		{"WithDot", "v1.0"},
+		{"WithDash", "v1-beta"},
+		{"WithLetters", "v1a"},
+		{"OnlyV", "v"},
+		{"EmptyString", ""},
+		{"VersionWord", "version1"},
+		{"Decimal", "v1.2.3"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Panics(t, func() {
 				NewResource("test_resource", WithVersion(tt.version))
-			})
+			}, "Should panic for invalid version format")
 		})
 	}
 }
 
+// TestNewResource_DefaultVersion tests default version assignment.
 func TestNewResource_DefaultVersion(t *testing.T) {
 	resource := NewResource("test_resource")
-	assert.Equal(t, VersionV1, resource.Version())
+	assert.Equal(t, VersionV1, resource.Version(), "Default version should be v1")
 }
 
-// ==================== Resource Name Tests ====================
-
+// TestNewResource_ValidNames tests resource name validation with valid inputs.
 func TestNewResource_ValidNames(t *testing.T) {
 	tests := []struct {
 		name         string
 		resourceName string
 	}{
-		{"simple name", "user"},
-		{"with underscore", "user_info"},
-		{"multiple underscores", "get_user_info"},
-		{"with number", "user2"},
-		{"with namespace", "sys/user"},
-		{"nested namespace", "sys/auth/user"},
-		{"namespace with underscore", "sys/user_info"},
-		{"complex", "auth/get_user_info"},
-		{"number in segment", "api2/user_info"},
+		{"SimpleName", "user"},
+		{"WithUnderscore", "user_info"},
+		{"MultipleUnderscores", "get_user_info"},
+		{"WithNumber", "user2"},
+		{"WithNamespace", "sys/user"},
+		{"NestedNamespace", "sys/auth/user"},
+		{"NamespaceWithUnderscore", "sys/user_info"},
+		{"Complex", "auth/get_user_info"},
+		{"NumberInSegment", "api2/user_info"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource := NewResource(tt.resourceName)
-			assert.Equal(t, tt.resourceName, resource.Name())
+			assert.Equal(t, tt.resourceName, resource.Name(), "Resource name should match the provided value")
 		})
 	}
 }
 
+// TestNewResource_InvalidNames tests resource name validation rejects invalid inputs.
 func TestNewResource_InvalidNames(t *testing.T) {
 	tests := []struct {
 		name         string
 		resourceName string
 	}{
-		{"empty", ""},
-		{"uppercase start", "User"},
-		{"camelCase", "getUser"},
+		{"Empty", ""},
+		{"UppercaseStart", "User"},
+		{"CamelCase", "getUser"},
 		{"PascalCase", "GetUser"},
-		{"with dash", "user-info"},
-		{"with space", "user info"},
-		{"leading slash", "/user"},
-		{"trailing slash", "user/"},
-		{"trailing slash with namespace", "sys/user/"},
-		{"consecutive slashes", "sys//user"},
-		{"uppercase in namespace", "Sys/user"},
-		{"camelCase in namespace", "sys/getUser"},
-		{"leading underscore", "_user"},
-		{"double underscore", "user__info"},
-		{"only slash", "/"},
-		{"only namespace", "sys/"},
-		{"starts with number", "1user"},
+		{"WithDash", "user-info"},
+		{"WithSpace", "user info"},
+		{"LeadingSlash", "/user"},
+		{"TrailingSlash", "user/"},
+		{"TrailingSlashWithNamespace", "sys/user/"},
+		{"ConsecutiveSlashes", "sys//user"},
+		{"UppercaseInNamespace", "Sys/user"},
+		{"CamelCaseInNamespace", "sys/getUser"},
+		{"LeadingUnderscore", "_user"},
+		{"DoubleUnderscore", "user__info"},
+		{"OnlySlash", "/"},
+		{"OnlyNamespace", "sys/"},
+		{"StartsWithNumber", "1user"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Panics(t, func() {
 				NewResource(tt.resourceName)
-			})
+			}, "Should panic for invalid resource name format")
 		})
 	}
 }
 
-// ==================== Action Name Tests ====================
-
+// TestWithApis_ValidActionNames tests action name validation with valid inputs.
 func TestWithApis_ValidActionNames(t *testing.T) {
 	tests := []struct {
 		name   string
 		action string
 	}{
-		{"simple action", "create"},
-		{"with underscore", "find_page"},
-		{"multiple underscores", "get_user_info"},
-		{"with number", "create2"},
-		{"long action", "find_all_active_users"},
+		{"SimpleAction", "create"},
+		{"WithUnderscore", "find_page"},
+		{"MultipleUnderscores", "get_user_info"},
+		{"WithNumber", "create2"},
+		{"LongAction", "find_all_active_users"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			spec := Spec{Action: tt.action}
 			resource := NewResource("test_resource", WithApis(spec))
-			require.Len(t, resource.Apis(), 1)
-			assert.Equal(t, tt.action, resource.Apis()[0].Action)
+			require.Len(t, resource.Apis(), 1, "Should have exactly one API spec")
+			assert.Equal(t, tt.action, resource.Apis()[0].Action, "Action name should match the provided value")
 		})
 	}
 }
 
+// TestWithApis_InvalidActionNames tests action name validation rejects invalid inputs.
 func TestWithApis_InvalidActionNames(t *testing.T) {
 	tests := []struct {
 		name   string
 		action string
 	}{
-		{"empty", ""},
-		{"uppercase start", "Create"},
-		{"camelCase", "findPage"},
+		{"Empty", ""},
+		{"UppercaseStart", "Create"},
+		{"CamelCase", "findPage"},
 		{"PascalCase", "FindPage"},
-		{"with dash", "find-page"},
-		{"with space", "find page"},
-		{"with dot", "find.page"},
-		{"with slash", "find/page"},
-		{"leading underscore", "_create"},
-		{"double underscore", "find__page"},
-		{"trailing underscore", "create_"},
-		{"starts with number", "1create"},
+		{"WithDash", "find-page"},
+		{"WithSpace", "find page"},
+		{"WithDot", "find.page"},
+		{"WithSlash", "find/page"},
+		{"LeadingUnderscore", "_create"},
+		{"DoubleUnderscore", "find__page"},
+		{"TrailingUnderscore", "create_"},
+		{"StartsWithNumber", "1create"},
 	}
 
 	for _, tt := range tests {
@@ -165,11 +166,12 @@ func TestWithApis_InvalidActionNames(t *testing.T) {
 			assert.Panics(t, func() {
 				spec := Spec{Action: tt.action}
 				NewResource("test_resource", WithApis(spec))
-			})
+			}, "Should panic for invalid action name format")
 		})
 	}
 }
 
+// TestWithApis_MultipleSpecs tests registration of multiple API specs.
 func TestWithApis_MultipleSpecs(t *testing.T) {
 	specs := []Spec{
 		{Action: "create"},
@@ -178,9 +180,10 @@ func TestWithApis_MultipleSpecs(t *testing.T) {
 	}
 
 	resource := NewResource("test_resource", WithApis(specs...))
-	assert.Len(t, resource.Apis(), 3)
+	assert.Len(t, resource.Apis(), 3, "Should have three API specs registered")
 }
 
+// TestWithApis_MultipleSpecs_OneInvalid tests that one invalid spec in a batch causes panic.
 func TestWithApis_MultipleSpecs_OneInvalid(t *testing.T) {
 	assert.Panics(t, func() {
 		specs := []Spec{
@@ -190,5 +193,5 @@ func TestWithApis_MultipleSpecs_OneInvalid(t *testing.T) {
 		}
 
 		NewResource("test_resource", WithApis(specs...))
-	})
+	}, "Should panic when any spec has an invalid action name")
 }

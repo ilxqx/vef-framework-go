@@ -1,8 +1,6 @@
 package cache
 
-import (
-	"github.com/goccy/go-json"
-)
+import "encoding/json"
 
 // jsonSerializer implements Serializer using JSON encoding.
 // It provides human-readable serialization format and cross-language compatibility.

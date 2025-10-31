@@ -9,28 +9,27 @@ import (
 )
 
 func TestSnowflakeIdGenerator(t *testing.T) {
-	t.Run("Should create generator successfully", func(t *testing.T) {
+	t.Run("CreateGenerator", func(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
-		require.NoError(t, err, "Should create snowflake generator without error")
+		require.NoError(t, err, "Should create generator without error")
 		assert.NotNil(t, generator, "Generator should not be nil")
 	})
 
-	t.Run("Should generate valid snowflake IDs", func(t *testing.T) {
+	t.Run("GenerateValidIds", func(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
 		id := generator.Generate()
-		assert.NotEmpty(t, id, "Generated ID should not be empty")
+		assert.NotEmpty(t, id, "ID should not be empty")
 
-		// Snowflake IDs in Base36 format should be alphanumeric
 		for _, char := range id {
 			assert.True(t,
 				(char >= '0' && char <= '9') || (char >= 'a' && char <= 'z'),
-				"Snowflake ID should only contain alphanumeric characters: %c", char)
+				"ID should contain only alphanumeric characters: %c", char)
 		}
 	})
 
-	t.Run("Should generate unique IDs", func(t *testing.T) {
+	t.Run("GenerateUniqueIds", func(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
@@ -39,52 +38,47 @@ func TestSnowflakeIdGenerator(t *testing.T) {
 
 		for range iterations {
 			id := generator.Generate()
-			assert.False(t, ids[id], "Generated ID should be unique: %s", id)
+			assert.False(t, ids[id], "ID should be unique: %s", id)
 			ids[id] = true
 		}
 
-		assert.Len(t, ids, iterations, "All generated IDs should be unique")
+		assert.Len(t, ids, iterations, "All IDs should be unique")
 	})
 
-	t.Run("Should handle different node IDs", func(t *testing.T) {
+	t.Run("DifferentNodeIds", func(t *testing.T) {
 		gen1, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
 		gen2, err := NewSnowflakeIdGenerator(2)
 		require.NoError(t, err)
 
-		// Generate IDs from different nodes
 		id1 := gen1.Generate()
 		id2 := gen2.Generate()
 
 		assert.NotEqual(t, id1, id2, "IDs from different nodes should be different")
 	})
 
-	t.Run("Should fail with invalid node ID", func(t *testing.T) {
-		// Test with node ID that exceeds the limit (2^6 - 1 = 63)
+	t.Run("InvalidNodeId", func(t *testing.T) {
 		_, err := NewSnowflakeIdGenerator(64)
 		assert.Error(t, err, "Should fail with invalid node ID")
 		assert.Contains(t, err.Error(), "failed to create snowflake node")
 	})
 
-	t.Run("Should handle negative node ID", func(t *testing.T) {
+	t.Run("NegativeNodeId", func(t *testing.T) {
 		_, err := NewSnowflakeIdGenerator(-1)
 		assert.Error(t, err, "Should fail with negative node ID")
 	})
 }
 
 func TestSnowflakeEnvironmentVariables(t *testing.T) {
-	t.Run("Should use NODE_ID environment variable", func(t *testing.T) {
-		// This test verifies the init() function behavior
-		// Since init() already ran, we can't test it directly,
-		// but we can verify the default generator works
+	t.Run("UseNodeIdEnvironmentVariable", func(t *testing.T) {
 		assert.NotNil(t, DefaultSnowflakeIdGenerator, "Default generator should be initialized")
 
 		id := DefaultSnowflakeIdGenerator.Generate()
 		assert.NotEmpty(t, id, "Default generator should produce valid IDs")
 	})
 
-	t.Run("Should handle concurrent generation", func(t *testing.T) {
+	t.Run("ConcurrentGeneration", func(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(1)
 		require.NoError(t, err)
 
@@ -95,7 +89,6 @@ func TestSnowflakeEnvironmentVariables(t *testing.T) {
 
 		idChan := make(chan string, numGoroutines*idsPerGoroutine)
 
-		// Start goroutines
 		for range numGoroutines {
 			go func() {
 				for range idsPerGoroutine {
@@ -104,7 +97,6 @@ func TestSnowflakeEnvironmentVariables(t *testing.T) {
 			}()
 		}
 
-		// Collect all IDs
 		ids := make(map[string]bool)
 
 		for range numGoroutines * idsPerGoroutine {
@@ -118,30 +110,25 @@ func TestSnowflakeEnvironmentVariables(t *testing.T) {
 }
 
 func TestSnowflakeConfiguration(t *testing.T) {
-	t.Run("Should use custom epoch configuration", func(t *testing.T) {
-		// We can't directly test the epoch since it's set in init(),
-		// but we can verify that IDs are generated correctly
+	t.Run("CustomEpochConfiguration", func(t *testing.T) {
 		generator, err := NewSnowflakeIdGenerator(0)
 		require.NoError(t, err)
 
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Generator with custom epoch should work")
 
-		// Verify the ID doesn't contain invalid characters
 		assert.False(t, strings.Contains(id, " "), "ID should not contain spaces")
 		assert.False(t, strings.Contains(id, "+"), "ID should not contain plus signs")
 		assert.False(t, strings.Contains(id, "/"), "ID should not contain slashes")
 	})
 
-	t.Run("Should handle boundary node IDs", func(t *testing.T) {
-		// Test minimum valid node ID
+	t.Run("BoundaryNodeIds", func(t *testing.T) {
 		gen0, err := NewSnowflakeIdGenerator(0)
 		require.NoError(t, err)
 
 		id0 := gen0.Generate()
 		assert.NotEmpty(t, id0, "Node ID 0 should work")
 
-		// Test maximum valid node ID (2^6 - 1 = 63)
 		gen63, err := NewSnowflakeIdGenerator(63)
 		require.NoError(t, err)
 

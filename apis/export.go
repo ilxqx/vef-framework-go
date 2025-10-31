@@ -37,35 +37,30 @@ func (a *exportApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.exportData)
 }
 
-// WithDefaultFormat sets the default export format (Excel or Csv). Default is Excel.
 func (a *exportApi[TModel, TSearch]) WithDefaultFormat(format TabularFormat) ExportApi[TModel, TSearch] {
 	a.defaultFormat = format
 
 	return a
 }
 
-// WithExcelOptions sets Excel exporter configuration options.
 func (a *exportApi[TModel, TSearch]) WithExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch] {
 	a.excelOpts = opts
 
 	return a
 }
 
-// WithCsvOptions sets Csv exporter configuration options.
 func (a *exportApi[TModel, TSearch]) WithCsvOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch] {
 	a.csvOpts = opts
 
 	return a
 }
 
-// WithPreExport sets a processor to modify data before exporting.
 func (a *exportApi[TModel, TSearch]) WithPreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch] {
 	a.preExport = processor
 
 	return a
 }
 
-// WithFilenameBuilder sets a function to generate the export filename dynamically.
 func (a *exportApi[TModel, TSearch]) WithFilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch] {
 	a.filenameBuilder = builder
 

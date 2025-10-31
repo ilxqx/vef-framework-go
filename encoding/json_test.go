@@ -18,104 +18,162 @@ type TestStruct struct {
 	Created time.Time `json:"created"`
 }
 
-func TestToJSON(t *testing.T) {
-	t.Run("Valid struct", func(t *testing.T) {
-		input := TestStruct{
-			Name:   "John Doe",
-			Age:    30,
-			Active: true,
-		}
+func TestToJson(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected []string
+	}{
+		{
+			name: "ValidStruct",
+			input: TestStruct{
+				Name:   "John Doe",
+				Age:    30,
+				Active: true,
+			},
+			expected: []string{`"name":"John Doe"`, `"age":30`, `"active":true`},
+		},
+		{
+			name:     "NilInput",
+			input:    nil,
+			expected: []string{"null"},
+		},
+		{
+			name:     "EmptyStruct",
+			input:    TestStruct{},
+			expected: []string{`"name":""`, `"age":0`, `"active":false`},
+		},
+		{
+			name: "StructWithAllFields",
+			input: TestStruct{
+				Name:    "Jane Doe",
+				Age:     25,
+				Email:   "jane@example.com",
+				Active:  true,
+				Score:   95.5,
+				Created: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			expected: []string{`"name":"Jane Doe"`, `"email":"jane@example.com"`, `"score":95.5`},
+		},
+	}
 
-		result, err := ToJSON(input)
-		require.NoError(t, err)
-		assert.Contains(t, result, "\"name\":\"John Doe\"")
-		assert.Contains(t, result, "\"age\":30")
-		assert.Contains(t, result, "\"active\":true")
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ToJson(tt.input)
+			require.NoError(t, err)
 
-	t.Run("Nil input", func(t *testing.T) {
-		result, err := ToJSON(nil)
-		require.NoError(t, err)
-		assert.Equal(t, "null", result)
-	})
-
-	t.Run("Empty struct", func(t *testing.T) {
-		input := TestStruct{}
-
-		result, err := ToJSON(input)
-		require.NoError(t, err)
-		assert.Contains(t, result, "\"name\":\"\"")
-		assert.Contains(t, result, "\"age\":0")
-		assert.Contains(t, result, "\"active\":false")
-	})
+			for _, exp := range tt.expected {
+				assert.Contains(t, result, exp)
+			}
+		})
+	}
 }
 
-func TestFromJSON(t *testing.T) {
-	t.Run("Valid JSON", func(t *testing.T) {
+func TestFromJson(t *testing.T) {
+	t.Run("ValidJSON", func(t *testing.T) {
 		input := `{"name":"John Doe","age":30,"email":"john@example.com","active":true,"score":95.5}`
-
-		result, err := FromJSON[TestStruct](input)
+		result, err := FromJson[TestStruct](input)
 		require.NoError(t, err)
-		require.NotNil(t, result)
-
+		assert.NotNil(t, result)
 		assert.Equal(t, "John Doe", result.Name)
 		assert.Equal(t, 30, result.Age)
 		assert.Equal(t, "john@example.com", result.Email)
-		assert.Equal(t, true, result.Active)
+		assert.True(t, result.Active)
 		assert.Equal(t, 95.5, result.Score)
 	})
 
-	t.Run("Partial JSON", func(t *testing.T) {
+	t.Run("PartialJSON", func(t *testing.T) {
 		input := `{"name":"Jane Doe"}`
-
-		result, err := FromJSON[TestStruct](input)
+		result, err := FromJson[TestStruct](input)
 		require.NoError(t, err)
-		require.NotNil(t, result)
-
+		assert.NotNil(t, result)
 		assert.Equal(t, "Jane Doe", result.Name)
 		assert.Equal(t, 0, result.Age)
+		assert.False(t, result.Active)
 	})
 
-	t.Run("Invalid JSON", func(t *testing.T) {
+	t.Run("InvalidJSON", func(t *testing.T) {
 		input := `{"name":"John Doe","age":}`
-
-		result, err := FromJSON[TestStruct](input)
+		_, err := FromJson[TestStruct](input)
 		assert.Error(t, err)
-		assert.Nil(t, result)
 	})
 
-	t.Run("Empty JSON", func(t *testing.T) {
+	t.Run("EmptyJSON", func(t *testing.T) {
 		input := `{}`
-
-		result, err := FromJSON[TestStruct](input)
+		result, err := FromJson[TestStruct](input)
 		require.NoError(t, err)
-		require.NotNil(t, result)
-
+		assert.NotNil(t, result)
 		assert.Equal(t, "", result.Name)
 		assert.Equal(t, 0, result.Age)
+		assert.False(t, result.Active)
+	})
+
+	t.Run("JSONWithExtraFields", func(t *testing.T) {
+		input := `{"name":"John Doe","age":30,"extra":"field"}`
+		result, err := FromJson[TestStruct](input)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "John Doe", result.Name)
+		assert.Equal(t, 30, result.Age)
 	})
 }
 
-func TestDecodeJSON(t *testing.T) {
-	t.Run("Decode into struct pointer", func(t *testing.T) {
+func TestDecodeJson(t *testing.T) {
+	t.Run("DecodeIntoStructPointer", func(t *testing.T) {
 		input := `{"name":"John Doe","age":30,"active":true}`
 
 		var result TestStruct
 
-		err := DecodeJSON(input, &result)
+		err := DecodeJson(input, &result)
 		require.NoError(t, err)
-
 		assert.Equal(t, "John Doe", result.Name)
 		assert.Equal(t, 30, result.Age)
 		assert.True(t, result.Active)
 	})
 
-	t.Run("Invalid JSON", func(t *testing.T) {
+	t.Run("InvalidJSON", func(t *testing.T) {
 		input := `{"name":"John Doe","age":}`
 
 		var result TestStruct
 
-		err := DecodeJSON(input, &result)
+		err := DecodeJson(input, &result)
 		assert.Error(t, err)
 	})
+
+	t.Run("EmptyJSON", func(t *testing.T) {
+		input := `{}`
+
+		var result TestStruct
+
+		err := DecodeJson(input, &result)
+		require.NoError(t, err)
+		assert.Equal(t, "", result.Name)
+		assert.Equal(t, 0, result.Age)
+	})
+}
+
+func TestJsonRoundTrip(t *testing.T) {
+	created := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+	input := TestStruct{
+		Name:    "Jane Doe",
+		Age:     25,
+		Email:   "jane@example.com",
+		Active:  true,
+		Score:   88.5,
+		Created: created,
+	}
+
+	encoded, err := ToJson(input)
+	require.NoError(t, err)
+	assert.NotEmpty(t, encoded)
+
+	decoded, err := FromJson[TestStruct](encoded)
+	require.NoError(t, err)
+	assert.NotNil(t, decoded)
+	assert.Equal(t, input.Name, decoded.Name)
+	assert.Equal(t, input.Age, decoded.Age)
+	assert.Equal(t, input.Email, decoded.Email)
+	assert.Equal(t, input.Active, decoded.Active)
+	assert.Equal(t, input.Score, decoded.Score)
+	assert.Equal(t, input.Created.Unix(), decoded.Created.Unix())
 }

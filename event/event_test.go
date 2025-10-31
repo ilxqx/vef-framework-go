@@ -10,17 +10,17 @@ import (
 )
 
 func TestNewBaseEvent(t *testing.T) {
-	t.Run("Minimal creation with just type", func(t *testing.T) {
+	t.Run("MinimalCreationWithJustType", func(t *testing.T) {
 		event := NewBaseEvent("test.event")
 
 		assert.Equal(t, "test.event", event.Type())
-		assert.Equal(t, "", event.Source())    // Default empty source
-		assert.NotEmpty(t, event.Id())         // Should generate ID
-		assert.False(t, event.Time().IsZero()) // Should set current time
-		assert.Equal(t, 0, len(event.Meta()))  // Empty metadata
+		assert.Equal(t, "", event.Source())
+		assert.NotEmpty(t, event.Id())
+		assert.False(t, event.Time().IsZero())
+		assert.Equal(t, 0, len(event.Meta()))
 	})
 
-	t.Run("Creation with source option", func(t *testing.T) {
+	t.Run("CreationWithSourceOption", func(t *testing.T) {
 		event := NewBaseEvent("user.created", WithSource("user-service"))
 
 		assert.Equal(t, "user.created", event.Type())
@@ -30,18 +30,18 @@ func TestNewBaseEvent(t *testing.T) {
 		assert.Equal(t, 0, len(event.Meta()))
 	})
 
-	t.Run("Creation with single metadata option", func(t *testing.T) {
+	t.Run("CreationWithSingleMetadataOption", func(t *testing.T) {
 		event := NewBaseEvent("order.placed", WithMeta("version", "1.0"))
 
 		assert.Equal(t, "order.placed", event.Type())
-		assert.Equal(t, "", event.Source()) // No source provided
+		assert.Equal(t, "", event.Source())
 		assert.NotEmpty(t, event.Id())
 		assert.False(t, event.Time().IsZero())
 		assert.Equal(t, 1, len(event.Meta()))
 		assert.Equal(t, "1.0", event.Meta()["version"])
 	})
 
-	t.Run("Creation with multiple options", func(t *testing.T) {
+	t.Run("CreationWithMultipleOptions", func(t *testing.T) {
 		event := NewBaseEvent("payment.processed",
 			WithSource("payment-service"),
 			WithMeta("amount", "100.00"),
@@ -61,10 +61,10 @@ func TestNewBaseEvent(t *testing.T) {
 		assert.Equal(t, "stripe", meta["gateway"])
 	})
 
-	t.Run("Each event has unique ID and time", func(t *testing.T) {
+	t.Run("EachEventHasUniqueIDAndTime", func(t *testing.T) {
 		event1 := NewBaseEvent("test.event")
 
-		time.Sleep(1 * time.Millisecond) // Ensure different timestamps
+		time.Sleep(1 * time.Millisecond)
 
 		event2 := NewBaseEvent("test.event")
 
@@ -74,7 +74,7 @@ func TestNewBaseEvent(t *testing.T) {
 }
 
 func TestBaseEvent_Metadata(t *testing.T) {
-	t.Run("Meta returns all metadata", func(t *testing.T) {
+	t.Run("MetaReturnsAllMetadata", func(t *testing.T) {
 		event := NewBaseEvent("test.event",
 			WithMeta("key1", "value1"),
 			WithMeta("key2", "value2"),
@@ -88,14 +88,13 @@ func TestBaseEvent_Metadata(t *testing.T) {
 		assert.Equal(t, "value3", meta["key3"])
 	})
 
-	t.Run("Meta returns copy to prevent external modification", func(t *testing.T) {
+	t.Run("MetaReturnsCopyToPreventExternalModification", func(t *testing.T) {
 		event := NewBaseEvent("test.event", WithMeta("key", "value"))
 
 		meta := event.Meta()
 		meta["key"] = "modified"
 		meta["new"] = "added"
 
-		// Original event should be unchanged
 		originalMeta := event.Meta()
 		assert.Equal(t, "value", originalMeta["key"])
 		assert.NotContains(t, originalMeta, "new")
@@ -103,13 +102,12 @@ func TestBaseEvent_Metadata(t *testing.T) {
 }
 
 func TestBaseEvent_JSONSerialization(t *testing.T) {
-	t.Run("Marshal minimal event", func(t *testing.T) {
+	t.Run("MarshalMinimalEvent", func(t *testing.T) {
 		event := NewBaseEvent("test.event")
 
 		jsonData, err := json.Marshal(event)
 		require.NoError(t, err)
 
-		// Verify JSON structure
 		var jsonMap map[string]any
 
 		err = json.Unmarshal(jsonData, &jsonMap)
@@ -120,12 +118,11 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		assert.NotEmpty(t, jsonMap["id"])
 		assert.NotEmpty(t, jsonMap["time"])
 
-		// Metadata should be omitted when empty
 		_, hasMetadata := jsonMap["metadata"]
 		assert.False(t, hasMetadata)
 	})
 
-	t.Run("Marshal event with all fields", func(t *testing.T) {
+	t.Run("MarshalEventWithAllFields", func(t *testing.T) {
 		event := NewBaseEvent("user.registered",
 			WithSource("user-service"),
 			WithMeta("version", "1.0"),
@@ -151,7 +148,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		assert.Equal(t, "us-east-1", metadata["region"])
 	})
 
-	t.Run("Unmarshal minimal event", func(t *testing.T) {
+	t.Run("UnmarshalMinimalEvent", func(t *testing.T) {
 		jsonData := `{
 			"type": "test.unmarshal",
 			"id": "test-id-123",
@@ -173,7 +170,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		assert.Equal(t, 0, len(event.Meta()))
 	})
 
-	t.Run("Unmarshal event with metadata", func(t *testing.T) {
+	t.Run("UnmarshalEventWithMetadata", func(t *testing.T) {
 		jsonData := `{
 			"type": "order.created",
 			"id": "order-456",
@@ -200,32 +197,29 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		assert.Equal(t, "99.99", meta["total"])
 	})
 
-	t.Run("Roundtrip serialization preserves data", func(t *testing.T) {
+	t.Run("RoundtripSerializationPreservesData", func(t *testing.T) {
 		original := NewBaseEvent("roundtrip.test",
 			WithSource("test-service"),
 			WithMeta("key1", "value1"),
 			WithMeta("key2", "value2"),
 		)
 
-		// Marshal to JSON
 		jsonData, err := json.Marshal(original)
 		require.NoError(t, err)
 
-		// Unmarshal back
 		var restored BaseEvent
 
 		err = json.Unmarshal(jsonData, &restored)
 		require.NoError(t, err)
 
-		// Verify all fields match
 		assert.Equal(t, original.Type(), restored.Type())
 		assert.Equal(t, original.Id(), restored.Id())
 		assert.Equal(t, original.Source(), restored.Source())
-		assert.Equal(t, original.Time().Unix(), restored.Time().Unix()) // Compare timestamps
+		assert.Equal(t, original.Time().Unix(), restored.Time().Unix())
 		assert.Equal(t, original.Meta(), restored.Meta())
 	})
 
-	t.Run("Unmarshal handles missing metadata gracefully", func(t *testing.T) {
+	t.Run("UnmarshalHandlesMissingMetadataGracefully", func(t *testing.T) {
 		jsonData := `{
 			"type": "simple.event",
 			"id": "simple-123",
@@ -241,11 +235,10 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 		assert.NotNil(t, event.Meta())
 		assert.Equal(t, 0, len(event.Meta()))
 
-		// Metadata should remain empty after unmarshaling
 		assert.Equal(t, 0, len(event.Meta()))
 	})
 
-	t.Run("Unmarshal invalid JSON returns error", func(t *testing.T) {
+	t.Run("UnmarshalInvalidJSONReturnsError", func(t *testing.T) {
 		invalidJSON := `{invalid json`
 
 		var event BaseEvent
@@ -256,7 +249,7 @@ func TestBaseEvent_JSONSerialization(t *testing.T) {
 }
 
 func TestBaseEvent_Immutability(t *testing.T) {
-	t.Run("Core fields are immutable after creation", func(t *testing.T) {
+	t.Run("CoreFieldsAreImmutableAfterCreation", func(t *testing.T) {
 		event := NewBaseEvent("test.event", WithSource("test-source"))
 
 		originalType := event.Type()
@@ -264,20 +257,17 @@ func TestBaseEvent_Immutability(t *testing.T) {
 		originalSource := event.Source()
 		originalTime := event.Time()
 
-		// Sleep to ensure time would be different if it were mutable
 		time.Sleep(1 * time.Millisecond)
 
-		// These should remain the same (can't directly modify private fields anyway)
 		assert.Equal(t, originalType, event.Type())
 		assert.Equal(t, originalId, event.Id())
 		assert.Equal(t, originalSource, event.Source())
 		assert.Equal(t, originalTime, event.Time())
 	})
 
-	t.Run("Metadata is immutable after creation", func(t *testing.T) {
+	t.Run("MetadataIsImmutableAfterCreation", func(t *testing.T) {
 		event := NewBaseEvent("test.event", WithMeta("initial", "value"))
 
-		// Metadata should remain unchanged after creation
 		meta := event.Meta()
 		assert.Equal(t, 1, len(meta))
 		assert.Equal(t, "value", meta["initial"])

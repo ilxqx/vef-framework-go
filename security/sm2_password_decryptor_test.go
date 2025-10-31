@@ -13,29 +13,22 @@ import (
 )
 
 func TestSM2PasswordDecryptor(t *testing.T) {
-	// Generate SM2 key pair
 	privateKey, err := sm2.GenerateKey(rand.Reader)
-	require.NoError(t, err, "Failed to generate SM2 key pair")
+	require.NoError(t, err, "Should generate SM2 key pair")
 
-	// Create decryptor
 	decryptor, err := NewSm2PasswordDecryptor(privateKey)
-	require.NoError(t, err, "Failed to create SM2 password decryptor")
+	require.NoError(t, err, "Should create SM2 password decryptor")
 
-	// Test password
 	password := "MySecurePassword123!@#"
 
-	// Encrypt password using SM2 public key
 	cipherBytes, err := sm2.Encrypt(&privateKey.PublicKey, []byte(password), rand.Reader, sm2.C1C3C2)
-	require.NoError(t, err, "Failed to encrypt password")
+	require.NoError(t, err, "Should encrypt password")
 
-	// Convert to base64
 	encryptedPasswordB64 := encoding.ToBase64(cipherBytes)
 
-	// Decrypt
 	decryptedPassword, err := decryptor.Decrypt(encryptedPasswordB64)
-	require.NoError(t, err, "Failed to decrypt password")
+	require.NoError(t, err, "Should decrypt password")
 
-	// Verify
 	assert.Equal(t, password, decryptedPassword, "Decrypted password should match original")
 }
 
@@ -46,15 +39,12 @@ func TestSM2PasswordDecryptor_NilKey(t *testing.T) {
 }
 
 func TestSM2PasswordDecryptor_Integration(t *testing.T) {
-	// Generate SM2 key pair
 	privateKey, err := sm2.GenerateKey(rand.Reader)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate SM2 key pair")
 
-	// Create decryptor
 	decryptor, err := NewSm2PasswordDecryptor(privateKey)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create SM2 password decryptor")
 
-	// Use crypto package to encrypt
 	cipher, err := crypto.NewSM2(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err)
 
@@ -62,8 +52,7 @@ func TestSM2PasswordDecryptor_Integration(t *testing.T) {
 	encrypted, err := cipher.Encrypt(password)
 	require.NoError(t, err)
 
-	// Decrypt using decryptor
 	decrypted, err := decryptor.Decrypt(encrypted)
-	require.NoError(t, err)
-	assert.Equal(t, password, decrypted)
+	require.NoError(t, err, "Should decrypt password")
+	assert.Equal(t, password, decrypted, "Decrypted password should match original")
 }

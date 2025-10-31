@@ -5,7 +5,6 @@ import "time"
 // MemoryOption configures the behavior of NewMemory caches.
 type MemoryOption func(*memoryConfig)
 
-// WithMemMaxSize sets the maximum number of entries the cache may hold.
 // A value <= 0 disables size limits.
 func WithMemMaxSize(size int64) MemoryOption {
 	return func(cfg *memoryConfig) {
@@ -13,7 +12,6 @@ func WithMemMaxSize(size int64) MemoryOption {
 	}
 }
 
-// WithMemDefaultTTL sets a global TTL applied when Set is called without explicit ttl.
 func WithMemDefaultTTL(ttl time.Duration) MemoryOption {
 	return func(cfg *memoryConfig) {
 		cfg.defaultTTL = ttl
@@ -27,7 +25,6 @@ func WithMemEvictionPolicy(policy EvictionPolicy) MemoryOption {
 	}
 }
 
-// WithMemGCInterval sets the interval used by the background garbage collector.
 func WithMemGCInterval(interval time.Duration) MemoryOption {
 	return func(cfg *memoryConfig) {
 		cfg.gcInterval = interval
@@ -37,7 +34,6 @@ func WithMemGCInterval(interval time.Duration) MemoryOption {
 // RedisOption configures Redis-backed cache instances.
 type RedisOption func(*redisConfig)
 
-// WithRdsDefaultTTL sets a fallback TTL applied when Set is invoked without explicit duration.
 func WithRdsDefaultTTL(ttl time.Duration) RedisOption {
 	return func(cfg *redisConfig) {
 		cfg.defaultTTL = ttl

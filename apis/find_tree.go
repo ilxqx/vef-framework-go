@@ -25,7 +25,6 @@ func (a *findTreeApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findTree)
 }
 
-// WithIdColumn sets the column name used as the node ID in tree structures.
 // This column is used to identify individual nodes and establish parent-child relationships.
 func (a *findTreeApi[TModel, TSearch]) WithIdColumn(name string) FindTreeApi[TModel, TSearch] {
 	a.idColumn = name
@@ -33,7 +32,6 @@ func (a *findTreeApi[TModel, TSearch]) WithIdColumn(name string) FindTreeApi[TMo
 	return a
 }
 
-// WithParentIdColumn sets the column name used to reference parent nodes in tree structures.
 // This column establishes the hierarchical relationship between parent and child nodes.
 func (a *findTreeApi[TModel, TSearch]) WithParentIdColumn(name string) FindTreeApi[TModel, TSearch] {
 	a.parentIdColumn = name

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
@@ -13,7 +13,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
-// RedisTestSuite is the test suite for redis package.
+// RedisTestSuite tests Redis client creation, connection, and health checks using Testcontainers.
 type RedisTestSuite struct {
 	suite.Suite
 
@@ -21,150 +21,180 @@ type RedisTestSuite struct {
 	redisContainer *testhelpers.RedisContainer
 }
 
-// SetupSuite runs before all tests in the suite.
 func (suite *RedisTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
-
-	// Start Redis container using testhelpers
 	suite.redisContainer = testhelpers.NewRedisContainer(suite.ctx, &suite.Suite)
 }
 
-// TearDownSuite runs after all tests in the suite.
 func (suite *RedisTestSuite) TearDownSuite() {
 	if suite.redisContainer != nil {
 		suite.redisContainer.Terminate(suite.ctx, &suite.Suite)
 	}
 }
 
-// TestNewClient tests Redis client creation with default configuration.
+// TestNewClient tests Redis client creation with various configurations.
 func (suite *RedisTestSuite) TestNewClient() {
-	cfg := &config.RedisConfig{
-		Host:     "127.0.0.1",
-		Port:     6379,
-		Database: 0,
-	}
+	suite.T().Log("Testing Redis client creation")
 
-	client := NewClient(cfg, &config.AppConfig{
-		Name: "test-app",
+	suite.Run("DefaultConfiguration", func() {
+		cfg := &config.RedisConfig{
+			Host:     "127.0.0.1",
+			Port:     6379,
+			Database: 0,
+		}
+
+		client := NewClient(cfg, &config.AppConfig{
+			Name: "test-app",
+		})
+		suite.Require().NotNil(client, "Client should be created")
+
+		options := client.Options()
+		suite.Equal("test-app", options.ClientName, "Client name should match app name")
+		suite.Equal(constants.VEFName, options.IdentitySuffix, "Identity suffix should be VEF name")
+		suite.Equal(3, options.Protocol, "Protocol should be RESP3")
+		suite.Equal("127.0.0.1:6379", options.Addr, "Address should match config")
+		suite.Equal(0, options.DB, "Database should be 0")
+		suite.True(options.ContextTimeoutEnabled, "Context timeout should be enabled")
+
+		suite.Greater(options.PoolSize, 0, "Pool size should be positive")
+		suite.Greater(options.PoolTimeout, time.Duration(0), "Pool timeout should be positive")
+		suite.Greater(options.MaxRetries, 0, "Max retries should be positive")
+		suite.Greater(options.MinIdleConns, 0, "Min idle connections should be positive")
+		suite.Greater(options.ConnMaxLifetime, time.Duration(0), "Connection max lifetime should be positive")
+		suite.Greater(options.ConnMaxIdleTime, time.Duration(0), "Connection max idle time should be positive")
+
+		suite.T().Logf("Redis client created - Pool size: %d, Pool timeout: %v",
+			options.PoolSize, options.PoolTimeout)
 	})
-	suite.Require().NotNil(client)
 
-	// Verify client options
-	options := client.Options()
-	suite.Equal("test-app", options.ClientName)
-	suite.Equal(constants.VEFName, options.IdentitySuffix)
-	suite.Equal(3, options.Protocol)
-	suite.Equal("127.0.0.1:6379", options.Addr)
-	suite.Equal(0, options.DB)
-	suite.True(options.ContextTimeoutEnabled)
+	suite.Run("CustomConfiguration", func() {
+		cfg := &config.RedisConfig{
+			Host:     "custom-host",
+			Port:     6380,
+			User:     "testuser",
+			Password: "testpass",
+			Database: 5,
+			Network:  "tcp",
+		}
 
-	// Verify pool configuration
-	suite.Greater(options.PoolSize, 0)
-	suite.Greater(options.PoolTimeout, time.Duration(0))
-	suite.Greater(options.MaxRetries, 0)
-	suite.Greater(options.MinIdleConns, 0)
-	suite.Greater(options.ConnMaxLifetime, time.Duration(0))
-	suite.Greater(options.ConnMaxIdleTime, time.Duration(0))
+		client := NewClient(cfg, &config.AppConfig{
+			Name: "custom-app",
+		})
+		suite.Require().NotNil(client, "Client should be created")
 
-	suite.T().Logf("Redis client created with pool size: %d", options.PoolSize)
+		options := client.Options()
+		suite.Equal("custom-app", options.ClientName, "Client name should match app name")
+		suite.Equal("custom-host:6380", options.Addr, "Address should match custom config")
+		suite.Equal("testuser", options.Username, "Username should match config")
+		suite.Equal("testpass", options.Password, "Password should match config")
+		suite.Equal(5, options.DB, "Database should be 5")
+		suite.Equal("tcp", options.Network, "Network should be tcp")
+
+		suite.T().Logf("Custom client created - Addr: %s, DB: %d", options.Addr, options.DB)
+	})
 }
 
-// TestNewClientWithCustomConfig tests Redis client with custom configuration.
-func (suite *RedisTestSuite) TestNewClientWithCustomConfig() {
-	cfg := &config.RedisConfig{
-		Host:     "custom-host",
-		Port:     6380,
-		User:     "testuser",
-		Password: "testpass",
-		Database: 5,
-		Network:  "tcp",
-	}
-
-	client := NewClient(cfg, &config.AppConfig{
-		Name: "custom-app",
-	})
-	suite.Require().NotNil(client)
-
-	options := client.Options()
-	suite.Equal("custom-app", options.ClientName)
-	suite.Equal("custom-host:6380", options.Addr)
-	suite.Equal("testuser", options.Username)
-	suite.Equal("testpass", options.Password)
-	suite.Equal(5, options.DB)
-	suite.Equal("tcp", options.Network)
-}
-
-// TestRedisConnection tests actual Redis connection using testcontainers.
+// TestRedisConnection tests actual Redis connection and operations using Testcontainers.
 func (suite *RedisTestSuite) TestRedisConnection() {
-	// Use the pre-configured Redis container
-	cfg := suite.redisContainer.RdsConfig
+	suite.T().Log("Testing Redis connection and operations")
 
+	cfg := suite.redisContainer.RdsConfig
 	client := NewClient(cfg, &config.AppConfig{
 		Name: "test-connection",
 	})
-	suite.Require().NotNil(client)
 
-	suite.T().Logf("Redis connection config: %+v", cfg)
+	suite.Require().NotNil(client, "Client should be created")
+	defer client.Close()
 
-	// Test connection
-	err := client.Ping(suite.ctx).Err()
-	suite.Require().NoError(err)
+	suite.T().Logf("Redis connection config: Host=%s, Port=%d, DB=%d",
+		cfg.Host, cfg.Port, cfg.Database)
 
-	// Test basic operations
-	suite.testBasicRedisOperations(client)
+	suite.Run("PingConnection", func() {
+		err := client.Ping(suite.ctx).Err()
+		suite.NoError(err, "PING should succeed")
+	})
 
-	// Clean up
-	suite.Require().NoError(client.Close())
+	suite.Run("StringOperations", func() {
+		err := client.Set(suite.ctx, "test_key", "test_value", 0).Err()
+		suite.NoError(err, "SET should succeed")
+
+		val, err := client.Get(suite.ctx, "test_key").Result()
+		suite.NoError(err, "GET should succeed")
+		suite.Equal("test_value", val, "Value should match")
+
+		err = client.Del(suite.ctx, "test_key").Err()
+		suite.NoError(err, "DEL should succeed")
+
+		_, err = client.Get(suite.ctx, "test_key").Result()
+		suite.Error(err, "GET should fail for deleted key")
+
+		suite.T().Log("String operations completed successfully")
+	})
+
+	suite.Run("HashOperations", func() {
+		err := client.HSet(suite.ctx, "test_hash", "field1", "value1").Err()
+		suite.NoError(err, "HSET should succeed")
+
+		hashVal, err := client.HGet(suite.ctx, "test_hash", "field1").Result()
+		suite.NoError(err, "HGET should succeed")
+		suite.Equal("value1", hashVal, "Hash value should match")
+
+		err = client.Del(suite.ctx, "test_hash").Err()
+		suite.NoError(err, "DEL hash should succeed")
+
+		suite.T().Log("Hash operations completed successfully")
+	})
 }
 
-// TestHealthCheck tests the health check functionality.
+// TestHealthCheck tests Redis health check functionality.
 func (suite *RedisTestSuite) TestHealthCheck() {
-	// Use the pre-configured Redis container
-	cfg := suite.redisContainer.RdsConfig
+	suite.T().Log("Testing Redis health check")
 
-	client := NewClient(cfg, &config.AppConfig{
-		Name: "test-health",
+	suite.Run("HealthCheckSuccess", func() {
+		cfg := suite.redisContainer.RdsConfig
+		client := NewClient(cfg, &config.AppConfig{
+			Name: "test-health",
+		})
+
+		suite.Require().NotNil(client, "Client should be created")
+		defer client.Close()
+
+		err := HealthCheck(suite.ctx, client)
+		suite.NoError(err, "Health check should succeed for valid connection")
+
+		suite.T().Log("Health check passed")
 	})
-	suite.Require().NotNil(client)
 
-	// Test health check
-	err := HealthCheck(suite.ctx, client)
-	suite.Require().NoError(err)
+	suite.Run("HealthCheckFailure", func() {
+		cfg := &config.RedisConfig{
+			Host:     "invalid-host",
+			Port:     9999,
+			Database: 0,
+		}
 
-	// Clean up
-	suite.Require().NoError(client.Close())
-}
+		client := NewClient(cfg, &config.AppConfig{
+			Name: "test-health-fail",
+		})
 
-// TestHealthCheckFailure tests health check with invalid configuration.
-func (suite *RedisTestSuite) TestHealthCheckFailure() {
-	cfg := &config.RedisConfig{
-		Host:     "invalid-host",
-		Port:     9999,
-		Database: 0,
-	}
+		suite.Require().NotNil(client, "Client should be created")
+		defer client.Close()
 
-	client := NewClient(cfg, &config.AppConfig{
-		Name: "test-health-fail",
+		err := HealthCheck(suite.ctx, client)
+		suite.Error(err, "Health check should fail for invalid connection")
+
+		suite.T().Log("Health check failed as expected")
 	})
-	suite.Require().NotNil(client)
-
-	// Test health check failure
-	err := HealthCheck(suite.ctx, client)
-	suite.Error(err)
-
-	// Clean up
-	suite.Require().NoError(client.Close())
 }
 
 // TestBuildRedisAddr tests the Redis address building function.
-func (suite *RedisTestSuite) TestBuildRedisAddr() {
+func TestBuildRedisAddr(t *testing.T) {
 	tests := []struct {
 		name     string
 		config   *config.RedisConfig
 		expected string
 	}{
 		{
-			name: "default host and port",
+			name: "DefaultHostAndPort",
 			config: &config.RedisConfig{
 				Host: "",
 				Port: 0,
@@ -172,7 +202,7 @@ func (suite *RedisTestSuite) TestBuildRedisAddr() {
 			expected: "127.0.0.1:6379",
 		},
 		{
-			name: "custom host and port",
+			name: "CustomHostAndPort",
 			config: &config.RedisConfig{
 				Host: "redis.example.com",
 				Port: 6380,
@@ -180,7 +210,7 @@ func (suite *RedisTestSuite) TestBuildRedisAddr() {
 			expected: "redis.example.com:6380",
 		},
 		{
-			name: "custom host with default port",
+			name: "CustomHostWithDefaultPort",
 			config: &config.RedisConfig{
 				Host: "localhost",
 				Port: 0,
@@ -188,7 +218,7 @@ func (suite *RedisTestSuite) TestBuildRedisAddr() {
 			expected: "localhost:6379",
 		},
 		{
-			name: "default host with custom port",
+			name: "DefaultHostWithCustomPort",
 			config: &config.RedisConfig{
 				Host: "",
 				Port: 6380,
@@ -198,72 +228,51 @@ func (suite *RedisTestSuite) TestBuildRedisAddr() {
 	}
 
 	for _, tt := range tests {
-		suite.Run(tt.name, func() {
+		t.Run(tt.name, func(t *testing.T) {
 			addr := buildRedisAddr(tt.config)
-			suite.Equal(tt.expected, addr)
+			assert.Equal(t, tt.expected, addr, "Address should match expected format")
 		})
 	}
 }
 
 // TestGetPoolSize tests the pool size calculation.
-func (suite *RedisTestSuite) TestGetPoolSize() {
+func TestGetPoolSize(t *testing.T) {
 	poolSize := getPoolSize()
 
-	// Pool size should be at least 4 and at most 100
-	suite.GreaterOrEqual(poolSize, 4)
-	suite.LessOrEqual(poolSize, 100)
+	assert.GreaterOrEqual(t, poolSize, 4, "Pool size should be at least 4")
+	assert.LessOrEqual(t, poolSize, 100, "Pool size should be at most 100")
 
-	suite.T().Logf("Calculated pool size: %d", poolSize)
+	t.Logf("Calculated pool size: %d", poolSize)
 }
 
 // TestGetConnectionConfig tests the connection configuration.
-func (suite *RedisTestSuite) TestGetConnectionConfig() {
-	poolSize := 10
-	poolTimeout, idleTimeout, maxRetries := getConnectionConfig(poolSize)
+func TestGetConnectionConfig(t *testing.T) {
+	tests := []struct {
+		name     string
+		poolSize int
+	}{
+		{"SmallPool", 4},
+		{"MediumPool", 10},
+		{"LargePool", 50},
+	}
 
-	// Verify reasonable values
-	suite.GreaterOrEqual(poolTimeout, 1*time.Second)
-	suite.LessOrEqual(poolTimeout, 5*time.Second)
-	suite.Equal(5*time.Minute, idleTimeout)
-	suite.Equal(3, maxRetries)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			poolTimeout, idleTimeout, maxRetries := getConnectionConfig(tt.poolSize)
 
-	suite.T().Logf("Connection config - Pool timeout: %v, Idle timeout: %v, Max retries: %d",
-		poolTimeout, idleTimeout, maxRetries)
-}
+			assert.GreaterOrEqual(t, poolTimeout, 1*time.Second,
+				"Pool timeout should be at least 1 second")
+			assert.LessOrEqual(t, poolTimeout, 5*time.Second,
+				"Pool timeout should be at most 5 seconds")
+			assert.Equal(t, 5*time.Minute, idleTimeout,
+				"Idle timeout should be 5 minutes")
+			assert.Equal(t, 3, maxRetries,
+				"Max retries should be 3")
 
-// testBasicRedisOperations performs basic Redis operations to verify functionality.
-func (suite *RedisTestSuite) testBasicRedisOperations(client *redis.Client) {
-	suite.T().Log("Testing basic Redis operations")
-
-	// Test SET and GET
-	err := client.Set(suite.ctx, "test_key", "test_value", 0).Err()
-	suite.Require().NoError(err)
-
-	val, err := client.Get(suite.ctx, "test_key").Result()
-	suite.Require().NoError(err)
-	suite.Equal("test_value", val)
-
-	// Test DEL
-	err = client.Del(suite.ctx, "test_key").Err()
-	suite.Require().NoError(err)
-
-	// Verify key is deleted
-	_, err = client.Get(suite.ctx, "test_key").Result()
-	suite.Error(err) // Should be redis.Nil error
-
-	// Test HSET and HGET
-	err = client.HSet(suite.ctx, "test_hash", "field1", "value1").Err()
-	suite.Require().NoError(err)
-
-	hashVal, err := client.HGet(suite.ctx, "test_hash", "field1").Result()
-	suite.Require().NoError(err)
-	suite.Equal("value1", hashVal)
-
-	// Clean up
-	err = client.Del(suite.ctx, "test_hash").Err()
-	suite.Require().NoError(err)
-
-	suite.T().Log("Basic Redis operations completed successfully")
+			t.Logf("Pool size: %d - Pool timeout: %v, Idle timeout: %v, Max retries: %d",
+				tt.poolSize, poolTimeout, idleTimeout, maxRetries)
+		})
+	}
 }
 
 // TestRedisSuite runs the test suite.

@@ -34,8 +34,6 @@ const (
 // String returns the SQL snippet for the given JoinType.
 func (j JoinType) String() string {
 	switch j {
-	case JoinInner:
-		return "INNER JOIN"
 	case JoinLeft, JoinDefault:
 		return "LEFT JOIN"
 	case JoinRight:
@@ -44,6 +42,8 @@ func (j JoinType) String() string {
 		return "FULL JOIN"
 	case JoinCross:
 		return "CROSS JOIN"
+	case JoinInner:
+		fallthrough
 	default:
 		return "JOIN"
 	}

@@ -6,78 +6,45 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type PhoneTestStruct struct {
-	PhoneNumber string `validate:"phone_number" label:"手机号"`
-}
-
 func TestPhoneNumberValidation(t *testing.T) {
+	type testStruct struct {
+		PhoneNumber string `validate:"phone_number" label:"手机号"`
+	}
+
 	tests := []struct {
-		name      string
-		phone     string
-		shouldErr bool
+		name    string
+		phone   string
+		wantErr bool
 	}{
-		// Valid phone numbers
-		{"Valid phone - starts with 13", "13888888888", false},
-		{"Valid phone - starts with 15", "15999999999", false},
-		{"Valid phone - starts with 18", "18666666666", false},
-		{"Valid phone - starts with 19", "19777777777", false},
-
-		// Invalid phone numbers
-		{"Invalid - starts with 12", "12888888888", true},
-		{"Invalid - starts with 10", "10888888888", true},
-		{"Invalid - too short", "1388888888", true},
-		{"Invalid - too long", "138888888888", true},
-		{"Invalid - contains letters", "13888888a88", true},
-		{"Invalid - contains special chars", "1388888-888", true},
-		{"Invalid - empty string", "", true},
-		{"Invalid - starts with 0", "01888888888", true},
-		{"Invalid - starts with 2", "21888888888", true},
-
-		// Edge cases
-		{"Valid - all same digits", "13333333333", false},
-		{"Valid - starts with 14", "14888888888", false},
-		{"Valid - starts with 16", "16888888888", false},
-		{"Valid - starts with 17", "17888888888", false},
+		{"validPhoneStartsWith13", "13888888888", false},
+		{"validPhoneStartsWith15", "15999999999", false},
+		{"validPhoneStartsWith18", "18666666666", false},
+		{"validPhoneStartsWith19", "19777777777", false},
+		{"validPhoneStartsWith14", "14888888888", false},
+		{"validPhoneStartsWith16", "16888888888", false},
+		{"validPhoneStartsWith17", "17888888888", false},
+		{"validPhoneAllSameDigits", "13333333333", false},
+		{"invalidStartsWith12", "12888888888", true},
+		{"invalidStartsWith10", "10888888888", true},
+		{"invalidStartsWith0", "01888888888", true},
+		{"invalidStartsWith2", "21888888888", true},
+		{"invalidTooShort", "1388888888", true},
+		{"invalidTooLong", "138888888888", true},
+		{"invalidContainsLetters", "13888888a88", true},
+		{"invalidContainsSpecialChars", "1388888-888", true},
+		{"invalidEmptyString", "", true},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			testStruct := PhoneTestStruct{PhoneNumber: tc.phone}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := testStruct{PhoneNumber: tt.phone}
 
-			err := Validate(&testStruct)
-			if tc.shouldErr {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "手机号")
+			err := Validate(&s)
+			if tt.wantErr {
+				assert.Error(t, err, "Should return validation error for phone: %q", tt.phone)
+				assert.Contains(t, err.Error(), "手机号", "Error message should contain label")
 			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestPhoneNumberValidationWithLabelCheck(t *testing.T) {
-	tests := []struct {
-		name      string
-		phone     string
-		shouldErr bool
-	}{
-		{"Valid 13x", "13012345678", false},
-		{"Valid 19x", "19812345678", false},
-		{"Invalid 12x", "12012345678", true},
-		{"Invalid length", "130123456", true},
-		{"Non-numeric", "abc12345678", true},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			testStruct := PhoneTestStruct{PhoneNumber: tc.phone}
-			err := Validate(&testStruct)
-
-			if tc.shouldErr {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "手机号")
-			} else {
-				assert.NoError(t, err)
+				assert.NoError(t, err, "Should not return validation error for phone: %q", tt.phone)
 			}
 		})
 	}

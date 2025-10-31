@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDateOf(t *testing.T) {
@@ -11,27 +13,26 @@ func TestDateOf(t *testing.T) {
 	date := DateOf(now)
 
 	unwrapped := date.Unwrap()
-	assertIntEqual(t, 2023, unwrapped.Year(), "DateOf should preserve year")
-	assertIntEqual(t, int(time.December), int(unwrapped.Month()), "DateOf should preserve month")
-	assertIntEqual(t, 25, unwrapped.Day(), "DateOf should preserve day")
-	assertIntEqual(t, 0, unwrapped.Hour(), "DateOf should zero out hour")
-	assertIntEqual(t, 0, unwrapped.Minute(), "DateOf should zero out minute")
-	assertIntEqual(t, 0, unwrapped.Second(), "DateOf should zero out second")
-	assertIntEqual(t, 0, unwrapped.Nanosecond(), "DateOf should zero out nanosecond")
+	assert.Equal(t, 2023, unwrapped.Year(), "Year should be preserved")
+	assert.Equal(t, int(time.December), int(unwrapped.Month()), "Month should be preserved")
+	assert.Equal(t, 25, unwrapped.Day(), "Day should be preserved")
+	assert.Equal(t, 0, unwrapped.Hour(), "Hour should be zeroed")
+	assert.Equal(t, 0, unwrapped.Minute(), "Minute should be zeroed")
+	assert.Equal(t, 0, unwrapped.Second(), "Second should be zeroed")
+	assert.Equal(t, 0, unwrapped.Nanosecond(), "Nanosecond should be zeroed")
 }
 
 func TestNowDate(t *testing.T) {
 	before := time.Now()
 	date := NowDate()
-	_ = time.Now() // after variable not needed
 
 	unwrapped := date.Unwrap()
-	assertIntEqual(t, before.Year(), unwrapped.Year(), "NowDate should return current year")
-	assertIntEqual(t, int(before.Month()), int(unwrapped.Month()), "NowDate should return current month")
-	assertIntEqual(t, before.Day(), unwrapped.Day(), "NowDate should return current day")
-	assertIntEqual(t, 0, unwrapped.Hour(), "NowDate should have zero hour")
-	assertIntEqual(t, 0, unwrapped.Minute(), "NowDate should have zero minute")
-	assertIntEqual(t, 0, unwrapped.Second(), "NowDate should have zero second")
+	assert.Equal(t, before.Year(), unwrapped.Year(), "Year should match current")
+	assert.Equal(t, int(before.Month()), int(unwrapped.Month()), "Month should match current")
+	assert.Equal(t, before.Day(), unwrapped.Day(), "Day should match current")
+	assert.Equal(t, 0, unwrapped.Hour(), "Hour should be zero")
+	assert.Equal(t, 0, unwrapped.Minute(), "Minute should be zero")
+	assert.Equal(t, 0, unwrapped.Second(), "Second should be zero")
 }
 
 func TestParseDate(t *testing.T) {
@@ -43,21 +44,21 @@ func TestParseDate(t *testing.T) {
 		expected  time.Time
 	}{
 		{
-			"Valid date",
+			"ValidDate",
 			"2023-12-25",
 			nil,
 			false,
 			testTime(2023, 12, 25, 0, 0, 0),
 		},
 		{
-			"Valid date with custom pattern",
+			"ValidDateWithCustomPattern",
 			"25/12/2023",
 			[]string{"02/01/2006"},
 			false,
 			testTime(2023, 12, 25, 0, 0, 0),
 		},
 		{
-			"Invalid date",
+			"InvalidDate",
 			"invalid",
 			nil,
 			true,
@@ -69,19 +70,18 @@ func TestParseDate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			date, err := ParseDate(tt.input, tt.pattern...)
 			if tt.shouldErr {
-				assertError(t, err, "Expected ParseDate error")
+				assert.Error(t, err, "Should return error for invalid input")
 			} else {
-				assertNoError(t, err, "Unexpected ParseDate error")
+				assert.NoError(t, err, "Should parse valid date")
 
 				if !tt.expected.IsZero() {
-					// Check that time components are zeroed
 					unwrapped := date.Unwrap()
-					assertIntEqual(t, tt.expected.Year(), unwrapped.Year(), "Year should match")
-					assertIntEqual(t, int(tt.expected.Month()), int(unwrapped.Month()), "Month should match")
-					assertIntEqual(t, tt.expected.Day(), unwrapped.Day(), "Day should match")
-					assertIntEqual(t, 0, unwrapped.Hour(), "Hour should be zero")
-					assertIntEqual(t, 0, unwrapped.Minute(), "Minute should be zero")
-					assertIntEqual(t, 0, unwrapped.Second(), "Second should be zero")
+					assert.Equal(t, tt.expected.Year(), unwrapped.Year(), "Year should match")
+					assert.Equal(t, int(tt.expected.Month()), int(unwrapped.Month()), "Month should match")
+					assert.Equal(t, tt.expected.Day(), unwrapped.Day(), "Day should match")
+					assert.Equal(t, 0, unwrapped.Hour(), "Hour should be zero")
+					assert.Equal(t, 0, unwrapped.Minute(), "Minute should be zero")
+					assert.Equal(t, 0, unwrapped.Second(), "Second should be zero")
 				}
 			}
 		})
@@ -91,7 +91,7 @@ func TestParseDate(t *testing.T) {
 func TestDateString(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	expected := "2023-12-25"
-	assertStringEqual(t, expected, date.String(), "Date string representation")
+	assert.Equal(t, expected, date.String(), "String representation should match format")
 }
 
 func TestDateEqual(t *testing.T) {
@@ -99,24 +99,24 @@ func TestDateEqual(t *testing.T) {
 	date2 := Date(testTime(2023, 12, 25, 0, 0, 0))
 	date3 := Date(testTime(2023, 12, 26, 0, 0, 0))
 
-	assertBoolEqual(t, true, date1.Equal(date2), "Equal dates should be equal")
-	assertBoolEqual(t, false, date1.Equal(date3), "Different dates should not be equal")
+	assert.True(t, date1.Equal(date2), "Equal dates should be equal")
+	assert.False(t, date1.Equal(date3), "Different dates should not be equal")
 }
 
 func TestDateBefore(t *testing.T) {
 	date1 := Date(testTime(2023, 12, 25, 0, 0, 0))
 	date2 := Date(testTime(2023, 12, 26, 0, 0, 0))
 
-	assertBoolEqual(t, true, date1.Before(date2), "Earlier date should be before later")
-	assertBoolEqual(t, false, date2.Before(date1), "Later date should not be before earlier")
+	assert.True(t, date1.Before(date2), "Earlier date should be before later")
+	assert.False(t, date2.Before(date1), "Later date should not be before earlier")
 }
 
 func TestDateAfter(t *testing.T) {
 	date1 := Date(testTime(2023, 12, 25, 0, 0, 0))
 	date2 := Date(testTime(2023, 12, 26, 0, 0, 0))
 
-	assertBoolEqual(t, false, date1.After(date2), "Earlier date should not be after later")
-	assertBoolEqual(t, true, date2.After(date1), "Later date should be after earlier")
+	assert.False(t, date1.After(date2), "Earlier date should not be after later")
+	assert.True(t, date2.After(date1), "Later date should be after earlier")
 }
 
 func TestDateBetween(t *testing.T) {
@@ -124,8 +124,8 @@ func TestDateBetween(t *testing.T) {
 	middle := Date(testTime(2023, 12, 26, 0, 0, 0))
 	end := Date(testTime(2023, 12, 27, 0, 0, 0))
 
-	assertBoolEqual(t, true, middle.Between(start, end), "Middle date should be between start and end")
-	assertBoolEqual(t, false, start.Between(middle, end), "Start date should not be between middle and end")
+	assert.True(t, middle.Between(start, end), "Middle date should be between start and end")
+	assert.False(t, start.Between(middle, end), "Start date should not be between middle and end")
 }
 
 func TestDateAddDays(t *testing.T) {
@@ -133,7 +133,7 @@ func TestDateAddDays(t *testing.T) {
 	result := date.AddDays(5)
 
 	expected := testTime(2023, 12, 30, 0, 0, 0)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddDays should add days correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddDays should add days correctly")
 }
 
 func TestDateAddMonths(t *testing.T) {
@@ -141,7 +141,7 @@ func TestDateAddMonths(t *testing.T) {
 	result := date.AddMonths(2)
 
 	expected := testTime(2024, 2, 25, 0, 0, 0)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddMonths should add months correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddMonths should add months correctly")
 }
 
 func TestDateAddYears(t *testing.T) {
@@ -149,107 +149,128 @@ func TestDateAddYears(t *testing.T) {
 	result := date.AddYears(1)
 
 	expected := testTime(2024, 12, 25, 0, 0, 0)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddYears should add years correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddYears should add years correctly")
 }
 
 func TestDateComponents(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
-	assertIntEqual(t, 2023, date.Year(), "Year")
-	assertIntEqual(t, int(time.December), int(date.Month()), "Month")
-	assertIntEqual(t, 25, date.Day(), "Day")
-	assertIntEqual(t, int(time.Monday), int(date.Weekday()), "Weekday")
-	assertIntEqual(t, 359, date.YearDay(), "YearDay") // 25th December is 359th day of year
+	assert.Equal(t, 2023, date.Year(), "Year should match")
+	assert.Equal(t, int(time.December), int(date.Month()), "Month should match")
+	assert.Equal(t, 25, date.Day(), "Day should match")
+	assert.Equal(t, int(time.Monday), int(date.Weekday()), "Weekday should match")
+	assert.Equal(t, 359, date.YearDay(), "YearDay should match")
 }
 
 func TestDateIsZero(t *testing.T) {
 	zeroDate := Date{}
 	nonZeroDate := Date(testTime(2023, 12, 25, 0, 0, 0))
 
-	assertBoolEqual(t, true, zeroDate.IsZero(), "Zero date should be zero")
-	assertBoolEqual(t, false, nonZeroDate.IsZero(), "Non-zero date should not be zero")
+	assert.True(t, zeroDate.IsZero(), "Zero date should be zero")
+	assert.False(t, nonZeroDate.IsZero(), "Non-zero date should not be zero")
 }
 
 func TestDateBeginOfMethods(t *testing.T) {
-	date := Date(testTime(2023, 12, 25, 0, 0, 0)) // Monday
+	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
-	// BeginOfDay (should return same date)
-	beginDay := date.BeginOfDay()
-	assertTimeEqual(t, date.Unwrap(), beginDay.Unwrap(), "BeginOfDay should return same date")
+	t.Run("BeginOfDay", func(t *testing.T) {
+		beginDay := date.BeginOfDay()
+		assert.True(t, date.Unwrap().Equal(beginDay.Unwrap()), "BeginOfDay should return same date")
+	})
 
-	// BeginOfWeek (Sunday is start of week)
-	beginWeek := date.BeginOfWeek()
-	expected := testTime(2023, 12, 24, 0, 0, 0) // Sunday
-	assertTimeEqual(t, expected, beginWeek.Unwrap(), "BeginOfWeek")
+	t.Run("BeginOfWeek", func(t *testing.T) {
+		beginWeek := date.BeginOfWeek()
+		expected := testTime(2023, 12, 24, 0, 0, 0)
+		assert.True(t, expected.Equal(beginWeek.Unwrap()), "BeginOfWeek should return Sunday")
+	})
 
-	// BeginOfMonth
-	beginMonth := date.BeginOfMonth()
-	expected = testTime(2023, 12, 1, 0, 0, 0)
-	assertTimeEqual(t, expected, beginMonth.Unwrap(), "BeginOfMonth")
+	t.Run("BeginOfMonth", func(t *testing.T) {
+		beginMonth := date.BeginOfMonth()
+		expected := testTime(2023, 12, 1, 0, 0, 0)
+		assert.True(t, expected.Equal(beginMonth.Unwrap()), "BeginOfMonth should return first day")
+	})
 
-	// BeginOfQuarter
-	beginQuarter := date.BeginOfQuarter()
-	expected = testTime(2023, 10, 1, 0, 0, 0) // Q4 starts in October
-	assertTimeEqual(t, expected, beginQuarter.Unwrap(), "BeginOfQuarter")
+	t.Run("BeginOfQuarter", func(t *testing.T) {
+		beginQuarter := date.BeginOfQuarter()
+		expected := testTime(2023, 10, 1, 0, 0, 0)
+		assert.True(t, expected.Equal(beginQuarter.Unwrap()), "BeginOfQuarter should return Q4 start")
+	})
 
-	// BeginOfYear
-	beginYear := date.BeginOfYear()
-	expected = testTime(2023, 1, 1, 0, 0, 0)
-	assertTimeEqual(t, expected, beginYear.Unwrap(), "BeginOfYear")
+	t.Run("BeginOfYear", func(t *testing.T) {
+		beginYear := date.BeginOfYear()
+		expected := testTime(2023, 1, 1, 0, 0, 0)
+		assert.True(t, expected.Equal(beginYear.Unwrap()), "BeginOfYear should return Jan 1")
+	})
 }
 
 func TestDateEndOfMethods(t *testing.T) {
-	date := Date(testTime(2023, 12, 25, 0, 0, 0)) // Monday
+	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
-	// EndOfDay (should return same date)
-	endDay := date.EndOfDay()
-	assertTimeEqual(t, date.Unwrap(), endDay.Unwrap(), "EndOfDay should return same date")
+	t.Run("EndOfDay", func(t *testing.T) {
+		endDay := date.EndOfDay()
+		assert.True(t, date.Unwrap().Equal(endDay.Unwrap()), "EndOfDay should return same date")
+	})
 
-	// EndOfWeek (Saturday is end of week)
-	endWeek := date.EndOfWeek()
-	expected := testTime(2023, 12, 30, 0, 0, 0) // Saturday
-	assertTimeEqual(t, expected, endWeek.Unwrap(), "EndOfWeek")
+	t.Run("EndOfWeek", func(t *testing.T) {
+		endWeek := date.EndOfWeek()
+		expected := testTime(2023, 12, 30, 0, 0, 0)
+		assert.True(t, expected.Equal(endWeek.Unwrap()), "EndOfWeek should return Saturday")
+	})
 
-	// EndOfMonth
-	endMonth := date.EndOfMonth()
-	expected = testTime(2023, 12, 31, 0, 0, 0)
-	assertTimeEqual(t, expected, endMonth.Unwrap(), "EndOfMonth")
+	t.Run("EndOfMonth", func(t *testing.T) {
+		endMonth := date.EndOfMonth()
+		expected := testTime(2023, 12, 31, 0, 0, 0)
+		assert.True(t, expected.Equal(endMonth.Unwrap()), "EndOfMonth should return last day")
+	})
 
-	// EndOfQuarter
-	endQuarter := date.EndOfQuarter()
-	expected = testTime(2023, 12, 31, 0, 0, 0) // Q4 ends on Dec 31
-	assertTimeEqual(t, expected, endQuarter.Unwrap(), "EndOfQuarter")
+	t.Run("EndOfQuarter", func(t *testing.T) {
+		endQuarter := date.EndOfQuarter()
+		expected := testTime(2023, 12, 31, 0, 0, 0)
+		assert.True(t, expected.Equal(endQuarter.Unwrap()), "EndOfQuarter should return Q4 end")
+	})
 
-	// EndOfYear
-	endYear := date.EndOfYear()
-	expected = testTime(2023, 12, 31, 0, 0, 0)
-	assertTimeEqual(t, expected, endYear.Unwrap(), "EndOfYear")
+	t.Run("EndOfYear", func(t *testing.T) {
+		endYear := date.EndOfYear()
+		expected := testTime(2023, 12, 31, 0, 0, 0)
+		assert.True(t, expected.Equal(endYear.Unwrap()), "EndOfYear should return Dec 31")
+	})
 }
 
 func TestDateWeekdayMethods(t *testing.T) {
-	date := Date(testTime(2023, 12, 25, 0, 0, 0)) // Monday
+	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 
-	// Test all weekday methods
-	monday := date.Monday()
-	assertTimeEqual(t, testTime(2023, 12, 25, 0, 0, 0), monday.Unwrap(), "Monday")
+	t.Run("Monday", func(t *testing.T) {
+		monday := date.Monday()
+		expected := testTime(2023, 12, 25, 0, 0, 0)
+		assert.True(t, expected.Equal(monday.Unwrap()), "Monday should return Dec 25")
+	})
 
-	tuesday := date.Tuesday()
-	assertTimeEqual(t, testTime(2023, 12, 26, 0, 0, 0), tuesday.Unwrap(), "Tuesday")
+	t.Run("Tuesday", func(t *testing.T) {
+		tuesday := date.Tuesday()
+		expected := testTime(2023, 12, 26, 0, 0, 0)
+		assert.True(t, expected.Equal(tuesday.Unwrap()), "Tuesday should return Dec 26")
+	})
 
-	sunday := date.Sunday()
-	assertTimeEqual(t, testTime(2023, 12, 24, 0, 0, 0), sunday.Unwrap(), "Sunday")
+	t.Run("Sunday", func(t *testing.T) {
+		sunday := date.Sunday()
+		expected := testTime(2023, 12, 24, 0, 0, 0)
+		assert.True(t, expected.Equal(sunday.Unwrap()), "Sunday should return Dec 24")
+	})
 
-	saturday := date.Saturday()
-	assertTimeEqual(t, testTime(2023, 12, 30, 0, 0, 0), saturday.Unwrap(), "Saturday")
+	t.Run("Saturday", func(t *testing.T) {
+		saturday := date.Saturday()
+		expected := testTime(2023, 12, 30, 0, 0, 0)
+		assert.True(t, expected.Equal(saturday.Unwrap()), "Saturday should return Dec 30")
+	})
 }
 
 func TestDateMarshalJSON(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	data, err := date.MarshalJSON()
-	assertNoError(t, err, "MarshalJSON")
+	assert.NoError(t, err, "MarshalJSON should succeed")
 
 	expected := `"2023-12-25"`
-	assertStringEqual(t, expected, string(data), "JSON marshaling")
+	assert.Equal(t, expected, string(data), "JSON should match expected format")
 }
 
 func TestDateUnmarshalJSON(t *testing.T) {
@@ -258,10 +279,10 @@ func TestDateUnmarshalJSON(t *testing.T) {
 		input     string
 		shouldErr bool
 	}{
-		{"Valid date", `"2023-12-25"`, false},
-		{"Null value", `null`, false},
-		{"Invalid format", `"invalid"`, true},
-		{"Wrong length", `"2023-12-25 14:30:45"`, true},
+		{"ValidDate", `"2023-12-25"`, false},
+		{"NullValue", `null`, false},
+		{"InvalidFormat", `"invalid"`, true},
+		{"WrongLength", `"2023-12-25 14:30:45"`, true},
 	}
 
 	for _, tt := range tests {
@@ -269,10 +290,11 @@ func TestDateUnmarshalJSON(t *testing.T) {
 			var date Date
 
 			err := date.UnmarshalJSON([]byte(tt.input))
+
 			if tt.shouldErr {
-				assertError(t, err, "Expected UnmarshalJSON error")
+				assert.Error(t, err, "Should return error for invalid input")
 			} else {
-				assertNoError(t, err, "Unexpected UnmarshalJSON error")
+				assert.NoError(t, err, "Should unmarshal valid input")
 			}
 		})
 	}
@@ -281,12 +303,12 @@ func TestDateUnmarshalJSON(t *testing.T) {
 func TestDateValue(t *testing.T) {
 	date := Date(testTime(2023, 12, 25, 0, 0, 0))
 	value, err := date.Value()
-	assertNoError(t, err, "Value")
+	assert.NoError(t, err, "Value should succeed")
 
 	expected := "2023-12-25"
-	if str, ok := value.(string); !ok || str != expected {
-		t.Errorf("Expected %s, got %v", expected, value)
-	}
+	str, ok := value.(string)
+	assert.True(t, ok, "Value should be string")
+	assert.Equal(t, expected, str, "Value should match expected format")
 }
 
 func TestDateScan(t *testing.T) {
@@ -296,10 +318,10 @@ func TestDateScan(t *testing.T) {
 		hasErr bool
 	}{
 		{"String", "2023-12-25", false},
-		{"[]byte", []byte("2023-12-25"), false},
-		{"time.Time", testTime(2023, 12, 25, 14, 30, 45), false},
-		{"nil *string", (*string)(nil), false},
-		{"invalid string", "invalid", true},
+		{"ByteSlice", []byte("2023-12-25"), false},
+		{"TimeTime", testTime(2023, 12, 25, 14, 30, 45), false},
+		{"NilPointer", (*string)(nil), false},
+		{"InvalidString", "invalid", true},
 	}
 
 	for _, tt := range tests {
@@ -307,10 +329,11 @@ func TestDateScan(t *testing.T) {
 			var date Date
 
 			err := date.Scan(tt.src)
+
 			if tt.hasErr {
-				assertError(t, err, "Expected Scan error")
+				assert.Error(t, err, "Should return error for invalid input")
 			} else {
-				assertNoError(t, err, "Unexpected Scan error")
+				assert.NoError(t, err, "Should scan valid input")
 			}
 		})
 	}
@@ -319,16 +342,13 @@ func TestDateScan(t *testing.T) {
 func TestDateJSONRoundTrip(t *testing.T) {
 	original := Date(testTime(2023, 12, 25, 0, 0, 0))
 
-	// Marshal
 	data, err := json.Marshal(original)
-	assertNoError(t, err, "Marshal")
+	assert.NoError(t, err, "Marshal should succeed")
 
-	// Unmarshal
 	var result Date
 
 	err = json.Unmarshal(data, &result)
-	assertNoError(t, err, "Unmarshal")
+	assert.NoError(t, err, "Unmarshal should succeed")
 
-	// Compare strings to avoid precision issues
-	assertStringEqual(t, original.String(), result.String(), "Round trip")
+	assert.Equal(t, original.String(), result.String(), "Round trip should preserve value")
 }

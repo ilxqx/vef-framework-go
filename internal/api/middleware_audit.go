@@ -75,7 +75,7 @@ func buildAuditEvent(ctx fiber.Ctx, request *api.Request, elapsed int, handlerEr
 
 	// Determine result based on handler error and response status
 	if handlerErr == nil {
-		res, err := encoding.FromJSON[result.Result](string(utils.CopyBytes(ctx.Response().Body())))
+		res, err := encoding.FromJson[result.Result](string(utils.CopyBytes(ctx.Response().Body())))
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode response body for audit event: %w", err)
 		}

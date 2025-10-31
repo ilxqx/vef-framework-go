@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestMemoryCache[T any](maxSize int64, defaultTTL time.Duration, evictionPolicy EvictionPolicy, gcInterval time.Duration) Cache[T] {
+func newTestCache[T any](maxSize int64, defaultTTL time.Duration, evictionPolicy EvictionPolicy, gcInterval time.Duration) Cache[T] {
 	return NewMemory[T](
 		WithMemMaxSize(maxSize),
 		WithMemDefaultTTL(defaultTTL),
@@ -52,12 +52,11 @@ func TestNewMemoryOptions(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheBasicOperations tests basic cache operations.
 func TestMemoryCacheBasicOperations(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("SetAndGet", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key1", "value1")
@@ -69,7 +68,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 
 	t.Run("GetNonExistentKey", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		value, found := cache.Get(ctx, "nonexistent")
@@ -78,7 +77,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 
 	t.Run("ContainsExistingKey", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -86,14 +85,14 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 
 	t.Run("ContainsNonExistentKey", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		assert.False(t, cache.Contains(ctx, "nonexistent"))
 	})
 
 	t.Run("DeleteExistingKey", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -103,7 +102,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 
 	t.Run("DeleteNonExistentKey", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		err := cache.Delete(ctx, "nonexistent")
@@ -111,7 +110,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 
 	t.Run("UpdateExistingKey", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -123,7 +122,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 
 	t.Run("GetOrLoadUsesLoaderOnce", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		var loaderCalls atomic.Int32
@@ -147,7 +146,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 
 	t.Run("GetOrLoadRequiresLoader", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_, err := cache.GetOrLoad(ctx, "key1", nil)
@@ -155,91 +154,78 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheExpiration tests TTL and expiration.
 func TestMemoryCacheExpiration(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("DefaultTTLExpiration", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 100*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 100*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key1", "value1")
 		require.NoError(t, err)
 
-		// Should exist immediately
 		assert.True(t, cache.Contains(ctx, "key1"))
 
-		// Wait for expiration
 		time.Sleep(150 * time.Millisecond)
 
-		// Should be expired
 		assert.False(t, cache.Contains(ctx, "key1"))
 		_, found := cache.Get(ctx, "key1")
 		assert.False(t, found)
 	})
 
 	t.Run("CustomTTLExpiration", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key1", "value1", 100*time.Millisecond)
 		require.NoError(t, err)
 
-		// Should exist immediately
 		assert.True(t, cache.Contains(ctx, "key1"))
 
-		// Wait for expiration
 		time.Sleep(150 * time.Millisecond)
 
-		// Should be expired
 		assert.False(t, cache.Contains(ctx, "key1"))
 	})
 
 	t.Run("CustomTTLOverridesDefault", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 1*time.Second, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 1*time.Second, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
-		// Set with shorter custom TTL
 		_ = cache.Set(ctx, "key1", "value1", 100*time.Millisecond)
 
 		time.Sleep(150 * time.Millisecond)
 
-		// Should be expired (custom TTL applied)
 		assert.False(t, cache.Contains(ctx, "key1"))
 	})
 
 	t.Run("ZeroTTLMeansNoExpiration", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
 
 		time.Sleep(100 * time.Millisecond)
 
-		// Should still exist
 		assert.True(t, cache.Contains(ctx, "key1"))
 	})
 
 	t.Run("NegativeTTLIgnored", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 100*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 100*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
-		// Negative TTL should be ignored, default TTL used
 		_ = cache.Set(ctx, "key1", "value1", -1*time.Second)
 
 		time.Sleep(150 * time.Millisecond)
 
-		// Should be expired (default TTL applied)
 		assert.False(t, cache.Contains(ctx, "key1"))
 	})
 }
 
-// TestMemoryCacheSize tests size tracking.
 func TestMemoryCacheSize(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("SizeIncreasesOnInsert", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		size, err := cache.Size(ctx)
@@ -258,7 +244,7 @@ func TestMemoryCacheSize(t *testing.T) {
 	})
 
 	t.Run("SizeDecreasesOnDelete", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -271,7 +257,7 @@ func TestMemoryCacheSize(t *testing.T) {
 	})
 
 	t.Run("SizeUnchangedOnUpdate", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -284,7 +270,7 @@ func TestMemoryCacheSize(t *testing.T) {
 	})
 
 	t.Run("SizeExcludesExpiredEntries", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 50*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 50*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -292,23 +278,20 @@ func TestMemoryCacheSize(t *testing.T) {
 
 		time.Sleep(100 * time.Millisecond)
 
-		// Trigger expiration check by accessing keys
 		cache.Get(ctx, "key1")
 		cache.Get(ctx, "key2")
 
-		// Now expired entries should be removed and size updated
 		size, err := cache.Size(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, int64(0), size)
 	})
 }
 
-// TestMemoryCacheEvictionPolicies tests different eviction policies.
 func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("LRUEviction", func(t *testing.T) {
-		cache := newTestMemoryCache[string](3, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](3, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -318,7 +301,6 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 		size, _ := cache.Size(ctx)
 		assert.Equal(t, int64(3), size)
 
-		// Adding one more should evict key1 (LRU)
 		_ = cache.Set(ctx, "key4", "value4")
 
 		size, _ = cache.Size(ctx)
@@ -328,17 +310,15 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	})
 
 	t.Run("LRUWithAccessUpdates", func(t *testing.T) {
-		cache := newTestMemoryCache[string](3, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](3, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
 		_ = cache.Set(ctx, "key2", "value2")
 		_ = cache.Set(ctx, "key3", "value3")
 
-		// Access key1 to make it recently used
 		cache.Get(ctx, "key1")
 
-		// Adding one more should evict key2 (now LRU)
 		_ = cache.Set(ctx, "key4", "value4")
 
 		assert.True(t, cache.Contains(ctx, "key1"))
@@ -348,19 +328,17 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	})
 
 	t.Run("LFUEviction", func(t *testing.T) {
-		cache := newTestMemoryCache[string](3, 0, EvictionPolicyLFU, 5*time.Minute)
+		cache := newTestCache[string](3, 0, EvictionPolicyLFU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
 		_ = cache.Set(ctx, "key2", "value2")
 		_ = cache.Set(ctx, "key3", "value3")
 
-		// Access key1 and key2 multiple times
 		cache.Get(ctx, "key1")
 		cache.Get(ctx, "key1")
 		cache.Get(ctx, "key2")
 
-		// key3 has lowest frequency, should be evicted
 		_ = cache.Set(ctx, "key4", "value4")
 
 		assert.True(t, cache.Contains(ctx, "key1"))
@@ -370,18 +348,16 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	})
 
 	t.Run("FIFOEviction", func(t *testing.T) {
-		cache := newTestMemoryCache[string](3, 0, EvictionPolicyFIFO, 5*time.Minute)
+		cache := newTestCache[string](3, 0, EvictionPolicyFIFO, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
 		_ = cache.Set(ctx, "key2", "value2")
 		_ = cache.Set(ctx, "key3", "value3")
 
-		// Access key1 (shouldn't affect FIFO order)
 		cache.Get(ctx, "key1")
 		cache.Get(ctx, "key1")
 
-		// key1 is oldest, should be evicted
 		_ = cache.Set(ctx, "key4", "value4")
 
 		assert.False(t, cache.Contains(ctx, "key1"))
@@ -391,25 +367,20 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	})
 
 	t.Run("NoOpPolicyFallsBackToLRU", func(t *testing.T) {
-		// When maxSize is set with NoOp policy, it should default to LRU
-		cache := newTestMemoryCache[string](2, 0, EvictionPolicyNone, 5*time.Minute)
+		cache := newTestCache[string](2, 0, EvictionPolicyNone, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
 		_ = cache.Set(ctx, "key2", "value2")
 
-		// Adding one more should trigger LRU eviction (not rejection)
 		err := cache.Set(ctx, "key3", "value3")
 		assert.NoError(t, err)
 
-		// Cache size should remain at 2 (one entry was evicted)
 		size, _ := cache.Size(ctx)
 		assert.Equal(t, int64(2), size)
 
-		// key3 should exist (was added successfully)
 		assert.True(t, cache.Contains(ctx, "key3"))
 
-		// Either key1 or key2 should have been evicted (LRU policy)
 		count := 0
 		if cache.Contains(ctx, "key1") {
 			count++
@@ -423,13 +394,12 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	})
 
 	t.Run("UpdateDoesNotTriggerEviction", func(t *testing.T) {
-		cache := newTestMemoryCache[string](2, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](2, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
 		_ = cache.Set(ctx, "key2", "value2")
 
-		// Update existing key should not trigger eviction
 		err := cache.Set(ctx, "key1", "value1_updated")
 		require.NoError(t, err)
 
@@ -438,12 +408,11 @@ func TestMemoryCacheEvictionPolicies(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheKeys tests key listing.
 func TestMemoryCacheKeys(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ListAllKeys", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "user:1", "alice")
@@ -457,7 +426,7 @@ func TestMemoryCacheKeys(t *testing.T) {
 	})
 
 	t.Run("ListKeysWithPrefix", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "user:1", "alice")
@@ -475,7 +444,7 @@ func TestMemoryCacheKeys(t *testing.T) {
 	})
 
 	t.Run("EmptyCacheReturnsEmptyList", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		keys, err := cache.Keys(ctx)
@@ -484,7 +453,7 @@ func TestMemoryCacheKeys(t *testing.T) {
 	})
 
 	t.Run("PrefixWithNoMatches", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "user:1", "alice")
@@ -496,7 +465,7 @@ func TestMemoryCacheKeys(t *testing.T) {
 	})
 
 	t.Run("ExcludesExpiredKeys", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 50*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 50*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -510,12 +479,11 @@ func TestMemoryCacheKeys(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheForEach tests iteration.
 func TestMemoryCacheForEach(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("IterateAllEntries", func(t *testing.T) {
-		cache := newTestMemoryCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "a", 1)
@@ -534,7 +502,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 	})
 
 	t.Run("IterateWithPrefixFilter", func(t *testing.T) {
-		cache := newTestMemoryCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "user:1", 10)
@@ -553,7 +521,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 	})
 
 	t.Run("EarlyTermination", func(t *testing.T) {
-		cache := newTestMemoryCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "a", 1)
@@ -564,7 +532,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 		err := cache.ForEach(ctx, func(key string, value int) bool {
 			count++
 
-			return count < 2 // Stop after 2 iterations
+			return count < 2
 		})
 
 		require.NoError(t, err)
@@ -572,7 +540,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 	})
 
 	t.Run("EmptyCache", func(t *testing.T) {
-		cache := newTestMemoryCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		called := false
@@ -587,7 +555,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 	})
 
 	t.Run("SkipsExpiredEntries", func(t *testing.T) {
-		cache := newTestMemoryCache[int](0, 50*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](0, 50*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "a", 1)
@@ -606,12 +574,11 @@ func TestMemoryCacheForEach(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheClear tests clearing the cache.
 func TestMemoryCacheClear(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ClearRemovesAllEntries", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -629,7 +596,7 @@ func TestMemoryCacheClear(t *testing.T) {
 	})
 
 	t.Run("ClearOnEmptyCache", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		err := cache.Clear(ctx)
@@ -640,7 +607,7 @@ func TestMemoryCacheClear(t *testing.T) {
 	})
 
 	t.Run("CanAddEntriesAfterClear", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -651,58 +618,48 @@ func TestMemoryCacheClear(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheClose tests cache closure.
 func TestMemoryCacheClose(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("CloseStopsGCGoroutine", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 100*time.Millisecond)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 100*time.Millisecond)
 
 		_ = cache.Set(ctx, "key1", "value1")
 
 		err := cache.Close()
 		require.NoError(t, err)
 
-		// Wait a bit to ensure GC goroutine has stopped
 		time.Sleep(200 * time.Millisecond)
 	})
 
 	t.Run("OperationsAfterCloseFailGracefully", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 
 		_ = cache.Set(ctx, "key1", "value1")
 		cache.Close()
 
-		// Get should return false
 		_, found := cache.Get(ctx, "key1")
 		assert.False(t, found)
 
-		// Set should fail with ErrCacheClosed
 		err := cache.Set(ctx, "key2", "value2")
 		assert.ErrorIs(t, err, ErrCacheClosed)
 
-		// Contains should return false
 		assert.False(t, cache.Contains(ctx, "key1"))
 
-		// Delete should not error
 		err = cache.Delete(ctx, "key1")
 		assert.NoError(t, err)
 
-		// Clear should not error
 		err = cache.Clear(ctx)
 		assert.NoError(t, err)
 
-		// Size should return 0
 		size, err := cache.Size(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), size)
 
-		// Keys should return nil
 		keys, err := cache.Keys(ctx)
 		assert.NoError(t, err)
 		assert.Nil(t, keys)
 
-		// ForEach should not error
 		err = cache.ForEach(ctx, func(key, value string) bool {
 			return true
 		})
@@ -710,7 +667,7 @@ func TestMemoryCacheClose(t *testing.T) {
 	})
 
 	t.Run("DoubleCloseIsSafe", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 
 		err := cache.Close()
 		require.NoError(t, err)
@@ -720,16 +677,13 @@ func TestMemoryCacheClose(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheGC tests garbage collection.
 func TestMemoryCacheGC(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("GCRemovesExpiredEntries", func(t *testing.T) {
-		// Use short GC interval for testing
-		cache := newTestMemoryCache[string](0, 50*time.Millisecond, EvictionPolicyLRU, 100*time.Millisecond)
+		cache := newTestCache[string](0, 50*time.Millisecond, EvictionPolicyLRU, 100*time.Millisecond)
 		defer cache.Close()
 
-		// Add entries that will expire
 		for i := range 10 {
 			_ = cache.Set(ctx, fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
 		}
@@ -737,34 +691,29 @@ func TestMemoryCacheGC(t *testing.T) {
 		size, _ := cache.Size(ctx)
 		assert.Equal(t, int64(10), size)
 
-		// Wait for expiration and GC
 		time.Sleep(200 * time.Millisecond)
 
-		// Size should be 0 after GC
 		size, _ = cache.Size(ctx)
 		assert.Equal(t, int64(0), size)
 	})
 
 	t.Run("GCDoesNotRemoveNonExpiredEntries", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 1*time.Second, EvictionPolicyLRU, 100*time.Millisecond)
+		cache := newTestCache[string](0, 1*time.Second, EvictionPolicyLRU, 100*time.Millisecond)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
 
-		// Wait for GC cycle but not expiration
 		time.Sleep(150 * time.Millisecond)
 
-		// Entry should still exist
 		assert.True(t, cache.Contains(ctx, "key1"))
 	})
 }
 
-// TestMemoryCacheConcurrency tests concurrent operations.
 func TestMemoryCacheConcurrency(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ConcurrentWrites", func(t *testing.T) {
-		cache := newTestMemoryCache[int](100, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](100, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		var wg sync.WaitGroup
@@ -786,10 +735,9 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 	})
 
 	t.Run("ConcurrentReads", func(t *testing.T) {
-		cache := newTestMemoryCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
-		// Pre-populate
 		for i := range 50 {
 			_ = cache.Set(ctx, fmt.Sprintf("key%d", i), i)
 		}
@@ -810,12 +758,11 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 	})
 
 	t.Run("ConcurrentMixedOperations", func(t *testing.T) {
-		cache := newTestMemoryCache[int](100, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](100, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		var wg sync.WaitGroup
 
-		// Concurrent writes
 		for i := range 50 {
 			wg.Add(1)
 
@@ -827,7 +774,6 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 			}(i)
 		}
 
-		// Concurrent reads
 		for i := range 50 {
 			wg.Add(1)
 
@@ -839,7 +785,6 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 			}(i)
 		}
 
-		// Concurrent deletes
 		for i := range 25 {
 			wg.Add(1)
 
@@ -853,14 +798,13 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 
 		wg.Wait()
 
-		// Should not panic and cache should be in consistent state
 		size, _ := cache.Size(ctx)
 		assert.GreaterOrEqual(t, size, int64(0))
 		assert.LessOrEqual(t, size, int64(100))
 	})
 
 	t.Run("ConcurrentEvictions", func(t *testing.T) {
-		cache := newTestMemoryCache[int](10, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[int](10, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		var wg sync.WaitGroup
@@ -882,15 +826,13 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 	})
 }
 
-// TestMemoryCacheEdgeCases tests edge cases.
 func TestMemoryCacheEdgeCases(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("ZeroMaxSizeMeansUnlimited", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
-		// Should be able to add many entries
 		for i := range 1000 {
 			err := cache.Set(ctx, fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
 			require.NoError(t, err)
@@ -901,20 +843,16 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 	})
 
 	t.Run("UnlimitedSizeForcesNoOpEvictionPolicy", func(t *testing.T) {
-		// Even if we specify LRU, it should be forced to NoOp when maxSize <= 0
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		mc := cache.(*memoryCache[string])
 
-		// Verify that eviction policy was forced to None (NoOp)
 		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
 
-		// Verify that eviction handler is NoOp
 		_, isNoOp := mc.evictionHandler.(*NoOpEvictionHandler)
 		assert.True(t, isNoOp, "eviction handler should be NoOpEvictionHandler when maxSize is unlimited")
 
-		// Should be able to add many entries without eviction
 		for i := range 1000 {
 			err := cache.Set(ctx, fmt.Sprintf("key%d", i), fmt.Sprintf("value%d", i))
 			require.NoError(t, err)
@@ -925,21 +863,19 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 	})
 
 	t.Run("NegativeMaxSizeForcesNoOpEvictionPolicy", func(t *testing.T) {
-		cache := newTestMemoryCache[string](-1, 0, EvictionPolicyLFU, 5*time.Minute)
+		cache := newTestCache[string](-1, 0, EvictionPolicyLFU, 5*time.Minute)
 		defer cache.Close()
 
 		mc := cache.(*memoryCache[string])
 
-		// Verify that eviction policy was forced to None (NoOp)
 		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
 
-		// Verify that eviction handler is NoOp
 		_, isNoOp := mc.evictionHandler.(*NoOpEvictionHandler)
 		assert.True(t, isNoOp, "eviction handler should be NoOpEvictionHandler when maxSize is negative")
 	})
 
 	t.Run("MaxSizeOfOne", func(t *testing.T) {
-		cache := newTestMemoryCache[string](1, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](1, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		_ = cache.Set(ctx, "key1", "value1")
@@ -952,7 +888,7 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 	})
 
 	t.Run("EmptyKey", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		err := cache.Set(ctx, "", "value")
@@ -964,7 +900,7 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 	})
 
 	t.Run("EmptyValue", func(t *testing.T) {
-		cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
 		err := cache.Set(ctx, "key", "")
@@ -977,7 +913,7 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 
 	t.Run("DifferentValueTypes", func(t *testing.T) {
 		t.Run("IntCache", func(t *testing.T) {
-			cache := newTestMemoryCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
+			cache := newTestCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
 			defer cache.Close()
 
 			_ = cache.Set(ctx, "key", 42)
@@ -992,7 +928,7 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 				Name string
 			}
 
-			cache := newTestMemoryCache[User](0, 0, EvictionPolicyLRU, 5*time.Minute)
+			cache := newTestCache[User](0, 0, EvictionPolicyLRU, 5*time.Minute)
 			defer cache.Close()
 
 			user := User{ID: 1, Name: "Alice"}
@@ -1004,7 +940,7 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		})
 
 		t.Run("PointerCache", func(t *testing.T) {
-			cache := newTestMemoryCache[*string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+			cache := newTestCache[*string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 			defer cache.Close()
 
 			str := "test"
@@ -1017,9 +953,8 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 	})
 }
 
-// Benchmark tests.
 func BenchmarkMemoryCacheSet(b *testing.B) {
-	cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+	cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 	defer cache.Close()
 
 	ctx := context.Background()
@@ -1035,7 +970,7 @@ func BenchmarkMemoryCacheSet(b *testing.B) {
 }
 
 func BenchmarkMemoryCacheGet(b *testing.B) {
-	cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+	cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 	defer cache.Close()
 
 	ctx := context.Background()
@@ -1057,7 +992,7 @@ func BenchmarkMemoryCacheGet(b *testing.B) {
 }
 
 func BenchmarkMemoryCacheSetWithEviction(b *testing.B) {
-	cache := newTestMemoryCache[string](100, 0, EvictionPolicyLRU, 5*time.Minute)
+	cache := newTestCache[string](100, 0, EvictionPolicyLRU, 5*time.Minute)
 	defer cache.Close()
 
 	ctx := context.Background()
@@ -1073,12 +1008,11 @@ func BenchmarkMemoryCacheSetWithEviction(b *testing.B) {
 }
 
 func BenchmarkMemoryCacheConcurrent(b *testing.B) {
-	cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+	cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 	defer cache.Close()
 
 	ctx := context.Background()
 
-	// Pre-populate
 	for i := range 1000 {
 		_ = cache.Set(ctx, fmt.Sprintf("key%d", i), "value")
 	}
@@ -1100,12 +1034,11 @@ func BenchmarkMemoryCacheConcurrent(b *testing.B) {
 }
 
 func BenchmarkMemoryCacheSize(b *testing.B) {
-	cache := newTestMemoryCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
+	cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 	defer cache.Close()
 
 	ctx := context.Background()
 
-	// Pre-populate
 	for i := range 1000 {
 		_ = cache.Set(ctx, fmt.Sprintf("key%d", i), "value")
 	}

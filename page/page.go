@@ -22,7 +22,6 @@ type Pageable struct {
 }
 
 // Normalize normalizes the pageable parameters.
-// It sets default values and enforces limits.
 func (p *Pageable) Normalize(size ...int) {
 	if p.Page < 1 {
 		p.Page = DefaultPageNumber

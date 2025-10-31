@@ -2,11 +2,11 @@ package i18n
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"slices"
 
-	"github.com/goccy/go-json"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/samber/lo"
 	"golang.org/x/text/language"
@@ -123,7 +123,6 @@ func IsLanguageSupported(languageCode string) bool {
 	return slices.Contains(supportedLanguages, languageCode)
 }
 
-// SetLanguage sets the global translator to use a specific language.
 // This is primarily intended for testing scenarios where you need to verify translations
 // in different languages without restarting the process.
 //

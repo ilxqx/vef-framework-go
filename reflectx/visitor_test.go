@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test structures for visitor pattern testing.
 type VisitorTestBase struct {
 	BaseValue string
 }
@@ -87,21 +86,18 @@ func TestVisit_DepthFirst(t *testing.T) {
 
 	Visit(reflect.ValueOf(testStruct), visitor)
 
-	// Verify structs are visited in depth-first order
 	expectedStructs := []string{"VisitorTestNested", "VisitorTestEmbedded", "VisitorTestBase", "VisitorTestServices", "VisitorTestLogger", "VisitorTestCache"}
-	assert.Equal(t, expectedStructs, visitedStructs)
+	assert.Equal(t, expectedStructs, visitedStructs, "Structs should be visited in depth-first order")
 
-	// Verify key fields are visited
-	assert.Contains(t, visitedFields, "NestedValue")
-	assert.Contains(t, visitedFields, "EmbeddedValue")
-	assert.Contains(t, visitedFields, "BaseValue")
-	assert.Contains(t, visitedFields, "Services")
-	assert.Contains(t, visitedFields, "Logger")
-	assert.Contains(t, visitedFields, "Cache")
+	assert.Contains(t, visitedFields, "NestedValue", "Should visit NestedValue field")
+	assert.Contains(t, visitedFields, "EmbeddedValue", "Should visit EmbeddedValue field")
+	assert.Contains(t, visitedFields, "BaseValue", "Should visit BaseValue field")
+	assert.Contains(t, visitedFields, "Services", "Should visit Services field")
+	assert.Contains(t, visitedFields, "Logger", "Should visit Logger field")
+	assert.Contains(t, visitedFields, "Cache", "Should visit Cache field")
 
-	// Verify methods are visited
-	assert.Contains(t, visitedMethods, "BaseMethod")
-	assert.Contains(t, visitedMethods, "EmbeddedMethod")
+	assert.Contains(t, visitedMethods, "BaseMethod", "Should visit BaseMethod")
+	assert.Contains(t, visitedMethods, "EmbeddedMethod", "Should visit EmbeddedMethod")
 }
 
 func TestVisit_BreadthFirst(t *testing.T) {
@@ -133,15 +129,12 @@ func TestVisit_BreadthFirst(t *testing.T) {
 
 	Visit(reflect.ValueOf(testStruct), visitor, WithTraversalMode(BreadthFirst))
 
-	// Verify breadth-first ordering: structures at same depth should be visited together
-	require.Len(t, visitedStructs, 6)
-	require.Len(t, depths, 6)
+	require.Len(t, visitedStructs, 6, "Should visit 6 structs total")
+	require.Len(t, depths, 6, "Should record 6 depths")
 
-	// Check that depths are generally non-decreasing (breadth-first property)
-	assert.Equal(t, "VisitorTestNested", visitedStructs[0])
-	assert.Equal(t, 0, depths[0])
+	assert.Equal(t, "VisitorTestNested", visitedStructs[0], "Root struct should be visited first")
+	assert.Equal(t, 0, depths[0], "Root struct should be at depth 0")
 
-	// Find structures at depth 1
 	depth1Structs := []string{}
 
 	for i, depth := range depths {
@@ -150,7 +143,7 @@ func TestVisit_BreadthFirst(t *testing.T) {
 		}
 	}
 
-	assert.Contains(t, depth1Structs, "VisitorTestEmbedded")
+	assert.Contains(t, depth1Structs, "VisitorTestEmbedded", "Embedded struct should be at depth 1")
 }
 
 func TestVisit_MaxDepth(t *testing.T) {
@@ -175,8 +168,7 @@ func TestVisit_MaxDepth(t *testing.T) {
 
 	Visit(reflect.ValueOf(testStruct), visitor, WithMaxDepth(2))
 
-	// Should not visit deeper structures due to MaxDepth
-	assert.NotContains(t, visitedStructs, "VisitorTestLogger")
+	assert.NotContains(t, visitedStructs, "VisitorTestLogger", "Should not visit deeper structures due to MaxDepth")
 }
 
 func TestVisit_StopAction(t *testing.T) {
@@ -200,9 +192,8 @@ func TestVisit_StopAction(t *testing.T) {
 
 	Visit(reflect.ValueOf(testStruct), visitor)
 
-	// Should stop after finding EmbeddedValue
-	assert.Contains(t, visitedFields, "EmbeddedValue")
-	// Verify it actually stopped by checking that later fields are not visited
+	assert.Contains(t, visitedFields, "EmbeddedValue", "Should visit EmbeddedValue before stopping")
+
 	laterFieldFound := false
 	embeddedValueIndex := -1
 
@@ -863,7 +854,6 @@ func TestVisitType_WithNilVisitors(t *testing.T) {
 	var visitedStructs []string
 
 	visitor := TypeVisitor{
-		// Only set VisitStructType, leave others nil
 		VisitStructType: func(structType reflect.Type, depth int) VisitAction {
 			visitedStructs = append(visitedStructs, structType.Name())
 

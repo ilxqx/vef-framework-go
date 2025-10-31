@@ -4,2469 +4,2311 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/page"
 )
 
+// SelectTestSuite tests SELECT operations including basic queries, column selection,
+// joins, subqueries, ordering, pagination, locking, set operations, and execution methods
+// across all databases (PostgreSQL, MySQL, SQLite).
 type SelectTestSuite struct {
 	*OrmTestSuite
 }
 
-// TestBasicSelect tests basic SELECT functionality across all databases.
-func (suite *SelectTestSuite) TestBasicSelect() {
-	suite.T().Logf("Testing basic SELECT for %s", suite.dbType)
+// TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
+func (suite *SelectTestSuite) TestCTE() {
+	suite.T().Logf("Testing CTE methods for %s", suite.DbType)
 
-	// Test 1: Select all users
-	var users []User
-
-	err := suite.db.NewSelect().
-		Model(&users).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(users, 3, "Should have 3 users from fixture")
-
-	// Verify user data matches fixture
-	userEmails := make(map[string]User)
-	for _, user := range users {
-		userEmails[user.Email] = user
-	}
-
-	alice := userEmails["alice@example.com"]
-	suite.Equal("Alice Johnson", alice.Name)
-	suite.Equal(int16(30), alice.Age)
-	suite.True(alice.IsActive)
-
-	bob := userEmails["bob@example.com"]
-	suite.Equal("Bob Smith", bob.Name)
-	suite.Equal(int16(25), bob.Age)
-	suite.True(bob.IsActive)
-
-	charlie := userEmails["charlie@example.com"]
-	suite.Equal("Charlie Brown", charlie.Name)
-	suite.Equal(int16(35), charlie.Age)
-	suite.False(charlie.IsActive)
-
-	// Test 2: Select single user
-	var singleUser User
-
-	err = suite.db.NewSelect().
-		Model(&singleUser).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "alice@example.com")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal("Alice Johnson", singleUser.Name)
-	suite.Equal("alice@example.com", singleUser.Email)
-
-	// Test 3: Count users
-	count, err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		Count(suite.ctx)
-	suite.NoError(err)
-	suite.Equal(int64(3), count)
-
-	// Test 4: Check existence
-	exists, err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "alice@example.com")
-		}).
-		Exists(suite.ctx)
-	suite.NoError(err)
-	suite.True(exists)
-
-	// Test 5: Check non-existence
-	notExists, err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "nonexistent@example.com")
-		}).
-		Exists(suite.ctx)
-	suite.NoError(err)
-	suite.False(notExists)
-}
-
-// TestSelectWithConditions tests SELECT with various WHERE conditions.
-func (suite *SelectTestSuite) TestSelectWithConditions() {
-	suite.T().Logf("Testing SELECT with conditions for %s", suite.dbType)
-
-	// Test 1: Equals condition
-	var activeUsers []User
-
-	err := suite.db.NewSelect().
-		Model(&activeUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("is_active", true)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(activeUsers, 2, "Should have 2 active users")
-
-	for _, user := range activeUsers {
-		suite.True(user.IsActive)
-	}
-
-	// Test 2: Greater than condition
-	var olderUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&olderUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.GreaterThan("age", 28)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(olderUsers, 2, "Should have 2 users older than 28")
-
-	for _, user := range olderUsers {
-		suite.True(user.Age > 28)
-	}
-
-	// Test 3: Between condition
-	var middleAgedUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&middleAgedUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Between("age", 25, 30)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(middleAgedUsers, 2, "Should have 2 users between age 25-30")
-
-	for _, user := range middleAgedUsers {
-		suite.True(user.Age >= 25 && user.Age <= 30)
-	}
-
-	// Test 4: IN condition
-	var specificUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&specificUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.In("email", []string{"alice@example.com", "bob@example.com"})
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(specificUsers, 2, "Should have 2 specific users")
-
-	// Test 5: LIKE condition (Contains)
-	var johnsonUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&johnsonUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Contains("name", "Johnson")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(johnsonUsers, 1, "Should have 1 user with Johnson in name")
-	suite.Equal("Alice Johnson", johnsonUsers[0].Name)
-
-	// Test 6: StartsWith condition
-	var aliceUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&aliceUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.StartsWith("name", "Alice")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(aliceUsers, 1, "Should have 1 user starting with Alice")
-	suite.Equal("Alice Johnson", aliceUsers[0].Name)
-
-	// Test 7: Complex AND conditions
-	var complexUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&complexUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.IsTrue("is_active").GreaterThan("age", 26)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(complexUsers, 1, "Should have 1 active user older than 26 (Alice)")
-	userNames := []string{complexUsers[0].Name}
-	suite.Contains(userNames, "Alice Johnson")
-
-	// Test 8: OR conditions
-	var orUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&orUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("age", 25).OrEquals("age", 35)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(orUsers, 2, "Should have 2 users with age 25 or 35")
-}
-
-// TestSelectWithJoins tests SELECT with JOIN operations.
-func (suite *SelectTestSuite) TestSelectWithJoins() {
-	suite.T().Logf("Testing SELECT with JOINs for %s", suite.dbType)
-
-	// Test 1: Select posts with user information
-	var posts []Post
-
-	err := suite.db.NewSelect().
-		Model(&posts).
-		Join((*User)(nil), func(cb ConditionBuilder) {
-			cb.EqualsColumn("u.id", "p.user_id")
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("u.name", "Alice Johnson")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(posts) >= 1, "Should have posts by Alice")
-
-	// Test 2: Select posts with category using relation
-	var postsWithRelation []Post
-
-	err = suite.db.NewSelect().
-		Model(&postsWithRelation).
-		Relation("User").
-		Relation("Category").
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("status", "published")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(postsWithRelation) > 0, "Should have published posts")
-
-	// Verify relations are loaded
-	for _, post := range postsWithRelation {
-		if post.User != nil {
-			suite.NotEmpty(post.User.Name, "User relation should be loaded")
+	suite.Run("WithBasicCTE", func() {
+		type PostWithUser struct {
+			Id       string `bun:"id"`
+			Title    string `bun:"title"`
+			UserName string `bun:"user_name"`
 		}
 
-		if post.Category != nil {
-			suite.NotEmpty(post.Category.Name, "Category relation should be loaded")
-		}
-	}
+		var postsWithUsers []PostWithUser
 
-	// Test 3: Left join with posts and categories
-	var categoriesWithPosts []Category
-
-	err = suite.db.NewSelect().
-		Model(&categoriesWithPosts).
-		LeftJoin((*Post)(nil), func(cb ConditionBuilder) {
-			cb.EqualsColumn("c.id", "p.category_id")
-		}, "p").
-		GroupBy("c.id", "c.name", "c.description").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(categoriesWithPosts) > 0, "Should have categories")
-}
-
-// TestSelectWithAggregation tests SELECT with aggregation functions.
-func (suite *SelectTestSuite) TestSelectWithAggregation() {
-	suite.T().Logf("Testing SELECT with aggregation for %s", suite.dbType)
-
-	// Test 1: Count posts by status
-	type StatusCount struct {
-		Status string `bun:"status"`
-		Count  int64  `bun:"post_count"`
-	}
-
-	var statusCounts []StatusCount
-
-	err := suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("status").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountAll()
-		}, "post_count").
-		GroupBy("status").
-		OrderBy("status").
-		Scan(suite.ctx, &statusCounts)
-	suite.NoError(err)
-	suite.True(len(statusCounts) > 0, "Should have status counts")
-
-	// Verify counts make sense
-	totalCount := int64(0)
-
-	for _, sc := range statusCounts {
-		suite.True(sc.Count > 0, "Each status should have at least 1 post")
-		totalCount += sc.Count
-	}
-
-	// Verify total matches expected post count from fixture
-	expectedPosts := 8 // From fixture.yaml
-	suite.Equal(int64(expectedPosts), totalCount, "Total count should match fixture posts")
-
-	// Test 2: Average age of users
-	type AgeStats struct {
-		AvgAge   float64 `bun:"avg_age"`
-		MinAge   int16   `bun:"min_age"`
-		MaxAge   int16   `bun:"max_age"`
-		CountAge int64   `bun:"count_age"`
-	}
-
-	var ageStats AgeStats
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.AvgColumn("age")
-		}, "avg_age").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.MinColumn("age")
-		}, "min_age").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.MaxColumn("age")
-		}, "max_age").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountColumn("age")
-		}, "count_age").
-		Scan(suite.ctx, &ageStats)
-	suite.NoError(err)
-	suite.Equal(int64(3), ageStats.CountAge, "Should count 3 users")
-	suite.Equal(int16(25), ageStats.MinAge, "Min age should be 25")
-	suite.Equal(int16(35), ageStats.MaxAge, "Max age should be 35")
-	suite.InDelta(30.0, ageStats.AvgAge, 1.0, "Average age should be around 30")
-
-	// Test 3: Sum of view counts
-	type ViewStats struct {
-		TotalViews int64   `bun:"total_views"`
-		AvgViews   float64 `bun:"avg_views"`
-	}
-
-	var viewStats ViewStats
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.SumColumn("view_count")
-		}, "total_views").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.AvgColumn("view_count")
-		}, "avg_views").
-		Scan(suite.ctx, &viewStats)
-	suite.NoError(err)
-	suite.True(viewStats.TotalViews > 0, "Should have total views")
-	suite.True(viewStats.AvgViews > 0, "Should have average views")
-}
-
-// TestSelectWithSubQueries tests SELECT with subquery conditions.
-func (suite *SelectTestSuite) TestSelectWithSubQueries() {
-	suite.T().Logf("Testing SELECT with subqueries for %s", suite.dbType)
-
-	// Test 1: Users who have published posts
-	var usersWithPublishedPosts []User
-
-	err := suite.db.NewSelect().
-		Model(&usersWithPublishedPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.InSubQuery("id", func(subquery SelectQuery) {
-				subquery.Model((*Post)(nil)).
-					Select("user_id").
+		err := suite.Db.NewSelect().
+			With("active_users", func(query SelectQuery) {
+				query.Model((*User)(nil)).
+					Select("id", "name").
 					Where(func(cb ConditionBuilder) {
-						cb.Equals("status", "published")
+						cb.IsTrue("is_active")
 					})
-			})
-		}).
-		OrderBy("name").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(usersWithPublishedPosts) > 0, "Should have users with published posts")
-
-	// Test 2: Posts with above average view count
-	var popularPosts []Post
-
-	err = suite.db.NewSelect().
-		Model(&popularPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.GreaterThanSubQuery("view_count", func(subquery SelectQuery) {
-				subquery.Model((*Post)(nil)).
-					SelectExpr(func(eb ExprBuilder) any {
-						return eb.AvgColumn("view_count")
-					})
-			})
-		}).
-		OrderByDesc("view_count").
-		Scan(suite.ctx)
-	suite.NoError(err)
-
-	if len(popularPosts) > 0 {
-		// Verify posts are actually above average
-		var avgViewCount float64
-
-		err = suite.db.NewSelect().
-			Model((*Post)(nil)).
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.AvgColumn("view_count")
 			}).
-			Scan(suite.ctx, &avgViewCount)
-		suite.NoError(err)
+			Model((*Post)(nil)).
+			Select("p.id", "p.title").
+			SelectAs("u.name", "user_name").
+			Join((*User)(nil), func(cb ConditionBuilder) {
+				cb.EqualsColumn("u.id", "p.user_id")
+			}, "u").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("p.title").
+			Limit(3).
+			Scan(suite.Ctx, &postsWithUsers)
 
-		for _, post := range popularPosts {
-			suite.True(float64(post.ViewCount) > avgViewCount,
-				"Post %s should have above average view count", post.Title)
+		suite.NoError(err, "WITH clause should work correctly")
+		suite.True(len(postsWithUsers) > 0, "Should return posts with user information")
+
+		for _, post := range postsWithUsers {
+			suite.NotEmpty(post.Id, "ID should not be empty")
+			suite.NotEmpty(post.Title, "Title should not be empty")
+			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
 		}
-	}
+	})
 
-	// Test 3: Categories with posts
-	var categoriesWithPosts []Category
-
-	err = suite.db.NewSelect().
-		Model(&categoriesWithPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.InSubQuery("id", func(subquery SelectQuery) {
-				subquery.Model((*Post)(nil)).
-					Select("category_id").
-					Distinct()
-			})
-		}).
-		OrderBy("name").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(categoriesWithPosts) > 0, "Should have categories with posts")
-}
-
-// TestSelectWithOrderingAndLimits tests SELECT with ORDER BY and LIMIT clauses.
-func (suite *SelectTestSuite) TestSelectWithOrderingAndLimits() {
-	suite.T().Logf("Testing SELECT with ordering and limits for %s", suite.dbType)
-
-	// Test 1: Order by age ascending
-	var usersByAge []User
-
-	err := suite.db.NewSelect().
-		Model(&usersByAge).
-		OrderBy("age").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(usersByAge, 3)
-	suite.True(usersByAge[0].Age <= usersByAge[1].Age)
-	suite.True(usersByAge[1].Age <= usersByAge[2].Age)
-
-	// Test 2: Order by age descending
-	var usersByAgeDesc []User
-
-	err = suite.db.NewSelect().
-		Model(&usersByAgeDesc).
-		OrderByDesc("age").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(usersByAgeDesc, 3)
-	suite.True(usersByAgeDesc[0].Age >= usersByAgeDesc[1].Age)
-	suite.True(usersByAgeDesc[1].Age >= usersByAgeDesc[2].Age)
-
-	// Test 3: Limit results
-	var limitedUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&limitedUsers).
-		OrderBy("age").
-		Limit(2).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(limitedUsers, 2, "Should return only 2 users")
-
-	// Test 4: Order by multiple columns
-	var postsByStatusAndViews []Post
-
-	err = suite.db.NewSelect().
-		Model(&postsByStatusAndViews).
-		OrderBy("status").
-		OrderByDesc("view_count").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(postsByStatusAndViews) > 0, "Should have posts ordered by status and view count")
-
-	// Test 5: Offset and Limit (pagination)
-	var paginatedUsers []User
-
-	err = suite.db.NewSelect().
-		Model(&paginatedUsers).
-		OrderBy("age").
-		Offset(1).
-		Limit(2).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(paginatedUsers, 2, "Should return 2 users with offset")
-
-	// Verify offset worked by comparing with full result
-	if len(usersByAge) >= 3 {
-		suite.Equal(usersByAge[1].Id, paginatedUsers[0].Id, "First paginated user should match second from full result")
-	}
-}
-
-// TestSelectSpecificColumns tests selecting specific columns.
-func (suite *SelectTestSuite) TestSelectSpecificColumns() {
-	suite.T().Logf("Testing SELECT with specific columns for %s", suite.dbType)
-
-	// Test 1: Select only specific columns
-	type UserBasic struct {
-		Id    string `bun:"id"`
-		Name  string `bun:"name"`
-		Email string `bun:"email"`
-	}
-
-	var basicUsers []UserBasic
-
-	err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("id", "name", "email").
-		OrderBy("name").
-		Scan(suite.ctx, &basicUsers)
-	suite.NoError(err)
-	suite.Len(basicUsers, 3)
-
-	for _, user := range basicUsers {
-		suite.NotEmpty(user.Id, "ID should be populated")
-		suite.NotEmpty(user.Name, "Name should be populated")
-		suite.NotEmpty(user.Email, "Email should be populated")
-	}
-
-	// Test 2: Select with expression (calculated field)
-	type UserWithAge struct {
-		Name    string `bun:"name"`
-		Age     int16  `bun:"age"`
-		AgeDesc string `bun:"age_desc"`
-	}
-
-	var usersWithAgeDesc []UserWithAge
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name", "age").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Concat("'Age: '", "age")
-		}, "age_desc").
-		OrderBy("name").
-		Scan(suite.ctx, &usersWithAgeDesc)
-	suite.NoError(err)
-	suite.Len(usersWithAgeDesc, 3)
-
-	for _, user := range usersWithAgeDesc {
-		suite.NotEmpty(user.AgeDesc, "Age description should be calculated")
-		suite.Contains(user.AgeDesc, "Age:", "Age description should contain 'Age:'")
-	}
-
-	// Test 3: Select distinct values
-	var distinctStatuses []string
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Distinct().
-		Select("status").
-		OrderBy("status").
-		Scan(suite.ctx, &distinctStatuses)
-	suite.NoError(err)
-	suite.True(len(distinctStatuses) > 0, "Should have distinct statuses")
-
-	// Verify distinctness
-	seen := make(map[string]bool)
-	for _, status := range distinctStatuses {
-		suite.False(seen[status], "Status %s should appear only once", status)
-		seen[status] = true
-	}
-}
-
-// TestSelectWithComplexConditions tests complex WHERE conditions.
-func (suite *SelectTestSuite) TestSelectWithComplexConditions() {
-	suite.T().Logf("Testing SELECT with complex conditions for %s", suite.dbType)
-
-	// Test 1: Nested conditions with groups
-	var complexUsers []User
-
-	err := suite.db.NewSelect().
-		Model(&complexUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("is_active", true).Group(func(innerCb ConditionBuilder) {
-				innerCb.LessThan("age", 30).OrGreaterThan("age", 32)
-			})
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-
-	// Should match: active users with age < 30 OR age > 32
-	for _, user := range complexUsers {
-		suite.True(user.IsActive, "User should be active")
-		suite.True(user.Age < 30 || user.Age > 32, "User age should be < 30 or > 32")
-	}
-
-	// Test 2: NOT conditions
-	var notCharlie []User
-
-	err = suite.db.NewSelect().
-		Model(&notCharlie).
-		Where(func(cb ConditionBuilder) {
-			cb.NotEquals("name", "Charlie Brown")
-		}).
-		OrderBy("name").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(notCharlie, 2, "Should have 2 users not named Charlie Brown")
-
-	for _, user := range notCharlie {
-		suite.NotEqual("Charlie Brown", user.Name, "User should not be Charlie Brown")
-	}
-
-	// Test 3: NULL checks
-	var postsWithDescription []Post
-
-	err = suite.db.NewSelect().
-		Model(&postsWithDescription).
-		Where(func(cb ConditionBuilder) {
-			cb.IsNotNull("description")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-
-	for _, post := range postsWithDescription {
-		suite.NotNil(post.Description, "Description should not be null")
-		suite.NotEmpty(*post.Description, "Description should not be empty")
-	}
-
-	// Test 4: Multiple NOT IN conditions
-	var filteredPosts []Post
-
-	err = suite.db.NewSelect().
-		Model(&filteredPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.NotIn("status", []string{"draft"}).
-				NotContains("title", "Test")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-
-	for _, post := range filteredPosts {
-		suite.NotEqual("draft", post.Status, "Post should not be draft")
-		suite.NotContains(post.Title, "Test", "Post title should not contain 'Test'")
-	}
-}
-
-// TestSelectWithWindowFunctions tests SELECT with window functions.
-func (suite *SelectTestSuite) TestSelectWithWindowFunctions() {
-	suite.T().Logf("Testing SELECT with window functions for %s", suite.dbType)
-
-	// Test 1: ROW_NUMBER window function
-	type UserWithRowNumber struct {
-		Id     string `bun:"id"`
-		Name   string `bun:"name"`
-		Age    int16  `bun:"age"`
-		RowNum int64  `bun:"row_num"`
-	}
-
-	var usersWithRowNum []UserWithRowNumber
-
-	err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("id", "name", "age").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.RowNumber(func(rn RowNumberBuilder) {
-				rn.Over().OrderBy("age")
-			})
-		}, "row_num").
-		OrderBy("age").
-		Scan(suite.ctx, &usersWithRowNum)
-	suite.NoError(err)
-	suite.Len(usersWithRowNum, 3)
-
-	// Verify ROW_NUMBER sequence
-	for i, user := range usersWithRowNum {
-		suite.Equal(int64(i+1), user.RowNum, "ROW_NUMBER should be sequential")
-	}
-
-	// Test 2: RANK and DENSE_RANK window functions
-	type PostWithRank struct {
-		Id        string `bun:"id"`
-		Title     string `bun:"title"`
-		Status    string `bun:"status"`
-		ViewCount int64  `bun:"view_count"`
-		Rank      int64  `bun:"rank"`
-		DenseRank int64  `bun:"dense_rank"`
-	}
-
-	var postsWithRank []PostWithRank
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("id", "title", "status", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Rank(func(r RankBuilder) {
-				r.Over().PartitionBy("status").OrderByDesc("view_count")
-			})
-		}, "rank").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.DenseRank(func(dr DenseRankBuilder) {
-				dr.Over().PartitionBy("status").OrderByDesc("view_count")
-			})
-		}, "dense_rank").
-		OrderBy("status").
-		OrderByDesc("view_count").
-		Scan(suite.ctx, &postsWithRank)
-	suite.NoError(err)
-	suite.True(len(postsWithRank) > 0, "Should have posts with rank")
-
-	// Verify ranking within partitions
-	statusGroups := make(map[string][]PostWithRank)
-	for _, post := range postsWithRank {
-		statusGroups[post.Status] = append(statusGroups[post.Status], post)
-	}
-
-	for status, posts := range statusGroups {
-		if len(posts) > 1 {
-			// Verify ranks are assigned correctly within each status partition
-			suite.True(posts[0].Rank >= 1, "First post in %s partition should have rank >= 1", status)
-			suite.True(posts[0].DenseRank >= 1, "First post in %s partition should have dense_rank >= 1", status)
+	suite.Run("WithValuesCTE", func() {
+		type StatusValue struct {
+			Status string `bun:"status"`
 		}
-	}
 
-	// Test 3: Aggregate window functions (SUM, AVG, COUNT)
-	type UserWithAggregates struct {
-		Name         string  `bun:"name"`
-		Age          int16   `bun:"age"`
-		RunningTotal int64   `bun:"running_total"`
-		MovingAvg    float64 `bun:"moving_avg"`
-		RunningCount int64   `bun:"running_count"`
-	}
-
-	var usersWithAggregates []UserWithAggregates
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name", "age").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.WSum(func(ws WindowSumBuilder) {
-				ws.Column("age").Over().OrderBy("age").Rows().UnboundedPreceding()
-			})
-		}, "running_total").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.WAvg(func(wa WindowAvgBuilder) {
-				wa.Column("age").Over().OrderBy("age").Rows().UnboundedPreceding()
-			})
-		}, "moving_avg").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.WCount(func(wc WindowCountBuilder) {
-				wc.All().Over().OrderBy("age").Rows().UnboundedPreceding()
-			})
-		}, "running_count").
-		OrderBy("age").
-		Scan(suite.ctx, &usersWithAggregates)
-	suite.NoError(err)
-	suite.Len(usersWithAggregates, 3)
-
-	// Verify running totals and counts
-	for i, user := range usersWithAggregates {
-		suite.Equal(int64(i+1), user.RunningCount, "Running count should increment by 1")
-		suite.True(user.RunningTotal > 0, "Running total should be positive")
-		suite.True(user.MovingAvg > 0, "Moving average should be positive")
-	}
-
-	// Test 4: LAG and LEAD window functions
-	type PostWithLagLead struct {
-		Title         string `bun:"title"`
-		ViewCount     int64  `bun:"view_count"`
-		PrevViewCount *int64 `bun:"prev_view_count"`
-		NextViewCount *int64 `bun:"next_view_count"`
-	}
-
-	var postsWithLagLead []PostWithLagLead
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Lag(func(lb LagBuilder) {
-				lb.Column("view_count").Over().OrderBy("view_count")
-			})
-		}, "prev_view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Lead(func(lb LeadBuilder) {
-				lb.Column("view_count").Over().OrderBy("view_count")
-			})
-		}, "next_view_count").
-		OrderBy("view_count").
-		Scan(suite.ctx, &postsWithLagLead)
-	suite.NoError(err)
-	suite.True(len(postsWithLagLead) > 0, "Should have posts with lag/lead")
-
-	// Verify LAG/LEAD behavior
-	if len(postsWithLagLead) > 0 {
-		// First row should have null prev_view_count
-		suite.Nil(postsWithLagLead[0].PrevViewCount, "First row should have null previous value")
-		// Last row should have null next_view_count
-		lastIdx := len(postsWithLagLead) - 1
-		suite.Nil(postsWithLagLead[lastIdx].NextViewCount, "Last row should have null next value")
-	}
-
-	// Test 5: FIRST_VALUE and LAST_VALUE window functions
-	type PostWithFirstLast struct {
-		Title         string `bun:"title"`
-		Status        string `bun:"status"`
-		ViewCount     int64  `bun:"view_count"`
-		FirstInStatus int64  `bun:"first_in_status"`
-		LastInStatus  int64  `bun:"last_in_status"`
-	}
-
-	var postsWithFirstLast []PostWithFirstLast
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title", "status", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.FirstValue(func(fvb FirstValueBuilder) {
-				fvb.Column("view_count").Over().PartitionBy("status").OrderBy("view_count")
-			})
-		}, "first_in_status").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.LastValue(func(lvb LastValueBuilder) {
-				lvb.Column("view_count").Over().PartitionBy("status").OrderBy("view_count").Rows().UnboundedPreceding().And().UnboundedFollowing()
-			})
-		}, "last_in_status").
-		OrderBy("status", "view_count").
-		Scan(suite.ctx, &postsWithFirstLast)
-	suite.NoError(err)
-	suite.True(len(postsWithFirstLast) > 0, "Should have posts with first/last values")
-
-	// Verify FIRST_VALUE and LAST_VALUE behavior
-	statusFirstLast := make(map[string][]PostWithFirstLast)
-	for _, post := range postsWithFirstLast {
-		statusFirstLast[post.Status] = append(statusFirstLast[post.Status], post)
-	}
-
-	for status, posts := range statusFirstLast {
-		if len(posts) > 1 {
-			// All posts in same status should have same first_in_status value
-			firstValue := posts[0].FirstInStatus
-
-			lastValue := posts[0].LastInStatus
-			for _, post := range posts {
-				suite.Equal(firstValue, post.FirstInStatus, "All posts in %s should have same first value", status)
-				suite.Equal(lastValue, post.LastInStatus, "All posts in %s should have same last value", status)
-			}
+		type StatusInfo struct {
+			Status string `bun:"status"`
+			Count  int64  `bun:"count"`
 		}
-	}
 
-	// Test 6: NTILE window function for quartiles
-	type UserWithQuartile struct {
-		Name     string `bun:"name"`
-		Age      int16  `bun:"age"`
-		Quartile int64  `bun:"quartile"`
-	}
-
-	var usersWithQuartile []UserWithQuartile
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name", "age").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Ntile(func(nb NtileBuilder) {
-				nb.Buckets(4).Over().OrderBy("age")
-			})
-		}, "quartile").
-		OrderBy("age").
-		Scan(suite.ctx, &usersWithQuartile)
-	suite.NoError(err)
-	suite.Len(usersWithQuartile, 3)
-
-	// Verify quartile assignment (with 3 users, we expect quartiles 1, 2, 3 or similar distribution)
-	for _, user := range usersWithQuartile {
-		suite.True(user.Quartile >= 1 && user.Quartile <= 4, "Quartile should be between 1 and 4")
-	}
-
-	// Test 7: Complex window function with multiple partitions and ordering
-	type PostAnalytics struct {
-		Title           string  `bun:"title"`
-		Status          string  `bun:"status"`
-		ViewCount       int64   `bun:"view_count"`
-		RankInStatus    int64   `bun:"rank_in_status"`
-		PercentOfTotal  float64 `bun:"percent_of_total"`
-		CumulativeViews int64   `bun:"cumulative_views"`
-	}
-
-	var postAnalytics []PostAnalytics
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title", "status", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Rank(func(r RankBuilder) {
-				r.Over().PartitionBy("status").OrderByDesc("view_count")
-			})
-		}, "rank_in_status").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.PercentRank(func(pr PercentRankBuilder) {
-				pr.Over().OrderByDesc("view_count")
-			})
-		}, "percent_of_total").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.WSum(func(ws WindowSumBuilder) {
-				ws.Column("view_count").Over().PartitionBy("status").OrderByDesc("view_count").Rows().UnboundedPreceding()
-			})
-		}, "cumulative_views").
-		OrderBy("status").
-		OrderByDesc("view_count").
-		Scan(suite.ctx, &postAnalytics)
-	suite.NoError(err)
-	suite.True(len(postAnalytics) > 0, "Should have post analytics")
-
-	// Verify complex analytics calculations
-	for _, post := range postAnalytics {
-		suite.True(post.RankInStatus >= 1, "Rank should be at least 1")
-		suite.True(post.PercentOfTotal >= 0 && post.PercentOfTotal <= 1, "Percent rank should be between 0 and 1")
-		suite.True(post.CumulativeViews >= post.ViewCount, "Cumulative views should be at least equal to current view count")
-	}
-}
-
-// TestSelectWithWindowFunctionsAdvanced covers advanced window features.
-func (suite *SelectTestSuite) TestSelectWithWindowFunctionsAdvanced() {
-	suite.T().Logf("Testing advanced window functions for %s", suite.dbType)
-
-	// Test 1: LAG/LEAD with offset and default value
-	type PostWithLagLeadAdvanced struct {
-		Title          string `bun:"title"`
-		ViewCount      int64  `bun:"view_count"`
-		Prev2ViewCount *int64 `bun:"prev2_view_count"`
-		Next2ViewCount *int64 `bun:"next2_view_count"`
-		Next2OrDefault int64  `bun:"next2_or_default"`
-	}
-
-	var advLagLead []PostWithLagLeadAdvanced
-
-	err := suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Lag(func(lb LagBuilder) {
-				lb.Column("view_count").Offset(2).Over().OrderBy("view_count")
-			})
-		}, "prev2_view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Lead(func(lb LeadBuilder) {
-				lb.Column("view_count").Offset(2).Over().OrderBy("view_count")
-			})
-		}, "next2_view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Lead(func(lb LeadBuilder) {
-				lb.Column("view_count").Offset(2).DefaultValue(-1).Over().OrderBy("view_count")
-			})
-		}, "next2_or_default").
-		OrderBy("view_count").
-		Scan(suite.ctx, &advLagLead)
-	suite.NoError(err)
-	suite.True(len(advLagLead) > 0, "Should have posts for advanced lag/lead")
-
-	if len(advLagLead) >= 3 {
-		// The third row's Prev2 should equal the first row's view_count
-		if advLagLead[2].Prev2ViewCount != nil {
-			suite.Equal(advLagLead[0].ViewCount, *advLagLead[2].Prev2ViewCount)
+		statusValues := []StatusValue{
+			{Status: "published"},
+			{Status: "draft"},
+			{Status: "review"},
 		}
-	}
-	// Default value should apply on the last rows where LEAD overflows
-	if len(advLagLead) >= 1 {
-		lastIdx := len(advLagLead) - 1
-		suite.NotZero(advLagLead[lastIdx].Next2OrDefault)
-	}
 
-	// Test 2: Moving average with ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
-	type PostWithMovingAvg struct {
-		Title     string  `bun:"title"`
-		ViewCount int64   `bun:"view_count"`
-		MovAvg    float64 `bun:"mov_avg"`
-	}
+		var statusCounts []StatusInfo
 
-	var movingAvgRows []PostWithMovingAvg
+		err := suite.Db.NewSelect().
+			WithValues("status_values", &statusValues).
+			Select("sv.status").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.CountColumn("p.id")
+			}, "count").
+			Table("status_values", "sv").
+			LeftJoin((*Post)(nil), func(cb ConditionBuilder) {
+				cb.EqualsColumn("sv.status", "p.status")
+			}).
+			GroupBy("sv.status").
+			OrderBy("sv.status").
+			Scan(suite.Ctx, &statusCounts)
 
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.WAvg(func(wab WindowAvgBuilder) {
-				wab.Column("view_count").Over().OrderBy("view_count").Rows().Preceding(2).And().CurrentRow()
-			})
-		}, "mov_avg").
-		OrderBy("view_count").
-		Scan(suite.ctx, &movingAvgRows)
-	suite.NoError(err)
-	suite.True(len(movingAvgRows) > 0, "Should have moving average values")
+		suite.NoError(err, "WITH VALUES should work correctly")
+		suite.True(len(statusCounts) > 0, "Should return status counts")
 
-	// Test 3: NTH_VALUE with full frame (omit FROM to maximize dialect support)
-	type PostWithNthValue struct {
-		Status        string `bun:"status"`
-		ViewCount     int64  `bun:"view_count"`
-		SecondFromEnd int64  `bun:"second_from_end"`
-	}
+		for _, status := range statusCounts {
+			suite.NotEmpty(status.Status, "Status should not be empty")
+			suite.True(status.Count >= 0, "Count should be non-negative")
+			suite.T().Logf("Status %s: %d posts", status.Status, status.Count)
+		}
+	})
 
-	var nthVals []PostWithNthValue
+	suite.Run("WithRecursiveCTE", func() {
+		if suite.DbType == constants.DbSQLite {
+			suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated UNION SQL")
+		}
 
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("status", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.NthValue(func(nvb NthValueBuilder) {
-				nvb.Column("view_count").N(2).Over().PartitionBy("status").OrderBy("view_count").Rows().UnboundedPreceding().And().UnboundedFollowing()
-			})
-		}, "second_from_end").
-		OrderBy("status", "view_count").
-		Scan(suite.ctx, &nthVals)
-	suite.NoError(err)
-	suite.True(len(nthVals) > 0, "Should compute NTH_VALUE from last")
-}
+		type CommentHierarchy struct {
+			Id       string `bun:"id"`
+			Content  string `bun:"content"`
+			ParentId string `bun:"parent_id"`
+			Level    int    `bun:"level"`
+		}
 
-// TestSelectWithWindowFunctionsFromClause validates FROM FIRST/LAST placement.
-func (suite *SelectTestSuite) TestSelectWithWindowFunctionsFromClause() {
-	suite.T().Logf("Testing window functions FROM FIRST/LAST for %s", suite.dbType)
+		var commentTree []CommentHierarchy
 
-	// FROM FIRST/FROM LAST syntax is only supported by Oracle and SQL Server
-	// PostgreSQL, MySQL, and SQLite do not support this syntax
-	suite.T().Skipf("Skip FROM FIRST/LAST tests for %s - not supported by common databases", suite.dbType)
-
-	// Test 1: NTH_VALUE ... FROM FIRST with full frame
-	type PostWithNthFromFirst struct {
-		Status string `bun:"status"`
-		NthVal int64  `bun:"nth_val"`
-	}
-
-	var nthFirst []PostWithNthFromFirst
-
-	err := suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("status").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.NthValue(func(nvb NthValueBuilder) {
-				nvb.Column("view_count").N(1).FromFirst().Over().
-					PartitionBy("status").OrderBy("view_count").
-					Rows().UnboundedPreceding().And().UnboundedFollowing()
-			})
-		}, "nth_val").
-		OrderBy("status").
-		Scan(suite.ctx, &nthFirst)
-	suite.NoError(err)
-	suite.True(len(nthFirst) > 0)
-
-	// Test 2: NTH_VALUE ... FROM LAST with full frame
-	type PostWithNthFromLast struct {
-		Status string `bun:"status"`
-		NthVal int64  `bun:"nth_val"`
-	}
-
-	var nthLast []PostWithNthFromLast
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("status").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.NthValue(func(nvb NthValueBuilder) {
-				nvb.Column("view_count").N(1).FromLast().Over().
-					PartitionBy("status").OrderBy("view_count").
-					Rows().UnboundedPreceding().And().UnboundedFollowing()
-			})
-		}, "nth_val").
-		OrderBy("status").
-		Scan(suite.ctx, &nthLast)
-	suite.NoError(err)
-	suite.True(len(nthLast) > 0)
-}
-
-// TestSelectWithComplexAggregates tests complex aggregate function features.
-func (suite *SelectTestSuite) TestSelectWithComplexAggregates() {
-	suite.T().Logf("Testing complex aggregate functions for %s", suite.dbType)
-
-	// Test 1: FILTER clause (PostgreSQL, SQLite) vs CASE equivalent (MySQL, Oracle, SQL Server)
-	type ConditionalCounts struct {
-		TotalPosts      int64 `bun:"total_posts"`
-		PublishedPosts  int64 `bun:"published_posts"`
-		DraftPosts      int64 `bun:"draft_posts"`
-		ReviewPosts     int64 `bun:"review_posts"`
-		HighViewPosts   int64 `bun:"high_view_posts"`
-		TotalViews      int64 `bun:"total_views"`
-		PublishedViews  int64 `bun:"published_views"`
-		AvgPublishedAge int64 `bun:"avg_published_age"`
-	}
-
-	var conditionalCounts ConditionalCounts
-
-	query := suite.db.NewSelect().
-		Model((*Post)(nil)).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountAll()
-		}, "total_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.SumColumn("view_count")
-		}, "total_views")
-
-	// Test FILTER clause - framework should handle database compatibility internally
-	query.
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Count(func(cb CountBuilder) {
-				cb.All().Filter(func(cb ConditionBuilder) {
-					cb.Equals("status", "published")
-				})
-			})
-		}, "published_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Count(func(cb CountBuilder) {
-				cb.All().Filter(func(cb ConditionBuilder) {
-					cb.Equals("status", "draft")
-				})
-			})
-		}, "draft_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Count(func(cb CountBuilder) {
-				cb.All().Filter(func(cb ConditionBuilder) {
-					cb.Equals("status", "review")
-				})
-			})
-		}, "review_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Count(func(cb CountBuilder) {
-				cb.All().Filter(func(cb ConditionBuilder) {
-					cb.GreaterThan("view_count", 80)
-				})
-			})
-		}, "high_view_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Sum(func(sb SumBuilder) {
-				sb.Column("view_count").Filter(func(cb ConditionBuilder) {
-					cb.Equals("status", "published")
-				})
-			})
-		}, "published_views").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.ToInteger(
-				eb.Avg(func(ab AvgBuilder) {
-					ab.Column("view_count").Filter(func(cb ConditionBuilder) {
-						cb.Equals("status", "published")
+		err := suite.Db.NewSelect().
+			WithRecursive("comment_tree", func(query SelectQuery) {
+				query.Model((*Post)(nil)).
+					Select("id", "category_id", "title", "status").
+					SelectExpr(func(eb ExprBuilder) any {
+						return 0
+					}, "level").
+					Where(func(cb ConditionBuilder) {
+						cb.IsNull("category_id")
+					}).
+					UnionAll(func(unionQuery SelectQuery) {
+						unionQuery.Model((*Post)(nil)).
+							Select("ct.id", "ct.category_id", "ct.title", "ct.status").
+							SelectExpr(func(eb ExprBuilder) any {
+								return eb.Add(eb.Column("ct.level"), 1)
+							}, "level").
+							JoinTable("comment_tree", func(cb ConditionBuilder) {
+								cb.EqualsColumn("category_id", "ct.id")
+							}, "ct")
 					})
-				}),
-			)
-		}, "avg_published_age")
+			}).
+			Table("comment_tree").
+			OrderBy("level", "id").
+			Limit(10).
+			Scan(suite.Ctx, &commentTree)
 
-	err := query.Scan(suite.ctx, &conditionalCounts)
-	suite.NoError(err)
-	suite.True(conditionalCounts.TotalPosts > 0, "Should have posts")
-	suite.True(conditionalCounts.PublishedPosts >= 0, "Should count published posts")
-	suite.True(conditionalCounts.TotalViews > 0, "Should have total views")
+		suite.NoError(err, "WITH RECURSIVE should work when supported")
 
-	// Test 2: DISTINCT aggregates
-	type DistinctStats struct {
-		UniqueStatuses   int64   `bun:"unique_statuses"`
-		UniqueCategories int64   `bun:"unique_categories"`
-		DistinctUserIds  int64   `bun:"distinct_user_ids"`
-		AvgDistinctViews float64 `bun:"avg_distinct_views"`
-	}
-
-	var distinctStats DistinctStats
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountColumn("status", true) // distinct = true
-		}, "unique_statuses").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountColumn("category_id", true)
-		}, "unique_categories").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountColumn("user_id", true)
-		}, "distinct_user_ids").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.AvgColumn("view_count", true) // distinct average
-		}, "avg_distinct_views").
-		Scan(suite.ctx, &distinctStats)
-	suite.NoError(err)
-	suite.True(distinctStats.UniqueStatuses > 0, "Should have unique statuses")
-	suite.True(distinctStats.UniqueCategories > 0, "Should have unique categories")
-	suite.True(distinctStats.AvgDistinctViews > 0, "Should have distinct average")
-
-	// Test 3: String aggregation - framework should handle dialect conversion
-	type StringAggResult struct {
-		StatusList       string `bun:"status_list"`
-		OrderedTitleList string `bun:"ordered_title_list"`
-	}
-
-	var stringAggResult StringAggResult
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.StringAgg(func(sab StringAggBuilder) {
-				sab.Column("status").Separator(", ").Distinct()
-			})
-		}, "status_list").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.StringAgg(func(sab StringAggBuilder) {
-				sab.Column("title").Separator(" | ").OrderBy("view_count")
-			})
-		}, "ordered_title_list").
-		Scan(suite.ctx, &stringAggResult)
-	suite.NoError(err)
-	suite.NotEmpty(stringAggResult.StatusList, "Should aggregate distinct statuses")
-	suite.NotEmpty(stringAggResult.OrderedTitleList, "Should aggregate ordered titles")
-	suite.T().Logf("Status list: %s", stringAggResult.StatusList)
-	suite.T().Logf("Ordered title list: %s", stringAggResult.OrderedTitleList)
-
-	// Test 4: Array aggregation - framework should handle database compatibility
-	type ArrayAggResult struct {
-		ViewCountArray []int64  `bun:"view_count_array,array"`
-		OrderedTitles  []string `bun:"ordered_titles,array"`
-		UniqueStatuses []string `bun:"unique_statuses,array"`
-	}
-
-	var arrayAggResult ArrayAggResult
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.ArrayAgg(func(aab ArrayAggBuilder) {
-				aab.Column("view_count").OrderByDesc("view_count")
-			})
-		}, "view_count_array").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.ArrayAgg(func(aab ArrayAggBuilder) {
-				aab.Column("title").OrderBy("title")
-			})
-		}, "ordered_titles").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.ArrayAgg(func(aab ArrayAggBuilder) {
-				aab.Column("status").Distinct().OrderBy("status")
-			})
-		}, "unique_statuses").
-		Scan(suite.ctx, &arrayAggResult)
-	suite.NoError(err)
-	suite.True(len(arrayAggResult.ViewCountArray) > 0, "Should have view count array")
-	suite.True(len(arrayAggResult.OrderedTitles) > 0, "Should have ordered titles")
-	suite.True(len(arrayAggResult.UniqueStatuses) > 0, "Should have unique statuses")
-
-	// Verify ordering (skip for MySQL and SQLite due to database limitations)
-	if suite.dbType != constants.DbMySQL && suite.dbType != constants.DbSQLite {
-		for i := 1; i < len(arrayAggResult.ViewCountArray); i++ {
-			suite.True(arrayAggResult.ViewCountArray[i-1] >= arrayAggResult.ViewCountArray[i],
-				"View counts should be in descending order")
+		for _, comment := range commentTree {
+			suite.NotEmpty(comment.Id, "Comment ID should not be empty")
+			suite.True(comment.Level >= 0, "Level should be non-negative")
+			suite.T().Logf("Comment level %d: %s", comment.Level, comment.Content)
 		}
-	}
-
-	// Test 5: JSON functions - using simple JSON array creation
-	type JsonResult struct {
-		SimpleArray string `bun:"simple_array"`
-	}
-
-	var jsonResult JsonResult
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonArray(eb.Column("id"), eb.Column("title"), eb.Column("status"))
-		}, "simple_array").
-		Limit(1).
-		Scan(suite.ctx, &jsonResult)
-	suite.NoError(err)
-	suite.NotEmpty(jsonResult.SimpleArray, "Should have JSON array")
-	suite.T().Logf("Simple JSON Array: %s", jsonResult.SimpleArray)
-
-	// Test 6: Complex GROUP BY with multiple conditional aggregates
-	type CategoryStats struct {
-		CategoryName   string  `bun:"category_name"`
-		TotalPosts     int64   `bun:"total_posts"`
-		PublishedPosts int64   `bun:"published_posts"`
-		DraftPosts     int64   `bun:"draft_posts"`
-		TotalViews     int64   `bun:"total_views"`
-		PublishedViews int64   `bun:"published_views"`
-		AvgViews       float64 `bun:"avg_views"`
-		MaxViews       int64   `bun:"max_views"`
-		MinViews       int64   `bun:"min_views"`
-	}
-
-	var categoryStats []CategoryStats
-
-	categoryQuery := suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Join((*Category)(nil), func(cb ConditionBuilder) {
-			cb.EqualsColumn("c.id", "category_id")
-		}).
-		SelectAs("c.name", "category_name").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountAll()
-		}, "total_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.SumColumn("view_count")
-		}, "total_views").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.AvgColumn("view_count")
-		}, "avg_views").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.MaxColumn("view_count")
-		}, "max_views").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.MinColumn("view_count")
-		}, "min_views").
-		GroupBy("c.id", "c.name").
-		OrderBy("c.name")
-
-	// Add conditional aggregates - framework should handle database compatibility
-	categoryQuery = categoryQuery.
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Count(func(cb CountBuilder) {
-				cb.All().Filter(func(cb ConditionBuilder) {
-					cb.Equals("status", "published")
-				})
-			})
-		}, "published_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Count(func(cb CountBuilder) {
-				cb.All().Filter(func(cb ConditionBuilder) {
-					cb.Equals("status", "draft")
-				})
-			})
-		}, "draft_posts").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Sum(func(sb SumBuilder) {
-				sb.Column("p.view_count").Filter(func(cb ConditionBuilder) {
-					cb.Equals("status", "published")
-				})
-			})
-		}, "published_views")
-
-	err = categoryQuery.Scan(suite.ctx, &categoryStats)
-	suite.NoError(err)
-	suite.True(len(categoryStats) > 0, "Should have category statistics")
-
-	for _, stat := range categoryStats {
-		suite.NotEmpty(stat.CategoryName, "Category name should not be empty")
-		suite.True(stat.TotalPosts > 0, "Each category should have posts")
-		suite.True(stat.TotalViews >= 0, "Total views should be non-negative")
-		suite.True(stat.PublishedViews >= 0, "Published views should be non-negative")
-		suite.True(stat.PublishedPosts >= 0, "Published posts should be non-negative")
-		suite.True(stat.DraftPosts >= 0, "Draft posts should be non-negative")
-		suite.True(stat.PublishedPosts+stat.DraftPosts <= stat.TotalPosts, "Published + Draft should not exceed total")
-		suite.T().Logf("Category %s: %d posts (%d published, %d draft), %d total views (%d published views)",
-			stat.CategoryName, stat.TotalPosts, stat.PublishedPosts, stat.DraftPosts,
-			stat.TotalViews, stat.PublishedViews)
-	}
+	})
 }
 
-// TestSelectWithJsonFunctions tests JSON functions and operations.
-func (suite *SelectTestSuite) TestSelectWithJsonFunctions() {
-	suite.T().Logf("Testing JSON functions for %s", suite.dbType)
+// TestSelectAll tests SelectAll method.
+func (suite *SelectTestSuite) TestSelectAll() {
+	suite.T().Logf("Testing SelectAll for %s", suite.DbType)
 
-	// Test 1: JSON_OBJECT creation
-	type JsonObjectResult struct {
-		Id         string `bun:"id"`
-		Name       string `bun:"name"`
-		UserObject string `bun:"user_object"`
-	}
+	suite.Run("SelectAllUsers", func() {
+		var users []User
 
-	var jsonObjectResults []JsonObjectResult
+		err := suite.Db.NewSelect().
+			Model(&users).
+			SelectAll().
+			OrderBy("name").
+			Limit(3).
+			Scan(suite.Ctx)
 
-	err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("id", "name").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("user_id", eb.Column("id"), "user_name", eb.Column("name"), "user_age", eb.Column("age"), "is_active", eb.Column("is_active"))
-		}, "user_object").
-		OrderBy("name").
-		Scan(suite.ctx, &jsonObjectResults)
-	suite.NoError(err)
-	suite.True(len(jsonObjectResults) > 0, "Should have JSON object results")
+		suite.NoError(err, "SelectAll should work correctly")
+		suite.Len(users, 3, "Should return 3 users")
 
-	for _, result := range jsonObjectResults {
-		suite.NotEmpty(result.UserObject, "User object should not be empty")
-		suite.Contains(result.UserObject, result.Id, "JSON should contain user ID")
-		suite.Contains(result.UserObject, result.Name, "JSON should contain user name")
-		suite.T().Logf("User %s JSON: %s", result.Name, result.UserObject)
-	}
-
-	// Test 2: JSON_ARRAY creation
-	type JsonArrayResult struct {
-		PostId    string `bun:"post_id"`
-		JsonArray string `bun:"json_array"`
-	}
-
-	var jsonArrayResults []JsonArrayResult
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("id").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonArray(eb.Column("title"), eb.Column("status"), eb.Column("view_count"))
-		}, "json_array").
-		OrderBy("title").
-		Limit(3).
-		Scan(suite.ctx, &jsonArrayResults)
-	suite.NoError(err)
-	suite.True(len(jsonArrayResults) > 0, "Should have JSON array results")
-
-	for _, result := range jsonArrayResults {
-		suite.NotEmpty(result.JsonArray, "JSON array should not be empty")
-		suite.T().Logf("Post %s JSON Array: %s", result.PostId, result.JsonArray)
-	}
-
-	// Test 3: JSON path extraction
-	type JsonExtractResult struct {
-		Title       string `bun:"title"`
-		MetaJson    string `bun:"meta_json"`
-		ExtractedId string `bun:"extracted_id"`
-	}
-
-	var jsonExtractResults []JsonExtractResult
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("post_id", eb.Column("id"), "title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
-		}, "meta_json").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonExtract(eb.JsonObject("id", eb.Column("id")), "$.id")
-		}, "extracted_id").
-		OrderBy("title").
-		Limit(3).
-		Scan(suite.ctx, &jsonExtractResults)
-	suite.NoError(err)
-	suite.True(len(jsonExtractResults) > 0, "Should have JSON extract results")
-
-	for _, result := range jsonExtractResults {
-		suite.NotEmpty(result.MetaJson, "Meta JSON should not be empty")
-		suite.NotEmpty(result.ExtractedId, "Extracted ID should not be empty")
-		suite.T().Logf("Post %s Meta: %s, Extracted ID: %s", result.Title, result.MetaJson, result.ExtractedId)
-	}
-
-	// Test 4: JSON validation and type checking
-	type JsonValidationResult struct {
-		Title    string `bun:"title"`
-		JsonData string `bun:"json_data"`
-		IsValid  bool   `bun:"is_valid"`
-	}
-
-	var jsonValidResults []JsonValidationResult
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
-		}, "json_data").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonValid(eb.JsonObject("test", eb.Column("title")))
-		}, "is_valid").
-		OrderBy("title").
-		Limit(2).
-		Scan(suite.ctx, &jsonValidResults)
-	suite.NoError(err)
-	suite.True(len(jsonValidResults) > 0, "Should have JSON validation results")
-
-	for _, result := range jsonValidResults {
-		suite.NotEmpty(result.JsonData, "JSON data should not be empty")
-		suite.True(result.IsValid, "JSON should be valid")
-		suite.T().Logf("Post %s: Valid: %t, Data: %s",
-			result.Title, result.IsValid, result.JsonData)
-	}
-
-	// Test 5: JSON modification functions
-	type JsonModifyResult struct {
-		Title       string `bun:"title"`
-		Original    string `bun:"original"`
-		WithInsert  string `bun:"with_insert"`
-		WithReplace string `bun:"with_replace"`
-	}
-
-	var jsonModifyResults []JsonModifyResult
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"))
-		}, "original").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonInsert(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.status", eb.Column("status"))
-		}, "with_insert").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.JsonReplace(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.views", 9999)
-		}, "with_replace").
-		OrderBy("title").
-		Limit(2).
-		Scan(suite.ctx, &jsonModifyResults)
-	suite.NoError(err)
-	suite.True(len(jsonModifyResults) > 0, "Should have JSON modify results")
-
-	for _, result := range jsonModifyResults {
-		suite.NotEmpty(result.Original, "Original JSON should not be empty")
-		suite.NotEmpty(result.WithInsert, "JSON with insert should not be empty")
-		suite.NotEmpty(result.WithReplace, "JSON with replace should not be empty")
-		suite.T().Logf("Post %s modifications:", result.Title)
-		suite.T().Logf("  Original: %s", result.Original)
-		suite.T().Logf("  With Insert: %s", result.WithInsert)
-		suite.T().Logf("  With Replace: %s", result.WithReplace)
-	}
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.Name, "Name should be populated")
+			suite.NotEmpty(user.Email, "Email should be populated")
+			suite.T().Logf("User: ID=%s, Name=%s, Email=%s", user.Id, user.Name, user.Email)
+		}
+	})
 }
 
-// TestSelectWithDecodeExpressions tests expr.Decode functionality for conditional expressions.
-func (suite *SelectTestSuite) TestSelectWithDecodeExpressions() {
-	suite.T().Logf("Testing Decode expressions for %s", suite.dbType)
+// TestSelectAndSelectAs tests Select and SelectAs methods.
+func (suite *SelectTestSuite) TestSelectAndSelectAs() {
+	suite.T().Logf("Testing Select and SelectAs for %s", suite.DbType)
 
-	// Test 1: Simple DECODE for status mapping
-	type DecodeStatusResult struct {
-		Title      string `bun:"title"`
-		Status     string `bun:"status"`
-		StatusDesc string `bun:"status_desc"`
-		StatusPrio int64  `bun:"status_priority"`
-	}
-
-	var decodeStatusResults []DecodeStatusResult
-
-	err := suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title", "status").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Decode(eb.Column("status"), "published", "Published Article", "draft", "Draft Article", "review", "Under Review", "Unknown Status")
-		}, "status_desc").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Decode(eb.Column("status"), "published", 1, "review", 2, "draft", 3, 99)
-		}, "status_priority").
-		OrderBy("title").
-		Scan(suite.ctx, &decodeStatusResults)
-	suite.NoError(err)
-	suite.True(len(decodeStatusResults) > 0, "Should have decode status results")
-
-	for _, result := range decodeStatusResults {
-		suite.NotEmpty(result.StatusDesc, "Status description should not be empty")
-		suite.True(result.StatusPrio > 0, "Status priority should be positive")
-
-		// Verify mapping correctness
-		switch result.Status {
-		case "published":
-			suite.Equal("Published Article", result.StatusDesc)
-			suite.Equal(int64(1), result.StatusPrio)
-		case "draft":
-			suite.Equal("Draft Article", result.StatusDesc)
-			suite.Equal(int64(3), result.StatusPrio)
-		case "review":
-			suite.Equal("Under Review", result.StatusDesc)
-			suite.Equal(int64(2), result.StatusPrio)
-		default:
-			suite.Equal("Unknown Status", result.StatusDesc)
-			suite.Equal(int64(99), result.StatusPrio)
+	suite.Run("SelectSpecificColumns", func() {
+		type UserBasic struct {
+			Id    string `bun:"id"`
+			Name  string `bun:"name"`
+			Email string `bun:"email"`
 		}
 
-		suite.T().Logf("Post %s: %s -> %s (Priority: %d)",
-			result.Title, result.Status, result.StatusDesc, result.StatusPrio)
-	}
+		var users []UserBasic
 
-	// Test 2: Simple DECODE with Case expression
-	type DecodeSimpleResult struct {
-		Title     string `bun:"title"`
-		ViewCount int    `bun:"view_count"`
-		Category  string `bun:"category"`
-	}
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("id", "name", "email").
+			OrderBy("name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
 
-	var decodeSimpleResults []DecodeSimpleResult
+		suite.NoError(err, "Select with specific columns should work")
+		suite.Len(users, 2, "Should return 2 users")
 
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("title", "view_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.When(func(cb ConditionBuilder) {
-					cb.GreaterThan("view_count", 80)
-				}).Then("Popular").
-					When(func(cb ConditionBuilder) {
-						cb.GreaterThan("view_count", 30)
-					}).Then("Moderate").
-					Else("Low")
-			})
-		}, "category").
-		OrderBy("title").
-		Scan(suite.ctx, &decodeSimpleResults)
-	suite.NoError(err)
-	suite.True(len(decodeSimpleResults) > 0, "Should have decode results")
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.Name, "Name should be populated")
+			suite.NotEmpty(user.Email, "Email should be populated")
+			suite.T().Logf("User: ID=%s, Name=%s, Email=%s", user.Id, user.Name, user.Email)
+		}
+	})
 
-	for _, result := range decodeSimpleResults {
-		suite.NotEmpty(result.Category, "Category should not be empty")
-		suite.T().Logf("Post %s: %d views -> %s", result.Title, result.ViewCount, result.Category)
-	}
+	suite.Run("SelectWithAlias", func() {
+		type PostWithAlias struct {
+			Id          string `bun:"id"`
+			Title       string `bun:"title"`
+			PostStatus  string `bun:"post_status"`
+			ViewDisplay string `bun:"view_display"`
+		}
+
+		var posts []PostWithAlias
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectAs("status", "post_status").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Concat("Views: ", eb.Column("view_count"))
+			}, "view_display").
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "SelectAs should work correctly")
+		suite.True(len(posts) > 0, "Should return posts")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.Title, "Title should be populated")
+			suite.NotEmpty(post.PostStatus, "Status should be populated")
+			suite.Contains(post.ViewDisplay, "Views:", "View display should contain prefix")
+			suite.T().Logf("Post: %s (Status: %s, %s)", post.Title, post.PostStatus, post.ViewDisplay)
+		}
+	})
 }
 
-// TestSelectWithJoinRelations tests SELECT with JoinRelations method using RelationSpec.
-func (suite *SelectTestSuite) TestSelectWithJoinRelations() {
-	suite.T().Logf("Testing SELECT with JoinRelations for %s", suite.dbType)
+// TestSelectExpr tests SelectExpr method.
+func (suite *SelectTestSuite) TestSelectExpr() {
+	suite.T().Logf("Testing SelectExpr for %s", suite.DbType)
 
-	// Test 1: Basic LEFT JOIN using RelationSpec with default settings
+	suite.Run("SelectExpression", func() {
+		type PostWithCalculated struct {
+			Id         string `bun:"id"`
+			Title      string `bun:"title"`
+			StatusDesc string `bun:"status_desc"`
+			ViewRange  string `bun:"view_range"`
+		}
+
+		var posts []PostWithCalculated
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(func(cond ConditionBuilder) {
+						cond.Equals("status", "published")
+					}).Then("'Published'")
+					cb.When(func(cond ConditionBuilder) {
+						cond.Equals("status", "draft")
+					}).Then("'Draft'")
+					cb.Else("'Other'")
+				})
+			}, "status_desc").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(func(cond ConditionBuilder) {
+						cond.GreaterThan("view_count", 100)
+					}).Then(eb.Concat("'High ('", eb.Column("view_count"), "')'"))
+					cb.Else(eb.Concat("'Low ('", eb.Column("view_count"), "')'"))
+				})
+			}, "view_range").
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "SelectExpr should work correctly")
+		suite.True(len(posts) > 0, "Should return posts")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.Title, "Title should be populated")
+			suite.NotEmpty(post.StatusDesc, "Status description should be calculated")
+			suite.NotEmpty(post.ViewRange, "View range should be calculated")
+			suite.T().Logf("Post: %s - Status: %s, %s", post.Title, post.StatusDesc, post.ViewRange)
+		}
+	})
+
+	suite.Run("MultipleSelectExpr", func() {
+		type UserWithStats struct {
+			Id        string `bun:"id"`
+			Name      string `bun:"name"`
+			UpperName string `bun:"upper_name"`
+			NameLen   int    `bun:"name_len"`
+			AgeGroup  string `bun:"age_group"`
+		}
+
+		var users []UserWithStats
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("id", "name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Upper(eb.Column("name"))
+			}, "upper_name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Length(eb.Column("name"))
+			}, "name_len").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(func(cond ConditionBuilder) {
+						cond.GreaterThan("age", 30)
+					}).Then("'Senior'")
+					cb.Else("'Junior'")
+				})
+			}, "age_group").
+			OrderBy("name").
+			Limit(3).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "Multiple SelectExpr should work correctly")
+		suite.True(len(users) > 0, "Should return users")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.Name, "Name should be populated")
+			suite.NotEmpty(user.UpperName, "Upper name should be calculated")
+			suite.True(user.NameLen > 0, "Name length should be positive")
+			suite.NotEmpty(user.AgeGroup, "Age group should be calculated")
+			suite.T().Logf("User: %s (%s) - Length: %d, Group: %s",
+				user.Name, user.UpperName, user.NameLen, user.AgeGroup)
+		}
+	})
+}
+
+// TestSelectModelColumns tests SelectModelColumns method.
+func (suite *SelectTestSuite) TestSelectModelColumns() {
+	suite.T().Logf("Testing SelectModelColumns for %s", suite.DbType)
+
+	suite.Run("SelectModelColumnsBasic", func() {
+		var users []User
+
+		err := suite.Db.NewSelect().
+			Model(&users).
+			SelectModelColumns().
+			OrderBy("name").
+			Limit(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "SelectModelColumns should work correctly")
+		suite.Len(users, 2, "Should return 2 users")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.CreatedAt, "CreatedAt should be populated")
+			suite.NotEmpty(user.CreatedBy, "CreatedBy should be populated")
+			suite.T().Logf("User: ID=%s, CreatedAt=%s, CreatedBy=%s",
+				user.Id, user.CreatedAt, user.CreatedBy)
+		}
+	})
+
+	suite.Run("SelectModelColumnsWithExpr", func() {
+		type UserWithExpr struct {
+			Id        string `bun:"id"`
+			CreatedAt string `bun:"created_at"`
+			CreatedBy string `bun:"created_by"`
+			UpdatedAt string `bun:"updated_at"`
+			UpdatedBy string `bun:"updated_by"`
+			Name      string `bun:"name"`
+			NameLen   int    `bun:"name_len"`
+		}
+
+		var users []UserWithExpr
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectModelColumns().
+			Select("name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Length(eb.Column("name"))
+			}, "name_len").
+			OrderBy("name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "SelectModelColumns with SelectExpr should work")
+		suite.True(len(users) > 0, "Should return users")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.Name, "Name should be populated")
+			suite.NotEmpty(user.CreatedAt, "CreatedAt should be populated")
+			suite.True(user.NameLen > 0, "Name length should be positive")
+			suite.T().Logf("User: ID=%s, Name=%s (len=%d), CreatedAt=%s",
+				user.Id, user.Name, user.NameLen, user.CreatedAt)
+		}
+	})
+}
+
+// TestSelectModelPks tests SelectModelPks method.
+func (suite *SelectTestSuite) TestSelectModelPks() {
+	suite.T().Logf("Testing SelectModelPks for %s", suite.DbType)
+
+	suite.Run("SelectModelPksBasic", func() {
+		type UserIDOnly struct {
+			Id string `bun:"id"`
+		}
+
+		var users []UserIDOnly
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectModelPks().
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "SelectModelPks should work correctly")
+		suite.Len(users, 3, "Should return 3 users")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.T().Logf("User ID: %s", user.Id)
+		}
+	})
+
+	suite.Run("SelectModelPksWithExpr", func() {
+		type UserWithExpr struct {
+			Id       string `bun:"id"`
+			NameDesc string `bun:"name_desc"`
+		}
+
+		var users []UserWithExpr
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectModelPks().
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Concat("User: ", eb.Column("name"))
+			}, "name_desc").
+			OrderBy("name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "SelectModelPks with SelectExpr should work")
+		suite.True(len(users) > 0, "Should return users")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.NameDesc, "Name description should be calculated")
+			suite.Contains(user.NameDesc, "User:", "Name description should contain prefix")
+			suite.T().Logf("User: ID=%s, %s", user.Id, user.NameDesc)
+		}
+	})
+}
+
+// TestExclude tests Exclude and ExcludeAll methods.
+func (suite *SelectTestSuite) TestExclude() {
+	suite.T().Logf("Testing Exclude methods for %s", suite.DbType)
+
+	suite.Run("ExcludeSpecificColumns", func() {
+		type UserWithoutSensitive struct {
+			Id        string `bun:"id"`
+			Name      string `bun:"name"`
+			CreatedAt string `bun:"created_at"`
+			CreatedBy string `bun:"created_by"`
+			UpdatedAt string `bun:"updated_at"`
+			UpdatedBy string `bun:"updated_by"`
+		}
+
+		var users []UserWithoutSensitive
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Exclude("name", "email", "age", "is_active", "meta").
+			OrderBy("id").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "Exclude should work correctly")
+		suite.Len(users, 2, "Should return 2 users")
+
+		for _, user := range users {
+			suite.Empty(user.Name, "Name should not be populated")
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.CreatedAt, "CreatedAt should be populated")
+			suite.T().Logf("User: ID=%s, CreatedAt=%s", user.Id, user.CreatedAt)
+		}
+	})
+
+	suite.Run("ExcludeAll", func() {
+		type PostWithExpr struct {
+			Title         string `bun:"title"`
+			StatusDisplay string `bun:"status_display"`
+			ViewCategory  string `bun:"view_category"`
+		}
+
+		var posts []PostWithExpr
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			ExcludeAll().
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Upper(eb.Column("status"))
+			}, "status_display").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(func(cond ConditionBuilder) {
+						cond.GreaterThan("view_count", 50)
+					}).Then("Popular")
+					cb.Else("Normal")
+				})
+			}, "view_category").
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "ExcludeAll should work correctly")
+		suite.True(len(posts) > 0, "Should return posts")
+
+		for _, post := range posts {
+			suite.Empty(post.Title, "Title should not be populated")
+			suite.NotEmpty(post.StatusDisplay, "Status display should be calculated")
+			suite.NotEmpty(post.ViewCategory, "View category should be calculated")
+			suite.T().Logf("Post: Status=%s, Category=%s", post.StatusDisplay, post.ViewCategory)
+		}
+	})
+}
+
+// TestSelectMutualExclusivity tests that base column selection methods are mutually exclusive.
+func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
+	suite.T().Logf("Testing Select method mutual exclusivity for %s", suite.DbType)
+
+	suite.Run("SelectAllOverridesSelect", func() {
+		var users1 []User
+
+		err := suite.Db.NewSelect().
+			Model(&users1).
+			Select("name").
+			SelectAll().
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "SelectAll should override Select")
+		suite.True(len(users1) > 0, "Should return results")
+		suite.NotEmpty(users1[0].Email, "Email should be populated when SelectAll is used")
+
+		suite.T().Logf("SelectAll overrode Select: got %d users with all columns", len(users1))
+	})
+
+	suite.Run("SelectOverridesSelectAll", func() {
+		type UserNameOnly struct {
+			Name string `bun:"name"`
+		}
+
+		var users2 []UserNameOnly
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectAll().
+			Select("name").
+			Scan(suite.Ctx, &users2)
+
+		suite.NoError(err, "Select should override SelectAll")
+		suite.True(len(users2) > 0, "Should return results")
+		suite.NotEmpty(users2[0].Name, "Name should be populated")
+
+		suite.T().Logf("Select overrode SelectAll: got %d users with name only", len(users2))
+	})
+
+	suite.Run("SelectModelColumnsOverridesSelectAll", func() {
+		var users3 []User
+
+		err := suite.Db.NewSelect().
+			Model(&users3).
+			SelectAll().
+			SelectModelColumns().
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "SelectModelColumns should override SelectAll")
+		suite.True(len(users3) > 0, "Should return results")
+
+		suite.T().Logf("SelectModelColumns overrode SelectAll: got %d users", len(users3))
+	})
+
+	suite.Run("SelectAllOverridesSelectModelColumns", func() {
+		var users4 []User
+
+		err := suite.Db.NewSelect().
+			Model(&users4).
+			SelectModelColumns().
+			SelectAll().
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "SelectAll should override SelectModelColumns")
+		suite.True(len(users4) > 0, "Should return results")
+
+		suite.T().Logf("SelectAll overrode SelectModelColumns: got %d users", len(users4))
+	})
+
+	suite.Run("SelectModelPksOverridesSelectModelColumns", func() {
+		type UserIDOnly struct {
+			Id string `bun:"id,pk"`
+		}
+
+		var users5 []UserIDOnly
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectModelColumns().
+			SelectModelPks().
+			Scan(suite.Ctx, &users5)
+
+		suite.NoError(err, "SelectModelPks should override SelectModelColumns")
+		suite.True(len(users5) > 0, "Should return results")
+		suite.NotEmpty(users5[0].Id, "ID should be populated")
+
+		suite.T().Logf("SelectModelPks overrode SelectModelColumns: got %d users with ID only", len(users5))
+	})
+
+	suite.Run("SelectModelColumnsOverridesSelectModelPks", func() {
+		var users6 []User
+
+		err := suite.Db.NewSelect().
+			Model(&users6).
+			SelectModelPks().
+			SelectModelColumns().
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "SelectModelColumns should override SelectModelPks")
+		suite.True(len(users6) > 0, "Should return results")
+		suite.NotEmpty(users6[0].Name, "Name should be populated when SelectModelColumns is used")
+
+		suite.T().Logf("SelectModelColumns overrode SelectModelPks: got %d users", len(users6))
+	})
+}
+
+// TestSelectExprCumulative tests that SelectExpr is cumulative and works with any base selection.
+func (suite *SelectTestSuite) TestSelectExprCumulative() {
+	suite.T().Logf("Testing SelectExpr cumulative behavior for %s", suite.DbType)
+
+	suite.Run("SelectExprWithSelectAll", func() {
+		type UserWithComputed struct {
+			Id       string `bun:"id"`
+			Name     string `bun:"name"`
+			Email    string `bun:"email"`
+			Age      int16  `bun:"age"`
+			AgeGroup string `bun:"age_group"`
+		}
+
+		var users1 []UserWithComputed
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectAll().
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(func(cond ConditionBuilder) {
+						cond.GreaterThan("age", 30)
+					}).Then("'senior'")
+					cb.Else("'junior'")
+				})
+			}, "age_group").
+			OrderBy("name").
+			Scan(suite.Ctx, &users1)
+
+		suite.NoError(err, "SelectExpr should work with SelectAll")
+		suite.True(len(users1) > 0, "Should return results")
+		suite.NotEmpty(users1[0].Name, "Name should be populated")
+		suite.NotEmpty(users1[0].AgeGroup, "Computed age_group should be populated")
+
+		for _, user := range users1 {
+			suite.T().Logf("User: %s, Age=%d, AgeGroup=%s", user.Name, user.Age, user.AgeGroup)
+		}
+	})
+
+	suite.Run("SelectExprWithSelect", func() {
+		type UserWithRowNum struct {
+			Name   string `bun:"name"`
+			Email  string `bun:"email"`
+			RowNum int    `bun:"row_num"`
+		}
+
+		var users2 []UserWithRowNum
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("name", "email").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.RowNumber(func(rb RowNumberBuilder) {
+					rb.Over().OrderBy("name")
+				})
+			}, "row_num").
+			OrderBy("name").
+			Scan(suite.Ctx, &users2)
+
+		suite.NoError(err, "SelectExpr should work with Select")
+		suite.True(len(users2) > 0, "Should return results")
+		suite.NotEmpty(users2[0].Name, "Name should be populated")
+		suite.True(users2[0].RowNum > 0, "Row number should be populated")
+
+		for _, user := range users2 {
+			suite.T().Logf("User: %s, RowNum=%d", user.Name, user.RowNum)
+		}
+	})
+
+	suite.Run("MultipleSelectExprCallsCumulative", func() {
+		type UserWithMultipleComputed struct {
+			Name      string `bun:"name"`
+			UpperName string `bun:"upper_name"`
+			NameLen   int    `bun:"name_len"`
+		}
+
+		var users3 []UserWithMultipleComputed
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Upper(eb.Column("name"))
+			}, "upper_name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Length(eb.Column("name"))
+			}, "name_len").
+			OrderBy("name").
+			Scan(suite.Ctx, &users3)
+
+		suite.NoError(err, "Multiple SelectExpr should be cumulative")
+		suite.True(len(users3) > 0, "Should return results")
+		suite.NotEmpty(users3[0].Name, "Name should be populated")
+		suite.NotEmpty(users3[0].UpperName, "Upper name should be populated")
+		suite.True(users3[0].NameLen > 0, "Name length should be populated")
+
+		for _, user := range users3 {
+			suite.T().Logf("User: %s, UpperName=%s, NameLen=%d", user.Name, user.UpperName, user.NameLen)
+		}
+	})
+
+	suite.Run("SelectExprPreservedWhenSwitchingBaseSelection", func() {
+		type UserAllWithComputed struct {
+			Id       string `bun:"id"`
+			Name     string `bun:"name"`
+			Email    string `bun:"email"`
+			Age      int16  `bun:"age"`
+			IsActive bool   `bun:"is_active"`
+			RowNum   int    `bun:"row_num"`
+		}
+
+		var users4 []UserAllWithComputed
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.RowNumber(func(rb RowNumberBuilder) {
+					rb.Over().OrderBy("name")
+				})
+			}, "row_num").
+			SelectAll().
+			OrderBy("name").
+			Scan(suite.Ctx, &users4)
+
+		suite.NoError(err, "SelectExpr should be preserved when switching to SelectAll")
+		suite.True(len(users4) > 0, "Should return results")
+		suite.NotEmpty(users4[0].Name, "Name should be populated")
+		suite.NotEmpty(users4[0].Email, "Email should be populated (SelectAll)")
+		suite.True(users4[0].RowNum > 0, "Row number should still be populated (SelectExpr preserved)")
+
+		for _, user := range users4 {
+			suite.T().Logf("User: %s, Email=%s, RowNum=%d", user.Name, user.Email, user.RowNum)
+		}
+	})
+
+	suite.Run("SelectExprWithSelectModelColumns", func() {
+		type UserModelWithTotal struct {
+			Id         string `bun:"id"`
+			CreatedAt  string `bun:"created_at"`
+			CreatedBy  string `bun:"created_by"`
+			UpdatedAt  string `bun:"updated_at"`
+			UpdatedBy  string `bun:"updated_by"`
+			Name       string `bun:"name"`
+			Email      string `bun:"email"`
+			Age        int16  `bun:"age"`
+			IsActive   bool   `bun:"is_active"`
+			Meta       string `bun:"meta"`
+			TotalCount int64  `bun:"total_count"`
+		}
+
+		var users5 []UserModelWithTotal
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectModelColumns().
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.WinCount(func(wcb WindowCountBuilder) {
+					wcb.All().Over()
+				})
+			}, "total_count").
+			OrderBy("name").
+			Scan(suite.Ctx, &users5)
+
+		suite.NoError(err, "SelectExpr should work with SelectModelColumns")
+		suite.True(len(users5) > 0, "Should return results")
+		suite.NotEmpty(users5[0].Name, "Name should be populated")
+		suite.True(users5[0].TotalCount > 0, "Total count should be populated")
+
+		for _, user := range users5 {
+			suite.T().Logf("User: %s, TotalCount=%d", user.Name, user.TotalCount)
+		}
+	})
+}
+
+// TestSelectIdempotency tests that SelectModelColumns and SelectModelPks are idempotent.
+func (suite *SelectTestSuite) TestSelectIdempotency() {
+	suite.T().Logf("Testing Select method idempotency for %s", suite.DbType)
+
+	suite.Run("MultipleSelectModelColumnsCalls", func() {
+		var users1 []User
+
+		err := suite.Db.NewSelect().
+			Model(&users1).
+			SelectModelColumns().
+			SelectModelColumns().
+			SelectModelColumns().
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Multiple SelectModelColumns should not cause errors")
+		suite.True(len(users1) > 0, "Should return results")
+		suite.NotEmpty(users1[0].Name, "Name should be populated")
+
+		suite.T().Logf("Multiple SelectModelColumns calls: got %d users", len(users1))
+	})
+
+	suite.Run("MultipleSelectModelPksCalls", func() {
+		type UserIDOnly struct {
+			Id string `bun:"id,pk"`
+		}
+
+		var users2 []UserIDOnly
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectModelPks().
+			SelectModelPks().
+			SelectModelPks().
+			Scan(suite.Ctx, &users2)
+
+		suite.NoError(err, "Multiple SelectModelPks should not cause errors")
+		suite.True(len(users2) > 0, "Should return results")
+		suite.NotEmpty(users2[0].Id, "ID should be populated")
+
+		suite.T().Logf("Multiple SelectModelPks calls: got %d users", len(users2))
+	})
+
+	suite.Run("MultipleSelectAllCalls", func() {
+		var users3 []User
+
+		err := suite.Db.NewSelect().
+			Model(&users3).
+			SelectAll().
+			SelectAll().
+			SelectAll().
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Multiple SelectAll should not cause errors")
+		suite.True(len(users3) > 0, "Should return results")
+		suite.NotEmpty(users3[0].Email, "All columns should be populated")
+
+		suite.T().Logf("Multiple SelectAll calls: got %d users", len(users3))
+	})
+}
+
+// TestDistinct tests Distinct, DistinctOnColumns, and DistinctOnExpr methods.
+func (suite *SelectTestSuite) TestDistinct() {
+	suite.T().Logf("Testing Distinct methods for %s", suite.DbType)
+
+	suite.Run("BasicDistinct", func() {
+		type DistinctStatus struct {
+			Status string `bun:"status"`
+		}
+
+		var statuses []DistinctStatus
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Distinct().
+			Select("status").
+			OrderBy("status").
+			Scan(suite.Ctx, &statuses)
+
+		suite.NoError(err, "DISTINCT should work correctly")
+		suite.True(len(statuses) > 0, "Should return distinct statuses")
+
+		for _, status := range statuses {
+			suite.NotEmpty(status.Status, "Status should not be empty")
+			suite.T().Logf("Distinct status: %s", status.Status)
+		}
+	})
+
+	suite.Run("DistinctOnColumns", func() {
+		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
+		if suite.DbType != "postgres" {
+			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.DbType)
+
+			return
+		}
+
+		type DistinctPost struct {
+			Title  string `bun:"title"`
+			Status string `bun:"status"`
+		}
+
+		var posts []DistinctPost
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			DistinctOnColumns("title").
+			Select("title", "status").
+			OrderBy("title").
+			Limit(5).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "DISTINCT ON columns should work when supported")
+		suite.True(len(posts) > 0, "Should return distinct posts")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Title, "Title should not be empty")
+			suite.T().Logf("Distinct post: %s (Status: %s)", post.Title, post.Status)
+		}
+	})
+
+	suite.Run("DistinctOnExpr", func() {
+		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
+		if suite.DbType != "postgres" {
+			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.DbType)
+
+			return
+		}
+
+		type DistinctExpr struct {
+			Id         string `bun:"id"`
+			Title      string `bun:"title"`
+			StatusDesc string `bun:"status_desc"`
+		}
+
+		var posts []DistinctExpr
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			DistinctOnExpr(func(eb ExprBuilder) any {
+				return eb.Upper(eb.Column("title"))
+			}).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Upper(eb.Column("status"))
+			}, "status_desc").
+			OrderByExpr(func(eb ExprBuilder) any {
+				return eb.Upper(eb.Column("title"))
+			}).
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "DISTINCT ON expression should work when supported")
+		suite.True(len(posts) > 0, "Should return distinct expression posts")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should not be empty")
+			suite.T().Logf("Distinct expr post: %s (Status: %s)", post.Title, post.StatusDesc)
+		}
+	})
+}
+
+// TestModelAndTable tests Model, ModelTable, Table, TableFrom, TableExpr, and TableSubQuery methods.
+func (suite *SelectTestSuite) TestModelAndTable() {
+	suite.T().Logf("Testing Model and Table methods for %s", suite.DbType)
+
+	suite.Run("ModelAndModelTable", func() {
+		type PostFromUserTable struct {
+			Id    string `bun:"id"`
+			Title string `bun:"title"`
+		}
+
+		var posts []PostFromUserTable
+
+		err := suite.Db.NewSelect().
+			ModelTable("test_user", "u").
+			Select("u.id", "u.name").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("u.is_active")
+			}).
+			OrderBy("u.name").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "ModelTable should work correctly")
+		suite.True(len(posts) > 0, "Should return users from specified table")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.T().Logf("User from table: ID=%s, Name=%s", post.Id, post.Title)
+		}
+	})
+
+	suite.Run("TableAndAlias", func() {
+		type TableWithAlias struct {
+			Id    string `bun:"id"`
+			Name  string `bun:"name"`
+			Email string `bun:"email"`
+		}
+
+		var users []TableWithAlias
+
+		err := suite.Db.NewSelect().
+			Table("test_user", "u").
+			Select("u.id", "u.name", "u.email").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("u.is_active")
+			}).
+			OrderBy("u.name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "Table with alias should work correctly")
+		suite.True(len(users) > 0, "Should return users from table with alias")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.T().Logf("User with alias: ID=%s, Name=%s", user.Id, user.Name)
+		}
+	})
+
+	suite.Run("TableFrom", func() {
+		type UserFromModel struct {
+			Id   string `bun:"id"`
+			Name string `bun:"name"`
+		}
+
+		var users []UserFromModel
+
+		err := suite.Db.NewSelect().
+			TableFrom((*User)(nil), "u").
+			Select("u.id", "u.name").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("u.is_active")
+			}).
+			OrderBy("u.name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "TableFrom should work correctly")
+		suite.True(len(users) > 0, "Should return users from model")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.T().Logf("User from model: ID=%s, Name=%s", user.Id, user.Name)
+		}
+	})
+
+	suite.Run("TableExpr", func() {
+		type ExprTable struct {
+			Id   string `bun:"id"`
+			Name string `bun:"name"`
+		}
+
+		var users []ExprTable
+
+		err := suite.Db.NewSelect().
+			TableExpr(func(eb ExprBuilder) any {
+				return eb.Expr("(SELECT id, name FROM ? WHERE is_active = ?)",
+					bun.Name("test_user"),
+					true)
+			}, "active_users").
+			Select("active_users.id", "active_users.name").
+			OrderBy("active_users.name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "TableExpr should work when supported")
+		suite.True(len(users) > 0, "Should return users from expression table")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.T().Logf("User from expr: ID=%s, Name=%s", user.Id, user.Name)
+		}
+	})
+
+	suite.Run("TableSubQuery", func() {
+		type SubQueryTable struct {
+			Id   string `bun:"id"`
+			Name string `bun:"name"`
+		}
+
+		var users []SubQueryTable
+
+		err := suite.Db.NewSelect().
+			TableSubQuery(func(query SelectQuery) {
+				query.Model((*User)(nil)).
+					Select("id", "name").
+					Where(func(cb ConditionBuilder) {
+						cb.IsTrue("is_active")
+					})
+			}, "active_users").
+			Select("active_users.id", "active_users.name").
+			OrderBy("active_users.name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "TableSubQuery should work correctly")
+		suite.True(len(users) > 0, "Should return users from subquery table")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.T().Logf("User from subquery: ID=%s, Name=%s", user.Id, user.Name)
+		}
+	})
+}
+
+// TestJoins tests all join types and variants.
+func (suite *SelectTestSuite) TestJoins() {
+	suite.T().Logf("Testing Join methods for %s", suite.DbType)
+
+	suite.Run("BasicInnerJoin", func() {
+		type PostWithUser struct {
+			Id       string `bun:"id"`
+			Title    string `bun:"title"`
+			UserName string `bun:"user_name"`
+		}
+
+		var posts []PostWithUser
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectAs("u.name", "user_name").
+			Join((*User)(nil), func(cb ConditionBuilder) {
+				cb.EqualsColumn("u.id", "user_id")
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "INNER JOIN should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with user info")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
+		}
+	})
+
+	suite.Run("LeftJoin", func() {
+		type CategoryWithPostCount struct {
+			Id        string `bun:"id"`
+			Name      string `bun:"name"`
+			PostCount int64  `bun:"post_count"`
+		}
+
+		var categories []CategoryWithPostCount
+
+		err := suite.Db.NewSelect().
+			Model((*Category)(nil)).
+			Select("id", "name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.CountColumn("p.id")
+			}, "post_count").
+			LeftJoin((*Post)(nil), func(cb ConditionBuilder) {
+				cb.EqualsColumn("p.category_id", "id")
+			}).
+			GroupBy("id", "name").
+			OrderBy("name").
+			Scan(suite.Ctx, &categories)
+
+		suite.NoError(err, "LEFT JOIN should work correctly")
+		suite.True(len(categories) > 0, "Should return categories with post counts")
+
+		for _, category := range categories {
+			suite.NotEmpty(category.Id, "ID should be populated")
+			suite.True(category.PostCount >= 0, "Post count should be non-negative")
+			suite.T().Logf("Category: %s (%d posts)", category.Name, category.PostCount)
+		}
+	})
+
+	suite.Run("RightJoin", func() {
+		type UserWithPosts struct {
+			Id        string `bun:"id"`
+			Name      string `bun:"name"`
+			PostId    string `bun:"post_id"`
+			PostTitle string `bun:"post_title"`
+		}
+
+		var users []UserWithPosts
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("id", "name").
+			SelectAs("p.id", "post_id").
+			SelectAs("p.title", "post_title").
+			RightJoin((*Post)(nil), func(cb ConditionBuilder) {
+				cb.EqualsColumn("p.user_id", "id")
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("is_active", true)
+			}).
+			OrderBy("name").
+			Limit(3).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "RIGHT JOIN should work when supported")
+		suite.True(len(users) > 0, "Should return users with posts")
+
+		for _, user := range users {
+			suite.T().Logf("User: %s, Post: %s", user.Name, user.PostTitle)
+		}
+	})
+
+	suite.Run("FullJoin", func() {
+		if suite.DbType == constants.DbMySQL {
+			suite.T().Skip("Skipping for MySQL: FULL JOIN not supported (use LEFT JOIN UNION RIGHT JOIN instead)")
+
+			return
+		}
+
+		type UserWithPosts struct {
+			Id        string `bun:"id"`
+			Name      string `bun:"name"`
+			PostId    string `bun:"post_id"`
+			PostTitle string `bun:"post_title"`
+		}
+
+		var users []UserWithPosts
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("id", "name").
+			SelectAs("p.id", "post_id").
+			SelectAs("p.title", "post_title").
+			FullJoin((*Post)(nil), func(cb ConditionBuilder) {
+				cb.EqualsColumn("p.user_id", "id")
+			}).
+			OrderBy("name").
+			Limit(2).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "FULL JOIN should work when supported")
+		suite.True(len(users) > 0, "Should return users with full join")
+
+		for _, user := range users {
+			suite.T().Logf("User with FULL JOIN: %s - Post: %s", user.Name, user.PostTitle)
+		}
+	})
+
+	suite.Run("CrossJoin", func() {
+		type UserCategoryCross struct {
+			UserId       string `bun:"user_id"`
+			UserName     string `bun:"user_name"`
+			CategoryId   string `bun:"category_id"`
+			CategoryName string `bun:"category_name"`
+		}
+
+		var cross []UserCategoryCross
+
+		err := suite.Db.NewSelect().
+			Table("test_user", "u").
+			SelectAs("u.id", "user_id").
+			SelectAs("u.name", "user_name").
+			SelectAs("c.id", "category_id").
+			SelectAs("c.name", "category_name").
+			CrossJoinTable("test_category", "c").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("u.is_active")
+			}).
+			OrderBy("u.name", "c.name").
+			Limit(4).
+			Scan(suite.Ctx, &cross)
+
+		suite.NoError(err, "CROSS JOIN should work when supported")
+		suite.True(len(cross) > 0, "Should return cross product")
+
+		for _, item := range cross {
+			suite.T().Logf("Cross: %s - %s", item.UserName, item.CategoryName)
+		}
+	})
+
+	suite.Run("JoinWithTable", func() {
+		type PostWithCategory struct {
+			Id           string `bun:"id"`
+			Title        string `bun:"title"`
+			CategoryName string `bun:"category_name"`
+		}
+
+		var posts []PostWithCategory
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectAs("c.name", "category_name").
+			JoinTable("test_category", func(cb ConditionBuilder) {
+				cb.EqualsColumn("c.id", "category_id")
+			}, "c").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "JOIN with table name should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with categories")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.T().Logf("Post: %s in %s", post.Title, post.CategoryName)
+		}
+	})
+
+	suite.Run("JoinWithSubQuery", func() {
+		type PostWithActiveUser struct {
+			Id       string `bun:"id"`
+			Title    string `bun:"title"`
+			UserName string `bun:"user_name"`
+		}
+
+		var posts []PostWithActiveUser
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectAs("active_users.name", "user_name").
+			JoinSubQuery(
+				func(subquery SelectQuery) {
+					subquery.Model((*User)(nil)).
+						Select("id", "name").
+						Where(func(cb ConditionBuilder) {
+							cb.IsTrue("is_active")
+						})
+				},
+				func(cb ConditionBuilder) {
+					cb.EqualsColumn("active_users.id", "user_id")
+				},
+				"active_users").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "JOIN with subquery should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with active users")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
+		}
+	})
+}
+
+// TestJoinRelations tests JoinRelations method with RelationSpec.
+func (suite *SelectTestSuite) TestJoinRelations() {
+	suite.T().Logf("Testing JoinRelations for %s", suite.DbType)
+
+	// Define result struct for JoinRelations tests
 	type PostWithUserName struct {
 		Id       string `bun:"id"`
 		Title    string `bun:"title"`
 		UserName string `bun:"user_name"`
 	}
 
-	var postsWithUser []PostWithUserName
+	suite.Run("BasicJoinRelations", func() {
+		var posts []PostWithUserName
 
-	err := suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(&RelationSpec{
-			Model:         (*User)(nil),
-			Alias:         "u",
-			ForeignColumn: "user_id",
-			SelectedColumns: []ColumnInfo{
-				{Name: "name", Alias: "user_name"},
-			},
-		}).
-		OrderBy("p.title").
-		Scan(suite.ctx, &postsWithUser)
-	suite.NoError(err)
-	suite.True(len(postsWithUser) > 0, "Should have posts with user names")
-
-	for _, post := range postsWithUser {
-		suite.NotEmpty(post.Title, "Post title should not be empty")
-		suite.NotEmpty(post.UserName, "User name should be populated via LEFT JOIN")
-		suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
-	}
-
-	// Test 2: INNER JOIN using RelationSpec
-	type PostWithCategory struct {
-		Id           string `bun:"id"`
-		Title        string `bun:"title"`
-		CategoryName string `bun:"category_name"`
-	}
-
-	var postsWithCategory []PostWithCategory
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(&RelationSpec{
-			Model:         (*Category)(nil),
-			Alias:         "c",
-			JoinType:      JoinInner,
-			ForeignColumn: "category_id",
-			SelectedColumns: []ColumnInfo{
-				{Name: "name", Alias: "category_name"},
-			},
-		}).
-		OrderBy("p.title").
-		Scan(suite.ctx, &postsWithCategory)
-	suite.NoError(err)
-	suite.True(len(postsWithCategory) > 0, "Should have posts with categories (INNER JOIN)")
-
-	for _, post := range postsWithCategory {
-		suite.NotEmpty(post.CategoryName, "Category name should be populated via INNER JOIN")
-		suite.T().Logf("Post: %s in category %s", post.Title, post.CategoryName)
-	}
-
-	// Test 3: Multiple JoinRelations in a single query
-	type PostComplete struct {
-		Id           string `bun:"id"`
-		Title        string `bun:"title"`
-		UserName     string `bun:"user_name"`
-		UserEmail    string `bun:"user_email"`
-		CategoryName string `bun:"category_name"`
-		CategoryDesc string `bun:"category_desc"`
-	}
-
-	var completePosts []PostComplete
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(
-			&RelationSpec{
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("p.id", "p.title").
+			JoinRelations(&RelationSpec{
 				Model:         (*User)(nil),
 				Alias:         "u",
 				ForeignColumn: "user_id",
 				SelectedColumns: []ColumnInfo{
 					{Name: "name", Alias: "user_name"},
-					{Name: "email", Alias: "user_email"},
 				},
-			},
-			&RelationSpec{
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "JoinRelations should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with user names")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.UserName, "User name should be loaded via JoinRelations")
+			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
+		}
+	})
+
+	suite.Run("JoinRelationsMultiple", func() {
+		type PostWithUserAndCategory struct {
+			Id           string `bun:"id"`
+			Title        string `bun:"title"`
+			UserName     string `bun:"user_name"`
+			CategoryName string `bun:"category_name"`
+		}
+
+		var posts []PostWithUserAndCategory
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("p.id", "p.title").
+			JoinRelations(
+				&RelationSpec{
+					Model:         (*User)(nil),
+					Alias:         "u",
+					ForeignColumn: "user_id",
+					SelectedColumns: []ColumnInfo{
+						{Name: "name", Alias: "user_name"},
+					},
+				},
+				&RelationSpec{
+					Model:         (*Category)(nil),
+					Alias:         "c",
+					ForeignColumn: "category_id",
+					SelectedColumns: []ColumnInfo{
+						{Name: "name", Alias: "category_name"},
+					},
+				},
+			).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "Multiple JoinRelations should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with user and category names")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.UserName, "User name should be loaded")
+			suite.NotEmpty(post.CategoryName, "Category name should be loaded")
+			suite.T().Logf("Post: %s by %s in %s", post.Title, post.UserName, post.CategoryName)
+		}
+	})
+
+	suite.Run("JoinRelationsWithJoinType", func() {
+		type PostWithCategory struct {
+			Id           string `bun:"id"`
+			Title        string `bun:"title"`
+			CategoryName string `bun:"category_name"`
+		}
+
+		var posts []PostWithCategory
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("p.id", "p.title").
+			JoinRelations(&RelationSpec{
 				Model:         (*Category)(nil),
 				Alias:         "c",
+				JoinType:      JoinInner,
 				ForeignColumn: "category_id",
 				SelectedColumns: []ColumnInfo{
 					{Name: "name", Alias: "category_name"},
-					{Name: "description", Alias: "category_desc"},
 				},
-			},
-		).
-		OrderBy("p.title").
-		Limit(5).
-		Scan(suite.ctx, &completePosts)
-	suite.NoError(err)
-	suite.True(len(completePosts) > 0, "Should have complete posts with multiple joins")
-
-	for _, post := range completePosts {
-		suite.NotEmpty(post.UserName, "User name should be populated")
-		suite.NotEmpty(post.CategoryName, "Category name should be populated")
-		suite.T().Logf("Post: %s by %s (%s) in %s [%s]",
-			post.Title, post.UserName, post.UserEmail, post.CategoryName, post.CategoryDesc)
-	}
-
-	// Test 4: RelationSpec with AutoAlias for columns
-	type PostWithAutoAlias struct {
-		Id           string `bun:"id"`
-		Title        string `bun:"title"`
-		UserName     string `bun:"user_name"`
-		UserAge      int16  `bun:"user_age"`
-		UserIsActive bool   `bun:"user_is_active"`
-	}
-
-	var postsWithAutoAlias []PostWithAutoAlias
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(&RelationSpec{
-			Model:         (*User)(nil),
-			Alias:         "u",
-			ForeignColumn: "user_id",
-			SelectedColumns: []ColumnInfo{
-				{Name: "name", AutoAlias: true},      // Will become "user_name"
-				{Name: "age", AutoAlias: true},       // Will become "user_age"
-				{Name: "is_active", AutoAlias: true}, // Will become "user_is_active"
-			},
-		}).
-		OrderBy("p.title").
-		Limit(3).
-		Scan(suite.ctx, &postsWithAutoAlias)
-	suite.NoError(err)
-	suite.True(len(postsWithAutoAlias) > 0, "Should have posts with auto-aliased columns")
-
-	for _, post := range postsWithAutoAlias {
-		suite.NotEmpty(post.UserName, "Auto-aliased user_name should be populated")
-		suite.True(post.UserAge > 0, "Auto-aliased user_age should be populated")
-		suite.T().Logf("Post: %s by %s (age: %d, active: %t)",
-			post.Title, post.UserName, post.UserAge, post.UserIsActive)
-	}
-
-	// Test 5: RelationSpec with custom ON conditions
-	type PostWithActiveUser struct {
-		Id       string `bun:"id"`
-		Title    string `bun:"title"`
-		UserName string `bun:"user_name"`
-	}
-
-	var postsWithActiveUser []PostWithActiveUser
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(&RelationSpec{
-			Model:         (*User)(nil),
-			Alias:         "u",
-			ForeignColumn: "user_id",
-			SelectedColumns: []ColumnInfo{
-				{Name: "name", Alias: "user_name"},
-			},
-			// Add custom ON condition to filter only active users
-			On: func(cb ConditionBuilder) {
-				cb.IsTrue("u.is_active")
-			},
-		}).
-		OrderBy("p.title").
-		Scan(suite.ctx, &postsWithActiveUser)
-	suite.NoError(err)
-	suite.True(len(postsWithActiveUser) >= 0, "Should have posts with active users")
-
-	// LEFT JOIN with ON condition will still return all posts, but inactive users will have null names
-	for _, post := range postsWithActiveUser {
-		suite.T().Logf("Post: %s by active user %s", post.Title, post.UserName)
-	}
-
-	// Test 6: INNER JOIN to count posts per user
-	type UserWithPostCount struct {
-		Id        string `bun:"id"`
-		Name      string `bun:"name"`
-		PostCount int64  `bun:"post_count"`
-	}
-
-	var usersWithPostCount []UserWithPostCount
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("u.id", "u.name").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountColumn("p.id")
-		}, "post_count").
-		JoinRelations(&RelationSpec{
-			Model:            (*Post)(nil),
-			Alias:            "p",
-			JoinType:         JoinInner,
-			ReferencedColumn: "user_id",
-			ForeignColumn:    "id",
-		}).
-		GroupBy("u.id", "u.name").
-		OrderBy("u.name").
-		Scan(suite.ctx, &usersWithPostCount)
-	suite.NoError(err)
-	suite.True(len(usersWithPostCount) > 0, "Should have users with post counts (INNER JOIN)")
-
-	for _, user := range usersWithPostCount {
-		suite.NotEmpty(user.Name, "User name should be populated")
-		suite.T().Logf("User: %s has %d posts", user.Name, user.PostCount)
-	}
-
-	// Test 7: RelationSpec with no SelectedColumns (tests default behavior)
-	type PostWithUser struct {
-		Id    string `bun:"id"`
-		Title string `bun:"title"`
-	}
-
-	var postsNoSelect []PostWithUser
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(&RelationSpec{
-			Model:         (*User)(nil),
-			Alias:         "u",
-			ForeignColumn: "user_id",
-			// No SelectedColumns - join exists for filtering only
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("u.is_active", true)
-		}).
-		OrderBy("p.title").
-		Limit(3).
-		Scan(suite.ctx, &postsNoSelect)
-	suite.NoError(err)
-	suite.True(len(postsNoSelect) >= 0, "Should execute join without selecting columns")
-
-	// Test 8: RelationSpec with default alias (empty alias)
-	type PostSimple struct {
-		Id       string `bun:"id"`
-		Title    string `bun:"title"`
-		UserName string `bun:"user_name"`
-	}
-
-	var postsDefaultAlias []PostSimple
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(&RelationSpec{
-			Model: (*User)(nil),
-			// Alias omitted - should use model's default alias
-			ForeignColumn: "user_id",
-			SelectedColumns: []ColumnInfo{
-				{Name: "name", Alias: "user_name"},
-			},
-		}).
-		OrderBy("p.title").
-		Limit(2).
-		Scan(suite.ctx, &postsDefaultAlias)
-	suite.NoError(err)
-	suite.True(len(postsDefaultAlias) > 0, "Should work with default model alias")
-
-	for _, post := range postsDefaultAlias {
-		suite.NotEmpty(post.UserName, "User name should be populated with default alias")
-		suite.T().Logf("Post: %s by %s (using default alias)", post.Title, post.UserName)
-	}
-
-	// Test 9: Complex query with JoinRelations, WHERE, and aggregation
-	type CategoryPostStats struct {
-		CategoryName   string  `bun:"category_name"`
-		PostCount      int64   `bun:"post_count"`
-		TotalViews     int64   `bun:"total_views"`
-		AvgViews       float64 `bun:"avg_views"`
-		PublishedCount int64   `bun:"published_count"`
-	}
-
-	var categoryStats []CategoryPostStats
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		JoinRelations(&RelationSpec{
-			Model:         (*Category)(nil),
-			Alias:         "c",
-			JoinType:      JoinInner,
-			ForeignColumn: "category_id",
-			SelectedColumns: []ColumnInfo{
-				{Name: "name", Alias: "category_name"},
-			},
-		}).
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.CountAll()
-		}, "post_count").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.SumColumn("p.view_count")
-		}, "total_views").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.AvgColumn("p.view_count")
-		}, "avg_views").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Count(func(cb CountBuilder) {
-				cb.All().Filter(func(cb ConditionBuilder) {
-					cb.Equals("p.status", "published")
-				})
-			})
-		}, "published_count").
-		GroupBy("c.id", "c.name").
-		OrderBy("c.name").
-		Scan(suite.ctx, &categoryStats)
-	suite.NoError(err)
-	suite.True(len(categoryStats) > 0, "Should have category statistics")
-
-	for _, stat := range categoryStats {
-		suite.NotEmpty(stat.CategoryName, "Category name should not be empty")
-		suite.True(stat.PostCount > 0, "Post count should be positive")
-		suite.True(stat.TotalViews >= 0, "Total views should be non-negative")
-		suite.T().Logf("Category %s: %d posts, %d total views (avg: %.2f), %d published",
-			stat.CategoryName, stat.PostCount, stat.TotalViews, stat.AvgViews, stat.PublishedCount)
-	}
-
-	// Test 10: JoinRelations with WHERE condition on joined table
-	type PostWithPopularCategory struct {
-		Id           string `bun:"id"`
-		Title        string `bun:"title"`
-		CategoryName string `bun:"category_name"`
-	}
-
-	var postsWithPopularCategory []PostWithPopularCategory
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		Select("p.id", "p.title").
-		JoinRelations(&RelationSpec{
-			Model:         (*Category)(nil),
-			Alias:         "c",
-			ForeignColumn: "category_id",
-			SelectedColumns: []ColumnInfo{
-				{Name: "name", Alias: "category_name"},
-			},
-		}).
-		Where(func(cb ConditionBuilder) {
-			// Filter for specific categories
-			cb.In("c.name", []string{"Technology", "Science", "GoLang"})
-		}).
-		OrderBy("p.title").
-		Limit(5).
-		Scan(suite.ctx, &postsWithPopularCategory)
-	suite.NoError(err)
-	suite.True(len(postsWithPopularCategory) > 0, "Should have posts in selected categories")
-
-	for _, post := range postsWithPopularCategory {
-		suite.NotEmpty(post.CategoryName, "Category name should be populated")
-		suite.T().Logf("Post: %s in category %s", post.Title, post.CategoryName)
-	}
-}
-
-// TestSelectMutualExclusivity tests that base column selection methods are mutually exclusive.
-func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
-	suite.T().Logf("Testing Select method mutual exclusivity for %s", suite.dbType)
-
-	// Test 1: SelectAll overrides Select
-	var users1 []User
-
-	err := suite.db.NewSelect().
-		Model(&users1).
-		Select("name").
-		SelectAll().
-		Scan(suite.ctx)
-	suite.NoError(err, "SelectAll should override Select")
-	suite.True(len(users1) > 0, "Should return results")
-	// Verify all columns are selected (not just name)
-	suite.NotEmpty(users1[0].Email, "Email should be populated when SelectAll is used")
-
-	// Test 2: Select overrides SelectAll
-	type UserNameOnly struct {
-		Name string `bun:"name"`
-	}
-
-	var users2 []UserNameOnly
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectAll().
-		Select("name").
-		Scan(suite.ctx, &users2)
-	suite.NoError(err, "Select should override SelectAll")
-	suite.True(len(users2) > 0, "Should return results")
-	suite.NotEmpty(users2[0].Name, "Name should be populated")
-
-	// Test 3: SelectModelColumns overrides SelectAll
-	var users3 []User
-
-	err = suite.db.NewSelect().
-		Model(&users3).
-		SelectAll().
-		SelectModelColumns().
-		Scan(suite.ctx)
-	suite.NoError(err, "SelectModelColumns should override SelectAll")
-	suite.True(len(users3) > 0, "Should return results")
-
-	// Test 4: SelectAll overrides SelectModelColumns
-	var users4 []User
-
-	err = suite.db.NewSelect().
-		Model(&users4).
-		SelectModelColumns().
-		SelectAll().
-		Scan(suite.ctx)
-	suite.NoError(err, "SelectAll should override SelectModelColumns")
-	suite.True(len(users4) > 0, "Should return results")
-
-	// Test 5: SelectModelPks overrides SelectModelColumns
-	type UserIDOnly struct {
-		Id string `bun:"id,pk"`
-	}
-
-	var users5 []UserIDOnly
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectModelColumns().
-		SelectModelPks().
-		Scan(suite.ctx, &users5)
-	suite.NoError(err, "SelectModelPks should override SelectModelColumns")
-	suite.True(len(users5) > 0, "Should return results")
-	suite.NotEmpty(users5[0].Id, "ID should be populated")
-
-	// Test 6: SelectModelColumns overrides SelectModelPks
-	var users6 []User
-
-	err = suite.db.NewSelect().
-		Model(&users6).
-		SelectModelPks().
-		SelectModelColumns().
-		Scan(suite.ctx)
-	suite.NoError(err, "SelectModelColumns should override SelectModelPks")
-	suite.True(len(users6) > 0, "Should return results")
-	suite.NotEmpty(users6[0].Name, "Name should be populated when SelectModelColumns is used")
-}
-
-// TestSelectExprCumulative tests that SelectExpr is cumulative and works with any base selection.
-func (suite *SelectTestSuite) TestSelectExprCumulative() {
-	suite.T().Logf("Testing SelectExpr cumulative behavior for %s", suite.dbType)
-
-	// Test 1: SelectExpr with SelectAll
-	type UserWithComputed struct {
-		Id       string `bun:"id"`
-		Name     string `bun:"name"`
-		Email    string `bun:"email"`
-		Age      int16  `bun:"age"`
-		AgeGroup string `bun:"age_group"`
-	}
-
-	var users1 []UserWithComputed
-
-	err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectAll().
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.When(func(cond ConditionBuilder) {
-					cond.GreaterThan("age", 30)
-				}).Then("'senior'")
-				cb.Else("'junior'")
-			})
-		}, "age_group").
-		OrderBy("name").
-		Scan(suite.ctx, &users1)
-	suite.NoError(err, "SelectExpr should work with SelectAll")
-	suite.True(len(users1) > 0, "Should return results")
-	suite.NotEmpty(users1[0].Name, "Name should be populated")
-	suite.NotEmpty(users1[0].AgeGroup, "Computed age_group should be populated")
-
-	// Test 2: SelectExpr with Select
-	type UserWithRowNum struct {
-		Name   string `bun:"name"`
-		Email  string `bun:"email"`
-		RowNum int    `bun:"row_num"`
-	}
-
-	var users2 []UserWithRowNum
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name", "email").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.RowNumber(func(rb RowNumberBuilder) {
-				rb.Over().OrderBy("name")
-			})
-		}, "row_num").
-		OrderBy("name").
-		Scan(suite.ctx, &users2)
-	suite.NoError(err, "SelectExpr should work with Select")
-	suite.True(len(users2) > 0, "Should return results")
-	suite.NotEmpty(users2[0].Name, "Name should be populated")
-	suite.True(users2[0].RowNum > 0, "Row number should be populated")
-
-	// Test 3: Multiple SelectExpr calls (cumulative)
-	type UserWithMultipleComputed struct {
-		Name      string `bun:"name"`
-		UpperName string `bun:"upper_name"`
-		NameLen   int    `bun:"name_len"`
-	}
-
-	var users3 []UserWithMultipleComputed
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Upper(eb.Column("name"))
-		}, "upper_name").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Length(eb.Column("name"))
-		}, "name_len").
-		OrderBy("name").
-		Scan(suite.ctx, &users3)
-	suite.NoError(err, "Multiple SelectExpr should be cumulative")
-	suite.True(len(users3) > 0, "Should return results")
-	suite.NotEmpty(users3[0].Name, "Name should be populated")
-	suite.NotEmpty(users3[0].UpperName, "Upper name should be populated")
-	suite.True(users3[0].NameLen > 0, "Name length should be populated")
-
-	// Test 4: SelectExpr preserved when switching base selection
-	type UserAllWithComputed struct {
-		Id       string `bun:"id"`
-		Name     string `bun:"name"`
-		Email    string `bun:"email"`
-		Age      int16  `bun:"age"`
-		IsActive bool   `bun:"is_active"`
-		RowNum   int    `bun:"row_num"`
-	}
-
-	var users4 []UserAllWithComputed
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.RowNumber(func(rb RowNumberBuilder) {
-				rb.Over().OrderBy("name")
-			})
-		}, "row_num").
-		SelectAll(). // Switch to SelectAll, but SelectExpr should be preserved
-		OrderBy("name").
-		Scan(suite.ctx, &users4)
-	suite.NoError(err, "SelectExpr should be preserved when switching to SelectAll")
-	suite.True(len(users4) > 0, "Should return results")
-	suite.NotEmpty(users4[0].Name, "Name should be populated")
-	suite.NotEmpty(users4[0].Email, "Email should be populated (SelectAll)")
-	suite.True(users4[0].RowNum > 0, "Row number should still be populated (SelectExpr preserved)")
-
-	// Test 5: SelectExpr with SelectModelColumns
-	type UserModelWithTotal struct {
-		Id         string `bun:"id"`
-		CreatedAt  string `bun:"created_at"`
-		CreatedBy  string `bun:"created_by"`
-		UpdatedAt  string `bun:"updated_at"`
-		UpdatedBy  string `bun:"updated_by"`
-		Name       string `bun:"name"`
-		Email      string `bun:"email"`
-		Age        int16  `bun:"age"`
-		IsActive   bool   `bun:"is_active"`
-		Meta       string `bun:"meta"`
-		TotalCount int64  `bun:"total_count"`
-	}
-
-	var users5 []UserModelWithTotal
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectModelColumns().
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.WCount(func(wcb WindowCountBuilder) {
-				wcb.All().Over()
-			})
-		}, "total_count").
-		OrderBy("name").
-		Scan(suite.ctx, &users5)
-	suite.NoError(err, "SelectExpr should work with SelectModelColumns")
-	suite.True(len(users5) > 0, "Should return results")
-	suite.NotEmpty(users5[0].Name, "Name should be populated")
-	suite.True(users5[0].TotalCount > 0, "Total count should be populated")
-}
-
-// TestSelectIdempotency tests that SelectModelColumns and SelectModelPks are idempotent.
-func (suite *SelectTestSuite) TestSelectIdempotency() {
-	suite.T().Logf("Testing Select method idempotency for %s", suite.dbType)
-
-	// Test 1: Multiple SelectModelColumns calls (should be idempotent)
-	var users1 []User
-
-	err := suite.db.NewSelect().
-		Model(&users1).
-		SelectModelColumns().
-		SelectModelColumns().
-		SelectModelColumns().
-		Scan(suite.ctx)
-	suite.NoError(err, "Multiple SelectModelColumns should not cause errors")
-	suite.True(len(users1) > 0, "Should return results")
-	suite.NotEmpty(users1[0].Name, "Name should be populated")
-
-	// Test 2: Multiple SelectModelPks calls (should be idempotent)
-	type UserIDOnly struct {
-		Id string `bun:"id,pk"`
-	}
-
-	var users2 []UserIDOnly
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectModelPks().
-		SelectModelPks().
-		SelectModelPks().
-		Scan(suite.ctx, &users2)
-	suite.NoError(err, "Multiple SelectModelPks should not cause errors")
-	suite.True(len(users2) > 0, "Should return results")
-	suite.NotEmpty(users2[0].Id, "ID should be populated")
-
-	// Test 3: Multiple SelectAll calls (should be idempotent)
-	var users3 []User
-
-	err = suite.db.NewSelect().
-		Model(&users3).
-		SelectAll().
-		SelectAll().
-		SelectAll().
-		Scan(suite.ctx)
-	suite.NoError(err, "Multiple SelectAll should not cause errors")
-	suite.True(len(users3) > 0, "Should return results")
-	suite.NotEmpty(users3[0].Email, "All columns should be populated")
-}
-
-// TestSelectModelColumnsWithExplicitSelect tests that SelectModelColumns/SelectModelPks can coexist with Select.
-func (suite *SelectTestSuite) TestSelectModelColumnsWithExplicitSelect() {
-	suite.T().Logf("Testing SelectModelColumns/SelectModelPks coexistence with Select for %s", suite.dbType)
-
-	// Test 1: SelectModelColumns + Select should include both model columns and explicit columns
-	type UserWithExtra struct {
-		Id        string `bun:"id"`
-		CreatedAt string `bun:"created_at"`
-		CreatedBy string `bun:"created_by"`
-		UpdatedAt string `bun:"updated_at"`
-		UpdatedBy string `bun:"updated_by"`
-		Name      string `bun:"name"`
-		Email     string `bun:"email"`
-		Age       int16  `bun:"age"`
-		IsActive  bool   `bun:"is_active"`
-		UpperName string `bun:"upper_name"`
-	}
-
-	var users1 []UserWithExtra
-
-	err := suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectModelColumns().                        // Should select: id, created_at, created_by, updated_at, updated_by, deleted_at, deleted_by
-		Select("name", "email", "age", "is_active"). // Should also select these explicit columns
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Upper(eb.Column("name"))
-		}, "upper_name"). // SelectExpr should always be cumulative
-		OrderBy("name").
-		Scan(suite.ctx, &users1)
-	suite.NoError(err, "SelectModelColumns + Select should coexist")
-	suite.True(len(users1) > 0, "Should return results")
-
-	// Verify both model columns and explicit columns are populated
-	for _, user := range users1 {
-		suite.NotEmpty(user.Id, "Model column ID should be populated")
-		suite.NotEmpty(user.CreatedAt, "Model column CreatedAt should be populated")
-		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
-		suite.NotEmpty(user.Email, "Explicit column Email should be populated")
-		suite.True(user.Age > 0, "Explicit column Age should be populated")
-		suite.NotEmpty(user.UpperName, "SelectExpr column should be populated")
-		suite.T().Logf("User: ID=%s, Name=%s, UpperName=%s, CreatedAt=%s",
-			user.Id, user.Name, user.UpperName, user.CreatedAt)
-	}
-
-	// Test 2: Select + SelectModelColumns (reverse order) should also work
-	type UserWithExtra2 struct {
-		Id        string `bun:"id"`
-		CreatedAt string `bun:"created_at"`
-		Name      string `bun:"name"`
-		Email     string `bun:"email"`
-		UpperName string `bun:"upper_name"`
-	}
-
-	var users2 []UserWithExtra2
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name", "email"). // Explicit columns first
-		SelectModelColumns().    // Model columns second
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Upper(eb.Column("email"))
-		}, "upper_name").
-		OrderBy("name").
-		Scan(suite.ctx, &users2)
-	suite.NoError(err, "Select + SelectModelColumns should coexist (reverse order)")
-	suite.True(len(users2) > 0, "Should return results")
-
-	for _, user := range users2 {
-		suite.NotEmpty(user.Id, "Model column ID should be populated")
-		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
-		suite.NotEmpty(user.Email, "Explicit column Email should be populated")
-		suite.NotEmpty(user.UpperName, "SelectExpr column should be populated")
-	}
-
-	// Test 3: SelectModelPks + Select should include both Pks and explicit columns
-	type UserWithPksAndExtra struct {
-		Id    string `bun:"id"`
-		Name  string `bun:"name"`
-		Email string `bun:"email"`
-		Age   int16  `bun:"age"`
-	}
-
-	var users3 []UserWithPksAndExtra
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		SelectModelPks().               // Should select: id (primary key)
-		Select("name", "email", "age"). // Should also select these explicit columns
-		OrderBy("name").
-		Scan(suite.ctx, &users3)
-	suite.NoError(err, "SelectModelPks + Select should coexist")
-	suite.True(len(users3) > 0, "Should return results")
-
-	for _, user := range users3 {
-		suite.NotEmpty(user.Id, "Pk column ID should be populated")
-		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
-		suite.NotEmpty(user.Email, "Explicit column Email should be populated")
-		suite.True(user.Age > 0, "Explicit column Age should be populated")
-		suite.T().Logf("User: ID=%s, Name=%s, Age=%d", user.Id, user.Name, user.Age)
-	}
-
-	// Test 4: Select + SelectModelPks (reverse order) should also work
-	type UserWithPksAndExtra2 struct {
-		Id         string `bun:"id"`
-		Name       string `bun:"name"`
-		LowerEmail string `bun:"lower_email"`
-	}
-
-	var users4 []UserWithPksAndExtra2
-
-	err = suite.db.NewSelect().
-		Model((*User)(nil)).
-		Select("name").   // Explicit column first
-		SelectModelPks(). // Pks second
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Lower(eb.Column("email"))
-		}, "lower_email").
-		OrderBy("name").
-		Scan(suite.ctx, &users4)
-	suite.NoError(err, "Select + SelectModelPks should coexist (reverse order)")
-	suite.True(len(users4) > 0, "Should return results")
-
-	for _, user := range users4 {
-		suite.NotEmpty(user.Id, "Pk column Id should be populated")
-		suite.NotEmpty(user.Name, "Explicit column Name should be populated")
-		suite.NotEmpty(user.LowerEmail, "SelectExpr column should be populated")
-	}
-
-	// Test 5: Complex scenario with JOIN, SelectModelColumns, Select, and SelectExpr
-	type PostWithUserInfo struct {
-		Id         string `bun:"id"`
-		CreatedAt  string `bun:"created_at"`
-		Title      string `bun:"title"`
-		Status     string `bun:"status"`
-		ViewCount  int64  `bun:"view_count"`
-		UserName   string `bun:"user_name"`
-		UserEmail  string `bun:"user_email"`
-		UpperTitle string `bun:"upper_title"`
-	}
-
-	var posts []PostWithUserInfo
-
-	err = suite.db.NewSelect().
-		Model((*Post)(nil)).
-		SelectModelColumns().                    // Post model columns
-		Select("title", "status", "view_count"). // Explicit post columns
-		SelectAs("u.name", "user_name").         // Joined user columns with alias
-		SelectAs("u.email", "user_email").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Upper(eb.Column("p.title"))
-		}, "upper_title").
-		LeftJoin((*User)(nil), func(cb ConditionBuilder) {
-			cb.EqualsColumn("u.id", "p.user_id")
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("status", "published")
-		}).
-		OrderBy("p.title").
-		Limit(5).
-		Scan(suite.ctx, &posts)
-	suite.NoError(err, "Complex query with SelectModelColumns + Select + JOIN should work")
-	suite.True(len(posts) > 0, "Should return posts")
-
-	for _, post := range posts {
-		suite.NotEmpty(post.Id, "Model column ID should be populated")
-		suite.NotEmpty(post.Title, "Explicit column Title should be populated")
-		suite.NotEmpty(post.Status, "Explicit column Status should be populated")
-
-		if post.UserName != "" {
-			suite.NotEmpty(post.UserEmail, "Joined column UserEmail should be populated when user exists")
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "JoinRelations with INNER JOIN should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with category names")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.CategoryName, "Category name should be loaded with INNER JOIN")
+		}
+	})
+
+	suite.Run("JoinRelationsWithCustomCondition", func() {
+		type PostWithActiveUser struct {
+			Id       string `bun:"id"`
+			Title    string `bun:"title"`
+			UserName string `bun:"user_name"`
 		}
 
-		suite.NotEmpty(post.UpperTitle, "SelectExpr column should be populated")
-		suite.T().Logf("Post: ID=%s, Title=%s, UpperTitle=%s, Author=%s",
-			post.Id, post.Title, post.UpperTitle, post.UserName)
-	}
+		var posts []PostWithActiveUser
+
+		err := suite.Db.NewSelect().
+			Model((*Post)(nil)).
+			Select("p.id", "p.title").
+			JoinRelations(&RelationSpec{
+				Model:         (*User)(nil),
+				Alias:         "u",
+				ForeignColumn: "user_id",
+				SelectedColumns: []ColumnInfo{
+					{Name: "name", Alias: "user_name"},
+				},
+				On: func(cb ConditionBuilder) {
+					cb.Equals("u.is_active", true)
+				},
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx, &posts)
+
+		suite.NoError(err, "JoinRelations with custom condition should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with active users only")
+	})
+
+	suite.Run("RelationMethod", func() {
+		var posts []Post
+
+		err := suite.Db.NewSelect().
+			Model(&posts).
+			Relation("User").
+			Relation("Category").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Relation method should load related objects")
+		suite.True(len(posts) > 0, "Should return posts with relations")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+
+			if post.User != nil {
+				suite.NotEmpty(post.User.Name, "User relation should be loaded")
+				suite.T().Logf("Post: %s by %s", post.Title, post.User.Name)
+			}
+
+			if post.Category != nil {
+				suite.NotEmpty(post.Category.Name, "Category relation should be loaded")
+			}
+		}
+	})
+
+	suite.Run("RelationMethodWithApply", func() {
+		var posts []Post
+
+		err := suite.Db.NewSelect().
+			Model(&posts).
+			Relation("User", func(query SelectQuery) {
+				// Customize User relation to only select specific columns
+				query.Select("id", "name", "email")
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(3).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Relation with apply should work correctly")
+		suite.True(len(posts) > 0, "Should return posts with customized user relations")
+
+		for _, post := range posts {
+			suite.NotEmpty(post.Id, "ID should be populated")
+
+			if post.User != nil {
+				suite.NotEmpty(post.User.Name, "User relation should be loaded with custom select")
+				suite.NotEmpty(post.User.Email, "User email should be loaded")
+				suite.T().Logf("Post: %s by %s (%s)", post.Title, post.User.Name, post.User.Email)
+			}
+		}
+	})
 }
 
-// TestSelectInSubQuery tests that deferred select state is properly applied in subqueries.
-func (suite *SelectTestSuite) TestSelectInSubQuery() {
-	suite.T().Logf("Testing Select in subqueries for %s", suite.dbType)
+// TestWhere tests Where, WherePk, WhereDeleted, and IncludeDeleted methods.
+func (suite *SelectTestSuite) TestWhere() {
+	suite.T().Logf("Testing Where methods for %s", suite.DbType)
 
-	// Test 1: SelectModelColumns in subquery should only select model columns
-	var users []User
+	suite.Run("BasicWhere", func() {
+		var users []User
 
-	err := suite.db.NewSelect().
-		Model(&users).
-		Where(func(cb ConditionBuilder) {
-			cb.InSubQuery("id", func(subquery SelectQuery) {
-				subquery.Model((*Post)(nil)).
-					Select("user_id"). // Should only select user_id, not all columns
-					Where(func(cb ConditionBuilder) {
-						cb.Equals("status", "published")
-					})
-			})
-		}).
-		OrderBy("name").
-		Scan(suite.ctx)
-	suite.NoError(err, "Subquery with Select should work correctly")
-	suite.True(len(users) > 0, "Should have users with published posts")
+		err := suite.Db.NewSelect().
+			Model(&users).
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active").
+					GreaterThan("age", 25)
+			}).
+			OrderBy("name").
+			Limit(3).
+			Scan(suite.Ctx)
 
-	// Test 2: SelectExpr in subquery with aggregation
-	var popularPosts []Post
+		suite.NoError(err, "WHERE with conditions should work correctly")
+		suite.True(len(users) > 0, "Should return active users older than 25")
 
-	err = suite.db.NewSelect().
-		Model(&popularPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.GreaterThanSubQuery("view_count", func(subquery SelectQuery) {
-				subquery.Model((*Post)(nil)).
-					SelectExpr(func(eb ExprBuilder) any {
-						return eb.AvgColumn("view_count")
-					})
-			})
-		}).
-		OrderByDesc("view_count").
-		Scan(suite.ctx)
-	suite.NoError(err, "Subquery with SelectExpr should work correctly")
-	suite.True(len(popularPosts) > 0, "Should have posts with above average views")
+		for _, user := range users {
+			suite.True(user.IsActive, "User should be active")
+			suite.True(user.Age > 25, "User age should be greater than 25")
+			suite.T().Logf("User: %s (age=%d, active=%t)", user.Name, user.Age, user.IsActive)
+		}
+	})
 
-	// Test 3: Subquery in FROM clause with SelectAll
-	type UserSummary struct {
-		Name      string `bun:"name"`
-		Email     string `bun:"email"`
-		PostCount int64  `bun:"post_count"`
+	suite.Run("WherePk", func() {
+		var firstUser User
+
+		err := suite.Db.NewSelect().
+			Model(&firstUser).
+			OrderBy("name").
+			Limit(1).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch first user")
+
+		var user User
+
+		user.Id = firstUser.Id
+		err = suite.Db.NewSelect().
+			Model(&user).
+			WherePk().
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "WHERE PK should work correctly")
+		suite.Equal(firstUser.Id, user.Id, "Should find user by primary key")
+		suite.Equal(firstUser.Email, user.Email, "Should match email")
+
+		suite.T().Logf("Found user by PK: %s (%s)", user.Name, user.Email)
+	})
+}
+
+// TestGroupByAndHaving tests GroupBy, GroupByExpr, and Having methods.
+func (suite *SelectTestSuite) TestGroupByAndHaving() {
+	suite.T().Logf("Testing GroupBy and Having methods for %s", suite.DbType)
+
+	suite.Run("BasicGroupBy", func() {
+		type UserCount struct {
+			Age   int16 `bun:"age"`
+			Count int64 `bun:"count"`
+		}
+
+		var userCounts []UserCount
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("age").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.CountColumn("id")
+			}, "count").
+			GroupBy("age").
+			OrderBy("age").
+			Scan(suite.Ctx, &userCounts)
+
+		suite.NoError(err, "GROUP BY should work correctly")
+		suite.True(len(userCounts) > 0, "Should return user counts by age")
+
+		for _, uc := range userCounts {
+			suite.True(uc.Count > 0, "Count should be positive")
+			suite.T().Logf("Age %d: %d users", uc.Age, uc.Count)
+		}
+	})
+
+	suite.Run("GroupByExpr", func() {
+		type UserByAgeGroup struct {
+			AgeGroup string `bun:"age_group"`
+			Count    int64  `bun:"count"`
+		}
+
+		var ageGroups []UserByAgeGroup
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(
+						func(cond ConditionBuilder) {
+							cond.GreaterThan("age", 30)
+						}).
+						Then("Senior").
+						Else("Junior")
+				})
+			}, "age_group").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.CountColumn("id")
+			}, "count").
+			GroupByExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(
+						func(cond ConditionBuilder) {
+							cond.GreaterThan("age", 30)
+						}).
+						Then("Senior").
+						Else("Junior")
+				})
+			}).
+			OrderByExpr(func(eb ExprBuilder) any {
+				// Use positional reference to the first select column (age_group)
+				return 1
+			}).
+			Scan(suite.Ctx, &ageGroups)
+
+		suite.NoError(err, "GROUP BY expression should work correctly")
+		suite.True(len(ageGroups) > 0, "Should return users by age group")
+
+		for _, group := range ageGroups {
+			suite.True(group.Count > 0, "Count should be positive")
+			suite.T().Logf("Age group %s: %d users", group.AgeGroup, group.Count)
+		}
+	})
+
+	suite.Run("Having", func() {
+		type AgeStats struct {
+			Age   int16 `bun:"age"`
+			Count int64 `bun:"count"`
+		}
+
+		var ageStats []AgeStats
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("age").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.CountColumn("id")
+			}, "count").
+			GroupBy("age").
+			Having(func(cb ConditionBuilder) {
+				cb.Expr(func(eb ExprBuilder) any {
+					return eb.GreaterThanOrEqual(eb.CountColumn("id"), 1)
+				})
+			}).
+			OrderBy("age").
+			Scan(suite.Ctx, &ageStats)
+
+		suite.NoError(err, "HAVING should work correctly")
+		suite.True(len(ageStats) > 0, "Should return ages with users")
+
+		for _, age := range ageStats {
+			suite.True(age.Count >= 1, "Count should be at least 1")
+			suite.T().Logf("Age %d: %d users", age.Age, age.Count)
+		}
+	})
+}
+
+// TestOrderBy tests OrderBy, OrderByDesc, and OrderByExpr methods.
+func (suite *SelectTestSuite) TestOrderBy() {
+	suite.T().Logf("Testing OrderBy methods for %s", suite.DbType)
+
+	suite.Run("OrderByColumns", func() {
+		var users []User
+
+		err := suite.Db.NewSelect().
+			Model(&users).
+			Select("id", "name", "age").
+			OrderBy("age").
+			OrderByDesc("name").
+			Limit(5).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "ORDER BY should work correctly")
+		suite.Len(users, 3, "Should return 3 users")
+
+		// Verify ordering by age ascending
+		for i := 1; i < len(users); i++ {
+			suite.True(users[i-1].Age <= users[i].Age,
+				"Users should be ordered by age ascending")
+		}
+
+		for _, user := range users {
+			suite.T().Logf("User: %s (age=%d)", user.Name, user.Age)
+		}
+	})
+
+	suite.Run("OrderByExpr", func() {
+		type UserWithComputedOrder struct {
+			Id       string `bun:"id"`
+			Name     string `bun:"name"`
+			Age      int16  `bun:"age"`
+			OrderKey int    `bun:"order_key"`
+		}
+
+		var users []UserWithComputedOrder
+
+		err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Select("id", "name", "age").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(
+						func(cond ConditionBuilder) {
+							cond.IsTrue("is_active")
+						}).
+						Then(eb.Add(eb.Column("age"), 100)).
+						Else(eb.Column("age"))
+				})
+			}, "order_key").
+			OrderByExpr(func(eb ExprBuilder) any {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.When(
+						func(cond ConditionBuilder) {
+							cond.IsTrue("is_active")
+						}).
+						Then(eb.Add(eb.Column("age"), 100)).
+						Else(eb.Column("age"))
+				})
+			}).
+			Limit(5).
+			Scan(suite.Ctx, &users)
+
+		suite.NoError(err, "ORDER BY expression should work correctly")
+		suite.True(len(users) > 0, "Should return users with computed ordering")
+
+		for _, user := range users {
+			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.T().Logf("User: %s (age=%d, order_key=%d)", user.Name, user.Age, user.OrderKey)
+		}
+	})
+}
+
+// TestPagination tests Limit, Offset, and Paginate methods.
+func (suite *SelectTestSuite) TestPagination() {
+	suite.T().Logf("Testing Pagination methods for %s", suite.DbType)
+
+	suite.Run("LimitAndOffset", func() {
+		// Get total count first
+		totalCount, err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Count(suite.Ctx)
+		suite.NoError(err, "Should count total users")
+
+		// Get first page
+		var page1 []User
+
+		err = suite.Db.NewSelect().
+			Model(&page1).
+			OrderBy("id").
+			Limit(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "First page should work")
+		suite.Len(page1, 2, "First page should have 2 users")
+
+		// Get second page
+		var page2 []User
+
+		err = suite.Db.NewSelect().
+			Model(&page2).
+			OrderBy("id").
+			Limit(2).
+			Offset(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Second page should work")
+		suite.True(len(page2) > 0, "Second page should have users")
+
+		// Verify no overlap
+		if len(page1) > 0 && len(page2) > 0 {
+			suite.NotEqual(page1[0].Id, page2[0].Id, "Pages should not overlap")
+		}
+
+		suite.T().Logf("Total: %d, Page1: %d users, Page2: %d users",
+			totalCount, len(page1), len(page2))
+	})
+
+	suite.Run("Paginate", func() {
+		// Create pageable request for page 2, size 2
+		pageable := page.Pageable{
+			Page: 2,
+			Size: 2,
+		}
+
+		var users []User
+
+		err := suite.Db.NewSelect().
+			Model(&users).
+			OrderBy("id").
+			Paginate(pageable).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Paginate should work correctly")
+		suite.True(len(users) > 0, "Should return paginated results")
+
+		suite.T().Logf("Page %d (size %d): %d users",
+			pageable.Page, pageable.Size, len(users))
+	})
+}
+
+// TestLocking tests ForShare and ForUpdate methods.
+func (suite *SelectTestSuite) TestLocking() {
+	suite.T().Logf("Testing Locking methods for %s", suite.DbType)
+
+	// SQLite doesn't support row-level locking (FOR SHARE/FOR UPDATE)
+	if suite.DbType == constants.DbSQLite {
+		suite.T().Skip("Skipping for SQLite: row-level locking (FOR SHARE/FOR UPDATE) not supported, uses database-level locking instead")
+
+		return
 	}
 
-	var userSummaries []UserSummary
+	suite.Run("ForShare", func() {
+		var users []User
 
-	err = suite.db.NewSelect().
-		TableSubQuery("u", func(sq SelectQuery) {
-			sq.Model((*User)(nil)).
-				SelectAll()
-		}).
-		Select("u.name", "u.email").
-		SelectExpr(func(eb ExprBuilder) any {
-			return eb.Expr("COALESCE((SELECT COUNT(*) FROM ? AS ? WHERE ?.? = ?.?), 0)",
-				bun.Name("test_post"),
-				bun.Name("p"),
-				bun.Name("p"),
-				bun.Name("user_id"),
-				bun.Name("u"),
-				bun.Name("id"),
-			)
-		}, "post_count").
-		OrderBy("u.name").
-		Scan(suite.ctx, &userSummaries)
-	suite.NoError(err, "Subquery in FROM with SelectAll should work")
-	suite.True(len(userSummaries) > 0, "Should return user summaries")
+		err := suite.Db.NewSelect().
+			Model(&users).
+			ForShare().
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "FOR SHARE should work when supported")
+		suite.True(len(users) > 0, "Should return users with share lock")
+
+		for _, user := range users {
+			suite.T().Logf("User with share lock: %s", user.Name)
+		}
+	})
+
+	suite.Run("ForUpdate", func() {
+		var posts []Post
+
+		err := suite.Db.NewSelect().
+			Model(&posts).
+			ForUpdate().
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "draft")
+			}).
+			OrderBy("id").
+			Limit(1).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "FOR UPDATE should work when supported")
+		suite.True(len(posts) > 0, "Should return posts with update lock")
+
+		for _, post := range posts {
+			suite.T().Logf("Post with update lock: %s", post.Title)
+		}
+	})
+
+	suite.Run("ForUpdateNoWait", func() {
+		var posts []Post
+
+		err := suite.Db.NewSelect().
+			Model(&posts).
+			ForUpdateNoWait().
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "draft")
+			}).
+			OrderBy("id").
+			Limit(1).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "FOR UPDATE NOWAIT should work when supported")
+		suite.True(len(posts) > 0, "Should return posts with NOWAIT lock")
+
+		for _, post := range posts {
+			suite.T().Logf("Post with NOWAIT lock: %s", post.Title)
+		}
+	})
+
+	suite.Run("ForUpdateSkipLocked", func() {
+		var posts []Post
+
+		err := suite.Db.NewSelect().
+			Model(&posts).
+			ForUpdateSkipLocked().
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("id").
+			Limit(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "FOR UPDATE SKIP LOCKED should work when supported")
+		suite.True(len(posts) > 0, "Should return posts with SKIP LOCKED option")
+
+		for _, post := range posts {
+			suite.T().Logf("Post with SKIP LOCKED: %s", post.Title)
+		}
+	})
+}
+
+// TestSetOperations tests Union, Intersect, and Except methods.
+func (suite *SelectTestSuite) TestSetOperations() {
+	suite.T().Logf("Testing Set Operations for %s", suite.DbType)
+
+	if suite.DbType == constants.DbSQLite {
+		suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated set operation SQL, resulting in syntax errors")
+
+		return
+	}
+
+	suite.Run("Union", func() {
+		type CombinedResult struct {
+			Name string `bun:"name"`
+			Type string `bun:"type"`
+		}
+
+		var results []CombinedResult
+
+		err := suite.Db.NewSelect().
+			Table("test_user").
+			Select("name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return "user"
+			}, "type").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Union(func(query SelectQuery) {
+				query.Table("test_category").
+					Select("name").
+					SelectExpr(func(eb ExprBuilder) any {
+						return "category"
+					}, "type")
+			}).
+			OrderBy("name").
+			Limit(5).
+			Scan(suite.Ctx, &results)
+
+		suite.NoError(err, "UNION should work correctly")
+		suite.True(len(results) > 0, "Should return combined results")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Name, "Name should not be empty")
+			suite.NotEmpty(result.Type, "Type should not be empty")
+			suite.T().Logf("Combined: %s (%s)", result.Name, result.Type)
+		}
+	})
+
+	suite.Run("UnionAll", func() {
+		type CombinedResult struct {
+			Name string `bun:"name"`
+			Type string `bun:"type"`
+		}
+
+		var results []CombinedResult
+
+		err := suite.Db.NewSelect().
+			Table("test_user").
+			Select("name").
+			SelectExpr(func(eb ExprBuilder) any {
+				return "user"
+			}, "type").
+			Limit(1).
+			UnionAll(func(query SelectQuery) {
+				query.Table("test_category").
+					Select("name").
+					SelectExpr(func(eb ExprBuilder) any {
+						return "category"
+					}, "type").
+					Limit(1)
+			}).
+			OrderBy("type", "name").
+			Scan(suite.Ctx, &results)
+
+		suite.NoError(err, "UNION ALL should work correctly")
+		suite.True(len(results) > 0, "Should return combined results with duplicates")
+
+		for _, result := range results {
+			suite.T().Logf("UNION ALL: %s (%s)", result.Name, result.Type)
+		}
+	})
+
+	suite.Run("Intersect", func() {
+		count, err := suite.Db.NewSelect().
+			TableSubQuery(func(query SelectQuery) {
+				query.Table("test_user").
+					Select("name").
+					Where(func(cb ConditionBuilder) {
+						cb.IsTrue("is_active")
+					}).
+					Intersect(func(query SelectQuery) {
+						query.Table("test_user").
+							Select("name").
+							Where(func(cb ConditionBuilder) {
+								cb.GreaterThan("age", 25)
+							})
+					})
+			}, "t").
+			Count(suite.Ctx)
+
+		suite.NoError(err, "INTERSECT should work when supported")
+		suite.True(count >= 0, "Count should be non-negative")
+		suite.T().Logf("INTERSECT count: %d", count)
+	})
+
+	suite.Run("Except", func() {
+		count, err := suite.Db.NewSelect().
+			TableSubQuery(func(query SelectQuery) {
+				query.Table("test_user").
+					Select("name").
+					Except(func(query SelectQuery) {
+						query.Table("test_user").
+							Select("name").
+							Where(func(cb ConditionBuilder) {
+								cb.IsTrue("is_active")
+							})
+					})
+			}, "t").
+			Count(suite.Ctx)
+
+		suite.NoError(err, "EXCEPT should work when supported")
+		suite.True(count >= 0, "Count should be non-negative")
+		suite.T().Logf("EXCEPT count: %d", count)
+	})
+}
+
+// TestApply tests Apply and ApplyIf methods.
+func (suite *SelectTestSuite) TestApply() {
+	suite.T().Logf("Testing Apply methods for %s", suite.DbType)
+
+	suite.Run("BasicApply", func() {
+		var users []User
+
+		err := suite.Db.NewSelect().
+			Model(&users).
+			Apply(
+				func(query SelectQuery) {
+					query.Where(func(cb ConditionBuilder) {
+						cb.IsTrue("is_active")
+					})
+				},
+				func(query SelectQuery) {
+					query.OrderBy("name")
+				},
+			).
+			Limit(3).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Apply should work correctly")
+		suite.Len(users, 2, "Should return 2 active users")
+
+		for _, user := range users {
+			suite.True(user.IsActive, "User should be active (applied filter)")
+			suite.T().Logf("Applied user: %s", user.Name)
+		}
+	})
+
+	suite.Run("ApplyIfTrue", func() {
+		var users []User
+
+		err := suite.Db.NewSelect().
+			Model(&users).
+			ApplyIf(
+				true,
+				func(query SelectQuery) {
+					query.Where(func(cb ConditionBuilder) {
+						cb.IsTrue("is_active")
+					})
+				},
+				func(query SelectQuery) {
+					query.OrderBy("name")
+				},
+			).
+			Limit(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "ApplyIf(true) should apply functions")
+		suite.Len(users, 2, "Should return 2 users")
+
+		for _, user := range users {
+			suite.True(user.IsActive, "User should be active (condition was true)")
+		}
+	})
+
+	suite.Run("ApplyIfFalse", func() {
+		var users []User
+
+		err := suite.Db.NewSelect().
+			Model(&users).
+			ApplyIf(
+				false,
+				func(query SelectQuery) {
+					query.Where(func(cb ConditionBuilder) {
+						cb.IsTrue("is_active")
+					})
+				},
+			).
+			Limit(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "ApplyIf(false) should skip functions")
+		suite.Len(users, 2, "Should return 2 users (no filter applied)")
+
+		for _, user := range users {
+			suite.T().Logf("Non-filtered user: %s (active=%t)", user.Name, user.IsActive)
+		}
+	})
+}
+
+// TestExecution tests Exec, Scan, Rows, ScanAndCount, Count, and Exists methods.
+func (suite *SelectTestSuite) TestExecution() {
+	suite.T().Logf("Testing Execution methods for %s", suite.DbType)
+
+	suite.Run("BasicScan", func() {
+		var users []User
+
+		err := suite.Db.NewSelect().
+			Model(&users).
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			OrderBy("name").
+			Limit(2).
+			Scan(suite.Ctx)
+
+		suite.NoError(err, "Basic Scan should work")
+		suite.Len(users, 2, "Should return 2 users")
+
+		for _, user := range users {
+			suite.T().Logf("Scanned user: %s", user.Name)
+		}
+	})
+
+	suite.Run("Count", func() {
+		count, err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Count(suite.Ctx)
+
+		suite.NoError(err, "Count should work")
+		suite.True(count > 0, "Should have active users")
+
+		suite.T().Logf("Active user count: %d", count)
+	})
+
+	suite.Run("Exists", func() {
+		exists, err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Exists(suite.Ctx)
+
+		suite.NoError(err, "Exists should work")
+		suite.True(exists, "Alice should exist")
+
+		suite.T().Logf("Alice exists: %t", exists)
+	})
+
+	suite.Run("ScanAndCount", func() {
+		var users []User
+
+		total, err := suite.Db.NewSelect().
+			Model(&users).
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			OrderBy("name").
+			Limit(2).
+			ScanAndCount(suite.Ctx)
+
+		suite.NoError(err, "ScanAndCount should work")
+		suite.Len(users, 2, "Should return 2 users")
+		suite.True(total >= int64(len(users)), "Total should be >= page size")
+
+		suite.T().Logf("Page: %d users, Total: %d", len(users), total)
+	})
+
+	suite.Run("Rows", func() {
+		rows, err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			OrderBy("name").
+			Limit(2).
+			Rows(suite.Ctx)
+
+		suite.NoError(err, "Rows should work")
+		suite.NotNil(rows, "Rows should not be nil")
+
+		defer rows.Close()
+
+		count := 0
+		for rows.Next() {
+			count++
+		}
+
+		suite.NoError(rows.Err(), "rows iteration should not have errors")
+		suite.Equal(2, count, "Should return 2 rows")
+		suite.T().Logf("Successfully iterated through %d rows", count)
+	})
+
+	suite.Run("Exec", func() {
+		// Exec with SELECT is less common but should work
+		var result struct {
+			Name string `bun:"name"`
+		}
+
+		_, err := suite.Db.NewSelect().
+			Model((*User)(nil)).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Exec(suite.Ctx, &result)
+
+		suite.NoError(err, "Exec should work when supported")
+		suite.T().Logf("Exec result: %s", result.Name)
+	})
 }

@@ -69,7 +69,8 @@ func NewTestUserUpdateManyWithPostHookResource() api.Resource {
 	}
 }
 
-// UpdateManyTestSuite is the test suite for UpdateMany Api tests.
+// UpdateManyTestSuite tests the UpdateMany API functionality
+// including basic batch update, PreUpdateMany/PostUpdateMany hooks, negative cases, transaction rollback, and partial updates.
 type UpdateManyTestSuite struct {
 	BaseSuite
 }
@@ -90,6 +91,8 @@ func (suite *UpdateManyTestSuite) TearDownSuite() {
 
 // TestUpdateManyBasic tests basic UpdateMany functionality.
 func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
+	suite.T().Logf("Testing UpdateMany API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many",
@@ -117,15 +120,19 @@ func (suite *UpdateManyTestSuite) TestUpdateManyBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
 	// UpdateManyApi returns no data, just success status
+
+	suite.T().Logf("Successfully updated 2 users in batch")
 }
 
 // TestUpdateManyWithPreHook tests UpdateMany with PreUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
+	suite.T().Logf("Testing UpdateMany API with PreUpdateMany hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many_prehook",
@@ -154,14 +161,18 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPreHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	suite.T().Logf("Successfully updated 2 users with PreUpdateMany hook")
 }
 
 // TestUpdateManyWithPostHook tests UpdateMany with PostUpdateMany hook.
 func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
+	suite.T().Logf("Testing UpdateMany API with PostUpdateMany hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many_posthook",
@@ -188,16 +199,21 @@ func (suite *UpdateManyTestSuite) TestUpdateManyWithPostHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
-	suite.NotEmpty(resp.Header.Get("X-Updated-Count"))
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+	suite.NotEmpty(resp.Header.Get("X-Updated-Count"), "Should set X-Updated-Count header via PostUpdateMany hook")
 
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	updatedCount := resp.Header.Get("X-Updated-Count")
+	suite.T().Logf("Updated %s users with PostUpdateMany hook", updatedCount)
 }
 
 // TestUpdateManyNegativeCases tests negative scenarios.
 func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
+	suite.T().Logf("Testing UpdateMany API negative cases for %s", suite.dbType)
+
 	suite.Run("EmptyArray", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -208,9 +224,11 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			Params: map[string]any{"list": []any{}},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail - list must have at least 1 item
+		suite.False(body.IsOk(), "Should fail when list is empty")
+
+		suite.T().Logf("Validation failed as expected for empty list")
 	})
 
 	suite.Run("NonExistentUser", func() {
@@ -240,10 +258,12 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail - one user not found
-		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound))
+		suite.False(body.IsOk(), "Should fail when one user does not exist")
+		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound), "Should return record not found message")
+
+		suite.T().Logf("Validation failed as expected for non-existent user in batch")
 	})
 
 	suite.Run("MissingId", func() {
@@ -273,10 +293,12 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
-		suite.Equal(body.Message, i18n.T("primary_key_required", map[string]any{"field": "id"}))
+		suite.False(body.IsOk(), "Should fail when required id is missing")
+		suite.Equal(body.Message, i18n.T("primary_key_required", map[string]any{"field": "id"}), "Should return primary key required message")
+
+		suite.T().Logf("Validation failed as expected for missing id")
 	})
 
 	suite.Run("InvalidEmail", func() {
@@ -306,9 +328,11 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when email format is invalid in batch")
+
+		suite.T().Logf("Validation failed as expected for invalid email format")
 	})
 
 	suite.Run("InvalidAge", func() {
@@ -338,9 +362,11 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when age is less than 1 in batch")
+
+		suite.T().Logf("Validation failed as expected for invalid age")
 	})
 
 	suite.Run("DuplicateEmailInBatch", func() {
@@ -370,10 +396,12 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail due to unique constraint
-		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordAlreadyExists))
+		suite.False(body.IsOk(), "Should fail due to duplicate email in batch")
+		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordAlreadyExists), "Should return record already exists message")
+
+		suite.T().Logf("Validation failed as expected for duplicate email in batch")
 	})
 
 	suite.Run("DuplicateEmailWithExisting", func() {
@@ -396,15 +424,19 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail due to unique constraint
-		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordAlreadyExists))
+		suite.False(body.IsOk(), "Should fail due to duplicate email with existing record")
+		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordAlreadyExists), "Should return record already exists message")
+
+		suite.T().Logf("Validation failed as expected for duplicate email with existing record")
 	})
 }
 
 // TestUpdateManyTransactionRollback tests that the entire batch rolls back on error.
 func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
+	suite.T().Logf("Testing UpdateMany API transaction rollback for %s", suite.dbType)
+
 	suite.Run("AllOrNothingSemantics", func() {
 		// Try to update a batch where the second item will fail
 		resp := suite.makeApiRequest(api.Request{
@@ -433,9 +465,9 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when one item in batch is invalid")
 
 		// Verify that the first user was not updated (transaction rolled back)
 		var user TestUser
@@ -443,13 +475,17 @@ func (suite *UpdateManyTestSuite) TestUpdateManyTransactionRollback() {
 		err := suite.db.NewSelect().Model(&user).Where(func(cb orm.ConditionBuilder) {
 			cb.Equals("id", "user001")
 		}).Scan(suite.ctx, &user)
-		suite.NoError(err)
+		suite.NoError(err, "Should successfully query database")
 		suite.NotEqual("rollback1@example.com", user.Email, "Email should not have been updated - transaction should have rolled back")
+
+		suite.T().Logf("Transaction rollback verified: first user was not updated")
 	})
 }
 
 // TestUpdateManyPartialUpdate tests updating only some fields.
 func (suite *UpdateManyTestSuite) TestUpdateManyPartialUpdate() {
+	suite.T().Logf("Testing UpdateMany API partial update for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_many",
@@ -478,8 +514,10 @@ func (suite *UpdateManyTestSuite) TestUpdateManyPartialUpdate() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	suite.T().Logf("Successfully partially updated 2 users")
 }

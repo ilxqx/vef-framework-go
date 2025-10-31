@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go"
@@ -17,36 +17,62 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/ilxqx/vef-framework-go/internal/app"
 	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// TestAppStartStop tests basic app lifecycle using fx.
-func TestAppStartStop(t *testing.T) {
-	testApp, stop := appTest.NewTestApp(
-		t,
+// AppTestSuite tests the app lifecycle and API functionality.
+type AppTestSuite struct {
+	suite.Suite
+
+	app  *app.App
+	stop func()
+}
+
+// SetupSuite runs once before all tests in the suite.
+func (suite *AppTestSuite) SetupSuite() {
+	suite.T().Log("Setting up AppTestSuite - starting test app")
+
+	// Clear environment variable to test with default language (zh-CN)
+	originalEnv := os.Getenv("VEF_I18N_LANGUAGE")
+
+	_ = os.Unsetenv("VEF_I18N_LANGUAGE")
+	defer func() {
+		if originalEnv != "" {
+			_ = os.Setenv("VEF_I18N_LANGUAGE", originalEnv)
+		}
+	}()
+
+	suite.app, suite.stop = appTest.NewTestApp(
+		suite.T(),
 		fx.Replace(&config.DatasourceConfig{
 			Type: constants.DbSQLite,
 		}),
+		fx.Invoke(func() {
+			// Re-initialize i18n with default language after clearing env var
+			_ = i18n.SetLanguage("")
+		}),
+		vef.ProvideApiResource(NewTestResource),
 	)
-	defer stop()
 
-	require.NotNil(t, testApp)
+	suite.Require().NotNil(suite.app, "App should be initialized")
 
-	// Start app
-	errChan := testApp.Start()
-	err := <-errChan
-	require.NoError(t, err)
-
-	// Give it a moment to fully start
-	time.Sleep(100 * time.Millisecond)
-
-	// Stop app
-	err = testApp.Stop()
-	require.NoError(t, err)
+	suite.T().Log("AppTestSuite setup complete - test app ready")
 }
 
-// TestResource is a simple test resource for Api testing.
+// TearDownSuite runs once after all tests in the suite.
+func (suite *AppTestSuite) TearDownSuite() {
+	suite.T().Log("Tearing down AppTestSuite")
+
+	if suite.stop != nil {
+		suite.stop()
+	}
+
+	suite.T().Log("AppTestSuite teardown complete")
+}
+
+// TestResource is a simple test resource for API testing.
 type TestResource struct {
 	apiPkg.Resource
 }
@@ -69,48 +95,46 @@ func (r *TestResource) Ping(ctx fiber.Ctx) error {
 	return result.Ok("pong").Response(ctx)
 }
 
-// TestAppWithCustomResource tests app with custom Api resource.
-func TestAppWithCustomResource(t *testing.T) {
-	// Save and clear the environment variable to test with default language (zh-CN)
-	originalEnv := os.Getenv("VEF_I18N_LANGUAGE")
+// TestAppLifecycle tests basic app lifecycle.
+func (suite *AppTestSuite) TestAppLifecycle() {
+	suite.T().Log("Testing app lifecycle (start and stop)")
 
-	os.Unsetenv("VEF_I18N_LANGUAGE")
-	defer func() {
-		if originalEnv != "" {
-			os.Setenv("VEF_I18N_LANGUAGE", originalEnv)
-		}
-	}()
+	suite.Run("StartStop", func() {
+		errChan := suite.app.Start()
+		err := <-errChan
+		suite.NoError(err, "App should start successfully")
 
-	testApp, stop := appTest.NewTestApp(
-		t,
-		fx.Replace(&config.DatasourceConfig{
-			Type: constants.DbSQLite,
-		}),
-		fx.Invoke(func() {
-			// Re-initialize i18n with default language after clearing env var
-			// This is necessary because i18n is initialized at package level
-			_ = i18n.SetLanguage("")
-		}),
-		vef.ProvideApiResource(NewTestResource),
-	)
-	defer stop()
+		time.Sleep(100 * time.Millisecond)
 
-	require.NotNil(t, testApp)
+		err = suite.app.Stop()
+		suite.NoError(err, "App should stop successfully")
+	})
+}
 
-	// Test the Api
-	req := httptest.NewRequest(
-		fiber.MethodPost,
-		"/api",
-		strings.NewReader(`{"resource": "test", "action": "ping", "version": "v1"}`),
-	)
-	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+// TestCustomResource tests app with custom API resource.
+func (suite *AppTestSuite) TestCustomResource() {
+	suite.T().Log("Testing custom API resource")
 
-	resp, err := testApp.Test(req, 2*time.Second)
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	require.Equal(t, 200, resp.StatusCode)
+	suite.Run("PingEndpoint", func() {
+		req := httptest.NewRequest(
+			fiber.MethodPost,
+			"/api",
+			strings.NewReader(`{"resource": "test", "action": "ping", "version": "v1"}`),
+		)
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	require.Equal(t, `{"code":0,"message":"成功","data":"pong"}`, string(body))
+		resp, err := suite.app.Test(req, 2*time.Second)
+		suite.NoError(err, "API request should not fail")
+		suite.NotNil(resp, "Response should not be nil")
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+
+		body, err := io.ReadAll(resp.Body)
+		suite.NoError(err, "Should read response body")
+		suite.Equal(`{"code":0,"message":"成功","data":"pong"}`, string(body), "Response body should match expected")
+	})
+}
+
+// TestAppTestSuite runs the test suite.
+func TestAppTestSuite(t *testing.T) {
+	suite.Run(t, new(AppTestSuite))
 }

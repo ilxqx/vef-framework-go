@@ -19,7 +19,7 @@ func IsDuplicateKeyError(err error) bool {
 		return true
 	}
 
-	if strings.Contains(message, "unique constraint") { // Generic/ORM
+	if strings.Contains(message, "unique constraint") { // Generic/Orm
 		return true
 	}
 

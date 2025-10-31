@@ -2,200 +2,367 @@ package orm
 
 import (
 	"context"
-	"html/template"
-	"os"
-	"time"
+	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dbfixture"
 
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/datetime"
-	"github.com/ilxqx/vef-framework-go/id"
+	"github.com/ilxqx/vef-framework-go/internal/database"
+	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
-// User represents a user in the system.
-type User struct {
-	bun.BaseModel `bun:"table:test_user,alias:u"`
-	Model         `bun:"extend"`
+// runAllOrmTests executes all Orm test suites on the given database configuration.
+func runAllOrmTests(t *testing.T, ctx context.Context, dsConfig *config.DatasourceConfig) {
+	// Create database connection
+	db, err := database.New(dsConfig)
+	require.NoError(t, err)
 
-	Name  string `json:"name"     bun:"name,notnull"`
-	Email string `json:"email"    bun:"email,notnull,unique"`
-	Age   int16  `json:"age"      bun:"age,notnull,default:0"`
-	// TODO: There is a bug: when fixtures explicitly set this field to true,
-	// Bun still applies the default value defined here. This likely stems from
-	// zero-value detection logic during fixture loading/merging.
-	// IsActive bool           `json:"isActive" bun:"is_active,notnull,default:TRUE"`
-	IsActive bool           `json:"isActive" bun:"is_active,notnull"`
-	Meta     map[string]any `json:"meta"     bun:"meta"`
-
-	// Relations
-	Posts []Post `json:"posts" bun:"rel:has-many,join:id=user_id"`
-}
-
-// Post represents a blog post or article.
-type Post struct {
-	bun.BaseModel `bun:"table:test_post,alias:p"`
-	Model         `bun:"extend"`
-
-	Title       string  `json:"title"       bun:"title,notnull"`
-	Content     string  `json:"content"     bun:"content,notnull"`
-	Description *string `json:"description" bun:"description"`
-	UserId      string  `json:"userId"      bun:"user_id,notnull"`
-	CategoryId  string  `json:"categoryId"  bun:"category_id,notnull"`
-	Status      string  `json:"status"      bun:"status,notnull,default:'draft'"`
-	ViewCount   int     `json:"viewCount"   bun:"view_count,notnull,default:0"`
-
-	// Relations
-	User     *User     `json:"user"     bun:"rel:belongs-to,join:user_id=id"`
-	Category *Category `json:"category" bun:"rel:belongs-to,join:category_id=id"`
-}
-
-// Tag represents a content tag.
-type Tag struct {
-	bun.BaseModel `bun:"table:test_tag,alias:t"`
-	Model         `bun:"extend"`
-
-	Name        string  `json:"name"        bun:"name,notnull,unique"`
-	Description *string `json:"description" bun:"description"`
-}
-
-// PostTag represents the many-to-many relationship between posts and tags.
-type PostTag struct {
-	bun.BaseModel `bun:"table:test_post_tag,alias:pt"`
-	Model         `bun:"extend"`
-
-	PostId string `json:"postId" bun:"post_id,notnull"`
-	TagId  string `json:"tagId"  bun:"tag_id,notnull"`
-
-	// Relations
-	Post *Post `json:"post" bun:"rel:belongs-to,join:post_id=id"`
-	Tag  *Tag  `json:"tag"  bun:"rel:belongs-to,join:tag_id=id"`
-}
-
-// Category represents a content category.
-type Category struct {
-	bun.BaseModel `bun:"table:test_category,alias:c"`
-	Model         `bun:"extend"`
-
-	Name        string  `json:"name"        bun:"name,notnull,unique"`
-	Description *string `json:"description" bun:"description"`
-	ParentId    *string `json:"parentId"    bun:"parent_id"`
-
-	// Relations
-	Posts    []Post     `json:"posts"    bun:"rel:has-many,join:id=category_id"`
-	Parent   *Category  `json:"parent"   bun:"rel:belongs-to,join:parent_id=id"`
-	Children []Category `json:"children" bun:"rel:has-many,join:id=parent_id"`
-}
-
-// SimpleModel represents a simple test model for subquery tests.
-type SimpleModel struct {
-	bun.BaseModel `bun:"table:test_simple,alias:s"`
-	Model         `bun:"extend"`
-
-	Name  string `json:"name"  bun:"name,notnull"`
-	Value int    `json:"value" bun:"value,notnull"`
-}
-
-// ComplexModel represents a complex test model with various data types.
-type ComplexModel struct {
-	bun.BaseModel `bun:"table:test_complex,alias:cm"`
-	Model         `bun:"extend"`
-
-	StringField string         `json:"stringField" bun:"string_field,notnull"`
-	IntField    int            `json:"intField"    bun:"int_field,notnull"`
-	FloatField  float64        `json:"floatField"  bun:"float_field,notnull"`
-	BoolField   bool           `json:"boolField"   bun:"bool_field,notnull"`
-	TimeField   time.Time      `json:"timeField"   bun:"time_field,notnull"`
-	NullString  *string        `json:"nullString"  bun:"null_string"`
-	NullInt     *int           `json:"nullInt"     bun:"null_int"`
-	NullTime    *time.Time     `json:"nullTime"    bun:"null_time"`
-	JSONField   map[string]any `json:"jsonField"   bun:"json_field"`
-	ArrayField  []string       `json:"arrayField"  bun:"array_field"` // PostgreSQL only
-}
-
-// OrmTestSuite contains all the actual test methods and works with orm.Db interface.
-// This suite will be run against multiple databases to verify cross-database compatibility.
-type OrmTestSuite struct {
-	suite.Suite
-
-	ctx    context.Context
-	db     Db
-	dbType constants.DbType
-}
-
-// SetupSuite initializes the test suite (called once per database).
-func (suite *OrmTestSuite) SetupSuite() {
-	suite.T().Logf("Setting up ORM test suite for %s", suite.dbType)
-
-	db := suite.getBunDb()
-	db.RegisterModel(
-		(*User)(nil),
-		(*Post)(nil),
-		(*Tag)(nil),
-		(*PostTag)(nil),
-		(*Category)(nil),
-		(*SimpleModel)(nil),
-		(*ComplexModel)(nil),
-	)
-
-	fixture := dbfixture.New(
-		db,
-		dbfixture.WithRecreateTables(),
-		dbfixture.WithTemplateFuncs(template.FuncMap{
-			"id": func() string {
-				return id.Generate()
-			},
-			"now": func() string {
-				return datetime.Now().String()
-			},
-		}),
-	)
-
-	err := fixture.Load(suite.ctx, os.DirFS("testdata"), "fixture.yaml")
-	suite.Require().NoError(err, "Failed to load fixtures")
-
-	_, err = db.NewCreateTable().IfNotExists().Model((*SimpleModel)(nil)).Exec(suite.ctx)
-	suite.Require().NoError(err, "Failed to create simple model table")
-	_, err = db.NewCreateTable().IfNotExists().Model((*ComplexModel)(nil)).Exec(suite.ctx)
-	suite.Require().NoError(err, "Failed to create complex model table")
-
-	suite.T().Logf("Test fixtures loaded for %s database", suite.dbType)
-}
-
-// getBunDb extracts the underlying bun.DB from orm.Db interface.
-func (suite *OrmTestSuite) getBunDb() *bun.DB {
-	if db, ok := suite.db.(*BunDb); ok {
-		if bunDB, ok := db.db.(*bun.DB); ok {
-			return bunDB
+	defer func() {
+		// Close the database connection after all tests are completed
+		if err := db.Close(); err != nil {
+			t.Logf("Error closing database connection for %s: %v", dsConfig.Type, err)
 		}
+	}()
+
+	ormDb := New(db)
+
+	// Create Select Suite
+	selectSuite := &SelectTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dsConfig.Type,
+			Db:     ormDb,
+		},
 	}
 
-	suite.Require().Fail("Could not extract bun.DB from orm.Db interface")
+	// Create Insert Suite
+	insertSuite := &InsertTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dsConfig.Type,
+			Db:     ormDb,
+		},
+	}
 
-	return nil
+	// Create Update Suite
+	updateSuite := &UpdateTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dsConfig.Type,
+			Db:     ormDb,
+		},
+	}
+
+	// Create Delete Suite
+	deleteSuite := &DeleteTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dsConfig.Type,
+			Db:     ormDb,
+		},
+	}
+
+	// Create Merge Suite
+	mergeSuite := &MergeTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dsConfig.Type,
+			Db:     ormDb,
+		},
+	}
+
+	t.Run("TestSelect", func(t *testing.T) {
+		suite.Run(t, selectSuite)
+	})
+
+	t.Run("TestInsert", func(t *testing.T) {
+		suite.Run(t, insertSuite)
+	})
+
+	t.Run("TestUpdate", func(t *testing.T) {
+		suite.Run(t, updateSuite)
+	})
+
+	t.Run("TestDelete", func(t *testing.T) {
+		suite.Run(t, deleteSuite)
+	})
+
+	t.Run("TestMerge", func(t *testing.T) {
+		suite.Run(t, mergeSuite)
+	})
+
+	t.Run("TestConditionBuilder", func(t *testing.T) {
+		runAllConditionBuilderTests(t, ctx, dsConfig.Type, ormDb)
+	})
+
+	t.Run("TestExprBuilder", func(t *testing.T) {
+		runAllExprBuilderTests(t, ctx, dsConfig.Type, ormDb)
+	})
 }
 
-// Helper methods for common test patterns
+// runAllConditionBuilderTests executes all ConditionBuilder test suites on the given database.
+func runAllConditionBuilderTests(t *testing.T, ctx context.Context, dbType constants.DbType, db Db) {
+	// Create base suite configuration
+	baseSuite := &ConditionBuilderTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
 
-// AssertCount verifies the count result of a select query.
-func (suite *OrmTestSuite) AssertCount(query SelectQuery, expectedCount int64) {
-	count, err := query.Count(suite.ctx)
-	suite.NoError(err)
-	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.dbType)
+	// Create all test suites
+	basicComparisonSuite := &BasicComparisonTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	rangeSetOperationsSuite := &RangeSetOperationsTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	subqueryOperationsSuite := &SubqueryOperationsTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	expressionOperationsSuite := &ExpressionOperationsTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	nullBooleanChecksSuite := &NullBooleanChecksTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	stringOperationsSuite := &StringOperationsTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	auditConditionsSuite := &AuditConditionsTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	primaryKeyConditionsSuite := &PrimaryKeyConditionsTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	logicalGroupingSuite := &LogicalGroupingTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	conditionComprehensiveSuite := &ConditionComprehensiveTestSuite{
+		ConditionBuilderTestSuite: baseSuite,
+	}
+
+	// Run all test suites
+	t.Run("TestBasicComparison", func(t *testing.T) {
+		suite.Run(t, basicComparisonSuite)
+	})
+
+	t.Run("TestRangeSetOperations", func(t *testing.T) {
+		suite.Run(t, rangeSetOperationsSuite)
+	})
+
+	t.Run("TestSubqueryOperations", func(t *testing.T) {
+		suite.Run(t, subqueryOperationsSuite)
+	})
+
+	t.Run("TestExpressionOperations", func(t *testing.T) {
+		suite.Run(t, expressionOperationsSuite)
+	})
+
+	t.Run("TestNullBooleanChecks", func(t *testing.T) {
+		suite.Run(t, nullBooleanChecksSuite)
+	})
+
+	t.Run("TestStringOperations", func(t *testing.T) {
+		suite.Run(t, stringOperationsSuite)
+	})
+
+	t.Run("TestAuditConditions", func(t *testing.T) {
+		suite.Run(t, auditConditionsSuite)
+	})
+
+	t.Run("TestPrimaryKeyConditions", func(t *testing.T) {
+		suite.Run(t, primaryKeyConditionsSuite)
+	})
+
+	t.Run("TestLogicalGrouping", func(t *testing.T) {
+		suite.Run(t, logicalGroupingSuite)
+	})
+
+	t.Run("TestConditionComprehensive", func(t *testing.T) {
+		suite.Run(t, conditionComprehensiveSuite)
+	})
 }
 
-// AssertExists verifies that a query returns at least one result.
-func (suite *OrmTestSuite) AssertExists(query SelectQuery) {
-	exists, err := query.Exists(suite.ctx)
-	suite.NoError(err)
-	suite.True(exists, "Query should return results for %s", suite.dbType)
+// runAllExprBuilderTests executes all ExprBuilder test suites on the given database.
+// This function is exported so it can be called from the parent orm package test runner.
+func runAllExprBuilderTests(t *testing.T, ctx context.Context, dbType constants.DbType, db Db) {
+	// Create test suites
+	basicExpressionsSuite := &BasicExpressionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	aggregationFunctionsSuite := &AggregationFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	windowFunctionsSuite := &WindowFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	stringFunctionsSuite := &StringFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	dateTimeFunctionsSuite := &DateTimeFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	mathFunctionsSuite := &MathFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	conditionalFunctionsSuite := &ConditionalFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	typeConversionFunctionsSuite := &TypeConversionFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	jsonFunctionsSuite := &JsonFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	utilityFunctionsSuite := &UtilityFunctionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			Ctx:    ctx,
+			DbType: dbType,
+			Db:     db,
+		},
+	}
+
+	// Run all test suites
+	t.Run("TestBasicExpressions", func(t *testing.T) {
+		suite.Run(t, basicExpressionsSuite)
+	})
+
+	t.Run("TestAggregationFunctions", func(t *testing.T) {
+		suite.Run(t, aggregationFunctionsSuite)
+	})
+
+	t.Run("TestStringFunctions", func(t *testing.T) {
+		suite.Run(t, stringFunctionsSuite)
+	})
+
+	t.Run("TestDateTimeFunctions", func(t *testing.T) {
+		suite.Run(t, dateTimeFunctionsSuite)
+	})
+
+	t.Run("TestMathFunctions", func(t *testing.T) {
+		suite.Run(t, mathFunctionsSuite)
+	})
+
+	t.Run("TestConditionalFunctions", func(t *testing.T) {
+		suite.Run(t, conditionalFunctionsSuite)
+	})
+
+	t.Run("TestTypeConversionFunctions", func(t *testing.T) {
+		suite.Run(t, typeConversionFunctionsSuite)
+	})
+
+	t.Run("TestJsonFunctions", func(t *testing.T) {
+		suite.Run(t, jsonFunctionsSuite)
+	})
+
+	t.Run("TestUtilityFunctions", func(t *testing.T) {
+		suite.Run(t, utilityFunctionsSuite)
+	})
+
+	t.Run("TestWindowFunctions", func(t *testing.T) {
+		suite.Run(t, windowFunctionsSuite)
+	})
 }
 
-// AssertNotExists verifies that a query returns no results.
-func (suite *OrmTestSuite) AssertNotExists(query SelectQuery) {
-	exists, err := query.Exists(suite.ctx)
-	suite.NoError(err)
-	suite.False(exists, "Query should not return results for %s", suite.dbType)
+// TestPostgres runs all Orm tests against PostgreSQL.
+func TestPostgres(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a dummy suite for container management
+	dummySuite := &suite.Suite{}
+	dummySuite.SetT(t)
+
+	// Start PostgreSQL container
+	postgresContainer := testhelpers.NewPostgresContainer(ctx, dummySuite)
+	defer postgresContainer.Terminate(ctx, dummySuite)
+
+	// Run all Orm tests
+	runAllOrmTests(t, ctx, postgresContainer.DsConfig)
+}
+
+// TestMySQL runs all Orm tests against MySQL.
+func TestMySQL(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a dummy suite for container management
+	dummySuite := &suite.Suite{}
+	dummySuite.SetT(t)
+
+	// Start MySQL container
+	mysqlContainer := testhelpers.NewMySQLContainer(ctx, dummySuite)
+	defer mysqlContainer.Terminate(ctx, dummySuite)
+
+	// Run all Orm tests
+	runAllOrmTests(t, ctx, mysqlContainer.DsConfig)
+}
+
+// TestSQLite runs all Orm tests against SQLite (in-memory).
+func TestSQLite(t *testing.T) {
+	ctx := context.Background()
+
+	// Create SQLite in-memory database config
+	dsConfig := &config.DatasourceConfig{
+		Type: constants.DbSQLite,
+	}
+
+	// Run all Orm tests
+	runAllOrmTests(t, ctx, dsConfig)
 }

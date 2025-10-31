@@ -18,43 +18,43 @@ func generateSM2KeyPair() (*sm2.PrivateKey, error) {
 	return sm2.GenerateKey(rand.Reader)
 }
 
+// TestSM2Cipher_Encrypt_Decrypt tests SM2 encryption and decryption.
 func TestSM2Cipher_Encrypt_Decrypt(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err, "Failed to generate SM2 key pair")
+	require.NoError(t, err, "Should generate SM2 key pair")
 
 	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
-	require.NoError(t, err, "Failed to create SM2 cipher")
+	require.NoError(t, err, "Should create SM2 cipher")
 
-	testCases := []string{
-		"Hello, World!",
-		"SM2 encryption test",
-		"中文测试",
-		"Special chars: !@#$%^&*()",
-		"国密SM2加密算法",
+	tests := []struct {
+		name      string
+		plaintext string
+	}{
+		{"EnglishText", "Hello, World!"},
+		{"WithDescription", "SM2 encryption test"},
+		{"ChineseCharacters", "中文测试"},
+		{"SpecialCharacters", "Special chars: !@#$%^&*()"},
+		{"ChineseAlgorithm", "国密SM2加密算法"},
 	}
 
-	for _, plaintext := range testCases {
-		t.Run(plaintext, func(t *testing.T) {
-			// Encrypt
-			ciphertext, err := cipher.Encrypt(plaintext)
-			require.NoError(t, err, "Encryption failed")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ciphertext, err := cipher.Encrypt(tt.plaintext)
+			require.NoError(t, err, "Should encrypt plaintext successfully")
 
-			// Decrypt
 			decrypted, err := cipher.Decrypt(ciphertext)
-			require.NoError(t, err, "Decryption failed")
+			require.NoError(t, err, "Should decrypt ciphertext successfully")
 
-			// Verify
-			assert.Equal(t, plaintext, decrypted)
+			assert.Equal(t, tt.plaintext, decrypted, "Decrypted text should match original plaintext")
 		})
 	}
 }
 
+// TestSM2Cipher_FromPEM tests creating SM2 cipher from PEM-encoded keys.
 func TestSM2Cipher_FromPEM(t *testing.T) {
-	// Generate key pair using the same library used by the implementation
 	priv, err := generateSM2KeyPair()
-	require.NoError(t, err, "failed to generate SM2 key pair")
+	require.NoError(t, err, "Should generate SM2 key pair")
 
-	// Build raw SM2 private key DER matching x509.ParseSm2PrivateKey expectations
 	type sm2Priv struct {
 		Version       int
 		PrivateKey    []byte
@@ -63,33 +63,29 @@ func TestSM2Cipher_FromPEM(t *testing.T) {
 	}
 
 	derPriv, err := asn1.Marshal(sm2Priv{Version: 1, PrivateKey: priv.D.Bytes()})
-	require.NoError(t, err, "failed to marshal raw SM2 private key")
-	// For public key, use library helper to ensure correct DER
+	require.NoError(t, err, "Should marshal SM2 private key")
 	derPub, err := x509.MarshalSm2PublicKey(&priv.PublicKey)
-	require.NoError(t, err, "failed to marshal SM2 public key")
+	require.NoError(t, err, "Should marshal SM2 public key")
 
-	// Wrap into PEM blocks
 	pemPriv := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: derPriv})
 	pemPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: derPub})
 
 	cipher, err := NewSM2FromPEM(pemPriv, pemPub)
-	require.NoError(t, err, "failed to create SM2 cipher from PEM")
+	require.NoError(t, err, "Should create SM2 cipher from PEM")
 
-	// Verify encrypt/decrypt
 	plaintext := "PEM roundtrip message"
 	ciphertext, err := cipher.Encrypt(plaintext)
-	require.NoError(t, err, "encryption failed for PEM roundtrip")
+	require.NoError(t, err, "Should encrypt plaintext successfully")
 	decrypted, err := cipher.Decrypt(ciphertext)
-	require.NoError(t, err, "decryption failed for PEM roundtrip")
-	assert.Equal(t, plaintext, decrypted)
+	require.NoError(t, err, "Should decrypt ciphertext successfully")
+	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
+// TestSM2Cipher_FromHex tests creating SM2 cipher from hex-encoded keys.
 func TestSM2Cipher_FromHex(t *testing.T) {
-	// Generate key pair
 	priv, err := generateSM2KeyPair()
-	require.NoError(t, err, "failed to generate SM2 key pair")
+	require.NoError(t, err, "Should generate SM2 key pair")
 
-	// Build raw SM2 private key DER as above and convert to HEX
 	type sm2Priv struct {
 		Version       int
 		PrivateKey    []byte
@@ -98,90 +94,89 @@ func TestSM2Cipher_FromHex(t *testing.T) {
 	}
 
 	derPriv, err := asn1.Marshal(sm2Priv{Version: 1, PrivateKey: priv.D.Bytes()})
-	require.NoError(t, err, "failed to marshal raw SM2 private key")
+	require.NoError(t, err, "Should marshal SM2 private key")
 	derPub, err := x509.MarshalSm2PublicKey(&priv.PublicKey)
-	require.NoError(t, err, "failed to marshal SM2 public key")
+	require.NoError(t, err, "Should marshal SM2 public key")
 
 	hexPriv := encoding.ToHex(derPriv)
 	hexPub := encoding.ToHex(derPub)
 
 	cipher, err := NewSM2FromHex(hexPriv, hexPub)
-	require.NoError(t, err, "failed to create SM2 cipher from HEX")
+	require.NoError(t, err, "Should create SM2 cipher from hex")
 
 	plaintext := "HEX roundtrip message"
 	ciphertext, err := cipher.Encrypt(plaintext)
-	require.NoError(t, err, "encryption failed for HEX roundtrip")
+	require.NoError(t, err, "Should encrypt plaintext successfully")
 	decrypted, err := cipher.Decrypt(ciphertext)
-	require.NoError(t, err, "decryption failed for HEX roundtrip")
-	assert.Equal(t, plaintext, decrypted)
+	require.NoError(t, err, "Should decrypt ciphertext successfully")
+	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
+// TestSM2Cipher_PublicKeyOnly tests SM2 cipher with only public key.
 func TestSM2Cipher_PublicKeyOnly(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err, "Failed to generate SM2 key pair")
+	require.NoError(t, err, "Should generate SM2 key pair")
 
-	// Create cipher with only public key
 	cipher, err := NewSM2(nil, &privateKey.PublicKey)
-	require.NoError(t, err, "Failed to create SM2 cipher")
+	require.NoError(t, err, "Should create SM2 cipher with public key only")
 
 	plaintext := "Test message"
 	ciphertext, err := cipher.Encrypt(plaintext)
-	require.NoError(t, err, "Encryption failed")
+	require.NoError(t, err, "Should encrypt plaintext successfully")
 
-	// Decryption should fail (no private key)
 	_, err = cipher.Decrypt(ciphertext)
-	assert.Error(t, err, "Expected error for decryption without private key")
+	assert.Error(t, err, "Should reject decryption without private key")
 }
 
+// TestSM2Cipher_PrivateKeyOnly tests SM2 cipher with only private key.
 func TestSM2Cipher_PrivateKeyOnly(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err, "Failed to generate SM2 key pair")
+	require.NoError(t, err, "Should generate SM2 key pair")
 
-	// Create cipher with only private key (public key should be derived)
 	cipher, err := NewSM2(privateKey, nil)
-	require.NoError(t, err, "Failed to create SM2 cipher")
+	require.NoError(t, err, "Should create SM2 cipher with private key only")
 
 	plaintext := "Test message"
 	ciphertext, err := cipher.Encrypt(plaintext)
-	require.NoError(t, err, "Encryption failed")
+	require.NoError(t, err, "Should encrypt plaintext successfully")
 
 	decrypted, err := cipher.Decrypt(ciphertext)
-	require.NoError(t, err, "Decryption failed")
+	require.NoError(t, err, "Should decrypt ciphertext successfully")
 
-	assert.Equal(t, plaintext, decrypted)
+	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
+// TestSM2Cipher_NoKeys tests that creating cipher without keys fails.
 func TestSM2Cipher_NoKeys(t *testing.T) {
 	_, err := NewSM2(nil, nil)
-	assert.Error(t, err, "Expected error when creating cipher without any keys")
+	assert.Error(t, err, "Should reject creating cipher without any keys")
 }
 
+// TestSM2Cipher_MultipleEncryptions tests that SM2 produces different ciphertexts.
 func TestSM2Cipher_MultipleEncryptions(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
-	require.NoError(t, err, "Failed to generate SM2 key pair")
+	require.NoError(t, err, "Should generate SM2 key pair")
 
 	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
-	require.NoError(t, err, "Failed to create SM2 cipher")
+	require.NoError(t, err, "Should create SM2 cipher")
 
 	plaintext := "Test message"
 
-	// Encrypt the same message multiple times
-	// Results should be different (due to random component in SM2)
 	ciphertext1, err := cipher.Encrypt(plaintext)
-	require.NoError(t, err, "First encryption failed")
+	require.NoError(t, err, "Should encrypt plaintext successfully")
 
 	ciphertext2, err := cipher.Encrypt(plaintext)
-	require.NoError(t, err, "Second encryption failed")
+	require.NoError(t, err, "Should encrypt plaintext successfully")
 
-	assert.NotEqual(t, ciphertext1, ciphertext2, "Expected different ciphertexts for same plaintext (SM2 should have random component)")
+	assert.NotEqual(t, ciphertext1, ciphertext2,
+		"SM2 should produce different ciphertexts due to random component")
 
-	// Both should decrypt to the same plaintext
 	decrypted1, err := cipher.Decrypt(ciphertext1)
-	require.NoError(t, err, "First decryption failed")
+	require.NoError(t, err, "Should decrypt ciphertext successfully")
 
 	decrypted2, err := cipher.Decrypt(ciphertext2)
-	require.NoError(t, err, "Second decryption failed")
+	require.NoError(t, err, "Should decrypt ciphertext successfully")
 
-	assert.Equal(t, plaintext, decrypted1)
-	assert.Equal(t, plaintext, decrypted2)
+	assert.Equal(t, plaintext, decrypted1, "First decrypted text should match original plaintext")
+	assert.Equal(t, plaintext, decrypted2, "Second decrypted text should match original plaintext")
 }

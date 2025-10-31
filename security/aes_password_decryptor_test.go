@@ -12,44 +12,37 @@ import (
 )
 
 func TestAESPasswordDecryptor(t *testing.T) {
-	// Generate random key and IV
-	key := make([]byte, 32) // AES-256
+	key := make([]byte, 32)
 	iv := make([]byte, 16)
 	_, err := rand.Read(key)
 	require.NoError(t, err)
 	_, err = rand.Read(iv)
 	require.NoError(t, err)
 
-	// Create decryptor
 	decryptor, err := NewAesPasswordDecryptor(key, iv)
-	require.NoError(t, err, "Failed to create AES password decryptor")
+	require.NoError(t, err, "Should create AES password decryptor")
 
-	// Test password
 	password := "MySecurePassword123!@#"
 
-	// Encrypt using crypto package
 	cipher, err := crypto.NewAES(key, iv, crypto.AesModeCBC)
 	require.NoError(t, err)
 
 	encryptedPassword, err := cipher.Encrypt(password)
 	require.NoError(t, err)
 
-	// Decrypt
 	decryptedPassword, err := decryptor.Decrypt(encryptedPassword)
-	require.NoError(t, err, "Failed to decrypt password")
+	require.NoError(t, err, "Should decrypt password")
 
-	// Verify
 	assert.Equal(t, password, decryptedPassword, "Decrypted password should match original")
 }
 
 func TestAESPasswordDecryptor_FromHex(t *testing.T) {
-	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" // 32 bytes
-	ivHex := "0123456789abcdef0123456789abcdef"                                  // 16 bytes
+	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	ivHex := "0123456789abcdef0123456789abcdef"
 
 	decryptor, err := NewAesPasswordDecryptorFromHex(keyHex, ivHex)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create decryptor from hex")
 
-	// Encrypt using the same key/iv
 	cipher, err := crypto.NewAESFromHex(keyHex, ivHex, crypto.AesModeCBC)
 	require.NoError(t, err)
 
@@ -57,10 +50,9 @@ func TestAESPasswordDecryptor_FromHex(t *testing.T) {
 	encrypted, err := cipher.Encrypt(password)
 	require.NoError(t, err)
 
-	// Decrypt
 	decrypted, err := decryptor.Decrypt(encrypted)
-	require.NoError(t, err)
-	assert.Equal(t, password, decrypted)
+	require.NoError(t, err, "Should decrypt password")
+	assert.Equal(t, password, decrypted, "Decrypted password should match original")
 }
 
 func TestAESPasswordDecryptor_FromBase64(t *testing.T) {
@@ -75,9 +67,8 @@ func TestAESPasswordDecryptor_FromBase64(t *testing.T) {
 	ivBase64 := encoding.ToBase64(iv)
 
 	decryptor, err := NewAesPasswordDecryptorFromBase64(keyBase64, ivBase64)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create decryptor from base64")
 
-	// Encrypt using the same key/iv
 	cipher, err := crypto.NewAES(key, iv, crypto.AesModeCBC)
 	require.NoError(t, err)
 
@@ -85,27 +76,26 @@ func TestAESPasswordDecryptor_FromBase64(t *testing.T) {
 	encrypted, err := cipher.Encrypt(password)
 	require.NoError(t, err)
 
-	// Decrypt
 	decrypted, err := decryptor.Decrypt(encrypted)
-	require.NoError(t, err)
-	assert.Equal(t, password, decrypted)
+	require.NoError(t, err, "Should decrypt password")
+	assert.Equal(t, password, decrypted, "Decrypted password should match original")
 }
 
 func TestAESPasswordDecryptor_InvalidKeyLength(t *testing.T) {
-	invalidKey := make([]byte, 15) // Invalid key size
+	invalidKey := make([]byte, 15)
 	iv := make([]byte, 16)
 
 	_, err := NewAesPasswordDecryptor(invalidKey, iv)
-	assert.Error(t, err)
+	assert.Error(t, err, "Should return error for invalid key length")
 	assert.Contains(t, err.Error(), "invalid AES key length")
 }
 
 func TestAESPasswordDecryptor_InvalidIVLength(t *testing.T) {
 	key := make([]byte, 32)
-	invalidIV := make([]byte, 8) // Invalid IV size
+	invalidIV := make([]byte, 8)
 
 	_, err := NewAesPasswordDecryptor(key, invalidIV)
-	assert.Error(t, err)
+	assert.Error(t, err, "Should return error for invalid IV length")
 	assert.Contains(t, err.Error(), "invalid IV length")
 }
 
@@ -114,11 +104,9 @@ func TestAESPasswordDecryptor_NilIV(t *testing.T) {
 	_, err := rand.Read(key)
 	require.NoError(t, err)
 
-	// Should use first 16 bytes of key as IV
 	decryptor, err := NewAesPasswordDecryptor(key, nil)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should create decryptor with nil IV")
 
-	// Encrypt using the same key as IV
 	cipher, err := crypto.NewAES(key, key[:16], crypto.AesModeCBC)
 	require.NoError(t, err)
 
@@ -126,10 +114,9 @@ func TestAESPasswordDecryptor_NilIV(t *testing.T) {
 	encrypted, err := cipher.Encrypt(password)
 	require.NoError(t, err)
 
-	// Decrypt
 	decrypted, err := decryptor.Decrypt(encrypted)
-	require.NoError(t, err)
-	assert.Equal(t, password, decrypted)
+	require.NoError(t, err, "Should decrypt password")
+	assert.Equal(t, password, decrypted, "Decrypted password should match original")
 }
 
 func TestAESPasswordDecryptor_DifferentKeySizes(t *testing.T) {
@@ -152,7 +139,7 @@ func TestAESPasswordDecryptor_DifferentKeySizes(t *testing.T) {
 			require.NoError(t, err)
 
 			decryptor, err := NewAesPasswordDecryptor(key, iv)
-			require.NoError(t, err)
+			require.NoError(t, err, "Should create decryptor with key size %d", tc.keySize)
 
 			cipher, err := crypto.NewAES(key, iv, crypto.AesModeCBC)
 			require.NoError(t, err)
@@ -162,8 +149,8 @@ func TestAESPasswordDecryptor_DifferentKeySizes(t *testing.T) {
 			require.NoError(t, err)
 
 			decrypted, err := decryptor.Decrypt(encrypted)
-			require.NoError(t, err)
-			assert.Equal(t, password, decrypted)
+			require.NoError(t, err, "Should decrypt password")
+			assert.Equal(t, password, decrypted, "Decrypted password should match original")
 		})
 	}
 }

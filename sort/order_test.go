@@ -14,13 +14,13 @@ func TestOrderDirectionString(t *testing.T) {
 		od       OrderDirection
 		expected string
 	}{
-		{"Ascending order", OrderAsc, "ASC"},
-		{"Descending order", OrderDesc, "DESC"},
+		{"AscendingOrder", OrderAsc, "ASC"},
+		{"DescendingOrder", OrderDesc, "DESC"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.od.String())
+			assert.Equal(t, tt.expected, tt.od.String(), "String representation should match expected value")
 		})
 	}
 }
@@ -31,15 +31,15 @@ func TestOrderDirectionMarshalText(t *testing.T) {
 		od       OrderDirection
 		expected string
 	}{
-		{"Ascending order", OrderAsc, "asc"},
-		{"Descending order", OrderDesc, "desc"},
+		{"AscendingOrder", OrderAsc, "asc"},
+		{"DescendingOrder", OrderDesc, "desc"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			text, err := tt.od.MarshalText()
-			require.NoError(t, err)
-			assert.Equal(t, tt.expected, string(text))
+			require.NoError(t, err, "MarshalText should not error")
+			assert.Equal(t, tt.expected, string(text), "Marshaled text should be lowercase")
 		})
 	}
 }
@@ -51,17 +51,17 @@ func TestOrderDirectionUnmarshalText(t *testing.T) {
 		expected  OrderDirection
 		shouldErr bool
 	}{
-		{"Lowercase asc", "asc", OrderAsc, false},
-		{"Uppercase ASC", "ASC", OrderAsc, false},
-		{"Mixed case Asc", "Asc", OrderAsc, false},
-		{"Lowercase desc", "desc", OrderDesc, false},
-		{"Uppercase DESC", "DESC", OrderDesc, false},
-		{"Mixed case Desc", "Desc", OrderDesc, false},
-		{"With leading space", " asc", OrderAsc, false},
-		{"With trailing space", "desc ", OrderDesc, false},
-		{"With both spaces", " DESC ", OrderDesc, false},
-		{"Invalid value", "invalid", OrderAsc, true},
-		{"Empty string", "", OrderAsc, true},
+		{"LowercaseAsc", "asc", OrderAsc, false},
+		{"UppercaseASC", "ASC", OrderAsc, false},
+		{"MixedCaseAsc", "Asc", OrderAsc, false},
+		{"LowercaseDesc", "desc", OrderDesc, false},
+		{"UppercaseDESC", "DESC", OrderDesc, false},
+		{"MixedCaseDesc", "Desc", OrderDesc, false},
+		{"WithLeadingSpace", " asc", OrderAsc, false},
+		{"WithTrailingSpace", "desc ", OrderDesc, false},
+		{"WithBothSpaces", " DESC ", OrderDesc, false},
+		{"InvalidValue", "invalid", OrderAsc, true},
+		{"EmptyString", "", OrderAsc, true},
 	}
 
 	for _, tt := range tests {
@@ -71,10 +71,10 @@ func TestOrderDirectionUnmarshalText(t *testing.T) {
 			err := od.UnmarshalText([]byte(tt.input))
 
 			if tt.shouldErr {
-				assert.Error(t, err)
+				assert.Error(t, err, "Should error for invalid input")
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, od)
+				require.NoError(t, err, "Should unmarshal valid input")
+				assert.Equal(t, tt.expected, od, "Unmarshaled value should match expected")
 			}
 		})
 	}
@@ -86,15 +86,15 @@ func TestOrderDirectionMarshalJSON(t *testing.T) {
 		od       OrderDirection
 		expected string
 	}{
-		{"Ascending order", OrderAsc, `"asc"`},
-		{"Descending order", OrderDesc, `"desc"`},
+		{"AscendingOrder", OrderAsc, `"asc"`},
+		{"DescendingOrder", OrderDesc, `"desc"`},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			data, err := json.Marshal(tt.od)
-			require.NoError(t, err)
-			assert.Equal(t, tt.expected, string(data))
+			require.NoError(t, err, "JSON marshaling should not error")
+			assert.Equal(t, tt.expected, string(data), "JSON output should be lowercase string")
 		})
 	}
 }
@@ -106,17 +106,17 @@ func TestOrderDirectionUnmarshalJSON(t *testing.T) {
 		expected  OrderDirection
 		shouldErr bool
 	}{
-		{"Lowercase asc", `"asc"`, OrderAsc, false},
-		{"Uppercase ASC", `"ASC"`, OrderAsc, false},
-		{"Mixed case Asc", `"Asc"`, OrderAsc, false},
-		{"Lowercase desc", `"desc"`, OrderDesc, false},
-		{"Uppercase DESC", `"DESC"`, OrderDesc, false},
-		{"Mixed case Desc", `"Desc"`, OrderDesc, false},
-		{"With spaces", `" desc "`, OrderDesc, false},
-		{"Invalid value", `"invalid"`, OrderAsc, true},
-		{"Not a string", `123`, OrderAsc, true},
-		{"Boolean value", `true`, OrderAsc, true},
-		{"Null value", `null`, OrderAsc, true},
+		{"LowercaseAsc", `"asc"`, OrderAsc, false},
+		{"UppercaseASC", `"ASC"`, OrderAsc, false},
+		{"MixedCaseAsc", `"Asc"`, OrderAsc, false},
+		{"LowercaseDesc", `"desc"`, OrderDesc, false},
+		{"UppercaseDESC", `"DESC"`, OrderDesc, false},
+		{"MixedCaseDesc", `"Desc"`, OrderDesc, false},
+		{"WithSpaces", `" desc "`, OrderDesc, false},
+		{"InvalidValue", `"invalid"`, OrderAsc, true},
+		{"NotAString", `123`, OrderAsc, true},
+		{"BooleanValue", `true`, OrderAsc, true},
+		{"NullValue", `null`, OrderAsc, true},
 	}
 
 	for _, tt := range tests {
@@ -126,10 +126,10 @@ func TestOrderDirectionUnmarshalJSON(t *testing.T) {
 			err := json.Unmarshal([]byte(tt.input), &od)
 
 			if tt.shouldErr {
-				assert.Error(t, err)
+				assert.Error(t, err, "Should error for invalid JSON input")
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, od)
+				require.NoError(t, err, "Should unmarshal valid JSON")
+				assert.Equal(t, tt.expected, od, "Unmarshaled value should match expected")
 			}
 		})
 	}
@@ -140,24 +140,21 @@ func TestOrderDirectionJSONRoundTrip(t *testing.T) {
 		name  string
 		input OrderDirection
 	}{
-		{"Ascending order", OrderAsc},
-		{"Descending order", OrderDesc},
+		{"AscendingOrder", OrderAsc},
+		{"DescendingOrder", OrderDesc},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Marshal
 			data, err := json.Marshal(tt.input)
-			require.NoError(t, err)
+			require.NoError(t, err, "Marshal should not error")
 
-			// Unmarshal
 			var result OrderDirection
 
 			err = json.Unmarshal(data, &result)
-			require.NoError(t, err)
+			require.NoError(t, err, "Unmarshal should not error")
 
-			// Compare
-			assert.Equal(t, tt.input, result)
+			assert.Equal(t, tt.input, result, "Round-trip should preserve value")
 		})
 	}
 }
@@ -172,25 +169,22 @@ func TestOrderDirectionInStruct(t *testing.T) {
 		name  string
 		input testStruct
 	}{
-		{"With ascending", testStruct{Direction: OrderAsc, Column: "name"}},
-		{"With descending", testStruct{Direction: OrderDesc, Column: "created_at"}},
+		{"WithAscending", testStruct{Direction: OrderAsc, Column: "name"}},
+		{"WithDescending", testStruct{Direction: OrderDesc, Column: "created_at"}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Marshal
 			data, err := json.Marshal(tt.input)
-			require.NoError(t, err)
+			require.NoError(t, err, "Marshal should not error")
 
-			// Unmarshal
 			var result testStruct
 
 			err = json.Unmarshal(data, &result)
-			require.NoError(t, err)
+			require.NoError(t, err, "Unmarshal should not error")
 
-			// Compare
-			assert.Equal(t, tt.input.Direction, result.Direction)
-			assert.Equal(t, tt.input.Column, result.Column)
+			assert.Equal(t, tt.input.Direction, result.Direction, "Direction should be preserved")
+			assert.Equal(t, tt.input.Column, result.Column, "Column should be preserved")
 		})
 	}
 }
@@ -201,14 +195,14 @@ func TestNullsOrderString(t *testing.T) {
 		no       NullsOrder
 		expected string
 	}{
-		{"Default nulls order", NullsDefault, ""},
-		{"Nulls first", NullsFirst, "NULLS FIRST"},
-		{"Nulls last", NullsLast, "NULLS LAST"},
+		{"DefaultNullsOrder", NullsDefault, ""},
+		{"NullsFirst", NullsFirst, "NULLS FIRST"},
+		{"NullsLast", NullsLast, "NULLS LAST"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.no.String())
+			assert.Equal(t, tt.expected, tt.no.String(), "String representation should match expected value")
 		})
 	}
 }
@@ -220,22 +214,22 @@ func TestOrderSpecIsValid(t *testing.T) {
 		expected bool
 	}{
 		{
-			"Valid with column",
+			"ValidWithColumn",
 			OrderSpec{Column: "name", Direction: OrderAsc},
 			true,
 		},
 		{
-			"Valid with column and nulls order",
+			"ValidWithColumnAndNullsOrder",
 			OrderSpec{Column: "age", Direction: OrderDesc, NullsOrder: NullsLast},
 			true,
 		},
 		{
-			"Invalid without column",
+			"InvalidWithoutColumn",
 			OrderSpec{Direction: OrderAsc},
 			false,
 		},
 		{
-			"Invalid with empty column",
+			"InvalidWithEmptyColumn",
 			OrderSpec{Column: "", Direction: OrderDesc},
 			false,
 		},
@@ -243,7 +237,7 @@ func TestOrderSpecIsValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.spec.IsValid())
+			assert.Equal(t, tt.expected, tt.spec.IsValid(), "IsValid should return expected result")
 		})
 	}
 }

@@ -62,7 +62,27 @@ func NewFilteredUserFindOptionsResource() api.Resource {
 	}
 }
 
-// FindOptionsTestSuite is the test suite for FindOptions Api tests.
+// Meta Options Resource.
+type MetaUserFindOptionsResource struct {
+	api.Resource
+	apis.FindOptionsApi[TestUser, TestUserSearch]
+}
+
+func NewMetaUserFindOptionsResource() api.Resource {
+	return &MetaUserFindOptionsResource{
+		Resource: api.NewResource("test/user_options_meta"),
+		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
+			Public().
+			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+				LabelColumn: "name",
+				ValueColumn: "id",
+				MetaColumns: []string{"status", "email"},
+			}),
+	}
+}
+
+// FindOptionsTestSuite tests the FindOptions API functionality
+// including basic queries, custom column mappings, search filters, filter appliers, meta columns, and negative cases.
 type FindOptionsTestSuite struct {
 	BaseSuite
 }
@@ -73,6 +93,7 @@ func (suite *FindOptionsTestSuite) SetupSuite() {
 		NewTestUserFindOptionsResource,
 		NewCustomFieldUserFindOptionsResource,
 		NewFilteredUserFindOptionsResource,
+		NewMetaUserFindOptionsResource,
 	)
 }
 
@@ -83,6 +104,8 @@ func (suite *FindOptionsTestSuite) TearDownSuite() {
 
 // TestFindOptionsBasic tests basic FindOptions functionality.
 func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
+	suite.T().Logf("Testing FindOptions API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_options",
@@ -91,23 +114,27 @@ func (suite *FindOptionsTestSuite) TestFindOptionsBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	options := suite.readDataAsSlice(body.Data)
-	suite.Len(options, 10)
+	suite.Len(options, 10, "Should return 10 options")
 
 	// Check first option structure
 	firstOption := suite.readDataAsMap(options[0])
-	suite.NotEmpty(firstOption["label"])
-	suite.NotEmpty(firstOption["value"])
+	suite.NotEmpty(firstOption["label"], "First option should have label")
+	suite.NotEmpty(firstOption["value"], "First option should have value")
+
+	suite.T().Logf("Found %d options with label=%v, value=%v", len(options), firstOption["label"], firstOption["value"])
 }
 
 // TestFindOptionsWithConfig tests FindOptions with custom config.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
+	suite.T().Logf("Testing FindOptions API with custom config for %s", suite.dbType)
+
 	suite.Run("DefaultConfig", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -117,12 +144,14 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		options := suite.readDataAsSlice(body.Data)
-		suite.Len(options, 10)
+		suite.Len(options, 10, "Should return 10 options with default config")
+
+		suite.T().Logf("Found %d options with default config (label=name, value=id)", len(options))
 	})
 
 	suite.Run("CustomConfig", func() {
@@ -138,18 +167,20 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		options := suite.readDataAsSlice(body.Data)
-		suite.Len(options, 10)
+		suite.Len(options, 10, "Should return 10 options with custom config")
 
 		// Verify email is used as label
 		firstOption := suite.readDataAsMap(options[0])
 		label, ok := firstOption["label"].(string)
-		suite.True(ok)
-		suite.Contains(label, "@") // Email should contain @
+		suite.True(ok, "Label should be a string")
+		suite.Contains(label, "@", "Email label should contain @ symbol")
+
+		suite.T().Logf("Found %d options with custom config (label=email: %s)", len(options), label)
 	})
 
 	suite.Run("WithDescription", func() {
@@ -161,21 +192,25 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithConfig() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		options := suite.readDataAsSlice(body.Data)
-		suite.Len(options, 10)
+		suite.Len(options, 10, "Should return 10 options with description field")
 
 		// Verify description is included
 		firstOption := suite.readDataAsMap(options[0])
-		suite.NotEmpty(firstOption["description"])
+		suite.NotEmpty(firstOption["description"], "First option should have description field")
+
+		suite.T().Logf("Found %d options with description column (description: %v)", len(options), firstOption["description"])
 	})
 }
 
 // TestFindOptionsWithSearch tests FindOptions with search conditions.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
+	suite.T().Logf("Testing FindOptions API with search conditions for %s", suite.dbType)
+
 	suite.Run("SearchByStatus", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -188,12 +223,14 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		options := suite.readDataAsSlice(body.Data)
-		suite.Len(options, 7) // 7 active users
+		suite.Len(options, 7, "Should return 7 active users")
+
+		suite.T().Logf("Found %d options filtered by status=active", len(options))
 	})
 
 	suite.Run("SearchByKeyword", func() {
@@ -208,17 +245,22 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithSearch() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		options := suite.readDataAsSlice(body.Data)
-		suite.Len(options, 1) // Only Alice Johnson
+		suite.Len(options, 1, "Should return only Alice Johnson")
+
+		firstOption := suite.readDataAsMap(options[0])
+		suite.T().Logf("Found %d option matching keyword 'Johnson' (label=%v)", len(options), firstOption["label"])
 	})
 }
 
 // TestFindOptionsWithFilterApplier tests FindOptions with filter applier.
 func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
+	suite.T().Logf("Testing FindOptions API with filter applier for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_options_filtered",
@@ -227,16 +269,20 @@ func (suite *FindOptionsTestSuite) TestFindOptionsWithFilterApplier() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	options := suite.readDataAsSlice(body.Data)
-	suite.Len(options, 7) // Only active users
+	suite.Len(options, 7, "Should return only active users filtered by condition")
+
+	suite.T().Logf("Found %d options filtered by condition (status=active)", len(options))
 }
 
 // TestFindOptionsNegativeCases tests negative scenarios.
 func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
+	suite.T().Logf("Testing FindOptions API negative cases for %s", suite.dbType)
+
 	suite.Run("NoMatchingRecords", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -249,12 +295,14 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		options := suite.readDataAsSlice(body.Data)
-		suite.Len(options, 0)
+		suite.Len(options, 0, "Should return empty options when no records match")
+
+		suite.T().Logf("No matching records found as expected for keyword 'NonexistentKeyword'")
 	})
 
 	suite.Run("InvalidFieldName", func() {
@@ -270,9 +318,122 @@ func (suite *FindOptionsTestSuite) TestFindOptionsNegativeCases() {
 			},
 		})
 
-		// Should return error for invalid field
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when label column does not exist")
+
+		suite.T().Logf("Validation failed as expected for invalid label column 'nonexistent_field'")
+	})
+}
+
+// TestFindOptionsWithMeta tests FindOptions with meta columns.
+func (suite *FindOptionsTestSuite) TestFindOptionsWithMeta() {
+	suite.T().Logf("Testing FindOptions API with meta columns for %s", suite.dbType)
+
+	suite.Run("DefaultMetaColumns", func() {
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_options_meta",
+				Action:   "find_options",
+				Version:  "v1",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		body := suite.readBody(resp)
+		suite.True(body.IsOk(), "Should return successful response")
+
+		options := suite.readDataAsSlice(body.Data)
+		suite.Len(options, 10, "Should return 10 options with default meta columns")
+
+		// Verify meta field exists and contains expected keys
+		firstOption := suite.readDataAsMap(options[0])
+		meta, ok := firstOption["meta"].(map[string]any)
+		suite.True(ok, "meta should be a map")
+		suite.NotNil(meta, "meta should not be nil")
+		suite.Contains(meta, "status", "meta should contain status field")
+		suite.Contains(meta, "email", "meta should contain email field")
+
+		suite.T().Logf("Found %d options with default meta columns (status, email)", len(options))
+	})
+
+	suite.Run("CustomMetaColumns", func() {
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_options",
+				Action:   "find_options",
+				Version:  "v1",
+			},
+			Meta: map[string]any{
+				"metaColumns": []string{"status", "description"},
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		body := suite.readBody(resp)
+		suite.True(body.IsOk(), "Should return successful response")
+
+		options := suite.readDataAsSlice(body.Data)
+		suite.Len(options, 10, "Should return 10 options with custom meta columns")
+
+		// Verify meta field contains custom columns
+		firstOption := suite.readDataAsMap(options[0])
+		meta, ok := firstOption["meta"].(map[string]any)
+		suite.True(ok, "meta should be a map")
+		suite.NotNil(meta, "meta should not be nil")
+		suite.Contains(meta, "status", "meta should contain status field")
+		suite.Contains(meta, "description", "meta should contain description field")
+
+		suite.T().Logf("Found %d options with custom meta columns (status, description)", len(options))
+	})
+
+	suite.Run("MetaColumnsWithAlias", func() {
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_options",
+				Action:   "find_options",
+				Version:  "v1",
+			},
+			Meta: map[string]any{
+				"metaColumns": []string{"status", "email AS contact"},
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		body := suite.readBody(resp)
+		suite.True(body.IsOk(), "Should return successful response")
+
+		options := suite.readDataAsSlice(body.Data)
+		suite.Len(options, 10, "Should return 10 options with aliased meta columns")
+
+		// Verify alias is used in meta field
+		firstOption := suite.readDataAsMap(options[0])
+		meta, ok := firstOption["meta"].(map[string]any)
+		suite.True(ok, "meta should be a map")
+		suite.NotNil(meta, "meta should not be nil")
+		suite.Contains(meta, "status", "meta should contain status field")
+		suite.Contains(meta, "contact", "meta should contain contact field (aliased from email)")
+		suite.NotContains(meta, "email", "meta should not contain original email field when aliased")
+
+		suite.T().Logf("Found %d options with aliased meta columns (status, email AS contact)", len(options))
+	})
+
+	suite.Run("InvalidMetaColumn", func() {
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "test/user_options",
+				Action:   "find_options",
+				Version:  "v1",
+			},
+			Meta: map[string]any{
+				"metaColumns": []string{"nonexistent_field"},
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+		body := suite.readBody(resp)
+		suite.False(body.IsOk(), "Should fail when meta column does not exist")
+
+		suite.T().Logf("Validation failed as expected for invalid meta column 'nonexistent_field'")
 	})
 }

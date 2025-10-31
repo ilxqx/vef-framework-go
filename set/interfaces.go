@@ -3,7 +3,6 @@ package set
 import "iter"
 
 // Set defines the interface for set data structures.
-// A set is a collection of unique elements with no duplicates.
 type Set[T comparable] interface {
 	// Add adds one or more elements to the set.
 	// Returns true if at least one element was added (wasn't already present).

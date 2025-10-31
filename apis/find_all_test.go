@@ -137,7 +137,8 @@ func NewMultipleDefaultSortUserFindAllResource() api.Resource {
 	}
 }
 
-// FindAllTestSuite is the test suite for FindAll Api tests.
+// FindAllTestSuite tests the FindAll API functionality
+// including basic queries, search filters, processors, sorting, audit user names, and negative cases.
 type FindAllTestSuite struct {
 	BaseSuite
 }
@@ -162,6 +163,8 @@ func (suite *FindAllTestSuite) TearDownSuite() {
 
 // TestFindAllBasic tests basic FindAll functionality.
 func (suite *FindAllTestSuite) TestFindAllBasic() {
+	suite.T().Logf("Testing FindAll API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all",
@@ -170,19 +173,22 @@ func (suite *FindAllTestSuite) TestFindAllBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+	suite.NotNil(body.Data, "Data should not be nil")
 
-	// Should return all 10 users
 	users := suite.readDataAsSlice(body.Data)
-	suite.Len(users, 10)
+	suite.Len(users, 10, "Should return all 10 users")
+
+	suite.T().Logf("Found %d users without filters", len(users))
 }
 
 // TestFindAllWithSearchApplier tests FindAll with custom search conditions.
 func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
+	suite.T().Logf("Testing FindAll API with search filters for %s", suite.dbType)
+
 	suite.Run("SearchByStatus", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -195,13 +201,15 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
-		suite.NotNil(body.Data)
+		suite.True(body.IsOk(), "Should return successful response")
+		suite.NotNil(body.Data, "Data should not be nil")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 7) // 7 active users in test data
+		suite.Len(users, 7, "Should return 7 active users")
+
+		suite.T().Logf("Found %d users with status=active", len(users))
 	})
 
 	suite.Run("SearchByKeyword", func() {
@@ -216,13 +224,15 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
-		suite.NotNil(body.Data)
+		suite.True(body.IsOk(), "Should return successful response")
+		suite.NotNil(body.Data, "Data should not be nil")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 3) // Alice (Software Engineer), Henry (DevOps Engineer), Ivy (QA Engineer)
+		suite.Len(users, 3, "Should return 3 users with keyword 'Engineer'")
+
+		suite.T().Logf("Found %d users with keyword=Engineer", len(users))
 	})
 
 	suite.Run("SearchByAgeRange", func() {
@@ -237,18 +247,22 @@ func (suite *FindAllTestSuite) TestFindAllWithSearchApplier() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
-		suite.NotNil(body.Data)
+		suite.True(body.IsOk(), "Should return successful response")
+		suite.NotNil(body.Data, "Data should not be nil")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.GreaterOrEqual(len(users), 3) // At least Alice (25), Eve (27), Charlie (28)
+		suite.GreaterOrEqual(len(users), 3, "Should return at least 3 users in age range 25-28")
+
+		suite.T().Logf("Found %d users with age range 25-28", len(users))
 	})
 }
 
 // TestFindAllWithProcessor tests FindAll with post-processing.
 func (suite *FindAllTestSuite) TestFindAllWithWithProcessor() {
+	suite.T().Logf("Testing FindAll API with processor for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_processed",
@@ -257,21 +271,25 @@ func (suite *FindAllTestSuite) TestFindAllWithWithProcessor() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	dataMap := suite.readDataAsMap(body.Data)
-	suite.Equal(true, dataMap["processed"])
-	suite.NotNil(dataMap["users"])
+	suite.Equal(true, dataMap["processed"], "Processed flag should be true")
+	suite.NotNil(dataMap["users"], "Users array should not be nil")
 
 	users := suite.readDataAsSlice(dataMap["users"])
-	suite.Len(users, 10)
+	suite.Len(users, 10, "Should return all 10 users in processed format")
+
+	suite.T().Logf("Found %d users with post-processing applied", len(users))
 }
 
 // TestFindAllWithFilterApplier tests FindAll with filter applier.
 func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
+	suite.T().Logf("Testing FindAll API with filter applier for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_filtered",
@@ -280,17 +298,21 @@ func (suite *FindAllTestSuite) TestFindAllWithFilterApplier() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	users := suite.readDataAsSlice(body.Data)
-	suite.Len(users, 7) // Only active users
+	suite.Len(users, 7, "Should return only active users (7 users)")
+
+	suite.T().Logf("Found %d active users with filter applier", len(users))
 }
 
 // TestFindAllWithSortApplier tests FindAll with sort applier.
 func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
+	suite.T().Logf("Testing FindAll API with sort applier for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_ordered",
@@ -299,21 +321,24 @@ func (suite *FindAllTestSuite) TestFindAllWithSortApplier() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	users := suite.readDataAsSlice(body.Data)
-	suite.Len(users, 10)
+	suite.Len(users, 10, "Should return all 10 users")
 
-	// First user should be youngest (Alice, age 25)
 	firstUser := suite.readDataAsMap(users[0])
-	suite.Equal(float64(25), firstUser["age"])
+	suite.Equal(float64(25), firstUser["age"], "First user should be youngest (age 25)")
+
+	suite.T().Logf("Found %d users sorted by age ascending, first user age: %.0f", len(users), firstUser["age"])
 }
 
 // TestFindAllNegativeCases tests negative scenarios.
 func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
+	suite.T().Logf("Testing FindAll API negative cases for %s", suite.dbType)
+
 	suite.Run("EmptySearchCriteria", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -324,13 +349,15 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 			Params: map[string]any{},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
-		suite.NotNil(body.Data)
+		suite.True(body.IsOk(), "Should return successful response")
+		suite.NotNil(body.Data, "Data should not be nil")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
+		suite.Len(users, 10, "Should return all users when no search criteria provided")
+
+		suite.T().Logf("Found %d users with empty search criteria", len(users))
 	})
 
 	suite.Run("NoMatchingRecords", func() {
@@ -345,18 +372,22 @@ func (suite *FindAllTestSuite) TestFindAllNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
-		suite.NotNil(body.Data)
+		suite.True(body.IsOk(), "Should return successful response")
+		suite.NotNil(body.Data, "Data should not be nil")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 0) // Empty array, not nil
+		suite.Len(users, 0, "Should return empty array when no records match")
+
+		suite.T().Logf("Found %d users with non-existent keyword (empty array as expected)", len(users))
 	})
 }
 
 // TestFindAllWithAuditUserNames tests FindAll with audit user names populated.
 func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
+	suite.T().Logf("Testing FindAll API with audit user names for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_all_audit",
@@ -368,34 +399,34 @@ func (suite *FindAllTestSuite) TestFindAllWithAuditUserNames() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	users := suite.readDataAsSlice(body.Data)
-	suite.Len(users, 7) // 7 active users
+	suite.Len(users, 7, "Should return 7 active users")
 
-	// Check first user has audit user names
 	firstUser := suite.readDataAsMap(users[0])
-	suite.NotNil(firstUser["createdByName"])
-	suite.NotNil(firstUser["updatedByName"])
+	suite.NotNil(firstUser["createdByName"], "First user should have createdByName")
+	suite.NotNil(firstUser["updatedByName"], "First user should have updatedByName")
 
-	// Verify all users have audit user names populated
 	for _, u := range users {
 		user := suite.readDataAsMap(u)
 		suite.NotNil(user["createdByName"], "User %s should have createdByName", user["id"])
 		suite.NotNil(user["updatedByName"], "User %s should have updatedByName", user["id"])
-		// Audit user names should be from TestAuditUser data
-		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["createdByName"])
-		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["updatedByName"])
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["createdByName"], "createdByName should be from audit users")
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["updatedByName"], "updatedByName should be from audit users")
 	}
+
+	suite.T().Logf("Found %d users with audit user names populated", len(users))
 }
 
 // TestFindAllDefaultSorting tests default sorting behavior.
 func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
+	suite.T().Logf("Testing FindAll API default sorting for %s", suite.dbType)
+
 	suite.Run("DefaultSortByPrimaryKey", func() {
-		// TestUserFindAllResource has no explicit default sort, should sort by id DESC
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all",
@@ -404,24 +435,23 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
+		suite.Len(users, 10, "Should return all 10 users")
 
-		// First user should have the highest id (user010)
 		firstUser := suite.readDataAsMap(users[0])
-		suite.Equal("user010", firstUser["id"])
+		suite.Equal("user010", firstUser["id"], "First user should have highest id (user010) when sorted by id DESC")
 
-		// Last user should have the lowest id (user001)
 		lastUser := suite.readDataAsMap(users[len(users)-1])
-		suite.Equal("user001", lastUser["id"])
+		suite.Equal("user001", lastUser["id"], "Last user should have lowest id (user001) when sorted by id DESC")
+
+		suite.T().Logf("Default sort by primary key: first=%s, last=%s", firstUser["id"], lastUser["id"])
 	})
 
 	suite.Run("CustomDefaultSort", func() {
-		// OrderedUserFindAllResource has default sort by age ASC
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_ordered",
@@ -430,26 +460,25 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
+		suite.Len(users, 10, "Should return all 10 users")
 
-		// First user should be youngest (Alice, age 25)
 		firstUser := suite.readDataAsMap(users[0])
-		suite.Equal(float64(25), firstUser["age"])
-		suite.Equal("Alice Johnson", firstUser["name"])
+		suite.Equal(float64(25), firstUser["age"], "First user should be youngest (age 25)")
+		suite.Equal("Alice Johnson", firstUser["name"], "First user should be Alice Johnson")
 
-		// Last user should be oldest (Frank, age 35)
 		lastUser := suite.readDataAsMap(users[len(users)-1])
-		suite.Equal(float64(35), lastUser["age"])
-		suite.Equal("Frank Miller", lastUser["name"])
+		suite.Equal(float64(35), lastUser["age"], "Last user should be oldest (age 35)")
+		suite.Equal("Frank Miller", lastUser["name"], "Last user should be Frank Miller")
+
+		suite.T().Logf("Custom default sort by age: first=%s (age %.0f), last=%s (age %.0f)", firstUser["name"], firstUser["age"], lastUser["name"], lastUser["age"])
 	})
 
 	suite.Run("DisableDefaultSort", func() {
-		// NoDefaultSortUserFindAllResource explicitly disables default sorting
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_no_default_sort",
@@ -458,17 +487,17 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
-		// Without sorting, order is database-dependent, just verify we got all users
+		suite.Len(users, 10, "Should return all 10 users without sorting")
+
+		suite.T().Logf("Found %d users with default sort disabled (order is database-dependent)", len(users))
 	})
 
 	suite.Run("MultipleDefaultSortColumns", func() {
-		// MultipleDefaultSortUserFindAllResource sorts by status ASC, then age DESC
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_multi_sort",
@@ -477,19 +506,16 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
+		suite.Len(users, 10, "Should return all 10 users")
 
-		// First user should be active with highest age (Frank is inactive, so Diana age 32)
 		firstUser := suite.readDataAsMap(users[0])
-		suite.Equal("active", firstUser["status"])
-		// Among active users, should be sorted by age DESC
+		suite.Equal("active", firstUser["status"], "First user should be active (sorted by status ASC)")
 
-		// Verify sorting: all active users should come before inactive users
 		var lastActiveIndex int
 		for i, u := range users {
 			user := suite.readDataAsMap(u)
@@ -498,25 +524,25 @@ func (suite *FindAllTestSuite) TestFindAllDefaultSorting() {
 			}
 		}
 
-		// Check that all active users come before inactive users
 		for i := 0; i <= lastActiveIndex; i++ {
 			user := suite.readDataAsMap(users[i])
-			suite.Equal("active", user["status"])
+			suite.Equal("active", user["status"], "All active users should come before inactive users")
 		}
 
-		// Check that inactive users come after active users
 		for i := lastActiveIndex + 1; i < len(users); i++ {
 			user := suite.readDataAsMap(users[i])
-			suite.Equal("inactive", user["status"])
+			suite.Equal("inactive", user["status"], "All inactive users should come after active users")
 		}
+
+		suite.T().Logf("Multiple sort columns verified: %d active users, %d inactive users", lastActiveIndex+1, len(users)-lastActiveIndex-1)
 	})
 }
 
 // TestFindAllRequestSortOverride tests that request-specified sorting overrides default sorting.
 func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
+	suite.T().Logf("Testing FindAll API request sort override for %s", suite.dbType)
+
 	suite.Run("OverrideDefaultSortWithRequestSort", func() {
-		// OrderedUserFindAllResource has default sort by age ASC
-		// Override with name DESC via request
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_ordered",
@@ -533,27 +559,25 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
+		suite.Len(users, 10, "Should return all 10 users")
 
-		// First user should have name starting with highest letter
 		firstUser := suite.readDataAsMap(users[0])
 		firstName := firstUser["name"].(string)
 
-		// Last user should have name starting with lowest letter
 		lastUser := suite.readDataAsMap(users[len(users)-1])
 		lastName := lastUser["name"].(string)
 
-		// Verify descending order
-		suite.True(firstName > lastName, "First name %s should be > last name %s", firstName, lastName)
+		suite.True(firstName > lastName, "First name %s should be > last name %s in DESC order", firstName, lastName)
+
+		suite.T().Logf("Request sort override: first=%s, last=%s", firstName, lastName)
 	})
 
 	suite.Run("OverrideWithMultipleSortColumns", func() {
-		// Override default sort with multiple columns: status ASC, name ASC
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_ordered",
@@ -574,14 +598,13 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
+		suite.Len(users, 10, "Should return all 10 users")
 
-		// Verify all active users come before inactive users
 		var lastActiveIndex int
 		for i, u := range users {
 			user := suite.readDataAsMap(u)
@@ -592,18 +615,18 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 
 		for i := 0; i <= lastActiveIndex; i++ {
 			user := suite.readDataAsMap(users[i])
-			suite.Equal("active", user["status"])
+			suite.Equal("active", user["status"], "All active users should come before inactive users")
 		}
 
 		for i := lastActiveIndex + 1; i < len(users); i++ {
 			user := suite.readDataAsMap(users[i])
-			suite.Equal("inactive", user["status"])
+			suite.Equal("inactive", user["status"], "All inactive users should come after active users")
 		}
+
+		suite.T().Logf("Multiple sort columns override verified: status ASC, name ASC")
 	})
 
 	suite.Run("OverrideDisabledDefaultSort", func() {
-		// NoDefaultSortUserFindAllResource has no default sort
-		// Add sorting via request
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_all_no_default_sort",
@@ -620,24 +643,25 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		users := suite.readDataAsSlice(body.Data)
-		suite.Len(users, 10)
+		suite.Len(users, 10, "Should return all 10 users")
 
-		// Verify emails are in ascending order
 		var prevEmail string
 		for i, u := range users {
 			user := suite.readDataAsMap(u)
 
 			email := user["email"].(string)
 			if i > 0 {
-				suite.True(email >= prevEmail, "Email %s should be >= previous email %s", email, prevEmail)
+				suite.True(email >= prevEmail, "Email %s should be >= previous email %s in ASC order", email, prevEmail)
 			}
 
 			prevEmail = email
 		}
+
+		suite.T().Logf("Request sort applied to resource with disabled default sort: emails sorted ASC")
 	})
 }

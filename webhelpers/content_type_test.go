@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIsJSON(t *testing.T) {
-	t.Run("Returns true when Content-Type is application/json", func(t *testing.T) {
+func TestIsJson(t *testing.T) {
+	t.Run("applicationJson", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
 			result := IsJson(c)
-			assert.True(t, result)
+			assert.True(t, result, "Should return true for application/json")
 
 			return c.SendStatus(fiber.StatusOK)
 		})
@@ -28,12 +28,12 @@ func TestIsJSON(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("Returns true for Content-Type with charset", func(t *testing.T) {
+	t.Run("applicationJsonWithCharset", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
 			result := IsJson(c)
-			assert.True(t, result)
+			assert.True(t, result, "Should return true for application/json with charset")
 
 			return c.SendStatus(fiber.StatusOK)
 		})
@@ -46,12 +46,12 @@ func TestIsJSON(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("Returns false when Content-Type header is missing", func(t *testing.T) {
+	t.Run("missingContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
 			result := IsJson(c)
-			assert.False(t, result)
+			assert.False(t, result, "Should return false when Content-Type header is missing")
 
 			return c.SendStatus(fiber.StatusOK)
 		})
@@ -63,12 +63,12 @@ func TestIsJSON(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("Returns false for non JSON Content-Type", func(t *testing.T) {
+	t.Run("nonJsonContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
 			result := IsJson(c)
-			assert.False(t, result)
+			assert.False(t, result, "Should return false for non-JSON Content-Type")
 
 			return c.SendStatus(fiber.StatusOK)
 		})
@@ -83,12 +83,12 @@ func TestIsJSON(t *testing.T) {
 }
 
 func TestIsMultipart(t *testing.T) {
-	t.Run("Returns true for multipart form data", func(t *testing.T) {
+	t.Run("multipartFormData", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/multipart", func(c fiber.Ctx) error {
 			result := IsMultipart(c)
-			assert.True(t, result)
+			assert.True(t, result, "Should return true for multipart/form-data")
 
 			return c.SendStatus(fiber.StatusOK)
 		})
@@ -101,12 +101,12 @@ func TestIsMultipart(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("Returns false for non multipart Content-Type", func(t *testing.T) {
+	t.Run("nonMultipartContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/multipart", func(c fiber.Ctx) error {
 			result := IsMultipart(c)
-			assert.False(t, result)
+			assert.False(t, result, "Should return false for non-multipart Content-Type")
 
 			return c.SendStatus(fiber.StatusOK)
 		})
@@ -119,12 +119,12 @@ func TestIsMultipart(t *testing.T) {
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("Returns false when Content-Type header is missing", func(t *testing.T) {
+	t.Run("missingContentType", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/multipart", func(c fiber.Ctx) error {
 			result := IsMultipart(c)
-			assert.False(t, result)
+			assert.False(t, result, "Should return false when Content-Type header is missing")
 
 			return c.SendStatus(fiber.StatusOK)
 		})

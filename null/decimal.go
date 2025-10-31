@@ -67,7 +67,6 @@ func (d Decimal) ValueOr(v decimal.Decimal) decimal.Decimal {
 	return d.Decimal
 }
 
-// SetValid sets the decimal to the given value and marks it as valid (non-null).
 // This method modifies the receiver, so it must be called on a pointer.
 func (d *Decimal) SetValid(v decimal.Decimal) {
 	d.Decimal = v

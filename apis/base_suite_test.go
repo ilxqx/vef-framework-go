@@ -136,7 +136,7 @@ func (suite *BaseSuite) tearDownBaseSuite() {
 // Helper methods for the suite
 
 func (suite *BaseSuite) makeApiRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJSON(body)
+	jsonBody, err := encoding.ToJson(body)
 	suite.Require().NoError(err)
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
@@ -157,7 +157,7 @@ func (suite *BaseSuite) readBody(resp *http.Response) result.Result {
 	}()
 
 	suite.Require().NoError(err)
-	res, err := encoding.FromJSON[result.Result](string(body))
+	res, err := encoding.FromJson[result.Result](string(body))
 	suite.Require().NoError(err)
 
 	return *res

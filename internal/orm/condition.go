@@ -12,6 +12,14 @@ type AuditConditionBuilder interface {
 	CreatedByEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// OrCreatedByEqualsSubQuery is a condition that checks if the created by column is equal to a subquery.
 	OrCreatedByEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// CreatedByEqualsAny is a condition that checks if the created by column is equal to any value returned by a subquery.
+	CreatedByEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrCreatedByEqualsAny is a condition that checks if the created by column is equal to any value returned by a subquery.
+	OrCreatedByEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// CreatedByEqualsAll is a condition that checks if the created by column is equal to all values returned by a subquery.
+	CreatedByEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrCreatedByEqualsAll is a condition that checks if the created by column is equal to all values returned by a subquery.
+	OrCreatedByEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// CreatedByEqualsCurrent is a condition that checks if the created by column is equal to the current user.
 	CreatedByEqualsCurrent(alias ...string) ConditionBuilder
 	// OrCreatedByEqualsCurrent is a condition that checks if the created by column is equal to the current user.
@@ -24,6 +32,14 @@ type AuditConditionBuilder interface {
 	CreatedByNotEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// OrCreatedByNotEqualsSubQuery is a condition that checks if the created by column is not equal to a subquery.
 	OrCreatedByNotEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// CreatedByNotEqualsAny is a condition that checks if the created by column is not equal to any value returned by a subquery.
+	CreatedByNotEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrCreatedByNotEqualsAny is a condition that checks if the created by column is not equal to any value returned by a subquery.
+	OrCreatedByNotEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// CreatedByNotEqualsAll is a condition that checks if the created by column is not equal to all values returned by a subquery.
+	CreatedByNotEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrCreatedByNotEqualsAll is a condition that checks if the created by column is not equal to all values returned by a subquery.
+	OrCreatedByNotEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// CreatedByNotEqualsCurrent is a condition that checks if the created by column is not equal to the current user.
 	CreatedByNotEqualsCurrent(alias ...string) ConditionBuilder
 	// OrCreatedByNotEqualsCurrent is a condition that checks if the created by column is not equal to the current user.
@@ -44,10 +60,20 @@ type AuditConditionBuilder interface {
 	OrCreatedByNotInSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// UpdatedByEquals is a condition that checks if the updated by column is equal to a value.
 	UpdatedByEquals(updatedBy string, alias ...string) ConditionBuilder
+	// OrUpdatedByEquals is a condition that checks if the updated by column is equal to a value.
+	OrUpdatedByEquals(updatedBy string, alias ...string) ConditionBuilder
 	// UpdatedByEqualsSubQuery is a condition that checks if the updated by column is equal to a subquery.
 	UpdatedByEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// OrUpdatedByEqualsSubQuery is a condition that checks if the updated by column is equal to a subquery.
 	OrUpdatedByEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// UpdatedByEqualsAny is a condition that checks if the updated by column is equal to any value returned by a subquery.
+	UpdatedByEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrUpdatedByEqualsAny is a condition that checks if the updated by column is equal to any value returned by a subquery.
+	OrUpdatedByEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// UpdatedByEqualsAll is a condition that checks if the updated by column is equal to all values returned by a subquery.
+	UpdatedByEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrUpdatedByEqualsAll is a condition that checks if the updated by column is equal to all values returned by a subquery.
+	OrUpdatedByEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// UpdatedByEqualsCurrent is a condition that checks if the updated by column is equal to the current user.
 	UpdatedByEqualsCurrent(alias ...string) ConditionBuilder
 	// OrUpdatedByEqualsCurrent is a condition that checks if the updated by column is equal to the current user.
@@ -58,6 +84,14 @@ type AuditConditionBuilder interface {
 	UpdatedByNotEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// OrUpdatedByNotEqualsSubQuery is a condition that checks if the updated by column is not equal to a subquery.
 	OrUpdatedByNotEqualsSubQuery(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// UpdatedByNotEqualsAny is a condition that checks if the updated by column is not equal to any value returned by a subquery.
+	UpdatedByNotEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrUpdatedByNotEqualsAny is a condition that checks if the updated by column is not equal to any value returned by a subquery.
+	OrUpdatedByNotEqualsAny(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// UpdatedByNotEqualsAll is a condition that checks if the updated by column is not equal to all values returned by a subquery.
+	UpdatedByNotEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
+	// OrUpdatedByNotEqualsAll is a condition that checks if the updated by column is not equal to all values returned by a subquery.
+	OrUpdatedByNotEqualsAll(builder func(query SelectQuery), alias ...string) ConditionBuilder
 	// UpdatedByNotEqualsCurrent is a condition that checks if the updated by column is not equal to the current user.
 	UpdatedByNotEqualsCurrent(alias ...string) ConditionBuilder
 	// OrUpdatedByNotEqualsCurrent is a condition that checks if the updated by column is not equal to the current user.
@@ -163,6 +197,14 @@ type ConditionBuilder interface {
 	EqualsSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
 	// OrEqualsSubQuery is a condition that checks if a column is equal to a subquery.
 	OrEqualsSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
+	// EqualsAny is a condition that checks if a column is equal to any value returned by a subquery.
+	EqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrEqualsAny is a condition that checks if a column is equal to any value returned by a subquery.
+	OrEqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// EqualsAll is a condition that checks if a column is equal to all values returned by a subquery.
+	EqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrEqualsAll is a condition that checks if a column is equal to all values returned by a subquery.
+	OrEqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder
 	// EqualsExpr is a condition that checks if a column is equal to an expression.
 	EqualsExpr(column string, builder func(ExprBuilder) any) ConditionBuilder
 	// OrEqualsExpr is a condition that checks if a column is equal to an expression.
@@ -179,6 +221,14 @@ type ConditionBuilder interface {
 	NotEqualsSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
 	// OrNotEqualsSubQuery is a condition that checks if a column is not equal to a subquery.
 	OrNotEqualsSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
+	// NotEqualsAny is a condition that checks if a column is not equal to any value returned by a subquery.
+	NotEqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrNotEqualsAny is a condition that checks if a column is not equal to any value returned by a subquery.
+	OrNotEqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// NotEqualsAll is a condition that checks if a column is not equal to all values returned by a subquery.
+	NotEqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrNotEqualsAll is a condition that checks if a column is not equal to all values returned by a subquery.
+	OrNotEqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder
 	// NotEqualsExpr is a condition that checks if a column is not equal to an expression.
 	NotEqualsExpr(column string, builder func(ExprBuilder) any) ConditionBuilder
 	// OrNotEqualsExpr is a condition that checks if a column is not equal to an expression.
@@ -195,6 +245,14 @@ type ConditionBuilder interface {
 	GreaterThanSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
 	// OrGreaterThanSubQuery is a condition that checks if a column is greater than a subquery.
 	OrGreaterThanSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
+	// GreaterThanAny is a condition that checks if a column is greater than any value returned by a subquery.
+	GreaterThanAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrGreaterThanAny is a condition that checks if a column is greater than any value returned by a subquery.
+	OrGreaterThanAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// GreaterThanAll is a condition that checks if a column is greater than all values returned by a subquery.
+	GreaterThanAll(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrGreaterThanAll is a condition that checks if a column is greater than all values returned by a subquery.
+	OrGreaterThanAll(column string, builder func(query SelectQuery)) ConditionBuilder
 	// GreaterThanExpr is a condition that checks if a column is greater than an expression.
 	GreaterThanExpr(column string, builder func(ExprBuilder) any) ConditionBuilder
 	// OrGreaterThanExpr is a condition that checks if a column is greater than an expression.
@@ -211,6 +269,14 @@ type ConditionBuilder interface {
 	GreaterThanOrEqualSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
 	// OrGreaterThanOrEqualSubQuery is a condition that checks if a column is greater than or equal to a subquery.
 	OrGreaterThanOrEqualSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
+	// GreaterThanOrEqualAny is a condition that checks if a column is greater than or equal to any value returned by a subquery.
+	GreaterThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrGreaterThanOrEqualAny is a condition that checks if a column is greater than or equal to any value returned by a subquery.
+	OrGreaterThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// GreaterThanOrEqualAll is a condition that checks if a column is greater than or equal to all values returned by a subquery.
+	GreaterThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrGreaterThanOrEqualAll is a condition that checks if a column is greater than or equal to all values returned by a subquery.
+	OrGreaterThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder
 	// GreaterThanOrEqualExpr is a condition that checks if a column is greater than or equal to an expression.
 	GreaterThanOrEqualExpr(column string, builder func(ExprBuilder) any) ConditionBuilder
 	// OrGreaterThanOrEqualExpr is a condition that checks if a column is greater than or equal to an expression.
@@ -227,6 +293,14 @@ type ConditionBuilder interface {
 	LessThanSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
 	// OrLessThanSubQuery is a condition that checks if a column is less than a subquery.
 	OrLessThanSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
+	// LessThanAny is a condition that checks if a column is less than any value returned by a subquery.
+	LessThanAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrLessThanAny is a condition that checks if a column is less than any value returned by a subquery.
+	OrLessThanAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// LessThanAll is a condition that checks if a column is less than all values returned by a subquery.
+	LessThanAll(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrLessThanAll is a condition that checks if a column is less than all values returned by a subquery.
+	OrLessThanAll(column string, builder func(query SelectQuery)) ConditionBuilder
 	// LessThanExpr is a condition that checks if a column is less than an expression.
 	LessThanExpr(column string, builder func(ExprBuilder) any) ConditionBuilder
 	// OrLessThanExpr is a condition that checks if a column is less than an expression.
@@ -243,6 +317,14 @@ type ConditionBuilder interface {
 	LessThanOrEqualSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
 	// OrLessThanOrEqualSubQuery is a condition that checks if a column is less than or equal to a subquery.
 	OrLessThanOrEqualSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder
+	// LessThanOrEqualAny is a condition that checks if a column is less than or equal to any value returned by a subquery.
+	LessThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrLessThanOrEqualAny is a condition that checks if a column is less than or equal to any value returned by a subquery.
+	OrLessThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder
+	// LessThanOrEqualAll is a condition that checks if a column is less than or equal to all values returned by a subquery.
+	LessThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder
+	// OrLessThanOrEqualAll is a condition that checks if a column is less than or equal to all values returned by a subquery.
+	OrLessThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder
 	// LessThanOrEqualExpr is a condition that checks if a column is less than or equal to an expression.
 	LessThanOrEqualExpr(column string, builder func(ExprBuilder) any) ConditionBuilder
 	// OrLessThanOrEqualExpr is a condition that checks if a column is less than or equal to an expression.

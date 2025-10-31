@@ -22,7 +22,7 @@ func TestAction_ValidActionNames(t *testing.T) {
 		t.Run(action, func(t *testing.T) {
 			assert.NotPanics(t, func() {
 				_ = apis.NewCreateApi[orm.Model, orm.Model]().Action(action)
-			})
+			}, "Should accept valid action name: %s", action)
 		})
 	}
 }
@@ -50,7 +50,7 @@ func TestAction_InvalidActionNames(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Panics(t, func() {
 				_ = apis.NewCreateApi[orm.Model, orm.Model]().Action(tc.action)
-			})
+			}, "Should panic for invalid action name (%s): %s", tc.name, tc.action)
 		})
 	}
 }

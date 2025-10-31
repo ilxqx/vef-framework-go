@@ -2,6 +2,8 @@ package apis
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
@@ -23,7 +25,7 @@ func validateColumnsExist(schema *schema.Table, columns ...struct {
 ) error {
 	for _, c := range columns {
 		if c.column != constants.Empty {
-			if field, _ := schema.Field(c.column); field == nil {
+			if !schema.HasField(c.column) {
 				return result.Err(i18n.T("field_not_exist_in_model", map[string]any{
 					"field": c.column,
 					"name":  c.name,
@@ -70,6 +72,11 @@ func mergeOptionColumnMapping(mapping, defaultMapping *DataOptionColumnMapping) 
 
 	if mapping.DescriptionColumn == constants.Empty {
 		mapping.DescriptionColumn = defaultMapping.DescriptionColumn
+	}
+
+	// Merge MetaColumns if not specified
+	if len(mapping.MetaColumns) == 0 && defaultMapping != nil {
+		mapping.MetaColumns = defaultMapping.MetaColumns
 	}
 }
 
@@ -121,4 +128,73 @@ func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.Relat
 	}
 
 	return relations
+}
+
+// columnAliasPattern matches "column AS alias" format (case-insensitive AS, flexible spaces).
+var columnAliasPattern = regexp.MustCompile(`^\s*(.+?)\s+(?i:as)\s+(.+?)\s*$`)
+
+// parseMetaColumn parses a single meta column specification into (column, alias).
+// Supports formats:
+//   - "column" -> ("column", "column")
+//   - "column AS alias" -> ("column", "alias")
+//   - "column as alias" -> ("column", "alias")
+func parseMetaColumn(spec string) (column, alias string) {
+	if matches := columnAliasPattern.FindStringSubmatch(spec); len(matches) == 3 {
+		column = strings.TrimSpace(matches[1])
+		alias = strings.TrimSpace(matches[2])
+
+		return column, alias
+	}
+
+	// No alias specified, use column name as alias
+	trimmed := strings.TrimSpace(spec)
+
+	return trimmed, trimmed
+}
+
+// parseMetaColumns parses meta column specifications into structured info.
+// This function should be called once to avoid redundant parsing.
+// Returns nil if specs is empty.
+func parseMetaColumns(specs []string) []orm.ColumnInfo {
+	if len(specs) == 0 {
+		return nil
+	}
+
+	result := make([]orm.ColumnInfo, len(specs))
+	for i, spec := range specs {
+		columnName, aliasName := parseMetaColumn(spec)
+		result[i] = orm.ColumnInfo{
+			Name:  columnName,
+			Alias: aliasName,
+		}
+	}
+
+	return result
+}
+
+// validateMetaColumns validates that all meta columns exist in the table schema.
+func validateMetaColumns(schema *schema.Table, metaColumns []orm.ColumnInfo) error {
+	for _, col := range metaColumns {
+		if !schema.HasField(col.Name) {
+			return result.Err(i18n.T("field_not_exist_in_model", map[string]any{
+				"field": col.Name,
+				"name":  "metaColumns",
+				"model": schema.TypeName,
+			}))
+		}
+	}
+
+	return nil
+}
+
+// buildMetaJsonExpr constructs a JSON_OBJECT expression for meta columns.
+func buildMetaJsonExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.QueryAppender {
+	// Build JSON_OBJECT arguments: key1, value1, key2, value2, ...
+	jsonArgs := make([]any, 0, len(metaColumns)*2)
+	for _, col := range metaColumns {
+		// Add key-value pair: alias as key, column expression as value
+		jsonArgs = append(jsonArgs, col.Alias, eb.Column(col.Name))
+	}
+
+	return eb.JsonObject(jsonArgs...)
 }

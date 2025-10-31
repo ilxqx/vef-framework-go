@@ -53,7 +53,6 @@ type VisitorConfig struct {
 // VisitorOption configures visitor behavior.
 type VisitorOption func(*VisitorConfig)
 
-// WithTraversalMode sets the traversal mode (DepthFirst or BreadthFirst).
 func WithTraversalMode(mode TraversalMode) VisitorOption {
 	return func(c *VisitorConfig) {
 		c.TraversalMode = mode

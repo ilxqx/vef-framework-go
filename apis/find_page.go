@@ -22,7 +22,6 @@ func (a *findPageApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findPage)
 }
 
-// WithDefaultPageSize sets the default page size when not specified in the request.
 // This value is used when the request's page size is zero or invalid.
 func (a *findPageApi[TModel, TSearch]) WithDefaultPageSize(size int) FindPageApi[TModel, TSearch] {
 	a.defaultPageSize = size

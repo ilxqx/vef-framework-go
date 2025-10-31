@@ -10,16 +10,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// Test user details struct.
 type TestUserDetails struct {
 	Email       string `json:"email"`
 	PhoneNumber string `json:"phoneNumber"`
 	Age         int    `json:"age"`
 }
 
-// Test external app details struct.
 type TestExternalAppDetails struct {
-	AppID     string   `json:"appId"`
+	AppId     string   `json:"appId"`
 	AppSecret string   `json:"appSecret"`
 	Scopes    []string `json:"scopes"`
 }
@@ -146,16 +144,15 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		var principal Principal
 
 		err := json.Unmarshal([]byte(jsonData), &principal)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should unmarshal user with map details")
 
 		assert.Equal(t, PrincipalTypeUser, principal.Type)
 		assert.Equal(t, "user123", principal.Id)
 		assert.Equal(t, "Test User", principal.Name)
 		assert.Equal(t, []string{"admin", "editor"}, principal.Roles)
 
-		// Details will be a pointer to map[string]any when userDetailsType is map[string]any
 		detailsPtr, ok := principal.Details.(*map[string]any)
-		require.True(t, ok)
+		require.True(t, ok, "Details should be a map")
 
 		details := *detailsPtr
 		assert.Equal(t, "test@example.com", details["email"])
@@ -163,9 +160,8 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 	})
 
 	t.Run("Unmarshal user with struct details", func(t *testing.T) {
-		// Set user details type
 		originalType := userDetailsType
-		defer func() { userDetailsType = originalType }() // Reset at end
+		defer func() { userDetailsType = originalType }()
 
 		SetUserDetailsType[TestUserDetails]()
 
@@ -184,19 +180,18 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		var principal Principal
 
 		err := json.Unmarshal([]byte(jsonData), &principal)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should unmarshal user with struct details")
 
 		details, ok := principal.Details.(*TestUserDetails)
-		require.True(t, ok)
+		require.True(t, ok, "Details should be TestUserDetails")
 		assert.Equal(t, "jane@example.com", details.Email)
 		assert.Equal(t, "+1234567890", details.PhoneNumber)
 		assert.Equal(t, 25, details.Age)
 	})
 
 	t.Run("Unmarshal external app with struct details", func(t *testing.T) {
-		// Set external app details type
 		originalType := externalAppDetailsType
-		defer func() { externalAppDetailsType = originalType }() // Reset at end
+		defer func() { externalAppDetailsType = originalType }()
 
 		SetExternalAppDetailsType[TestExternalAppDetails]()
 
@@ -215,11 +210,11 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		var principal Principal
 
 		err := json.Unmarshal([]byte(jsonData), &principal)
-		require.NoError(t, err)
+		require.NoError(t, err, "Should unmarshal external app with struct details")
 
 		details, ok := principal.Details.(*TestExternalAppDetails)
-		require.True(t, ok)
-		assert.Equal(t, "app_123456", details.AppID)
+		require.True(t, ok, "Details should be TestExternalAppDetails")
+		assert.Equal(t, "app_123456", details.AppId)
 		assert.Equal(t, "secret_abc", details.AppSecret)
 		assert.Equal(t, []string{"read", "write"}, details.Scopes)
 	})
@@ -277,7 +272,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 	t.Run("Unmarshal external app details from map", func(t *testing.T) {
 		originalType := externalAppDetailsType
-		defer func() { externalAppDetailsType = originalType }() // Reset at end
+		defer func() { externalAppDetailsType = originalType }()
 
 		SetExternalAppDetailsType[TestExternalAppDetails]()
 
@@ -291,21 +286,19 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 		app.AttemptUnmarshalDetails(detailsMap)
 
 		details, ok := app.Details.(*TestExternalAppDetails)
-		require.True(t, ok)
-		assert.Equal(t, "app_123", details.AppID)
+		require.True(t, ok, "Details should be TestExternalAppDetails")
+		assert.Equal(t, "app_123", details.AppId)
 		assert.Equal(t, "secret", details.AppSecret)
 	})
 
 	t.Run("Details type is map, keep as is", func(t *testing.T) {
-		// Default type is already map[string]any, no need to set
 		user := NewUser("user123", "Test User")
 		detailsMap := map[string]any{
 			"key": "value",
 		}
 
 		user.AttemptUnmarshalDetails(detailsMap)
-		// When type is map[string]any, it's kept as-is
-		assert.Equal(t, detailsMap, user.Details)
+		assert.Equal(t, detailsMap, user.Details, "Details should remain as map")
 	})
 
 	t.Run("Non-map details for user type", func(t *testing.T) {
@@ -330,55 +323,53 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 	t.Run("Decode with partial fields creates struct", func(t *testing.T) {
 		originalType := userDetailsType
-		defer func() { userDetailsType = originalType }() // Reset at end
+		defer func() { userDetailsType = originalType }()
 
 		SetUserDetailsType[TestUserDetails]()
 
 		user := NewUser("user123", "Test User")
-		// Details with only some fields that match TestUserDetails
 		partialDetails := map[string]any{
 			"email":        "test@example.com",
-			"invalidField": "value", // This field will be ignored
+			"invalidField": "value",
 		}
 
 		user.AttemptUnmarshalDetails(partialDetails)
-		// Decoder succeeds and creates struct with matched fields
 		details, ok := user.Details.(*TestUserDetails)
-		require.True(t, ok)
+		require.True(t, ok, "Details should be TestUserDetails")
 		assert.Equal(t, "test@example.com", details.Email)
-		assert.Equal(t, "", details.PhoneNumber) // Unset field has zero value
+		assert.Equal(t, "", details.PhoneNumber, "Unset field should have zero value")
 	})
 }
 
 func TestSetUserDetailsType(t *testing.T) {
 	t.Run("Set valid struct type", func(t *testing.T) {
 		originalType := userDetailsType
-		defer func() { userDetailsType = originalType }() // Reset at end
+		defer func() { userDetailsType = originalType }()
 
 		SetUserDetailsType[TestUserDetails]()
-		assert.Equal(t, "TestUserDetails", userDetailsType.Name())
+		assert.Equal(t, "TestUserDetails", userDetailsType.Name(), "Type name should be TestUserDetails")
 	})
 
 	t.Run("Panic on non-struct type", func(t *testing.T) {
 		assert.Panics(t, func() {
 			SetUserDetailsType[string]()
-		})
+		}, "Should panic on non-struct type")
 	})
 }
 
 func TestSetExternalAppDetailsType(t *testing.T) {
 	t.Run("Set valid struct type", func(t *testing.T) {
 		originalType := externalAppDetailsType
-		defer func() { externalAppDetailsType = originalType }() // Reset at end
+		defer func() { externalAppDetailsType = originalType }()
 
 		SetExternalAppDetailsType[TestExternalAppDetails]()
-		assert.Equal(t, "TestExternalAppDetails", externalAppDetailsType.Name())
+		assert.Equal(t, "TestExternalAppDetails", externalAppDetailsType.Name(), "Type name should be TestExternalAppDetails")
 	})
 
 	t.Run("Panic on non-struct type", func(t *testing.T) {
 		assert.Panics(t, func() {
 			SetExternalAppDetailsType[int]()
-		})
+		}, "Should panic on non-struct type")
 	})
 }
 

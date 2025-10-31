@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"reflect"
 
-	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
@@ -13,6 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/set"
 )
 
 // NewUpdateQuery creates a new UpdateQuery instance with the provided database instance.
@@ -28,6 +28,9 @@ func NewUpdateQuery(db *BunDb) *BunUpdateQuery {
 		dialect: dialect,
 		eb:      eb,
 		query:   uq,
+
+		selectedColumns:  set.NewHashSet[string](),
+		returningColumns: set.NewHashSet[string](),
 	}
 	eb.qb = query
 
@@ -39,11 +42,14 @@ func NewUpdateQuery(db *BunDb) *BunUpdateQuery {
 type BunUpdateQuery struct {
 	QueryBuilder
 
-	db      *BunDb
-	dialect schema.Dialect
-	eb      ExprBuilder
-	query   *bun.UpdateQuery
-	hasSet  bool
+	db               *BunDb
+	dialect          schema.Dialect
+	eb               ExprBuilder
+	query            *bun.UpdateQuery
+	hasSet           bool
+	isBulk           bool
+	selectedColumns  set.Set[string]
+	returningColumns set.Set[string]
 }
 
 func (q *BunUpdateQuery) Db() Db {
@@ -99,59 +105,35 @@ func (q *BunUpdateQuery) Table(name string, alias ...string) UpdateQuery {
 	return q
 }
 
-func (q *BunUpdateQuery) TableExpr(alias string, builder func(ExprBuilder) any) UpdateQuery {
-	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
-
-	return q
-}
-
-func (q *BunUpdateQuery) TableSubQuery(alias string, builder func(SelectQuery)) UpdateQuery {
-	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
-
-	return q
-}
-
-func (q *BunUpdateQuery) Join(model any, builder func(ConditionBuilder), alias ...string) UpdateQuery {
-	table := getTableSchema(model, q.query.DB())
+func (q *BunUpdateQuery) TableFrom(model any, alias ...string) UpdateQuery {
+	table := q.db.TableOf(model)
 
 	aliasToUse := table.Alias
 	if len(alias) > 0 && alias[0] != constants.Empty {
 		aliasToUse = alias[0]
 	}
 
-	q.query.Join(
-		"? ? AS ?",
-		bun.Safe(JoinInner.String()),
-		bun.Name(table.Name),
-		bun.Name(aliasToUse),
-	)
-	q.query.JoinOn("?", q.BuildCondition(builder))
+	q.query.TableExpr("? AS ?", bun.Name(table.Name), bun.Name(aliasToUse))
 
 	return q
 }
 
-func (q *BunUpdateQuery) JoinTable(name string, builder func(ConditionBuilder), alias ...string) UpdateQuery {
+func (q *BunUpdateQuery) TableExpr(builder func(ExprBuilder) any, alias ...string) UpdateQuery {
 	if len(alias) > 0 && alias[0] != constants.Empty {
-		q.query.Join("? ? AS ?", bun.Safe(JoinInner.String()), bun.Name(name), bun.Name(alias[0]))
+		q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias[0]))
 	} else {
-		q.query.Join("? ?", bun.Safe(JoinInner.String()), bun.Name(name))
+		q.query.TableExpr("(?)", builder(q.eb))
 	}
 
-	q.query.JoinOn("?", q.BuildCondition(builder))
-
 	return q
 }
 
-func (q *BunUpdateQuery) JoinSubQuery(alias string, sqBuilder func(query SelectQuery), cBuilder func(ConditionBuilder)) UpdateQuery {
-	q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), q.BuildSubQuery(sqBuilder), bun.Name(alias))
-	q.query.JoinOn("?", q.BuildCondition(cBuilder))
-
-	return q
-}
-
-func (q *BunUpdateQuery) JoinExpr(alias string, eBuilder func(ExprBuilder) any, cBuilder func(ConditionBuilder)) UpdateQuery {
-	q.query.Join("? (?) AS ?", bun.Safe(JoinInner.String()), eBuilder(q.eb), bun.Name(alias))
-	q.query.JoinOn("?", q.BuildCondition(cBuilder))
+func (q *BunUpdateQuery) TableSubQuery(builder func(SelectQuery), alias ...string) UpdateQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias[0]))
+	} else {
+		q.query.TableExpr("(?)", q.BuildSubQuery(builder))
+	}
 
 	return q
 }
@@ -182,52 +164,47 @@ func (q *BunUpdateQuery) IncludeDeleted() UpdateQuery {
 }
 
 func (q *BunUpdateQuery) SelectAll() UpdateQuery {
-	q.query.Column(columnAll)
-
 	return q
 }
 
 func (q *BunUpdateQuery) Select(columns ...string) UpdateQuery {
 	q.query.Column(columns...)
+	q.selectedColumns.Add(columns...)
 
 	return q
 }
 
 func (q *BunUpdateQuery) Exclude(columns ...string) UpdateQuery {
 	q.query.ExcludeColumn(columns...)
+	q.selectedColumns.Remove(columns...)
 
 	return q
 }
 
 func (q *BunUpdateQuery) ExcludeAll() UpdateQuery {
 	q.query.ExcludeColumn(columnAll)
+	q.selectedColumns.Clear()
 
 	return q
 }
 
 func (q *BunUpdateQuery) Column(name string, value any) UpdateQuery {
 	q.query.Value(name, "?", value)
-	q.query.Returning("?", bun.Ident(name))
 
 	return q
 }
 
 func (q *BunUpdateQuery) ColumnExpr(name string, builder func(ExprBuilder) any) UpdateQuery {
 	q.query.Value(name, "?", builder(q.eb))
-	q.query.Returning("?", bun.Ident(name))
 
 	return q
 }
 
 func (q *BunUpdateQuery) Set(name string, value any) UpdateQuery {
 	if q.query.DB().HasFeature(feature.UpdateMultiTable) {
-		q.query.Set("?TableAlias.? = ?", bun.Ident(name), value)
+		q.query.Set("? = ?", q.eb.Column(name), value)
 	} else {
-		q.query.Set("? = ?", bun.Ident(name), value)
-	}
-
-	if lo.IsNotNil(q.query.GetModel().Value()) {
-		q.query.Returning("?", bun.Ident(name))
+		q.query.Set("? = ?", bun.Name(name), value)
 	}
 
 	q.hasSet = true
@@ -237,13 +214,9 @@ func (q *BunUpdateQuery) Set(name string, value any) UpdateQuery {
 
 func (q *BunUpdateQuery) SetExpr(name string, builder func(ExprBuilder) any) UpdateQuery {
 	if q.query.DB().HasFeature(feature.UpdateMultiTable) {
-		q.query.Set("?TableAlias.? = ?", bun.Ident(name), builder(q.eb))
+		q.query.Set("? = ?", q.eb.Column(name), builder(q.eb))
 	} else {
-		q.query.Set("? = ?", bun.Ident(name), builder(q.eb))
-	}
-
-	if lo.IsNotNil(q.query.GetModel().Value()) {
-		q.query.Returning("?", bun.Ident(name))
+		q.query.Set("? = ?", bun.Name(name), builder(q.eb))
 	}
 
 	q.hasSet = true
@@ -265,7 +238,7 @@ func (q *BunUpdateQuery) OrderBy(columns ...string) UpdateQuery {
 
 func (q *BunUpdateQuery) OrderByDesc(columns ...string) UpdateQuery {
 	for _, column := range columns {
-		q.query.OrderExpr("? DESC", bun.Ident(column))
+		q.query.OrderExpr("? DESC", q.eb.Column(column))
 	}
 
 	return q
@@ -284,24 +257,27 @@ func (q *BunUpdateQuery) Limit(limit int) UpdateQuery {
 }
 
 func (q *BunUpdateQuery) Returning(columns ...string) UpdateQuery {
-	q.query.Returning("?", Names(columns...))
+	q.returningColumns.Add(columns...)
 
 	return q
 }
 
 func (q *BunUpdateQuery) ReturningAll() UpdateQuery {
-	q.query.Returning(columnAll)
+	q.returningColumns.Clear()
+	q.returningColumns.Add(columnAll)
 
 	return q
 }
 
 func (q *BunUpdateQuery) ReturningNone() UpdateQuery {
-	q.query.Returning(sqlNull)
+	q.returningColumns.Clear()
+	q.returningColumns.Add(sqlNull)
 
 	return q
 }
 
 func (q *BunUpdateQuery) Bulk() UpdateQuery {
+	q.isBulk = true
 	q.query.Bulk()
 
 	return q
@@ -325,15 +301,32 @@ func (q *BunUpdateQuery) ApplyIf(condition bool, fns ...ApplyFunc[UpdateQuery]) 
 	return q
 }
 
-// beforeUpdate applies auto column handlers before executing the update operation.
-// It processes UpdateHandler for fields like updated_at and updated_by,
-// and excludes InsertHandler-only fields from being updated.
 func (q *BunUpdateQuery) beforeUpdate() {
 	if table := q.GetTable(); table != nil {
+		q.skipCreateAuditColumns(table)
+
 		modelValue := q.query.GetModel().Value()
 		mv := reflect.Indirect(reflect.ValueOf(modelValue))
 
-		processAutoColumns(autoColumns, q.query, q.hasSet, table, modelValue, mv)
+		processAutoColumns(q, table, modelValue, mv)
+	}
+
+	if !q.returningColumns.IsEmpty() {
+		q.query.Returning("?", buildReturningExpr(q.returningColumns, q.eb))
+	}
+}
+
+func (q *BunUpdateQuery) skipCreateAuditColumns(table *schema.Table) {
+	if q.hasSet || !q.selectedColumns.IsEmpty() {
+		return
+	}
+
+	if table.HasField(constants.ColumnCreatedAt) {
+		q.Exclude(constants.ColumnCreatedAt)
+	}
+
+	if table.HasField(constants.ColumnCreatedBy) {
+		q.Exclude(constants.ColumnCreatedBy)
 	}
 }
 

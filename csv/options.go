@@ -17,7 +17,6 @@ type importOptions struct {
 // ImportOption is a function that configures importOptions.
 type ImportOption func(*importOptions)
 
-// WithImportDelimiter sets the field delimiter for import.
 func WithImportDelimiter(delimiter rune) ImportOption {
 	return func(o *importOptions) {
 		o.delimiter = delimiter
@@ -32,7 +31,6 @@ func WithoutHeader() ImportOption {
 	}
 }
 
-// WithSkipRows sets the number of rows to skip before the header row.
 func WithSkipRows(rows int) ImportOption {
 	return func(o *importOptions) {
 		o.skipRows = rows
@@ -47,7 +45,6 @@ func WithoutTrimSpace() ImportOption {
 	}
 }
 
-// WithComment sets the comment character.
 func WithComment(comment rune) ImportOption {
 	return func(o *importOptions) {
 		o.comment = comment
@@ -67,7 +64,6 @@ type exportOptions struct {
 // ExportOption is a function that configures exportOptions.
 type ExportOption func(*exportOptions)
 
-// WithExportDelimiter sets the field delimiter for export.
 func WithExportDelimiter(delimiter rune) ExportOption {
 	return func(o *exportOptions) {
 		o.delimiter = delimiter

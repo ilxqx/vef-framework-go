@@ -8,6 +8,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/set"
 	"github.com/ilxqx/vef-framework-go/sort"
 )
 
@@ -150,4 +151,21 @@ func ApplySort(query SelectQuery, orders []sort.OrderSpec) {
 			})
 		})
 	}
+}
+
+func buildReturningExpr(returningColumns set.Set[string], eb ExprBuilder) schema.QueryAppender {
+	columns := make([]any, 0, returningColumns.Size())
+
+	for column := range returningColumns.Seq() {
+		switch column {
+		case sqlNull:
+			columns = append(columns, bun.Safe(sqlNull))
+		case columnAll:
+			columns = append(columns, bun.Safe(columnAll))
+		default:
+			columns = append(columns, bun.Ident(column))
+		}
+	}
+
+	return eb.Exprs(columns...)
 }

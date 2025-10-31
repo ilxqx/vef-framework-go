@@ -81,7 +81,8 @@ func NewAuditUserTestUserFindPageResource() api.Resource {
 	}
 }
 
-// FindPageTestSuite is the test suite for FindPage Api tests.
+// FindPageTestSuite tests the FindPage API functionality
+// including basic pagination, search filters, processors, filter appliers, audit user names, and negative cases.
 type FindPageTestSuite struct {
 	BaseSuite
 }
@@ -103,6 +104,8 @@ func (suite *FindPageTestSuite) TearDownSuite() {
 
 // TestFindPageBasic tests basic FindPage functionality.
 func (suite *FindPageTestSuite) TestFindPageBasic() {
+	suite.T().Logf("Testing FindPage API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page",
@@ -115,23 +118,27 @@ func (suite *FindPageTestSuite) TestFindPageBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	page := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(10), page["total"])
-	suite.Equal(float64(1), page["page"])
-	suite.Equal(float64(5), page["size"])
+	suite.Equal(float64(10), page["total"], "Total should be 10")
+	suite.Equal(float64(1), page["page"], "Page should be 1")
+	suite.Equal(float64(5), page["size"], "Size should be 5")
 
 	items := suite.readDataAsSlice(page["items"])
-	suite.Len(items, 5)
+	suite.Len(items, 5, "Should return 5 items on first page")
+
+	suite.T().Logf("Found %d items on page %v of %v (size=%v, total=%v)", len(items), page["page"], page["total"], page["size"], page["total"])
 }
 
 // TestFindPagePagination tests pagination functionality.
 func (suite *FindPageTestSuite) TestFindPagePagination() {
+	suite.T().Logf("Testing FindPage API pagination for %s", suite.dbType)
+
 	suite.Run("FirstPage", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -145,17 +152,19 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		page := suite.readDataAsMap(body.Data)
-		suite.Equal(float64(10), page["total"])
-		suite.Equal(float64(1), page["page"])
-		suite.Equal(float64(3), page["size"])
+		suite.Equal(float64(10), page["total"], "Total should be 10")
+		suite.Equal(float64(1), page["page"], "Page should be 1")
+		suite.Equal(float64(3), page["size"], "Size should be 3")
 
 		items := suite.readDataAsSlice(page["items"])
-		suite.Len(items, 3)
+		suite.Len(items, 3, "Should return 3 items on first page")
+
+		suite.T().Logf("First page: %d items (page=%v, size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 	})
 
 	suite.Run("SecondPage", func() {
@@ -171,17 +180,19 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		page := suite.readDataAsMap(body.Data)
-		suite.Equal(float64(10), page["total"])
-		suite.Equal(float64(2), page["page"])
-		suite.Equal(float64(3), page["size"])
+		suite.Equal(float64(10), page["total"], "Total should be 10")
+		suite.Equal(float64(2), page["page"], "Page should be 2")
+		suite.Equal(float64(3), page["size"], "Size should be 3")
 
 		items := suite.readDataAsSlice(page["items"])
-		suite.Len(items, 3)
+		suite.Len(items, 3, "Should return 3 items on second page")
+
+		suite.T().Logf("Second page: %d items (page=%v, size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 	})
 
 	suite.Run("LastPage", func() {
@@ -197,16 +208,18 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		page := suite.readDataAsMap(body.Data)
-		suite.Equal(float64(10), page["total"])
-		suite.Equal(float64(4), page["page"])
+		suite.Equal(float64(10), page["total"], "Total should be 10")
+		suite.Equal(float64(4), page["page"], "Page should be 4")
 
 		items := suite.readDataAsSlice(page["items"])
-		suite.Len(items, 1) // Only 1 record on last page
+		suite.Len(items, 1, "Should return 1 item on last page")
+
+		suite.T().Logf("Last page: %d items (page=%v, size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 	})
 
 	suite.Run("EmptyPage", func() {
@@ -222,20 +235,24 @@ func (suite *FindPageTestSuite) TestFindPagePagination() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		page := suite.readDataAsMap(body.Data)
-		suite.Equal(float64(10), page["total"])
+		suite.Equal(float64(10), page["total"], "Total should be 10")
 
 		items := suite.readDataAsSlice(page["items"])
-		suite.Len(items, 0)
+		suite.Len(items, 0, "Should return empty items array for out-of-range page")
+
+		suite.T().Logf("Empty page: %d items (page=%v, size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 	})
 }
 
 // TestFindPageWithSearch tests FindPage with search conditions.
 func (suite *FindPageTestSuite) TestFindPageWithSearch() {
+	suite.T().Logf("Testing FindPage API with search filters for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page",
@@ -251,19 +268,23 @@ func (suite *FindPageTestSuite) TestFindPageWithSearch() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	page := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(7), page["total"]) // 7 active users
+	suite.Equal(float64(7), page["total"], "Total should be 7 active users")
 
 	items := suite.readDataAsSlice(page["items"])
-	suite.Len(items, 7)
+	suite.Len(items, 7, "Should return 7 active users")
+
+	suite.T().Logf("Found %d active users on page %v (size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 }
 
 // TestFindPageWithProcessor tests FindPage with post-processing.
 func (suite *FindPageTestSuite) TestFindPageWithWithProcessor() {
+	suite.T().Logf("Testing FindPage API with processor for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_processed",
@@ -276,24 +297,26 @@ func (suite *FindPageTestSuite) TestFindPageWithWithProcessor() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	page := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(10), page["total"])
+	suite.Equal(float64(10), page["total"], "Total should be 10")
 
-	// Processor returned slice of ProcessedUser
 	items := suite.readDataAsSlice(page["items"])
-	suite.Len(items, 5)
+	suite.Len(items, 5, "Should return 5 processed items")
 
-	// Check first processed user has the processed flag
 	firstUser := suite.readDataAsMap(items[0])
-	suite.Equal(true, firstUser["processed"])
+	suite.Equal(true, firstUser["processed"], "Processed flag should be true")
+
+	suite.T().Logf("Found %d items with post-processing applied on page %v (size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 }
 
 // TestFindPageWithFilterApplier tests FindPage with filter applier.
 func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
+	suite.T().Logf("Testing FindPage API with filter applier for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_filtered",
@@ -306,19 +329,23 @@ func (suite *FindPageTestSuite) TestFindPageWithFilterApplier() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
 	page := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(7), page["total"]) // Only active users
+	suite.Equal(float64(7), page["total"], "Total should be 7 active users")
 
 	items := suite.readDataAsSlice(page["items"])
-	suite.Len(items, 7)
+	suite.Len(items, 7, "Should return 7 active users with filter applier")
+
+	suite.T().Logf("Found %d active users with filter applier on page %v (size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 }
 
 // TestFindPageNegativeCases tests negative scenarios.
 func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
+	suite.T().Logf("Testing FindPage API negative cases for %s", suite.dbType)
+
 	suite.Run("InvalidPageNumber", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -327,17 +354,19 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 				Version:  "v1",
 			},
 			Meta: map[string]any{
-				"page": 0, // Should be normalized to 1
+				"page": 0,
 				"size": 10,
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		page := suite.readDataAsMap(body.Data)
-		suite.Equal(float64(1), page["page"]) // Normalized to 1
+		suite.Equal(float64(1), page["page"], "Page should be normalized to 1")
+
+		suite.T().Logf("Invalid page number 0 was normalized to %v", page["page"])
 	})
 
 	suite.Run("InvalidPageSize", func() {
@@ -349,19 +378,20 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 			},
 			Meta: map[string]any{
 				"page": 1,
-				"size": 0, // Should be normalized to default
+				"size": 0,
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
-		// Data should still be returned even with invalid page size
 		page := suite.readDataAsMap(body.Data)
-		suite.Equal(float64(10), page["total"])
+		suite.Equal(float64(10), page["total"], "Total should be 10")
 		items := suite.readDataAsSlice(page["items"])
-		suite.Greater(len(items), 0) // Should return items with default page size
+		suite.Greater(len(items), 0, "Should return items with default page size")
+
+		suite.T().Logf("Invalid page size 0 returned %d items with default size", len(items))
 	})
 
 	suite.Run("NoMatchingRecords", func() {
@@ -380,20 +410,24 @@ func (suite *FindPageTestSuite) TestFindPageNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.True(body.IsOk())
+		suite.True(body.IsOk(), "Should return successful response")
 
 		page := suite.readDataAsMap(body.Data)
-		suite.Equal(float64(0), page["total"])
+		suite.Equal(float64(0), page["total"], "Total should be 0 for no matching records")
 
 		items := suite.readDataAsSlice(page["items"])
-		suite.Len(items, 0)
+		suite.Len(items, 0, "Should return empty items array")
+
+		suite.T().Logf("No matching records: total=%v, items=%d", page["total"], len(items))
 	})
 }
 
 // TestFindPageWithAuditUserNames tests FindPage with audit user names populated.
 func (suite *FindPageTestSuite) TestFindPageWithAuditUserNames() {
+	suite.T().Logf("Testing FindPage API with audit user names for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_page_audit",
@@ -409,31 +443,30 @@ func (suite *FindPageTestSuite) TestFindPageWithAuditUserNames() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.NotNil(body.Data, "Data should not be nil")
 
 	page := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(7), page["total"]) // 7 active users
-	suite.Equal(float64(1), page["page"])
-	suite.Equal(float64(5), page["size"])
+	suite.Equal(float64(7), page["total"], "Total should be 7 active users")
+	suite.Equal(float64(1), page["page"], "Page should be 1")
+	suite.Equal(float64(5), page["size"], "Size should be 5")
 
 	items := suite.readDataAsSlice(page["items"])
-	suite.Len(items, 5)
+	suite.Len(items, 5, "Should return 5 items on first page")
 
-	// Check first user has audit user names
 	firstUser := suite.readDataAsMap(items[0])
-	suite.NotNil(firstUser["createdByName"])
-	suite.NotNil(firstUser["updatedByName"])
+	suite.NotNil(firstUser["createdByName"], "First user should have createdByName")
+	suite.NotNil(firstUser["updatedByName"], "First user should have updatedByName")
 
-	// Verify all users have audit user names populated
 	for _, u := range items {
 		user := suite.readDataAsMap(u)
 		suite.NotNil(user["createdByName"], "User %s should have createdByName", user["id"])
 		suite.NotNil(user["updatedByName"], "User %s should have updatedByName", user["id"])
-		// Audit user names should be from TestAuditUser data
-		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["createdByName"])
-		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["updatedByName"])
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["createdByName"], "createdByName should be from audit users")
+		suite.Contains([]string{"John Doe", "Jane Smith", "Michael Johnson", "Sarah Williams"}, user["updatedByName"], "updatedByName should be from audit users")
 	}
+
+	suite.T().Logf("Found %d users with audit user names populated on page %v (size=%v, total=%v)", len(items), page["page"], page["size"], page["total"])
 }

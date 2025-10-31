@@ -33,17 +33,14 @@ func (c *CustomCtx) Logger() log.Logger {
 	return c.logger
 }
 
-// SetLogger sets the logger instance for the current request.
 func (c *CustomCtx) SetLogger(logger log.Logger) {
 	c.logger = logger
 }
 
-// SetPrincipal sets the authenticated principal for the current request.
 func (c *CustomCtx) SetPrincipal(principal *security.Principal) {
 	c.principal = principal
 }
 
-// SetDb sets the database connection for the current request.
 func (c *CustomCtx) SetDb(db orm.Db) {
 	c.db = db
 }

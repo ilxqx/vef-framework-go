@@ -12,11 +12,8 @@ import (
 // ConflictBuilder is used to configure INSERT conflict handling (UPSERT) target in a dialect-aware way.
 // This is the first stage that defines the conflict target (columns, constraints, conditions).
 type ConflictBuilder interface {
-	// Columns sets the conflict target columns (PostgreSQL/SQLite). Ignored on MySQL.
 	Columns(columns ...string) ConflictBuilder
-	// Constraint sets the named unique constraint as conflict target (PostgreSQL/SQLite). Ignored on MySQL.
 	Constraint(name string) ConflictBuilder
-	// Where sets a predicate for partial index conflict target (PostgreSQL/SQLite).
 	Where(func(ConditionBuilder)) ConflictBuilder
 
 	// DoNothing performs DO NOTHING on conflict and finalizes the conflict handling.
@@ -95,7 +92,7 @@ func (b *InsertQueryConflictUpdateBuilder) Set(column string, value ...any) Conf
 	if len(value) > 0 {
 		valueExpr = value[0]
 	} else {
-		b.parent.eb.RunDialect(DialectActions{
+		b.parent.eb.ExecByDialect(DialectExecs{
 			Postgres: func() {
 				valueExpr = b.parent.eb.Expr("EXCLUDED.?", bun.Name(column))
 			},
@@ -108,7 +105,7 @@ func (b *InsertQueryConflictUpdateBuilder) Set(column string, value ...any) Conf
 		})
 	}
 
-	setExpr := b.parent.eb.ExprByDialect(DialectExpr{
+	setExpr := b.parent.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
 		},
@@ -127,7 +124,7 @@ func (b *InsertQueryConflictUpdateBuilder) Set(column string, value ...any) Conf
 
 func (b *InsertQueryConflictUpdateBuilder) SetExpr(column string, builder func(ExprBuilder) any) ConflictUpdateBuilder {
 	valueExpr := builder(b.parent.eb)
-	setExpr := b.parent.eb.ExprByDialect(DialectExpr{
+	setExpr := b.parent.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return b.parent.eb.Expr("? = ?", bun.Name(column), valueExpr)
 		},
@@ -153,7 +150,7 @@ func (b *InsertQueryConflictUpdateBuilder) Where(builder func(ConditionBuilder))
 // build applies the configured conflict handling to the underlying bun.InsertQuery.
 func (b *InsertQueryConflictBuilder) build(query *bun.InsertQuery) {
 	// Dialect specific handling
-	b.eb.RunDialect(DialectActions{
+	b.eb.ExecByDialect(DialectExecs{
 		MySQL: func() {
 			// MySQL: ON DUPLICATE KEY UPDATE ... or INSERT IGNORE for do-nothing
 			if b.action == ConflictDoNothing {

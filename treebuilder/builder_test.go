@@ -10,24 +10,21 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// TestNode represents a simple node structure for testing.
 type TestNode struct {
-	Id       string     `json:"id"`       // unique identifier
-	ParentId string     `json:"parentId"` // parent identifier
-	Name     string     `json:"name"`     // node name for identification
-	Children []TestNode `json:"children"` // children nodes
+	Id       string     `json:"id"`
+	ParentId string     `json:"parentId"`
+	Name     string     `json:"name"`
+	Children []TestNode `json:"children"`
 }
 
-// TestCategory represents a category structure for testing.
 type TestCategory struct {
-	CategoryId    string         `json:"categoryId"`    // unique identifier
-	ParentCatId   string         `json:"parentCatId"`   // parent identifier
-	CategoryName  string         `json:"categoryName"`  // category name
-	SubCategories []TestCategory `json:"subCategories"` // sub categories
-	Level         int            `json:"level"`         // category level
+	CategoryId    string         `json:"categoryId"`
+	ParentCatId   string         `json:"parentCatId"`
+	CategoryName  string         `json:"categoryName"`
+	SubCategories []TestCategory `json:"subCategories"`
+	Level         int            `json:"level"`
 }
 
-// createTestNodeAdapter creates a TreeAdapter for TestNode.
 func createTestNodeAdapter() Adapter[TestNode] {
 	return Adapter[TestNode]{
 		GetId:       func(node TestNode) string { return node.Id },
@@ -37,7 +34,6 @@ func createTestNodeAdapter() Adapter[TestNode] {
 	}
 }
 
-// createTestCategoryAdapter creates a TreeAdapter for TestCategory.
 func createTestCategoryAdapter() Adapter[TestCategory] {
 	return Adapter[TestCategory]{
 		GetId:       func(cat TestCategory) string { return cat.CategoryId },
@@ -47,7 +43,6 @@ func createTestCategoryAdapter() Adapter[TestCategory] {
 	}
 }
 
-// createTestNodes creates a set of test nodes for testing.
 func createTestNodes() []TestNode {
 	return []TestNode{
 		{Id: "1", ParentId: constants.Empty, Name: "Root 1"},
@@ -57,11 +52,10 @@ func createTestNodes() []TestNode {
 		{Id: "5", ParentId: "2", Name: "Child 1-1-2"},
 		{Id: "6", ParentId: constants.Empty, Name: "Root 2"},
 		{Id: "7", ParentId: "6", Name: "Child 2-1"},
-		{Id: "8", ParentId: "nonexistent", Name: "Orphan"}, // orphan node
+		{Id: "8", ParentId: "nonexistent", Name: "Orphan"},
 	}
 }
 
-// createComplexTestNodes creates a more complex set of test nodes.
 func createComplexTestNodes() []TestNode {
 	return []TestNode{
 		{Id: "root1", ParentId: constants.Empty, Name: "Root 1"},
@@ -81,7 +75,7 @@ func createComplexTestNodes() []TestNode {
 func TestBuild(t *testing.T) {
 	adapter := createTestNodeAdapter()
 
-	t.Run("Builds simple tree structure", func(t *testing.T) {
+	t.Run("BuildsSimpleTreeStructure", func(t *testing.T) {
 		nodes := []TestNode{
 			{Id: "1", ParentId: constants.Empty, Name: "Root"},
 			{Id: "2", ParentId: "1", Name: "Child 1"},
@@ -90,20 +84,19 @@ func TestBuild(t *testing.T) {
 
 		result := Build(nodes, adapter)
 
-		require.Len(t, result, 1)
+		require.Len(t, result, 1, "Should have one root node")
 		root := result[0]
-		assert.Equal(t, "1", root.Id)
-		assert.Equal(t, "Root", root.Name)
-		assert.Len(t, root.Children, 2)
+		assert.Equal(t, "1", root.Id, "Root ID should match")
+		assert.Equal(t, "Root", root.Name, "Root name should match")
+		assert.Len(t, root.Children, 2, "Root should have two children")
 
-		// Check children
 		child1 := root.Children[0]
 		child2 := root.Children[1]
 
-		assert.Equal(t, "2", child1.Id)
-		assert.Equal(t, "3", child2.Id)
-		assert.Len(t, child1.Children, 0)
-		assert.Len(t, child2.Children, 0)
+		assert.Equal(t, "2", child1.Id, "First child ID should match")
+		assert.Equal(t, "3", child2.Id, "Second child ID should match")
+		assert.Len(t, child1.Children, 0, "First child should have no children")
+		assert.Len(t, child2.Children, 0, "Second child should have no children")
 	})
 
 	t.Run("Builds tree with multiple roots", func(t *testing.T) {

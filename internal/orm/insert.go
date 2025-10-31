@@ -11,6 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/set"
 )
 
 // NewInsertQuery creates a new InsertQuery instance with the provided database instance.
@@ -26,6 +27,8 @@ func NewInsertQuery(db *BunDb) *BunInsertQuery {
 		dialect: dialect,
 		eb:      eb,
 		query:   iq,
+
+		returningColumns: set.NewHashSet[string](),
 	}
 	eb.qb = query
 
@@ -41,6 +44,8 @@ type BunInsertQuery struct {
 	dialect schema.Dialect
 	eb      ExprBuilder
 	query   *bun.InsertQuery
+
+	returningColumns set.Set[string]
 }
 
 func (q *BunInsertQuery) Db() Db {
@@ -80,7 +85,7 @@ func (q *BunInsertQuery) ModelTable(name string, alias ...string) InsertQuery {
 	if len(alias) > 0 && alias[0] != constants.Empty {
 		q.query.ModelTableExpr("? AS ?", bun.Name(name), bun.Name(alias[0]))
 	} else {
-		q.query.ModelTableExpr("?", bun.Name(name))
+		q.query.ModelTableExpr("? AS ?TableAlias", bun.Name(name))
 	}
 
 	return q
@@ -96,14 +101,35 @@ func (q *BunInsertQuery) Table(name string, alias ...string) InsertQuery {
 	return q
 }
 
-func (q *BunInsertQuery) TableExpr(alias string, builder func(ExprBuilder) any) InsertQuery {
-	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
+func (q *BunInsertQuery) TableFrom(model any, alias ...string) InsertQuery {
+	table := q.db.TableOf(model)
+
+	aliasToUse := table.Alias
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		aliasToUse = alias[0]
+	}
+
+	q.query.TableExpr("? AS ?", bun.Name(table.Name), bun.Name(aliasToUse))
 
 	return q
 }
 
-func (q *BunInsertQuery) TableSubQuery(alias string, builder func(SelectQuery)) InsertQuery {
-	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
+func (q *BunInsertQuery) TableExpr(builder func(ExprBuilder) any, alias ...string) InsertQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias[0]))
+	} else {
+		q.query.TableExpr("(?)", builder(q.eb))
+	}
+
+	return q
+}
+
+func (q *BunInsertQuery) TableSubQuery(builder func(SelectQuery), alias ...string) InsertQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias[0]))
+	} else {
+		q.query.TableExpr("(?)", q.BuildSubQuery(builder))
+	}
 
 	return q
 }
@@ -155,19 +181,21 @@ func (q *BunInsertQuery) ColumnExpr(name string, builder func(ExprBuilder) any) 
 }
 
 func (q *BunInsertQuery) Returning(columns ...string) InsertQuery {
-	q.query.Returning("?", Names(columns...))
+	q.returningColumns.Add(columns...)
 
 	return q
 }
 
 func (q *BunInsertQuery) ReturningAll() InsertQuery {
-	q.query.Returning(columnAll)
+	q.returningColumns.Clear()
+	q.returningColumns.Add(columnAll)
 
 	return q
 }
 
 func (q *BunInsertQuery) ReturningNone() InsertQuery {
-	q.query.Returning(sqlNull)
+	q.returningColumns.Clear()
+	q.returningColumns.Add(sqlNull)
 
 	return q
 }
@@ -197,7 +225,11 @@ func (q *BunInsertQuery) beforeInsert() {
 		modelValue := q.query.GetModel().Value()
 		mv := reflect.Indirect(reflect.ValueOf(modelValue))
 
-		processAutoColumns(autoColumns, q.query, false, table, modelValue, mv)
+		processAutoColumns(q, table, modelValue, mv)
+	}
+
+	if !q.returningColumns.IsEmpty() {
+		q.query.Returning("?", buildReturningExpr(q.returningColumns, q.eb))
 	}
 }
 

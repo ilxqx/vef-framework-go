@@ -113,7 +113,6 @@ func FindNode[T any](roots []T, targetId string, adapter Adapter[T]) (T, bool) {
 	return findNodeRecursive(roots, targetId, adapter)
 }
 
-// FindNodePath returns the path from root to the target node for Adapter.
 func FindNodePath[T any](roots []T, targetId string, adapter Adapter[T]) ([]T, bool) {
 	if targetId == constants.Empty {
 		return nil, false

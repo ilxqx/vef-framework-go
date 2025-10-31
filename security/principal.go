@@ -1,10 +1,10 @@
 package security
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 
-	"github.com/goccy/go-json"
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -32,7 +32,6 @@ var (
 	externalAppDetailsType = reflect.TypeFor[map[string]any]()
 )
 
-// SetUserDetailsType sets the type of the user details.
 func SetUserDetailsType[T any]() {
 	userDetailsType = reflect.TypeFor[T]()
 	if userDetailsType.Kind() != reflect.Struct {
@@ -42,7 +41,6 @@ func SetUserDetailsType[T any]() {
 	}
 }
 
-// SetExternalAppDetailsType sets the type of the external app details.
 func SetExternalAppDetailsType[T any]() {
 	externalAppDetailsType = reflect.TypeFor[T]()
 	if externalAppDetailsType.Kind() != reflect.Struct {

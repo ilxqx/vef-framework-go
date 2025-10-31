@@ -7,99 +7,157 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestToXML(t *testing.T) {
-	t.Run("Valid struct", func(t *testing.T) {
-		input := TestStruct{
-			Name:   "John Doe",
-			Age:    30,
-			Active: true,
-		}
+func TestToXml(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    TestStruct
+		expected []string
+	}{
+		{
+			name: "ValidStruct",
+			input: TestStruct{
+				Name:   "John Doe",
+				Age:    30,
+				Active: true,
+			},
+			expected: []string{"<TestStruct>", "<Name>John Doe</Name>", "<Age>30</Age>", "<Active>true</Active>"},
+		},
+		{
+			name:     "EmptyStruct",
+			input:    TestStruct{},
+			expected: []string{"<TestStruct>", "<Name></Name>", "<Age>0</Age>", "<Active>false</Active>"},
+		},
+		{
+			name: "StructWithAllFields",
+			input: TestStruct{
+				Name:   "Jane Doe",
+				Age:    25,
+				Email:  "jane@example.com",
+				Active: true,
+				Score:  95.5,
+			},
+			expected: []string{
+				"<Name>Jane Doe</Name>",
+				"<Age>25</Age>",
+				"<Email>jane@example.com</Email>",
+				"<Score>95.5</Score>",
+			},
+		},
+	}
 
-		result, err := ToXML(input)
-		require.NoError(t, err)
-		assert.Contains(t, result, "<TestStruct>")
-		assert.Contains(t, result, "<Name>John Doe</Name>")
-		assert.Contains(t, result, "<Age>30</Age>")
-		assert.Contains(t, result, "<Active>true</Active>")
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := ToXml(tt.input)
+			require.NoError(t, err)
 
-	t.Run("Empty struct", func(t *testing.T) {
-		input := TestStruct{}
-
-		result, err := ToXML(input)
-		require.NoError(t, err)
-		assert.Contains(t, result, "<TestStruct>")
-		assert.Contains(t, result, "<Name></Name>")
-		assert.Contains(t, result, "<Age>0</Age>")
-		assert.Contains(t, result, "<Active>false</Active>")
-	})
+			for _, exp := range tt.expected {
+				assert.Contains(t, result, exp)
+			}
+		})
+	}
 }
 
-func TestFromXML(t *testing.T) {
-	t.Run("Valid XML", func(t *testing.T) {
+func TestFromXml(t *testing.T) {
+	t.Run("ValidXML", func(t *testing.T) {
 		input := `<TestStruct><Name>John Doe</Name><Age>30</Age><Active>true</Active><Score>95.5</Score></TestStruct>`
-
-		result, err := FromXML[TestStruct](input)
+		result, err := FromXml[TestStruct](input)
 		require.NoError(t, err)
-		require.NotNil(t, result)
-
+		assert.NotNil(t, result)
 		assert.Equal(t, "John Doe", result.Name)
 		assert.Equal(t, 30, result.Age)
-		assert.Equal(t, true, result.Active)
+		assert.True(t, result.Active)
 		assert.Equal(t, 95.5, result.Score)
 	})
 
-	t.Run("Partial XML", func(t *testing.T) {
+	t.Run("PartialXML", func(t *testing.T) {
 		input := `<TestStruct><Name>Jane Doe</Name></TestStruct>`
-
-		result, err := FromXML[TestStruct](input)
+		result, err := FromXml[TestStruct](input)
 		require.NoError(t, err)
-		require.NotNil(t, result)
-
+		assert.NotNil(t, result)
 		assert.Equal(t, "Jane Doe", result.Name)
 		assert.Equal(t, 0, result.Age)
+		assert.False(t, result.Active)
 	})
 
-	t.Run("Invalid XML", func(t *testing.T) {
+	t.Run("InvalidXMLMissingClosingTag", func(t *testing.T) {
 		input := `<TestStruct><Name>John Doe</Name><Age>30</TestStruct>`
-
-		result, err := FromXML[TestStruct](input)
+		_, err := FromXml[TestStruct](input)
 		assert.Error(t, err)
-		assert.Nil(t, result)
 	})
 
-	t.Run("Empty XML", func(t *testing.T) {
+	t.Run("EmptyXML", func(t *testing.T) {
 		input := `<TestStruct></TestStruct>`
-
-		result, err := FromXML[TestStruct](input)
+		result, err := FromXml[TestStruct](input)
 		require.NoError(t, err)
-		require.NotNil(t, result)
-
+		assert.NotNil(t, result)
 		assert.Equal(t, "", result.Name)
 		assert.Equal(t, 0, result.Age)
+		assert.False(t, result.Active)
+	})
+
+	t.Run("XMLWithExtraElements", func(t *testing.T) {
+		input := `<TestStruct><Name>John Doe</Name><Age>30</Age><Extra>field</Extra></TestStruct>`
+		result, err := FromXml[TestStruct](input)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, "John Doe", result.Name)
+		assert.Equal(t, 30, result.Age)
 	})
 }
 
-func TestDecodeXML(t *testing.T) {
-	t.Run("Decode into struct pointer", func(t *testing.T) {
+func TestDecodeXml(t *testing.T) {
+	t.Run("DecodeIntoStructPointer", func(t *testing.T) {
 		input := `<TestStruct><Name>John Doe</Name><Age>30</Age><Active>true</Active></TestStruct>`
 
 		var result TestStruct
 
-		err := DecodeXML(input, &result)
+		err := DecodeXml(input, &result)
 		require.NoError(t, err)
-
 		assert.Equal(t, "John Doe", result.Name)
 		assert.Equal(t, 30, result.Age)
 		assert.True(t, result.Active)
 	})
 
-	t.Run("Invalid XML", func(t *testing.T) {
+	t.Run("InvalidXML", func(t *testing.T) {
 		input := `<TestStruct><Name>John Doe</Name><Age>30</TestStruct>`
 
 		var result TestStruct
 
-		err := DecodeXML(input, &result)
+		err := DecodeXml(input, &result)
 		assert.Error(t, err)
 	})
+
+	t.Run("EmptyXML", func(t *testing.T) {
+		input := `<TestStruct></TestStruct>`
+
+		var result TestStruct
+
+		err := DecodeXml(input, &result)
+		require.NoError(t, err)
+		assert.Equal(t, "", result.Name)
+		assert.Equal(t, 0, result.Age)
+	})
+}
+
+func TestXmlRoundTrip(t *testing.T) {
+	input := TestStruct{
+		Name:   "Jane Doe",
+		Age:    25,
+		Email:  "jane@example.com",
+		Active: true,
+		Score:  88.5,
+	}
+
+	encoded, err := ToXml(input)
+	require.NoError(t, err)
+	assert.NotEmpty(t, encoded)
+
+	decoded, err := FromXml[TestStruct](encoded)
+	require.NoError(t, err)
+	assert.NotNil(t, decoded)
+	assert.Equal(t, input.Name, decoded.Name)
+	assert.Equal(t, input.Age, decoded.Age)
+	assert.Equal(t, input.Email, decoded.Email)
+	assert.Equal(t, input.Active, decoded.Active)
+	assert.Equal(t, input.Score, decoded.Score)
 }

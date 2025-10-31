@@ -9,7 +9,6 @@ import (
 // This allows for flexible and extensible job configuration.
 type JobDescriptorOption func(*jobDescriptor)
 
-// WithName sets the name of the job for identification and logging purposes.
 func WithName(name string) JobDescriptorOption {
 	return func(d *jobDescriptor) {
 		d.name = name
@@ -59,7 +58,6 @@ func WithLimitedRuns(limitedRuns uint) JobDescriptorOption {
 	}
 }
 
-// WithContext sets a custom context for the job execution.
 // If the context is canceled, the job will be canceled as well.
 func WithContext(ctx context.Context) JobDescriptorOption {
 	return func(d *jobDescriptor) {
@@ -67,7 +65,6 @@ func WithContext(ctx context.Context) JobDescriptorOption {
 	}
 }
 
-// WithTask sets the handler function and its parameters for the job.
 // The handler must be a function, and params are the arguments to pass to it.
 func WithTask(handler any, params ...any) JobDescriptorOption {
 	return func(d *jobDescriptor) {

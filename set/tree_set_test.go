@@ -11,136 +11,181 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestTreeSet(t *testing.T) {
-	t.Run("NewTreeSet", func(t *testing.T) {
-		s := NewTreeSet[int]()
-		assert.NotNil(t, s)
-		assert.True(t, s.IsEmpty())
-		assert.Equal(t, 0, s.Size())
+func TestTreeSetNew(t *testing.T) {
+	s := NewTreeSet[int]()
+
+	assert.NotNil(t, s, "TreeSet should be initialized")
+	assert.True(t, s.IsEmpty(), "New TreeSet should be empty")
+	assert.Equal(t, 0, s.Size(), "Size should be 0")
+}
+
+func TestTreeSetAddMaintainsOrder(t *testing.T) {
+	s := NewTreeSet[int]()
+
+	s.Add(3, 1, 4, 1, 5, 9, 2, 6)
+
+	values := s.Values()
+	assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values, "Values should be sorted and unique")
+}
+
+func TestTreeSetCustomComparator(t *testing.T) {
+	s := NewTreeSetWithComparator(func(a, b int) int {
+		if a < b {
+			return 1
+		} else if a > b {
+			return -1
+		}
+
+		return 0
 	})
 
-	t.Run("Add maintains order", func(t *testing.T) {
-		s := NewTreeSet[int]()
-		s.Add(3, 1, 4, 1, 5, 9, 2, 6)
-		values := s.Values()
-		assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values)
-	})
+	s.Add(1, 2, 3, 4, 5)
 
-	t.Run("Custom comparator", func(t *testing.T) {
-		s := NewTreeSetWithComparator(func(a, b int) int {
-			if a < b {
-				return 1
-			} else if a > b {
-				return -1
+	values := s.Values()
+	assert.Equal(t, []int{5, 4, 3, 2, 1}, values, "Values should be sorted in descending order")
+}
+
+func TestTreeSetRemove(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
+
+	removed := s.Remove(2, 5)
+	assert.True(t, removed, "Should return true when removing existing elements")
+	assert.Equal(t, []int{1, 3, 4}, s.Values(), "Remaining elements should be correct")
+
+	removed = s.Remove(8)
+	assert.False(t, removed, "Should return false when removing non-existent element")
+}
+
+func TestTreeSetContains(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
+
+	tests := []struct {
+		name     string
+		method   string
+		elements []int
+		expected bool
+	}{
+		{"ContainsExisting", "Contains", []int{3}, true},
+		{"ContainsNonExisting", "Contains", []int{9}, false},
+		{"ContainsAllExisting", "ContainsAll", []int{1, 4, 5}, true},
+		{"ContainsAllPartial", "ContainsAll", []int{1, 6}, false},
+		{"ContainsAnySome", "ContainsAny", []int{0, 5, 10}, true},
+		{"ContainsAnyNone", "ContainsAny", []int{-1, 6}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result bool
+			switch tt.method {
+			case "Contains":
+				result = s.Contains(tt.elements[0])
+			case "ContainsAll":
+				result = s.ContainsAll(tt.elements...)
+			case "ContainsAny":
+				result = s.ContainsAny(tt.elements...)
 			}
 
-			return 0
+			assert.Equal(t, tt.expected, result, "Method should return correct result")
 		})
-		s.Add(1, 2, 3, 4, 5)
-		values := s.Values()
-		assert.Equal(t, []int{5, 4, 3, 2, 1}, values)
+	}
+}
+
+func TestTreeSetSizeAndEmpty(t *testing.T) {
+	s := NewTreeSet[int]()
+
+	assert.True(t, s.IsEmpty(), "New set should be empty")
+
+	s.Add(1)
+
+	assert.False(t, s.IsEmpty(), "Set should not be empty after adding")
+	assert.Equal(t, 1, s.Size(), "Size should be 1")
+}
+
+func TestTreeSetClear(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3})
+
+	s.Clear()
+
+	assert.True(t, s.IsEmpty(), "Set should be empty after Clear")
+}
+
+func TestTreeSetRemoveIf(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8})
+
+	count := s.RemoveIf(func(element int) bool {
+		return element%2 == 0
 	})
 
-	t.Run("Remove", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
-		assert.True(t, s.Remove(2, 5))
-		assert.Equal(t, []int{1, 3, 4}, s.Values())
-		assert.False(t, s.Remove(8))
-	})
+	assert.Equal(t, 4, count, "Should remove 4 even elements")
+	assert.Equal(t, []int{1, 3, 5, 7}, s.Values(), "Should contain only odd elements")
+}
 
-	t.Run("Contains variations", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
-		assert.True(t, s.Contains(3))
-		assert.False(t, s.Contains(9))
-		assert.True(t, s.ContainsAll(1, 4, 5))
-		assert.False(t, s.ContainsAll(1, 6))
-		assert.True(t, s.ContainsAny(0, 5, 10))
-		assert.False(t, s.ContainsAny(-1, 6))
-	})
+func TestTreeSetValues(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{3, 1, 2})
 
-	t.Run("Size and empty", func(t *testing.T) {
-		s := NewTreeSet[int]()
-		assert.True(t, s.IsEmpty())
-		s.Add(1)
-		assert.False(t, s.IsEmpty())
-		assert.Equal(t, 1, s.Size())
-	})
+	values := s.Values()
 
-	t.Run("Clear", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3})
-		s.Clear()
-		assert.True(t, s.IsEmpty())
-	})
+	assert.Equal(t, []int{1, 2, 3}, values, "Values should be sorted")
+}
 
-	t.Run("RemoveIf", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8})
-		count := s.RemoveIf(func(element int) bool { return element%2 == 0 })
-		assert.Equal(t, 4, count)
-		assert.Equal(t, []int{1, 3, 5, 7}, s.Values())
-	})
+func TestTreeSetSeq(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{3, 1, 4, 1, 5, 9, 2, 6})
 
-	t.Run("Values", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{3, 1, 2})
-		assert.Equal(t, []int{1, 2, 3}, s.Values())
-	})
+	var values []int
+	for element := range s.Seq() {
+		values = append(values, element)
+	}
 
-	t.Run("Seq", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{3, 1, 4, 1, 5, 9, 2, 6})
+	assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values, "Seq should iterate in sorted order")
+}
 
-		var values []int
-		for element := range s.Seq() {
-			values = append(values, element)
-		}
+func TestTreeSetSeqWithIndex(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{3, 1, 4, 1, 5, 9, 2})
 
-		assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values)
-	})
+	var (
+		positions []int
+		values    []int
+	)
 
-	t.Run("SeqWithIndex", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{3, 1, 4, 1, 5, 9, 2})
+	for index, element := range s.SeqWithIndex() {
+		positions = append(positions, index)
+		values = append(values, element)
+	}
 
-		var (
-			positions []int
-			values    []int
-		)
+	assert.Equal(t, []int{0, 1, 2, 3, 4, 5}, positions, "Indices should be sequential")
+	assert.Equal(t, []int{1, 2, 3, 4, 5, 9}, values, "Values should be sorted")
+}
 
-		for index, element := range s.SeqWithIndex() {
-			positions = append(positions, index)
-			values = append(values, element)
-		}
+func TestTreeSetReverseSeq(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
 
-		assert.Equal(t, []int{0, 1, 2, 3, 4, 5}, positions)
-		assert.Equal(t, []int{1, 2, 3, 4, 5, 9}, values)
-	})
+	var values []int
+	for element := range s.ReverseSeq() {
+		values = append(values, element)
+	}
 
-	t.Run("ReverseSeq", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
+	assert.Equal(t, []int{5, 4, 3, 2, 1}, values, "ReverseSeq should iterate in reverse order")
+}
 
-		var values []int
-		for element := range s.ReverseSeq() {
-			values = append(values, element)
-		}
+func TestTreeSetReverseSeqWithIndex(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4})
 
-		assert.Equal(t, []int{5, 4, 3, 2, 1}, values)
-	})
+	var (
+		positions []int
+		values    []int
+	)
 
-	t.Run("ReverseSeqWithIndex", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4})
+	for index, element := range s.ReverseSeqWithIndex() {
+		positions = append(positions, index)
+		values = append(values, element)
+	}
 
-		var (
-			positions []int
-			values    []int
-		)
+	assert.Equal(t, []int{0, 1, 2, 3}, positions, "Indices should be sequential")
+	assert.Equal(t, []int{4, 3, 2, 1}, values, "Values should be in reverse order")
+}
 
-		for index, element := range s.ReverseSeqWithIndex() {
-			positions = append(positions, index)
-			values = append(values, element)
-		}
-
-		assert.Equal(t, []int{0, 1, 2, 3}, positions)
-		assert.Equal(t, []int{4, 3, 2, 1}, values)
-	})
-
-	t.Run("Each variations", func(t *testing.T) {
+func TestTreeSetEach(t *testing.T) {
+	t.Run("CompleteIteration", func(t *testing.T) {
 		s := NewTreeSetFromSlice([]int{3, 1, 4, 1, 5, 9, 2, 6})
 
 		var values []int
@@ -149,133 +194,220 @@ func TestTreeSet(t *testing.T) {
 
 			return true
 		})
-		assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values)
 
-		var positions []int
+		assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values, "Each should iterate in sorted order")
+	})
 
-		values = nil
+	t.Run("EachIndexed", func(t *testing.T) {
+		s := NewTreeSetFromSlice([]int{3, 1, 4, 1, 5, 9, 2, 6})
+
+		var (
+			positions []int
+			values    []int
+		)
+
 		s.EachIndexed(func(index, element int) bool {
 			positions = append(positions, index)
 			values = append(values, element)
 
 			return true
 		})
-		assert.Equal(t, []int{0, 1, 2, 3, 4, 5, 6}, positions)
-		assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values)
+
+		assert.Equal(t, []int{0, 1, 2, 3, 4, 5, 6}, positions, "Indices should be sequential")
+		assert.Equal(t, []int{1, 2, 3, 4, 5, 6, 9}, values, "Values should be sorted")
+	})
+}
+
+func TestTreeSetUnion(t *testing.T) {
+	s1 := NewTreeSetFromSlice([]int{1, 2, 3})
+	s2 := NewTreeSetFromSlice([]int{3, 4, 5})
+
+	result := s1.Union(s2)
+
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, result.Values(), "Union should contain all elements in sorted order")
+}
+
+func TestTreeSetIntersection(t *testing.T) {
+	s1 := NewTreeSetFromSlice([]int{1, 2, 3, 4})
+	s2 := NewTreeSetFromSlice([]int{3, 4, 5, 6})
+
+	result := s1.Intersection(s2)
+
+	assert.Equal(t, []int{3, 4}, result.Values(), "Intersection should contain common elements")
+}
+
+func TestTreeSetDifference(t *testing.T) {
+	s1 := NewTreeSetFromSlice([]int{1, 2, 3, 4})
+	s2 := NewTreeSetFromSlice([]int{3, 4, 5, 6})
+
+	result := s1.Difference(s2)
+
+	assert.Equal(t, []int{1, 2}, result.Values(), "Difference should contain elements only in first set")
+}
+
+func TestTreeSetSymmetricDifference(t *testing.T) {
+	s1 := NewTreeSetFromSlice([]int{1, 2, 3})
+	s2 := NewTreeSetFromSlice([]int{3, 4, 5})
+
+	result := s1.SymmetricDifference(s2)
+
+	assert.Equal(t, []int{1, 2, 4, 5}, result.Values(), "SymmetricDifference should contain non-common elements")
+}
+
+func TestTreeSetSubsetAndSuperset(t *testing.T) {
+	s1 := NewTreeSetFromSlice([]int{1, 2})
+	s2 := NewTreeSetFromSlice([]int{1, 2, 3, 4})
+
+	assert.True(t, s1.IsSubset(s2), "s1 should be subset of s2")
+	assert.False(t, s2.IsSubset(s1), "s2 should not be subset of s1")
+	assert.True(t, s2.IsSuperset(s1), "s2 should be superset of s1")
+	assert.False(t, s1.IsSuperset(s2), "s1 should not be superset of s2")
+}
+
+func TestTreeSetEqual(t *testing.T) {
+	s1 := NewTreeSetFromSlice([]int{1, 2, 3})
+	s2 := NewTreeSetFromSlice([]int{3, 2, 1})
+	s3 := NewTreeSetFromSlice([]int{1, 2, 4})
+
+	assert.True(t, s1.Equal(s2), "Sets with same elements should be equal")
+	assert.False(t, s1.Equal(s3), "Sets with different elements should not be equal")
+}
+
+func TestTreeSetClone(t *testing.T) {
+	s1 := NewTreeSetFromSlice([]int{1, 2, 3})
+
+	s2 := s1.Clone()
+
+	assert.Equal(t, []int{1, 2, 3}, s2.Values(), "Clone should have same values")
+
+	s2.Add(4)
+
+	assert.Equal(t, []int{1, 2, 3}, s1.Values(), "Original should remain unchanged")
+	assert.Equal(t, []int{1, 2, 3, 4}, s2.Values(), "Clone should have new element")
+}
+
+func TestTreeSetFilter(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5, 6})
+
+	result := s.Filter(func(element int) bool {
+		return element%2 == 0
 	})
 
-	t.Run("Union", func(t *testing.T) {
-		s1 := NewTreeSetFromSlice([]int{1, 2, 3})
-		s2 := NewTreeSetFromSlice([]int{3, 4, 5})
-		result := s1.Union(s2)
-		assert.Equal(t, []int{1, 2, 3, 4, 5}, result.Values())
+	assert.Equal(t, []int{2, 4, 6}, result.Values(), "Filtered set should contain only even elements")
+}
+
+func TestTreeSetMap(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3})
+
+	result := s.Map(func(element int) int {
+		return element * 2
 	})
 
-	t.Run("Intersection", func(t *testing.T) {
-		s1 := NewTreeSetFromSlice([]int{1, 2, 3, 4})
-		s2 := NewTreeSetFromSlice([]int{3, 4, 5, 6})
-		result := s1.Intersection(s2)
-		assert.Equal(t, []int{3, 4}, result.Values())
-	})
+	assert.Equal(t, []int{2, 4, 6}, result.Values(), "Mapped set should contain doubled elements")
+}
 
-	t.Run("Difference", func(t *testing.T) {
-		s1 := NewTreeSetFromSlice([]int{1, 2, 3, 4})
-		s2 := NewTreeSetFromSlice([]int{3, 4, 5, 6})
-		result := s1.Difference(s2)
-		assert.Equal(t, []int{1, 2}, result.Values())
-	})
+func TestTreeSetAny(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
 
-	t.Run("SymmetricDifference", func(t *testing.T) {
-		s1 := NewTreeSetFromSlice([]int{1, 2, 3})
-		s2 := NewTreeSetFromSlice([]int{3, 4, 5})
-		result := s1.SymmetricDifference(s2)
-		assert.Equal(t, []int{1, 2, 4, 5}, result.Values())
-	})
+	tests := []struct {
+		name      string
+		predicate func(int) bool
+		expected  bool
+	}{
+		{
+			"SomeMatch",
+			func(element int) bool { return element > 3 },
+			true,
+		},
+		{
+			"NoneMatch",
+			func(element int) bool { return element > 10 },
+			false,
+		},
+	}
 
-	t.Run("Subset and superset", func(t *testing.T) {
-		s1 := NewTreeSetFromSlice([]int{1, 2})
-		s2 := NewTreeSetFromSlice([]int{1, 2, 3, 4})
-		assert.True(t, s1.IsSubset(s2))
-		assert.False(t, s2.IsSubset(s1))
-		assert.True(t, s2.IsSuperset(s1))
-		assert.False(t, s1.IsSuperset(s2))
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := s.Any(tt.predicate)
+			assert.Equal(t, tt.expected, result, "Any should return correct result")
+		})
+	}
+}
 
-	t.Run("Equal", func(t *testing.T) {
-		s1 := NewTreeSetFromSlice([]int{1, 2, 3})
-		s2 := NewTreeSetFromSlice([]int{3, 2, 1})
-		s3 := NewTreeSetFromSlice([]int{1, 2, 4})
+func TestTreeSetAll(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{2, 4, 6, 8})
 
-		assert.True(t, s1.Equal(s2))
-		assert.False(t, s1.Equal(s3))
-	})
+	tests := []struct {
+		name      string
+		predicate func(int) bool
+		expected  bool
+	}{
+		{
+			"AllMatch",
+			func(element int) bool { return element%2 == 0 },
+			true,
+		},
+		{
+			"NotAllMatch",
+			func(element int) bool { return element > 5 },
+			false,
+		},
+	}
 
-	t.Run("Clone", func(t *testing.T) {
-		s1 := NewTreeSetFromSlice([]int{1, 2, 3})
-		s2 := s1.Clone()
-		assert.Equal(t, []int{1, 2, 3}, s2.Values())
-		s2.Add(4)
-		assert.Equal(t, []int{1, 2, 3}, s1.Values())
-		assert.Equal(t, []int{1, 2, 3, 4}, s2.Values())
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := s.All(tt.predicate)
+			assert.Equal(t, tt.expected, result, "All should return correct result")
+		})
+	}
+}
 
-	t.Run("Filter", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5, 6})
-		result := s.Filter(func(element int) bool { return element%2 == 0 })
-		assert.Equal(t, []int{2, 4, 6}, result.Values())
-	})
-
-	t.Run("Map", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3})
-		result := s.Map(func(element int) int { return element * 2 })
-		assert.Equal(t, []int{2, 4, 6}, result.Values())
-	})
-
-	t.Run("Any", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
-		assert.True(t, s.Any(func(element int) bool { return element > 3 }))
-		assert.False(t, s.Any(func(element int) bool { return element > 10 }))
-	})
-
-	t.Run("All", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{2, 4, 6, 8})
-		assert.True(t, s.All(func(element int) bool { return element%2 == 0 }))
-		assert.False(t, s.All(func(element int) bool { return element > 5 }))
-	})
-
-	t.Run("Min and Max", func(t *testing.T) {
+func TestTreeSetMinAndMax(t *testing.T) {
+	t.Run("NonEmptySet", func(t *testing.T) {
 		s := NewTreeSetFromSlice([]int{3, 1, 4, 1, 5, 9, 2, 6})
+
 		min, ok := s.Min()
-		assert.True(t, ok)
-		assert.Equal(t, 1, min)
+		assert.True(t, ok, "Min should return true for non-empty set")
+		assert.Equal(t, 1, min, "Min should be 1")
 
 		max, ok := s.Max()
-		assert.True(t, ok)
-		assert.Equal(t, 9, max)
+		assert.True(t, ok, "Max should return true for non-empty set")
+		assert.Equal(t, 9, max, "Max should be 9")
+	})
 
+	t.Run("EmptySet", func(t *testing.T) {
 		empty := NewTreeSet[int]()
-		_, ok = empty.Min()
-		assert.False(t, ok)
+
+		_, ok := empty.Min()
+		assert.False(t, ok, "Min should return false for empty set")
+
 		_, ok = empty.Max()
-		assert.False(t, ok)
+		assert.False(t, ok, "Max should return false for empty set")
 	})
+}
 
-	t.Run("Range", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-		assert.Equal(t, []int{3, 4, 5, 6, 7}, s.Range(3, 8))
-	})
+func TestTreeSetRange(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 
-	t.Run("Iterator bidirectional", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
-		it := s.Iterator()
+	result := s.Range(3, 8)
 
+	assert.Equal(t, []int{3, 4, 5, 6, 7}, result, "Range should return elements within bounds")
+}
+
+func TestTreeSetIteratorBidirectional(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3, 4, 5})
+	it := s.Iterator()
+
+	t.Run("ForwardIteration", func(t *testing.T) {
 		var forward []int
 		for it.Next() {
 			forward = append(forward, it.Value())
 		}
 
-		assert.Equal(t, []int{1, 2, 3, 4, 5}, forward)
+		assert.Equal(t, []int{1, 2, 3, 4, 5}, forward, "Forward iteration should be in sorted order")
+	})
 
+	t.Run("BackwardIteration", func(t *testing.T) {
 		var backward []int
 
 		it.End()
@@ -284,74 +416,85 @@ func TestTreeSet(t *testing.T) {
 			backward = append(backward, it.Value())
 		}
 
-		assert.Equal(t, []int{5, 4, 3, 2, 1}, backward)
+		assert.Equal(t, []int{5, 4, 3, 2, 1}, backward, "Backward iteration should be in reverse order")
 	})
+}
 
-	t.Run("JSON serialization", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3})
-		data, err := json.Marshal(s)
-		require.NoError(t, err)
+func TestTreeSetJSONSerialization(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3})
 
-		decoded := NewTreeSet[int]()
-		require.NoError(t, json.Unmarshal(data, decoded))
-		assert.True(t, s.Equal(decoded))
-	})
+	data, err := json.Marshal(s)
+	require.NoError(t, err, "Marshal should succeed")
 
-	t.Run("Gob serialization", func(t *testing.T) {
-		s := NewTreeSetFromSlice([]int{1, 2, 3})
+	decoded := NewTreeSet[int]()
+	require.NoError(t, json.Unmarshal(data, decoded), "Unmarshal should succeed")
+	assert.True(t, s.Equal(decoded), "Decoded set should equal original")
+}
 
-		var buf bytes.Buffer
+func TestTreeSetGobSerialization(t *testing.T) {
+	s := NewTreeSetFromSlice([]int{1, 2, 3})
 
-		require.NoError(t, gob.NewEncoder(&buf).Encode(s))
+	var buf bytes.Buffer
+	require.NoError(t, gob.NewEncoder(&buf).Encode(s), "Gob encode should succeed")
 
-		decoded := NewTreeSet[int]()
-		require.NoError(t, gob.NewDecoder(&buf).Decode(decoded))
-		assert.True(t, s.Equal(decoded))
-	})
+	decoded := NewTreeSet[int]()
+	require.NoError(t, gob.NewDecoder(&buf).Decode(decoded), "Gob decode should succeed")
+	assert.True(t, s.Equal(decoded), "Decoded set should equal original")
+}
 
-	t.Run("Empty set serialization", func(t *testing.T) {
-		s := NewTreeSet[int]()
+func TestTreeSetEmptySerialization(t *testing.T) {
+	s := NewTreeSet[int]()
 
-		// JSON
-		data, err := json.Marshal(s)
-		require.NoError(t, err)
-		assert.Equal(t, "[]", string(data))
+	data, err := json.Marshal(s)
+	require.NoError(t, err, "Marshal empty set should succeed")
+	assert.Equal(t, "[]", string(data), "Empty set should serialize as empty array")
 
-		decodedJSON := NewTreeSet[int]()
-		require.NoError(t, json.Unmarshal(data, decodedJSON))
-		assert.True(t, decodedJSON.IsEmpty())
-	})
+	decodedJSON := NewTreeSet[int]()
+	require.NoError(t, json.Unmarshal(data, decodedJSON), "Unmarshal empty set should succeed")
+	assert.True(t, decodedJSON.IsEmpty(), "Decoded empty set should be empty")
+}
 
-	t.Run("UnmarshalJSON with invalid input", func(t *testing.T) {
-		s := NewTreeSet[int]()
-		err := json.Unmarshal([]byte("not valid json"), s)
-		assert.Error(t, err)
-	})
+func TestTreeSetUnmarshalInvalid(t *testing.T) {
+	s := NewTreeSet[int]()
 
-	t.Run("Serialization without comparator initialization", func(t *testing.T) {
-		// Create a TreeSet without comparator
+	err := json.Unmarshal([]byte("not valid json"), s)
+	assert.Error(t, err, "Unmarshal invalid JSON should return error")
+}
+
+func TestTreeSetSerializationWithoutComparatorInitialization(t *testing.T) {
+	t.Run("UnmarshalJSONWithNilTree", func(t *testing.T) {
 		var s TreeSet[int]
 
-		// UnmarshalJSON should panic with tree nil
 		assert.Panics(t, func() {
 			_ = s.UnmarshalJSON([]byte("[1,2,3]"))
 		}, "UnmarshalJSON should panic when tree is nil")
+	})
 
-		// GobDecode should panic with tree nil
+	t.Run("GobDecodeWithNilTree", func(t *testing.T) {
+		var s TreeSet[int]
+
 		assert.Panics(t, func() {
 			_ = s.GobDecode([]byte{})
 		}, "GobDecode should panic when tree is nil")
+	})
 
-		// Initialize tree but not comparator
+	t.Run("UnmarshalJSONWithNilComparator", func(t *testing.T) {
+		var s TreeSet[int]
+
 		s.tree = treeset.New[int]()
 		s.cmp = nil
 
-		// UnmarshalJSON should panic with nil comparator
 		assert.Panics(t, func() {
 			_ = s.UnmarshalJSON([]byte("[1,2,3]"))
 		}, "UnmarshalJSON should panic when comparator is nil")
+	})
 
-		// GobDecode should panic with nil comparator
+	t.Run("GobDecodeWithNilComparator", func(t *testing.T) {
+		var s TreeSet[int]
+
+		s.tree = treeset.New[int]()
+		s.cmp = nil
+
 		assert.Panics(t, func() {
 			_ = s.GobDecode([]byte{})
 		}, "GobDecode should panic when comparator is nil")
@@ -359,29 +502,42 @@ func TestTreeSet(t *testing.T) {
 }
 
 func TestTreeSetInterfaceCompliance(t *testing.T) {
-	var s Set[int] = NewTreeSet[int]()
-	s.Add(1, 2, 3)
-	assert.Equal(t, 3, s.Size())
+	t.Run("SetInterface", func(t *testing.T) {
+		var s Set[int] = NewTreeSet[int]()
+		s.Add(1, 2, 3)
+		assert.Equal(t, 3, s.Size(), "Set interface should work correctly")
+	})
 
-	var ordered OrderedSet[int] = NewTreeSet[int]()
-	ordered.Add(3, 1, 2)
-	min, _ := ordered.Min()
-	max, _ := ordered.Max()
+	t.Run("OrderedSetInterface", func(t *testing.T) {
+		var ordered OrderedSet[int] = NewTreeSet[int]()
+		ordered.Add(3, 1, 2)
 
-	assert.Equal(t, 1, min)
-	assert.Equal(t, 3, max)
+		min, _ := ordered.Min()
+		max, _ := ordered.Max()
+
+		assert.Equal(t, 1, min, "Min should be 1")
+		assert.Equal(t, 3, max, "Max should be 3")
+	})
 }
 
 func TestSetOperationsAcrossTypes(t *testing.T) {
-	hashSet := NewHashSetFromSlice([]int{1, 2, 3})
-	treeSet := NewTreeSetFromSlice([]int{3, 4, 5})
-	result := hashSet.Union(treeSet)
-	assert.Equal(t, 5, result.Size())
-	assert.True(t, result.ContainsAll(1, 2, 3, 4, 5))
+	t.Run("HashSetUnionTreeSet", func(t *testing.T) {
+		hashSet := NewHashSetFromSlice([]int{1, 2, 3})
+		treeSet := NewTreeSetFromSlice([]int{3, 4, 5})
 
-	treeSet = NewTreeSetFromSlice([]int{1, 2, 3, 4})
-	hashSet = NewHashSetFromSlice([]int{3, 4, 5, 6})
-	result = treeSet.Intersection(hashSet)
-	assert.Equal(t, 2, result.Size())
-	assert.True(t, result.ContainsAll(3, 4))
+		result := hashSet.Union(treeSet)
+
+		assert.Equal(t, 5, result.Size(), "Union should contain 5 elements")
+		assert.True(t, result.ContainsAll(1, 2, 3, 4, 5), "Union should contain all elements")
+	})
+
+	t.Run("TreeSetIntersectionHashSet", func(t *testing.T) {
+		treeSet := NewTreeSetFromSlice([]int{1, 2, 3, 4})
+		hashSet := NewHashSetFromSlice([]int{3, 4, 5, 6})
+
+		result := treeSet.Intersection(hashSet)
+
+		assert.Equal(t, 2, result.Size(), "Intersection should contain 2 elements")
+		assert.True(t, result.ContainsAll(3, 4), "Intersection should contain common elements")
+	})
 }

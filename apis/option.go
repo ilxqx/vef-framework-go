@@ -9,13 +9,13 @@ import (
 // Commonly used for dropdown lists, radio buttons, and select components.
 type DataOption struct {
 	// Display text shown to users
-	Label string `json:"label"`
+	Label string `json:"label" bun:"label"`
 	// Underlying value used in form submissions
-	Value string `json:"value"`
+	Value string `json:"value" bun:"value"`
 	// Additional descriptive text (optional)
-	Description string `json:"description,omitempty"`
+	Description string `json:"description,omitempty" bun:"description"`
 	// Custom metadata for extended functionality (optional)
-	Meta map[string]any `json:"meta,omitempty"`
+	Meta map[string]any `json:"meta,omitempty" bun:"meta"`
 }
 
 // DataOptionColumnMapping defines the mapping between database columns and option fields.
@@ -26,6 +26,10 @@ type DataOptionColumnMapping struct {
 	ValueColumn string `json:"valueColumn"`
 	// Column name for description
 	DescriptionColumn string `json:"descriptionColumn"`
+	// Additional columns to include in meta field
+	// Supports simple column names or "column AS alias" format
+	// Examples: ["status", "role_name as role"]
+	MetaColumns []string `json:"metaColumns"`
 }
 
 // DataOptionConfig is the Api request meta for querying options.
@@ -41,9 +45,9 @@ type TreeDataOption struct {
 	DataOption
 
 	// Unique identifier for the tree node
-	Id string `json:"-"`
+	Id string `json:"-" bun:"id"`
 	// Parent node identifier (null for root nodes)
-	ParentId null.String `json:"-"`
+	ParentId null.String `json:"-" bun:"parent_id"`
 	// Nested child options forming the tree structure
-	Children []TreeDataOption `json:"children,omitempty"`
+	Children []TreeDataOption `json:"children,omitempty" bun:"-"`
 }

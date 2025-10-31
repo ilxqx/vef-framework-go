@@ -13,7 +13,6 @@ import (
 var logger = log.Named("cron")
 
 // newScheduler creates a new gocron scheduler with optimal configuration for production use.
-// It sets up logging, monitoring, concurrency limits, and lifecycle management.
 func newScheduler(lc fx.Lifecycle) (gocron.Scheduler, error) {
 	scheduler, err := gocron.NewScheduler(
 		gocron.WithLocation(time.Local),

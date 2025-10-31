@@ -2,9 +2,11 @@
 
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
+[![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
 
-**Current Version:** v0.7.0
+A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 
 ## Features
 
@@ -1086,9 +1088,9 @@ func (l *MyRolePermissionsLoader) LoadPermissions(ctx context.Context, role stri
 
 - `security.PrioritySelf` (10) - Self-created data only
 - `security.PriorityDepartment` (20) - Department data
-- `security.PriorityDeptAndSub` (30) - Department and sub-department data
+- `security.PriorityDepartmentAndSub` (30) - Department and sub-department data
 - `security.PriorityOrganization` (40) - Organization data
-- `security.PriorityOrgAndSub` (50) - Organization and sub-organization data
+- `security.PriorityOrganizationAndSub` (50) - Organization and sub-organization data
 - `security.PriorityCustom` (60) - Custom data scope
 - `security.PriorityAll` (10000) - All data
 

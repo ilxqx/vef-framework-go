@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTimeOf(t *testing.T) {
@@ -11,28 +13,25 @@ func TestTimeOf(t *testing.T) {
 	timeOnly := TimeOf(now)
 
 	unwrapped := timeOnly.Unwrap()
-	assertIntEqual(t, 1970, unwrapped.Year(), "TimeOf should use epoch year")
-	assertIntEqual(t, int(time.January), int(unwrapped.Month()), "TimeOf should use epoch month")
-	assertIntEqual(t, 1, unwrapped.Day(), "TimeOf should use epoch day")
-	assertIntEqual(t, 14, unwrapped.Hour(), "TimeOf should preserve hour")
-	assertIntEqual(t, 30, unwrapped.Minute(), "TimeOf should preserve minute")
-	assertIntEqual(t, 45, unwrapped.Second(), "TimeOf should preserve second")
+	assert.Equal(t, 1970, unwrapped.Year(), "Year should be epoch")
+	assert.Equal(t, int(time.January), int(unwrapped.Month()), "Month should be epoch")
+	assert.Equal(t, 1, unwrapped.Day(), "Day should be epoch")
+	assert.Equal(t, 14, unwrapped.Hour(), "Hour should be preserved")
+	assert.Equal(t, 30, unwrapped.Minute(), "Minute should be preserved")
+	assert.Equal(t, 45, unwrapped.Second(), "Second should be preserved")
 }
 
 func TestNowTime(t *testing.T) {
 	before := time.Now()
 	timeOnly := NowTime()
-	_ = time.Now() // after variable not used
 
 	unwrapped := timeOnly.Unwrap()
-	assertIntEqual(t, 1970, unwrapped.Year(), "NowTime should use epoch year")
-	assertIntEqual(t, int(time.January), int(unwrapped.Month()), "NowTime should use epoch month")
-	assertIntEqual(t, 1, unwrapped.Day(), "NowTime should use epoch day")
+	assert.Equal(t, 1970, unwrapped.Year(), "Year should be epoch")
+	assert.Equal(t, int(time.January), int(unwrapped.Month()), "Month should be epoch")
+	assert.Equal(t, 1, unwrapped.Day(), "Day should be epoch")
 
-	// Time components should be close to current time
-	if unwrapped.Hour() < before.Hour()-1 || unwrapped.Hour() > before.Hour()+1 {
-		t.Error("NowTime should return approximately current time")
-	}
+	assert.GreaterOrEqual(t, unwrapped.Hour(), before.Hour()-1, "Hour should be close to current")
+	assert.LessOrEqual(t, unwrapped.Hour(), before.Hour()+1, "Hour should be close to current")
 }
 
 func TestParseTime(t *testing.T) {
@@ -44,21 +43,21 @@ func TestParseTime(t *testing.T) {
 		expected  time.Time
 	}{
 		{
-			"Valid time",
+			"ValidTime",
 			"14:30:45",
 			nil,
 			false,
 			time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local),
 		},
 		{
-			"Valid time with custom pattern",
+			"ValidTimeWithCustomPattern",
 			"2:30:45 PM",
 			[]string{"3:04:05 PM"},
 			false,
 			time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local),
 		},
 		{
-			"Invalid time",
+			"InvalidTime",
 			"invalid",
 			nil,
 			true,
@@ -70,19 +69,18 @@ func TestParseTime(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			timeOnly, err := ParseTime(tt.input, tt.pattern...)
 			if tt.shouldErr {
-				assertError(t, err, "Expected ParseTime error")
+				assert.Error(t, err, "Should return error for invalid input")
 			} else {
-				assertNoError(t, err, "Unexpected ParseTime error")
+				assert.NoError(t, err, "Should parse valid time")
 
 				if !tt.expected.IsZero() {
-					// Check that date is epoch
 					unwrapped := timeOnly.Unwrap()
-					assertIntEqual(t, 1970, unwrapped.Year(), "Year should be epoch")
-					assertIntEqual(t, int(time.January), int(unwrapped.Month()), "Month should be epoch")
-					assertIntEqual(t, 1, unwrapped.Day(), "Day should be epoch")
-					assertIntEqual(t, tt.expected.Hour(), unwrapped.Hour(), "Hour should match")
-					assertIntEqual(t, tt.expected.Minute(), unwrapped.Minute(), "Minute should match")
-					assertIntEqual(t, tt.expected.Second(), unwrapped.Second(), "Second should match")
+					assert.Equal(t, 1970, unwrapped.Year(), "Year should be epoch")
+					assert.Equal(t, int(time.January), int(unwrapped.Month()), "Month should be epoch")
+					assert.Equal(t, 1, unwrapped.Day(), "Day should be epoch")
+					assert.Equal(t, tt.expected.Hour(), unwrapped.Hour(), "Hour should match")
+					assert.Equal(t, tt.expected.Minute(), unwrapped.Minute(), "Minute should match")
+					assert.Equal(t, tt.expected.Second(), unwrapped.Second(), "Second should match")
 				}
 			}
 		})
@@ -92,7 +90,7 @@ func TestParseTime(t *testing.T) {
 func TestTimeString(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 	expected := "14:30:45"
-	assertStringEqual(t, expected, timeOnly.String(), "Time string representation")
+	assert.Equal(t, expected, timeOnly.String(), "String representation should match format")
 }
 
 func TestTimeEqual(t *testing.T) {
@@ -100,24 +98,24 @@ func TestTimeEqual(t *testing.T) {
 	time2 := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 	time3 := Time(time.Date(1970, 1, 1, 14, 30, 46, 0, time.Local))
 
-	assertBoolEqual(t, true, time1.Equal(time2), "Equal times should be equal")
-	assertBoolEqual(t, false, time1.Equal(time3), "Different times should not be equal")
+	assert.True(t, time1.Equal(time2), "Equal times should be equal")
+	assert.False(t, time1.Equal(time3), "Different times should not be equal")
 }
 
 func TestTimeBefore(t *testing.T) {
 	time1 := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 	time2 := Time(time.Date(1970, 1, 1, 14, 30, 46, 0, time.Local))
 
-	assertBoolEqual(t, true, time1.Before(time2), "Earlier time should be before later")
-	assertBoolEqual(t, false, time2.Before(time1), "Later time should not be before earlier")
+	assert.True(t, time1.Before(time2), "Earlier time should be before later")
+	assert.False(t, time2.Before(time1), "Later time should not be before earlier")
 }
 
 func TestTimeAfter(t *testing.T) {
 	time1 := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 	time2 := Time(time.Date(1970, 1, 1, 14, 30, 46, 0, time.Local))
 
-	assertBoolEqual(t, false, time1.After(time2), "Earlier time should not be after later")
-	assertBoolEqual(t, true, time2.After(time1), "Later time should be after earlier")
+	assert.False(t, time1.After(time2), "Earlier time should not be after later")
+	assert.True(t, time2.After(time1), "Later time should be after earlier")
 }
 
 func TestTimeBetween(t *testing.T) {
@@ -125,8 +123,8 @@ func TestTimeBetween(t *testing.T) {
 	middle := Time(time.Date(1970, 1, 1, 14, 30, 46, 0, time.Local))
 	end := Time(time.Date(1970, 1, 1, 14, 30, 47, 0, time.Local))
 
-	assertBoolEqual(t, true, middle.Between(start, end), "Middle time should be between start and end")
-	assertBoolEqual(t, false, start.Between(middle, end), "Start time should not be between middle and end")
+	assert.True(t, middle.Between(start, end), "Middle time should be between start and end")
+	assert.False(t, start.Between(middle, end), "Start time should not be between middle and end")
 }
 
 func TestTimeAdd(t *testing.T) {
@@ -135,7 +133,7 @@ func TestTimeAdd(t *testing.T) {
 	result := timeOnly.Add(duration)
 
 	expected := time.Date(1970, 1, 1, 16, 30, 45, 0, time.Local)
-	assertTimeEqual(t, expected, result.Unwrap(), "Add should add duration correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "Add should add duration correctly")
 }
 
 func TestTimeAddHours(t *testing.T) {
@@ -143,7 +141,7 @@ func TestTimeAddHours(t *testing.T) {
 	result := timeOnly.AddHours(3)
 
 	expected := time.Date(1970, 1, 1, 17, 30, 45, 0, time.Local)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddHours should add hours correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddHours should add hours correctly")
 }
 
 func TestTimeAddMinutes(t *testing.T) {
@@ -151,7 +149,7 @@ func TestTimeAddMinutes(t *testing.T) {
 	result := timeOnly.AddMinutes(15)
 
 	expected := time.Date(1970, 1, 1, 14, 45, 45, 0, time.Local)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddMinutes should add minutes correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddMinutes should add minutes correctly")
 }
 
 func TestTimeAddSeconds(t *testing.T) {
@@ -159,85 +157,89 @@ func TestTimeAddSeconds(t *testing.T) {
 	result := timeOnly.AddSeconds(30)
 
 	expected := time.Date(1970, 1, 1, 14, 31, 15, 0, time.Local)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddSeconds should add seconds correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddSeconds should add seconds correctly")
 }
 
 func TestTimeAddNanoseconds(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
-	result := timeOnly.AddNanoseconds(500000000) // 0.5 seconds
+	result := timeOnly.AddNanoseconds(500000000)
 
 	expected := time.Date(1970, 1, 1, 14, 30, 45, 500000000, time.Local)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddNanoseconds should add nanoseconds correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddNanoseconds should add nanoseconds correctly")
 }
 
 func TestTimeAddMicroseconds(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
-	result := timeOnly.AddMicroseconds(500000) // 0.5 seconds
+	result := timeOnly.AddMicroseconds(500000)
 
 	expected := time.Date(1970, 1, 1, 14, 30, 45, 500000000, time.Local)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddMicroseconds should add microseconds correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddMicroseconds should add microseconds correctly")
 }
 
 func TestTimeAddMilliseconds(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
-	result := timeOnly.AddMilliseconds(500) // 0.5 seconds
+	result := timeOnly.AddMilliseconds(500)
 
 	expected := time.Date(1970, 1, 1, 14, 30, 45, 500000000, time.Local)
-	assertTimeEqual(t, expected, result.Unwrap(), "AddMilliseconds should add milliseconds correctly")
+	assert.True(t, expected.Equal(result.Unwrap()), "AddMilliseconds should add milliseconds correctly")
 }
 
 func TestTimeComponents(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 123456789, time.Local))
 
-	assertIntEqual(t, 14, timeOnly.Hour(), "Hour")
-	assertIntEqual(t, 30, timeOnly.Minute(), "Minute")
-	assertIntEqual(t, 45, timeOnly.Second(), "Second")
-	assertIntEqual(t, 123456789, timeOnly.Nanosecond(), "Nanosecond")
+	assert.Equal(t, 14, timeOnly.Hour(), "Hour should match")
+	assert.Equal(t, 30, timeOnly.Minute(), "Minute should match")
+	assert.Equal(t, 45, timeOnly.Second(), "Second should match")
+	assert.Equal(t, 123456789, timeOnly.Nanosecond(), "Nanosecond should match")
 }
 
 func TestTimeIsZero(t *testing.T) {
 	zeroTime := Time{}
 	nonZeroTime := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 
-	assertBoolEqual(t, true, zeroTime.IsZero(), "Zero time should be zero")
-	assertBoolEqual(t, false, nonZeroTime.IsZero(), "Non-zero time should not be zero")
+	assert.True(t, zeroTime.IsZero(), "Zero time should be zero")
+	assert.False(t, nonZeroTime.IsZero(), "Non-zero time should not be zero")
 }
 
 func TestTimeBeginOfMethods(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 123456789, time.Local))
 
-	// BeginOfMinute
-	beginMinute := timeOnly.BeginOfMinute()
-	expected := time.Date(1970, 1, 1, 14, 30, 0, 0, time.Local)
-	assertTimeEqual(t, expected, beginMinute.Unwrap(), "BeginOfMinute")
+	t.Run("BeginOfMinute", func(t *testing.T) {
+		beginMinute := timeOnly.BeginOfMinute()
+		expected := time.Date(1970, 1, 1, 14, 30, 0, 0, time.Local)
+		assert.True(t, expected.Equal(beginMinute.Unwrap()), "BeginOfMinute should zero seconds and nanoseconds")
+	})
 
-	// BeginOfHour
-	beginHour := timeOnly.BeginOfHour()
-	expected = time.Date(1970, 1, 1, 14, 0, 0, 0, time.Local)
-	assertTimeEqual(t, expected, beginHour.Unwrap(), "BeginOfHour")
+	t.Run("BeginOfHour", func(t *testing.T) {
+		beginHour := timeOnly.BeginOfHour()
+		expected := time.Date(1970, 1, 1, 14, 0, 0, 0, time.Local)
+		assert.True(t, expected.Equal(beginHour.Unwrap()), "BeginOfHour should zero minutes, seconds, and nanoseconds")
+	})
 }
 
 func TestTimeEndOfMethods(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 123456789, time.Local))
 
-	// EndOfMinute
-	endMinute := timeOnly.EndOfMinute()
-	expected := time.Date(1970, 1, 1, 14, 30, 59, 999999999, time.Local)
-	assertTimeEqual(t, expected, endMinute.Unwrap(), "EndOfMinute")
+	t.Run("EndOfMinute", func(t *testing.T) {
+		endMinute := timeOnly.EndOfMinute()
+		expected := time.Date(1970, 1, 1, 14, 30, 59, 999999999, time.Local)
+		assert.True(t, expected.Equal(endMinute.Unwrap()), "EndOfMinute should set to last moment")
+	})
 
-	// EndOfHour
-	endHour := timeOnly.EndOfHour()
-	expected = time.Date(1970, 1, 1, 14, 59, 59, 999999999, time.Local)
-	assertTimeEqual(t, expected, endHour.Unwrap(), "EndOfHour")
+	t.Run("EndOfHour", func(t *testing.T) {
+		endHour := timeOnly.EndOfHour()
+		expected := time.Date(1970, 1, 1, 14, 59, 59, 999999999, time.Local)
+		assert.True(t, expected.Equal(endHour.Unwrap()), "EndOfHour should set to last moment")
+	})
 }
 
 func TestTimeMarshalJSON(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 	data, err := timeOnly.MarshalJSON()
-	assertNoError(t, err, "MarshalJSON")
+	assert.NoError(t, err, "MarshalJSON should succeed")
 
 	expected := `"14:30:45"`
-	assertStringEqual(t, expected, string(data), "JSON marshaling")
+	assert.Equal(t, expected, string(data), "JSON should match expected format")
 }
 
 func TestTimeUnmarshalJSON(t *testing.T) {
@@ -246,10 +248,10 @@ func TestTimeUnmarshalJSON(t *testing.T) {
 		input     string
 		shouldErr bool
 	}{
-		{"Valid time", `"14:30:45"`, false},
-		{"Null value", `null`, false},
-		{"Invalid format", `"invalid"`, true},
-		{"Wrong length", `"14:30"`, true},
+		{"ValidTime", `"14:30:45"`, false},
+		{"NullValue", `null`, false},
+		{"InvalidFormat", `"invalid"`, true},
+		{"WrongLength", `"14:30"`, true},
 	}
 
 	for _, tt := range tests {
@@ -257,10 +259,11 @@ func TestTimeUnmarshalJSON(t *testing.T) {
 			var timeOnly Time
 
 			err := timeOnly.UnmarshalJSON([]byte(tt.input))
+
 			if tt.shouldErr {
-				assertError(t, err, "Expected UnmarshalJSON error")
+				assert.Error(t, err, "Should return error for invalid input")
 			} else {
-				assertNoError(t, err, "Unexpected UnmarshalJSON error")
+				assert.NoError(t, err, "Should unmarshal valid input")
 			}
 		})
 	}
@@ -269,12 +272,12 @@ func TestTimeUnmarshalJSON(t *testing.T) {
 func TestTimeValue(t *testing.T) {
 	timeOnly := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 	value, err := timeOnly.Value()
-	assertNoError(t, err, "Value")
+	assert.NoError(t, err, "Value should succeed")
 
 	expected := "14:30:45"
-	if str, ok := value.(string); !ok || str != expected {
-		t.Errorf("Expected %s, got %v", expected, value)
-	}
+	str, ok := value.(string)
+	assert.True(t, ok, "Value should be string")
+	assert.Equal(t, expected, str, "Value should match expected format")
 }
 
 func TestTimeScan(t *testing.T) {
@@ -284,10 +287,10 @@ func TestTimeScan(t *testing.T) {
 		hasErr bool
 	}{
 		{"String", "14:30:45", false},
-		{"[]byte", []byte("14:30:45"), false},
-		{"time.Time", testTime(2023, 12, 25, 14, 30, 45), false},
-		{"nil *string", (*string)(nil), false},
-		{"invalid string", "invalid", true},
+		{"ByteSlice", []byte("14:30:45"), false},
+		{"TimeTime", testTime(2023, 12, 25, 14, 30, 45), false},
+		{"NilPointer", (*string)(nil), false},
+		{"InvalidString", "invalid", true},
 	}
 
 	for _, tt := range tests {
@@ -295,10 +298,11 @@ func TestTimeScan(t *testing.T) {
 			var timeOnly Time
 
 			err := timeOnly.Scan(tt.src)
+
 			if tt.hasErr {
-				assertError(t, err, "Expected Scan error")
+				assert.Error(t, err, "Should return error for invalid input")
 			} else {
-				assertNoError(t, err, "Unexpected Scan error")
+				assert.NoError(t, err, "Should scan valid input")
 			}
 		})
 	}
@@ -307,16 +311,13 @@ func TestTimeScan(t *testing.T) {
 func TestTimeJSONRoundTrip(t *testing.T) {
 	original := Time(time.Date(1970, 1, 1, 14, 30, 45, 0, time.Local))
 
-	// Marshal
 	data, err := json.Marshal(original)
-	assertNoError(t, err, "Marshal")
+	assert.NoError(t, err, "Marshal should succeed")
 
-	// Unmarshal
 	var result Time
 
 	err = json.Unmarshal(data, &result)
-	assertNoError(t, err, "Unmarshal")
+	assert.NoError(t, err, "Unmarshal should succeed")
 
-	// Compare strings to avoid precision issues
-	assertStringEqual(t, original.String(), result.String(), "Round trip")
+	assert.Equal(t, original.String(), result.String(), "Round trip should preserve value")
 }

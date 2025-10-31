@@ -15,7 +15,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
-// DatabaseTestSuite is the test suite for database package.
+// DatabaseTestSuite tests database connection and configuration for PostgreSQL, MySQL, and SQLite.
 type DatabaseTestSuite struct {
 	suite.Suite
 
@@ -24,18 +24,13 @@ type DatabaseTestSuite struct {
 	mysqlContainer    *testhelpers.MySQLContainer
 }
 
-// SetupSuite runs before all tests in the suite.
 func (suite *DatabaseTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 
-	// Start PostgreSQL container using testhelpers
 	suite.postgresContainer = testhelpers.NewPostgresContainer(suite.ctx, &suite.Suite)
-
-	// Start MySQL container using testhelpers
 	suite.mysqlContainer = testhelpers.NewMySQLContainer(suite.ctx, &suite.Suite)
 }
 
-// TearDownSuite runs after all tests in the suite.
 func (suite *DatabaseTestSuite) TearDownSuite() {
 	if suite.postgresContainer != nil {
 		suite.postgresContainer.Terminate(suite.ctx, &suite.Suite)
@@ -46,79 +41,64 @@ func (suite *DatabaseTestSuite) TearDownSuite() {
 	}
 }
 
-// TestSQLiteConnection tests SQLite database connection.
+// TestSQLiteConnection tests SQLite in-memory database connection and basic operations.
 func (suite *DatabaseTestSuite) TestSQLiteConnection() {
-	// Use in-memory SQLite (no path specified)
 	config := &config.DatasourceConfig{
 		Type: constants.DbSQLite,
 	}
 
-	// Test basic connection
 	db, err := New(config)
-	suite.Require().NoError(err)
-	suite.Require().NotNil(db)
+	suite.Require().NoError(err, "SQLite connection should succeed")
+	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	// Test database functionality
 	suite.testBasicDbOperations(db, "SQLite")
 
-	// Clean up
-	suite.Require().NoError(db.Close())
+	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-// TestSQLiteWithOptions tests SQLite with custom options.
+// TestSQLiteWithOptions tests SQLite with custom configuration options.
 func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
-	// Use in-memory SQLite with custom options
 	config := &config.DatasourceConfig{
 		Type: constants.DbSQLite,
 	}
 
-	// Test with custom options
-	db, err := New(config,
-		DisableQueryHook(),
-	)
-	suite.Require().NoError(err)
-	suite.Require().NotNil(db)
+	db, err := New(config, DisableQueryHook())
+	suite.Require().NoError(err, "SQLite with custom options should succeed")
+	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	// Test database functionality
 	suite.testBasicDbOperations(db, "SQLite")
 
-	suite.Require().NoError(db.Close())
+	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-// TestPostgreSQLConnection tests PostgreSQL database connection.
+// TestPostgreSQLConnection tests PostgreSQL database connection via Testcontainers.
 func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
-	// Use the pre-configured PostgreSQL container
 	config := suite.postgresContainer.DsConfig
 
-	suite.T().Logf("PostgreSQL connection config: %+v", config)
+	suite.T().Logf("Testing PostgreSQL connection with config: %+v", config)
 
-	// Test basic connection
 	db, err := New(config)
-	suite.Require().NoError(err)
-	suite.Require().NotNil(db)
+	suite.Require().NoError(err, "PostgreSQL connection should succeed")
+	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	// Test database functionality
 	suite.testBasicDbOperations(db, "PostgreSQL")
 
-	suite.Require().NoError(db.Close())
+	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-// TestMySQLConnection tests MySQL database connection.
+// TestMySQLConnection tests MySQL database connection via Testcontainers.
 func (suite *DatabaseTestSuite) TestMySQLConnection() {
-	// Use the pre-configured MySQL container
 	config := suite.mysqlContainer.DsConfig
 
-	suite.T().Logf("MySQL connection config: %+v", config)
+	suite.T().Logf("Testing MySQL connection with config: %+v", config)
 
-	// Test basic connection
 	db, err := New(config)
-	suite.Require().NoError(err)
-	suite.Require().NotNil(db)
+	suite.Require().NoError(err, "MySQL connection should succeed")
+	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	// Test database functionality
 	suite.testBasicDbOperations(db, "MySQL")
 
-	suite.Require().NoError(db.Close())
+	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
 // TestUnsupportedDatabaseType tests error handling for unsupported database types.
@@ -128,33 +108,30 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 	}
 
 	db, err := New(config)
-	suite.Error(err)
-	suite.Nil(db)
-	suite.Contains(err.Error(), "unsupported database type")
+	suite.Error(err, "Should return error for unsupported database type")
+	suite.Nil(db, "Database instance should be nil on error")
+	suite.Contains(err.Error(), "unsupported database type", "Error message should mention unsupported type")
 }
 
-// TestSQLiteInMemoryMode tests SQLite in-memory mode.
+// TestSQLiteInMemoryMode tests SQLite in-memory mode explicitly.
 func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 	config := &config.DatasourceConfig{
 		Type: constants.DbSQLite,
-		// No Path specified - should use in-memory mode
 	}
 
 	db, err := New(config)
-	suite.Require().NoError(err)
-	suite.Require().NotNil(db)
+	suite.Require().NoError(err, "In-memory SQLite connection should succeed")
+	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	// Test that in-memory mode works
 	suite.testBasicDbOperations(db, "SQLite In-Memory")
 
-	suite.Require().NoError(db.Close())
+	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-// TestSQLiteFileMode tests SQLite file mode.
+// TestSQLiteFileMode tests SQLite file-based database mode.
 func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
-	// Create a temporary SQLite database file
 	tempFile, err := os.CreateTemp("", "test_file_*.db")
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Temporary file creation should succeed")
 
 	defer func() {
 		if err := os.Remove(tempFile.Name()); err != nil {
@@ -162,9 +139,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 		}
 	}()
 
-	if err := tempFile.Close(); err != nil {
-		suite.T().Logf("Failed to close temp file: %v", err)
-	}
+	suite.Require().NoError(tempFile.Close(), "Temporary file should close successfully")
 
 	config := &config.DatasourceConfig{
 		Type: constants.DbSQLite,
@@ -172,37 +147,33 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 	}
 
 	db, err := New(config)
-	suite.Require().NoError(err)
-	suite.Require().NotNil(db)
+	suite.Require().NoError(err, "File-based SQLite connection should succeed")
+	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	// Test that file mode works
 	suite.testBasicDbOperations(db, "SQLite File")
 
-	suite.Require().NoError(db.Close())
+	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-// TestMySQLValidation tests MySQL configuration validation.
+// TestMySQLValidation tests MySQL configuration validation for missing required fields.
 func (suite *DatabaseTestSuite) TestMySQLValidation() {
 	config := &config.DatasourceConfig{
 		Type: constants.DbMySQL,
 		Host: "localhost",
 		Port: 3306,
 		User: "root",
-		// Missing Database
 	}
 
 	db, err := New(config)
-	suite.Error(err)
-	suite.Nil(db)
-	suite.Contains(err.Error(), "database name is required")
+	suite.Error(err, "Should return error when database name is missing")
+	suite.Nil(db, "Database instance should be nil on validation error")
+	suite.Contains(err.Error(), "database name is required", "Error message should mention missing database name")
 }
 
-// TestConnectionPoolConfiguration tests connection pool settings.
+// TestConnectionPoolConfiguration tests custom connection pool configuration.
 func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
-	// Use in-memory SQLite for connection pool testing
 	config := &config.DatasourceConfig{
 		Type: constants.DbSQLite,
-		// Path is empty, so it will use in-memory mode
 	}
 
 	customPoolConfig := &ConnectionPoolConfig{
@@ -213,40 +184,31 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	}
 
 	db, err := New(config, WithConnectionPool(customPoolConfig))
-	suite.Require().NoError(err)
-	suite.Require().NotNil(db)
+	suite.Require().NoError(err, "Connection with custom pool config should succeed")
+	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	// Verify connection pool settings
 	sqlDb := db.DB
+	suite.NotNil(sqlDb, "Underlying SQL DB should not be nil")
 
-	// Note: MaxIdleClosed is cumulative, so we check if max idle connections are configured
-	// by checking that the DB can accept connections properly
-	suite.NotNil(sqlDb)
-
-	// Test that we can use the connection pool
 	var result int
 
 	err = db.NewSelect().ColumnExpr("1").Scan(suite.ctx, &result)
-	suite.Require().NoError(err)
-	suite.Equal(1, result)
+	suite.Require().NoError(err, "Query should succeed with connection pool")
+	suite.Equal(1, result, "Query result should be 1")
 
-	suite.Require().NoError(db.Close())
+	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-// testBasicDbOperations performs basic database operations to verify functionality.
 func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string) {
 	suite.T().Logf("Testing basic operations for %s", dbType)
 
-	// Test simple query
 	var result int
 
 	err := db.NewSelect().ColumnExpr("1 as test").Scan(suite.ctx, &result)
-	suite.Require().NoError(err)
-	suite.Equal(1, result)
+	suite.Require().NoError(err, "Simple query should succeed")
+	suite.Equal(1, result, "Query result should be 1")
 
-	// Test version query (this tests our version query implementation)
 	var version string
-
 	switch dbType {
 	case "SQLite", "SQLite In-Memory", "SQLite File":
 		err = db.NewSelect().ColumnExpr("sqlite_version()").Scan(suite.ctx, &version)
@@ -256,18 +218,16 @@ func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string)
 		err = db.NewSelect().ColumnExpr("version()").Scan(suite.ctx, &version)
 	}
 
-	suite.Require().NoError(err)
-	suite.NotEmpty(version)
+	suite.Require().NoError(err, "Version query should succeed")
+	suite.NotEmpty(version, "Version should not be empty")
 	suite.T().Logf("%s version: %s", dbType, version)
 
-	// Test table creation and basic CRUD
 	_, err = db.NewCreateTable().
 		Model((*TestTable)(nil)).
 		IfNotExists().
 		Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Table creation should succeed")
 
-	// Insert test data
 	testData := &TestTable{
 		Name:  fmt.Sprintf("test_%s", dbType),
 		Value: 42,
@@ -276,35 +236,31 @@ func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string)
 	_, err = db.NewInsert().
 		Model(testData).
 		Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Insert should succeed")
 
-	// Read test data
 	var retrieved TestTable
 
 	err = db.NewSelect().
 		Model(&retrieved).
 		Where("name = ?", testData.Name).
 		Scan(suite.ctx)
-	suite.Require().NoError(err)
-	suite.Equal(testData.Name, retrieved.Name)
-	suite.Equal(testData.Value, retrieved.Value)
+	suite.Require().NoError(err, "Select should succeed")
+	suite.Equal(testData.Name, retrieved.Name, "Retrieved name should match")
+	suite.Equal(testData.Value, retrieved.Value, "Retrieved value should match")
 
-	// Clean up test table
 	_, err = db.NewDropTable().
 		Model((*TestTable)(nil)).
 		IfExists().
 		Exec(suite.ctx)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, "Table cleanup should succeed")
 }
 
-// TestTable is a simple table for testing database operations.
 type TestTable struct {
 	ID    int64  `bun:"id,pk,autoincrement"`
 	Name  string `bun:"name,notnull"`
 	Value int    `bun:"value"`
 }
 
-// TestDatabaseSuite runs the test suite.
 func TestDatabaseSuite(t *testing.T) {
 	suite.Run(t, new(DatabaseTestSuite))
 }

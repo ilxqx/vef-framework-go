@@ -38,7 +38,6 @@ func NewJwtClaimsBuilder() *JwtClaimsBuilder {
 	}
 }
 
-// WithId sets the Jwt ID claim.
 func (b *JwtClaimsBuilder) WithId(id string) *JwtClaimsBuilder {
 	b.claims[claimJwtId] = id
 
@@ -52,7 +51,6 @@ func (b *JwtClaimsBuilder) Id() (string, bool) {
 	return cast.ToString(id), ok
 }
 
-// WithSubject sets the subject claim.
 func (b *JwtClaimsBuilder) WithSubject(subject string) *JwtClaimsBuilder {
 	b.claims[claimSubject] = subject
 
@@ -66,7 +64,6 @@ func (b *JwtClaimsBuilder) Subject() (string, bool) {
 	return cast.ToString(subject), ok
 }
 
-// WithRoles sets the roles claim.
 func (b *JwtClaimsBuilder) WithRoles(roles []string) *JwtClaimsBuilder {
 	b.claims[claimRoles] = roles
 
@@ -80,7 +77,6 @@ func (b *JwtClaimsBuilder) Roles() ([]string, bool) {
 	return cast.ToStringSlice(roles), ok
 }
 
-// WithDetails sets the details claim.
 func (b *JwtClaimsBuilder) WithDetails(details any) *JwtClaimsBuilder {
 	b.claims[claimDetails] = details
 
@@ -94,7 +90,6 @@ func (b *JwtClaimsBuilder) Details() (any, bool) {
 	return details, ok
 }
 
-// WithType sets the token type claim.
 func (b *JwtClaimsBuilder) WithType(typ string) *JwtClaimsBuilder {
 	b.claims[claimType] = typ
 
@@ -108,7 +103,6 @@ func (b *JwtClaimsBuilder) Type() (string, bool) {
 	return cast.ToString(typ), ok
 }
 
-// WithClaim sets a custom claim.
 func (b *JwtClaimsBuilder) WithClaim(key string, value any) *JwtClaimsBuilder {
 	b.claims[key] = value
 

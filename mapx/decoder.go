@@ -81,7 +81,6 @@ func NewDecoder(result any, options ...decoderOption) (*mapstructure.Decoder, er
 	return mapstructure.NewDecoder(config)
 }
 
-// WithTagName sets the struct tag name used for field mapping.
 // Default is "json". This specifies which struct tag to read for field names.
 // Example: WithTagName("yaml") will use `yaml:"field_name"` tags.
 func WithTagName(tagName string) decoderOption {
@@ -99,7 +98,6 @@ func WithIgnoreUntaggedFields(ignoreUntaggedFields bool) decoderOption {
 	}
 }
 
-// WithDecodeHook sets a custom decode hook function for type conversion.
 // The hook is called before decoding and allows modification of values before setting them.
 // It's called for every map and value in the input. Returning an error will cause the entire decode to fail.
 // This replaces the default DecoderHook which includes time, URL, IP, and basic type conversions.
@@ -109,7 +107,6 @@ func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) decoderOption {
 	}
 }
 
-// WithMatchName sets a custom function to match map keys to struct field names.
 // Default uses CamelCase matching. The function receives the map key and struct field name,
 // and should return true if they match. This allows implementing case-sensitive matching,
 // snake_case conversion, or other custom naming strategies.

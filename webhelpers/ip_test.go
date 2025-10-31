@@ -10,13 +10,13 @@ import (
 )
 
 func TestGetIp(t *testing.T) {
-	t.Run("Uses X-Forwarded-For header when present", func(t *testing.T) {
+	t.Run("xForwardedForHeader", func(t *testing.T) {
 		app := fiber.New()
 		forwardedIP := "192.168.1.100"
 
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIp(c)
-			assert.Equal(t, forwardedIP, ip)
+			assert.Equal(t, forwardedIP, ip, "Should use X-Forwarded-For header")
 
 			return c.SendString(ip)
 		})
@@ -28,13 +28,12 @@ func TestGetIp(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("Falls back to direct IP when X-Forwarded-For is not present", func(t *testing.T) {
+	t.Run("fallbackToDirectIP", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIp(c)
-			// The IP should be the test IP (usually "0.0.0.0")
-			assert.NotEmpty(t, ip)
+			assert.NotEmpty(t, ip, "Should return direct IP when X-Forwarded-For is not present")
 
 			return c.SendString(ip)
 		})
@@ -45,13 +44,13 @@ func TestGetIp(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("Uses X-Forwarded-For over direct IP", func(t *testing.T) {
+	t.Run("xForwardedForOverridesDirectIP", func(t *testing.T) {
 		app := fiber.New()
 		forwardedIP := "10.0.0.1"
 
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIp(c)
-			assert.Equal(t, forwardedIP, ip)
+			assert.Equal(t, forwardedIP, ip, "Should use X-Forwarded-For over direct IP")
 
 			return c.SendString(ip)
 		})
@@ -63,13 +62,12 @@ func TestGetIp(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("Handles empty X-Forwarded-For header", func(t *testing.T) {
+	t.Run("emptyXForwardedForHeader", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIp(c)
-			// Should fall back to direct IP when header is empty
-			assert.NotEmpty(t, ip)
+			assert.NotEmpty(t, ip, "Should fall back to direct IP when header is empty")
 
 			return c.SendString(ip)
 		})
@@ -81,14 +79,13 @@ func TestGetIp(t *testing.T) {
 		require.Equal(t, 200, resp.StatusCode)
 	})
 
-	t.Run("Handles multiple IPs in X-Forwarded-For", func(t *testing.T) {
+	t.Run("multipleIPsInXForwardedFor", func(t *testing.T) {
 		app := fiber.New()
-		// X-Forwarded-For can contain multiple IPs, typically the first one is the original client
 		forwardedIPs := "203.0.113.195, 70.41.3.18, 150.172.238.178"
 
 		app.Get("/test", func(c fiber.Ctx) error {
 			ip := GetIp(c)
-			assert.Equal(t, forwardedIPs, ip)
+			assert.Equal(t, forwardedIPs, ip, "Should return the full X-Forwarded-For value")
 
 			return c.SendString(ip)
 		})

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
@@ -40,13 +39,13 @@ func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
 			}
 		},
 		fiber.Config{
-			AppName:         lo.CoalesceOrEmpty(cfg.Name, constants.VEFName+"-app"),
-			BodyLimit:       int(bodyLimit),
-			CaseSensitive:   true,
-			IdleTimeout:     30 * time.Second,
-			ErrorHandler:    handleError,
-			JSONEncoder:     json.Marshal,
-			JSONDecoder:     json.Unmarshal,
+			AppName:       lo.CoalesceOrEmpty(cfg.Name, constants.VEFName+"-app"),
+			BodyLimit:     int(bodyLimit),
+			CaseSensitive: true,
+			IdleTimeout:   30 * time.Second,
+			ErrorHandler:  handleError,
+			// JSONEncoder:     json.Marshal,
+			// JSONDecoder:     json.Unmarshal,
 			StrictRouting:   false,
 			StructValidator: newStructValidator(),
 			ServerHeader:    constants.VEFName,

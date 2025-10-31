@@ -47,7 +47,6 @@ func (e BaseEvent) Meta() map[string]string {
 // baseEventOption defines an option for configuring BaseEvent creation.
 type baseEventOption func(*BaseEvent)
 
-// WithSource sets the event source.
 func WithSource(source string) baseEventOption {
 	return func(e *BaseEvent) {
 		e.source = source

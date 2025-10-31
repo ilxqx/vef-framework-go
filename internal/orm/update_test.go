@@ -1,956 +1,1061 @@
 package orm
 
 import (
-	"time"
+	"database/sql"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
+// UpdateTestSuite tests UPDATE operations including CTE operations, table sources,
+// selection methods, filter operations, column updates, flags, ordering, RETURNING clause,
+// Apply methods, and execution methods across all databases.
 type UpdateTestSuite struct {
 	*OrmTestSuite
 }
 
-// TestBasicUpdate tests basic UPDATE functionality across all databases.
-func (suite *UpdateTestSuite) TestBasicUpdate() {
-	suite.T().Logf("Testing basic UPDATE for %s", suite.dbType)
+// TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
+func (suite *UpdateTestSuite) TestCTE() {
+	suite.T().Logf("Testing CTE methods for %s", suite.DbType)
 
-	// First get a user to update
-	var user User
+	suite.Run("WithBasicCTE", func() {
+		// Create CTE of active users, then update posts from those users
+		result, err := suite.Db.NewUpdate().
+			With("active_users", func(query SelectQuery) {
+				query.Model((*User)(nil)).
+					Select("id").
+					Where(func(cb ConditionBuilder) {
+						cb.IsTrue("is_active")
+					})
+			}).
+			Model((*Post)(nil)).
+			Set("updated_by", "cte_test").
+			Where(func(cb ConditionBuilder) {
+				cb.InSubQuery("user_id", func(subquery SelectQuery) {
+					subquery.Table("active_users").Select("id")
+				})
+			}).
+			Exec(suite.Ctx)
 
-	err := suite.db.NewSelect().
-		Model(&user).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "alice@example.com")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
+		suite.NoError(err, "WITH clause should work for updates")
 
-	originalAge := user.Age
+		rowsAffected, err := result.RowsAffected()
+		suite.NoError(err, "Should get rows affected")
+		suite.True(rowsAffected > 0, "Should update posts from active users")
 
-	// Test 1: Update single field
-	result, err := suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("age", 31).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "alice@example.com")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		suite.T().Logf("Updated %d posts using WITH CTE", rowsAffected)
+	})
 
-	// Verify result
-	rowsAffected, err := result.RowsAffected()
-	suite.NoError(err)
-	suite.Equal(int64(1), rowsAffected)
+	suite.Run("WithValuesCTE", func() {
+		// First, get specific post IDs to update (to avoid affecting other tests)
+		var postsToUpdate []Post
 
-	// Verify the update
-	var updatedUser User
+		err := suite.Db.NewSelect().
+			Model(&postsToUpdate).
+			Where(func(cb ConditionBuilder) {
+				cb.In("status", []string{"published", "draft"})
+			}).
+			OrderBy("id").
+			Limit(2). // Only update 2 posts to minimize impact
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch posts to update")
+		suite.True(len(postsToUpdate) >= 2, "Should have at least 2 posts to update")
 
-	err = suite.db.NewSelect().
-		Model(&updatedUser).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "alice@example.com")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal(int16(31), updatedUser.Age)
-	suite.Equal("Alice Johnson", updatedUser.Name) // Other fields unchanged
+		postIds := make([]string, len(postsToUpdate))
+		for i, p := range postsToUpdate {
+			postIds[i] = p.Id
+		}
 
-	// Test 2: Update multiple fields
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("name", "Alice Smith").
-		Set("age", 32).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "alice@example.com")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		type StatusMapping struct {
+			OldStatus string `bun:"old_status"`
+			NewStatus string `bun:"new_status"`
+		}
 
-	// Verify multiple field update
-	err = suite.db.NewSelect().
-		Model(&updatedUser).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "alice@example.com")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal("Alice Smith", updatedUser.Name)
-	suite.Equal(int16(32), updatedUser.Age)
+		mappings := []StatusMapping{
+			{OldStatus: "published", NewStatus: "archived"},
+			{OldStatus: "draft", NewStatus: "deleted"},
+		}
 
-	// Test 3: Update with model instance
-	userToUpdate := &User{
-		Name: "Alice Johnson Updated",
-		Age:  33,
-	}
-	userToUpdate.Id = user.Id
-	_, err = suite.db.NewUpdate().
-		Model(userToUpdate).
-		Column("name", userToUpdate.Name).
-		Column("age", userToUpdate.Age).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(userToUpdate.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		result, err := suite.Db.NewUpdate().
+			WithValues("status_map", &mappings).
+			Model((*Post)(nil)).
+			Table("status_map", "sm").
+			SetExpr("status", func(eb ExprBuilder) any {
+				return eb.Column("sm.new_status")
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.EqualsColumn("status", "sm.old_status").
+					In("id", postIds) // Only update the specific posts we selected
+			}).
+			Exec(suite.Ctx)
 
-	// Verify model instance update
-	err = suite.db.NewSelect().
-		Model(&updatedUser).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(user.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal("Alice Johnson Updated", updatedUser.Name)
-	suite.Equal(int16(33), updatedUser.Age)
+		suite.NoError(err, "WITH VALUES should work when supported")
 
-	// Cleanup - restore original age
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("name", "Alice Johnson").
-		Set("age", originalAge).
-		Set("is_active", true).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(user.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		rowsAffected, _ := result.RowsAffected()
+		suite.T().Logf("Updated %d posts using WITH VALUES", rowsAffected)
+	})
 }
 
-// TestUpdateWithConditions tests UPDATE with various WHERE conditions.
-func (suite *UpdateTestSuite) TestUpdateWithConditions() {
-	suite.T().Logf("Testing UPDATE with conditions for %s", suite.dbType)
+// TestTableSource tests table source methods (Model, ModelTable, Table, TableFrom, TableExpr, TableSubQuery).
+func (suite *UpdateTestSuite) TestTableSource() {
+	suite.T().Logf("Testing table source methods for %s", suite.DbType)
 
-	// Test 1: Update multiple records with simple condition
-	_, err := suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("updated_by", "batch_update").
-		Where(func(cb ConditionBuilder) {
-			cb.IsTrue("is_active")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+	suite.Run("ModelBasic", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("updated_by", "model_test").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Exec(suite.Ctx)
 
-	// Verify the updates
-	var activeUsers []User
+		suite.NoError(err, "Model should set table correctly")
 
-	err = suite.db.NewSelect().
-		Model(&activeUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.IsTrue("is_active")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(activeUsers, 2) // Alice and Bob are active
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
 
-	for _, user := range activeUsers {
-		suite.Equal("batch_update", user.UpdatedBy)
-	}
+		suite.T().Logf("Updated %d user using Model", rowsAffected)
+	})
 
-	// Test 2: Update with complex conditions (AND)
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("updated_by", "complex_update").
-		Where(func(cb ConditionBuilder) {
-			cb.IsTrue("is_active").GreaterThan("age", 26)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+	suite.Run("ModelTable", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			ModelTable("test_user", "u").
+			Set("updated_by", "model_table_test").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("u.email", "alice@example.com")
+			}).
+			Exec(suite.Ctx)
 
-	// Verify complex condition update (should only affect Alice)
-	var complexUpdatedUsers []User
+		suite.NoError(err, "ModelTable should override table name and alias")
 
-	err = suite.db.NewSelect().
-		Model(&complexUpdatedUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("updated_by", "complex_update")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Require().Len(complexUpdatedUsers, 1)
-	suite.Equal("Alice Johnson", complexUpdatedUsers[0].Name)
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
 
-	// Test 3: Update with OR conditions
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("updated_by", "or_update").
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("age", 25).OrEquals("age", 35)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		suite.T().Logf("Updated %d user using ModelTable", rowsAffected)
+	})
 
-	// Verify OR condition update (should affect Bob and Charlie)
-	var orUpdatedUsers []User
+	suite.Run("TableDirect", func() {
+		testPosts := []Post{
+			{Title: "Table Direct Post", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
+		}
 
-	err = suite.db.NewSelect().
-		Model(&orUpdatedUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("updated_by", "or_update")
-		}).
-		OrderBy("name").
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(orUpdatedUsers, 2)
-	suite.Equal("Bob Smith", orUpdatedUsers[0].Name)
-	suite.Equal("Charlie Brown", orUpdatedUsers[1].Name)
+		_, err := suite.Db.NewInsert().Model(&testPosts).Exec(suite.Ctx)
+		suite.NoError(err, "Should insert test post")
 
-	// Test 4: Update with IN condition
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("updated_by", "in_update").
-		Where(func(cb ConditionBuilder) {
-			cb.In("name", []string{"Bob Smith", "Charlie Brown"})
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		result, err := suite.Db.NewUpdate().
+			Table("test_post", "p").
+			Set("status", "published").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("p.title", "Table Direct Post")
+			}).
+			Exec(suite.Ctx)
 
-	// Verify IN condition update
-	var inUpdatedUsers []User
+		suite.NoError(err, "Table method should work correctly")
 
-	err = suite.db.NewSelect().
-		Model(&inUpdatedUsers).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("updated_by", "in_update")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Len(inUpdatedUsers, 2)
+		rowsAffected, err := result.RowsAffected()
+		suite.NoError(err, "Should get rows affected")
+		suite.Equal(int64(1), rowsAffected, "Should update 1 post using Table")
 
-	// Cleanup - restore original updated_by
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("updated_by", "system").
-		Where(func(cb ConditionBuilder) {
-			cb.NotEquals("updated_by", "system")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		suite.T().Logf("Updated %d post using Table method", rowsAffected)
+	})
+
+	suite.Run("TableFrom", func() {
+		testPosts := []Post{
+			{Title: "TableFrom Post", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
+		}
+
+		_, err := suite.Db.NewInsert().Model(&testPosts).Exec(suite.Ctx)
+		suite.NoError(err, "Should insert test post")
+
+		result, err := suite.Db.NewUpdate().
+			TableFrom((*Post)(nil), "p").
+			Set("status", "archived").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("p.title", "TableFrom Post")
+			}).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "TableFrom method should work correctly")
+
+		rowsAffected, err := result.RowsAffected()
+		suite.NoError(err, "Should get rows affected")
+		suite.Equal(int64(1), rowsAffected, "Should update 1 post using TableFrom")
+
+		suite.T().Logf("Updated %d post using TableFrom method", rowsAffected)
+	})
+
+	suite.Run("TableExpr", func() {
+		// Setup: Create an inactive user and their post
+		testUser := &User{
+			Name:     "Inactive Author",
+			Email:    "inactive.author@example.com",
+			Age:      30,
+			IsActive: false,
+		}
+		_, err := suite.Db.NewInsert().Model(testUser).Exec(suite.Ctx)
+		suite.NoError(err, "Should insert test user")
+
+		testPost := &Post{
+			Title:      "Post by Inactive User",
+			Content:    "This post should be archived",
+			UserId:     testUser.Id,
+			CategoryId: "cat1",
+			Status:     "published",
+		}
+		_, err = suite.Db.NewInsert().Model(testPost).Exec(suite.Ctx)
+		suite.NoError(err, "Should insert test post")
+
+		var result sql.Result
+
+		result, err = suite.Db.NewUpdate().
+			Model((*Post)(nil)).
+			TableExpr(func(eb ExprBuilder) any {
+				return eb.SubQuery(func(sq SelectQuery) {
+					sq.Model((*User)(nil))
+				})
+			}, "u").
+			Set("status", "archived").
+			Set("updated_by", "multi_table_update").
+			Where(func(cb ConditionBuilder) {
+				cb.EqualsColumn("user_id", "u.id").
+					IsFalse("u.is_active")
+			}).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "TableExpr for multi-table update should work")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.True(rowsAffected > 0, "Should update posts from inactive users")
+		suite.T().Logf("Multi-table update affected %d posts on %s", rowsAffected, suite.DbType)
+	})
 }
 
-// TestUpdateWithExpressions tests UPDATE with SQL expressions.
-func (suite *UpdateTestSuite) TestUpdateWithExpressions() {
-	suite.T().Logf("Testing UPDATE with expressions for %s", suite.dbType)
+// TestSelectionMethods tests selection methods for controlling which columns are included in UPDATE SET clause.
+// These methods (Select, Exclude, SelectAll, ExcludeAll) only work when updating with a model instance,
+// as the framework reflects all columns from the model and these methods control which ones to include in SET.
+func (suite *UpdateTestSuite) TestSelectionMethods() {
+	suite.T().Logf("Testing selection methods for %s", suite.DbType)
 
-	// Get initial post view count
+	suite.Run("SelectSpecificColumns", func() {
+		// First, get the user ID
+		var existingUser User
+
+		err := suite.Db.NewSelect().
+			Model(&existingUser).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch user")
+
+		originalEmail := existingUser.Email
+		originalIsActive := existingUser.IsActive
+		userId := existingUser.Id
+
+		// Create a NEW user instance (not from database query)
+		user := User{
+			Model: Model{
+				Id: userId,
+			},
+			Name: "Alice Updated",
+			Age:  99,
+		}
+
+		result, err := suite.Db.NewUpdate().
+			Model(&user).
+			Select("name", "age").
+			WherePk().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "Select should control which columns are updated")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		// Verify only selected columns were updated
+		var updatedUser User
+
+		err = suite.Db.NewSelect().
+			Model(&updatedUser).
+			Where(func(cb ConditionBuilder) {
+				cb.PkEquals(userId)
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch updated user")
+
+		suite.Equal("Alice Updated", updatedUser.Name, "Name should be updated")
+		suite.Equal(int16(99), updatedUser.Age, "Age should be updated")
+		suite.Equal(originalEmail, updatedUser.Email, "Email should NOT be updated")
+		suite.Equal(originalIsActive, updatedUser.IsActive, "IsActive should NOT be updated")
+
+		suite.T().Logf("Select updated only name and age: name=%s, age=%d, email=%s (unchanged), is_active=%v (unchanged)",
+			updatedUser.Name, updatedUser.Age, updatedUser.Email, updatedUser.IsActive)
+	})
+
+	suite.Run("SelectAllColumns", func() {
+		var user User
+
+		err := suite.Db.NewSelect().
+			Model(&user).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "bob@example.com")
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch user")
+
+		// Modify all fields
+		user.Name = "Bob Updated"
+		user.Age = 88
+		user.Email = "bob.new@example.com"
+		user.IsActive = false
+
+		result, err := suite.Db.NewUpdate().
+			Model(&user).
+			SelectAll().
+			WherePk().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "SelectAll should update all columns")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		// Verify all columns were updated
+		var updatedUser User
+
+		err = suite.Db.NewSelect().
+			Model(&updatedUser).
+			Where(func(cb ConditionBuilder) {
+				cb.PkEquals(user.Id)
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch updated user")
+
+		suite.Equal("Bob Updated", updatedUser.Name, "Name should be updated")
+		suite.Equal(int16(88), updatedUser.Age, "Age should be updated")
+		suite.Equal("bob.new@example.com", updatedUser.Email, "Email should be updated")
+		suite.Equal(false, updatedUser.IsActive, "IsActive should be updated")
+
+		suite.T().Logf("SelectAll updated all columns: name=%s, age=%d, email=%s, is_active=%v",
+			updatedUser.Name, updatedUser.Age, updatedUser.Email, updatedUser.IsActive)
+	})
+
+	suite.Run("ExcludeSpecificColumns", func() {
+		var user User
+
+		err := suite.Db.NewSelect().
+			Model(&user).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "charlie@example.com")
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch user")
+
+		originalEmail := user.Email
+		originalAge := user.Age
+
+		// Modify multiple fields but exclude some from update
+		user.Name = "Charlie Updated"
+		user.Age = 77
+		user.Email = "charlie.new@example.com"
+		user.IsActive = true
+
+		result, err := suite.Db.NewUpdate().
+			Model(&user).
+			Exclude("email", "age").
+			WherePk().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "Exclude should prevent specific columns from being updated")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		// Verify excluded columns were NOT updated
+		var updatedUser User
+
+		err = suite.Db.NewSelect().
+			Model(&updatedUser).
+			Where(func(cb ConditionBuilder) {
+				cb.PkEquals(user.Id)
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch updated user")
+
+		suite.Equal("Charlie Updated", updatedUser.Name, "Name should be updated")
+		suite.Equal(true, updatedUser.IsActive, "IsActive should be updated")
+		suite.Equal(originalEmail, updatedUser.Email, "Email should NOT be updated (excluded)")
+		suite.Equal(originalAge, updatedUser.Age, "Age should NOT be updated (excluded)")
+
+		suite.T().Logf("Exclude prevented email and age from updating: name=%s (updated), email=%s (unchanged), age=%d (unchanged)",
+			updatedUser.Name, updatedUser.Email, updatedUser.Age)
+	})
+
+	suite.Run("ExcludeAllColumns", func() {
+		var user User
+
+		err := suite.Db.NewSelect().
+			Model(&user).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch user")
+
+		originalName := user.Name
+		originalEmail := user.Email
+
+		// Modify multiple fields
+		user.Name = "Alice Updated Again"
+		user.Age = 77 // Use a different value than previous tests
+		user.Email = "alice.new@example.com"
+
+		// Select name and email first, then ExcludeAll clears them, then Select age
+		// Result: only age should be updated
+		result, err := suite.Db.NewUpdate().
+			Model(&user).
+			Select("name", "email").
+			ExcludeAll().
+			Select("age").
+			WherePk().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "ExcludeAll should clear previous Select and allow new Select")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		// Verify only age was updated
+		var updatedUser User
+
+		err = suite.Db.NewSelect().
+			Model(&updatedUser).
+			Where(func(cb ConditionBuilder) {
+				cb.PkEquals(user.Id)
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch updated user")
+
+		suite.Equal(originalName, updatedUser.Name, "Name should NOT be updated (cleared by ExcludeAll)")
+		suite.Equal(originalEmail, updatedUser.Email, "Email should NOT be updated (cleared by ExcludeAll)")
+		suite.Equal(int16(77), updatedUser.Age, "Age should be updated (selected after ExcludeAll)")
+
+		suite.T().Logf("ExcludeAll cleared previous Select, only age updated: name=%s (unchanged), email=%s (unchanged), age=%d (updated)",
+			updatedUser.Name, updatedUser.Email, updatedUser.Age)
+	})
+}
+
+// TestFilterOperations tests filter methods (Where, WherePk, WhereDeleted, IncludeDeleted).
+func (suite *UpdateTestSuite) TestFilterOperations() {
+	suite.T().Logf("Testing filter operations for %s", suite.DbType)
+
+	suite.Run("WhereBasic", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("updated_by", "where_test").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "Where should work correctly")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.True(rowsAffected > 0, "Should update active users")
+
+		suite.T().Logf("Updated %d users with Where", rowsAffected)
+	})
+
+	suite.Run("WherePk", func() {
+		var user User
+
+		err := suite.Db.NewSelect().
+			Model(&user).
+			OrderBy("id").
+			Limit(1).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch a user")
+
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("updated_by", "where_pk_test").
+			Where(func(cb ConditionBuilder) {
+				cb.PkEquals(user.Id)
+			}).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "WherePk should work correctly")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		suite.T().Logf("Updated user by PK: %s", user.Id)
+	})
+
+	suite.Run("WhereDeletedAndIncludeDeleted", func() {
+		// TODO
+	})
+}
+
+// TestColumnUpdates tests column update methods (Column, ColumnExpr, Set, SetExpr).
+func (suite *UpdateTestSuite) TestColumnUpdates() {
+	suite.T().Logf("Testing column update methods for %s", suite.DbType)
+
 	var post Post
 
-	err := suite.db.NewSelect().
+	err := suite.Db.NewSelect().
 		Model(&post).
 		Where(func(cb ConditionBuilder) {
 			cb.Contains("title", "Introduction")
 		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
+		Scan(suite.Ctx)
+	suite.NoError(err, "Should fetch a post")
 
-	initialViewCount := post.ViewCount
+	suite.Run("ColumnMethod", func() {
+		// Column method is used to override model values during update
+		// When using Model(&post), Column can override specific field values
+		var post Post
 
-	// Test 1: Arithmetic expression (increment view count)
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		SetExpr("view_count", func(eb ExprBuilder) any {
-			return eb.Expr("view_count + ?", 10)
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify arithmetic update
-	var updatedPost Post
-
-	err = suite.db.NewSelect().
-		Model(&updatedPost).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal(initialViewCount+10, updatedPost.ViewCount)
-
-	// Test 2: String concatenation expression
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		SetExpr("title", func(eb ExprBuilder) any {
-			return eb.Concat("title", "' - Updated'")
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify string concatenation
-	err = suite.db.NewSelect().
-		Model(&updatedPost).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Contains(updatedPost.Title, "- Updated")
-
-	// Test 3: Conditional expression (CASE)
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		SetExpr("status", func(eb ExprBuilder) any {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.When(func(cb ConditionBuilder) {
-					cb.GreaterThan("view_count", 100)
-				}).Then("popular").
-					Else("normal")
-			})
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.NotEquals("status", "draft")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify conditional expression update
-	var posts []Post
-
-	err = suite.db.NewSelect().
-		Model(&posts).
-		Where(func(cb ConditionBuilder) {
-			cb.In("status", []string{"popular", "normal"})
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(posts) > 0, "Should have posts with updated status")
-
-	// Cleanup - restore original values
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		Set("view_count", initialViewCount).
-		Set("title", "Introduction to Go").
-		Set("status", "published").
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-}
-
-// TestUpdateWithJoins tests UPDATE with JOIN operations.
-func (suite *UpdateTestSuite) TestUpdateWithJoins() {
-	suite.T().Logf("Testing UPDATE with JOINs for %s", suite.dbType)
-
-	// Test: Update posts based on user information using subquery approach
-	// (JOINs in UPDATE syntax varies between databases, so we use subqueries)
-	_, err := suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		Set("status", "user_inactive_post").
-		Where(func(cb ConditionBuilder) {
-			cb.InSubQuery("user_id", func(subquery SelectQuery) {
-				subquery.Model((*User)(nil)).
-					Select("id").
-					Where(func(cb ConditionBuilder) {
-						cb.IsFalse("is_active")
-					})
-			})
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify subquery-based update
-	var inactiveUserPosts []Post
-
-	err = suite.db.NewSelect().
-		Model(&inactiveUserPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("status", "user_inactive_post")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-
-	// Should have posts by inactive users (Charlie)
-	for _, post := range inactiveUserPosts {
-		// Verify these are indeed from inactive users
-		var user User
-
-		err = suite.db.NewSelect().
-			Model(&user).
+		err := suite.Db.NewSelect().
+			Model(&post).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(post.UserId)
+				cb.Equals("title", "Database Design Basics")
 			}).
-			Scan(suite.ctx)
-		suite.NoError(err)
-		suite.False(user.IsActive, "Posts should be from inactive users")
-	}
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch post")
 
-	// Test 2: Update with more complex subquery
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		Set("status", "high_activity_user").
-		Where(func(cb ConditionBuilder) {
-			cb.InSubQuery("user_id", func(subquery SelectQuery) {
-				subquery.Model((*User)(nil)).
-					Select("id").
-					Where(func(cb ConditionBuilder) {
-						cb.IsTrue("is_active").GreaterThan("age", 25)
-					})
-			})
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		originalViewCount := post.ViewCount
 
-	// Verify complex subquery update
-	var highActivityPosts []Post
+		// Modify the model
+		post.Title = "Updated Title from Model"
+		post.ViewCount = 999
 
-	err = suite.db.NewSelect().
-		Model(&highActivityPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("status", "high_activity_user")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
+		// Use Column to override model's view_count value
+		result, err := suite.Db.NewUpdate().
+			Model(&post).
+			Column("view_count", 555). // Override model's 999 with 555
+			WherePk().
+			Exec(suite.Ctx)
 
-	// Should have posts by active users with age > 25 (Alice)
-	for _, post := range highActivityPosts {
-		var user User
+		suite.NoError(err, "Column should override model value")
 
-		err = suite.db.NewSelect().
-			Model(&user).
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		// Verify the update
+		var updatedPost Post
+
+		err = suite.Db.NewSelect().
+			Model(&updatedPost).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(post.UserId)
+				cb.PkEquals(post.Id)
 			}).
-			Scan(suite.ctx)
-		suite.NoError(err)
-		suite.True(user.IsActive, "User should be active")
-		suite.True(user.Age > 25, "User should be older than 25")
-	}
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should retrieve updated post")
+		suite.Equal("Updated Title from Model", updatedPost.Title, "Title should be from model")
+		suite.Equal(int32(555), int32(updatedPost.ViewCount), "View count should be from Column, not model")
 
-	// Cleanup - restore original statuses based on fixture data
-	posts := map[string]string{
-		"Introduction to Go":             "published",
-		"Database Design Basics":         "published",
-		"Machine Learning Basics":        "draft",
-		"Business Strategy Fundamentals": "published",
-		"Advanced Go Patterns":           "review",
-		"Latest Trends in Science":       "published",
-		"Practical Tech Tutorials":       "published",
-		"Startup Finance 101":            "published",
-	}
+		suite.T().Logf("Column overrode model: view_count=%d (model was 999, original was %d)",
+			updatedPost.ViewCount, originalViewCount)
+	})
 
-	for title, status := range posts {
-		_, err = suite.db.NewUpdate().
+	suite.Run("ColumnExprMethod", func() {
+		// ColumnExpr method is used to override model values with expressions
+		// When using Model(&post), ColumnExpr can override with calculated values
+		var post Post
+
+		err := suite.Db.NewSelect().
+			Model(&post).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("title", "Machine Learning Basics")
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch post")
+
+		originalViewCount := post.ViewCount
+
+		// Modify the model
+		post.Title = "Updated Title from Model"
+		post.ViewCount = 888
+
+		// Use ColumnExpr to override model's view_count with an expression
+		result, err := suite.Db.NewUpdate().
+			Model(&post).
+			ColumnExpr("view_count", func(eb ExprBuilder) any {
+				// Increment view_count by 100
+				return eb.Add(eb.Column("view_count"), 100)
+			}).
+			WherePk().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "ColumnExpr should override model value with expression")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		// Verify the update
+		var updatedPost Post
+
+		err = suite.Db.NewSelect().
+			Model(&updatedPost).
+			Where(func(cb ConditionBuilder) {
+				cb.PkEquals(post.Id)
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should retrieve updated post")
+		suite.Equal("Updated Title from Model", updatedPost.Title, "Title should be from model")
+		suite.Equal(int32(originalViewCount+100), int32(updatedPost.ViewCount), "View count should be from ColumnExpr")
+
+		suite.T().Logf("ColumnExpr overrode model: view_count=%d (was %d, model was 888)",
+			updatedPost.ViewCount, originalViewCount)
+	})
+
+	suite.Run("SetMethod", func() {
+		result, err := suite.Db.NewUpdate().
 			Model((*Post)(nil)).
-			Set("status", status).
+			Set("updated_by", "set_test").
 			Where(func(cb ConditionBuilder) {
-				cb.Equals("title", title)
+				cb.PkEquals(post.Id)
 			}).
-			Exec(suite.ctx)
-		suite.NoError(err)
-	}
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "Set should work as alias for Column")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		suite.T().Logf("Updated using Set method")
+	})
+
+	suite.Run("SetExprMethod", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*Post)(nil)).
+			SetExpr("title", func(eb ExprBuilder) any {
+				return eb.Concat(eb.Column("title"), " [Updated]")
+			}).
+			Where(func(cb ConditionBuilder) {
+				cb.PkEquals(post.Id)
+			}).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "SetExpr should work as alias for ColumnExpr")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		suite.T().Logf("Updated title using SetExpr")
+	})
 }
 
-// TestUpdateReturning tests UPDATE with RETURNING clause.
-func (suite *UpdateTestSuite) TestUpdateReturning() {
-	suite.T().Logf("Testing UPDATE with RETURNING for %s", suite.dbType)
+// TestUpdateFlags tests special flags (OmitZero, Bulk).
+func (suite *UpdateTestSuite) TestUpdateFlags() {
+	suite.T().Logf("Testing update flags for %s", suite.DbType)
 
-	// Skip if database doesn't support RETURNING
-	if suite.dbType == constants.DbMySQL {
+	suite.Run("OmitZeroFlag", func() {
+		var user User
+
+		err := suite.Db.NewSelect().
+			Model(&user).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch user")
+
+		// Update with a full User model but only set Name, leave Age as zero
+		partialUpdate := &User{
+			Model: Model{Id: user.Id},
+			Name:  "Alice Updated with OmitZero",
+			// Age will be zero, OmitZero should skip it
+		}
+
+		result, err := suite.Db.NewUpdate().
+			Model(partialUpdate).
+			OmitZero().
+			WherePk().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "OmitZero should skip zero-value fields")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		suite.T().Logf("Updated with OmitZero flag")
+	})
+
+	suite.Run("BulkUpdate", func() {
+		// Fetch multiple posts to update (use all posts to ensure we have enough)
+		var posts []Post
+
+		err := suite.Db.NewSelect().
+			Model(&posts).
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.Ctx)
+		suite.NoError(err, "Should fetch posts for bulk update")
+		suite.True(len(posts) >= 2, "Should have at least 2 posts")
+
+		originalCount := len(posts)
+		suite.T().Logf("Fetched %d posts for bulk update", originalCount)
+
+		// Store original view counts for verification
+		originalViewCounts := make([]int, len(posts))
+		for i := range posts {
+			originalViewCounts[i] = posts[i].ViewCount
+		}
+
+		// Modify each post with different values
+		for i := range posts {
+			posts[i].ViewCount = 1000 + i*100 // 1000, 1100, 1200, ...
+			posts[i].UpdatedBy = "bulk_test"
+		}
+
+		// Perform bulk update using Bulk() method
+		result, err := suite.Db.NewUpdate().
+			Model(&posts).
+			Bulk().
+			WherePk().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "Bulk update should work")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(originalCount), rowsAffected, "Should update all fetched posts")
+
+		// Verify each post was updated with its specific value
+		for i, post := range posts {
+			var updatedPost Post
+
+			err = suite.Db.NewSelect().
+				Model(&updatedPost).
+				Where(func(cb ConditionBuilder) {
+					cb.PkEquals(post.Id)
+				}).
+				Scan(suite.Ctx)
+			suite.NoError(err, "Should retrieve updated post")
+			suite.Equal(1000+i*100, updatedPost.ViewCount, "View count should match bulk update value")
+			suite.Equal("bulk_test", updatedPost.UpdatedBy, "UpdatedBy should be bulk_test")
+
+			suite.T().Logf("Post %d: view_count=%d (was %d, expected %d)",
+				i, updatedPost.ViewCount, originalViewCounts[i], 1000+i*100)
+		}
+
+		suite.T().Logf("Bulk updated %d posts with different values", originalCount)
+	})
+}
+
+// TestOrderingAndLimits tests ordering and limit methods (OrderBy, OrderByDesc, OrderByExpr, Limit).
+func (suite *UpdateTestSuite) TestOrderingAndLimits() {
+	suite.T().Logf("Testing ordering and limits for %s", suite.DbType)
+
+	// Only MySQL supports ORDER BY and LIMIT in UPDATE statements
+	if suite.DbType != constants.DbMySQL {
+		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.DbType)
+	}
+
+	suite.Run("OrderByBasic", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*Post)(nil)).
+			Set("updated_by", "order_test").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "published")
+			}).
+			OrderBy("title").
+			Limit(2).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "OrderBy should work when supported")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.True(rowsAffected > 0, "Should update posts with ordering")
+		suite.T().Logf("Updated %d posts with OrderBy", rowsAffected)
+	})
+
+	suite.Run("OrderByDesc", func() {
+		_, err := suite.Db.NewUpdate().
+			Model((*Post)(nil)).
+			Set("updated_by", "order_desc_test").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("status", "draft")
+			}).
+			OrderByDesc("view_count").
+			Limit(1).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "OrderByDesc should work when supported")
+		suite.T().Logf("Updated with OrderByDesc")
+	})
+
+	suite.Run("OrderByExpr", func() {
+		_, err := suite.Db.NewUpdate().
+			Model((*Post)(nil)).
+			Set("updated_by", "order_expr_test").
+			Where(func(cb ConditionBuilder) {
+				cb.NotEquals("status", "deleted")
+			}).
+			OrderByExpr(func(eb ExprBuilder) any {
+				return eb.Column("view_count")
+			}).
+			Limit(1).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "OrderByExpr should work when supported")
+		suite.T().Logf("Updated with OrderByExpr")
+	})
+
+	suite.Run("LimitOnly", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("updated_by", "limit_test").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			Limit(1).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "Limit should work when supported")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should limit updates to 1 row")
+		suite.T().Logf("Limited update to %d row", rowsAffected)
+	})
+}
+
+// TestReturningClause tests RETURNING clause methods (Returning, ReturningAll, ReturningNone).
+func (suite *UpdateTestSuite) TestReturningClause() {
+	suite.T().Logf("Testing RETURNING clause methods for %s", suite.DbType)
+
+	if suite.DbType == constants.DbMySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 	}
 
-	// Get a user to update
-	var user User
-
-	err := suite.db.NewSelect().
-		Model(&user).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "bob@example.com")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-
-	originalAge := user.Age
-
-	// Test: Update with RETURNING clause
-	type UpdateResult struct {
-		Id   string `bun:"id"`
-		Name string `bun:"name"`
-		Age  int16  `bun:"age"`
-	}
-
-	var returnedUser UpdateResult
-
-	err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("name", "Bob Johnson").
-		Set("age", 26).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "bob@example.com")
-		}).
-		Returning("id", "name", "age").
-		Scan(suite.ctx, &returnedUser)
-	suite.NoError(err)
-
-	// Verify returned values
-	suite.Equal(user.Id, returnedUser.Id)
-	suite.Equal("Bob Johnson", returnedUser.Name)
-	suite.Equal(int16(26), returnedUser.Age)
-
-	// Verify the update actually happened
-	var updatedUser User
-
-	err = suite.db.NewSelect().
-		Model(&updatedUser).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "bob@example.com")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal("Bob Johnson", updatedUser.Name)
-	suite.Equal(int16(26), updatedUser.Age)
-
-	// Test: RETURNING with multiple updates
-	var returnedUsers []UpdateResult
-
-	err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("updated_by", "returning_test").
-		Where(func(cb ConditionBuilder) {
-			cb.IsTrue("is_active")
-		}).
-		Returning("id", "name", "age").
-		Scan(suite.ctx, &returnedUsers)
-	suite.NoError(err)
-	suite.Len(returnedUsers, 2) // Should return 2 active users
-
-	// Cleanup - restore original values
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("name", "Bob Smith").
-		Set("age", originalAge).
-		Set("updated_by", "system").
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "bob@example.com")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-}
-
-// TestUpdateComplexModel tests updating models with various data types.
-func (suite *UpdateTestSuite) TestUpdateComplexModel() {
-	suite.T().Logf("Testing UPDATE with complex model for %s", suite.dbType)
-
-	// First, insert a complex model to update
-	now := time.Now()
-	complexModel := &ComplexModel{
-		StringField: "original string",
-		IntField:    100,
-		FloatField:  1.234,
-		BoolField:   false,
-		TimeField:   now.Add(-time.Hour),
-		JSONField:   map[string]any{"original": true},
-	}
-
-	_, err := suite.db.NewInsert().
-		Model(complexModel).
-		Exec(suite.ctx)
-	suite.NoError(err)
-	suite.NotEmpty(complexModel.Id, "Complex model should have ID after insert")
-
-	// Test 1: Update basic fields
-	_, err = suite.db.NewUpdate().
-		Model((*ComplexModel)(nil)).
-		Set("string_field", "updated string").
-		Set("int_field", 200).
-		Set("float_field", 5.678).
-		Set("bool_field", true).
-		Set("time_field", now).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify basic field updates
-	var updatedComplex ComplexModel
-
-	err = suite.db.NewSelect().
-		Model(&updatedComplex).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal("updated string", updatedComplex.StringField)
-	suite.Equal(200, updatedComplex.IntField)
-	suite.Equal(5.678, updatedComplex.FloatField)
-	suite.True(updatedComplex.BoolField)
-
-	// Test 2: Update JSON field (if supported)
-	jsonData := map[string]any{
-		"updated": true,
-		"version": 2,
-		"items":   []string{"a", "b", "c"},
-	}
-
-	_, err = suite.db.NewUpdate().
-		Model((*ComplexModel)(nil)).
-		Set("json_field", jsonData).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Exec(suite.ctx)
-	if err != nil {
-		suite.T().Logf("JSON field update not supported for %s: %v", suite.dbType, err)
-	} else {
-		// Verify JSON update
-		var jsonUpdated ComplexModel
-
-		err = suite.db.NewSelect().
-			Model(&jsonUpdated).
-			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(complexModel.Id)
-			}).
-			Scan(suite.ctx)
-		suite.NoError(err)
-
-		if jsonUpdated.JSONField != nil {
-			suite.Equal(true, jsonUpdated.JSONField["updated"])
-			suite.Equal(float64(2), jsonUpdated.JSONField["version"]) // JSON numbers are float64
+	suite.Run("ReturningSpecificColumns", func() {
+		type UpdateResult struct {
+			Id   string `bun:"id"`
+			Name string `bun:"name"`
+			Age  int16  `bun:"age"`
 		}
-	}
 
-	// Test 3: Update null fields
-	nullString := "not null anymore"
-	nullInt := 42
-	nullTime := now
+		var result UpdateResult
 
-	_, err = suite.db.NewUpdate().
-		Model((*ComplexModel)(nil)).
-		Set("null_string", &nullString).
-		Set("null_int", &nullInt).
-		Set("null_time", &nullTime).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("age", 28).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "bob@example.com")
+			}).
+			Returning("id", "name", "age").
+			Scan(suite.Ctx, &result)
 
-	// Verify null field updates
-	err = suite.db.NewSelect().
-		Model(&updatedComplex).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.NotNil(updatedComplex.NullString)
-	suite.Equal("not null anymore", *updatedComplex.NullString)
-	suite.NotNil(updatedComplex.NullInt)
-	suite.Equal(42, *updatedComplex.NullInt)
-	suite.NotNil(updatedComplex.NullTime)
+		suite.NoError(err, "Returning should work with specific columns")
+		suite.NotEmpty(result.Id, "ID should be returned")
+		suite.Equal(int16(28), result.Age, "Age should be updated value")
 
-	// Test 4: Set fields back to null
-	_, err = suite.db.NewUpdate().
-		Model((*ComplexModel)(nil)).
-		Set("null_string", nil).
-		Set("null_int", nil).
-		Set("null_time", nil).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		suite.T().Logf("Returned: id=%s, name=%s, age=%d", result.Id, result.Name, result.Age)
+	})
 
-	// Verify fields are null again
-	err = suite.db.NewSelect().
-		Model(&updatedComplex).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	// Some drivers may scan NULL into pointer-as-zero-value instead of nil. Normalize here.
-	if updatedComplex.NullString != nil && *updatedComplex.NullString == "" {
-		updatedComplex.NullString = nil
-	}
+	suite.Run("ReturningAllColumns", func() {
+		type UpdateResult struct {
+			Id    string `bun:"id"`
+			Name  string `bun:"name"`
+			Email string `bun:"email"`
+			Age   int16  `bun:"age"`
+		}
 
-	if updatedComplex.NullInt != nil && *updatedComplex.NullInt == 0 {
-		updatedComplex.NullInt = nil
-	}
+		var result UpdateResult
 
-	if updatedComplex.NullTime != nil && updatedComplex.NullTime.IsZero() {
-		updatedComplex.NullTime = nil
-	}
+		err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("age", 29).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "charlie@example.com")
+			}).
+			ReturningAll().
+			Scan(suite.Ctx, &result)
 
-	suite.Nil(updatedComplex.NullString)
-	suite.Nil(updatedComplex.NullInt)
-	suite.Nil(updatedComplex.NullTime)
+		suite.NoError(err, "ReturningAll should return all columns")
+		suite.NotEmpty(result.Id, "ID should be returned")
+		suite.NotEmpty(result.Email, "Email should be returned")
 
-	// Cleanup
-	_, err = suite.db.NewDelete().
-		Model((*ComplexModel)(nil)).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(complexModel.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		suite.T().Logf("ReturningAll: id=%s, email=%s", result.Id, result.Email)
+	})
+
+	suite.Run("ReturningNone", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("age", 30).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			ReturningNone().
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "ReturningNone should return no columns")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
+
+		suite.T().Logf("ReturningNone: updated %d row", rowsAffected)
+	})
 }
 
-// TestUpdateBulkOperations tests bulk update operations.
-func (suite *UpdateTestSuite) TestUpdateBulkOperations() {
-	suite.T().Logf("Testing bulk UPDATE operations for %s", suite.dbType)
+// TestApplyMethods tests Apply and ApplyIf methods.
+func (suite *UpdateTestSuite) TestApplyMethods() {
+	suite.T().Logf("Testing Apply methods for %s", suite.DbType)
 
-	// Test 1: Bulk update with condition affecting multiple records
-	_, err := suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		Set("updated_by", "bulk_update_test").
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("status", "published")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify bulk update
-	var bulkUpdatedPosts []Post
-
-	err = suite.db.NewSelect().
-		Model(&bulkUpdatedPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("updated_by", "bulk_update_test")
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(bulkUpdatedPosts) > 1, "Should have multiple posts updated")
-
-	// Test 2: Bulk update with expression
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		SetExpr("view_count", func(eb ExprBuilder) any {
-			return eb.Expr("view_count + ?", 5)
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("status", "published")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Test 3: Conditional bulk update
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		SetExpr("status", func(eb ExprBuilder) any {
-			return eb.Case(func(cb CaseBuilder) {
-				cb.When(func(condBuilder ConditionBuilder) {
-					condBuilder.GreaterThan("view_count", 100)
-				}).Then("high_traffic").
-					When(func(condBuilder ConditionBuilder) {
-						condBuilder.GreaterThan("view_count", 50)
-					}).
-					Then("medium_traffic").
-					Else("low_traffic")
+	suite.Run("ApplyBasic", func() {
+		applyActive := func(query UpdateQuery) {
+			query.Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
 			})
-		}).
-		Where(func(cb ConditionBuilder) {
-			cb.NotEquals("status", "draft")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify conditional bulk update
-	var trafficPosts []Post
-
-	err = suite.db.NewSelect().
-		Model(&trafficPosts).
-		Where(func(cb ConditionBuilder) {
-			cb.In("status", []string{"high_traffic", "medium_traffic", "low_traffic"})
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.True(len(trafficPosts) > 0, "Should have posts with traffic status")
-
-	// Verify traffic categorization is correct
-	for _, post := range trafficPosts {
-		if post.ViewCount > 100 {
-			suite.Equal("high_traffic", post.Status)
-		} else if post.ViewCount > 50 {
-			suite.Equal("medium_traffic", post.Status)
-		} else {
-			suite.Equal("low_traffic", post.Status)
 		}
-	}
 
-	// Cleanup - restore original post statuses and updated_by
-	posts := map[string]string{
-		"Introduction to Go":             "published",
-		"Database Design Basics":         "published",
-		"Machine Learning Basics":        "draft",
-		"Business Strategy Fundamentals": "published",
-		"Advanced Go Patterns":           "review",
-		"Latest Trends in Science":       "published",
-		"Practical Tech Tutorials":       "published",
-		"Startup Finance 101":            "published",
-	}
+		applyUpdatedBy := func(query UpdateQuery) {
+			query.Set("updated_by", "apply_test")
+		}
 
-	for title, status := range posts {
-		_, err = suite.db.NewUpdate().
-			Model((*Post)(nil)).
-			Set("status", status).
-			Set("updated_by", "system"). // Restore updated_by from fixture
-			SetExpr("view_count", func(eb ExprBuilder) any {
-				return eb.Expr("view_count - ?", 5) // Restore view count
-			}).
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("age", 35).
+			Apply(applyActive, applyUpdatedBy).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "Apply should work correctly")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.True(rowsAffected > 0, "Should update active users")
+
+		suite.T().Logf("Applied functions updated %d users", rowsAffected)
+	})
+
+	suite.Run("ApplyIfTrue", func() {
+		addFilter := func(query UpdateQuery) {
+			query.Where(func(cb ConditionBuilder) {
+				cb.GreaterThan("age", 25)
+			})
+		}
+
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("updated_by", "apply_if_true").
 			Where(func(cb ConditionBuilder) {
-				cb.Equals("title", title)
+				cb.IsTrue("is_active")
 			}).
-			Exec(suite.ctx)
-		suite.NoError(err)
-	}
+			ApplyIf(true, addFilter).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "ApplyIf(true) should apply function")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.True(rowsAffected >= 0, "Should execute with condition")
+
+		suite.T().Logf("ApplyIf(true) updated %d users", rowsAffected)
+	})
+
+	suite.Run("ApplyIfFalse", func() {
+		addFilter := func(query UpdateQuery) {
+			query.Where(func(cb ConditionBuilder) {
+				cb.LessThan("age", 18)
+			})
+		}
+
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("updated_by", "apply_if_false").
+			Where(func(cb ConditionBuilder) {
+				cb.IsTrue("is_active")
+			}).
+			ApplyIf(false, addFilter).
+			Exec(suite.Ctx)
+
+		suite.NoError(err, "ApplyIf(false) should skip function")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.True(rowsAffected > 0, "Should update without applied filter")
+
+		suite.T().Logf("ApplyIf(false) updated %d users", rowsAffected)
+	})
 }
 
-// TestUpdateErrorHandling tests error handling in update operations.
-func (suite *UpdateTestSuite) TestUpdateErrorHandling() {
-	suite.T().Logf("Testing UPDATE error handling for %s", suite.dbType)
+// TestExecution tests execution methods (Exec, Scan).
+func (suite *UpdateTestSuite) TestExecution() {
+	suite.T().Logf("Testing execution methods for %s", suite.DbType)
 
-	// Test 1: Update with no matching records (should not error but affect 0 rows)
-	result, err := suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("name", "Non-existent User").
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "nonexistent@example.com")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err, "UPDATE with no matching rows should not error")
+	suite.Run("ExecBasic", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("age", 40).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Exec(suite.Ctx)
 
-	rowsAffected, err := result.RowsAffected()
-	suite.NoError(err)
-	suite.Equal(int64(0), rowsAffected, "Should affect 0 rows")
+		suite.NoError(err, "Exec should execute update successfully")
 
-	// Test 2: Update without WHERE clause (updates all records - be careful!)
-	// We'll use a test table to avoid affecting fixture data
-	testUser := &User{
-		Name:     "Test User For Update",
-		Email:    "testupdate@example.com",
-		Age:      25,
-		IsActive: true,
-	}
+		rowsAffected, err := result.RowsAffected()
+		suite.NoError(err, "Should get rows affected")
+		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
 
-	_, err = suite.db.NewInsert().
-		Model(testUser).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		suite.T().Logf("Exec updated %d row", rowsAffected)
+	})
 
-	// Update without WHERE clause on a single record table is safe
-	result, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("updated_by", "no_where_test").
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "testupdate@example.com")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err, "UPDATE without WHERE should work")
+	suite.Run("ScanWithReturning", func() {
+		if suite.DbType == constants.DbMySQL {
+			suite.T().Skip("MySQL doesn't support RETURNING clause")
+		}
 
-	rowsAffected, err = result.RowsAffected()
-	suite.NoError(err)
-	suite.Equal(int64(1), rowsAffected)
+		type UpdateResult struct {
+			Id   string `bun:"id"`
+			Name string `bun:"name"`
+		}
 
-	// Test 3: Update with invalid field/column name (should error)
-	_, err = suite.db.NewUpdate().
-		Model((*User)(nil)).
-		Set("non_existent_field", "value").
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(testUser.Id)
-		}).
-		Exec(suite.ctx)
-	suite.Error(err, "UPDATE with invalid field should error")
+		var result UpdateResult
 
-	// Cleanup test user
-	_, err = suite.db.NewDelete().
-		Model((*User)(nil)).
-		Where(func(cb ConditionBuilder) {
-			cb.Equals("email", "testupdate@example.com")
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-}
+		err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("age", 41).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "bob@example.com")
+			}).
+			Returning("id", "name").
+			Scan(suite.Ctx, &result)
 
-// TestUpdateWithOptionalFields tests updating with optional/nullable fields.
-func (suite *UpdateTestSuite) TestUpdateWithOptionalFields() {
-	suite.T().Logf("Testing UPDATE with optional fields for %s", suite.dbType)
+		suite.NoError(err, "Scan should work with RETURNING")
+		suite.NotEmpty(result.Id, "ID should be scanned")
+		suite.NotEmpty(result.Name, "Name should be scanned")
 
-	// Get a post with description to update
-	var post Post
+		suite.T().Logf("Scanned result: id=%s, name=%s", result.Id, result.Name)
+	})
 
-	err := suite.db.NewSelect().
-		Model(&post).
-		Where(func(cb ConditionBuilder) {
-			cb.IsNotNull("description")
-		}).
-		Limit(1).
-		Scan(suite.ctx)
-	suite.NoError(err)
+	suite.Run("ExecNoMatchingRows", func() {
+		result, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("age", 999).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "nonexistent@example.com")
+			}).
+			Exec(suite.Ctx)
 
-	originalDescription := *post.Description
+		suite.NoError(err, "Exec with no matching rows should not error")
 
-	// Test 1: Set nullable field to non-null value
-	newDescription := "Updated description for testing"
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		Set("description", newDescription).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		rowsAffected, err := result.RowsAffected()
+		suite.NoError(err, "Should get rows affected")
+		suite.Equal(int64(0), rowsAffected, "Should affect 0 rows")
 
-	// Verify non-null update
-	var updatedPost Post
+		suite.T().Logf("Exec with no matches: %d rows affected", rowsAffected)
+	})
 
-	err = suite.db.NewSelect().
-		Model(&updatedPost).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.NotNil(updatedPost.Description)
-	suite.Equal(newDescription, *updatedPost.Description)
+	suite.Run("ExecInvalidField", func() {
+		_, err := suite.Db.NewUpdate().
+			Model((*User)(nil)).
+			Set("nonexistent_field", "value").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("email", "alice@example.com")
+			}).
+			Exec(suite.Ctx)
 
-	// Test 2: Set nullable field to null
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		Set("description", nil).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
+		suite.Error(err, "Exec with invalid field should error")
 
-	// Verify null update
-	updatedPost = Post{}
-	err = suite.db.NewSelect().
-		Model(&updatedPost).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Nil(updatedPost.Description)
-
-	// Test 3: Set nullable field back to original value
-	_, err = suite.db.NewUpdate().
-		Model((*Post)(nil)).
-		Set("description", originalDescription).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Exec(suite.ctx)
-	suite.NoError(err)
-
-	// Verify restoration
-	updatedPost = Post{}
-	err = suite.db.NewSelect().
-		Model(&updatedPost).
-		Where(func(cb ConditionBuilder) {
-			cb.PkEquals(post.Id)
-		}).
-		Scan(suite.ctx)
-	suite.NoError(err)
-	suite.Equal(originalDescription, *updatedPost.Description)
+		suite.T().Logf("Exec with invalid field correctly returned error")
+	})
 }

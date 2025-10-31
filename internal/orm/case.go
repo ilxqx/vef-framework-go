@@ -21,7 +21,6 @@ type CaseBuilder interface {
 	WhenExpr(expr any) CaseWhenBuilder
 	// WhenSubQuery adds a WHEN subquery for searched CASE.
 	WhenSubQuery(func(query SelectQuery)) CaseWhenBuilder
-	// ElseExpr sets the ELSE expression for the CASE expression.
 	Else(expr any)
 	// ElseSubQuery adds a ELSE subquery for the CASE expression.
 	ElseSubQuery(func(query SelectQuery))
@@ -29,9 +28,7 @@ type CaseBuilder interface {
 
 // CaseWhenBuilder is an interface for building the THEN part of WHEN clauses.
 type CaseWhenBuilder interface {
-	// ThenExpr sets the result expression when the WHEN condition is true.
 	Then(expr any) CaseBuilder
-	// ThenSubQuery sets the result as a subquery when the WHEN condition is true.
 	ThenSubQuery(func(query SelectQuery)) CaseBuilder
 }
 

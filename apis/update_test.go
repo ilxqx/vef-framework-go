@@ -10,7 +10,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// Test Resources.
 type TestUserUpdateResource struct {
 	api.Resource
 	apis.UpdateApi[TestUser, TestUserUpdateParams]
@@ -23,7 +22,6 @@ func NewTestUserUpdateResource() api.Resource {
 	}
 }
 
-// Resource with PreUpdate hook.
 type TestUserUpdateWithPreHookResource struct {
 	api.Resource
 	apis.UpdateApi[TestUser, TestUserUpdateParams]
@@ -35,7 +33,6 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().
 			Public().
 			WithPreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
-				// Add suffix to description
 				if params.Description != "" {
 					model.Description = params.Description + " [Updated]"
 				}
@@ -45,7 +42,6 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 	}
 }
 
-// Resource with PostUpdate hook.
 type TestUserUpdateWithPostHookResource struct {
 	api.Resource
 	apis.UpdateApi[TestUser, TestUserUpdateParams]
@@ -57,7 +53,6 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().
 			Public().
 			WithPostUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
-				// Set custom header
 				ctx.Set("X-Updated-User-Name", model.Name)
 
 				return nil
@@ -65,7 +60,6 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 	}
 }
 
-// Test params for update (includes id).
 type TestUserUpdateParams struct {
 	api.P
 
@@ -77,12 +71,11 @@ type TestUserUpdateParams struct {
 	Status      string `json:"status"      validate:"required,oneof=active inactive"`
 }
 
-// UpdateTestSuite is the test suite for Update Api tests.
+// UpdateTestSuite tests the Update API functionality.
 type UpdateTestSuite struct {
 	BaseSuite
 }
 
-// SetupSuite runs once before all tests in the suite.
 func (suite *UpdateTestSuite) SetupSuite() {
 	suite.setupBaseSuite(
 		NewTestUserUpdateResource,
@@ -91,13 +84,14 @@ func (suite *UpdateTestSuite) SetupSuite() {
 	)
 }
 
-// TearDownSuite runs once after all tests in the suite.
 func (suite *UpdateTestSuite) TearDownSuite() {
 	suite.tearDownBaseSuite()
 }
 
 // TestUpdateBasic tests basic Update functionality.
 func (suite *UpdateTestSuite) TestUpdateBasic() {
+	suite.T().Logf("Testing Update API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update",
@@ -114,15 +108,18 @@ func (suite *UpdateTestSuite) TestUpdateBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	// UpdateApi returns no data, just success status
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	suite.T().Logf("Updated user001 successfully")
 }
 
 // TestUpdateWithPreHook tests Update with PreUpdate hook.
 func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
+	suite.T().Logf("Testing Update API with PreUpdate hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_prehook",
@@ -139,15 +136,18 @@ func (suite *UpdateTestSuite) TestUpdateWithPreHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	// UpdateApi returns no data, PreUpdate hook was executed if update succeeded
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	suite.T().Logf("Updated user002 with PreUpdate hook successfully")
 }
 
 // TestUpdateWithPostHook tests Update with PostUpdate hook.
 func (suite *UpdateTestSuite) TestUpdateWithPostHook() {
+	suite.T().Logf("Testing Update API with PostUpdate hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update_posthook",
@@ -163,16 +163,20 @@ func (suite *UpdateTestSuite) TestUpdateWithPostHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
-	suite.Equal("Charlie Updated", resp.Header.Get("X-Updated-User-Name"))
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+	suite.Equal("Charlie Updated", resp.Header.Get("X-Updated-User-Name"), "Should set X-Updated-User-Name header via PostUpdate hook")
 
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	suite.T().Logf("Updated user003 with PostUpdate hook, header: %s", resp.Header.Get("X-Updated-User-Name"))
 }
 
 // TestUpdateNegativeCases tests negative scenarios.
 func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
+	suite.T().Logf("Testing Update API negative cases for %s", suite.dbType)
+
 	suite.Run("NonExistentUser", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -189,10 +193,12 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail - user not found
-		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound))
+		suite.False(body.IsOk(), "Should fail when user does not exist")
+		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordNotFound), "Should return record not found message")
+
+		suite.T().Logf("Validation failed as expected for non-existent user")
 	})
 
 	suite.Run("MissingId", func() {
@@ -207,14 +213,15 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 				"email":  "test@example.com",
 				"age":    25,
 				"status": "active",
-				// Missing "id"
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
-		suite.Equal(body.Message, i18n.T("primary_key_required", map[string]any{"field": "id"}))
+		suite.False(body.IsOk(), "Should fail when required id is missing")
+		suite.Equal(body.Message, i18n.T("primary_key_required", map[string]any{"field": "id"}), "Should return primary key required message")
+
+		suite.T().Logf("Validation failed as expected for missing id")
 	})
 
 	suite.Run("InvalidEmail", func() {
@@ -233,9 +240,11 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when email format is invalid")
+
+		suite.T().Logf("Validation failed as expected for invalid email format")
 	})
 
 	suite.Run("InvalidAge", func() {
@@ -249,18 +258,19 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 				"id":     "user005",
 				"name":   "Test",
 				"email":  "test@example.com",
-				"age":    0, // Invalid: min=1
+				"age":    0,
 				"status": "active",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when age is less than 1")
+
+		suite.T().Logf("Validation failed as expected for invalid age")
 	})
 
 	suite.Run("DuplicateEmail", func() {
-		// Try to update user006's email to user005's email (which hasn't been modified in tests)
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update",
@@ -270,23 +280,26 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 			Params: map[string]any{
 				"id":          "user006",
 				"name":        "Frank Miller",
-				"email":       "eve@example.com", // user005's email - should cause unique constraint violation
+				"email":       "eve@example.com",
 				"description": "Sales Manager",
 				"age":         35,
 				"status":      "inactive",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail due to unique constraint violation
-		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordAlreadyExists))
+		suite.False(body.IsOk(), "Should fail due to duplicate email unique constraint")
+		suite.Equal(body.Message, i18n.T(result.ErrMessageRecordAlreadyExists), "Should return record already exists message")
+
+		suite.T().Logf("Validation failed as expected for duplicate email")
 	})
 }
 
-// TestPartialUpdate tests updating only some fields.
+// TestPartialUpdate tests partial field updates.
 func (suite *UpdateTestSuite) TestPartialUpdate() {
-	// First, get original user
+	suite.T().Logf("Testing Update API partial update for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_update",
@@ -299,13 +312,13 @@ func (suite *UpdateTestSuite) TestPartialUpdate() {
 			"email":  "grace@example.com",
 			"age":    30,
 			"status": "active",
-			// Not updating description
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	// UpdateApi returns no data, update succeeded
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+
+	suite.T().Logf("Partially updated user007 successfully")
 }

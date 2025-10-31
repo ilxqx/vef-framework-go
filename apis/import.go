@@ -34,35 +34,30 @@ func (i *importApi[TModel]) Provide() api.Spec {
 	return i.Build(i.importData)
 }
 
-// WithDefaultFormat sets the default import format (Excel or Csv). Default is Excel.
 func (i *importApi[TModel]) WithDefaultFormat(format TabularFormat) ImportApi[TModel] {
 	i.defaultFormat = format
 
 	return i
 }
 
-// WithExcelOptions sets Excel importer configuration options.
 func (i *importApi[TModel]) WithExcelOptions(opts ...excel.ImportOption) ImportApi[TModel] {
 	i.excelOpts = opts
 
 	return i
 }
 
-// WithCsvOptions sets Csv importer configuration options.
 func (i *importApi[TModel]) WithCsvOptions(opts ...csv.ImportOption) ImportApi[TModel] {
 	i.csvOpts = opts
 
 	return i
 }
 
-// WithPreImport sets a processor to validate or modify data before saving.
 func (i *importApi[TModel]) WithPreImport(processor PreImportProcessor[TModel]) ImportApi[TModel] {
 	i.preImport = processor
 
 	return i
 }
 
-// WithPostImport sets a processor to perform additional actions after import.
 func (i *importApi[TModel]) WithPostImport(processor PostImportProcessor[TModel]) ImportApi[TModel] {
 	i.postImport = processor
 

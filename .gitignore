@@ -29,9 +29,12 @@ go.work.sum
 
 .claude/
 .factory/
+.kiro/
 .mcp.json
+openspec
 CLAUDE.md
 AGENTS.md
+TEST_GUIDELINES.md
 
 # shell scripts
 *.sh

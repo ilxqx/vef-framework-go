@@ -20,44 +20,33 @@ type SimpleSearch struct {
 }
 
 type ComplexSearch struct {
-	// String operators
 	Title       string `search:"column=title,operator=eq"`
 	Description string `search:"operator=contains"`
 	Content     string `search:"operator=startsWith"`
 	Tags        string `search:"operator=endsWith"`
 	Category    string `search:"operator=iContains"`
 
-	// Numeric operators
 	MinPrice int     `search:"column=price,operator=gte"`
 	MaxPrice int     `search:"column=price,operator=lte"`
 	Rating   float64 `search:"operator=gt"`
 
-	// Collection operators
 	StatusList string `search:"column=status,operator=in,params=delimiter:|"`
 	ExcludeIds string `search:"column=id,operator=notIn"`
 
-	// Range operators
 	PriceRange monad.Range[int] `search:"column=price,operator=between"`
 	DateRange  string           `search:"column=created_at,operator=between,params=type:date,delimiter:-"`
 
-	// Null check operators
 	DeletedAt bool `search:"column=deleted_at,operator=isNull"`
 	UpdatedAt bool `search:"column=updated_at,operator=isNotNull"`
 
-	// Multiple columns
 	SearchText string `search:"column=title|description|content,operator=contains"`
 }
 
 type NestedSearch struct {
-	// Nested struct
-	User   UserSearch `search:"dive"`
-	Status string     `search:"operator:eq"`
-
-	// Another nested struct
-	Product ProductSearch `search:"dive"`
-
-	// Regular field
-	CreatedAt time.Time `search:"column=created_at,operator=gte"`
+	User      UserSearch    `search:"dive"`
+	Status    string        `search:"operator:eq"`
+	Product   ProductSearch `search:"dive"`
+	CreatedAt time.Time     `search:"column=created_at,operator=gte"`
 }
 
 type UserSearch struct {
@@ -78,288 +67,306 @@ type CategorySearch struct {
 }
 
 type EdgeCaseSearch struct {
-	// Field without search tag (will use default eq)
-	NoTagField string
-
-	// Field explicitly ignored
+	NoTagField   string `search:""`
 	IgnoredField string `search:"-"`
-
-	// Field with empty tag
-	EmptyTag string `search:""`
-
-	// Field with only operator
 	OnlyOperator string `search:"operator=contains"`
+	CustomAlias  string `search:"alias=t1,column=name"`
+	WithArgs     string `search:"operator=in,params=delimiter:;,type:int"`
+	WithDefault  string `search:"startsWith"`
+	InvalidDive  string `search:"dive"`
+}
 
-	// Field with custom alias
-	CustomAlias string `search:"alias=t1,column=name"`
-
-	// Field with params
-	WithArgs string `search:"operator=in,params=delimiter:;,type:int"`
-
-	// Field with default fallback (startsWith as default operator, no operator= specified)
-	WithDefault string `search:"startsWith"`
-
-	// Invalid dive field (should log warning)
-	InvalidDive string `search:"dive"`
+type ShorthandSearch struct {
+	Name1 string `search:"eq"`
+	Name2 string `search:"contains"`
+	Name3 string `search:"startsWith"`
+	Name4 string `search:"contains,column=title|description"`
+	Name5 string `search:"in,column=status,params=delimiter:|"`
+	Name6 string `search:"gte,column=price"`
+	Name7 string `search:"operator=endsWith,column=suffix"`
 }
 
 func TestNew(t *testing.T) {
 	search := NewFor[SimpleSearch]()
-	assert.NotNil(t, search.conditions)
-	assert.Len(t, search.conditions, 4) // Name, Age, Active, Salary (all included now)
+
+	assert.NotNil(t, search.conditions, "Conditions should be initialized")
+	assert.Len(t, search.conditions, 4, "Should have all fields including no-tag field")
 }
 
 func TestNewFromType(t *testing.T) {
 	search := New(reflect.TypeOf(SimpleSearch{}))
-	assert.NotNil(t, search.conditions)
-	assert.Len(t, search.conditions, 4) // All fields included now
+
+	assert.NotNil(t, search.conditions, "Conditions should be initialized")
+	assert.Len(t, search.conditions, 4, "Should have all fields including no-tag field")
 }
 
 func TestSimpleSearch(t *testing.T) {
 	search := NewFor[SimpleSearch]()
 
-	assert.Len(t, search.conditions, 4) // All fields included now
-
-	// Create expected conditions
-	expectedByColumn := map[string]struct {
+	tests := []struct {
+		column   string
 		operator Operator
 		alias    string
 		params   map[string]string
 	}{
-		"name": {
+		{
+			column:   "name",
 			operator: Contains,
 			alias:    "",
 			params:   map[string]string{},
 		},
-		"age": {
+		{
+			column:   "age",
 			operator: GreaterThanOrEqual,
 			alias:    "",
 			params:   map[string]string{},
 		},
-		"is_active": {
+		{
+			column:   "is_active",
 			operator: Equals,
 			alias:    "",
 			params:   map[string]string{},
 		},
-		"salary": {
-			operator: Equals, // Default operator for no-tag field
+		{
+			column:   "salary",
+			operator: Equals,
 			alias:    "",
 			params:   map[string]string{},
 		},
 	}
 
-	// Verify each condition
+	assert.Len(t, search.conditions, len(tests), "Should have correct number of conditions")
+
+	conditionsByColumn := make(map[string]Condition)
 	for _, condition := range search.conditions {
 		assert.Len(t, condition.Columns, 1, "Each condition should have exactly one column")
+		conditionsByColumn[condition.Columns[0]] = condition
+	}
 
-		columnName := condition.Columns[0]
-		expected, exists := expectedByColumn[columnName]
-		assert.True(t, exists, "Unexpected column: %s", columnName)
-
-		assert.Equal(t, expected.operator, condition.Operator, "Operator mismatch for column %s", columnName)
-		assert.Equal(t, expected.alias, condition.Alias, "Alias mismatch for column %s", columnName)
-		assert.Equal(t, expected.params, condition.Params, "Params mismatch for column %s", columnName)
+	for _, tt := range tests {
+		t.Run(tt.column, func(t *testing.T) {
+			condition, exists := conditionsByColumn[tt.column]
+			assert.True(t, exists, "Column should exist in conditions")
+			assert.Equal(t, tt.operator, condition.Operator, "Operator should match")
+			assert.Equal(t, tt.alias, condition.Alias, "Alias should match")
+			assert.Equal(t, tt.params, condition.Params, "Params should match")
+		})
 	}
 }
 
 func TestComplexSearch(t *testing.T) {
 	search := NewFor[ComplexSearch]()
 
-	// Verify we have conditions for key fields
 	assert.Greater(t, len(search.conditions), 5, "Should have multiple conditions")
 
-	// Test a few key scenarios
-	foundMultiColumn := false
-	foundWithParams := false
-	foundRangeOp := false
-
-	for _, condition := range search.conditions {
-		// Check for multi-column condition
-		if len(condition.Columns) > 1 {
-			foundMultiColumn = true
-
-			assert.Equal(t, Contains, condition.Operator, "Multi-column should use contains")
-		}
-
-		// Check for condition with params
-		if len(condition.Params) > 0 {
-			foundWithParams = true
-		}
-
-		// Check for range operators
-		if condition.Operator == Between || condition.Operator == NotBetween {
-			foundRangeOp = true
-		}
-	}
-
-	assert.True(t, foundMultiColumn, "Should have multi-column condition")
-	assert.True(t, foundWithParams, "Should have condition with params")
-	assert.True(t, foundRangeOp, "Should have range operator")
-}
-
-func TestNestedSearch(t *testing.T) {
-	search := NewFor[NestedSearch]()
-
-	// Should include fields from nested structs after recursion fix
-	expectedColumns := []string{
-		"user_name", "user_email", "user_active", // from UserSearch
-		"status", "created_at", // from NestedSearch
-		"product_name", "product_price", // from ProductSearch
-		"category_name", "category_code", // from CategorySearch
-	}
-
-	assert.Len(t, search.conditions, len(expectedColumns), "Should have all nested fields")
-
-	// Verify all expected columns are present
-	for _, expectedCol := range expectedColumns {
-		found := false
-
+	t.Run("MultiColumnCondition", func(t *testing.T) {
+		foundMultiColumn := false
 		for _, condition := range search.conditions {
-			if len(condition.Columns) == 1 && condition.Columns[0] == expectedCol {
-				found = true
+			if len(condition.Columns) > 1 {
+				foundMultiColumn = true
+
+				assert.Equal(t, Contains, condition.Operator, "Multi-column should use contains operator")
+			}
+		}
+
+		assert.True(t, foundMultiColumn, "Should have multi-column condition")
+	})
+
+	t.Run("ConditionWithParams", func(t *testing.T) {
+		foundWithParams := false
+		for _, condition := range search.conditions {
+			if len(condition.Params) > 0 {
+				foundWithParams = true
 
 				break
 			}
 		}
 
-		assert.True(t, found, "Expected column not found: %s", expectedCol)
+		assert.True(t, foundWithParams, "Should have condition with params")
+	})
+
+	t.Run("RangeOperators", func(t *testing.T) {
+		foundRangeOp := false
+		for _, condition := range search.conditions {
+			if condition.Operator == Between || condition.Operator == NotBetween {
+				foundRangeOp = true
+
+				break
+			}
+		}
+
+		assert.True(t, foundRangeOp, "Should have range operator")
+	})
+}
+
+func TestNestedSearch(t *testing.T) {
+	search := NewFor[NestedSearch]()
+
+	expectedColumns := []string{
+		"user_name", "user_email", "user_active",
+		"status", "created_at",
+		"product_name", "product_price",
+		"category_name", "category_code",
+	}
+
+	assert.Len(t, search.conditions, len(expectedColumns), "Should have all nested fields")
+
+	for _, expectedCol := range expectedColumns {
+		t.Run(expectedCol, func(t *testing.T) {
+			found := false
+			for _, condition := range search.conditions {
+				if len(condition.Columns) == 1 && condition.Columns[0] == expectedCol {
+					found = true
+
+					break
+				}
+			}
+
+			assert.True(t, found, "Expected column should be found")
+		})
 	}
 }
 
 func TestEdgeCases(t *testing.T) {
 	search := NewFor[EdgeCaseSearch]()
 
-	// Should ignore: IgnoredField (search:"-") and InvalidDive (dive on non-struct)
-	// Should process: NoTagField, EmptyTag, OnlyOperator, CustomAlias, WithParams, WithDefault
-	assert.Len(t, search.conditions, 6, "Should have exactly 6 conditions")
+	assert.Len(t, search.conditions, 5, "Should have exactly 5 conditions")
 
-	foundWithAlias := false
-	foundWithParams := false
-	foundDefault := false
+	t.Run("CustomAlias", func(t *testing.T) {
+		foundWithAlias := false
+		for _, condition := range search.conditions {
+			if condition.Alias == "t1" {
+				foundWithAlias = true
 
-	for i, condition := range search.conditions {
-		t.Logf("Condition %d: Columns=%v, Operator=%s, Alias=%s, Params=%v",
-			i, condition.Columns, condition.Operator, condition.Alias, condition.Params)
-
-		// Check for alias
-		if condition.Alias == "t1" {
-			foundWithAlias = true
-
-			assert.Equal(t, []string{"name"}, condition.Columns)
+				assert.Equal(t, []string{"name"}, condition.Columns, "Should have correct column")
+			}
 		}
 
-		// Check for params
-		if len(condition.Params) > 0 {
-			foundWithParams = true
+		assert.True(t, foundWithAlias, "Should have condition with custom alias")
+	})
+
+	t.Run("WithParams", func(t *testing.T) {
+		foundWithParams := false
+		for _, condition := range search.conditions {
+			if len(condition.Params) > 0 {
+				foundWithParams = true
+
+				break
+			}
 		}
 
-		// Check for default operator fallback
-		// WithDefault field has `search:"default=startsWith"` which means startsWith is used as default operator
-		if condition.Operator == "startsWith" {
-			foundDefault = true
-		}
-	}
+		assert.True(t, foundWithParams, "Should have condition with params")
+	})
 
-	assert.True(t, foundWithAlias, "Should have condition with alias")
-	assert.True(t, foundWithParams, "Should have condition with params")
-	assert.True(t, foundDefault, "Should have condition with default operator")
+	t.Run("DefaultOperator", func(t *testing.T) {
+		foundDefault := false
+		for _, condition := range search.conditions {
+			if condition.Operator == "startsWith" {
+				foundDefault = true
+
+				break
+			}
+		}
+
+		assert.True(t, foundDefault, "Should have condition with default operator")
+	})
 }
 
 func TestOperatorShorthand(t *testing.T) {
-	// Test the special operator shorthand syntax
-	type ShorthandSearch struct {
-		// Simple operator shorthand
-		Name1 string `search:"eq"`
-		Name2 string `search:"contains"`
-		Name3 string `search:"startsWith"`
-
-		// Operator shorthand with additional parameters
-		Name4 string `search:"contains,column=title|description"`
-		Name5 string `search:"in,column=status,params=delimiter:|"`
-		Name6 string `search:"gte,column=price"`
-
-		// Mixed: explicit operator= syntax
-		Name7 string `search:"operator=endsWith,column=suffix"`
-	}
-
 	search := NewFor[ShorthandSearch]()
 
-	expectedConditions := map[string]struct {
+	tests := []struct {
+		key      string
 		operator Operator
 		columns  []string
 		params   map[string]string
 	}{
-		"name_1": { // snake_case conversion
-			operator: "eq", // shorthand operator as-is
+		{
+			key:      "name_1",
+			operator: "eq",
 			columns:  []string{"name_1"},
 			params:   map[string]string{},
 		},
-		"name_2": {
+		{
+			key:      "name_2",
 			operator: "contains",
 			columns:  []string{"name_2"},
 			params:   map[string]string{},
 		},
-		"name_3": {
+		{
+			key:      "name_3",
 			operator: "startsWith",
 			columns:  []string{"name_3"},
 			params:   map[string]string{},
 		},
-		"title": { // from first column name in tag
+		{
+			key:      "title",
 			operator: "contains",
 			columns:  []string{"title", "description"},
 			params:   map[string]string{},
 		},
-		"status": {
+		{
+			key:      "status",
 			operator: "in",
 			columns:  []string{"status"},
 			params:   map[string]string{"delimiter": "|"},
 		},
-		"price": {
+		{
+			key:      "price",
 			operator: "gte",
 			columns:  []string{"price"},
 			params:   map[string]string{},
 		},
-		"suffix": {
-			operator: "endsWith", // explicit operator= syntax
+		{
+			key:      "suffix",
+			operator: "endsWith",
 			columns:  []string{"suffix"},
 			params:   map[string]string{},
 		},
 	}
 
-	assert.Len(t, search.conditions, len(expectedConditions))
+	assert.Len(t, search.conditions, len(tests), "Should have correct number of conditions")
 
-	// Verify each condition
+	conditionsByFirstColumn := make(map[string]Condition)
 	for _, condition := range search.conditions {
 		assert.Greater(t, len(condition.Columns), 0, "Should have at least one column")
+		conditionsByFirstColumn[condition.Columns[0]] = condition
+	}
 
-		// Use first column as key for lookup
-		key := condition.Columns[0]
-		expected, exists := expectedConditions[key]
-		assert.True(t, exists, "Unexpected column: %s", key)
-
-		assert.Equal(t, expected.operator, condition.Operator, "Operator mismatch for %s", key)
-		assert.Equal(t, expected.columns, condition.Columns, "Columns mismatch for %s", key)
-		assert.Equal(t, expected.params, condition.Params, "Params mismatch for %s", key)
+	for _, tt := range tests {
+		t.Run(tt.key, func(t *testing.T) {
+			condition, exists := conditionsByFirstColumn[tt.key]
+			assert.True(t, exists, "Column should exist in conditions")
+			assert.Equal(t, tt.operator, condition.Operator, "Operator should match")
+			assert.Equal(t, tt.columns, condition.Columns, "Columns should match")
+			assert.Equal(t, tt.params, condition.Params, "Params should match")
+		})
 	}
 }
 
 func TestNewFromTypeWithNonStruct(t *testing.T) {
-	// Test with non-struct types should return empty search
-	search := New(reflect.TypeOf("string"))
-	assert.Empty(t, search.conditions)
+	tests := []struct {
+		name      string
+		inputType reflect.Type
+	}{
+		{"String", reflect.TypeOf("string")},
+		{"Int", reflect.TypeOf(42)},
+		{"Slice", reflect.TypeOf([]string{})},
+	}
 
-	search = New(reflect.TypeOf(42))
-	assert.Empty(t, search.conditions)
-
-	search = New(reflect.TypeOf([]string{}))
-	assert.Empty(t, search.conditions)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			search := New(tt.inputType)
+			assert.Empty(t, search.conditions, "Non-struct types should return empty conditions")
+		})
+	}
 }
 
 func TestEmptyStruct(t *testing.T) {
 	type EmptyStruct struct{}
 
 	search := NewFor[EmptyStruct]()
-	assert.Empty(t, search.conditions)
+	assert.Empty(t, search.conditions, "Empty struct should have no conditions")
 }
 
 func TestStructWithoutSearchTags(t *testing.T) {
@@ -370,12 +377,11 @@ func TestStructWithoutSearchTags(t *testing.T) {
 	}
 
 	search := NewFor[NoSearchTags]()
-	// Should have 3 conditions with default settings (eq operator, snake_case column)
-	assert.Len(t, search.conditions, 3)
 
-	// Verify all fields use default operator
+	assert.Len(t, search.conditions, 3, "Should have conditions for all fields")
+
 	for _, condition := range search.conditions {
-		assert.Equal(t, Equals, condition.Operator)
+		assert.Equal(t, Equals, condition.Operator, "Should use default operator")
 	}
 }
 
@@ -401,41 +407,52 @@ func TestDeepNestedStruct(t *testing.T) {
 	assert.Len(t, search.conditions, 3, "Should have all deeply nested fields")
 
 	for _, expectedCol := range expectedColumns {
-		found := false
+		t.Run(expectedCol, func(t *testing.T) {
+			found := false
+			for _, condition := range search.conditions {
+				if len(condition.Columns) == 1 && condition.Columns[0] == expectedCol {
+					found = true
 
-		for _, condition := range search.conditions {
-			if len(condition.Columns) == 1 && condition.Columns[0] == expectedCol {
-				found = true
-
-				break
+					break
+				}
 			}
-		}
 
-		assert.True(t, found, "Expected column not found: %s", expectedCol)
+			assert.True(t, found, "Expected column should be found")
+		})
 	}
 }
 
-// TestNoTagStruct tests struct fields without search tags.
-type TestNoTagStruct struct {
-	Name   string
-	Age    int
-	Email  string
-	Status int `search:"-"` // Explicitly ignored
-}
+func TestNoTagStruct(t *testing.T) {
+	type TestNoTagStruct struct {
+		Name   string
+		Age    int
+		Email  string
+		Status int `search:"-"`
+	}
 
-func TestSearch_NoTags(t *testing.T) {
 	search := NewFor[TestNoTagStruct]()
 
-	// Should have 3 conditions (Status is ignored)
-	assert.Len(t, search.conditions, 3)
+	tests := []struct {
+		column   string
+		operator Operator
+	}{
+		{"name", Equals},
+		{"age", Equals},
+		{"email", Equals},
+	}
 
-	// Verify default operator (eq) and snake_case column names
-	assert.Equal(t, Equals, search.conditions[0].Operator)
-	assert.Equal(t, []string{"name"}, search.conditions[0].Columns)
+	assert.Len(t, search.conditions, len(tests), "Should have conditions excluding ignored fields")
 
-	assert.Equal(t, Equals, search.conditions[1].Operator)
-	assert.Equal(t, []string{"age"}, search.conditions[1].Columns)
+	conditionsByColumn := make(map[string]Condition)
+	for _, condition := range search.conditions {
+		conditionsByColumn[condition.Columns[0]] = condition
+	}
 
-	assert.Equal(t, Equals, search.conditions[2].Operator)
-	assert.Equal(t, []string{"email"}, search.conditions[2].Columns)
+	for _, tt := range tests {
+		t.Run(tt.column, func(t *testing.T) {
+			condition, exists := conditionsByColumn[tt.column]
+			assert.True(t, exists, "Column should exist in conditions")
+			assert.Equal(t, tt.operator, condition.Operator, "Should use default operator")
+		})
+	}
 }

@@ -72,6 +72,30 @@ func (cb *CriteriaBuilder) OrEqualsSubQuery(column string, builder func(query Se
 	return cb
 }
 
+func (cb *CriteriaBuilder) EqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? = ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrEqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? = ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) EqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? = ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrEqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? = ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
 func (cb *CriteriaBuilder) EqualsExpr(column string, builder func(ExprBuilder) any) ConditionBuilder {
 	cb.and("? = ?", cb.eb.Column(column), builder(cb.eb))
 
@@ -116,6 +140,30 @@ func (cb *CriteriaBuilder) NotEqualsSubQuery(column string, builder func(query S
 
 func (cb *CriteriaBuilder) OrNotEqualsSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder {
 	cb.or("? <> (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) NotEqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? <> ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrNotEqualsAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? <> ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) NotEqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? <> ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrNotEqualsAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? <> ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
@@ -168,6 +216,30 @@ func (cb *CriteriaBuilder) OrGreaterThanSubQuery(column string, builder func(que
 	return cb
 }
 
+func (cb *CriteriaBuilder) GreaterThanAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? > ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrGreaterThanAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? > ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) GreaterThanAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? > ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrGreaterThanAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? > ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
 func (cb *CriteriaBuilder) GreaterThanExpr(column string, builder func(ExprBuilder) any) ConditionBuilder {
 	cb.and("? > ?", cb.eb.Column(column), builder(cb.eb))
 
@@ -212,6 +284,30 @@ func (cb *CriteriaBuilder) GreaterThanOrEqualSubQuery(column string, builder fun
 
 func (cb *CriteriaBuilder) OrGreaterThanOrEqualSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder {
 	cb.or("? >= (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) GreaterThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? >= ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrGreaterThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? >= ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) GreaterThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? >= ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrGreaterThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? >= ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
@@ -264,6 +360,30 @@ func (cb *CriteriaBuilder) OrLessThanSubQuery(column string, builder func(query 
 	return cb
 }
 
+func (cb *CriteriaBuilder) LessThanAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? < ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrLessThanAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? < ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) LessThanAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? < ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrLessThanAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? < ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
 func (cb *CriteriaBuilder) LessThanExpr(column string, builder func(ExprBuilder) any) ConditionBuilder {
 	cb.and("? < ?", cb.eb.Column(column), builder(cb.eb))
 
@@ -308,6 +428,30 @@ func (cb *CriteriaBuilder) LessThanOrEqualSubQuery(column string, builder func(q
 
 func (cb *CriteriaBuilder) OrLessThanOrEqualSubQuery(column string, builder func(query SelectQuery)) ConditionBuilder {
 	cb.or("? <= (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) LessThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? <= ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrLessThanOrEqualAny(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? <= ANY (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) LessThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.and("? <= ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrLessThanOrEqualAll(column string, builder func(query SelectQuery)) ConditionBuilder {
+	cb.or("? <= ALL (?)", cb.eb.Column(column), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
@@ -648,7 +792,7 @@ func (cb *CriteriaBuilder) OrContainsAny(column string, values []string) Conditi
 
 func (cb *CriteriaBuilder) ContainsIgnoreCase(column, value string) ConditionBuilder {
 	// Use ILIKE on Postgres; fallback to LOWER(column) LIKE LOWER(value) on others
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyContains))
 		},
@@ -666,7 +810,7 @@ func (cb *CriteriaBuilder) ContainsIgnoreCase(column, value string) ConditionBui
 }
 
 func (cb *CriteriaBuilder) OrContainsIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyContains))
 		},
@@ -736,7 +880,7 @@ func (cb *CriteriaBuilder) OrNotContainsAny(column string, values []string) Cond
 }
 
 func (cb *CriteriaBuilder) NotContainsIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyContains))
 		},
@@ -754,7 +898,7 @@ func (cb *CriteriaBuilder) NotContainsIgnoreCase(column, value string) Condition
 }
 
 func (cb *CriteriaBuilder) OrNotContainsIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyContains))
 		},
@@ -824,7 +968,7 @@ func (cb *CriteriaBuilder) OrStartsWithAny(column string, values []string) Condi
 }
 
 func (cb *CriteriaBuilder) StartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyStarts))
 		},
@@ -842,7 +986,7 @@ func (cb *CriteriaBuilder) StartsWithIgnoreCase(column, value string) ConditionB
 }
 
 func (cb *CriteriaBuilder) OrStartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyStarts))
 		},
@@ -912,7 +1056,7 @@ func (cb *CriteriaBuilder) OrNotStartsWithAny(column string, values []string) Co
 }
 
 func (cb *CriteriaBuilder) NotStartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyStarts))
 		},
@@ -930,7 +1074,7 @@ func (cb *CriteriaBuilder) NotStartsWithIgnoreCase(column, value string) Conditi
 }
 
 func (cb *CriteriaBuilder) OrNotStartsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyStarts))
 		},
@@ -1000,7 +1144,7 @@ func (cb *CriteriaBuilder) OrEndsWithAny(column string, values []string) Conditi
 }
 
 func (cb *CriteriaBuilder) EndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyEnds))
 		},
@@ -1018,7 +1162,7 @@ func (cb *CriteriaBuilder) EndsWithIgnoreCase(column, value string) ConditionBui
 }
 
 func (cb *CriteriaBuilder) OrEndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyEnds))
 		},
@@ -1088,7 +1232,7 @@ func (cb *CriteriaBuilder) OrNotEndsWithAny(column string, values []string) Cond
 }
 
 func (cb *CriteriaBuilder) NotEndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyEnds))
 		},
@@ -1106,7 +1250,7 @@ func (cb *CriteriaBuilder) NotEndsWithIgnoreCase(column, value string) Condition
 }
 
 func (cb *CriteriaBuilder) OrNotEndsWithIgnoreCase(column, value string) ConditionBuilder {
-	expr := cb.eb.ExprByDialect(DialectExpr{
+	expr := cb.eb.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			return cb.eb.Expr("? NOT ILIKE ?", cb.eb.Column(column), buildFuzzyValue(value, FuzzyEnds))
 		},
@@ -1191,6 +1335,30 @@ func (cb *CriteriaBuilder) OrCreatedByEqualsSubQuery(builder func(SelectQuery), 
 	return cb
 }
 
+func (cb *CriteriaBuilder) CreatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? = ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrCreatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? = ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) CreatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? = ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrCreatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? = ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
 func (cb *CriteriaBuilder) CreatedByEqualsCurrent(alias ...string) ConditionBuilder {
 	cb.and("? = ?Operator", buildColumnExpr(constants.ColumnCreatedBy, alias...))
 
@@ -1223,6 +1391,30 @@ func (cb *CriteriaBuilder) CreatedByNotEqualsSubQuery(builder func(SelectQuery),
 
 func (cb *CriteriaBuilder) OrCreatedByNotEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
 	cb.or("? <> (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) CreatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? <> ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrCreatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? <> ANY (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) CreatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? <> ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrCreatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? <> ALL (?)", buildColumnExpr(constants.ColumnCreatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }
@@ -1311,6 +1503,30 @@ func (cb *CriteriaBuilder) OrUpdatedByEqualsSubQuery(builder func(SelectQuery), 
 	return cb
 }
 
+func (cb *CriteriaBuilder) UpdatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? = ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrUpdatedByEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? = ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) UpdatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? = ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrUpdatedByEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? = ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
 func (cb *CriteriaBuilder) UpdatedByEqualsCurrent(alias ...string) ConditionBuilder {
 	cb.and("? = ?Operator", buildColumnExpr(constants.ColumnUpdatedBy, alias...))
 
@@ -1343,6 +1559,30 @@ func (cb *CriteriaBuilder) UpdatedByNotEqualsSubQuery(builder func(SelectQuery),
 
 func (cb *CriteriaBuilder) OrUpdatedByNotEqualsSubQuery(builder func(SelectQuery), alias ...string) ConditionBuilder {
 	cb.or("? <> (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) UpdatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? <> ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrUpdatedByNotEqualsAny(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? <> ANY (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) UpdatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.and("? <> ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
+
+	return cb
+}
+
+func (cb *CriteriaBuilder) OrUpdatedByNotEqualsAll(builder func(SelectQuery), alias ...string) ConditionBuilder {
+	cb.or("? <> ALL (?)", buildColumnExpr(constants.ColumnUpdatedBy, alias...), cb.qb.BuildSubQuery(builder))
 
 	return cb
 }

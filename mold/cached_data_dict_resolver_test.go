@@ -14,6 +14,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/event"
 )
 
+// CachedDataDictResolverTestSuite tests the CachedDataDictResolver component.
+// Covers: caching behavior, invalidation (specific and global), error handling,
+// edge cases (empty keys, not found), panic scenarios, and concurrent access.
 type CachedDataDictResolverTestSuite struct {
 	suite.Suite
 
@@ -39,6 +42,8 @@ func (s *CachedDataDictResolverTestSuite) newResolver(loader DataDictLoader) Dat
 }
 
 func (s *CachedDataDictResolverTestSuite) TestCachesEntries() {
+	s.T().Logf("Testing cache entries behavior")
+
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft":     "草稿",
@@ -48,17 +53,21 @@ func (s *CachedDataDictResolverTestSuite) TestCachesEntries() {
 	resolver := s.newResolver(loader)
 
 	result, err := resolver.Resolve(s.ctx, "status", "published")
-	s.NoError(err)
-	s.Equal("已发布", result)
+	s.NoError(err, "Should resolve 'published' status successfully")
+	s.Equal("已发布", result, "Should return correct published value")
+	s.T().Logf("First resolve: status 'published' -> '%s'", result)
 
 	result2, err := resolver.Resolve(s.ctx, "status", "draft")
-	s.NoError(err)
-	s.Equal("草稿", result2)
+	s.NoError(err, "Should resolve 'draft' status from cache")
+	s.Equal("草稿", result2, "Should return correct draft value from cache")
+	s.T().Logf("Second resolve (cached): status 'draft' -> '%s'", result2)
 
 	loader.AssertExpectations(s.T())
 }
 
 func (s *CachedDataDictResolverTestSuite) TestInvalidatesSpecificKeys() {
+	s.T().Logf("Testing specific key invalidation")
+
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft": "草稿",
@@ -71,20 +80,25 @@ func (s *CachedDataDictResolverTestSuite) TestInvalidatesSpecificKeys() {
 	resolver := s.newResolver(loader)
 
 	first, err := resolver.Resolve(s.ctx, "status", "draft")
-	s.NoError(err)
-	s.Equal("草稿", first)
+	s.NoError(err, "Should resolve 'draft' status before invalidation")
+	s.Equal("草稿", first, "Should return correct draft value")
+	s.T().Logf("Before invalidation: status 'draft' -> '%s'", first)
 
 	PublishDataDictChangedEvent(s.bus, "status")
 	time.Sleep(10 * time.Millisecond)
+	s.T().Logf("Published invalidation event for 'status' key")
 
 	second, err := resolver.Resolve(s.ctx, "status", "archived")
-	s.NoError(err)
-	s.Equal("已归档", second)
+	s.NoError(err, "Should resolve 'archived' status after invalidation")
+	s.Equal("已归档", second, "Should return correct archived value from reloaded data")
+	s.T().Logf("After invalidation: status 'archived' -> '%s'", second)
 
 	loader.AssertExpectations(s.T())
 }
 
 func (s *CachedDataDictResolverTestSuite) TestInvalidatesAllKeys() {
+	s.T().Logf("Testing global key invalidation")
+
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft": "草稿",
@@ -100,24 +114,30 @@ func (s *CachedDataDictResolverTestSuite) TestInvalidatesAllKeys() {
 	resolver := s.newResolver(loader)
 
 	firstStatus, err := resolver.Resolve(s.ctx, "status", "draft")
-	s.NoError(err)
-	s.Equal("草稿", firstStatus)
+	s.NoError(err, "Should resolve 'status' before invalidation")
+	s.Equal("草稿", firstStatus, "Should return correct status value")
+	s.T().Logf("Before invalidation: status 'draft' -> '%s'", firstStatus)
 
 	firstCategory, err := resolver.Resolve(s.ctx, "category", "news")
-	s.NoError(err)
-	s.Equal("新闻", firstCategory)
+	s.NoError(err, "Should resolve 'category' before invalidation")
+	s.Equal("新闻", firstCategory, "Should return correct category value")
+	s.T().Logf("Before invalidation: category 'news' -> '%s'", firstCategory)
 
 	PublishDataDictChangedEvent(s.bus)
 	time.Sleep(10 * time.Millisecond)
+	s.T().Logf("Published global invalidation event (all keys)")
 
 	updatedStatus, err := resolver.Resolve(s.ctx, "status", "published")
-	s.NoError(err)
-	s.Equal("已发布", updatedStatus)
+	s.NoError(err, "Should resolve 'status' after global invalidation")
+	s.Equal("已发布", updatedStatus, "Should return updated published value from reloaded data")
+	s.T().Logf("After invalidation: status 'published' -> '%s'", updatedStatus)
 
 	loader.AssertExpectations(s.T())
 }
 
 func (s *CachedDataDictResolverTestSuite) TestLoaderError() {
+	s.T().Logf("Testing loader error handling")
+
 	loader := new(MockDataDictLoader)
 	expectedErr := context.DeadlineExceeded
 	loader.On("Load", mock.Anything, "status").Return(map[string]string(nil), expectedErr).Once()
@@ -125,31 +145,38 @@ func (s *CachedDataDictResolverTestSuite) TestLoaderError() {
 	resolver := s.newResolver(loader)
 
 	result, err := resolver.Resolve(s.ctx, "status", "draft")
-	s.Error(err)
+	s.Error(err, "Should return error when loader fails")
 	s.True(errors.Is(err, expectedErr), "Error should wrap the original error")
-	s.Contains(err.Error(), "failed to load dictionary \"status\"")
-	s.Equal("", result)
+	s.Contains(err.Error(), "failed to load dictionary \"status\"", "Error message should describe the failure")
+	s.Equal("", result, "Should return empty result on error")
+	s.T().Logf("Loader error correctly propagated: %v", err)
 
 	loader.AssertExpectations(s.T())
 }
 
 func (s *CachedDataDictResolverTestSuite) TestEmptyKeyOrCode() {
+	s.T().Logf("Testing empty key or code handling")
+
 	loader := new(MockDataDictLoader)
 
 	resolver := s.newResolver(loader)
 
 	result1, err1 := resolver.Resolve(s.ctx, "", "code")
-	s.NoError(err1)
-	s.Equal("", result1)
+	s.NoError(err1, "Should not error with empty key")
+	s.Equal("", result1, "Should return empty result for empty key")
+	s.T().Logf("Empty key case: returned '%s'", result1)
 
 	result2, err2 := resolver.Resolve(s.ctx, "key", "")
-	s.NoError(err2)
-	s.Equal("", result2)
+	s.NoError(err2, "Should not error with empty code")
+	s.Equal("", result2, "Should return empty result for empty code")
+	s.T().Logf("Empty code case: returned '%s'", result2)
 
 	loader.AssertExpectations(s.T())
 }
 
 func (s *CachedDataDictResolverTestSuite) TestCodeNotFound() {
+	s.T().Logf("Testing code not found scenario")
+
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft":     "草稿",
@@ -159,26 +186,37 @@ func (s *CachedDataDictResolverTestSuite) TestCodeNotFound() {
 	resolver := s.newResolver(loader)
 
 	result, err := resolver.Resolve(s.ctx, "status", "archived")
-	s.NoError(err)
-	s.Equal("", result)
+	s.NoError(err, "Should not error when code is not found")
+	s.Equal("", result, "Should return empty result for non-existent code")
+	s.T().Logf("Code 'archived' not found in dictionary, returned empty result")
 
 	loader.AssertExpectations(s.T())
 }
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenLoaderIsNil() {
+	s.T().Logf("Testing panic when loader is nil")
+
 	s.Panics(func() {
 		NewCachedDataDictResolver(nil, s.bus)
 	}, "Expected panic when loader is nil")
+
+	s.T().Logf("Correctly panicked with nil loader")
 }
 
 func (s *CachedDataDictResolverTestSuite) TestPanicsWhenBusIsNil() {
+	s.T().Logf("Testing panic when bus is nil")
+
 	loader := new(MockDataDictLoader)
 	s.Panics(func() {
 		NewCachedDataDictResolver(loader, nil)
 	}, "Expected panic when bus is nil")
+
+	s.T().Logf("Correctly panicked with nil bus")
 }
 
 func (s *CachedDataDictResolverTestSuite) TestNilCacheCreatesDefault() {
+	s.T().Logf("Testing default cache creation")
+
 	loader := new(MockDataDictLoader)
 	loader.On("Load", mock.Anything, "status").Return(map[string]string{
 		"draft": "草稿",
@@ -187,8 +225,9 @@ func (s *CachedDataDictResolverTestSuite) TestNilCacheCreatesDefault() {
 	resolver := NewCachedDataDictResolver(loader, s.bus)
 
 	result, err := resolver.Resolve(s.ctx, "status", "draft")
-	s.NoError(err)
-	s.Equal("草稿", result)
+	s.NoError(err, "Should resolve successfully with default cache")
+	s.Equal("草稿", result, "Should return correct value")
+	s.T().Logf("Default cache works correctly: status 'draft' -> '%s'", result)
 
 	loader.AssertExpectations(s.T())
 }
@@ -196,6 +235,8 @@ func (s *CachedDataDictResolverTestSuite) TestNilCacheCreatesDefault() {
 // TestSingleflightMergesConcurrentRequests verifies that concurrent requests for the same dictionary key
 // are merged by singleflight and only trigger one underlying load operation.
 func (s *CachedDataDictResolverTestSuite) TestSingleflightMergesConcurrentRequests() {
+	s.T().Logf("Testing singleflight concurrent request merging")
+
 	loader := new(MockDataDictLoader)
 
 	// Setup mock to return dictionary data for the key
@@ -220,6 +261,8 @@ func (s *CachedDataDictResolverTestSuite) TestSingleflightMergesConcurrentReques
 	results := make([]string, numRequests)
 	errors := make([]error, numRequests)
 
+	s.T().Logf("Launching %d concurrent requests for 'status' dictionary", numRequests)
+
 	for i := range numRequests {
 		wg.Go(func() {
 			// Different codes but same dictionary key
@@ -232,6 +275,7 @@ func (s *CachedDataDictResolverTestSuite) TestSingleflightMergesConcurrentReques
 	wg.Wait()
 
 	// All requests should succeed
+	successCount := 0
 	for i := range numRequests {
 		s.NoError(errors[i], "Request %d should not error", i)
 		s.NotEmpty(results[i], "Request %d should return a result", i)
@@ -241,7 +285,12 @@ func (s *CachedDataDictResolverTestSuite) TestSingleflightMergesConcurrentReques
 		expectedCode := codes[i%len(codes)]
 		expectedValue := dictData[expectedCode]
 		s.Equal(expectedValue, results[i], "Request %d should return correct value", i)
+
+		successCount++
 	}
+
+	s.T().Logf("All %d concurrent requests completed successfully", successCount)
+	s.T().Logf("Loader was called only once (singleflight merged requests)")
 
 	// The mock should have been called only once, proving that singleflight merged all requests
 	loader.AssertExpectations(s.T())

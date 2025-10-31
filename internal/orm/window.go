@@ -47,11 +47,8 @@ type WindowFrameablePartitionBuilder interface {
 
 // WindowBoundable defines window frame boundaries.
 type WindowBoundable[T any] interface {
-	// CurrentRow sets the boundary to CURRENT ROW.
 	CurrentRow() T
-	// Preceding sets the boundary to N PRECEDING.
 	Preceding(n int) T
-	// Following sets the boundary to N FOLLOWING.
 	Following(n int) T
 }
 
@@ -59,7 +56,6 @@ type WindowBoundable[T any] interface {
 type WindowStartBoundable[T any] interface {
 	WindowBoundable[T]
 
-	// UnboundedPreceding sets the start boundary to UNBOUNDED PRECEDING.
 	UnboundedPreceding() T
 }
 
@@ -67,7 +63,6 @@ type WindowStartBoundable[T any] interface {
 type WindowEndBoundable[T any] interface {
 	WindowStartBoundable[T]
 
-	// UnboundedFollowing sets the end boundary to UNBOUNDED FOLLOWING.
 	UnboundedFollowing() T
 }
 
@@ -209,6 +204,7 @@ type WindowMaxBuilder interface {
 
 // WindowStringAggBuilder defines STRING_AGG() as window function builder.
 type WindowStringAggBuilder interface {
+	BaseAggregate[WindowStringAggBuilder]
 	DistinctableAggregate[WindowStringAggBuilder]
 	OrderableAggregate[WindowStringAggBuilder]
 	NullHandlingBuilder[WindowStringAggBuilder]
@@ -219,6 +215,7 @@ type WindowStringAggBuilder interface {
 
 // WindowArrayAggBuilder defines ARRAY_AGG() as window function builder.
 type WindowArrayAggBuilder interface {
+	BaseAggregate[WindowArrayAggBuilder]
 	DistinctableAggregate[WindowArrayAggBuilder]
 	OrderableAggregate[WindowArrayAggBuilder]
 	NullHandlingBuilder[WindowArrayAggBuilder]
@@ -246,9 +243,7 @@ type WindowJsonObjectAggBuilder interface {
 	OrderableAggregate[WindowJsonObjectAggBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
-	// KeyColumn sets the key using a column reference.
 	KeyColumn(column string) WindowJsonObjectAggBuilder
-	// KeyExpr sets the key using a expression.
 	KeyExpr(expr any) WindowJsonObjectAggBuilder
 }
 
@@ -405,7 +400,7 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 		// - PostgreSQL, MySQL, SQLite: support neither
 		// Use dialect-specific logic to generate appropriate SQL for each database
 		if w.fromDir != FromDefault || w.nullsMode != NullsDefault {
-			dialectBytes, err := w.eb.RunDialectFunc(DialectFuncs{
+			dialectBytes, err := w.eb.FragmentByDialect(DialectFragments{
 				// Oracle supports both FROM FIRST/LAST and IGNORE/RESPECT NULLS
 				Oracle: func() ([]byte, error) {
 					var dialectB []byte

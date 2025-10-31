@@ -6,7 +6,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
-// logger is the named logger instance for the ORM package.
+// logger is the named logger instance for the Orm package.
 var logger = log.Named("orm")
 
 // New creates a new Db instance that wraps the provided bun.IDB.

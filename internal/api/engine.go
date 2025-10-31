@@ -50,7 +50,6 @@ type DefaultEngine struct {
 }
 
 // Connect registers the Api engine with the given router.
-// It sets up the middleware chain and registers the Api endpoint.
 func (e *DefaultEngine) Connect(router fiber.Router) {
 	middlewares := e.buildMiddlewares()
 	middlewares = append(middlewares, e.dispatch)

@@ -3,6 +3,9 @@ package page
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPageableNormalize(t *testing.T) {
@@ -12,37 +15,37 @@ func TestPageableNormalize(t *testing.T) {
 		expected Pageable
 	}{
 		{
-			"Normal values",
+			"NormalValues",
 			Pageable{Page: 2, Size: 10},
 			Pageable{Page: 2, Size: 10},
 		},
 		{
-			"Page less than 1",
+			"PageLessThanOne",
 			Pageable{Page: 0, Size: 10},
 			Pageable{Page: DefaultPageNumber, Size: 10},
 		},
 		{
-			"Negative page",
+			"NegativePage",
 			Pageable{Page: -1, Size: 10},
 			Pageable{Page: DefaultPageNumber, Size: 10},
 		},
 		{
-			"Size less than 1",
+			"SizeLessThanOne",
 			Pageable{Page: 1, Size: 0},
 			Pageable{Page: 1, Size: DefaultPageSize},
 		},
 		{
-			"Negative size",
+			"NegativeSize",
 			Pageable{Page: 1, Size: -5},
 			Pageable{Page: 1, Size: DefaultPageSize},
 		},
 		{
-			"Size exceeds maximum",
+			"SizeExceedsMaximum",
 			Pageable{Page: 1, Size: 2000},
 			Pageable{Page: 1, Size: MaxPageSize},
 		},
 		{
-			"All invalid values",
+			"AllInvalidValues",
 			Pageable{Page: -1, Size: -1},
 			Pageable{Page: DefaultPageNumber, Size: DefaultPageSize},
 		},
@@ -52,13 +55,9 @@ func TestPageableNormalize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.input.Normalize()
 
-			if tt.input.Page != tt.expected.Page {
-				t.Errorf("Expected Page %d, got %d", tt.expected.Page, tt.input.Page)
-			}
-
-			if tt.input.Size != tt.expected.Size {
-				t.Errorf("Expected Size %d, got %d", tt.expected.Size, tt.input.Size)
-			}
+			assert.Equal(t, tt.expected.Page, tt.input.Page, "Page should be normalized correctly")
+			assert.Equal(t, tt.expected.Size, tt.input.Size, "Size should be normalized correctly")
+			t.Logf("✓ Normalized - Page: %d, Size: %d", tt.input.Page, tt.input.Size)
 		})
 	}
 }
@@ -69,19 +68,18 @@ func TestPageableOffset(t *testing.T) {
 		pageable Pageable
 		expected int
 	}{
-		{"Page 1, Size 10", Pageable{Page: 1, Size: 10}, 0},
-		{"Page 2, Size 10", Pageable{Page: 2, Size: 10}, 10},
-		{"Page 3, Size 15", Pageable{Page: 3, Size: 15}, 30},
-		{"Page 1, Size 1", Pageable{Page: 1, Size: 1}, 0},
-		{"Page 5, Size 20", Pageable{Page: 5, Size: 20}, 80},
+		{"Page1Size10", Pageable{Page: 1, Size: 10}, 0},
+		{"Page2Size10", Pageable{Page: 2, Size: 10}, 10},
+		{"Page3Size15", Pageable{Page: 3, Size: 15}, 30},
+		{"Page1Size1", Pageable{Page: 1, Size: 1}, 0},
+		{"Page5Size20", Pageable{Page: 5, Size: 20}, 80},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			offset := tt.pageable.Offset()
-			if offset != tt.expected {
-				t.Errorf("Expected offset %d, got %d", tt.expected, offset)
-			}
+			assert.Equal(t, tt.expected, offset, "Offset should be calculated correctly")
+			t.Logf("✓ Offset calculated - Page: %d, Size: %d, Offset: %d", tt.pageable.Page, tt.pageable.Size, offset)
 		})
 	}
 }
@@ -93,25 +91,13 @@ func TestNewPage(t *testing.T) {
 
 	page := New(pageable, total, items)
 
-	if page.Page != 2 {
-		t.Errorf("Expected Page to be 2, got %d", page.Page)
-	}
-
-	if page.Size != 10 {
-		t.Errorf("Expected Size to be 10, got %d", page.Size)
-	}
-
-	if page.Total != 25 {
-		t.Errorf("Expected Total to be 25, got %d", page.Total)
-	}
-
-	if len(page.Items) != 3 {
-		t.Errorf("Expected 3 items, got %d", len(page.Items))
-	}
-
-	if page.Items[0] != "item1" {
-		t.Errorf("Expected first item to be 'item1', got %s", page.Items[0])
-	}
+	assert.Equal(t, 2, page.Page, "Page number should match")
+	assert.Equal(t, 10, page.Size, "Page size should match")
+	assert.Equal(t, int64(25), page.Total, "Total count should match")
+	assert.Len(t, page.Items, 3, "Should have correct number of items")
+	assert.Equal(t, "item1", page.Items[0], "First item should match")
+	t.Logf("✓ Page created - Page: %d, Size: %d, Total: %d, Items: %d",
+		page.Page, page.Size, page.Total, len(page.Items))
 }
 
 func TestNewPageWithNilItems(t *testing.T) {
@@ -120,13 +106,9 @@ func TestNewPageWithNilItems(t *testing.T) {
 
 	page := New[string](pageable, total, nil)
 
-	if page.Items == nil {
-		t.Error("Expected Items to be empty slice, not nil")
-	}
-
-	if len(page.Items) != 0 {
-		t.Errorf("Expected empty slice, got length %d", len(page.Items))
-	}
+	assert.NotNil(t, page.Items, "Items should be empty slice, not nil")
+	assert.Empty(t, page.Items, "Items should be empty")
+	t.Logf("✓ Page created with nil items - Items initialized as empty slice")
 }
 
 func TestPageTotalPages(t *testing.T) {
@@ -136,32 +118,32 @@ func TestPageTotalPages(t *testing.T) {
 		expected int
 	}{
 		{
-			"Normal case",
+			"NormalCase",
 			Page[string]{Size: 10, Total: 25},
 			3,
 		},
 		{
-			"Exact division",
+			"ExactDivision",
 			Page[string]{Size: 10, Total: 20},
 			2,
 		},
 		{
-			"Single item",
+			"SingleItem",
 			Page[string]{Size: 10, Total: 1},
 			1,
 		},
 		{
-			"Zero items",
+			"ZeroItems",
 			Page[string]{Size: 10, Total: 0},
 			0,
 		},
 		{
-			"Zero size",
+			"ZeroSize",
 			Page[string]{Size: 0, Total: 10},
 			0,
 		},
 		{
-			"Large numbers",
+			"LargeNumbers",
 			Page[string]{Size: 15, Total: 100},
 			7,
 		},
@@ -170,9 +152,8 @@ func TestPageTotalPages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			totalPages := tt.page.TotalPages()
-			if totalPages != tt.expected {
-				t.Errorf("Expected %d total pages, got %d", tt.expected, totalPages)
-			}
+			assert.Equal(t, tt.expected, totalPages, "Total pages should be calculated correctly")
+			t.Logf("✓ Total pages - Size: %d, Total: %d, Pages: %d", tt.page.Size, tt.page.Total, totalPages)
 		})
 	}
 }
@@ -184,27 +165,27 @@ func TestPageHasNext(t *testing.T) {
 		expected bool
 	}{
 		{
-			"Has next page",
+			"HasNextPage",
 			Page[string]{Page: 1, Size: 10, Total: 25},
 			true,
 		},
 		{
-			"Last page",
+			"LastPage",
 			Page[string]{Page: 3, Size: 10, Total: 25},
 			false,
 		},
 		{
-			"Single page",
+			"SinglePage",
 			Page[string]{Page: 1, Size: 10, Total: 5},
 			false,
 		},
 		{
-			"Empty result",
+			"EmptyResult",
 			Page[string]{Page: 1, Size: 10, Total: 0},
 			false,
 		},
 		{
-			"Middle page",
+			"MiddlePage",
 			Page[string]{Page: 2, Size: 10, Total: 30},
 			true,
 		},
@@ -213,9 +194,9 @@ func TestPageHasNext(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hasNext := tt.page.HasNext()
-			if hasNext != tt.expected {
-				t.Errorf("Expected HasNext to be %t, got %t", tt.expected, hasNext)
-			}
+			assert.Equal(t, tt.expected, hasNext, "HasNext should return correct value")
+			t.Logf("✓ HasNext - Page: %d/%d, HasNext: %t",
+				tt.page.Page, tt.page.TotalPages(), hasNext)
 		})
 	}
 }
@@ -227,22 +208,22 @@ func TestPageHasPrevious(t *testing.T) {
 		expected bool
 	}{
 		{
-			"First page",
+			"FirstPage",
 			Page[string]{Page: 1, Size: 10, Total: 25},
 			false,
 		},
 		{
-			"Second page",
+			"SecondPage",
 			Page[string]{Page: 2, Size: 10, Total: 25},
 			true,
 		},
 		{
-			"Last page",
+			"LastPage",
 			Page[string]{Page: 3, Size: 10, Total: 25},
 			true,
 		},
 		{
-			"Middle page",
+			"MiddlePage",
 			Page[string]{Page: 5, Size: 10, Total: 100},
 			true,
 		},
@@ -251,9 +232,8 @@ func TestPageHasPrevious(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hasPrevious := tt.page.HasPrevious()
-			if hasPrevious != tt.expected {
-				t.Errorf("Expected HasPrevious to be %t, got %t", tt.expected, hasPrevious)
-			}
+			assert.Equal(t, tt.expected, hasPrevious, "HasPrevious should return correct value")
+			t.Logf("✓ HasPrevious - Page: %d, HasPrevious: %t", tt.page.Page, hasPrevious)
 		})
 	}
 }
@@ -266,26 +246,18 @@ func TestPageableJSONMarshaling(t *testing.T) {
 
 	// Marshal
 	data, err := json.Marshal(pageable)
-	if err != nil {
-		t.Fatalf("Marshal error: %v", err)
-	}
+	require.NoError(t, err, "Pageable should marshal to JSON successfully")
 
 	// Unmarshal
 	var result Pageable
 
 	err = json.Unmarshal(data, &result)
-	if err != nil {
-		t.Fatalf("Unmarshal error: %v", err)
-	}
+	require.NoError(t, err, "JSON should unmarshal to Pageable successfully")
 
 	// Compare
-	if result.Page != pageable.Page {
-		t.Errorf("Expected Page %d, got %d", pageable.Page, result.Page)
-	}
-
-	if result.Size != pageable.Size {
-		t.Errorf("Expected Size %d, got %d", pageable.Size, result.Size)
-	}
+	assert.Equal(t, pageable.Page, result.Page, "Page should match after marshaling")
+	assert.Equal(t, pageable.Size, result.Size, "Size should match after marshaling")
+	t.Logf("✓ JSON marshaling - Original: %+v, Result: %+v", pageable, result)
 }
 
 func TestPageJSONMarshaling(t *testing.T) {
@@ -299,86 +271,68 @@ func TestPageJSONMarshaling(t *testing.T) {
 
 	// Marshal
 	data, err := json.Marshal(page)
-	if err != nil {
-		t.Fatalf("Marshal error: %v", err)
-	}
+	require.NoError(t, err, "Page should marshal to JSON successfully")
 
 	// Unmarshal
 	var result Page[string]
 
 	err = json.Unmarshal(data, &result)
-	if err != nil {
-		t.Fatalf("Unmarshal error: %v", err)
-	}
+	require.NoError(t, err, "JSON should unmarshal to Page successfully")
 
 	// Compare
-	if result.Page != page.Page {
-		t.Errorf("Expected Page %d, got %d", page.Page, result.Page)
-	}
-
-	if result.Size != page.Size {
-		t.Errorf("Expected Size %d, got %d", page.Size, result.Size)
-	}
-
-	if result.Total != page.Total {
-		t.Errorf("Expected Total %d, got %d", page.Total, result.Total)
-	}
-
-	if len(result.Items) != len(page.Items) {
-		t.Errorf("Expected %d items, got %d", len(page.Items), len(result.Items))
-	}
+	assert.Equal(t, page.Page, result.Page, "Page number should match after marshaling")
+	assert.Equal(t, page.Size, result.Size, "Page size should match after marshaling")
+	assert.Equal(t, page.Total, result.Total, "Total should match after marshaling")
+	assert.Equal(t, len(page.Items), len(result.Items), "Items count should match after marshaling")
 
 	for i, item := range page.Items {
-		if result.Items[i] != item {
-			t.Errorf("Expected item[%d] to be %s, got %s", i, item, result.Items[i])
-		}
+		assert.Equal(t, item, result.Items[i], "Item[%d] should match after marshaling", i)
 	}
+
+	t.Logf("✓ Page JSON marshaling - Page: %d, Total: %d, Items: %d",
+		result.Page, result.Total, len(result.Items))
 }
 
 func TestPageWithDifferentTypes(t *testing.T) {
-	// Test with struct
-	type User struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	}
+	t.Run("WithStructType", func(t *testing.T) {
+		type User struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		}
 
-	users := []User{
-		{ID: 1, Name: "Alice"},
-		{ID: 2, Name: "Bob"},
-	}
+		users := []User{
+			{ID: 1, Name: "Alice"},
+			{ID: 2, Name: "Bob"},
+		}
 
-	pageable := Pageable{Page: 1, Size: 10}
-	userPage := New(pageable, 2, users)
+		pageable := Pageable{Page: 1, Size: 10}
+		userPage := New(pageable, 2, users)
 
-	if userPage.Items[0].Name != "Alice" {
-		t.Errorf("Expected first user name to be Alice, got %s", userPage.Items[0].Name)
-	}
+		assert.Equal(t, "Alice", userPage.Items[0].Name, "First user name should be Alice")
+		assert.Equal(t, 2, len(userPage.Items), "Should have 2 users")
+		t.Logf("✓ Struct type - User count: %d, First user: %s", len(userPage.Items), userPage.Items[0].Name)
+	})
 
-	// Test with int
-	numbers := []int{1, 2, 3, 4, 5}
-	numberPage := New(pageable, 5, numbers)
+	t.Run("WithIntType", func(t *testing.T) {
+		numbers := []int{1, 2, 3, 4, 5}
+		pageable := Pageable{Page: 1, Size: 10}
+		numberPage := New(pageable, 5, numbers)
 
-	if len(numberPage.Items) != 5 {
-		t.Errorf("Expected 5 numbers, got %d", len(numberPage.Items))
-	}
-
-	if numberPage.Items[0] != 1 {
-		t.Errorf("Expected first number to be 1, got %d", numberPage.Items[0])
-	}
+		assert.Len(t, numberPage.Items, 5, "Should have 5 numbers")
+		assert.Equal(t, 1, numberPage.Items[0], "First number should be 1")
+		t.Logf("✓ Int type - Number count: %d, First number: %d", len(numberPage.Items), numberPage.Items[0])
+	})
 }
 
 func TestPaginationScenarios(t *testing.T) {
-	// Scenario: Api pagination
-	t.Run("Api pagination workflow", func(t *testing.T) {
+	t.Run("ApiPaginationWorkflow", func(t *testing.T) {
 		// Client sends request for page 2, size 10
 		pageable := Pageable{Page: 2, Size: 10}
 		pageable.Normalize()
 
 		// Database query would use offset
 		offset := pageable.Offset()
-		if offset != 10 {
-			t.Errorf("Expected offset 10, got %d", offset)
-		}
+		assert.Equal(t, 10, offset, "Offset should be calculated correctly for page 2")
 
 		// Mock data from database
 		items := []string{"item11", "item12", "item13", "item14", "item15"}
@@ -388,47 +342,32 @@ func TestPaginationScenarios(t *testing.T) {
 		page := New(pageable, total, items)
 
 		// Verify page metadata
-		if !page.HasPrevious() {
-			t.Error("Expected page to have previous")
-		}
+		assert.True(t, page.HasPrevious(), "Page 2 should have previous page")
+		assert.True(t, page.HasNext(), "Page 2 should have next page")
+		assert.Equal(t, 5, page.TotalPages(), "Should have 5 total pages")
 
-		if !page.HasNext() {
-			t.Error("Expected page to have next")
-		}
-
-		if page.TotalPages() != 5 {
-			t.Errorf("Expected 5 total pages, got %d", page.TotalPages())
-		}
+		t.Logf("✓ API pagination - Page: %d/%d, Items: %d, HasPrev: %t, HasNext: %t",
+			page.Page, page.TotalPages(), len(page.Items), page.HasPrevious(), page.HasNext())
 	})
 
-	// Scenario: Edge cases
-	t.Run("Edge cases", func(t *testing.T) {
-		// Empty result set
-		emptyPageable := Pageable{Page: 1, Size: 10}
-		emptyPage := New[string](emptyPageable, 0, nil)
+	t.Run("EdgeCases", func(t *testing.T) {
+		t.Run("EmptyResultSet", func(t *testing.T) {
+			emptyPageable := Pageable{Page: 1, Size: 10}
+			emptyPage := New[string](emptyPageable, 0, nil)
 
-		if emptyPage.HasNext() {
-			t.Error("Empty page should not have next")
-		}
+			assert.False(t, emptyPage.HasNext(), "Empty page should not have next")
+			assert.False(t, emptyPage.HasPrevious(), "Empty page should not have previous")
+			assert.Equal(t, 0, emptyPage.TotalPages(), "Empty page should have 0 total pages")
+			t.Logf("✓ Empty result - Total: %d, Pages: %d", emptyPage.Total, emptyPage.TotalPages())
+		})
 
-		if emptyPage.HasPrevious() {
-			t.Error("Empty page should not have previous")
-		}
+		t.Run("SingleItemResult", func(t *testing.T) {
+			singlePageable := Pageable{Page: 1, Size: 10}
+			singlePage := New(singlePageable, 1, []string{"only item"})
 
-		if emptyPage.TotalPages() != 0 {
-			t.Errorf("Empty page should have 0 total pages, got %d", emptyPage.TotalPages())
-		}
-
-		// Single item result
-		singlePageable := Pageable{Page: 1, Size: 10}
-		singlePage := New(singlePageable, 1, []string{"only item"})
-
-		if singlePage.HasNext() {
-			t.Error("Single item page should not have next")
-		}
-
-		if singlePage.TotalPages() != 1 {
-			t.Errorf("Single item page should have 1 total page, got %d", singlePage.TotalPages())
-		}
+			assert.False(t, singlePage.HasNext(), "Single item page should not have next")
+			assert.Equal(t, 1, singlePage.TotalPages(), "Single item page should have 1 total page")
+			t.Logf("✓ Single item - Total: %d, Pages: %d", singlePage.Total, singlePage.TotalPages())
+		})
 	})
 }

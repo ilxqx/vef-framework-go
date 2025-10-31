@@ -74,7 +74,8 @@ type TestUserCreateParams struct {
 	Status      string `json:"status"      validate:"required,oneof=active inactive"`
 }
 
-// CreateTestSuite is the test suite for Create Api tests.
+// CreateTestSuite tests the Create API functionality
+// including basic create, PreCreate/PostCreate hooks, and negative cases.
 type CreateTestSuite struct {
 	BaseSuite
 }
@@ -95,6 +96,8 @@ func (suite *CreateTestSuite) TearDownSuite() {
 
 // TestCreateBasic tests basic Create functionality.
 func (suite *CreateTestSuite) TestCreateBasic() {
+	suite.T().Logf("Testing Create API basic functionality for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create",
@@ -110,19 +113,22 @@ func (suite *CreateTestSuite) TestCreateBasic() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(body.Message, i18n.T(result.OkMessage))
-	suite.NotNil(body.Data)
+	suite.True(body.IsOk(), "Should return successful response")
+	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
+	suite.NotNil(body.Data, "Should return data")
 
-	// CreateApi returns primary key(s) only
 	pk := suite.readDataAsMap(body.Data)
-	suite.NotEmpty(pk["id"])
+	suite.NotEmpty(pk["id"], "Should return created user id")
+
+	suite.T().Logf("Created user with id: %v", pk["id"])
 }
 
 // TestCreateWithPreHook tests Create with PreCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPreHook() {
+	suite.T().Logf("Testing Create API with PreCreate hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_prehook",
@@ -137,18 +143,20 @@ func (suite *CreateTestSuite) TestCreateWithPreHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
-	// CreateApi returns primary key(s) only, we can't verify the name directly
-	// The PreCreate hook was executed if the insert succeeded
 	pk := suite.readDataAsMap(body.Data)
-	suite.NotEmpty(pk["id"])
+	suite.NotEmpty(pk["id"], "Should return created user id")
+
+	suite.T().Logf("Created user with PreCreate hook, id: %v", pk["id"])
 }
 
 // TestCreateWithPostHook tests Create with PostCreate hook.
 func (suite *CreateTestSuite) TestCreateWithPostHook() {
+	suite.T().Logf("Testing Create API with PostCreate hook for %s", suite.dbType)
+
 	resp := suite.makeApiRequest(api.Request{
 		Identifier: api.Identifier{
 			Resource: "test/user_create_posthook",
@@ -163,19 +171,22 @@ func (suite *CreateTestSuite) TestCreateWithPostHook() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode)
-	suite.NotEmpty(resp.Header.Get("X-Created-User-Id"))
+	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
+	suite.NotEmpty(resp.Header.Get("X-Created-User-Id"), "Should set X-Created-User-Id header via PostCreate hook")
 
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return successful response")
 
-	// CreateApi returns primary key(s) only
 	pk := suite.readDataAsMap(body.Data)
-	suite.NotEmpty(pk["id"])
+	suite.NotEmpty(pk["id"], "Should return created user id")
+
+	suite.T().Logf("Created user with PostCreate hook, id: %v, header: %s", pk["id"], resp.Header.Get("X-Created-User-Id"))
 }
 
 // TestCreateNegativeCases tests negative scenarios.
 func (suite *CreateTestSuite) TestCreateNegativeCases() {
+	suite.T().Logf("Testing Create API negative cases for %s", suite.dbType)
+
 	suite.Run("MissingRequiredField", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
@@ -187,13 +198,14 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 				"email":  "test@example.com",
 				"age":    25,
 				"status": "active",
-				// Missing "name"
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when required field 'name' is missing")
+
+		suite.T().Logf("Validation failed as expected for missing required field")
 	})
 
 	suite.Run("InvalidEmail", func() {
@@ -211,9 +223,11 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when email format is invalid")
+
+		suite.T().Logf("Validation failed as expected for invalid email format")
 	})
 
 	suite.Run("InvalidAge", func() {
@@ -226,14 +240,16 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			Params: map[string]any{
 				"name":   "Test",
 				"email":  "test@example.com",
-				"age":    150, // Invalid: > 120
+				"age":    150,
 				"status": "active",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when age is greater than 120")
+
+		suite.T().Logf("Validation failed as expected for invalid age")
 	})
 
 	suite.Run("InvalidStatus", func() {
@@ -251,13 +267,14 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when status is not 'active' or 'inactive'")
+
+		suite.T().Logf("Validation failed as expected for invalid status")
 	})
 
 	suite.Run("DuplicateEmail", func() {
-		// First create
 		suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
@@ -272,7 +289,6 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		// Try to create with same email
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_create",
@@ -287,8 +303,10 @@ func (suite *CreateTestSuite) TestCreateNegativeCases() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return 200 status code")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk()) // Should fail due to unique constraint
+		suite.False(body.IsOk(), "Should fail due to duplicate email unique constraint")
+
+		suite.T().Logf("Validation failed as expected for duplicate email")
 	})
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
-	t.Run("Single subscriber receives event", func(t *testing.T) {
+	t.Run("SingleSubscriberReceivesEvent", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -35,7 +35,6 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		// Wait for event delivery with timeout
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -43,17 +42,19 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		select {
 		case <-done:
-			require.NotNil(t, receivedEvent)
-			assert.Equal(t, "user.created", receivedEvent.Type())
-			assert.Equal(t, "test-service", receivedEvent.Source())
-			assert.Equal(t, testEvent.Id(), receivedEvent.Id())
+			require.NotNil(t, receivedEvent, "Received event should not be nil")
+			assert.Equal(t, "user.created", receivedEvent.Type(), "Event type should match")
+			assert.Equal(t, "test-service", receivedEvent.Source(), "Event source should match")
+			assert.Equal(t, testEvent.Id(), receivedEvent.Id(), "Event ID should match")
+			t.Logf("✓ Event delivered - Type: %s, Source: %s, ID: %s",
+				receivedEvent.Type(), receivedEvent.Source(), receivedEvent.Id())
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timeout waiting for event delivery")
+			t.Fatal("Timeout waiting for event delivery")
 		}
 	})
 
-	t.Run("Multiple subscribers receive same event", func(t *testing.T) {
+	t.Run("MultipleSubscribersReceiveSameEvent", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -93,7 +94,6 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		// Wait for all subscribers to receive the event
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -102,22 +102,25 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		select {
 		case <-done:
 			mu.Lock()
-			assert.Equal(t, subscriberCount, len(receivedEvents))
+			assert.Equal(t, subscriberCount, len(receivedEvents), "All subscribers should receive the event")
 
-			for _, evt := range receivedEvents {
-				assert.Equal(t, "order.placed", evt.Type())
-				assert.Equal(t, "order-service", evt.Source())
-				assert.Equal(t, testEvent.Id(), evt.Id())
+			for i, evt := range receivedEvents {
+				assert.Equal(t, "order.placed", evt.Type(), "Event type should match for subscriber %d", i)
+				assert.Equal(t, "order-service", evt.Source(), "Event source should match for subscriber %d", i)
+				assert.Equal(t, testEvent.Id(), evt.Id(), "Event ID should match for subscriber %d", i)
 			}
 
 			mu.Unlock()
 
+			t.Logf("✓ Event delivered to %d subscribers - Type: %s, Source: %s",
+				subscriberCount, testEvent.Type(), testEvent.Source())
+
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timeout waiting for event delivery to all subscribers")
+			t.Fatal("Timeout waiting for event delivery to all subscribers")
 		}
 	})
 
-	t.Run("Subscribers for different event types", func(t *testing.T) {
+	t.Run("SubscribersForDifferentEventTypes", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -158,7 +161,6 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		// Wait for both events
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -167,20 +169,23 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		select {
 		case <-done:
 			mu.Lock()
-			assert.Equal(t, 1, len(userEvents))
-			assert.Equal(t, 1, len(orderEvents))
-			assert.Equal(t, "user.registered", userEvents[0].Type())
-			assert.Equal(t, "order.created", orderEvents[0].Type())
+			assert.Equal(t, 1, len(userEvents), "Should receive exactly one user event")
+			assert.Equal(t, 1, len(orderEvents), "Should receive exactly one order event")
+			assert.Equal(t, "user.registered", userEvents[0].Type(), "User event type should match")
+			assert.Equal(t, "order.created", orderEvents[0].Type(), "Order event type should match")
 			mu.Unlock()
 
+			t.Logf("✓ Events delivered correctly - User: %s, Order: %s",
+				userEvents[0].Type(), orderEvents[0].Type())
+
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timeout waiting for events")
+			t.Fatal("Timeout waiting for events")
 		}
 	})
 }
 
 func TestMemoryEventBus_Unsubscribe(t *testing.T) {
-	t.Run("Unsubscribe prevents further event delivery", func(t *testing.T) {
+	t.Run("UnsubscribePreventsFurtherEventDelivery", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -203,6 +208,13 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		// Give some time for delivery
 		time.Sleep(10 * time.Millisecond)
 
+		mu.Lock()
+
+		firstCount := eventCount
+
+		mu.Unlock()
+		t.Logf("Events received before unsubscribe: %d", firstCount)
+
 		// Unsubscribe
 		unsubscribe()
 
@@ -214,11 +226,16 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 
 		mu.Lock()
-		assert.Equal(t, 1, eventCount) // Should only receive the first event
+
+		finalCount := eventCount
+
 		mu.Unlock()
+
+		assert.Equal(t, 1, finalCount, "Should only receive the first event")
+		t.Logf("✓ Unsubscribe successful - Events before: %d, after: %d", firstCount, finalCount)
 	})
 
-	t.Run("Unsubscribe one of multiple subscribers", func(t *testing.T) {
+	t.Run("UnsubscribeOneOfMultipleSubscribers", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -251,6 +268,15 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		bus.Publish(event1)
 		time.Sleep(10 * time.Millisecond)
 
+		mu.Lock()
+
+		count1After1 := subscriber1Count
+		count2After1 := subscriber2Count
+
+		mu.Unlock()
+
+		t.Logf("After first event - Subscriber1: %d, Subscriber2: %d", count1After1, count2After1)
+
 		// Unsubscribe first subscriber
 		unsubscribe1()
 
@@ -260,12 +286,18 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 
 		mu.Lock()
-		assert.Equal(t, 1, subscriber1Count) // Should only receive first event
-		assert.Equal(t, 2, subscriber2Count) // Should receive both events
+
+		count1Final := subscriber1Count
+		count2Final := subscriber2Count
+
 		mu.Unlock()
+
+		assert.Equal(t, 1, count1Final, "Subscriber1 should only receive first event")
+		assert.Equal(t, 2, count2Final, "Subscriber2 should receive both events")
+		t.Logf("✓ Partial unsubscribe successful - Subscriber1: %d, Subscriber2: %d", count1Final, count2Final)
 	})
 
-	t.Run("Unsubscribe function is idempotent", func(t *testing.T) {
+	t.Run("UnsubscribeFunctionIsIdempotent", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -285,6 +317,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		unsubscribe()
 		unsubscribe()
 		unsubscribe()
+		t.Logf("Unsubscribe called 3 times without panic")
 
 		// Event should not be delivered
 		testEvent := event.NewBaseEvent("test.event")
@@ -292,13 +325,18 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 
 		mu.Lock()
-		assert.Equal(t, 0, eventCount)
+
+		finalCount := eventCount
+
 		mu.Unlock()
+
+		assert.Equal(t, 0, finalCount, "No events should be received after unsubscribe")
+		t.Logf("✓ Idempotent unsubscribe verified - Event count: %d", finalCount)
 	})
 }
 
 func TestMemoryEventBus_Lifecycle(t *testing.T) {
-	t.Run("Start and shutdown", func(t *testing.T) {
+	t.Run("StartAndShutdown", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		bus := &MemoryBus{
@@ -311,25 +349,28 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 
 		// Start the bus
 		err := bus.Start()
-		require.NoError(t, err)
+		require.NoError(t, err, "Bus should start successfully")
+		t.Logf("Bus started successfully")
 
 		// Verify it's started
-		assert.True(t, bus.started)
+		assert.True(t, bus.started, "Bus should be marked as started")
 
 		// Try to start again - should return error
 		err = bus.Start()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "already started")
+		assert.Error(t, err, "Starting an already started bus should return error")
+		assert.Contains(t, err.Error(), "already started", "Error should indicate bus is already started")
+		t.Logf("Correctly prevented double start")
 
 		// Shutdown the bus
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
 
 		err = bus.Shutdown(shutdownCtx)
-		require.NoError(t, err)
+		require.NoError(t, err, "Bus should shutdown successfully")
+		t.Logf("✓ Bus lifecycle completed - Start → Shutdown")
 	})
 
-	t.Run("Shutdown without start", func(t *testing.T) {
+	t.Run("ShutdownWithoutStart", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		bus := &MemoryBus{
@@ -342,10 +383,11 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 
 		// Shutdown without starting - should not error
 		err := bus.Shutdown(context.Background())
-		assert.NoError(t, err)
+		assert.NoError(t, err, "Shutdown without start should not return error")
+		t.Logf("✓ Graceful shutdown without start verified")
 	})
 
-	t.Run("Events are processed after start", func(t *testing.T) {
+	t.Run("EventsAreProcessedAfterStart", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		var (
@@ -366,7 +408,6 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		bus.Publish(testEvent)
 
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -374,15 +415,17 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 
 		select {
 		case <-done:
-			assert.Equal(t, testEvent.Id(), receivedEvent.Id())
+			assert.Equal(t, testEvent.Id(), receivedEvent.Id(), "Event ID should match")
+			t.Logf("✓ Event processed after start - ID: %s", receivedEvent.Id())
+
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timeout waiting for event after start")
+			t.Fatal("Timeout waiting for event after start")
 		}
 	})
 }
 
 func TestMemoryEventBus_Middleware(t *testing.T) {
-	t.Run("Middleware processes events", func(t *testing.T) {
+	t.Run("MiddlewareProcessesEvents", func(t *testing.T) {
 		var (
 			processedEvents []event.Event
 			mu              sync.Mutex
@@ -420,7 +463,6 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		bus.Publish(testEvent)
 
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -429,17 +471,23 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		select {
 		case <-done:
 			mu.Lock()
-			assert.Equal(t, 1, len(processedEvents))
-			assert.Equal(t, testEvent.Id(), processedEvents[0].Id())
+
+			processedCount := len(processedEvents)
+			processedID := processedEvents[0].Id()
+
 			mu.Unlock()
-			assert.Equal(t, testEvent.Id(), receivedEvent.Id())
+
+			assert.Equal(t, 1, processedCount, "Middleware should process exactly one event")
+			assert.Equal(t, testEvent.Id(), processedID, "Processed event ID should match")
+			assert.Equal(t, testEvent.Id(), receivedEvent.Id(), "Received event ID should match")
+			t.Logf("✓ Middleware processed event - ID: %s", processedID)
 
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timeout waiting for middleware processing")
+			t.Fatal("Timeout waiting for middleware processing")
 		}
 	})
 
-	t.Run("Middleware chain processes in order", func(t *testing.T) {
+	t.Run("MiddlewareChainProcessesInOrder", func(t *testing.T) {
 		var (
 			processingOrder []string
 			mu              sync.Mutex
@@ -483,7 +531,6 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		bus.Publish(testEvent)
 
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -492,16 +539,23 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		select {
 		case <-done:
 			mu.Lock()
-			assert.Equal(t, []string{"middleware1", "middleware2"}, processingOrder)
+
+			actualOrder := make([]string, len(processingOrder))
+			copy(actualOrder, processingOrder)
 			mu.Unlock()
+
+			expectedOrder := []string{"middleware1", "middleware2"}
+			assert.Equal(t, expectedOrder, actualOrder, "Middleware should process in registration order")
+			t.Logf("✓ Middleware chain processed in order: %v", actualOrder)
+
 		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timeout waiting for middleware chain processing")
+			t.Fatal("Timeout waiting for middleware chain processing")
 		}
 	})
 }
 
 func TestMemoryEventBus_Concurrency(t *testing.T) {
-	t.Run("Concurrent publish and subscribe", func(t *testing.T) {
+	t.Run("ConcurrentPublishAndSubscribe", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		const (
@@ -518,7 +572,6 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 
 		// Create subscribers
 		var unsubscribers []event.UnsubscribeFunc
-
 		for range numSubscribers {
 			wg.Add(eventsPerPublisher * numPublishers) // Each subscriber should receive all events
 
@@ -543,18 +596,17 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 		for i := range numPublishers {
 			go func(publisherID int) {
 				for j := range eventsPerPublisher {
-					event := event.NewBaseEvent("concurrent.test",
+					evt := event.NewBaseEvent("concurrent.test",
 						event.WithMeta("publisherID", string(rune(publisherID+'0'))),
 						event.WithMeta("eventNum", string(rune(j+'0'))),
 					)
-					bus.Publish(event)
+					bus.Publish(evt)
 				}
 			}(i)
 		}
 
 		// Wait for all events to be processed
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -565,15 +617,21 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 			expectedTotal := numPublishers * eventsPerPublisher * numSubscribers
 
 			mu.Lock()
-			assert.Equal(t, expectedTotal, totalReceived)
+
+			actualTotal := totalReceived
+
 			mu.Unlock()
 
+			assert.Equal(t, expectedTotal, actualTotal, "All events should be received by all subscribers")
+			t.Logf("✓ Concurrent processing verified - Publishers: %d, Subscribers: %d, Events/Publisher: %d, Total received: %d",
+				numPublishers, numSubscribers, eventsPerPublisher, actualTotal)
+
 		case <-time.After(5 * time.Second):
-			t.Fatal("timeout waiting for concurrent event processing")
+			t.Fatal("Timeout waiting for concurrent event processing")
 		}
 	})
 
-	t.Run("Concurrent subscribe and unsubscribe", func(t *testing.T) {
+	t.Run("ConcurrentSubscribeAndUnsubscribe", func(t *testing.T) {
 		bus := createTestEventBus(t)
 
 		const numRoutines = 50
@@ -597,7 +655,6 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 
 		// Wait for all routines to complete
 		done := make(chan struct{})
-
 		go func() {
 			wg.Wait()
 			close(done)
@@ -605,9 +662,10 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 
 		select {
 		case <-done:
-			// Test passes if no deadlock or panic occurs
+			t.Logf("✓ Concurrent subscribe/unsubscribe verified - %d routines completed without deadlock or panic", numRoutines)
+
 		case <-time.After(5 * time.Second):
-			t.Fatal("timeout during concurrent subscribe/unsubscribe")
+			t.Fatal("Timeout during concurrent subscribe/unsubscribe")
 		}
 	})
 }

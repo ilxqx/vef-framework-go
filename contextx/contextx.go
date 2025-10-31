@@ -24,14 +24,12 @@ const (
 	KeyDataPermApplier
 )
 
-// ApiRequest returns the api.ApiRequest from fiber context.
 func ApiRequest(ctx context.Context) *api.Request {
 	req, _ := ctx.Value(KeyRequest).(*api.Request)
 
 	return req
 }
 
-// SetApiRequest stores the api.Request into fiber context.
 func SetApiRequest(ctx context.Context, request *api.Request) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
@@ -43,14 +41,12 @@ func SetApiRequest(ctx context.Context, request *api.Request) context.Context {
 	}
 }
 
-// RequestId returns the request id from fiber context.
 func RequestId(ctx context.Context) string {
 	id, _ := ctx.Value(KeyRequestId).(string)
 
 	return id
 }
 
-// SetRequestId stores the request id into fiber context.
 func SetRequestId(ctx context.Context, requestId string) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
@@ -62,14 +58,12 @@ func SetRequestId(ctx context.Context, requestId string) context.Context {
 	}
 }
 
-// Principal returns the security.Principal from fiber context.
 func Principal(ctx context.Context) *security.Principal {
 	principal, _ := ctx.Value(KeyPrincipal).(*security.Principal)
 
 	return principal
 }
 
-// SetPrincipal stores the security.Principal into fiber context.
 func SetPrincipal(ctx context.Context, principal *security.Principal) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
@@ -81,14 +75,12 @@ func SetPrincipal(ctx context.Context, principal *security.Principal) context.Co
 	}
 }
 
-// Logger returns the log.Logger from fiber context.
 func Logger(ctx context.Context) log.Logger {
 	logger, _ := ctx.Value(KeyLogger).(log.Logger)
 
 	return logger
 }
 
-// SetLogger stores the log.Logger into fiber context.
 func SetLogger(ctx context.Context, logger log.Logger) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
@@ -100,14 +92,12 @@ func SetLogger(ctx context.Context, logger log.Logger) context.Context {
 	}
 }
 
-// Db returns the orm.Db from fiber context.
 func Db(ctx context.Context) orm.Db {
 	db, _ := ctx.Value(KeyDb).(orm.Db)
 
 	return db
 }
 
-// SetDb stores the orm.Db into fiber context.
 func SetDb(ctx context.Context, db orm.Db) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
@@ -119,14 +109,12 @@ func SetDb(ctx context.Context, db orm.Db) context.Context {
 	}
 }
 
-// Transformer returns the mold.Transformer from fiber context.
 func Transformer(ctx context.Context) mold.Transformer {
 	transformer, _ := ctx.Value(KeyTransformer).(mold.Transformer)
 
 	return transformer
 }
 
-// SetTransformer stores the mold.Transformer into fiber context.
 func SetTransformer(ctx context.Context, transformer mold.Transformer) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:
@@ -138,14 +126,12 @@ func SetTransformer(ctx context.Context, transformer mold.Transformer) context.C
 	}
 }
 
-// DataPermApplier returns the security.DataPermissionApplier from fiber context.
 func DataPermApplier(ctx context.Context) security.DataPermissionApplier {
 	applier, _ := ctx.Value(KeyDataPermApplier).(security.DataPermissionApplier)
 
 	return applier
 }
 
-// SetDataPermApplier stores the security.DataPermissionApplier into fiber context.
 func SetDataPermApplier(ctx context.Context, applier security.DataPermissionApplier) context.Context {
 	switch c := ctx.(type) {
 	case fiber.Ctx:

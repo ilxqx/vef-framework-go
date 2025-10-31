@@ -14,37 +14,37 @@ func TestColumnWithAlias(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "column without alias",
+			name:     "ColumnWithoutAlias",
 			column:   "name",
 			alias:    []string{},
 			expected: "name",
 		},
 		{
-			name:     "column with alias",
+			name:     "ColumnWithAlias",
 			column:   "name",
 			alias:    []string{"u"},
 			expected: "u.name",
 		},
 		{
-			name:     "column with empty alias",
+			name:     "ColumnWithEmptyAlias",
 			column:   "age",
 			alias:    []string{""},
 			expected: "age",
 		},
 		{
-			name:     "column with multiple alias values",
+			name:     "ColumnWithMultipleAliasValues",
 			column:   "email",
 			alias:    []string{"user", "profile"},
 			expected: "user.email",
 		},
 		{
-			name:     "empty column with alias",
+			name:     "EmptyColumnWithAlias",
 			column:   "",
 			alias:    []string{"t"},
 			expected: "t.",
 		},
 		{
-			name:     "empty column without alias",
+			name:     "EmptyColumnWithoutAlias",
 			column:   "",
 			alias:    []string{},
 			expected: "",

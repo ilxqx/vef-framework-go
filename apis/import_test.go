@@ -134,7 +134,9 @@ func NewTestUserImportCSVWithOptionsResource() api.Resource {
 	}
 }
 
-// ImportTestSuite is the test suite for Import Api tests.
+// ImportTestSuite tests the Import API functionality
+// including basic Excel/CSV imports, validation errors, pre/post processors, format overrides,
+// large file handling, and negative cases.
 type ImportTestSuite struct {
 	BaseSuite
 }
@@ -159,6 +161,8 @@ func (suite *ImportTestSuite) TearDownSuite() {
 // Import Tests
 
 func (suite *ImportTestSuite) TestImportBasic() {
+	suite.T().Logf("Testing basic Excel import for %s", suite.dbType)
+
 	// Create test Excel file
 	exporter := excel.NewExporterFor[ImportUser]()
 	testUsers := []ImportUser{
@@ -168,7 +172,7 @@ func (suite *ImportTestSuite) TestImportBasic() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users to Excel successfully")
 
 	// Create multipart request
 	resp := suite.makeMultipartApiRequest(api.Request{
@@ -179,17 +183,20 @@ func (suite *ImportTestSuite) TestImportBasic() {
 		},
 	}, "test_import.xlsx", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(i18n.T(result.OkMessage), body.Message)
+	suite.True(body.IsOk(), "Should return success response")
+	suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return OK message")
 
 	// Verify response data
 	data := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(3), data["total"])
+	suite.Equal(float64(3), data["total"], "Should import exactly 3 users")
+	suite.T().Logf("Successfully imported %v users", data["total"])
 }
 
 func (suite *ImportTestSuite) TestImportWithValidationErrors() {
+	suite.T().Logf("Testing import with validation errors for %s", suite.dbType)
+
 	// Create test Excel file with invalid data
 	exporter := excel.NewExporterFor[ImportUser]()
 	testUsers := []ImportUser{
@@ -200,7 +207,7 @@ func (suite *ImportTestSuite) TestImportWithValidationErrors() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users with invalid data to Excel successfully")
 
 	// Import should detect validation errors
 	resp := suite.makeMultipartApiRequest(api.Request{
@@ -211,18 +218,21 @@ func (suite *ImportTestSuite) TestImportWithValidationErrors() {
 		},
 	}, "test_import_invalid.xlsx", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.False(body.IsOk())
+	suite.False(body.IsOk(), "Should return failure response due to validation errors")
 
 	// Verify error data contains validation errors
 	data := suite.readDataAsMap(body.Data)
-	suite.NotNil(data["errors"])
+	suite.Require().NotNil(data["errors"], "Should contain errors field in response data")
 	errors := suite.readDataAsSlice(data["errors"])
-	suite.NotEmpty(errors)
+	suite.NotEmpty(errors, "Should contain validation errors in errors array")
+	suite.T().Logf("Validation detected %d error(s) as expected", len(errors))
 }
 
 func (suite *ImportTestSuite) TestImportWithMissingRequiredFields() {
+	suite.T().Logf("Testing import with missing required fields for %s", suite.dbType)
+
 	// Create test Excel file with missing required fields
 	exporter := excel.NewExporterFor[ImportUser]()
 	testUsers := []ImportUser{
@@ -231,7 +241,7 @@ func (suite *ImportTestSuite) TestImportWithMissingRequiredFields() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users with missing fields to Excel successfully")
 
 	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
@@ -241,15 +251,18 @@ func (suite *ImportTestSuite) TestImportWithMissingRequiredFields() {
 		},
 	}, "test_import_missing.xlsx", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.False(body.IsOk())
+	suite.False(body.IsOk(), "Should return failure response due to missing required fields")
 
 	data := suite.readDataAsMap(body.Data)
-	suite.NotNil(data["errors"])
+	suite.Require().NotNil(data["errors"], "Should contain errors field in response data")
+	suite.T().Log("Missing required fields correctly rejected")
 }
 
 func (suite *ImportTestSuite) TestImportWithPreProcessor() {
+	suite.T().Logf("Testing import with pre-processor for %s", suite.dbType)
+
 	// Create test Excel file with users
 	// The preprocessor will change "inactive" status to "pending"
 	exporter := excel.NewExporterFor[ImportUser]()
@@ -259,7 +272,7 @@ func (suite *ImportTestSuite) TestImportWithPreProcessor() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users to Excel successfully")
 
 	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
@@ -269,16 +282,19 @@ func (suite *ImportTestSuite) TestImportWithPreProcessor() {
 		},
 	}, "test_import_preproc.xlsx", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk(), "Expected success but got error: %s", body.Message)
+	suite.True(body.IsOk(), "Should return success response, got error: %s", body.Message)
 
 	// Verify data was imported
 	data := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(2), data["total"])
+	suite.Equal(float64(2), data["total"], "Should import exactly 2 users after pre-processing")
+	suite.T().Logf("Pre-processor successfully transformed and imported %v users", data["total"])
 }
 
 func (suite *ImportTestSuite) TestImportWithPostProcessor() {
+	suite.T().Logf("Testing import with post-processor for %s", suite.dbType)
+
 	// Create test Excel file
 	exporter := excel.NewExporterFor[ImportUser]()
 	testUsers := []ImportUser{
@@ -288,7 +304,7 @@ func (suite *ImportTestSuite) TestImportWithPostProcessor() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users to Excel successfully")
 
 	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
@@ -298,24 +314,27 @@ func (suite *ImportTestSuite) TestImportWithPostProcessor() {
 		},
 	}, "test_import_postproc.xlsx", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
-	suite.NotEmpty(resp.Header.Get("X-Import-Count"))
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
+	suite.NotEmpty(resp.Header.Get("X-Import-Count"), "Should set X-Import-Count header in post-processor")
 
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return success response")
 
 	data := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(3), data["total"])
+	suite.Equal(float64(3), data["total"], "Should import exactly 3 users")
+	suite.T().Logf("Post-processor executed, imported %v users with header: %s", data["total"], resp.Header.Get("X-Import-Count"))
 }
 
 func (suite *ImportTestSuite) TestImportEmptyFile() {
+	suite.T().Logf("Testing import with empty Excel file for %s", suite.dbType)
+
 	// Create empty Excel file (with headers but no data rows)
 	exporter := excel.NewExporterFor[ImportUser]()
 
 	var testUsers []ImportUser
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export empty user list to Excel successfully")
 
 	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
@@ -331,13 +350,16 @@ func (suite *ImportTestSuite) TestImportEmptyFile() {
 	if resp.StatusCode == 500 {
 		suite.T().Log("Empty file correctly rejected with 500 status")
 	} else {
-		suite.Equal(200, resp.StatusCode)
+		suite.Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 		body := suite.readBody(resp)
-		suite.False(body.IsOk(), "Empty file should return error")
+		suite.False(body.IsOk(), "Should return error response for empty file")
+		suite.T().Log("Empty file correctly rejected with error response")
 	}
 }
 
 func (suite *ImportTestSuite) TestImportLargeFile() {
+	suite.T().Logf("Testing import with large Excel file for %s", suite.dbType)
+
 	// Create large test file with many rows
 	exporter := excel.NewExporterFor[ImportUser]()
 
@@ -352,7 +374,7 @@ func (suite *ImportTestSuite) TestImportLargeFile() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export 100 test users to Excel successfully")
 
 	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
@@ -362,15 +384,18 @@ func (suite *ImportTestSuite) TestImportLargeFile() {
 		},
 	}, "test_import_large.xlsx", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return success response")
 
 	data := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(100), data["total"])
+	suite.Equal(float64(100), data["total"], "Should import exactly 100 users")
+	suite.T().Logf("Successfully imported large file with %v users", data["total"])
 }
 
 func (suite *ImportTestSuite) TestImportNegativeCases() {
+	suite.T().Logf("Testing import negative cases for %s", suite.dbType)
+
 	suite.Run("MissingFile", func() {
 		// Try to import without providing a file
 		resp := suite.makeApiRequest(api.Request{
@@ -383,7 +408,8 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 
 		// Request should fail with status 500 or 200 with error
 		body := suite.readBody(resp)
-		suite.False(body.IsOk())
+		suite.False(body.IsOk(), "Should fail when importing without file")
+		suite.T().Log("Missing file correctly rejected")
 	})
 
 	suite.Run("InvalidFileFormat", func() {
@@ -399,10 +425,12 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 		// Should return error (either 500 or 200 with error body)
 		if resp.StatusCode == 200 {
 			body := suite.readBody(resp)
-			suite.False(body.IsOk())
+			suite.False(body.IsOk(), "Should reject invalid file format")
+			suite.T().Log("Invalid file format correctly rejected with error response")
 		} else {
 			// 500 error is also acceptable for invalid file format
-			suite.NotEqual(200, resp.StatusCode)
+			suite.NotEqual(200, resp.StatusCode, "Should return error status for invalid format")
+			suite.T().Log("Invalid file format correctly rejected with error status")
 		}
 	})
 
@@ -422,10 +450,12 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 		// Should fail because no file was provided or wrong content type
 		if resp.StatusCode == 200 {
 			body := suite.readBody(resp)
-			suite.False(body.IsOk())
+			suite.False(body.IsOk(), "Should fail for JSON request without multipart file")
+			suite.T().Log("JSON request correctly rejected with error response")
 		} else {
 			// Error status is also acceptable
-			suite.NotEqual(200, resp.StatusCode)
+			suite.NotEqual(200, resp.StatusCode, "Should return error status for JSON request")
+			suite.T().Log("JSON request correctly rejected with error status")
 		}
 	})
 
@@ -444,10 +474,12 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 		// Should return error (either 500 or 200 with error body)
 		if resp.StatusCode == 200 {
 			body := suite.readBody(resp)
-			suite.False(body.IsOk())
+			suite.False(body.IsOk(), "Should reject corrupted Excel file")
+			suite.T().Log("Corrupted file correctly rejected with error response")
 		} else {
 			// 500 error is also acceptable for corrupted file
-			suite.NotEqual(200, resp.StatusCode)
+			suite.NotEqual(200, resp.StatusCode, "Should return error status for corrupted file")
+			suite.T().Log("Corrupted file correctly rejected with error status")
 		}
 	})
 }
@@ -455,6 +487,8 @@ func (suite *ImportTestSuite) TestImportNegativeCases() {
 // CSV Import Tests
 
 func (suite *ImportTestSuite) TestImportCSVBasic() {
+	suite.T().Logf("Testing basic CSV import for %s", suite.dbType)
+
 	// Create test CSV file
 	exporter := csv.NewExporterFor[ImportUser]()
 	testUsers := []ImportUser{
@@ -464,7 +498,7 @@ func (suite *ImportTestSuite) TestImportCSVBasic() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users to CSV successfully")
 
 	// Create multipart request
 	resp := suite.makeMultipartApiRequest(api.Request{
@@ -475,17 +509,20 @@ func (suite *ImportTestSuite) TestImportCSVBasic() {
 		},
 	}, "test_import.csv", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
-	suite.Equal(i18n.T(result.OkMessage), body.Message)
+	suite.True(body.IsOk(), "Should return success response")
+	suite.Equal(i18n.T(result.OkMessage), body.Message, "Should return OK message")
 
 	// Verify response data
 	data := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(3), data["total"])
+	suite.Equal(float64(3), data["total"], "Should import exactly 3 users from CSV")
+	suite.T().Logf("Successfully imported %v users from CSV", data["total"])
 }
 
 func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
+	suite.T().Logf("Testing CSV import with validation errors for %s", suite.dbType)
+
 	// Create test CSV file with invalid data
 	exporter := csv.NewExporterFor[ImportUser]()
 	testUsers := []ImportUser{
@@ -496,7 +533,7 @@ func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users with invalid data to CSV successfully")
 
 	// Import should detect validation errors
 	resp := suite.makeMultipartApiRequest(api.Request{
@@ -507,18 +544,21 @@ func (suite *ImportTestSuite) TestImportCSVWithValidationErrors() {
 		},
 	}, "test_import_invalid.csv", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.False(body.IsOk())
+	suite.False(body.IsOk(), "Should return failure response due to validation errors")
 
 	// Verify error data contains validation errors
 	data := suite.readDataAsMap(body.Data)
-	suite.NotNil(data["errors"])
+	suite.Require().NotNil(data["errors"], "Should contain errors field in response data")
 	errors := suite.readDataAsSlice(data["errors"])
-	suite.NotEmpty(errors)
+	suite.NotEmpty(errors, "Should contain validation errors in errors array")
+	suite.T().Logf("CSV validation detected %d error(s) as expected", len(errors))
 }
 
 func (suite *ImportTestSuite) TestImportCSVWithOptions() {
+	suite.T().Logf("Testing CSV import with custom delimiter for %s", suite.dbType)
+
 	// Create test CSV file with semicolon delimiter
 	exporter := csv.NewExporterFor[ImportUser](csv.WithExportDelimiter(';'))
 	testUsers := []ImportUser{
@@ -527,7 +567,7 @@ func (suite *ImportTestSuite) TestImportCSVWithOptions() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test users to CSV with semicolon delimiter successfully")
 
 	resp := suite.makeMultipartApiRequest(api.Request{
 		Identifier: api.Identifier{
@@ -537,15 +577,18 @@ func (suite *ImportTestSuite) TestImportCSVWithOptions() {
 		},
 	}, "test_import_opts.csv", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return success response")
 
 	data := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(2), data["total"])
+	suite.Equal(float64(2), data["total"], "Should import exactly 2 users with custom delimiter")
+	suite.T().Logf("Successfully imported %v users with semicolon delimiter", data["total"])
 }
 
 func (suite *ImportTestSuite) TestImportFormatOverride() {
+	suite.T().Logf("Testing import format override for %s", suite.dbType)
+
 	// Test format parameter override
 	exporter := csv.NewExporterFor[ImportUser]()
 	testUsers := []ImportUser{
@@ -553,7 +596,7 @@ func (suite *ImportTestSuite) TestImportFormatOverride() {
 	}
 
 	buf, err := exporter.Export(testUsers)
-	suite.NoError(err)
+	suite.NoError(err, "Should export test user to CSV successfully")
 
 	// Use Excel endpoint but override format to CSV via parameter
 	resp := suite.makeMultipartApiRequest(api.Request{
@@ -567,12 +610,13 @@ func (suite *ImportTestSuite) TestImportFormatOverride() {
 		},
 	}, "test_import_override.csv", buf.Bytes())
 
-	suite.Equal(200, resp.StatusCode)
+	suite.Require().Equal(200, resp.StatusCode, "Should return HTTP 200 status")
 	body := suite.readBody(resp)
-	suite.True(body.IsOk())
+	suite.True(body.IsOk(), "Should return success response")
 
 	data := suite.readDataAsMap(body.Data)
-	suite.Equal(float64(1), data["total"])
+	suite.Equal(float64(1), data["total"], "Should import exactly 1 user with format override")
+	suite.T().Logf("Successfully imported %v user with format override from Excel to CSV", data["total"])
 }
 
 // Helper method for multipart requests.
@@ -588,7 +632,7 @@ func (suite *ImportTestSuite) makeMultipartApiRequest(req api.Request, filename 
 
 	// Add params as JSON string if present
 	if req.Params != nil {
-		paramsJSON, err := encoding.ToJSON(req.Params)
+		paramsJSON, err := encoding.ToJson(req.Params)
 		suite.NoError(err)
 
 		_ = writer.WriteField("params", paramsJSON)
@@ -596,7 +640,7 @@ func (suite *ImportTestSuite) makeMultipartApiRequest(req api.Request, filename 
 
 	// Add meta as JSON string if present
 	if req.Meta != nil {
-		metaJSON, err := encoding.ToJSON(req.Meta)
+		metaJSON, err := encoding.ToJson(req.Meta)
 		suite.NoError(err)
 
 		_ = writer.WriteField("meta", metaJSON)

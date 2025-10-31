@@ -4,8 +4,6 @@ import (
 	"testing"
 )
 
-// Benchmark tests for comparing performance of different ID generators
-
 func BenchmarkGenerate(b *testing.B) {
 	for b.Loop() {
 		_ = Generate()
@@ -116,7 +114,6 @@ func BenchmarkRandomIdGenerator_Parallel(b *testing.B) {
 	})
 }
 
-// Benchmark default generators for comparison.
 func BenchmarkDefaultGenerators(b *testing.B) {
 	b.Run("DefaultXidIdGenerator", func(b *testing.B) {
 		b.ResetTimer()
@@ -143,7 +140,6 @@ func BenchmarkDefaultGenerators(b *testing.B) {
 	})
 }
 
-// Memory allocation benchmarks.
 func BenchmarkMemoryAllocation(b *testing.B) {
 	b.Run("Snowflake", func(b *testing.B) {
 		generator, _ := NewSnowflakeIdGenerator(1)
@@ -190,7 +186,6 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 	})
 }
 
-// Concurrent performance comparison.
 func BenchmarkConcurrentPerformance(b *testing.B) {
 	b.Run("Snowflake_Concurrent", func(b *testing.B) {
 		generator, _ := NewSnowflakeIdGenerator(1)

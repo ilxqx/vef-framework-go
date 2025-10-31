@@ -11,9 +11,7 @@ import (
 
 // BaseAggregate defines the basic aggregate function interface with generic type support.
 type BaseAggregate[T any] interface {
-	// Column sets the aggregate argument using a column reference.
 	Column(column string) T
-	// Expr sets the aggregate argument using a raw expression.
 	Expr(expr any) T
 	// Filter applies a FILTER clause to the aggregate expression.
 	Filter(func(ConditionBuilder)) T
@@ -88,7 +86,6 @@ type StringAggBuilder interface {
 	OrderableAggregate[StringAggBuilder]
 	NullHandlingBuilder[StringAggBuilder]
 
-	// Separator sets the delimiter used between aggregated values.
 	Separator(separator string) StringAggBuilder
 }
 
@@ -118,9 +115,7 @@ type JsonObjectAggBuilder interface {
 	DistinctableAggregate[JsonObjectAggBuilder]
 	OrderableAggregate[JsonObjectAggBuilder]
 
-	// KeyColumn sets the key using a column reference.
 	KeyColumn(column string) JsonObjectAggBuilder
-	// KeyExpr sets the key using a raw expression.
 	KeyExpr(expr any) JsonObjectAggBuilder
 }
 
@@ -221,7 +216,7 @@ func (a *baseAggregateExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []b
 	if a.filter != nil {
 		var handled bool
 
-		a.eb.RunDialect(DialectActions{
+		a.eb.ExecByDialect(DialectExecs{
 			MySQL: func() {
 				b, err = a.appendCompatibleFilterQuery(fmter, b)
 				handled = true
@@ -492,7 +487,7 @@ func (s *stringAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []by
 		s.orderExprs = originalOrderExprs
 	}()
 
-	if err = s.eb.RunDialectErr(DialectActionsErr{
+	if err = s.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
 			// PostgreSQL: STRING_AGG([DISTINCT] expression, delimiter [ORDER BY ...])
 			s.funcName = "STRING_AGG"
@@ -613,7 +608,7 @@ func (a *arrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byt
 		a.orderExprs = originalOrderExprs
 	}()
 
-	if err = a.eb.RunDialectErr(DialectActionsErr{
+	if err = a.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
 			// PostgreSQL: ARRAY_AGG([DISTINCT] expression [ORDER BY ...])
 			a.funcName = "ARRAY_AGG"
@@ -682,16 +677,31 @@ func (s *statisticalAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []
 		s.funcName = originalFuncName
 	}()
 
-	if err = s.eb.RunDialectErr(DialectActionsErr{
+	if err = s.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			s.funcName = s.funcName + constants.Underscore + lo.CoalesceOrEmpty(s.statisticalMode.String(), StatisticalPopulation.String())
+			// PostgreSQL uses different function name prefixes for STDDEV and VARIANCE
+			// STDDEV -> STDDEV_POP/STDDEV_SAMP
+			// VARIANCE -> VAR_POP/VAR_SAMP
+			funcName := s.funcName
+			if s.funcName == "VARIANCE" {
+				funcName = "VAR"
+			}
+			s.funcName = funcName + constants.Underscore + lo.CoalesceOrEmpty(s.statisticalMode.String(), StatisticalPopulation.String())
 
 			return nil
 		},
 		MySQL: func() error {
+			// MySQL uses different function name prefixes for STDDEV and VARIANCE
+			// STDDEV -> STDDEV_POP/STDDEV_SAMP
+			// VARIANCE -> VAR_POP/VAR_SAMP
+			funcName := s.funcName
+			if s.funcName == "VARIANCE" {
+				funcName = "VAR"
+			}
+
 			switch s.statisticalMode {
 			case StatisticalPopulation, StatisticalSample:
-				s.funcName = s.funcName + constants.Underscore + s.statisticalMode.String()
+				s.funcName = funcName + constants.Underscore + s.statisticalMode.String()
 			}
 
 			return nil
@@ -759,7 +769,7 @@ func (j *jsonObjectAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ 
 		j.argsExpr = originalArgsExpr
 	}()
 
-	if err = j.eb.RunDialectErr(DialectActionsErr{
+	if err = j.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
 			// PostgreSQL uses json_object_agg(key, value)
 			j.funcName = "JSON_OBJECT_AGG"
@@ -806,7 +816,7 @@ func (j *jsonArrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ [
 		j.funcName = originalFuncName
 	}()
 
-	if err = j.eb.RunDialectErr(DialectActionsErr{
+	if err = j.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
 			// PostgreSQL uses json_agg(expression)
 			j.funcName = "JSON_AGG"
@@ -852,7 +862,7 @@ func (b *bitOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte
 		b.argsExpr = originalArgsExpr
 	}()
 
-	if err = b.eb.RunDialectErr(DialectActionsErr{
+	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		MySQL: func() error {
 			// MySQL supports BIT_OR
 			b.funcName = "BIT_OR"
@@ -860,12 +870,8 @@ func (b *bitOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte
 			return nil
 		},
 		Postgres: func() error {
-			// PostgreSQL doesn't have BIT_OR, but we can simulate it using custom aggregation
-			// For simple boolean-like bit operations, we can use BOOL_OR
-			// For integer bit operations, we need a more complex approach
-			b.funcName = "BOOL_OR"
-			// Convert numeric values to boolean for BOOL_OR
-			b.argsExpr = b.eb.Expr("? != 0", originalArgsExpr)
+			// PostgreSQL supports BIT_OR natively since version 8.0
+			b.funcName = "BIT_OR"
 
 			return nil
 		},
@@ -907,7 +913,7 @@ func (b *bitAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 		b.argsExpr = originalArgsExpr
 	}()
 
-	if err = b.eb.RunDialectErr(DialectActionsErr{
+	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		MySQL: func() error {
 			// MySQL supports BIT_AND
 			b.funcName = "BIT_AND"
@@ -915,11 +921,8 @@ func (b *bitAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 			return nil
 		},
 		Postgres: func() error {
-			// PostgreSQL doesn't have BIT_AND, but we can simulate it using BOOL_AND
-			// For simple boolean-like bit operations
-			b.funcName = "BOOL_AND"
-			// Convert numeric values to boolean for BOOL_AND
-			b.argsExpr = b.eb.Expr("? != 0", originalArgsExpr)
+			// PostgreSQL supports BIT_AND natively since version 8.0
+			b.funcName = "BIT_AND"
 
 			return nil
 		},
@@ -961,7 +964,7 @@ func (b *boolOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 		b.argsExpr = originalArgsExpr
 	}()
 
-	if err = b.eb.RunDialectErr(DialectActionsErr{
+	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
 			// PostgreSQL supports BOOL_OR
 			b.funcName = "BOOL_OR"
@@ -1015,7 +1018,7 @@ func (b *boolAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []by
 		b.argsExpr = originalArgsExpr
 	}()
 
-	if err = b.eb.RunDialectErr(DialectActionsErr{
+	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
 			// PostgreSQL supports BOOL_AND
 			b.funcName = "BOOL_AND"
@@ -1280,6 +1283,15 @@ func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
 	expr := &stringAggExpr[T]{
 		baseAggregateExpr:    baseExpr,
 		baseAggregateBuilder: baseBuilder,
+		distinctableAggregateBuilder: &distinctableAggregateBuilder[T]{
+			baseAggregateBuilder: baseBuilder,
+		},
+		orderableAggregateBuilder: &orderableAggregateBuilder[T]{
+			baseAggregateBuilder: baseBuilder,
+		},
+		baseNullHandlingBuilder: &baseNullHandlingBuilder[T]{
+			baseAggregateBuilder: baseBuilder,
+		},
 	}
 
 	baseBuilder.self = self

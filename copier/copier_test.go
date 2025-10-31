@@ -12,6 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
+// TestCopyBasic tests basic struct copying functionality.
 func TestCopyBasic(t *testing.T) {
 	t.Run("Struct", func(t *testing.T) {
 		type Source struct {
@@ -28,12 +29,13 @@ func TestCopyBasic(t *testing.T) {
 
 		var dst Dest
 
-		require.NoError(t, Copy(src, &dst))
-		assert.Equal(t, "John", dst.Name)
-		assert.Equal(t, 30, dst.Age)
+		require.NoError(t, Copy(src, &dst), "Should copy struct")
+		assert.Equal(t, "John", dst.Name, "Name should match")
+		assert.Equal(t, 30, dst.Age, "Age should match")
 	})
 }
 
+// TestCopyConverters tests type converters between null and non-null types.
 func TestCopyConverters(t *testing.T) {
 	tests := []struct {
 		name string
@@ -54,8 +56,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, "test", dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.String to string")
+				assert.Equal(t, "test", dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -73,9 +75,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, "test", dst.Value.String)
+				require.NoError(t, Copy(src, &dst), "Should convert string to null.String")
+				assert.True(t, dst.Value.Valid, "null.String should be valid")
+				assert.Equal(t, "test", dst.Value.String, "Converted value should match")
 			},
 		},
 		{
@@ -93,8 +95,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, int64(42), dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Int to int64")
+				assert.Equal(t, int64(42), dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -112,9 +114,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, int64(42), dst.Value.Int64)
+				require.NoError(t, Copy(src, &dst), "Should convert int64 to null.Int")
+				assert.True(t, dst.Value.Valid, "null.Int should be valid")
+				assert.Equal(t, int64(42), dst.Value.Int64, "Converted value should match")
 			},
 		},
 		{
@@ -132,8 +134,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, int16(100), dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Int16 to int16")
+				assert.Equal(t, int16(100), dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -151,9 +153,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, int16(200), dst.Value.Int16)
+				require.NoError(t, Copy(src, &dst), "Should convert int16 to null.Int16")
+				assert.True(t, dst.Value.Valid, "null.Int16 should be valid")
+				assert.Equal(t, int16(200), dst.Value.Int16, "Converted value should match")
 			},
 		},
 		{
@@ -171,8 +173,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, int32(12345), dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Int32 to int32")
+				assert.Equal(t, int32(12345), dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -190,9 +192,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, int32(54321), dst.Value.Int32)
+				require.NoError(t, Copy(src, &dst), "Should convert int32 to null.Int32")
+				assert.True(t, dst.Value.Valid, "null.Int32 should be valid")
+				assert.Equal(t, int32(54321), dst.Value.Int32, "Converted value should match")
 			},
 		},
 		{
@@ -210,8 +212,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, 3.14, dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Float to float64")
+				assert.Equal(t, 3.14, dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -229,9 +231,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, 3.14, dst.Value.Float64)
+				require.NoError(t, Copy(src, &dst), "Should convert float64 to null.Float")
+				assert.True(t, dst.Value.Valid, "null.Float should be valid")
+				assert.Equal(t, 3.14, dst.Value.Float64, "Converted value should match")
 			},
 		},
 		{
@@ -249,8 +251,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, byte(255), dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Byte to byte")
+				assert.Equal(t, byte(255), dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -268,9 +270,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, byte(128), dst.Value.Byte)
+				require.NoError(t, Copy(src, &dst), "Should convert byte to null.Byte")
+				assert.True(t, dst.Value.Valid, "null.Byte should be valid")
+				assert.Equal(t, byte(128), dst.Value.Byte, "Converted value should match")
 			},
 		},
 		{
@@ -288,8 +290,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Bool to bool")
+				assert.True(t, dst.Value, "Converted value should be true")
 			},
 		},
 		{
@@ -307,9 +309,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.True(t, dst.Value.Bool)
+				require.NoError(t, Copy(src, &dst), "Should convert bool to null.Bool")
+				assert.True(t, dst.Value.Valid, "null.Bool should be valid")
+				assert.True(t, dst.Value.Bool, "Converted value should be true")
 			},
 		},
 		{
@@ -328,8 +330,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, testValue, dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.DateTime to datetime.DateTime")
+				assert.Equal(t, testValue, dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -348,9 +350,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, testValue, dst.Value.V)
+				require.NoError(t, Copy(src, &dst), "Should convert datetime.DateTime to null.DateTime")
+				assert.True(t, dst.Value.Valid, "null.DateTime should be valid")
+				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
 		},
 		{
@@ -369,8 +371,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, testValue, dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Date to datetime.Date")
+				assert.Equal(t, testValue, dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -389,9 +391,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, testValue, dst.Value.V)
+				require.NoError(t, Copy(src, &dst), "Should convert datetime.Date to null.Date")
+				assert.True(t, dst.Value.Valid, "null.Date should be valid")
+				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
 		},
 		{
@@ -410,8 +412,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Equal(t, testValue, dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Time to datetime.Time")
+				assert.Equal(t, testValue, dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -430,9 +432,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, testValue, dst.Value.V)
+				require.NoError(t, Copy(src, &dst), "Should convert datetime.Time to null.Time")
+				assert.True(t, dst.Value.Valid, "null.Time should be valid")
+				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
 		},
 		{
@@ -451,8 +453,8 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, testDecimal.Equal(dst.Value))
+				require.NoError(t, Copy(src, &dst), "Should convert null.Decimal to decimal.Decimal")
+				assert.True(t, testDecimal.Equal(dst.Value), "Converted value should match")
 			},
 		},
 		{
@@ -471,9 +473,9 @@ func TestCopyConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.True(t, testDecimal.Equal(dst.Value.Decimal))
+				require.NoError(t, Copy(src, &dst), "Should convert decimal.Decimal to null.Decimal")
+				assert.True(t, dst.Value.Valid, "null.Decimal should be valid")
+				assert.True(t, testDecimal.Equal(dst.Value.Decimal), "Converted value should match")
 			},
 		},
 	}
@@ -483,6 +485,7 @@ func TestCopyConverters(t *testing.T) {
 	}
 }
 
+// TestCopyPointerConverters tests type converters between null types and pointers.
 func TestCopyPointerConverters(t *testing.T) {
 	tests := []struct {
 		name string
@@ -503,9 +506,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, "pointer", *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.String to string pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, "pointer", *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -524,9 +527,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, "pointer", dst.Value.String)
+				require.NoError(t, Copy(src, &dst), "Should convert string pointer to null.String")
+				assert.True(t, dst.Value.Valid, "null.String should be valid")
+				assert.Equal(t, "pointer", dst.Value.String, "Converted value should match")
 			},
 		},
 		{
@@ -545,8 +548,8 @@ func TestCopyPointerConverters(t *testing.T) {
 					dst Dest
 				)
 
-				require.NoError(t, Copy(src, &dst))
-				assert.False(t, dst.Value.Valid)
+				require.NoError(t, Copy(src, &dst), "Should handle nil string pointer")
+				assert.False(t, dst.Value.Valid, "null.String should be invalid")
 			},
 		},
 		{
@@ -564,8 +567,8 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.Nil(t, dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should handle invalid null.String")
+				assert.Nil(t, dst.Value, "Pointer should be nil for invalid null.String")
 			},
 		},
 		{
@@ -583,9 +586,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, int64(42), *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Int to int64 pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, int64(42), *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -604,9 +607,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, int64(42), dst.Value.Int64)
+				require.NoError(t, Copy(src, &dst), "Should convert int64 pointer to null.Int")
+				assert.True(t, dst.Value.Valid, "null.Int should be valid")
+				assert.Equal(t, int64(42), dst.Value.Int64, "Converted value should match")
 			},
 		},
 		{
@@ -624,9 +627,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.True(t, *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Bool to bool pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.True(t, *dst.Value, "Converted value should be true")
 			},
 		},
 		{
@@ -645,9 +648,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.False(t, dst.Value.Bool)
+				require.NoError(t, Copy(src, &dst), "Should convert bool pointer to null.Bool")
+				assert.True(t, dst.Value.Valid, "null.Bool should be valid")
+				assert.False(t, dst.Value.Bool, "Converted value should be false")
 			},
 		},
 		{
@@ -665,9 +668,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, int16(123), *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Int16 to int16 pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, int16(123), *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -686,9 +689,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, int16(321), dst.Value.Int16)
+				require.NoError(t, Copy(src, &dst), "Should convert int16 pointer to null.Int16")
+				assert.True(t, dst.Value.Valid, "null.Int16 should be valid")
+				assert.Equal(t, int16(321), dst.Value.Int16, "Converted value should match")
 			},
 		},
 		{
@@ -706,9 +709,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, int32(111), *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Int32 to int32 pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, int32(111), *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -727,9 +730,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, int32(222), dst.Value.Int32)
+				require.NoError(t, Copy(src, &dst), "Should convert int32 pointer to null.Int32")
+				assert.True(t, dst.Value.Valid, "null.Int32 should be valid")
+				assert.Equal(t, int32(222), dst.Value.Int32, "Converted value should match")
 			},
 		},
 		{
@@ -747,9 +750,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, 9.87, *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Float to float64 pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, 9.87, *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -768,9 +771,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, value, dst.Value.Float64)
+				require.NoError(t, Copy(src, &dst), "Should convert float64 pointer to null.Float")
+				assert.True(t, dst.Value.Valid, "null.Float should be valid")
+				assert.Equal(t, value, dst.Value.Float64, "Converted value should match")
 			},
 		},
 		{
@@ -788,9 +791,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, byte(77), *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Byte to byte pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, byte(77), *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -809,9 +812,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, byte(88), dst.Value.Byte)
+				require.NoError(t, Copy(src, &dst), "Should convert byte pointer to null.Byte")
+				assert.True(t, dst.Value.Valid, "null.Byte should be valid")
+				assert.Equal(t, byte(88), dst.Value.Byte, "Converted value should match")
 			},
 		},
 		{
@@ -830,9 +833,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, testValue, *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.DateTime to datetime.DateTime pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, testValue, *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -851,9 +854,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, testValue, dst.Value.V)
+				require.NoError(t, Copy(src, &dst), "Should convert datetime.DateTime pointer to null.DateTime")
+				assert.True(t, dst.Value.Valid, "null.DateTime should be valid")
+				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
 		},
 		{
@@ -872,9 +875,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, testValue, *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Date to datetime.Date pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, testValue, *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -893,9 +896,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, testValue, dst.Value.V)
+				require.NoError(t, Copy(src, &dst), "Should convert datetime.Date pointer to null.Date")
+				assert.True(t, dst.Value.Valid, "null.Date should be valid")
+				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
 		},
 		{
@@ -914,9 +917,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.Equal(t, testValue, *dst.Value)
+				require.NoError(t, Copy(src, &dst), "Should convert null.Time to datetime.Time pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.Equal(t, testValue, *dst.Value, "Converted value should match")
 			},
 		},
 		{
@@ -935,9 +938,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.Equal(t, testValue, dst.Value.V)
+				require.NoError(t, Copy(src, &dst), "Should convert datetime.Time pointer to null.Time")
+				assert.True(t, dst.Value.Valid, "null.Time should be valid")
+				assert.Equal(t, testValue, dst.Value.V, "Converted value should match")
 			},
 		},
 		{
@@ -956,9 +959,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				require.NotNil(t, dst.Value)
-				assert.True(t, testValue.Equal(*dst.Value))
+				require.NoError(t, Copy(src, &dst), "Should convert null.Decimal to decimal.Decimal pointer")
+				require.NotNil(t, dst.Value, "Pointer should not be nil")
+				assert.True(t, testValue.Equal(*dst.Value), "Converted value should match")
 			},
 		},
 		{
@@ -977,9 +980,9 @@ func TestCopyPointerConverters(t *testing.T) {
 
 				var dst Dest
 
-				require.NoError(t, Copy(src, &dst))
-				assert.True(t, dst.Value.Valid)
-				assert.True(t, testValue.Equal(dst.Value.Decimal))
+				require.NoError(t, Copy(src, &dst), "Should convert decimal.Decimal pointer to null.Decimal")
+				assert.True(t, dst.Value.Valid, "null.Decimal should be valid")
+				assert.True(t, testValue.Equal(dst.Value.Decimal), "Converted value should match")
 			},
 		},
 	}
@@ -989,6 +992,7 @@ func TestCopyPointerConverters(t *testing.T) {
 	}
 }
 
+// TestCopyIntegration tests integration scenarios with multiple field conversions.
 func TestCopyIntegration(t *testing.T) {
 	t.Run("NullToBasic", func(t *testing.T) {
 		type Source struct {
@@ -1011,10 +1015,10 @@ func TestCopyIntegration(t *testing.T) {
 
 		var dst Dest
 
-		require.NoError(t, Copy(src, &dst))
-		assert.Equal(t, "John Doe", dst.Name)
-		assert.Equal(t, int64(30), dst.Age)
-		assert.True(t, dst.Active)
+		require.NoError(t, Copy(src, &dst), "Should convert multiple null types to basic types")
+		assert.Equal(t, "John Doe", dst.Name, "Name should match")
+		assert.Equal(t, int64(30), dst.Age, "Age should match")
+		assert.True(t, dst.Active, "Active should be true")
 	})
 
 	t.Run("BasicToNull", func(t *testing.T) {
@@ -1038,16 +1042,17 @@ func TestCopyIntegration(t *testing.T) {
 
 		var dst Dest
 
-		require.NoError(t, Copy(src, &dst))
-		assert.True(t, dst.Name.Valid)
-		assert.Equal(t, "Jane Doe", dst.Name.String)
-		assert.True(t, dst.Age.Valid)
-		assert.Equal(t, int64(28), dst.Age.Int64)
-		assert.True(t, dst.Active.Valid)
-		assert.False(t, dst.Active.Bool)
+		require.NoError(t, Copy(src, &dst), "Should convert multiple basic types to null types")
+		assert.True(t, dst.Name.Valid, "Name should be valid")
+		assert.Equal(t, "Jane Doe", dst.Name.String, "Name should match")
+		assert.True(t, dst.Age.Valid, "Age should be valid")
+		assert.Equal(t, int64(28), dst.Age.Int64, "Age should match")
+		assert.True(t, dst.Active.Valid, "Active should be valid")
+		assert.False(t, dst.Active.Bool, "Active should be false")
 	})
 }
 
+// TestCopyOptions tests copy options like IgnoreEmpty and CaseInsensitive.
 func TestCopyOptions(t *testing.T) {
 	t.Run("IgnoreEmpty", func(t *testing.T) {
 		type Source struct {
@@ -1063,8 +1068,8 @@ func TestCopyOptions(t *testing.T) {
 		dst := Dest{Name: "Initial Name", Age: 25}
 		src := Source{Name: "", Age: 30}
 
-		require.NoError(t, Copy(src, &dst, WithIgnoreEmpty()))
-		assert.Equal(t, 30, dst.Age)
+		require.NoError(t, Copy(src, &dst, WithIgnoreEmpty()), "Should copy with ignore empty option")
+		assert.Equal(t, 30, dst.Age, "Age should be updated")
 	})
 
 	t.Run("CaseInsensitive", func(t *testing.T) {
@@ -1080,11 +1085,12 @@ func TestCopyOptions(t *testing.T) {
 
 		var dst Dest
 
-		require.NoError(t, Copy(src, &dst, WithCaseInsensitive()))
-		assert.Equal(t, "John Doe", dst.Name)
+		require.NoError(t, Copy(src, &dst, WithCaseInsensitive()), "Should copy with case insensitive option")
+		assert.Equal(t, "John Doe", dst.Name, "Name should match despite case difference")
 	})
 }
 
+// TestCopyError tests error handling for invalid inputs.
 func TestCopyError(t *testing.T) {
 	t.Run("NonPointerDestination", func(t *testing.T) {
 		type Source struct {
@@ -1099,6 +1105,6 @@ func TestCopyError(t *testing.T) {
 		dst := Dest{}
 
 		err := Copy(src, dst)
-		assert.Error(t, err)
+		assert.Error(t, err, "Should return error for non-pointer destination")
 	})
 }

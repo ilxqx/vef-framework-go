@@ -30,7 +30,6 @@ func newDefaultOptions(config *config.DatasourceConfig) *databaseOptions {
 	}
 }
 
-// WithConnectionPool sets a custom connection pool configuration.
 func WithConnectionPool(poolConfig *ConnectionPoolConfig) Option {
 	return func(opts *databaseOptions) {
 		opts.PoolConfig = poolConfig
@@ -45,7 +44,6 @@ func DisableQueryHook() Option {
 	}
 }
 
-// WithLogger sets a custom logger.
 func WithLogger(logger logPkg.Logger) Option {
 	return func(opts *databaseOptions) {
 		opts.Logger = logger

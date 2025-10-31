@@ -16,7 +16,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/sort"
 )
 
-// Test struct for encoding/decoding tests.
 type TestStruct struct {
 	Name       string        `json:"name"`
 	Age        int           `json:"age"`
@@ -27,7 +26,7 @@ type TestStruct struct {
 	Duration   time.Duration `json:"duration"`
 	Website    *url.URL      `json:"website"`
 	IP         net.IP        `json:"ip"`
-	Unexported string        // This field should be ignored by default
+	Unexported string
 }
 
 type EmbeddedStruct struct {
@@ -40,26 +39,28 @@ type StructWithEmbedding struct {
 	Embedded EmbeddedStruct `json:"embedded,inline"`
 }
 
+// TestNewDecoder tests decoder creation with various options.
 func TestNewDecoder(t *testing.T) {
-	t.Run("Create decoder with default options", func(t *testing.T) {
+	t.Run("DefaultOptions", func(t *testing.T) {
 		var result TestStruct
 
 		decoder, err := NewDecoder(&result)
-		require.NoError(t, err)
-		assert.NotNil(t, decoder)
+		require.NoError(t, err, "Decoder creation should succeed")
+		assert.NotNil(t, decoder, "Decoder should not be nil")
 	})
 
-	t.Run("Create decoder with custom options", func(t *testing.T) {
+	t.Run("CustomOptions", func(t *testing.T) {
 		var result TestStruct
 
 		decoder, err := NewDecoder(&result, WithTagName("custom"), WithErrorUnused())
-		require.NoError(t, err)
-		assert.NotNil(t, decoder)
+		require.NoError(t, err, "Decoder creation with custom options should succeed")
+		assert.NotNil(t, decoder, "Decoder should not be nil")
 	})
 }
 
+// TestToMap tests struct to map conversion.
 func TestToMap(t *testing.T) {
-	t.Run("Valid struct", func(t *testing.T) {
+	t.Run("ValidStruct", func(t *testing.T) {
 		testTime := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 		testURL, _ := url.Parse("https://example.com")
 		input := TestStruct{
@@ -75,33 +76,33 @@ func TestToMap(t *testing.T) {
 		}
 
 		result, err := ToMap(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Struct to map conversion should succeed")
 
-		assert.Equal(t, "John Doe", result["name"])
-		assert.Equal(t, 30, result["age"])
-		assert.Equal(t, "john@example.com", result["email"])
-		assert.Equal(t, true, result["active"])
-		assert.Equal(t, 95.5, result["score"])
-		assert.Contains(t, result, "created")
-		assert.Contains(t, result, "duration")
-		assert.Contains(t, result, "website")
-		assert.Contains(t, result, "ip")
+		assert.Equal(t, "John Doe", result["name"], "Name should match")
+		assert.Equal(t, 30, result["age"], "Age should match")
+		assert.Equal(t, "john@example.com", result["email"], "Email should match")
+		assert.Equal(t, true, result["active"], "Active should match")
+		assert.Equal(t, 95.5, result["score"], "Score should match")
+		assert.Contains(t, result, "created", "Created field should exist")
+		assert.Contains(t, result, "duration", "Duration field should exist")
+		assert.Contains(t, result, "website", "Website field should exist")
+		assert.Contains(t, result, "ip", "IP field should exist")
 	})
 
-	t.Run("Pointer to struct", func(t *testing.T) {
+	t.Run("PointerToStruct", func(t *testing.T) {
 		input := &TestStruct{
 			Name: "Jane Doe",
 			Age:  25,
 		}
 
 		result, err := ToMap(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Pointer to struct conversion should succeed")
 
-		assert.Equal(t, "Jane Doe", result["name"])
-		assert.Equal(t, 25, result["age"])
+		assert.Equal(t, "Jane Doe", result["name"], "Name should match")
+		assert.Equal(t, 25, result["age"], "Age should match")
 	})
 
-	t.Run("Struct with embedding", func(t *testing.T) {
+	t.Run("StructWithEmbedding", func(t *testing.T) {
 		input := StructWithEmbedding{
 			Name: "Test",
 			Embedded: EmbeddedStruct{
@@ -111,33 +112,32 @@ func TestToMap(t *testing.T) {
 		}
 
 		result, err := ToMap(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Struct with embedding conversion should succeed")
 
-		assert.Equal(t, "Test", result["name"])
-		// Check if embedded fields are inlined
-		assert.Equal(t, 123, result["id"])
-		assert.Equal(t, "example", result["type"])
+		assert.Equal(t, "Test", result["name"], "Name should match")
+		assert.Equal(t, 123, result["id"], "Embedded id should be inlined")
+		assert.Equal(t, "example", result["type"], "Embedded type should be inlined")
 	})
 
-	t.Run("Non-struct value", func(t *testing.T) {
+	t.Run("NonStructValue", func(t *testing.T) {
 		input := "not a struct"
 
 		result, err := ToMap(input)
-		assert.Error(t, err)
-		assert.Nil(t, result)
-		assert.Contains(t, err.Error(), "must be a struct")
+		assert.Error(t, err, "Non-struct value should error")
+		assert.Nil(t, result, "Result should be nil for error case")
+		assert.Contains(t, err.Error(), "must be a struct", "Error should mention struct requirement")
 	})
 
-	t.Run("Slice input", func(t *testing.T) {
+	t.Run("SliceInput", func(t *testing.T) {
 		input := []int{1, 2, 3}
 
 		result, err := ToMap(input)
-		assert.Error(t, err)
-		assert.Nil(t, result)
-		assert.Contains(t, err.Error(), "must be a struct")
+		assert.Error(t, err, "Slice input should error")
+		assert.Nil(t, result, "Result should be nil for error case")
+		assert.Contains(t, err.Error(), "must be a struct", "Error should mention struct requirement")
 	})
 
-	t.Run("With custom tag name", func(t *testing.T) {
+	t.Run("CustomTagName", func(t *testing.T) {
 		type CustomTagStruct struct {
 			Name string `custom:"full_name"`
 			Age  int    `custom:"years"`
@@ -145,15 +145,16 @@ func TestToMap(t *testing.T) {
 
 		input := CustomTagStruct{Name: "John", Age: 30}
 		result, err := ToMap(input, WithTagName("custom"))
-		require.NoError(t, err)
+		require.NoError(t, err, "Conversion with custom tag should succeed")
 
-		assert.Equal(t, "John", result["full_name"])
-		assert.Equal(t, 30, result["years"])
+		assert.Equal(t, "John", result["full_name"], "Custom tag name should be used")
+		assert.Equal(t, 30, result["years"], "Custom tag name should be used")
 	})
 }
 
+// TestFromMap tests map to struct conversion.
 func TestFromMap(t *testing.T) {
-	t.Run("Valid map to struct", func(t *testing.T) {
+	t.Run("ValidMapToStruct", func(t *testing.T) {
 		testTime := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 		input := map[string]any{
 			"name":     "John Doe",
@@ -168,48 +169,48 @@ func TestFromMap(t *testing.T) {
 		}
 
 		result, err := FromMap[TestStruct](input)
-		require.NoError(t, err)
-		require.NotNil(t, result)
+		require.NoError(t, err, "Map to struct conversion should succeed")
+		require.NotNil(t, result, "Result should not be nil")
 
-		assert.Equal(t, "John Doe", result.Name)
-		assert.Equal(t, 30, result.Age)
-		assert.Equal(t, "john@example.com", result.Email)
-		assert.Equal(t, true, result.Active)
-		assert.Equal(t, 95.5, result.Score)
-		assert.Equal(t, testTime, result.Created)
-		assert.Equal(t, time.Hour, result.Duration)
-		assert.Equal(t, "https://example.com", result.Website.String())
-		assert.Equal(t, "192.168.1.1", result.IP.String())
+		assert.Equal(t, "John Doe", result.Name, "Name should match")
+		assert.Equal(t, 30, result.Age, "Age should match")
+		assert.Equal(t, "john@example.com", result.Email, "Email should match")
+		assert.Equal(t, true, result.Active, "Active should match")
+		assert.Equal(t, 95.5, result.Score, "Score should match")
+		assert.Equal(t, testTime, result.Created, "Created time should match")
+		assert.Equal(t, time.Hour, result.Duration, "Duration should match")
+		assert.Equal(t, "https://example.com", result.Website.String(), "Website URL should match")
+		assert.Equal(t, "192.168.1.1", result.IP.String(), "IP address should match")
 	})
 
-	t.Run("Partial map", func(t *testing.T) {
+	t.Run("PartialMap", func(t *testing.T) {
 		input := map[string]any{
 			"name": "Jane Doe",
 			"age":  25,
 		}
 
 		result, err := FromMap[TestStruct](input)
-		require.NoError(t, err)
-		require.NotNil(t, result)
+		require.NoError(t, err, "Partial map conversion should succeed")
+		require.NotNil(t, result, "Result should not be nil")
 
-		assert.Equal(t, "Jane Doe", result.Name)
-		assert.Equal(t, 25, result.Age)
-		assert.Equal(t, "", result.Email)
-		assert.Equal(t, false, result.Active)
+		assert.Equal(t, "Jane Doe", result.Name, "Name should match")
+		assert.Equal(t, 25, result.Age, "Age should match")
+		assert.Equal(t, "", result.Email, "Email should be empty")
+		assert.Equal(t, false, result.Active, "Active should be false (zero value)")
 	})
 
-	t.Run("Empty map", func(t *testing.T) {
+	t.Run("EmptyMap", func(t *testing.T) {
 		input := map[string]any{}
 
 		result, err := FromMap[TestStruct](input)
-		require.NoError(t, err)
-		require.NotNil(t, result)
+		require.NoError(t, err, "Empty map conversion should succeed")
+		require.NotNil(t, result, "Result should not be nil")
 
-		assert.Equal(t, "", result.Name)
-		assert.Equal(t, 0, result.Age)
+		assert.Equal(t, "", result.Name, "Name should be empty (zero value)")
+		assert.Equal(t, 0, result.Age, "Age should be 0 (zero value)")
 	})
 
-	t.Run("Map with embedding", func(t *testing.T) {
+	t.Run("MapWithEmbedding", func(t *testing.T) {
 		input := map[string]any{
 			"name": "Test",
 			"id":   123,
@@ -217,24 +218,24 @@ func TestFromMap(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithEmbedding](input)
-		require.NoError(t, err)
-		require.NotNil(t, result)
+		require.NoError(t, err, "Map with embedded fields conversion should succeed")
+		require.NotNil(t, result, "Result should not be nil")
 
-		assert.Equal(t, "Test", result.Name)
-		assert.Equal(t, 123, result.Embedded.Id)
-		assert.Equal(t, "example", result.Embedded.Type)
+		assert.Equal(t, "Test", result.Name, "Name should match")
+		assert.Equal(t, 123, result.Embedded.Id, "Embedded id should match")
+		assert.Equal(t, "example", result.Embedded.Type, "Embedded type should match")
 	})
 
-	t.Run("Non-struct type parameter", func(t *testing.T) {
+	t.Run("NonStructTypeParameter", func(t *testing.T) {
 		input := map[string]any{"value": "test"}
 
 		result, err := FromMap[string](input)
-		assert.Error(t, err)
-		assert.Nil(t, result)
-		assert.Contains(t, err.Error(), "must be a struct")
+		assert.Error(t, err, "Non-struct type parameter should error")
+		assert.Nil(t, result, "Result should be nil for error case")
+		assert.Contains(t, err.Error(), "must be a struct", "Error should mention struct requirement")
 	})
 
-	t.Run("With custom tag name", func(t *testing.T) {
+	t.Run("CustomTagName", func(t *testing.T) {
 		type CustomTagStruct struct {
 			Name string `custom:"full_name"`
 			Age  int    `custom:"years"`
@@ -246,14 +247,15 @@ func TestFromMap(t *testing.T) {
 		}
 
 		result, err := FromMap[CustomTagStruct](input, WithTagName("custom"))
-		require.NoError(t, err)
-		require.NotNil(t, result)
+		require.NoError(t, err, "Conversion with custom tag should succeed")
+		require.NotNil(t, result, "Result should not be nil")
 
-		assert.Equal(t, "John", result.Name)
-		assert.Equal(t, 30, result.Age)
+		assert.Equal(t, "John", result.Name, "Name should match")
+		assert.Equal(t, 30, result.Age, "Age should match")
 	})
 }
 
+// TestDecoderOptions tests various decoder configuration options.
 func TestDecoderOptions(t *testing.T) {
 	t.Run("WithTagName", func(t *testing.T) {
 		type TestStruct struct {
@@ -262,8 +264,8 @@ func TestDecoderOptions(t *testing.T) {
 
 		input := map[string]any{"fullName": "John"}
 		result, err := FromMap[TestStruct](input, WithTagName("yaml"))
-		require.NoError(t, err)
-		assert.Equal(t, "John", result.Name)
+		require.NoError(t, err, "Decoding with custom tag name should succeed")
+		assert.Equal(t, "John", result.Name, "Name should match")
 	})
 
 	t.Run("WithIgnoreUntaggedFields", func(t *testing.T) {
@@ -278,9 +280,9 @@ func TestDecoderOptions(t *testing.T) {
 		}
 
 		result, err := FromMap[TestStruct](input, WithIgnoreUntaggedFields(true))
-		require.NoError(t, err)
-		assert.Equal(t, "John", result.Name)
-		assert.Equal(t, "", result.UntaggedField) // Should be empty because it's ignored
+		require.NoError(t, err, "Decoding with ignored untagged fields should succeed")
+		assert.Equal(t, "John", result.Name, "Name should match")
+		assert.Equal(t, "", result.UntaggedField, "Untagged field should be empty")
 	})
 
 	t.Run("WithWeaklyTypedInput", func(t *testing.T) {
@@ -288,11 +290,10 @@ func TestDecoderOptions(t *testing.T) {
 			Age int `json:"age"`
 		}
 
-		// String instead of int
 		input := map[string]any{"age": "30"}
 		result, err := FromMap[TestStruct](input, WithWeaklyTypedInput())
-		require.NoError(t, err)
-		assert.Equal(t, 30, result.Age)
+		require.NoError(t, err, "Weakly typed input conversion should succeed")
+		assert.Equal(t, 30, result.Age, "Age should be converted from string to int")
 	})
 
 	t.Run("WithZeroFields", func(t *testing.T) {
@@ -301,13 +302,12 @@ func TestDecoderOptions(t *testing.T) {
 			Age  int    `json:"age"`
 		}
 
-		// Create a decoder with ZeroFields option
 		input := map[string]any{"name": "New Name"}
 		result, err := FromMap[TestStruct](input, WithZeroFields())
-		require.NoError(t, err)
+		require.NoError(t, err, "Decoding with zero fields should succeed")
 
-		assert.Equal(t, "New Name", result.Name)
-		assert.Equal(t, 0, result.Age) // Should be zero by default
+		assert.Equal(t, "New Name", result.Name, "Name should match")
+		assert.Equal(t, 0, result.Age, "Age should be zero (default)")
 	})
 
 	t.Run("WithMetadata", func(t *testing.T) {
@@ -325,15 +325,16 @@ func TestDecoderOptions(t *testing.T) {
 		}
 
 		result, err := FromMap[TestStruct](input, WithMetadata(&metadata))
-		require.NoError(t, err)
-		assert.Equal(t, "John", result.Name)
-		assert.Equal(t, 30, result.Age)
-		assert.Contains(t, metadata.Unused, "extra")
+		require.NoError(t, err, "Decoding with metadata should succeed")
+		assert.Equal(t, "John", result.Name, "Name should match")
+		assert.Equal(t, 30, result.Age, "Age should match")
+		assert.Contains(t, metadata.Unused, "extra", "Metadata should contain unused fields")
 	})
 }
 
+// TestComplexTypeConversions tests conversion of complex types.
 func TestComplexTypeConversions(t *testing.T) {
-	t.Run("Time conversion", func(t *testing.T) {
+	t.Run("TimeConversion", func(t *testing.T) {
 		type TimeStruct struct {
 			Created time.Time `json:"created"`
 		}
@@ -343,13 +344,13 @@ func TestComplexTypeConversions(t *testing.T) {
 		}
 
 		result, err := FromMap[TimeStruct](input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Time conversion should succeed")
 
 		expectedTime, _ := time.Parse(time.RFC3339, "2023-01-01T12:00:00Z")
-		assert.Equal(t, expectedTime, result.Created)
+		assert.Equal(t, expectedTime, result.Created, "Time should match")
 	})
 
-	t.Run("Duration conversion", func(t *testing.T) {
+	t.Run("DurationConversion", func(t *testing.T) {
 		type DurationStruct struct {
 			Timeout time.Duration `json:"timeout"`
 		}
@@ -359,13 +360,13 @@ func TestComplexTypeConversions(t *testing.T) {
 		}
 
 		result, err := FromMap[DurationStruct](input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Duration conversion should succeed")
 
 		expected, _ := time.ParseDuration("5m30s")
-		assert.Equal(t, expected, result.Timeout)
+		assert.Equal(t, expected, result.Timeout, "Duration should match")
 	})
 
-	t.Run("URL conversion", func(t *testing.T) {
+	t.Run("URLConversion", func(t *testing.T) {
 		type URLStruct struct {
 			Website *url.URL `json:"website"`
 		}
@@ -375,11 +376,11 @@ func TestComplexTypeConversions(t *testing.T) {
 		}
 
 		result, err := FromMap[URLStruct](input)
-		require.NoError(t, err)
-		assert.Equal(t, "https://example.com/path?param=value", result.Website.String())
+		require.NoError(t, err, "URL conversion should succeed")
+		assert.Equal(t, "https://example.com/path?param=value", result.Website.String(), "URL should match")
 	})
 
-	t.Run("IP conversion", func(t *testing.T) {
+	t.Run("IPConversion", func(t *testing.T) {
 		type IPStruct struct {
 			Address net.IP `json:"address"`
 		}
@@ -389,13 +390,14 @@ func TestComplexTypeConversions(t *testing.T) {
 		}
 
 		result, err := FromMap[IPStruct](input)
-		require.NoError(t, err)
-		assert.Equal(t, "192.168.1.100", result.Address.String())
+		require.NoError(t, err, "IP conversion should succeed")
+		assert.Equal(t, "192.168.1.100", result.Address.String(), "IP address should match")
 	})
 }
 
+// TestRoundTripConversion tests struct-to-map and back-to-struct conversion.
 func TestRoundTripConversion(t *testing.T) {
-	t.Run("Struct to map and back", func(t *testing.T) {
+	t.Run("StructToMapAndBack", func(t *testing.T) {
 		testTime := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 		original := TestStruct{
 			Name:     "John Doe",
@@ -407,25 +409,23 @@ func TestRoundTripConversion(t *testing.T) {
 			Duration: time.Hour * 2,
 		}
 
-		// Convert to map
 		mapResult, err := ToMap(original)
-		require.NoError(t, err)
+		require.NoError(t, err, "Struct to map should succeed")
 
-		// Convert back to struct
 		structResult, err := FromMap[TestStruct](mapResult)
-		require.NoError(t, err)
+		require.NoError(t, err, "Map to struct should succeed")
 
-		assert.Equal(t, original.Name, structResult.Name)
-		assert.Equal(t, original.Age, structResult.Age)
-		assert.Equal(t, original.Email, structResult.Email)
-		assert.Equal(t, original.Active, structResult.Active)
-		assert.Equal(t, original.Score, structResult.Score)
-		// Note: Time and Duration might have slight differences due to encoding/decoding
+		assert.Equal(t, original.Name, structResult.Name, "Name should match")
+		assert.Equal(t, original.Age, structResult.Age, "Age should match")
+		assert.Equal(t, original.Email, structResult.Email, "Email should match")
+		assert.Equal(t, original.Active, structResult.Active, "Active should match")
+		assert.Equal(t, original.Score, structResult.Score, "Score should match")
 	})
 }
 
+// TestNullBoolDecodeHook tests null.Bool type conversions.
 func TestNullBoolDecodeHook(t *testing.T) {
-	t.Run("Null.Bool to bool conversion", func(t *testing.T) {
+	t.Run("NullBoolToBool", func(t *testing.T) {
 		type StructWithBool struct {
 			Active bool `json:"active"`
 		}
@@ -435,11 +435,11 @@ func TestNullBoolDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithBool](input)
-		require.NoError(t, err)
-		assert.True(t, result.Active)
+		require.NoError(t, err, "null.Bool to bool conversion should succeed")
+		assert.True(t, result.Active, "Active should be true")
 	})
 
-	t.Run("Bool to null.Bool conversion", func(t *testing.T) {
+	t.Run("BoolToNullBool", func(t *testing.T) {
 		type StructWithNullBool struct {
 			Active null.Bool `json:"active"`
 		}
@@ -449,26 +449,26 @@ func TestNullBoolDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullBool](input)
-		require.NoError(t, err)
-		assert.True(t, result.Active.Valid)
-		assert.True(t, result.Active.Bool)
+		require.NoError(t, err, "bool to null.Bool conversion should succeed")
+		assert.True(t, result.Active.Valid, "null.Bool should be valid")
+		assert.True(t, result.Active.Bool, "null.Bool value should be true")
 	})
 
-	t.Run("Invalid null.Bool to bool", func(t *testing.T) {
+	t.Run("InvalidNullBoolToBool", func(t *testing.T) {
 		type StructWithBool struct {
 			Active bool `json:"active"`
 		}
 
 		input := map[string]any{
-			"active": null.NewBool(true, false), // invalid null.Bool
+			"active": null.NewBool(true, false),
 		}
 
 		result, err := FromMap[StructWithBool](input)
-		require.NoError(t, err)
-		assert.False(t, result.Active) // Should be false for invalid null.Bool
+		require.NoError(t, err, "Invalid null.Bool conversion should succeed")
+		assert.False(t, result.Active, "Active should be false for invalid null.Bool")
 	})
 
-	t.Run("ToMap with null.Bool", func(t *testing.T) {
+	t.Run("ToMapWithNullBool", func(t *testing.T) {
 		type StructWithNullBool struct {
 			Active null.Bool `json:"active"`
 		}
@@ -478,26 +478,24 @@ func TestNullBoolDecodeHook(t *testing.T) {
 		}
 
 		result, err := ToMap(input)
-		require.NoError(t, err)
-		// Check what type we actually got
+		require.NoError(t, err, "ToMap with null.Bool should succeed")
+
 		t.Logf("Result type: %T, value: %v", result["active"], result["active"])
-		// The null.Bool might be converted to a map structure, let's check if it has the expected value
+
 		if boolVal, ok := result["active"].(bool); ok {
-			assert.True(t, boolVal)
+			assert.True(t, boolVal, "Active should be true")
+		} else if mapVal, ok := result["active"].(map[string]any); ok {
+			assert.True(t, mapVal["Valid"].(bool), "Valid should be true")
+			assert.True(t, mapVal["Bool"].(bool), "Bool should be true")
 		} else {
-			// If it's a map, check the structure
-			if mapVal, ok := result["active"].(map[string]any); ok {
-				assert.True(t, mapVal["Valid"].(bool))
-				assert.True(t, mapVal["Bool"].(bool))
-			} else {
-				t.Fatalf("Unexpected type for active field: %T", result["active"])
-			}
+			t.Fatalf("Unexpected type for active field: %T", result["active"])
 		}
 	})
 }
 
+// TestNullValueDecodeHook tests null.Value[T] type conversions.
 func TestNullValueDecodeHook(t *testing.T) {
-	t.Run("Null.Value[string] to string conversion", func(t *testing.T) {
+	t.Run("NullValueStringToString", func(t *testing.T) {
 		type StructWithString struct {
 			Name string `json:"name"`
 		}
@@ -507,11 +505,11 @@ func TestNullValueDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithString](input)
-		require.NoError(t, err)
-		assert.Equal(t, "John Doe", result.Name)
+		require.NoError(t, err, "null.Value[string] to string conversion should succeed")
+		assert.Equal(t, "John Doe", result.Name, "Name should match")
 	})
 
-	t.Run("String to null.Value[string] conversion", func(t *testing.T) {
+	t.Run("StringToNullValueString", func(t *testing.T) {
 		type StructWithNullString struct {
 			Name null.Value[string] `json:"name"`
 		}
@@ -521,12 +519,12 @@ func TestNullValueDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullString](input)
-		require.NoError(t, err)
-		assert.True(t, result.Name.Valid)
-		assert.Equal(t, "John Doe", result.Name.V)
+		require.NoError(t, err, "string to null.Value[string] conversion should succeed")
+		assert.True(t, result.Name.Valid, "null.Value should be valid")
+		assert.Equal(t, "John Doe", result.Name.V, "Value should match")
 	})
 
-	t.Run("Null.Value[int] to int conversion", func(t *testing.T) {
+	t.Run("NullValueIntToInt", func(t *testing.T) {
 		type StructWithInt struct {
 			Age int `json:"age"`
 		}
@@ -536,11 +534,11 @@ func TestNullValueDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithInt](input)
-		require.NoError(t, err)
-		assert.Equal(t, 30, result.Age)
+		require.NoError(t, err, "null.Value[int] to int conversion should succeed")
+		assert.Equal(t, 30, result.Age, "Age should match")
 	})
 
-	t.Run("Int to null.Value[int] conversion", func(t *testing.T) {
+	t.Run("IntToNullValueInt", func(t *testing.T) {
 		type StructWithNullInt struct {
 			Age null.Value[int] `json:"age"`
 		}
@@ -550,26 +548,26 @@ func TestNullValueDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullInt](input)
-		require.NoError(t, err)
-		assert.True(t, result.Age.Valid)
-		assert.Equal(t, 30, result.Age.V)
+		require.NoError(t, err, "int to null.Value[int] conversion should succeed")
+		assert.True(t, result.Age.Valid, "null.Value should be valid")
+		assert.Equal(t, 30, result.Age.V, "Value should match")
 	})
 
-	t.Run("Invalid null.Value to primitive", func(t *testing.T) {
+	t.Run("InvalidNullValueToPrimitive", func(t *testing.T) {
 		type StructWithString struct {
 			Name string `json:"name"`
 		}
 
 		input := map[string]any{
-			"name": null.NewValue("John", false), // invalid null.Value
+			"name": null.NewValue("John", false),
 		}
 
 		result, err := FromMap[StructWithString](input)
-		require.NoError(t, err)
-		assert.Equal(t, "", result.Name) // Should be zero value for invalid null.Value
+		require.NoError(t, err, "Invalid null.Value conversion should succeed")
+		assert.Equal(t, "", result.Name, "Name should be zero value for invalid null.Value")
 	})
 
-	t.Run("ToMap with null.Value", func(t *testing.T) {
+	t.Run("ToMapWithNullValue", func(t *testing.T) {
 		type StructWithNullValue struct {
 			Name null.Value[string] `json:"name"`
 			Age  null.Value[int]    `json:"age"`
@@ -581,28 +579,27 @@ func TestNullValueDecodeHook(t *testing.T) {
 		}
 
 		result, err := ToMap(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "ToMap with null.Value should succeed")
 
-		// Check name field
 		if nameVal, ok := result["name"].(string); ok {
-			assert.Equal(t, "John Doe", nameVal)
+			assert.Equal(t, "John Doe", nameVal, "Name should match")
 		} else if mapVal, ok := result["name"].(map[string]any); ok {
-			assert.True(t, mapVal["Valid"].(bool))
-			assert.Equal(t, "John Doe", mapVal["V"])
+			assert.True(t, mapVal["Valid"].(bool), "Valid should be true")
+			assert.Equal(t, "John Doe", mapVal["V"], "Value should match")
 		}
 
-		// Check age field
 		if ageVal, ok := result["age"].(int); ok {
-			assert.Equal(t, 30, ageVal)
+			assert.Equal(t, 30, ageVal, "Age should match")
 		} else if mapVal, ok := result["age"].(map[string]any); ok {
-			assert.True(t, mapVal["Valid"].(bool))
-			assert.Equal(t, 30, mapVal["V"])
+			assert.True(t, mapVal["Valid"].(bool), "Valid should be true")
+			assert.Equal(t, 30, mapVal["V"], "Value should match")
 		}
 	})
 }
 
+// TestNullTypesIntegration tests integration of various null types.
 func TestNullTypesIntegration(t *testing.T) {
-	t.Run("Complex struct with various null types", func(t *testing.T) {
+	t.Run("ComplexStructWithNullTypes", func(t *testing.T) {
 		type ComplexStruct struct {
 			Name          null.Value[string]  `json:"name"`
 			Age           null.Value[int]     `json:"age"`
@@ -619,27 +616,24 @@ func TestNullTypesIntegration(t *testing.T) {
 		}
 
 		result, err := FromMap[ComplexStruct](input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Complex struct conversion should succeed")
 
-		assert.True(t, result.Name.Valid)
-		assert.Equal(t, "John Doe", result.Name.V)
+		assert.True(t, result.Name.Valid, "Name should be valid")
+		assert.Equal(t, "John Doe", result.Name.V, "Name should match")
 
-		assert.True(t, result.Age.Valid)
-		assert.Equal(t, 30, result.Age.V)
+		assert.True(t, result.Age.Valid, "Age should be valid")
+		assert.Equal(t, 30, result.Age.V, "Age should match")
 
-		assert.True(t, result.Active.Valid)
-		assert.True(t, result.Active.Bool)
+		assert.True(t, result.Active.Valid, "Active should be valid")
+		assert.True(t, result.Active.Bool, "Active should be true")
 
-		assert.True(t, result.Score.Valid)
-		assert.Equal(t, 95.5, result.Score.V)
+		assert.True(t, result.Score.Valid, "Score should be valid")
+		assert.Equal(t, 95.5, result.Score.V, "Score should match")
 
-		assert.False(t, result.OptionalField.Valid) // Not provided in input
+		assert.False(t, result.OptionalField.Valid, "Optional field should be invalid")
 	})
 
-	t.Run("Round trip with null types", func(t *testing.T) {
-		// Note: Round trip with null types has limitations because ToMap converts
-		// null.Value and null.Bool to map structures rather than primitives.
-		// This is expected behavior due to how mapstructure handles struct decomposition.
+	t.Run("RoundTripWithNullTypes", func(t *testing.T) {
 		type NullStruct struct {
 			Name   null.Value[string] `json:"name"`
 			Age    null.Value[int]    `json:"age"`
@@ -652,32 +646,26 @@ func TestNullTypesIntegration(t *testing.T) {
 			Active: null.BoolFrom(false),
 		}
 
-		// Convert to map
 		mapResult, err := ToMap(original)
-		require.NoError(t, err)
+		require.NoError(t, err, "ToMap should succeed")
 
-		// Verify the map contains the expected structure
 		nameMap, ok := mapResult["name"].(map[string]any)
-		require.True(t, ok, "name should be converted to map")
-		assert.True(t, nameMap["Valid"].(bool))
-		assert.Equal(t, "Jane Doe", nameMap["V"])
+		require.True(t, ok, "Name should be converted to map")
+		assert.True(t, nameMap["Valid"].(bool), "Name Valid should be true")
+		assert.Equal(t, "Jane Doe", nameMap["V"], "Name value should match")
 
 		ageMap, ok := mapResult["age"].(map[string]any)
-		require.True(t, ok, "age should be converted to map")
-		assert.True(t, ageMap["Valid"].(bool))
-		assert.Equal(t, 25, ageMap["V"])
+		require.True(t, ok, "Age should be converted to map")
+		assert.True(t, ageMap["Valid"].(bool), "Age Valid should be true")
+		assert.Equal(t, 25, ageMap["V"], "Age value should match")
 
 		activeMap, ok := mapResult["active"].(map[string]any)
-		require.True(t, ok, "active should be converted to map")
-		assert.True(t, activeMap["Valid"].(bool))
-		assert.False(t, activeMap["Bool"].(bool))
-
-		// Note: Full round trip back to the original struct is not supported
-		// because the map structure doesn't map cleanly back to null types.
-		// This is a known limitation when using nested struct types.
+		require.True(t, ok, "Active should be converted to map")
+		assert.True(t, activeMap["Valid"].(bool), "Active Valid should be true")
+		assert.False(t, activeMap["Bool"].(bool), "Active Bool should be false")
 	})
 
-	t.Run("Mixed null and regular types", func(t *testing.T) {
+	t.Run("MixedNullAndRegularTypes", func(t *testing.T) {
 		type MixedStruct struct {
 			RegularName string             `json:"regularName"`
 			NullName    null.Value[string] `json:"nullName"`
@@ -697,121 +685,123 @@ func TestNullTypesIntegration(t *testing.T) {
 		}
 
 		result, err := FromMap[MixedStruct](input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Mixed struct conversion should succeed")
 
-		assert.Equal(t, "John", result.RegularName)
-		assert.Equal(t, "Jane", result.NullName.V)
-		assert.True(t, result.NullName.Valid)
+		assert.Equal(t, "John", result.RegularName, "Regular name should match")
+		assert.Equal(t, "Jane", result.NullName.V, "Null name value should match")
+		assert.True(t, result.NullName.Valid, "Null name should be valid")
 
-		assert.Equal(t, 30, result.RegularAge)
-		assert.Equal(t, 25, result.NullAge.V)
-		assert.True(t, result.NullAge.Valid)
+		assert.Equal(t, 30, result.RegularAge, "Regular age should match")
+		assert.Equal(t, 25, result.NullAge.V, "Null age value should match")
+		assert.True(t, result.NullAge.Valid, "Null age should be valid")
 
-		assert.True(t, result.RegularFlag)
-		assert.False(t, result.NullFlag.Bool)
-		assert.True(t, result.NullFlag.Valid)
+		assert.True(t, result.RegularFlag, "Regular flag should be true")
+		assert.False(t, result.NullFlag.Bool, "Null flag should be false")
+		assert.True(t, result.NullFlag.Valid, "Null flag should be valid")
 	})
 }
 
+// TestNullBoolBasicOperations tests null.Bool creation and operations.
 func TestNullBoolBasicOperations(t *testing.T) {
-	t.Run("BoolFrom creates valid null.Bool", func(t *testing.T) {
+	t.Run("BoolFromCreatesValid", func(t *testing.T) {
 		b := null.BoolFrom(true)
-		assert.True(t, b.Valid)
-		assert.True(t, b.Bool)
-		assert.True(t, b.ValueOrZero())
+		assert.True(t, b.Valid, "Should be valid")
+		assert.True(t, b.Bool, "Bool should be true")
+		assert.True(t, b.ValueOrZero(), "ValueOrZero should be true")
 	})
 
-	t.Run("BoolFromPtr with nil creates invalid null.Bool", func(t *testing.T) {
+	t.Run("BoolFromPtrWithNil", func(t *testing.T) {
 		b := null.BoolFromPtr(nil)
-		assert.False(t, b.Valid)
-		assert.False(t, b.Bool)
-		assert.False(t, b.ValueOrZero())
+		assert.False(t, b.Valid, "Should be invalid")
+		assert.False(t, b.Bool, "Bool should be false")
+		assert.False(t, b.ValueOrZero(), "ValueOrZero should be false")
 	})
 
-	t.Run("BoolFromPtr with value creates valid null.Bool", func(t *testing.T) {
+	t.Run("BoolFromPtrWithValue", func(t *testing.T) {
 		value := true
 		b := null.BoolFromPtr(&value)
-		assert.True(t, b.Valid)
-		assert.True(t, b.Bool)
-		assert.True(t, b.ValueOrZero())
+		assert.True(t, b.Valid, "Should be valid")
+		assert.True(t, b.Bool, "Bool should be true")
+		assert.True(t, b.ValueOrZero(), "ValueOrZero should be true")
 	})
 
-	t.Run("NewBool creates null.Bool with specified validity", func(t *testing.T) {
+	t.Run("NewBoolWithValidity", func(t *testing.T) {
 		validBool := null.NewBool(true, true)
-		assert.True(t, validBool.Valid)
-		assert.True(t, validBool.Bool)
+		assert.True(t, validBool.Valid, "Should be valid")
+		assert.True(t, validBool.Bool, "Bool should be true")
 
 		invalidBool := null.NewBool(true, false)
-		assert.False(t, invalidBool.Valid)
-		assert.True(t, invalidBool.Bool)           // Value is set but not valid
-		assert.False(t, invalidBool.ValueOrZero()) // Should return false for invalid
+		assert.False(t, invalidBool.Valid, "Should be invalid")
+		assert.True(t, invalidBool.Bool, "Bool should be true")
+		assert.False(t, invalidBool.ValueOrZero(), "ValueOrZero should be false for invalid")
 	})
 
-	t.Run("ValueOr returns default for invalid bool", func(t *testing.T) {
+	t.Run("ValueOrReturnsDefault", func(t *testing.T) {
 		invalidBool := null.NewBool(false, false)
-		assert.True(t, invalidBool.ValueOr(true))
+		assert.True(t, invalidBool.ValueOr(true), "Should return default for invalid")
 
 		validBool := null.BoolFrom(false)
-		assert.False(t, validBool.ValueOr(true))
+		assert.False(t, validBool.ValueOr(true), "Should return actual value for valid")
 	})
 }
 
+// TestNullValueBasicOperations tests null.Value[T] creation and operations.
 func TestNullValueBasicOperations(t *testing.T) {
-	t.Run("ValueFrom creates valid null.Value", func(t *testing.T) {
+	t.Run("ValueFromCreatesValid", func(t *testing.T) {
 		str := null.ValueFrom("hello")
-		assert.True(t, str.Valid)
-		assert.Equal(t, "hello", str.V)
-		assert.Equal(t, "hello", str.ValueOrZero())
+		assert.True(t, str.Valid, "Should be valid")
+		assert.Equal(t, "hello", str.V, "Value should match")
+		assert.Equal(t, "hello", str.ValueOrZero(), "ValueOrZero should match")
 	})
 
-	t.Run("ValueFromPtr with nil creates invalid null.Value", func(t *testing.T) {
+	t.Run("ValueFromPtrWithNil", func(t *testing.T) {
 		var nilStr *string
 
 		str := null.ValueFromPtr(nilStr)
-		assert.False(t, str.Valid)
-		assert.Equal(t, "", str.ValueOrZero())
+		assert.False(t, str.Valid, "Should be invalid")
+		assert.Equal(t, "", str.ValueOrZero(), "ValueOrZero should be zero value")
 	})
 
-	t.Run("ValueFromPtr with value creates valid null.Value", func(t *testing.T) {
+	t.Run("ValueFromPtrWithValue", func(t *testing.T) {
 		value := "hello"
 		str := null.ValueFromPtr(&value)
-		assert.True(t, str.Valid)
-		assert.Equal(t, "hello", str.V)
-		assert.Equal(t, "hello", str.ValueOrZero())
+		assert.True(t, str.Valid, "Should be valid")
+		assert.Equal(t, "hello", str.V, "Value should match")
+		assert.Equal(t, "hello", str.ValueOrZero(), "ValueOrZero should match")
 	})
 
-	t.Run("NewValue creates null.Value with specified validity", func(t *testing.T) {
+	t.Run("NewValueWithValidity", func(t *testing.T) {
 		validValue := null.NewValue("hello", true)
-		assert.True(t, validValue.Valid)
-		assert.Equal(t, "hello", validValue.V)
+		assert.True(t, validValue.Valid, "Should be valid")
+		assert.Equal(t, "hello", validValue.V, "Value should match")
 
 		invalidValue := null.NewValue("hello", false)
-		assert.False(t, invalidValue.Valid)
-		assert.Equal(t, "hello", invalidValue.V)        // Value is set but not valid
-		assert.Equal(t, "", invalidValue.ValueOrZero()) // Should return zero value for invalid
+		assert.False(t, invalidValue.Valid, "Should be invalid")
+		assert.Equal(t, "hello", invalidValue.V, "Value should match")
+		assert.Equal(t, "", invalidValue.ValueOrZero(), "ValueOrZero should be zero value for invalid")
 	})
 
-	t.Run("Null.Value with different types", func(t *testing.T) {
+	t.Run("NullValueWithDifferentTypes", func(t *testing.T) {
 		intVal := null.ValueFrom(42)
-		assert.True(t, intVal.Valid)
-		assert.Equal(t, 42, intVal.V)
-		assert.Equal(t, 42, intVal.ValueOrZero())
+		assert.True(t, intVal.Valid, "Int should be valid")
+		assert.Equal(t, 42, intVal.V, "Int value should match")
+		assert.Equal(t, 42, intVal.ValueOrZero(), "Int ValueOrZero should match")
 
 		floatVal := null.ValueFrom(3.14)
-		assert.True(t, floatVal.Valid)
-		assert.Equal(t, 3.14, floatVal.V)
-		assert.Equal(t, 3.14, floatVal.ValueOrZero())
+		assert.True(t, floatVal.Valid, "Float should be valid")
+		assert.Equal(t, 3.14, floatVal.V, "Float value should match")
+		assert.Equal(t, 3.14, floatVal.ValueOrZero(), "Float ValueOrZero should match")
 
 		boolVal := null.ValueFrom(true)
-		assert.True(t, boolVal.Valid)
-		assert.True(t, boolVal.V)
-		assert.True(t, boolVal.ValueOrZero())
+		assert.True(t, boolVal.Valid, "Bool should be valid")
+		assert.True(t, boolVal.V, "Bool value should be true")
+		assert.True(t, boolVal.ValueOrZero(), "Bool ValueOrZero should be true")
 	})
 }
 
+// TestNullSpecificTypesDecodeHook tests specific null type conversions.
 func TestNullSpecificTypesDecodeHook(t *testing.T) {
-	t.Run("Null.String decode hook", func(t *testing.T) {
-		// Test string to null.String conversion
+	t.Run("NullStringDecodeHook", func(t *testing.T) {
 		type StructWithNullString struct {
 			Name null.String `json:"name"`
 		}
@@ -821,11 +811,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullString](input)
-		require.NoError(t, err)
-		assert.True(t, result.Name.Valid)
-		assert.Equal(t, "John Doe", result.Name.String)
+		require.NoError(t, err, "String to null.String conversion should succeed")
+		assert.True(t, result.Name.Valid, "Should be valid")
+		assert.Equal(t, "John Doe", result.Name.String, "Value should match")
 
-		// Test null.String to string conversion
 		type StructWithString struct {
 			Name string `json:"name"`
 		}
@@ -835,21 +824,19 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithString](input2)
-		require.NoError(t, err)
-		assert.Equal(t, "Jane Doe", result2.Name)
+		require.NoError(t, err, "null.String to string conversion should succeed")
+		assert.Equal(t, "Jane Doe", result2.Name, "Value should match")
 
-		// Test invalid null.String to string
 		input3 := map[string]any{
 			"name": null.NewString("", false),
 		}
 
 		result3, err := FromMap[StructWithString](input3)
-		require.NoError(t, err)
-		assert.Equal(t, "", result3.Name) // Should be zero value for invalid
+		require.NoError(t, err, "Invalid null.String conversion should succeed")
+		assert.Equal(t, "", result3.Name, "Should be zero value for invalid")
 	})
 
-	t.Run("Null.Int decode hook", func(t *testing.T) {
-		// Test int64 to null.Int conversion
+	t.Run("NullIntDecodeHook", func(t *testing.T) {
 		type StructWithNullInt struct {
 			Age null.Int `json:"age"`
 		}
@@ -859,11 +846,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullInt](input)
-		require.NoError(t, err)
-		assert.True(t, result.Age.Valid)
-		assert.Equal(t, int64(30), result.Age.Int64)
+		require.NoError(t, err, "int64 to null.Int conversion should succeed")
+		assert.True(t, result.Age.Valid, "Should be valid")
+		assert.Equal(t, int64(30), result.Age.Int64, "Value should match")
 
-		// Test null.Int to int64 conversion
 		type StructWithInt struct {
 			Age int64 `json:"age"`
 		}
@@ -873,12 +859,11 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithInt](input2)
-		require.NoError(t, err)
-		assert.Equal(t, int64(25), result2.Age)
+		require.NoError(t, err, "null.Int to int64 conversion should succeed")
+		assert.Equal(t, int64(25), result2.Age, "Value should match")
 	})
 
-	t.Run("Null.Int16 decode hook", func(t *testing.T) {
-		// Test int16 to null.Int16 conversion
+	t.Run("NullInt16DecodeHook", func(t *testing.T) {
 		type StructWithNullInt16 struct {
 			Count null.Int16 `json:"count"`
 		}
@@ -888,11 +873,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullInt16](input)
-		require.NoError(t, err)
-		assert.True(t, result.Count.Valid)
-		assert.Equal(t, int16(100), result.Count.Int16)
+		require.NoError(t, err, "int16 to null.Int16 conversion should succeed")
+		assert.True(t, result.Count.Valid, "Should be valid")
+		assert.Equal(t, int16(100), result.Count.Int16, "Value should match")
 
-		// Test null.Int16 to int16 conversion
 		type StructWithInt16 struct {
 			Count int16 `json:"count"`
 		}
@@ -902,14 +886,13 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithInt16](input2)
-		require.NoError(t, err)
-		assert.Equal(t, int16(200), result2.Count)
+		require.NoError(t, err, "null.Int16 to int16 conversion should succeed")
+		assert.Equal(t, int16(200), result2.Count, "Value should match")
 	})
 
-	t.Run("Null.Int32 decode hook", func(t *testing.T) {
-		// Test int32 to null.Int32 conversion
+	t.Run("NullInt32DecodeHook", func(t *testing.T) {
 		type StructWithNullInt32 struct {
-			ID null.Int32 `json:"id"`
+			Id null.Int32 `json:"id"`
 		}
 
 		input := map[string]any{
@@ -917,13 +900,12 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullInt32](input)
-		require.NoError(t, err)
-		assert.True(t, result.ID.Valid)
-		assert.Equal(t, int32(12345), result.ID.Int32)
+		require.NoError(t, err, "int32 to null.Int32 conversion should succeed")
+		assert.True(t, result.Id.Valid, "Should be valid")
+		assert.Equal(t, int32(12345), result.Id.Int32, "Value should match")
 
-		// Test null.Int32 to int32 conversion
 		type StructWithInt32 struct {
-			ID int32 `json:"id"`
+			Id int32 `json:"id"`
 		}
 
 		input2 := map[string]any{
@@ -931,12 +913,11 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithInt32](input2)
-		require.NoError(t, err)
-		assert.Equal(t, int32(54321), result2.ID)
+		require.NoError(t, err, "null.Int32 to int32 conversion should succeed")
+		assert.Equal(t, int32(54321), result2.Id, "Value should match")
 	})
 
-	t.Run("Null.Float decode hook", func(t *testing.T) {
-		// Test float64 to null.Float conversion
+	t.Run("NullFloatDecodeHook", func(t *testing.T) {
 		type StructWithNullFloat struct {
 			Score null.Float `json:"score"`
 		}
@@ -946,11 +927,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullFloat](input)
-		require.NoError(t, err)
-		assert.True(t, result.Score.Valid)
-		assert.Equal(t, 95.5, result.Score.Float64)
+		require.NoError(t, err, "float64 to null.Float conversion should succeed")
+		assert.True(t, result.Score.Valid, "Should be valid")
+		assert.Equal(t, 95.5, result.Score.Float64, "Value should match")
 
-		// Test null.Float to float64 conversion
 		type StructWithFloat struct {
 			Score float64 `json:"score"`
 		}
@@ -960,12 +940,11 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithFloat](input2)
-		require.NoError(t, err)
-		assert.Equal(t, 87.3, result2.Score)
+		require.NoError(t, err, "null.Float to float64 conversion should succeed")
+		assert.Equal(t, 87.3, result2.Score, "Value should match")
 	})
 
-	t.Run("Null.Byte decode hook", func(t *testing.T) {
-		// Test byte to null.Byte conversion
+	t.Run("NullByteDecodeHook", func(t *testing.T) {
 		type StructWithNullByte struct {
 			Flag null.Byte `json:"flag"`
 		}
@@ -975,11 +954,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullByte](input)
-		require.NoError(t, err)
-		assert.True(t, result.Flag.Valid)
-		assert.Equal(t, byte(255), result.Flag.Byte)
+		require.NoError(t, err, "byte to null.Byte conversion should succeed")
+		assert.True(t, result.Flag.Valid, "Should be valid")
+		assert.Equal(t, byte(255), result.Flag.Byte, "Value should match")
 
-		// Test null.Byte to byte conversion
 		type StructWithByte struct {
 			Flag byte `json:"flag"`
 		}
@@ -989,14 +967,13 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithByte](input2)
-		require.NoError(t, err)
-		assert.Equal(t, byte(128), result2.Flag)
+		require.NoError(t, err, "null.Byte to byte conversion should succeed")
+		assert.Equal(t, byte(128), result2.Flag, "Value should match")
 	})
 
-	t.Run("Null.DateTime decode hook", func(t *testing.T) {
+	t.Run("NullDateTimeDecodeHook", func(t *testing.T) {
 		testDateTime := datetime.Of(time.Date(2023, 12, 25, 15, 30, 0, 0, time.UTC))
 
-		// Test datetime.DateTime to null.DateTime conversion
 		type StructWithNullDateTime struct {
 			Created null.DateTime `json:"created"`
 		}
@@ -1006,11 +983,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullDateTime](input)
-		require.NoError(t, err)
-		assert.True(t, result.Created.Valid)
-		assert.Equal(t, testDateTime, result.Created.V)
+		require.NoError(t, err, "datetime.DateTime to null.DateTime conversion should succeed")
+		assert.True(t, result.Created.Valid, "Should be valid")
+		assert.Equal(t, testDateTime, result.Created.V, "Value should match")
 
-		// Test null.DateTime to datetime.DateTime conversion
 		type StructWithDateTime struct {
 			Created datetime.DateTime `json:"created"`
 		}
@@ -1020,14 +996,13 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithDateTime](input2)
-		require.NoError(t, err)
-		assert.Equal(t, testDateTime, result2.Created)
+		require.NoError(t, err, "null.DateTime to datetime.DateTime conversion should succeed")
+		assert.Equal(t, testDateTime, result2.Created, "Value should match")
 	})
 
-	t.Run("Null.Date decode hook", func(t *testing.T) {
+	t.Run("NullDateDecodeHook", func(t *testing.T) {
 		testDate := datetime.DateOf(time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC))
 
-		// Test datetime.Date to null.Date conversion
 		type StructWithNullDate struct {
 			Birthday null.Date `json:"birthday"`
 		}
@@ -1037,11 +1012,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullDate](input)
-		require.NoError(t, err)
-		assert.True(t, result.Birthday.Valid)
-		assert.Equal(t, testDate, result.Birthday.V)
+		require.NoError(t, err, "datetime.Date to null.Date conversion should succeed")
+		assert.True(t, result.Birthday.Valid, "Should be valid")
+		assert.Equal(t, testDate, result.Birthday.V, "Value should match")
 
-		// Test null.Date to datetime.Date conversion
 		type StructWithDate struct {
 			Birthday datetime.Date `json:"birthday"`
 		}
@@ -1051,14 +1025,13 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithDate](input2)
-		require.NoError(t, err)
-		assert.Equal(t, testDate, result2.Birthday)
+		require.NoError(t, err, "null.Date to datetime.Date conversion should succeed")
+		assert.Equal(t, testDate, result2.Birthday, "Value should match")
 	})
 
-	t.Run("Null.Time decode hook", func(t *testing.T) {
+	t.Run("NullTimeDecodeHook", func(t *testing.T) {
 		testTime := datetime.TimeOf(time.Date(0, 1, 1, 15, 30, 45, 0, time.UTC))
 
-		// Test datetime.Time to null.Time conversion
 		type StructWithNullTime struct {
 			MeetingTime null.Time `json:"meetingTime"`
 		}
@@ -1068,11 +1041,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullTime](input)
-		require.NoError(t, err)
-		assert.True(t, result.MeetingTime.Valid)
-		assert.Equal(t, testTime, result.MeetingTime.V)
+		require.NoError(t, err, "datetime.Time to null.Time conversion should succeed")
+		assert.True(t, result.MeetingTime.Valid, "Should be valid")
+		assert.Equal(t, testTime, result.MeetingTime.V, "Value should match")
 
-		// Test null.Time to datetime.Time conversion
 		type StructWithTime struct {
 			MeetingTime datetime.Time `json:"meetingTime"`
 		}
@@ -1082,14 +1054,13 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithTime](input2)
-		require.NoError(t, err)
-		assert.Equal(t, testTime, result2.MeetingTime)
+		require.NoError(t, err, "null.Time to datetime.Time conversion should succeed")
+		assert.Equal(t, testTime, result2.MeetingTime, "Value should match")
 	})
 
-	t.Run("Null.Decimal decode hook", func(t *testing.T) {
+	t.Run("NullDecimalDecodeHook", func(t *testing.T) {
 		testDecimal := decimal.NewFromFloat(123.456)
 
-		// Test decimal.Decimal to null.Decimal conversion
 		type StructWithNullDecimal struct {
 			Price null.Decimal `json:"price"`
 		}
@@ -1099,11 +1070,10 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullDecimal](input)
-		require.NoError(t, err)
-		assert.True(t, result.Price.Valid)
-		assert.True(t, testDecimal.Equal(result.Price.Decimal))
+		require.NoError(t, err, "decimal.Decimal to null.Decimal conversion should succeed")
+		assert.True(t, result.Price.Valid, "Should be valid")
+		assert.True(t, testDecimal.Equal(result.Price.Decimal), "Value should match")
 
-		// Test null.Decimal to decimal.Decimal conversion
 		type StructWithDecimal struct {
 			Price decimal.Decimal `json:"price"`
 		}
@@ -1113,14 +1083,14 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithDecimal](input2)
-		require.NoError(t, err)
-		assert.True(t, testDecimal.Equal(result2.Price))
+		require.NoError(t, err, "null.Decimal to decimal.Decimal conversion should succeed")
+		assert.True(t, testDecimal.Equal(result2.Price), "Value should match")
 	})
 }
 
+// TestNullTypesWithPointersDecodeHook tests null type conversions with pointers.
 func TestNullTypesWithPointersDecodeHook(t *testing.T) {
-	t.Run("Pointer types conversion", func(t *testing.T) {
-		// Test *string to null.String
+	t.Run("PointerTypesConversion", func(t *testing.T) {
 		type StructWithNullString struct {
 			Name null.String `json:"name"`
 		}
@@ -1131,11 +1101,10 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullString](input)
-		require.NoError(t, err)
-		assert.True(t, result.Name.Valid)
-		assert.Equal(t, "John Doe", result.Name.String)
+		require.NoError(t, err, "*string to null.String conversion should succeed")
+		assert.True(t, result.Name.Valid, "Should be valid")
+		assert.Equal(t, "John Doe", result.Name.String, "Value should match")
 
-		// Test null.String to *string
 		type StructWithStringPtr struct {
 			Name *string `json:"name"`
 		}
@@ -1145,11 +1114,10 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithStringPtr](input2)
-		require.NoError(t, err)
-		require.NotNil(t, result2.Name)
-		assert.Equal(t, "Jane Doe", *result2.Name)
+		require.NoError(t, err, "null.String to *string conversion should succeed")
+		require.NotNil(t, result2.Name, "Pointer should not be nil")
+		assert.Equal(t, "Jane Doe", *result2.Name, "Value should match")
 
-		// Test nil pointer to null.String
 		var nilString *string
 
 		input3 := map[string]any{
@@ -1157,21 +1125,19 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 		}
 
 		result3, err := FromMap[StructWithNullString](input3)
-		require.NoError(t, err)
-		assert.False(t, result3.Name.Valid)
+		require.NoError(t, err, "nil pointer conversion should succeed")
+		assert.False(t, result3.Name.Valid, "Should be invalid for nil pointer")
 
-		// Test invalid null.String to *string
 		input4 := map[string]any{
 			"name": null.NewString("test", false),
 		}
 
 		result4, err := FromMap[StructWithStringPtr](input4)
-		require.NoError(t, err)
-		assert.Nil(t, result4.Name)
+		require.NoError(t, err, "Invalid null.String to pointer conversion should succeed")
+		assert.Nil(t, result4.Name, "Pointer should be nil for invalid null.String")
 	})
 
-	t.Run("Integer pointer types", func(t *testing.T) {
-		// Test *int64 to null.Int
+	t.Run("IntegerPointerTypes", func(t *testing.T) {
 		type StructWithNullInt struct {
 			Age null.Int `json:"age"`
 		}
@@ -1182,11 +1148,10 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithNullInt](input)
-		require.NoError(t, err)
-		assert.True(t, result.Age.Valid)
-		assert.Equal(t, int64(30), result.Age.Int64)
+		require.NoError(t, err, "*int64 to null.Int conversion should succeed")
+		assert.True(t, result.Age.Valid, "Should be valid")
+		assert.Equal(t, int64(30), result.Age.Int64, "Value should match")
 
-		// Test null.Int to *int64
 		type StructWithIntPtr struct {
 			Age *int64 `json:"age"`
 		}
@@ -1196,14 +1161,15 @@ func TestNullTypesWithPointersDecodeHook(t *testing.T) {
 		}
 
 		result2, err := FromMap[StructWithIntPtr](input2)
-		require.NoError(t, err)
-		require.NotNil(t, result2.Age)
-		assert.Equal(t, int64(25), *result2.Age)
+		require.NoError(t, err, "null.Int to *int64 conversion should succeed")
+		require.NotNil(t, result2.Age, "Pointer should not be nil")
+		assert.Equal(t, int64(25), *result2.Age, "Value should match")
 	})
 }
 
+// TestFileHeaderConversion tests multipart file header conversions.
 func TestFileHeaderConversion(t *testing.T) {
-	t.Run("Slice with single file to single file pointer", func(t *testing.T) {
+	t.Run("SliceWithSingleFileToSinglePointer", func(t *testing.T) {
 		type StructWithSingleFile struct {
 			Avatar *multipart.FileHeader `json:"avatar"`
 		}
@@ -1218,13 +1184,13 @@ func TestFileHeaderConversion(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithSingleFile](input)
-		require.NoError(t, err)
-		require.NotNil(t, result.Avatar)
-		assert.Equal(t, "avatar.jpg", result.Avatar.Filename)
-		assert.Equal(t, int64(1024), result.Avatar.Size)
+		require.NoError(t, err, "Slice to single file conversion should succeed")
+		require.NotNil(t, result.Avatar, "Avatar should not be nil")
+		assert.Equal(t, "avatar.jpg", result.Avatar.Filename, "Filename should match")
+		assert.Equal(t, int64(1024), result.Avatar.Size, "Size should match")
 	})
 
-	t.Run("Slice with multiple files remains slice", func(t *testing.T) {
+	t.Run("SliceWithMultipleFilesRemainsSlice", func(t *testing.T) {
 		type StructWithMultipleFiles struct {
 			Attachments []*multipart.FileHeader `json:"attachments"`
 		}
@@ -1239,13 +1205,13 @@ func TestFileHeaderConversion(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithMultipleFiles](input)
-		require.NoError(t, err)
-		require.Len(t, result.Attachments, 2)
-		assert.Equal(t, "file1.pdf", result.Attachments[0].Filename)
-		assert.Equal(t, "file2.pdf", result.Attachments[1].Filename)
+		require.NoError(t, err, "Multiple files conversion should succeed")
+		require.Len(t, result.Attachments, 2, "Should have 2 attachments")
+		assert.Equal(t, "file1.pdf", result.Attachments[0].Filename, "First filename should match")
+		assert.Equal(t, "file2.pdf", result.Attachments[1].Filename, "Second filename should match")
 	})
 
-	t.Run("Empty slice to single file pointer", func(t *testing.T) {
+	t.Run("EmptySliceToSinglePointer", func(t *testing.T) {
 		type StructWithSingleFile struct {
 			Avatar *multipart.FileHeader `json:"avatar"`
 		}
@@ -1255,12 +1221,11 @@ func TestFileHeaderConversion(t *testing.T) {
 		}
 
 		_, err := FromMap[StructWithSingleFile](input)
-		// Empty slice cannot be converted to single pointer, should error
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "expected a map or struct")
+		assert.Error(t, err, "Empty slice to pointer should error")
+		assert.Contains(t, err.Error(), "expected a map or struct", "Error should mention type mismatch")
 	})
 
-	t.Run("Slice to slice remains unchanged", func(t *testing.T) {
+	t.Run("SliceToSliceRemainsUnchanged", func(t *testing.T) {
 		type StructWithFileSlice struct {
 			Files []*multipart.FileHeader `json:"files"`
 		}
@@ -1275,13 +1240,13 @@ func TestFileHeaderConversion(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithFileSlice](input)
-		require.NoError(t, err)
-		require.Len(t, result.Files, 1)
-		assert.Equal(t, "document.pdf", result.Files[0].Filename)
-		assert.Equal(t, int64(4096), result.Files[0].Size)
+		require.NoError(t, err, "Slice to slice conversion should succeed")
+		require.Len(t, result.Files, 1, "Should have 1 file")
+		assert.Equal(t, "document.pdf", result.Files[0].Filename, "Filename should match")
+		assert.Equal(t, int64(4096), result.Files[0].Size, "Size should match")
 	})
 
-	t.Run("Nil slice to single file pointer", func(t *testing.T) {
+	t.Run("NilSliceToSinglePointer", func(t *testing.T) {
 		type StructWithSingleFile struct {
 			Avatar *multipart.FileHeader `json:"avatar"`
 		}
@@ -1291,18 +1256,19 @@ func TestFileHeaderConversion(t *testing.T) {
 		}
 
 		result, err := FromMap[StructWithSingleFile](input)
-		require.NoError(t, err)
-		assert.Nil(t, result.Avatar)
+		require.NoError(t, err, "Nil slice conversion should succeed")
+		assert.Nil(t, result.Avatar, "Avatar should be nil")
 	})
 }
 
+// TestNullTypesIntegrationAdvanced tests comprehensive null type integration.
 func TestNullTypesIntegrationAdvanced(t *testing.T) {
-	t.Run("Comprehensive struct with all null types", func(t *testing.T) {
+	t.Run("ComprehensiveStructWithAllNullTypes", func(t *testing.T) {
 		type ComprehensiveStruct struct {
 			Name        null.String   `json:"name"`
 			Age         null.Int      `json:"age"`
 			ShortCount  null.Int16    `json:"shortCount"`
-			ID          null.Int32    `json:"id"`
+			Id          null.Int32    `json:"id"`
 			Score       null.Float    `json:"score"`
 			Flag        null.Byte     `json:"flag"`
 			Created     null.DateTime `json:"created"`
@@ -1332,44 +1298,43 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 		}
 
 		result, err := FromMap[ComprehensiveStruct](input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Comprehensive struct conversion should succeed")
 
-		// Verify all fields are valid and have correct values
-		assert.True(t, result.Name.Valid)
-		assert.Equal(t, "John Doe", result.Name.String)
+		assert.True(t, result.Name.Valid, "Name should be valid")
+		assert.Equal(t, "John Doe", result.Name.String, "Name should match")
 
-		assert.True(t, result.Age.Valid)
-		assert.Equal(t, int64(30), result.Age.Int64)
+		assert.True(t, result.Age.Valid, "Age should be valid")
+		assert.Equal(t, int64(30), result.Age.Int64, "Age should match")
 
-		assert.True(t, result.ShortCount.Valid)
-		assert.Equal(t, int16(100), result.ShortCount.Int16)
+		assert.True(t, result.ShortCount.Valid, "ShortCount should be valid")
+		assert.Equal(t, int16(100), result.ShortCount.Int16, "ShortCount should match")
 
-		assert.True(t, result.ID.Valid)
-		assert.Equal(t, int32(12345), result.ID.Int32)
+		assert.True(t, result.Id.Valid, "Id should be valid")
+		assert.Equal(t, int32(12345), result.Id.Int32, "Id should match")
 
-		assert.True(t, result.Score.Valid)
-		assert.Equal(t, 95.5, result.Score.Float64)
+		assert.True(t, result.Score.Valid, "Score should be valid")
+		assert.Equal(t, 95.5, result.Score.Float64, "Score should match")
 
-		assert.True(t, result.Flag.Valid)
-		assert.Equal(t, byte(255), result.Flag.Byte)
+		assert.True(t, result.Flag.Valid, "Flag should be valid")
+		assert.Equal(t, byte(255), result.Flag.Byte, "Flag should match")
 
-		assert.True(t, result.Created.Valid)
-		assert.Equal(t, testDateTime, result.Created.V)
+		assert.True(t, result.Created.Valid, "Created should be valid")
+		assert.Equal(t, testDateTime, result.Created.V, "Created should match")
 
-		assert.True(t, result.Birthday.Valid)
-		assert.Equal(t, testDate, result.Birthday.V)
+		assert.True(t, result.Birthday.Valid, "Birthday should be valid")
+		assert.Equal(t, testDate, result.Birthday.V, "Birthday should match")
 
-		assert.True(t, result.MeetingTime.Valid)
-		assert.Equal(t, testTime, result.MeetingTime.V)
+		assert.True(t, result.MeetingTime.Valid, "MeetingTime should be valid")
+		assert.Equal(t, testTime, result.MeetingTime.V, "MeetingTime should match")
 
-		assert.True(t, result.Price.Valid)
-		assert.True(t, testDecimal.Equal(result.Price.Decimal))
+		assert.True(t, result.Price.Valid, "Price should be valid")
+		assert.True(t, testDecimal.Equal(result.Price.Decimal), "Price should match")
 
-		assert.True(t, result.Active.Valid)
-		assert.True(t, result.Active.Bool)
+		assert.True(t, result.Active.Valid, "Active should be valid")
+		assert.True(t, result.Active.Bool, "Active should be true")
 	})
 
-	t.Run("Partial input with some null fields", func(t *testing.T) {
+	t.Run("PartialInputWithSomeNullFields", func(t *testing.T) {
 		type PartialStruct struct {
 			Name   null.String `json:"name"`
 			Age    null.Int    `json:"age"`
@@ -1377,30 +1342,28 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 			Active null.Bool   `json:"active"`
 		}
 
-		// Only provide name and age, leave score and active unset
 		input := map[string]any{
 			"name": "Jane Doe",
 			"age":  int64(25),
 		}
 
 		result, err := FromMap[PartialStruct](input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Partial input conversion should succeed")
 
-		// Provided fields should be valid
-		assert.True(t, result.Name.Valid)
-		assert.Equal(t, "Jane Doe", result.Name.String)
+		assert.True(t, result.Name.Valid, "Name should be valid")
+		assert.Equal(t, "Jane Doe", result.Name.String, "Name should match")
 
-		assert.True(t, result.Age.Valid)
-		assert.Equal(t, int64(25), result.Age.Int64)
+		assert.True(t, result.Age.Valid, "Age should be valid")
+		assert.Equal(t, int64(25), result.Age.Int64, "Age should match")
 
-		// Unprovided fields should be invalid
-		assert.False(t, result.Score.Valid)
-		assert.False(t, result.Active.Valid)
+		assert.False(t, result.Score.Valid, "Score should be invalid")
+		assert.False(t, result.Active.Valid, "Active should be invalid")
 	})
 }
 
+// TestDecodeOrderDirection tests sort.OrderDirection type conversions.
 func TestDecodeOrderDirection(t *testing.T) {
-	t.Run("Decode string to OrderDirection in struct", func(t *testing.T) {
+	t.Run("DecodeStringToOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
 			Column    string              `json:"column"`
 			Direction sort.OrderDirection `json:"direction"`
@@ -1414,16 +1377,16 @@ func TestDecodeOrderDirection(t *testing.T) {
 		var result SortSpec
 
 		decoder, err := NewDecoder(&result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decoder creation should succeed")
 
 		err = decoder.Decode(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decode should succeed")
 
-		assert.Equal(t, "name", result.Column)
-		assert.Equal(t, sort.OrderAsc, result.Direction)
+		assert.Equal(t, "name", result.Column, "Column should match")
+		assert.Equal(t, sort.OrderAsc, result.Direction, "Direction should be asc")
 	})
 
-	t.Run("Decode uppercase string to OrderDirection", func(t *testing.T) {
+	t.Run("DecodeUppercaseStringToOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
 			Direction sort.OrderDirection `json:"direction"`
 		}
@@ -1435,15 +1398,15 @@ func TestDecodeOrderDirection(t *testing.T) {
 		var result SortSpec
 
 		decoder, err := NewDecoder(&result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decoder creation should succeed")
 
 		err = decoder.Decode(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decode should succeed")
 
-		assert.Equal(t, sort.OrderDesc, result.Direction)
+		assert.Equal(t, sort.OrderDesc, result.Direction, "Direction should be desc")
 	})
 
-	t.Run("Decode mixed case string to OrderDirection", func(t *testing.T) {
+	t.Run("DecodeMixedCaseStringToOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
 			Direction sort.OrderDirection `json:"direction"`
 		}
@@ -1468,17 +1431,17 @@ func TestDecodeOrderDirection(t *testing.T) {
 				var result SortSpec
 
 				decoder, err := NewDecoder(&result)
-				require.NoError(t, err)
+				require.NoError(t, err, "Decoder creation should succeed")
 
 				err = decoder.Decode(input)
-				require.NoError(t, err)
+				require.NoError(t, err, "Decode should succeed")
 
-				assert.Equal(t, tt.expected, result.Direction)
+				assert.Equal(t, tt.expected, result.Direction, "Direction should match expected value")
 			})
 		}
 	})
 
-	t.Run("Decode OrderDirection with spaces", func(t *testing.T) {
+	t.Run("DecodeOrderDirectionWithSpaces", func(t *testing.T) {
 		type SortSpec struct {
 			Direction sort.OrderDirection `json:"direction"`
 		}
@@ -1490,15 +1453,15 @@ func TestDecodeOrderDirection(t *testing.T) {
 		var result SortSpec
 
 		decoder, err := NewDecoder(&result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decoder creation should succeed")
 
 		err = decoder.Decode(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decode should succeed")
 
-		assert.Equal(t, sort.OrderAsc, result.Direction)
+		assert.Equal(t, sort.OrderAsc, result.Direction, "Direction should be asc with spaces trimmed")
 	})
 
-	t.Run("Decode invalid OrderDirection value", func(t *testing.T) {
+	t.Run("DecodeInvalidOrderDirectionValue", func(t *testing.T) {
 		type SortSpec struct {
 			Direction sort.OrderDirection `json:"direction"`
 		}
@@ -1510,14 +1473,14 @@ func TestDecodeOrderDirection(t *testing.T) {
 		var result SortSpec
 
 		decoder, err := NewDecoder(&result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decoder creation should succeed")
 
 		err = decoder.Decode(input)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid OrderDirection value")
+		assert.Error(t, err, "Invalid value should error")
+		assert.Contains(t, err.Error(), "invalid OrderDirection value", "Error should mention invalid value")
 	})
 
-	t.Run("Decode multiple OrderDirection values in slice", func(t *testing.T) {
+	t.Run("DecodeMultipleOrderDirectionInSlice", func(t *testing.T) {
 		type SortRequest struct {
 			Sort []sort.OrderSpec `json:"sort"`
 		}
@@ -1532,19 +1495,19 @@ func TestDecodeOrderDirection(t *testing.T) {
 		var result SortRequest
 
 		decoder, err := NewDecoder(&result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decoder creation should succeed")
 
 		err = decoder.Decode(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decode should succeed")
 
-		require.Len(t, result.Sort, 2)
-		assert.Equal(t, "name", result.Sort[0].Column)
-		assert.Equal(t, sort.OrderAsc, result.Sort[0].Direction)
-		assert.Equal(t, "age", result.Sort[1].Column)
-		assert.Equal(t, sort.OrderDesc, result.Sort[1].Direction)
+		require.Len(t, result.Sort, 2, "Should have 2 sort specs")
+		assert.Equal(t, "name", result.Sort[0].Column, "First column should be name")
+		assert.Equal(t, sort.OrderAsc, result.Sort[0].Direction, "First direction should be asc")
+		assert.Equal(t, "age", result.Sort[1].Column, "Second column should be age")
+		assert.Equal(t, sort.OrderDesc, result.Sort[1].Direction, "Second direction should be desc")
 	})
 
-	t.Run("Decode nested OrderDirection in complex struct", func(t *testing.T) {
+	t.Run("DecodeNestedOrderDirectionInComplexStruct", func(t *testing.T) {
 		type FilterSpec struct {
 			Field    string `json:"field"`
 			Operator string `json:"operator"`
@@ -1573,21 +1536,21 @@ func TestDecodeOrderDirection(t *testing.T) {
 		var result QueryRequest
 
 		decoder, err := NewDecoder(&result)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decoder creation should succeed")
 
 		err = decoder.Decode(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "Decode should succeed")
 
-		assert.Equal(t, 1, result.Page)
-		assert.Equal(t, 20, result.Size)
-		require.Len(t, result.Sort, 2)
-		assert.Equal(t, "created_at", result.Sort[0].Column)
-		assert.Equal(t, sort.OrderDesc, result.Sort[0].Direction)
-		assert.Equal(t, "name", result.Sort[1].Column)
-		assert.Equal(t, sort.OrderAsc, result.Sort[1].Direction)
+		assert.Equal(t, 1, result.Page, "Page should match")
+		assert.Equal(t, 20, result.Size, "Size should match")
+		require.Len(t, result.Sort, 2, "Should have 2 sort specs")
+		assert.Equal(t, "created_at", result.Sort[0].Column, "First column should be created_at")
+		assert.Equal(t, sort.OrderDesc, result.Sort[0].Direction, "First direction should be desc")
+		assert.Equal(t, "name", result.Sort[1].Column, "Second column should be name")
+		assert.Equal(t, sort.OrderAsc, result.Sort[1].Direction, "Second direction should be asc")
 	})
 
-	t.Run("FromMap with OrderDirection", func(t *testing.T) {
+	t.Run("FromMapWithOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
 			Column    string              `json:"column"`
 			Direction sort.OrderDirection `json:"direction"`
@@ -1599,13 +1562,13 @@ func TestDecodeOrderDirection(t *testing.T) {
 		}
 
 		result, err := FromMap[SortSpec](input)
-		require.NoError(t, err)
+		require.NoError(t, err, "FromMap should succeed")
 
-		assert.Equal(t, "email", result.Column)
-		assert.Equal(t, sort.OrderDesc, result.Direction)
+		assert.Equal(t, "email", result.Column, "Column should match")
+		assert.Equal(t, sort.OrderDesc, result.Direction, "Direction should be desc")
 	})
 
-	t.Run("ToMap with OrderDirection", func(t *testing.T) {
+	t.Run("ToMapWithOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
 			Column    string              `json:"column"`
 			Direction sort.OrderDirection `json:"direction"`
@@ -1617,10 +1580,9 @@ func TestDecodeOrderDirection(t *testing.T) {
 		}
 
 		result, err := ToMap(input)
-		require.NoError(t, err)
+		require.NoError(t, err, "ToMap should succeed")
 
-		assert.Equal(t, "username", result["column"])
-		// OrderDirection is stored as its underlying int value in the map
-		assert.Equal(t, sort.OrderAsc, result["direction"])
+		assert.Equal(t, "username", result["column"], "Column should match")
+		assert.Equal(t, sort.OrderAsc, result["direction"], "Direction should match")
 	})
 }

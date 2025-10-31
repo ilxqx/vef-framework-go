@@ -7,7 +7,7 @@ import (
 )
 
 func TestAlphanumUs(t *testing.T) {
-	type TestStruct struct {
+	type testStruct struct {
 		Value string `validate:"alphanum_us"`
 	}
 
@@ -16,45 +16,42 @@ func TestAlphanumUs(t *testing.T) {
 		value   string
 		wantErr bool
 	}{
-		// Valid cases
-		{"lowercase letters", "abc", false},
-		{"uppercase letters", "ABC", false},
-		{"mixed case", "AbCdEf", false},
+		{"lowercaseLetters", "abc", false},
+		{"uppercaseLetters", "ABC", false},
+		{"mixedCase", "AbCdEf", false},
 		{"numbers", "123", false},
 		{"alphanumeric", "abc123", false},
-		{"with underscores", "abc_123", false},
-		{"multiple underscores", "abc__123__def", false},
-		{"leading underscore", "_abc", false},
-		{"trailing underscore", "abc_", false},
-		{"only underscores", "___", false},
-		{"snake_case", "get_user_info", false},
-
-		// Invalid cases
-		{"with space", "abc 123", true},
-		{"with dash", "abc-123", true},
-		{"with slash", "abc/123", true},
-		{"with dot", "abc.123", true},
-		{"with special chars", "abc@123", true},
-		{"empty string", "", true},
-		{"chinese characters", "中文", true},
+		{"withUnderscores", "abc_123", false},
+		{"multipleUnderscores", "abc__123__def", false},
+		{"leadingUnderscore", "_abc", false},
+		{"trailingUnderscore", "abc_", false},
+		{"onlyUnderscores", "___", false},
+		{"snakeCase", "get_user_info", false},
+		{"withSpace", "abc 123", true},
+		{"withDash", "abc-123", true},
+		{"withSlash", "abc/123", true},
+		{"withDot", "abc.123", true},
+		{"withSpecialChars", "abc@123", true},
+		{"emptyString", "", true},
+		{"chineseCharacters", "中文", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := TestStruct{Value: tt.value}
+			s := testStruct{Value: tt.value}
 
 			err := Validate(&s)
 			if tt.wantErr {
-				assert.Error(t, err, "Expected validation error for value: %q", tt.value)
+				assert.Error(t, err, "Should return validation error for value: %q", tt.value)
 			} else {
-				assert.NoError(t, err, "Expected no validation error for value: %q", tt.value)
+				assert.NoError(t, err, "Should not return validation error for value: %q", tt.value)
 			}
 		})
 	}
 }
 
 func TestAlphanumUsSlash(t *testing.T) {
-	type TestStruct struct {
+	type testStruct struct {
 		Value string `validate:"alphanum_us_slash"`
 	}
 
@@ -63,45 +60,42 @@ func TestAlphanumUsSlash(t *testing.T) {
 		value   string
 		wantErr bool
 	}{
-		// Valid cases
-		{"lowercase letters", "abc", false},
-		{"uppercase letters", "ABC", false},
+		{"lowercaseLetters", "abc", false},
+		{"uppercaseLetters", "ABC", false},
 		{"numbers", "123", false},
 		{"alphanumeric", "abc123", false},
-		{"with underscores", "abc_123", false},
-		{"with slashes", "abc/123", false},
-		{"resource path", "sys/user", false},
-		{"nested path", "auth/get_user_info", false},
-		{"multiple slashes", "a/b/c/d", false},
-		{"leading slash", "/abc", false},
-		{"trailing slash", "abc/", false},
+		{"withUnderscores", "abc_123", false},
+		{"withSlashes", "abc/123", false},
+		{"resourcePath", "sys/user", false},
+		{"nestedPath", "auth/get_user_info", false},
+		{"multipleSlashes", "a/b/c/d", false},
+		{"leadingSlash", "/abc", false},
+		{"trailingSlash", "abc/", false},
 		{"mixed", "sys_module/user_info", false},
-
-		// Invalid cases
-		{"with space", "abc 123", true},
-		{"with dash", "abc-123", true},
-		{"with dot", "abc.123", true},
-		{"with special chars", "abc@123", true},
-		{"empty string", "", true},
-		{"chinese characters", "中文", true},
+		{"withSpace", "abc 123", true},
+		{"withDash", "abc-123", true},
+		{"withDot", "abc.123", true},
+		{"withSpecialChars", "abc@123", true},
+		{"emptyString", "", true},
+		{"chineseCharacters", "中文", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := TestStruct{Value: tt.value}
+			s := testStruct{Value: tt.value}
 
 			err := Validate(&s)
 			if tt.wantErr {
-				assert.Error(t, err, "Expected validation error for value: %q", tt.value)
+				assert.Error(t, err, "Should return validation error for value: %q", tt.value)
 			} else {
-				assert.NoError(t, err, "Expected no validation error for value: %q", tt.value)
+				assert.NoError(t, err, "Should not return validation error for value: %q", tt.value)
 			}
 		})
 	}
 }
 
 func TestAlphanumUsDot(t *testing.T) {
-	type TestStruct struct {
+	type testStruct struct {
 		Value string `validate:"alphanum_us_dot"`
 	}
 
@@ -110,46 +104,43 @@ func TestAlphanumUsDot(t *testing.T) {
 		value   string
 		wantErr bool
 	}{
-		// Valid cases
-		{"lowercase letters", "abc", false},
-		{"uppercase letters", "ABC", false},
+		{"lowercaseLetters", "abc", false},
+		{"uppercaseLetters", "ABC", false},
 		{"numbers", "123", false},
 		{"alphanumeric", "abc123", false},
-		{"with underscores", "abc_123", false},
-		{"with dots", "abc.123", false},
-		{"file name", "config.yaml", false},
-		{"module name", "com.example.app", false},
-		{"version number", "v1.2.3", false},
-		{"multiple dots", "a.b.c.d", false},
-		{"leading dot", ".hidden", false},
-		{"trailing dot", "file.", false},
+		{"withUnderscores", "abc_123", false},
+		{"withDots", "abc.123", false},
+		{"fileName", "config.yaml", false},
+		{"moduleName", "com.example.app", false},
+		{"versionNumber", "v1.2.3", false},
+		{"multipleDots", "a.b.c.d", false},
+		{"leadingDot", ".hidden", false},
+		{"trailingDot", "file.", false},
 		{"mixed", "app_config.prod.yaml", false},
-
-		// Invalid cases
-		{"with space", "abc 123", true},
-		{"with dash", "abc-123", true},
-		{"with slash", "abc/123", true},
-		{"with special chars", "abc@123", true},
-		{"empty string", "", true},
-		{"chinese characters", "中文", true},
+		{"withSpace", "abc 123", true},
+		{"withDash", "abc-123", true},
+		{"withSlash", "abc/123", true},
+		{"withSpecialChars", "abc@123", true},
+		{"emptyString", "", true},
+		{"chineseCharacters", "中文", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := TestStruct{Value: tt.value}
+			s := testStruct{Value: tt.value}
 
 			err := Validate(&s)
 			if tt.wantErr {
-				assert.Error(t, err, "Expected validation error for value: %q", tt.value)
+				assert.Error(t, err, "Should return validation error for value: %q", tt.value)
 			} else {
-				assert.NoError(t, err, "Expected no validation error for value: %q", tt.value)
+				assert.NoError(t, err, "Should not return validation error for value: %q", tt.value)
 			}
 		})
 	}
 }
 
 func TestAlphanumRulesCombined(t *testing.T) {
-	type TestStruct struct {
+	type testStruct struct {
 		Action   string `validate:"alphanum_us" label:"操作"`
 		Resource string `validate:"alphanum_us_slash" label:"资源"`
 		FileName string `validate:"alphanum_us_dot" label:"文件名"`
@@ -163,28 +154,28 @@ func TestAlphanumRulesCombined(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "all valid",
+			name:     "allValid",
 			action:   "get_user_info",
 			resource: "sys/user",
 			fileName: "config.yaml",
 			wantErr:  false,
 		},
 		{
-			name:     "invalid action with slash",
+			name:     "invalidActionWithSlash",
 			action:   "get/user",
 			resource: "sys/user",
 			fileName: "config.yaml",
 			wantErr:  true,
 		},
 		{
-			name:     "invalid resource with dot",
+			name:     "invalidResourceWithDot",
 			action:   "get_user",
 			resource: "sys.user",
 			fileName: "config.yaml",
 			wantErr:  true,
 		},
 		{
-			name:     "invalid filename with slash",
+			name:     "invalidFilenameWithSlash",
 			action:   "get_user",
 			resource: "sys/user",
 			fileName: "config/app.yaml",
@@ -194,7 +185,7 @@ func TestAlphanumRulesCombined(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := TestStruct{
+			s := testStruct{
 				Action:   tt.action,
 				Resource: tt.resource,
 				FileName: tt.fileName,
@@ -202,9 +193,9 @@ func TestAlphanumRulesCombined(t *testing.T) {
 
 			err := Validate(&s)
 			if tt.wantErr {
-				assert.Error(t, err)
+				assert.Error(t, err, "Should return validation error")
 			} else {
-				assert.NoError(t, err)
+				assert.NoError(t, err, "Should not return validation error")
 			}
 		})
 	}

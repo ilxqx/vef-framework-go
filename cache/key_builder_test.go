@@ -26,7 +26,6 @@ func TestPrefixKeyBuilder(t *testing.T) {
 	t.Run("BuildWithEmptyKeyParts", func(t *testing.T) {
 		builder := NewPrefixKeyBuilder("app")
 
-		// Should return prefix only, without trailing separator
 		result := builder.Build()
 		assert.Equal(t, "app", result)
 	})

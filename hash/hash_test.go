@@ -24,7 +24,6 @@ func TestMD5(t *testing.T) {
 			result := Md5(tc.input)
 			assert.Equal(t, tc.expected, result)
 
-			// Test MD5Bytes
 			resultBytes := Md5Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
@@ -49,7 +48,6 @@ func TestSHA1(t *testing.T) {
 			result := Sha1(tc.input)
 			assert.Equal(t, tc.expected, result)
 
-			// Test SHA1Bytes
 			resultBytes := Sha1Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
@@ -74,7 +72,6 @@ func TestSHA256(t *testing.T) {
 			result := Sha256(tc.input)
 			assert.Equal(t, tc.expected, result)
 
-			// Test SHA256Bytes
 			resultBytes := Sha256Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
@@ -98,7 +95,6 @@ func TestSHA512(t *testing.T) {
 			result := Sha512(tc.input)
 			assert.Equal(t, tc.expected, result)
 
-			// Test SHA512Bytes
 			resultBytes := Sha512Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
@@ -123,7 +119,6 @@ func TestSM3(t *testing.T) {
 			result := Sm3(tc.input)
 			assert.Equal(t, tc.expected, result)
 
-			// Test SM3Bytes
 			resultBytes := Sm3Bytes([]byte(tc.input))
 			assert.Equal(t, tc.expected, resultBytes)
 		})
@@ -273,40 +268,60 @@ func TestHashOutputFormat(t *testing.T) {
 func BenchmarkMD5(b *testing.B) {
 	data := "benchmark test data"
 
-	for b.Loop() {
-		Md5(data)
-	}
+	b.Helper()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			Md5(data)
+		}
+	})
 }
 
 func BenchmarkSHA256(b *testing.B) {
 	data := "benchmark test data"
 
-	for b.Loop() {
-		Sha256(data)
-	}
+	b.Helper()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			Sha256(data)
+		}
+	})
 }
 
 func BenchmarkSHA512(b *testing.B) {
 	data := "benchmark test data"
 
-	for b.Loop() {
-		Sha512(data)
-	}
+	b.Helper()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			Sha512(data)
+		}
+	})
 }
 
 func BenchmarkSM3(b *testing.B) {
 	data := "benchmark test data"
 
-	for b.Loop() {
-		Sm3(data)
-	}
+	b.Helper()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			Sm3(data)
+		}
+	})
 }
 
 func BenchmarkSHA256Hmac(b *testing.B) {
 	key := []byte("secret-key")
 	data := []byte("benchmark test data")
 
-	for b.Loop() {
-		Sha256Hmac(key, data)
-	}
+	b.Helper()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			Sha256Hmac(key, data)
+		}
+	})
 }

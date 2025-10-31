@@ -13,13 +13,9 @@ type OrderBuilder interface {
 	Column(column string) OrderBuilder
 	// Expr allows ordering by a SQL expression
 	Expr(expr any) OrderBuilder
-	// Asc sets ascending order (default)
 	Asc() OrderBuilder
-	// Desc sets descending order
 	Desc() OrderBuilder
-	// NullsFirst sets NULL values to appear first
 	NullsFirst() OrderBuilder
-	// NullsLast sets NULL values to appear last
 	NullsLast() OrderBuilder
 }
 

@@ -4,11 +4,14 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 )
+
+var defaultSourceAlias = "src"
 
 // NewMergeQuery creates a new MergeQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
@@ -34,10 +37,11 @@ func NewMergeQuery(db *BunDb) *BunMergeQuery {
 type BunMergeQuery struct {
 	QueryBuilder
 
-	db      *BunDb
-	dialect schema.Dialect
-	eb      ExprBuilder
-	query   *bun.MergeQuery
+	db       *BunDb
+	dialect  schema.Dialect
+	eb       ExprBuilder
+	query    *bun.MergeQuery
+	srcAlias string
 }
 
 func (q *BunMergeQuery) Db() Db {
@@ -93,53 +97,88 @@ func (q *BunMergeQuery) Table(name string, alias ...string) MergeQuery {
 	return q
 }
 
-func (q *BunMergeQuery) TableExpr(alias string, builder func(ExprBuilder) any) MergeQuery {
-	q.query.TableExpr("(?) AS ?", builder(q.eb), bun.Name(alias))
+func (q *BunMergeQuery) TableFrom(model any, alias ...string) MergeQuery {
+	table := q.db.TableOf(model)
 
-	return q
-}
-
-func (q *BunMergeQuery) TableSubQuery(alias string, builder func(SelectQuery)) MergeQuery {
-	q.query.TableExpr("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
-
-	return q
-}
-
-func (q *BunMergeQuery) Using(source string, alias ...string) MergeQuery {
+	aliasToUse := table.Alias
 	if len(alias) > 0 && alias[0] != constants.Empty {
-		q.query.Using("? AS ?", bun.Name(source), bun.Name(alias[0]))
+		aliasToUse = alias[0]
+	}
+
+	q.query.TableExpr("? AS ?", bun.Name(table.Name), bun.Name(aliasToUse))
+
+	return q
+}
+
+func (q *BunMergeQuery) TableExpr(builder func(ExprBuilder) any, alias ...string) MergeQuery {
+	expr := builder(q.eb)
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.TableExpr("(?) AS ?", expr, bun.Name(alias[0]))
 	} else {
-		q.query.Using("?", bun.Name(source))
+		q.query.TableExpr("(?)", expr)
 	}
 
 	return q
 }
 
-func (q *BunMergeQuery) UsingModel(model any) MergeQuery {
-	q.query.Using("?", model)
-
-	return q
-}
-
-func (q *BunMergeQuery) UsingExpr(alias string, builder func(ExprBuilder) any) MergeQuery {
-	q.query.Using("(?) AS ?", builder(q.eb), bun.Name(alias))
-
-	return q
-}
-
-func (q *BunMergeQuery) UsingSubQuery(alias string, builder func(SelectQuery)) MergeQuery {
-	q.query.Using("(?) AS ?", q.BuildSubQuery(builder), bun.Name(alias))
-
-	return q
-}
-
-func (q *BunMergeQuery) UsingValues(model any, columns ...string) MergeQuery {
-	values := q.query.NewValues(model)
-	if len(columns) > 0 {
-		values.Column(columns...)
+func (q *BunMergeQuery) TableSubQuery(builder func(SelectQuery), alias ...string) MergeQuery {
+	subQuery := q.BuildSubQuery(builder)
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.query.TableExpr("(?) AS ?", subQuery, bun.Name(alias[0]))
+	} else {
+		q.query.TableExpr("(?)", subQuery)
 	}
 
-	q.query.Using("?", values)
+	return q
+}
+
+func (q *BunMergeQuery) Using(model any, alias ...string) MergeQuery {
+	table := q.db.TableOf(model)
+
+	q.srcAlias = table.Alias
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.srcAlias = alias[0]
+	}
+
+	if q.srcAlias == constants.Empty {
+		q.srcAlias = table.Name
+	}
+
+	q.query.Using("? AS ?", table.Name, bun.Name(q.srcAlias))
+
+	return q
+}
+
+func (q *BunMergeQuery) UsingTable(table string, alias ...string) MergeQuery {
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.srcAlias = alias[0]
+		q.query.Using("? AS ?", bun.Name(table), bun.Name(alias[0]))
+	} else {
+		q.srcAlias = table
+		q.query.Using("?", bun.Name(table))
+	}
+
+	return q
+}
+
+func (q *BunMergeQuery) UsingExpr(builder func(ExprBuilder) any, alias ...string) MergeQuery {
+	q.srcAlias = defaultSourceAlias
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.srcAlias = alias[0]
+	}
+
+	q.query.Using("(?) AS ?", builder(q.eb), bun.Name(q.srcAlias))
+
+	return q
+}
+
+func (q *BunMergeQuery) UsingSubQuery(builder func(SelectQuery), alias ...string) MergeQuery {
+	q.srcAlias = defaultSourceAlias
+	if len(alias) > 0 && alias[0] != constants.Empty {
+		q.srcAlias = alias[0]
+	}
+
+	q.query.Using("(?) AS ?", q.BuildSubQuery(builder), bun.Name(q.srcAlias))
 
 	return q
 }
@@ -151,19 +190,28 @@ func (q *BunMergeQuery) On(builder func(ConditionBuilder)) MergeQuery {
 }
 
 func (q *BunMergeQuery) WhenMatched(builder ...func(ConditionBuilder)) MergeWhenBuilder {
-	return newMergeWhenBuilder(q, "MATCHED", builder...)
+	return newMergeWhenBuilder(q, q.srcAlias, "MATCHED", builder...)
 }
 
 func (q *BunMergeQuery) WhenNotMatched(builder ...func(ConditionBuilder)) MergeWhenBuilder {
-	return newMergeWhenBuilder(q, "NOT MATCHED", builder...)
+	return newMergeWhenBuilder(q, q.srcAlias, "NOT MATCHED", builder...)
+}
+
+func (q *BunMergeQuery) WhenNotMatchedByTarget(builder ...func(ConditionBuilder)) MergeWhenBuilder {
+	return newMergeWhenBuilder(q, q.srcAlias, "NOT MATCHED BY TARGET", builder...)
 }
 
 func (q *BunMergeQuery) WhenNotMatchedBySource(builder ...func(ConditionBuilder)) MergeWhenBuilder {
-	return newMergeWhenBuilder(q, "NOT MATCHED BY SOURCE", builder...)
+	return newMergeWhenBuilder(q, q.srcAlias, "NOT MATCHED BY SOURCE", builder...)
 }
 
 func (q *BunMergeQuery) Returning(columns ...string) MergeQuery {
-	q.query.Returning("?", Names(columns...))
+	expr := q.eb.Exprs(
+		lo.Map(columns, func(column string, _ int) any {
+			return q.eb.Column(column)
+		})...,
+	)
+	q.query.Returning("?", expr)
 
 	return q
 }

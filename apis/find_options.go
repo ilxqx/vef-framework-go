@@ -19,7 +19,6 @@ func (a *findOptionsApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findOptions)
 }
 
-// WithDefaultColumnMapping sets the default column mapping for options queries.
 // This mapping provides fallback values for column mapping when not explicitly specified in queries.
 func (a *findOptionsApi[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptionsApi[TModel, TSearch] {
 	a.defaultColumnMapping = mapping
@@ -53,6 +52,12 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 			return err
 		}
 
+		// Parse and validate meta columns
+		metaColumns := parseMetaColumns(config.MetaColumns)
+		if err := validateMetaColumns(table, metaColumns); err != nil {
+			return err
+		}
+
 		// Select only required columns
 		if config.ValueColumn == valueColumn {
 			query.Select(config.ValueColumn)
@@ -73,6 +78,16 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 				query.SelectAs(config.DescriptionColumn, descriptionColumn)
 			}
 		}
+
+		// Build and select meta column as JSON object
+		query.ApplyIf(len(metaColumns) > 0, func(sq orm.SelectQuery) {
+			sq.SelectExpr(
+				func(eb orm.ExprBuilder) any {
+					return buildMetaJsonExpr(eb, metaColumns)
+				},
+				"meta",
+			)
+		})
 
 		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
 			return err

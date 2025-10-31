@@ -95,7 +95,6 @@ func NewResource(name string, opts ...resourceOption) Resource {
 
 type resourceOption func(*baseResource)
 
-// WithVersion sets the version for the resource.
 // This option allows overriding the default v1 version with a custom version string.
 // The version must match the pattern "v" followed by one or more digits (e.g., v1, v2, v10).
 // Panics if the version format is invalid.

@@ -7,9 +7,9 @@ type Model struct {
 	// Id is the primary key of the model
 	Id string `json:"id" bun:",pk"`
 	// CreatedAt is the created at time of the model
-	CreatedAt datetime.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
+	CreatedAt datetime.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
 	// CreatedBy is the created by of the model
-	CreatedBy string `json:"createdBy" bun:",notnull" mold:"translate=user?"`
+	CreatedBy string `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
 	// CreatedByName is the created by name of the model
 	CreatedByName string `json:"createdByName" bun:",scanonly"`
 	// UpdatedAt is the updated at time of the model

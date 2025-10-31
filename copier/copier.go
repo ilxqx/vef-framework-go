@@ -104,7 +104,6 @@ func WithFieldNameMapping(fieldMapping ...copier.FieldNameMapping) copyOption {
 	}
 }
 
-// WithTypeConverters sets the type converters.
 func WithTypeConverters(converters ...TypeConverter) copyOption {
 	return func(option *copier.Option) {
 		option.Converters = append(option.Converters, converters...)

@@ -26,7 +26,6 @@ func (a *findTreeOptionsApi[TModel, TSearch]) Provide() api.Spec {
 	return a.Build(a.findTreeOptions)
 }
 
-// WithDefaultColumnMapping sets the default column mapping for data option fields.
 // This mapping provides fallback values for label, value, description, and sort columns.
 func (a *findTreeOptionsApi[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptionsApi[TModel, TSearch] {
 	a.defaultColumnMapping = mapping
@@ -34,7 +33,6 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithDefaultColumnMapping(mapping *
 	return a
 }
 
-// WithIdColumn sets the column name used as the node ID in tree structures.
 // This column is used to identify individual nodes and establish parent-child relationships.
 func (a *findTreeOptionsApi[TModel, TSearch]) WithIdColumn(name string) FindTreeOptionsApi[TModel, TSearch] {
 	a.idColumn = name
@@ -42,26 +40,9 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithIdColumn(name string) FindTree
 	return a
 }
 
-// WithParentIdColumn sets the column name used to reference parent nodes in tree structures.
 // This column establishes the hierarchical relationship between parent and child nodes.
 func (a *findTreeOptionsApi[TModel, TSearch]) WithParentIdColumn(name string) FindTreeOptionsApi[TModel, TSearch] {
 	a.parentIdColumn = name
-
-	return a
-}
-
-// WithSelect adds a column to the SELECT clause.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithSelect(column string, parts ...QueryPart) FindTreeOptionsApi[TModel, TSearch] {
-	a.FindApi.WithSelect(column, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
-
-	return a
-}
-
-// WithSelectAs adds a column with an alias to the SELECT clause.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithSelectAs(column, alias string, parts ...QueryPart) FindTreeOptionsApi[TModel, TSearch] {
-	a.FindApi.WithSelectAs(column, alias, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
 }
@@ -70,14 +51,6 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithSelectAs(column, alias string,
 // Applies to root query only by default (QueryRoot) unless specific parts are provided.
 func (a *findTreeOptionsApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTreeOptionsApi[TModel, TSearch] {
 	a.FindApi.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
-
-	return a
-}
-
-// WithRelation adds a relation join to the query.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
-func (a *findTreeOptionsApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) FindTreeOptionsApi[TModel, TSearch] {
-	a.FindApi.WithRelation(relation, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
 }
@@ -101,14 +74,6 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 		return nil, err
 	}
 
-	// HACK: Direct access to baseFindApi's defaultSort field via type assertion.
-	// This is needed because the recursive CTE query must SELECT all columns that will be used
-	// in the outer query's ORDER BY clause, otherwise the database will report "column not found" errors.
-	// The proper solution would be to add a method to the FindApi interface to expose defaultSort,
-	// but this would require interface changes for a relatively rare use case.
-	// TODO: Consider a more appropriate approach if this pattern becomes more common.
-	defaultSort := a.FindApi.(*baseFindApi[TModel, TSearch, []TreeDataOption, FindTreeOptionsApi[TModel, TSearch]]).defaultSort
-
 	table := db.TableOf((*TModel)(nil))
 	treeAdapter := treebuilder.Adapter[TreeDataOption]{
 		GetId:       func(t TreeDataOption) string { return t.Id },
@@ -125,7 +90,10 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 	}
 
 	return func(ctx fiber.Ctx, db orm.Db, config DataOptionConfig, sortable Sortable, search TSearch) error {
-		var flatOptions []TreeDataOption
+		var (
+			flatOptions []TreeDataOption
+			query       = db.NewSelect().Model((*TModel)(nil))
+		)
 
 		// Merge column mapping from params with defaults
 		mergeOptionColumnMapping(&config.DataOptionColumnMapping, a.defaultColumnMapping)
@@ -134,38 +102,14 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 			return err
 		}
 
+		// Parse and validate meta columns
+		metaColumns := parseMetaColumns(config.MetaColumns)
+		if err := validateMetaColumns(table, metaColumns); err != nil {
+			return err
+		}
+
 		// Helper function to apply column selections with proper aliasing
 		applyColumnSelections := func(query orm.SelectQuery) {
-			if config.ValueColumn == valueColumn {
-				query.Select(config.ValueColumn)
-			} else {
-				query.SelectAs(config.ValueColumn, valueColumn)
-			}
-
-			if config.LabelColumn == labelColumn {
-				query.Select(config.LabelColumn)
-			} else {
-				query.SelectAs(config.LabelColumn, labelColumn)
-			}
-
-			if config.DescriptionColumn != constants.Empty {
-				if config.DescriptionColumn == descriptionColumn {
-					query.Select(config.DescriptionColumn)
-				} else {
-					query.SelectAs(config.DescriptionColumn, descriptionColumn)
-				}
-			}
-
-			if len(sortable.Sort) > 0 {
-				for i := range sortable.Sort {
-					query.Select((&sortable.Sort[i]).Column)
-				}
-			} else if len(defaultSort) > 0 {
-				for _, spec := range defaultSort {
-					query.Select(spec.Column)
-				}
-			}
-
 			if a.idColumn == idColumn {
 				query.Select(a.idColumn)
 			} else {
@@ -179,14 +123,11 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 			}
 		}
 
-		query := db.NewSelect().
-			WithRecursive("tmp_tree", func(cteQuery orm.SelectQuery) {
-				// Base query - the starting point of the tree traversal
-				baseQuery := cteQuery.Model((*TModel)(nil))
+		query.WithRecursive(
+			"tmp_tree", func(cteQuery orm.SelectQuery) {
+				applyColumnSelections(cteQuery.Model((*TModel)(nil)))
 
-				applyColumnSelections(baseQuery)
-
-				if err := a.ConfigureQuery(baseQuery, search, ctx, QueryBase); err != nil {
+				if err := a.ConfigureQuery(cteQuery, search, ctx, QueryBase); err != nil {
 					SetQueryError(ctx, err)
 
 					return
@@ -194,9 +135,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 
 				// Recursive part: find all ancestor nodes
 				cteQuery.UnionAll(func(recursiveQuery orm.SelectQuery) {
-					recursiveQuery.Model((*TModel)(nil))
-
-					applyColumnSelections(recursiveQuery)
+					applyColumnSelections(recursiveQuery.Model((*TModel)(nil)))
 
 					if err := a.ConfigureQuery(recursiveQuery, search, ctx, QueryRecursive); err != nil {
 						SetQueryError(ctx, err)
@@ -214,13 +153,53 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 					)
 				})
 			}).
-			Table("tmp_tree").
-			Distinct()
+			With("tmp_ids", func(query orm.SelectQuery) {
+				query.Table("tmp_tree", "tt").
+					Select(dbhelpers.ColumnWithAlias(idColumn, "tt")).
+					Distinct()
+			})
 
 		// Check for errors during query building
 		if queryErr := QueryError(ctx); queryErr != nil {
 			return queryErr
 		}
+
+		applyColumnSelections(query)
+
+		if config.LabelColumn == labelColumn {
+			query.Select(config.LabelColumn)
+		} else {
+			query.SelectAs(config.LabelColumn, labelColumn)
+		}
+
+		if config.ValueColumn == valueColumn {
+			query.Select(config.ValueColumn)
+		} else {
+			query.SelectAs(config.ValueColumn, valueColumn)
+		}
+
+		if config.DescriptionColumn != constants.Empty {
+			if config.DescriptionColumn == descriptionColumn {
+				query.Select(config.DescriptionColumn)
+			} else {
+				query.SelectAs(config.DescriptionColumn, descriptionColumn)
+			}
+		}
+
+		query.ApplyIf(len(metaColumns) > 0, func(sq orm.SelectQuery) {
+			sq.SelectExpr(
+				func(eb orm.ExprBuilder) any {
+					return buildMetaJsonExpr(eb, metaColumns)
+				},
+				"meta",
+			)
+		})
+
+		query.Where(func(cb orm.ConditionBuilder) {
+			cb.InSubQuery(a.idColumn, func(query orm.SelectQuery) {
+				query.Table("tmp_ids")
+			})
+		})
 
 		// Apply QueryRoot and QueryAll options to the outer query
 		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {

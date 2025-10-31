@@ -2,9 +2,11 @@
 
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-一个基于 Uber FX 依赖注入和 Fiber 构建的现代化 Go Web 开发框架，采用约定优于配置的设计理念，为企业级应用快速开发提供开箱即用的完整功能。
+[![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
 
-**当前版本：** v0.7.0
+一个基于 Uber FX 依赖注入和 Fiber 构建的现代化 Go Web 开发框架，采用约定优于配置的设计理念，为企业级应用快速开发提供开箱即用的完整功能。
 
 ## 核心特性
 
@@ -1077,9 +1079,9 @@ func (l *MyRolePermissionsLoader) LoadPermissions(ctx context.Context, role stri
 
 - `security.PrioritySelf` (10) - 仅自己创建的数据
 - `security.PriorityDepartment` (20) - 部门数据
-- `security.PriorityDeptAndSub` (30) - 部门及子部门数据
+- `security.PriorityDepartmentAndSub` (30) - 部门及子部门数据
 - `security.PriorityOrganization` (40) - 组织数据
-- `security.PriorityOrgAndSub` (50) - 组织及子组织数据
+- `security.PriorityOrganizationAndSub` (50) - 组织及子组织数据
 - `security.PriorityCustom` (60) - 自定义数据范围
 - `security.PriorityAll` (10000) - 所有数据
 

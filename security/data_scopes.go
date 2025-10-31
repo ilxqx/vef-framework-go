@@ -17,14 +17,14 @@ const (
 	// PriorityDepartment indicates access to data within the user's department.
 	PriorityDepartment = 20
 
-	// PriorityDeptAndSub indicates access to data within the user's department and all sub-departments.
-	PriorityDeptAndSub = 30
+	// PriorityDepartmentAndSub indicates access to data within the user's department and all sub-departments.
+	PriorityDepartmentAndSub = 30
 
 	// PriorityOrganization indicates access to data within the user's organization.
 	PriorityOrganization = 40
 
-	// PriorityOrgAndSub indicates access to data within the user's organization and all sub-organizations.
-	PriorityOrgAndSub = 50
+	// PriorityOrganizationAndSub indicates access to data within the user's organization and all sub-organizations.
+	PriorityOrganizationAndSub = 50
 
 	// PriorityCustom indicates access to data within the user's custom data scope.
 	PriorityCustom = 60

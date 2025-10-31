@@ -5,8 +5,8 @@ import (
 	"encoding/gob"
 )
 
-// ToGOB converts a struct value to a GOB byte slice.
-func ToGOB(value any) ([]byte, error) {
+// ToGob converts a struct value to a GOB byte slice.
+func ToGob(value any) ([]byte, error) {
 	var buffer bytes.Buffer
 
 	encoder := gob.NewEncoder(&buffer)
@@ -18,8 +18,8 @@ func ToGOB(value any) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// FromGOB converts a GOB byte slice to a struct value.
-func FromGOB[T any](data []byte) (*T, error) {
+// FromGob converts a GOB byte slice to a struct value.
+func FromGob[T any](data []byte) (*T, error) {
 	buffer := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buffer)
 
@@ -31,8 +31,8 @@ func FromGOB[T any](data []byte) (*T, error) {
 	return &result, nil
 }
 
-// DecodeGOB decodes a GOB byte slice into the provided result pointer.
-func DecodeGOB(data []byte, result any) error {
+// DecodeGob decodes a GOB byte slice into the provided result pointer.
+func DecodeGob(data []byte, result any) error {
 	buffer := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buffer)
 
