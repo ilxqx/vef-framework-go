@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/fx"
 
-	"github.com/ilxqx/vef-framework-go"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -126,8 +125,6 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 
 	suite.app, suite.stop = appTest.NewTestApp(
 		suite.T(),
-		// Provide the auth resource
-		vef.ProvideApiResource(isecurity.NewAuthResource, ``, ``, `optional:"true"`),
 		// Provide mock user loader
 		fx.Supply(
 			fx.Annotate(
