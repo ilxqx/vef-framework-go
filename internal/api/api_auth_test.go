@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/guregu/null/v6"
@@ -328,7 +329,8 @@ func (suite *ApiAuthTestSuite) makeApiRequest(body api.Request, token string) *h
 		req.Header.Set(fiber.HeaderAuthorization, "Bearer "+token)
 	}
 
-	resp, err := suite.app.Test(req)
+	// Use 10 second timeout to handle slower CI environments
+	resp, err := suite.app.Test(req, 10*time.Second)
 	suite.Require().NoError(err, "Should make API request successfully")
 
 	return resp
