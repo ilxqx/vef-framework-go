@@ -29,10 +29,10 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 	if authenticator == nil {
 		logger.Warnf("No authenticator found for authentication type: %s", authentication.Type)
 
-		return nil, result.ErrWithCodef(
-			result.ErrCodeUnsupportedAuthenticationType,
+		return nil, result.Errf(
 			"Authentication type %q is not supported",
 			authentication.Type,
+			result.WithCode(result.ErrCodeUnsupportedAuthenticationType),
 		)
 	}
 

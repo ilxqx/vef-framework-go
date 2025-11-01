@@ -1,6 +1,11 @@
 package api
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/ilxqx/vef-framework-go/api"
+)
 
 var (
 	// ErrResolveParamType indicates failing to resolve handler parameter type.
@@ -24,3 +29,21 @@ var (
 	// ErrHandlerFactoryInvalidReturn indicates handler factory invalid return count.
 	ErrHandlerFactoryInvalidReturn = errors.New("handler factory method should return 1 or 2 values")
 )
+
+// DuplicateApiError represents an error when attempting to register a duplicate Api definition.
+// It contains information about both the existing and new Api definitions.
+type DuplicateApiError struct {
+	Identifier api.Identifier
+	Existing   *api.Definition
+	New        *api.Definition
+}
+
+// Error returns a formatted error message with details about the duplicate Api.
+func (e *DuplicateApiError) Error() string {
+	return fmt.Sprintf(
+		"duplicate api definition: resource=%q, action=%q, version=%q (attempting to override existing api)",
+		e.Identifier.Resource,
+		e.Identifier.Action,
+		e.Identifier.Version,
+	)
+}

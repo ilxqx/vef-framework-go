@@ -119,7 +119,7 @@ func (a *AuthResource) Logout(ctx fiber.Ctx) error {
 // It requires a UserInfoLoader implementation to be provided.
 func (a *AuthResource) GetUserInfo(ctx fiber.Ctx, principal *security.Principal) error {
 	if a.userInfoLoader == nil {
-		return result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("user_info_loader_not_implemented"))
+		return result.Err(i18n.T("user_info_loader_not_implemented"), result.WithCode(result.ErrCodeNotImplemented))
 	}
 
 	// Get API request from context to extract params

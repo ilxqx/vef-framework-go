@@ -55,7 +55,7 @@ func (d *BunDb) RunInTx(ctx context.Context, fn func(context.Context, Db) error)
 		ctx,
 		txOptions,
 		func(ctx context.Context, tx bun.Tx) error {
-			return fn(ctx, New(tx))
+			return fn(ctx, &BunDb{db: tx})
 		},
 	)
 }
@@ -65,17 +65,17 @@ func (d *BunDb) RunInReadOnlyTx(ctx context.Context, fn func(context.Context, Db
 		ctx,
 		readOnlyTxOptions,
 		func(ctx context.Context, tx bun.Tx) error {
-			return fn(ctx, New(tx))
+			return fn(ctx, &BunDb{db: tx})
 		},
 	)
 }
 
 func (d *BunDb) WithNamedArg(name string, value any) Db {
 	if db, ok := d.db.(*bun.DB); ok {
-		return New(db.WithNamedArg(name, value))
+		return &BunDb{db: db.WithNamedArg(name, value)}
 	}
 
-	logger.Panic("'WithNamedArg' is not supported within a transaction context")
+	logger.Panicf("%q is not supported within a transaction context", "WithNamedArg")
 
 	return d
 }

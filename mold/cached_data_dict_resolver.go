@@ -13,7 +13,7 @@ import (
 
 const (
 	// EventTypeDataDictChanged represents the event type used to invalidate cached dictionary values.
-	eventTypeDataDictChanged = constants.VEFName + ".translate.data_dict.changed"
+	eventTypeDataDictChanged = "vef.translate.data_dict.changed"
 )
 
 // DataDictLoaderFunc allows using a plain function as a DataDictLoader.

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
@@ -50,7 +49,7 @@ func (suite *RedisTestSuite) TestNewClient() {
 
 		options := client.Options()
 		suite.Equal("test-app", options.ClientName, "Client name should match app name")
-		suite.Equal(constants.VEFName, options.IdentitySuffix, "Identity suffix should be VEF name")
+		suite.Equal("vef", options.IdentitySuffix, "Identity suffix should be VEF name")
 		suite.Equal(3, options.Protocol, "Protocol should be RESP3")
 		suite.Equal("127.0.0.1:6379", options.Addr, "Address should match config")
 		suite.Equal(0, options.DB, "Database should be 0")

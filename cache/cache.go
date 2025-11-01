@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	cacheKeyPrefix = constants.VEFName + constants.Colon + "cache"
+	cacheKeyPrefix = "vef" + constants.Colon + "cache"
 )
 
 // NewMemory constructs an in-memory cache using functional options.

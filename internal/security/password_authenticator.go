@@ -38,32 +38,32 @@ func (*PasswordAuthenticator) Supports(authType string) bool { return authType =
 // Authenticate validates credentials which should be a plaintext password for the given principal (username).
 func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if p.loader == nil {
-		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("user_loader_not_implemented"))
+		return nil, result.Err(i18n.T("user_loader_not_implemented"), result.WithCode(result.ErrCodeNotImplemented))
 	}
 
 	username := authentication.Principal
 	if username == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodePrincipalInvalid, i18n.T("username_required"))
+		return nil, result.Err(i18n.T("username_required"), result.WithCode(result.ErrCodePrincipalInvalid))
 	}
 
 	// Prevent system internal principals from logging in
 	if username == constants.PrincipalSystem || username == constants.PrincipalCronJob || username == constants.PrincipalAnonymous {
-		return nil, result.ErrWithCode(result.ErrCodePrincipalInvalid, i18n.T("system_principal_login_forbidden"))
+		return nil, result.Err(i18n.T("system_principal_login_forbidden"), result.WithCode(result.ErrCodePrincipalInvalid))
 	}
 
 	// Expect password in credentials (may be encrypted)
 	password, ok := authentication.Credentials.(string)
 	if !ok || password == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("password_required"))
+		return nil, result.Err(i18n.T("password_required"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
 	// Decrypt password if decryptor is provided
 	if p.decryptor != nil {
 		plaintextPassword, err := p.decryptor.Decrypt(password)
 		if err != nil {
-			logger.Errorf("failed to decrypt password for principal %q: %v", username, err)
+			logger.Errorf("Failed to decrypt password for principal %q: %v", username, err)
 
-			return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
+			return nil, result.Err(i18n.T("invalid_credentials"), result.WithCode(result.ErrCodeCredentialsInvalid))
 		}
 
 		password = plaintextPassword
@@ -72,22 +72,22 @@ func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication
 	// Load user info and password hash via injected loader
 	principal, passwordHash, err := p.loader.LoadByUsername(ctx, username)
 	if err != nil {
-		if result.IsErrRecordNotFound(err) {
-			logger.Infof("user loader returned record not found for username %q", username)
+		if result.IsRecordNotFound(err) {
+			logger.Infof("User loader returned record not found for username %q", username)
 		} else {
-			logger.Warnf("failed to load user by username %q: %v", username, err)
+			logger.Warnf("Failed to load user by username %q: %v", username, err)
 		}
 
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
+		return nil, result.Err(i18n.T("invalid_credentials"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
 	if principal == nil || passwordHash == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
+		return nil, result.Err(i18n.T("invalid_credentials"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
 	// Compare password with stored hash
 	if !security.VerifyPassword(password, passwordHash) {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("invalid_credentials"))
+		return nil, result.Err(i18n.T("invalid_credentials"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
 	logger.Infof("Password authentication successful for principal %q", principal.Id)

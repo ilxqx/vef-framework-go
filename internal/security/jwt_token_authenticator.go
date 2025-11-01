@@ -39,9 +39,9 @@ func (ja *JwtTokenAuthenticator) Authenticate(_ context.Context, authentication 
 	// Extract the token from credentials
 	token := authentication.Principal
 	if token == constants.Empty {
-		return nil, result.ErrWithCode(
-			result.ErrCodePrincipalInvalid,
+		return nil, result.Err(
 			i18n.T("token_invalid"),
+			result.WithCode(result.ErrCodePrincipalInvalid),
 		)
 	}
 
@@ -52,9 +52,9 @@ func (ja *JwtTokenAuthenticator) Authenticate(_ context.Context, authentication 
 	}
 
 	if claimsAccessor.Type() != tokenTypeAccess {
-		return nil, result.ErrWithCode(
-			result.ErrCodeTokenInvalid,
+		return nil, result.Err(
 			i18n.T("token_invalid"),
+			result.WithCode(result.ErrCodeTokenInvalid),
 		)
 	}
 

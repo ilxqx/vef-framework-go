@@ -129,7 +129,7 @@ func Validate(value any) error {
 		errors.As(err, &validationErrors)
 
 		for _, validationError := range validationErrors {
-			return result.ErrWithCode(result.ErrCodeBadRequest, validationError.Translate(translator))
+			return result.Err(validationError.Translate(translator), result.WithCode(result.ErrCodeBadRequest))
 		}
 	}
 

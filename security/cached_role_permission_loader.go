@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ilxqx/vef-framework-go/cache"
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	logPkg "github.com/ilxqx/vef-framework-go/log"
@@ -13,7 +12,7 @@ import (
 const (
 	// EventTypeRolePermissionsChanged is the event type for role permissions changes.
 	// When this event is published, the entire role permissions cache will be cleared.
-	eventTypeRolePermissionsChanged = constants.VEFName + ".security.role_permissions.changed"
+	eventTypeRolePermissionsChanged = "vef.security.role_permissions.changed"
 )
 
 // RolePermissionsChangedEvent is published when role permissions are modified.

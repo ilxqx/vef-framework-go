@@ -15,8 +15,17 @@ type apiManager struct {
 
 // Register adds a new Api definition to the manager.
 // The handler will be wrapped with timeout middleware.
-func (m *apiManager) Register(api *apiPkg.Definition) {
-	m.apis.Store(api.Identifier, wrapHandler(api))
+// Returns an error if an Api with the same identifier already exists.
+func (m *apiManager) Register(api *apiPkg.Definition) error {
+	if existing, loaded := m.apis.LoadOrStore(api.Identifier, wrapHandler(api)); loaded {
+		return &DuplicateApiError{
+			Identifier: api.Identifier,
+			Existing:   existing,
+			New:        api,
+		}
+	}
+
+	return nil
 }
 
 // Remove removes an Api definition by its identifier.
@@ -62,6 +71,7 @@ func wrapHandler(api *apiPkg.Definition) *apiPkg.Definition {
 }
 
 // NewManager creates a new Api manager and registers all provided resources.
+// Returns an error if any API registration fails, including duplicate definitions.
 func NewManager(resources []apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (apiPkg.Manager, error) {
 	manager := &apiManager{
 		apis: xsync.NewMap[apiPkg.Identifier, *apiPkg.Definition](),
@@ -72,7 +82,9 @@ func NewManager(resources []apiPkg.Resource, db orm.Db, paramResolver *HandlerPa
 		return nil, err
 	}
 
-	definition.Register(manager)
+	if err = definition.Register(manager); err != nil {
+		return nil, err
+	}
 
 	return manager, nil
 }

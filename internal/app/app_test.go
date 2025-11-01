@@ -124,7 +124,7 @@ func (suite *AppTestSuite) TestCustomResource() {
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 		resp, err := suite.app.Test(req, 2*time.Second)
-		suite.NoError(err, "API request should not fail")
+		suite.NoError(err, "Api request should not fail")
 		suite.NotNil(resp, "Response should not be nil")
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 

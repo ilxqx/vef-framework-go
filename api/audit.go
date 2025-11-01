@@ -3,12 +3,11 @@ package api
 import (
 	"context"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
 )
 
 const (
-	eventTypeAudit = constants.VEFName + ".api.request.audit"
+	eventTypeAudit = "vef.api.request.audit"
 )
 
 // AuditEvent represents an Api audit log event.

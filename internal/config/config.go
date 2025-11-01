@@ -9,8 +9,8 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	ilog "github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mapx"
 )
 
@@ -25,11 +25,11 @@ var (
 	configDir  = "configs"
 )
 
-type viperConfig struct {
+type ViperConfig struct {
 	v *viper.Viper
 }
 
-func (v *viperConfig) Unmarshal(key string, target any) error {
+func (v *ViperConfig) Unmarshal(key string, target any) error {
 	return v.v.UnmarshalKey(key, target, decodeUsingJsonTagOption)
 }
 
@@ -37,7 +37,7 @@ func newConfig() (config.Config, error) {
 	v := viper.NewWithOptions(
 		viper.EnvKeyReplacer(strings.NewReplacer(constants.Dot, constants.Underscore)),
 		viper.KeyDelimiter(constants.Dot),
-		viper.WithLogger(log.NewSLogger("config", 3, logPkg.LevelWarn)),
+		viper.WithLogger(ilog.NewSLogger("config", 3, log.LevelWarn)),
 	)
 	v.SetEnvPrefix(constants.EnvKeyPrefix)
 	v.AllowEmptyEnv(true)
@@ -54,5 +54,5 @@ func newConfig() (config.Config, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	return &viperConfig{v: v}, nil
+	return &ViperConfig{v: v}, nil
 }

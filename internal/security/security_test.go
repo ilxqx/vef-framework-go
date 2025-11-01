@@ -24,9 +24,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
-	"github.com/ilxqx/vef-framework-go/internal/security"
+	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/result"
-	securityPkg "github.com/ilxqx/vef-framework-go/security"
+	"github.com/ilxqx/vef-framework-go/security"
 )
 
 // MockUserLoader is a mock implementation of security.UserLoader for testing.
@@ -34,22 +34,22 @@ type MockUserLoader struct {
 	mock.Mock
 }
 
-func (m *MockUserLoader) LoadByUsername(ctx context.Context, username string) (*securityPkg.Principal, string, error) {
+func (m *MockUserLoader) LoadByUsername(ctx context.Context, username string) (*security.Principal, string, error) {
 	args := m.Called(ctx, username)
 	if args.Get(0) == nil {
 		return nil, args.String(1), args.Error(2)
 	}
 
-	return args.Get(0).(*securityPkg.Principal), args.String(1), args.Error(2)
+	return args.Get(0).(*security.Principal), args.String(1), args.Error(2)
 }
 
-func (m *MockUserLoader) LoadById(ctx context.Context, id string) (*securityPkg.Principal, error) {
+func (m *MockUserLoader) LoadById(ctx context.Context, id string) (*security.Principal, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 
-	return args.Get(0).(*securityPkg.Principal), args.Error(1)
+	return args.Get(0).(*security.Principal), args.Error(1)
 }
 
 // MockUserInfoLoader is a mock implementation of security.UserInfoLoader for testing.
@@ -57,13 +57,13 @@ type MockUserInfoLoader struct {
 	mock.Mock
 }
 
-func (m *MockUserInfoLoader) LoadUserInfo(ctx context.Context, principal *securityPkg.Principal, params map[string]any) (*securityPkg.UserInfo, error) {
+func (m *MockUserInfoLoader) LoadUserInfo(ctx context.Context, principal *security.Principal, params map[string]any) (*security.UserInfo, error) {
 	args := m.Called(ctx, principal, params)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 
-	return args.Get(0).(*securityPkg.UserInfo), args.Error(1)
+	return args.Get(0).(*security.UserInfo), args.Error(1)
 }
 
 // AuthResourceTestSuite is the test suite for AuthResource.
@@ -76,7 +76,7 @@ type AuthResourceTestSuite struct {
 	userLoader     *MockUserLoader
 	userInfoLoader *MockUserInfoLoader
 	jwtSecret      string
-	testUser       *securityPkg.Principal
+	testUser       *security.Principal
 }
 
 // SetupSuite runs once before all tests in the suite.
@@ -86,7 +86,7 @@ func (suite *AuthResourceTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.jwtSecret = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
-	suite.testUser = securityPkg.NewUser("user001", "Test User", "admin", "user")
+	suite.testUser = security.NewUser("user001", "Test User", "admin", "user")
 	suite.testUser.Details = map[string]any{
 		"email":  "test@example.com",
 		"phone":  "1234567890",
@@ -121,25 +121,25 @@ func (suite *AuthResourceTestSuite) SetupTest() {
 
 func (suite *AuthResourceTestSuite) setupTestApp() {
 	// Hash the password for test user
-	hashedPassword, err := securityPkg.HashPassword("password123")
+	hashedPassword, err := security.HashPassword("password123")
 	suite.Require().NoError(err)
 
 	suite.app, suite.stop = appTest.NewTestApp(
 		suite.T(),
 		// Provide the auth resource
-		vef.ProvideApiResource(security.NewAuthResource, ``, ``, `optional:"true"`),
+		vef.ProvideApiResource(isecurity.NewAuthResource, ``, ``, `optional:"true"`),
 		// Provide mock user loader
 		fx.Supply(
 			fx.Annotate(
 				suite.userLoader,
-				fx.As(new(securityPkg.UserLoader)),
+				fx.As(new(security.UserLoader)),
 			),
 		),
 		// Provide mock user info loader
 		fx.Supply(
 			fx.Annotate(
 				suite.userInfoLoader,
-				fx.As(new(securityPkg.UserInfoLoader)),
+				fx.As(new(security.UserInfoLoader)),
 			),
 		),
 		// Replace security config with test values
@@ -150,7 +150,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 			&config.SecurityConfig{
 				TokenExpires: 24 * time.Hour,
 			},
-			&securityPkg.JwtConfig{
+			&security.JwtConfig{
 				Secret:   suite.jwtSecret,
 				Audience: "test-app",
 			},
@@ -189,7 +189,7 @@ func (suite *AuthResourceTestSuite) makeApiRequest(body api.Request) *http.Respo
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
+	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
 }
@@ -203,7 +203,7 @@ func (suite *AuthResourceTestSuite) makeApiRequestWithToken(body api.Request, to
 	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+token)
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
+	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
 }
@@ -239,7 +239,7 @@ func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -272,7 +272,7 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        security.AuthTypePassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "testuser",
 				"credentials": "wrongpassword",
 			},
@@ -293,7 +293,7 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        security.AuthTypePassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "nonexistent",
 				"credentials": "password123",
 			},
@@ -319,7 +319,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        security.AuthTypePassword,
+				"type":        isecurity.AuthTypePassword,
 				"credentials": "password123",
 			},
 		})
@@ -339,7 +339,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":      security.AuthTypePassword,
+				"type":      isecurity.AuthTypePassword,
 				"principal": "testuser",
 			},
 		})
@@ -359,7 +359,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        security.AuthTypePassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   "testuser",
 				"credentials": "",
 			},
@@ -375,7 +375,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 	suite.Run("LoaderRecordNotFoundError", func() {
 		username := "loaderNotFound"
 		suite.userLoader.On("LoadByUsername", mock.Anything, username).
-			Return((*securityPkg.Principal)(nil), "", result.ErrRecordNotFound).
+			Return((*security.Principal)(nil), "", result.ErrRecordNotFound).
 			Once()
 
 		resp := suite.makeApiRequest(api.Request{
@@ -385,7 +385,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        security.AuthTypePassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   username,
 				"credentials": "password123",
 			},
@@ -402,7 +402,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 	suite.Run("LoaderUnexpectedError", func() {
 		username := "loaderUnexpected"
 		suite.userLoader.On("LoadByUsername", mock.Anything, username).
-			Return((*securityPkg.Principal)(nil), "", errors.New("loader failure")).
+			Return((*security.Principal)(nil), "", errors.New("loader failure")).
 			Once()
 
 		resp := suite.makeApiRequest(api.Request{
@@ -412,7 +412,7 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        security.AuthTypePassword,
+				"type":        isecurity.AuthTypePassword,
 				"principal":   username,
 				"credentials": "password123",
 			},
@@ -438,7 +438,7 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -550,7 +550,7 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -591,7 +591,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -606,7 +606,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 	prevExpected := append([]*mock.Call(nil), suite.userLoader.ExpectedCalls...)
 	defer func() { suite.userLoader.ExpectedCalls = prevExpected }()
 
-	call := suite.userLoader.On("LoadById", mock.Anything, mock.Anything).Return((*securityPkg.Principal)(nil), nil).Once()
+	call := suite.userLoader.On("LoadById", mock.Anything, mock.Anything).Return((*security.Principal)(nil), nil).Once()
 	if n := len(suite.userLoader.ExpectedCalls); n > 1 {
 		last := suite.userLoader.ExpectedCalls[n-1]
 		suite.userLoader.ExpectedCalls = append([]*mock.Call{last}, suite.userLoader.ExpectedCalls[:n-1]...)
@@ -642,7 +642,7 @@ func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -680,7 +680,7 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -752,7 +752,7 @@ func (suite *AuthResourceTestSuite) TestTokenDetails() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -785,7 +785,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -798,25 +798,25 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 	accessToken := tokens["accessToken"].(string)
 
 	avatarURL := "https://example.com/avatar.jpg"
-	expectedUserInfo := &securityPkg.UserInfo{
+	expectedUserInfo := &security.UserInfo{
 		Id:     "user001",
 		Name:   "Test User",
-		Gender: securityPkg.GenderMale,
+		Gender: security.GenderMale,
 		Avatar: null.StringFrom(avatarURL),
 		PermTokens: []string{
 			"user:read",
 			"user:write",
 			"order:read",
 		},
-		Menus: []securityPkg.UserMenu{
+		Menus: []security.UserMenu{
 			{
-				Type: securityPkg.UserMenuTypeDirectory,
+				Type: security.UserMenuTypeDirectory,
 				Path: "/system",
 				Name: "System Management",
 				Icon: null.StringFrom("setting"),
-				Children: []securityPkg.UserMenu{
+				Children: []security.UserMenu{
 					{
-						Type: securityPkg.UserMenuTypeMenu,
+						Type: security.UserMenuTypeMenu,
 						Path: "/system/users",
 						Name: "User Management",
 						Icon: null.StringFrom("user"),
@@ -826,7 +826,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 		},
 	}
 
-	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *securityPkg.Principal) bool {
+	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
 		return p.Id == "user001"
 	}), mock.Anything).Return(expectedUserInfo, nil).Once()
 
@@ -900,7 +900,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -912,9 +912,9 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 	tokens := suite.readDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 
-	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *securityPkg.Principal) bool {
+	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
 		return p.Id == "user001"
-	}), mock.Anything).Return((*securityPkg.UserInfo)(nil), errors.New("database connection failed")).Once()
+	}), mock.Anything).Return((*security.UserInfo)(nil), errors.New("database connection failed")).Once()
 
 	resp := suite.makeApiRequestWithToken(api.Request{
 		Identifier: api.Identifier{
@@ -943,7 +943,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        security.AuthTypePassword,
+			"type":        isecurity.AuthTypePassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -955,15 +955,15 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 	tokens := suite.readDataAsMap(loginBody.Data)
 	accessToken := tokens["accessToken"].(string)
 
-	expectedUserInfo := &securityPkg.UserInfo{
+	expectedUserInfo := &security.UserInfo{
 		Id:         "user001",
 		Name:       "Test User",
-		Gender:     securityPkg.GenderUnknown,
+		Gender:     security.GenderUnknown,
 		PermTokens: []string{},
-		Menus:      []securityPkg.UserMenu{},
+		Menus:      []security.UserMenu{},
 	}
 
-	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *securityPkg.Principal) bool {
+	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
 		return p.Id == "user001"
 	}), mock.Anything).Return(expectedUserInfo, nil).Once()
 

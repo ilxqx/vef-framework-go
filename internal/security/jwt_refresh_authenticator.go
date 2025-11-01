@@ -33,14 +33,14 @@ func (j *JwtRefreshAuthenticator) Supports(authType string) bool {
 
 func (j *JwtRefreshAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if j.userLoader == nil {
-		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("user_loader_not_implemented"))
+		return nil, result.Err(i18n.T("user_loader_not_implemented"), result.WithCode(result.ErrCodeNotImplemented))
 	}
 
 	token := authentication.Principal
 	if token == constants.Empty {
-		return nil, result.ErrWithCode(
-			result.ErrCodePrincipalInvalid,
+		return nil, result.Err(
 			i18n.T("token_invalid"),
+			result.WithCode(result.ErrCodePrincipalInvalid),
 		)
 	}
 
@@ -53,9 +53,9 @@ func (j *JwtRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 	}
 
 	if claimsAccessor.Type() != tokenTypeRefresh {
-		return nil, result.ErrWithCode(
-			result.ErrCodeTokenInvalid,
+		return nil, result.Err(
 			i18n.T("token_invalid"),
+			result.WithCode(result.ErrCodeTokenInvalid),
 		)
 	}
 
@@ -74,7 +74,7 @@ func (j *JwtRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 	if principal == nil {
 		logger.Warnf("User not found by Id %q", userId)
 
-		return nil, result.ErrWithCode(result.ErrCodeRecordNotFound, i18n.T("record_not_found"))
+		return nil, result.Err(i18n.T("record_not_found"), result.WithCode(result.ErrCodeRecordNotFound))
 	}
 
 	return principal, nil

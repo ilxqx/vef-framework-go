@@ -21,7 +21,7 @@ var logger = log.Named("redis")
 // It applies sensible defaults for connection pooling based on runtime environment,
 // while allowing customization through the config structure.
 func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client {
-	clientName := lo.CoalesceOrEmpty(appCfg.Name, constants.VEFName+"-app")
+	clientName := lo.CoalesceOrEmpty(appCfg.Name, "vef-app")
 
 	// Calculate optimal connection pool settings
 	poolSize := getPoolSize()
@@ -31,7 +31,7 @@ func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client 
 	options := &redis.Options{
 		// Basic connection settings
 		ClientName:            clientName,
-		IdentitySuffix:        constants.VEFName,
+		IdentitySuffix:        "vef",
 		Protocol:              3,
 		ContextTimeoutEnabled: true,
 		Network:               lo.Ternary(cfg.Network != constants.Empty, cfg.Network, "tcp"),

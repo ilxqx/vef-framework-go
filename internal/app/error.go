@@ -65,7 +65,7 @@ func handleError(ctx fiber.Ctx, err error) error {
 			}
 		}
 
-		return r.ResponseWithStatus(ctx, fiberErr.Code)
+		return r.Response(ctx, fiberErr.Code)
 	}
 
 	if resultErr, ok := result.AsErr(err); ok {
@@ -87,5 +87,5 @@ func responseError(e result.Error, ctx fiber.Ctx) error {
 		Message: e.Message,
 	}
 
-	return r.ResponseWithStatus(ctx, e.Status)
+	return r.Response(ctx, e.Status)
 }

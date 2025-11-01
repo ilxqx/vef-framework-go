@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/monitor"
 )
 
 // newAppConfig creates and parses application configuration from "vef.app" section.
@@ -70,4 +71,15 @@ func newStorageConfig(cfg config.Config) (*config.StorageConfig, error) {
 	}
 
 	return &storageConfig, nil
+}
+
+// newMonitorConfig creates and parses monitor configuration from "vef.monitor" section.
+func newMonitorConfig(cfg config.Config) (*config.MonitorConfig, error) {
+	monitorConfig := monitor.DefaultConfig()
+	// Unmarshal extracts monitor config from "vef.monitor" section
+	if err := cfg.Unmarshal("vef.monitor", &monitorConfig); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal monitor config: %w", err)
+	}
+
+	return &monitorConfig, nil
 }

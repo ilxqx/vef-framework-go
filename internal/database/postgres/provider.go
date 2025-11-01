@@ -50,7 +50,7 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 		pgdriver.WithUser(lo.Ternary(config.User != constants.Empty, config.User, "postgres")),
 		pgdriver.WithPassword(lo.Ternary(config.Password != constants.Empty, config.Password, "postgres")),
 		pgdriver.WithDatabase(lo.Ternary(config.Database != constants.Empty, config.Database, "postgres")),
-		pgdriver.WithApplicationName(constants.VEFName),
+		pgdriver.WithApplicationName("vef"),
 		pgdriver.WithConnParams(map[string]any{
 			"search_path": lo.Ternary(config.Schema != constants.Empty, config.Schema, "public"),
 		}),

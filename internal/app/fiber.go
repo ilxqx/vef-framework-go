@@ -39,7 +39,7 @@ func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
 			}
 		},
 		fiber.Config{
-			AppName:       lo.CoalesceOrEmpty(cfg.Name, constants.VEFName+"-app"),
+			AppName:       lo.CoalesceOrEmpty(cfg.Name, "vef-app"),
 			BodyLimit:     int(bodyLimit),
 			CaseSensitive: true,
 			IdleTimeout:   30 * time.Second,
@@ -48,7 +48,7 @@ func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
 			// JSONDecoder:     json.Unmarshal,
 			StrictRouting:   false,
 			StructValidator: newStructValidator(),
-			ServerHeader:    constants.VEFName,
+			ServerHeader:    "vef",
 			Concurrency:     1024 * 1024,
 			ReadBufferSize:  8192,
 			WriteBufferSize: 8192,

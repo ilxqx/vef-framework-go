@@ -67,7 +67,7 @@ func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
 				Message: i18n.T(result.ErrMessageTooManyRequests),
 			}
 
-			return r.ResponseWithStatus(ctx, fiber.StatusTooManyRequests)
+			return r.Response(ctx, fiber.StatusTooManyRequests)
 		},
 	})
 

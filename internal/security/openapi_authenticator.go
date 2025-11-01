@@ -41,23 +41,23 @@ func (*OpenApiAuthenticator) Supports(authType string) bool { return authType ==
 // Authenticate validates the provided OpenApi authentication information.
 func (a *OpenApiAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if a.loader == nil {
-		return nil, result.ErrWithCode(result.ErrCodeNotImplemented, i18n.T("external_app_loader_not_implemented"))
+		return nil, result.Err(i18n.T("external_app_loader_not_implemented"), result.WithCode(result.ErrCodeNotImplemented))
 	}
 
 	appId := authentication.Principal
 	if appId == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodeAppIdRequired, result.ErrMessageAppIdRequired)
+		return nil, result.Err(result.ErrMessageAppIdRequired, result.WithCode(result.ErrCodeAppIdRequired))
 	}
 
 	cred, ok := authentication.Credentials.(string)
 	if !ok || cred == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, result.ErrMessageSignatureRequired)
+		return nil, result.Err(result.ErrMessageSignatureRequired, result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
 	// credentials format: "<signatureHex>@<timestamp>@<bodySha256Base64>"
 	parts := strings.SplitN(cred, constants.At, 3)
 	if len(parts) != 3 {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("credentials_format_invalid"))
+		return nil, result.Err(i18n.T("credentials_format_invalid"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
 	signatureHex := parts[0]
@@ -65,7 +65,7 @@ func (a *OpenApiAuthenticator) Authenticate(ctx context.Context, authentication 
 
 	bodyHash := parts[2]
 	if signatureHex == constants.Empty || timestamp == constants.Empty || bodyHash == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodeCredentialsInvalid, i18n.T("credentials_fields_required"))
+		return nil, result.Err(i18n.T("credentials_fields_required"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
 	principal, secret, err := a.loader.LoadById(ctx, appId)
@@ -74,7 +74,7 @@ func (a *OpenApiAuthenticator) Authenticate(ctx context.Context, authentication 
 	}
 
 	if principal == nil || secret == constants.Empty {
-		return nil, result.ErrWithCode(result.ErrCodeExternalAppNotFound, result.ErrMessageExternalAppNotFound)
+		return nil, result.Err(result.ErrMessageExternalAppNotFound, result.WithCode(result.ErrCodeExternalAppNotFound))
 	}
 
 	// Recompute signature: hex(HMAC-SHA256(secret, appId + "\n" + timestamp + "\n" + bodyHash))
@@ -97,7 +97,7 @@ func (a *OpenApiAuthenticator) Authenticate(ctx context.Context, authentication 
 	// Compare signatures using constant-time comparison
 	providedMac, err := encoding.FromHex(signatureHex)
 	if err != nil {
-		return nil, result.ErrWithCode(result.ErrCodeSignatureInvalid, i18n.T("signature_decode_failed"))
+		return nil, result.Err(i18n.T("signature_decode_failed"), result.WithCode(result.ErrCodeSignatureInvalid))
 	}
 
 	expectedMac, err := encoding.FromHex(expectedSignatureHex)

@@ -59,6 +59,11 @@ func (c *createApi[TModel, TParams]) create(ctx fiber.Ctx, db orm.Db, params TPa
 			}
 		}
 
-		return result.Ok(db.ModelPks(&model)).Response(ctx)
+		pks, err := db.ModelPks(&model)
+		if err != nil {
+			return err
+		}
+
+		return result.Ok(pks).Response(ctx)
 	})
 }

@@ -10,7 +10,8 @@ import (
 // It provides methods to register, remove, and lookup Api definitions by their identifiers.
 type Manager interface {
 	// Register adds a new Api definition to the manager.
-	Register(api *Definition)
+	// Returns an error if an Api with the same identifier already exists.
+	Register(api *Definition) error
 	// Remove removes an Api definition by its identifier.
 	Remove(id Identifier)
 	// Lookup retrieves an Api definition by its identifier.

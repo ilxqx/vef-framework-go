@@ -35,6 +35,7 @@ openspec
 CLAUDE.md
 AGENTS.md
 TEST_GUIDELINES.md
+cmd/CMD_DEV_GUIDELINES.md
 
 # shell scripts
 *.sh
