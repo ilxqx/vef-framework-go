@@ -6,7 +6,6 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/config"
@@ -16,6 +15,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/internal/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/mold"
+	"github.com/ilxqx/vef-framework-go/internal/monitor"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
 	"github.com/ilxqx/vef-framework-go/internal/security"
@@ -28,7 +28,7 @@ const defaultTimeout = 30 * time.Second
 
 func newFxLogger() fxevent.Logger {
 	return &fxevent.SlogLogger{
-		Logger: log.NewSLogger(constants.VEFName, 5, logPkg.LevelWarn),
+		Logger: log.NewSLogger("vef", 5, logPkg.LevelWarn),
 	}
 }
 
@@ -49,6 +49,7 @@ func Run(options ...fx.Option) {
 		redis.Module,
 		mold.Module,
 		storage.Module,
+		monitor.Module,
 		app.Module,
 	}
 
