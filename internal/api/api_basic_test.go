@@ -18,7 +18,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go"
-	apiPkg "github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -37,11 +37,6 @@ type BasicApiTestSuite struct {
 	app  *app.App
 	bus  event.Bus
 	stop func()
-}
-
-// TestBasicApiTestSuite is the entry point for running the test suite.
-func TestBasicApiTestSuite(t *testing.T) {
-	suite.Run(t, new(BasicApiTestSuite))
 }
 
 // SetupSuite initializes the test suite by creating a single App instance with all test resources.
@@ -105,7 +100,7 @@ func (suite *BasicApiTestSuite) makeApiRequest(body string) *http.Response {
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
+	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
 }
@@ -127,7 +122,7 @@ func (suite *BasicApiTestSuite) makeApiRequestMultipart(fields map[string]string
 	req.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
+	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
 }
@@ -159,7 +154,7 @@ func (suite *BasicApiTestSuite) makeApiRequestWithFiles(fields map[string]string
 	req.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "API request should not fail")
+	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
 }
@@ -582,25 +577,25 @@ type FileContent struct {
 // Test Resources
 
 type TestUserResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewTestResource() apiPkg.Resource {
+func NewTestResource() api.Resource {
 	return &TestUserResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/user",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "get", Public: true},
-				apiPkg.Spec{Action: "list", Public: true},
-				apiPkg.Spec{Action: "create", Public: true},
-				apiPkg.Spec{Action: "log", Public: true},
+			api.WithApis(
+				api.Spec{Action: "get", Public: true},
+				api.Spec{Action: "list", Public: true},
+				api.Spec{Action: "create", Public: true},
+				api.Spec{Action: "log", Public: true},
 			),
 		),
 	}
 }
 
 type GetUserParams struct {
-	apiPkg.P
+	api.P
 
 	ID string `json:"id" validate:"required"`
 }
@@ -622,7 +617,7 @@ func (r *TestUserResource) List(ctx fiber.Ctx, db orm.Db) error {
 }
 
 type CreateUserParams struct {
-	apiPkg.P
+	api.P
 
 	Name  string `json:"name"  validate:"required"`
 	Email string `json:"email" validate:"required,email"`
@@ -644,15 +639,15 @@ func (r *TestUserResource) Log(ctx fiber.Ctx, logger log.Logger) error {
 // Product Resource
 
 type ProductResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewProductResource() apiPkg.Resource {
+func NewProductResource() api.Resource {
 	return &ProductResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/product",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "list", Public: true},
+			api.WithApis(
+				api.Spec{Action: "list", Public: true},
 			),
 		),
 	}
@@ -665,16 +660,16 @@ func (r *ProductResource) List(ctx fiber.Ctx) error {
 // Versioned Resource
 
 type VersionedResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewVersionedResource() apiPkg.Resource {
+func NewVersionedResource() api.Resource {
 	return &VersionedResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/versioned",
-			apiPkg.WithVersion(apiPkg.VersionV1),
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "info", Public: true},
+			api.WithVersion(api.VersionV1),
+			api.WithApis(
+				api.Spec{Action: "info", Public: true},
 			),
 		),
 	}
@@ -682,23 +677,23 @@ func NewVersionedResource() apiPkg.Resource {
 
 func (r *VersionedResource) Info(ctx fiber.Ctx) error {
 	return result.Ok(map[string]string{
-		"version": apiPkg.VersionV1,
+		"version": api.VersionV1,
 	}).Response(ctx)
 }
 
 // V2 Resource
 
 type VersionedResourceV2 struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewVersionedResourceV2() apiPkg.Resource {
+func NewVersionedResourceV2() api.Resource {
 	return &VersionedResourceV2{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/versioned",
-			apiPkg.WithVersion(apiPkg.VersionV2),
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "info", Public: true},
+			api.WithVersion(api.VersionV2),
+			api.WithApis(
+				api.Spec{Action: "info", Public: true},
 			),
 		),
 	}
@@ -706,22 +701,22 @@ func NewVersionedResourceV2() apiPkg.Resource {
 
 func (r *VersionedResourceV2) Info(ctx fiber.Ctx) error {
 	return result.Ok(map[string]string{
-		"version": apiPkg.VersionV2,
+		"version": api.VersionV2,
 	}).Response(ctx)
 }
 
 // Explicit Handler Resource - tests Spec.Handler field
 
 type ExplicitHandlerResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewExplicitHandlerResource() apiPkg.Resource {
+func NewExplicitHandlerResource() api.Resource {
 	return &ExplicitHandlerResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/explicit",
-			apiPkg.WithApis(
-				apiPkg.Spec{
+			api.WithApis(
+				api.Spec{
 					Action: "custom",
 					Public: true,
 					Handler: func(ctx fiber.Ctx) error {
@@ -736,15 +731,15 @@ func NewExplicitHandlerResource() apiPkg.Resource {
 // Factory Resource - tests handler factory pattern
 
 type FactoryResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewFactoryResource() apiPkg.Resource {
+func NewFactoryResource() api.Resource {
 	return &FactoryResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/factory",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "query", Public: true},
+			api.WithApis(
+				api.Spec{Action: "query", Public: true},
 			),
 		),
 	}
@@ -764,15 +759,15 @@ func (r *FactoryResource) Query(db orm.Db) func(ctx fiber.Ctx) error {
 // NoParamFactory Resource - tests handler factory without parameters
 
 type NoParamFactoryResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewNoParamFactoryResource() apiPkg.Resource {
+func NewNoParamFactoryResource() api.Resource {
 	return &NoParamFactoryResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/noparam",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "static", Public: true},
+			api.WithApis(
+				api.Spec{Action: "static", Public: true},
 			),
 		),
 	}
@@ -788,15 +783,15 @@ func (r *NoParamFactoryResource) Static() func(ctx fiber.Ctx) error {
 // NoReturn Resource - tests handler without return value
 
 type NoReturnResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewNoReturnResource() apiPkg.Resource {
+func NewNoReturnResource() api.Resource {
 	return &NoReturnResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/noreturn",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "ping", Public: true},
+			api.WithApis(
+				api.Spec{Action: "ping", Public: true},
 			),
 		),
 	}
@@ -816,17 +811,17 @@ type TestService struct {
 }
 
 type FieldInjectionResource struct {
-	apiPkg.Resource
+	api.Resource
 
 	Service *TestService
 }
 
-func NewFieldInjectionResource() apiPkg.Resource {
+func NewFieldInjectionResource() api.Resource {
 	return &FieldInjectionResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/field",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "check", Public: true},
+			api.WithApis(
+				api.Spec{Action: "check", Public: true},
 			),
 		),
 		Service: &TestService{Name: "injected"},
@@ -847,8 +842,8 @@ func (r *FieldInjectionResource) Check(ctx fiber.Ctx, service *TestService) erro
 
 type ProvidedApi struct{}
 
-func (p *ProvidedApi) Provide() apiPkg.Spec {
-	return apiPkg.Spec{
+func (p *ProvidedApi) Provide() api.Spec {
+	return api.Spec{
 		Action: "provided",
 		Public: true,
 		Handler: func(ctx fiber.Ctx) error {
@@ -858,13 +853,13 @@ func (p *ProvidedApi) Provide() apiPkg.Spec {
 }
 
 type EmbeddedProviderResource struct {
-	apiPkg.Resource
+	api.Resource
 	*ProvidedApi
 }
 
-func NewEmbeddedProviderResource() apiPkg.Resource {
+func NewEmbeddedProviderResource() api.Resource {
 	return &EmbeddedProviderResource{
-		Resource:    apiPkg.NewResource("test/embedded"),
+		Resource:    api.NewResource("test/embedded"),
 		ProvidedApi: &ProvidedApi{},
 	}
 }
@@ -872,22 +867,22 @@ func NewEmbeddedProviderResource() apiPkg.Resource {
 // Multipart Resource - tests multipart/form-data request handling
 
 type MultipartResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewMultipartResource() apiPkg.Resource {
+func NewMultipartResource() api.Resource {
 	return &MultipartResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/multipart",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "import", Public: true},
+			api.WithApis(
+				api.Spec{Action: "import", Public: true},
 			),
 		),
 	}
 }
 
 type ImportParams struct {
-	apiPkg.P
+	api.P
 
 	Name  string `json:"name"  validate:"required"`
 	Email string `json:"email" validate:"required,email"`
@@ -900,15 +895,15 @@ func (r *MultipartResource) Import(ctx fiber.Ctx, params ImportParams) error {
 // Formats Resource - tests both JSON and multipart/form-data request formats
 
 type FormatsResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewFormatsResource() apiPkg.Resource {
+func NewFormatsResource() api.Resource {
 	return &FormatsResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/formats",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "echo", Public: true},
+			api.WithApis(
+				api.Spec{Action: "echo", Public: true},
 			),
 		),
 	}
@@ -916,31 +911,31 @@ func NewFormatsResource() apiPkg.Resource {
 
 func (r *FormatsResource) Echo(ctx fiber.Ctx) error {
 	// Just verify the request was processed successfully
-	return result.OkWithMessage("request received", ctx.Get(fiber.HeaderContentType)).
+	return result.Ok(ctx.Get(fiber.HeaderContentType), result.WithMessage("request received")).
 		Response(ctx)
 }
 
 // FileUpload Resource - tests file upload handling
 
 type FileUploadResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewFileUploadResource() apiPkg.Resource {
+func NewFileUploadResource() api.Resource {
 	return &FileUploadResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/upload",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "multiple_keys", Public: true},
-				apiPkg.Spec{Action: "same_key", Public: true},
-				apiPkg.Spec{Action: "with_params", Public: true},
+			api.WithApis(
+				api.Spec{Action: "multiple_keys", Public: true},
+				api.Spec{Action: "same_key", Public: true},
+				api.Spec{Action: "with_params", Public: true},
 			),
 		),
 	}
 }
 
 type MultipleKeysParams struct {
-	apiPkg.P
+	api.P
 
 	UserId   string `json:"userId" validate:"required"`
 	Avatar   *multipart.FileHeader
@@ -958,7 +953,7 @@ func (r *FileUploadResource) MultipleKeys(ctx fiber.Ctx, params MultipleKeysPara
 }
 
 type SameKeyParams struct {
-	apiPkg.P
+	api.P
 
 	Category    string `json:"category" validate:"required"`
 	Attachments []*multipart.FileHeader
@@ -977,7 +972,7 @@ func (r *FileUploadResource) SameKey(ctx fiber.Ctx, params SameKeyParams) error 
 }
 
 type WithParamsParams struct {
-	apiPkg.P
+	api.P
 
 	Title       string   `json:"title"       validate:"required"`
 	Description string   `json:"description"`
@@ -999,24 +994,24 @@ func (r *FileUploadResource) WithParams(ctx fiber.Ctx, params WithParamsParams) 
 // Audit Resource - tests audit log functionality
 
 type AuditResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewAuditResource() apiPkg.Resource {
+func NewAuditResource() api.Resource {
 	return &AuditResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/audit",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "success", EnableAudit: true, Public: true},
-				apiPkg.Spec{Action: "failure", EnableAudit: true, Public: true},
-				apiPkg.Spec{Action: "no_audit", EnableAudit: false, Public: true},
+			api.WithApis(
+				api.Spec{Action: "success", EnableAudit: true, Public: true},
+				api.Spec{Action: "failure", EnableAudit: true, Public: true},
+				api.Spec{Action: "no_audit", EnableAudit: false, Public: true},
 			),
 		),
 	}
 }
 
 type AuditSuccessParams struct {
-	apiPkg.P
+	api.P
 
 	Name string `json:"name" validate:"required"`
 }
@@ -1029,7 +1024,7 @@ func (r *AuditResource) Success(ctx fiber.Ctx, params AuditSuccessParams) error 
 }
 
 func (r *AuditResource) Failure(ctx fiber.Ctx) error {
-	return result.ErrWithCode(result.ErrCodeRecordNotFound, "Record not found")
+	return result.Err("Record not found", result.WithCode(result.ErrCodeRecordNotFound))
 }
 
 func (r *AuditResource) NoAudit(ctx fiber.Ctx) error {
@@ -1041,11 +1036,11 @@ func (suite *BasicApiTestSuite) TestAuditSuccess() {
 	suite.T().Log("Testing audit event for successful request")
 
 	var (
-		auditEvents []*apiPkg.AuditEvent
+		auditEvents []*api.AuditEvent
 		mu          sync.Mutex
 	)
 
-	unsubscribe := apiPkg.SubscribeAuditEvent(suite.bus, func(ctx context.Context, evt *apiPkg.AuditEvent) {
+	unsubscribe := api.SubscribeAuditEvent(suite.bus, func(ctx context.Context, evt *api.AuditEvent) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -1086,11 +1081,11 @@ func (suite *BasicApiTestSuite) TestAuditFailure() {
 	suite.T().Log("Testing audit event for failed request")
 
 	var (
-		auditEvents []*apiPkg.AuditEvent
+		auditEvents []*api.AuditEvent
 		mu          sync.Mutex
 	)
 
-	unsubscribe := apiPkg.SubscribeAuditEvent(suite.bus, func(ctx context.Context, evt *apiPkg.AuditEvent) {
+	unsubscribe := api.SubscribeAuditEvent(suite.bus, func(ctx context.Context, evt *api.AuditEvent) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -1128,11 +1123,11 @@ func (suite *BasicApiTestSuite) TestAuditDisabled() {
 	suite.T().Log("Testing audit disabled")
 
 	var (
-		auditEvents []*apiPkg.AuditEvent
+		auditEvents []*api.AuditEvent
 		mu          sync.Mutex
 	)
 
-	unsubscribe := apiPkg.SubscribeAuditEvent(suite.bus, func(ctx context.Context, evt *apiPkg.AuditEvent) {
+	unsubscribe := api.SubscribeAuditEvent(suite.bus, func(ctx context.Context, evt *api.AuditEvent) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -1159,24 +1154,24 @@ func (suite *BasicApiTestSuite) TestAuditDisabled() {
 // Meta Resource - tests meta parameter injection
 
 type MetaResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
-func NewMetaResource() apiPkg.Resource {
+func NewMetaResource() api.Resource {
 	return &MetaResource{
-		Resource: apiPkg.NewResource(
+		Resource: api.NewResource(
 			"test/meta",
-			apiPkg.WithApis(
-				apiPkg.Spec{Action: "with_meta", Public: true},
-				apiPkg.Spec{Action: "with_both", Public: true},
-				apiPkg.Spec{Action: "meta_validation", Public: true},
+			api.WithApis(
+				api.Spec{Action: "with_meta", Public: true},
+				api.Spec{Action: "with_both", Public: true},
+				api.Spec{Action: "meta_validation", Public: true},
 			),
 		),
 	}
 }
 
 type RequestMeta struct {
-	apiPkg.M
+	api.M
 
 	RequestId string `json:"requestId"`
 	ClientIP  string `json:"clientIp"`
@@ -1192,14 +1187,14 @@ func (r *MetaResource) WithMeta(ctx fiber.Ctx, meta RequestMeta) error {
 }
 
 type CreateItemParams struct {
-	apiPkg.P
+	api.P
 
 	Name        string `json:"name" validate:"required"`
 	Description string `json:"description"`
 }
 
 type CreateItemMeta struct {
-	apiPkg.M
+	api.M
 
 	Source    string `json:"source" validate:"required"`
 	Timestamp int64  `json:"timestamp"`
@@ -1219,7 +1214,7 @@ func (r *MetaResource) WithBoth(ctx fiber.Ctx, params CreateItemParams, meta Cre
 }
 
 type ValidatedMeta struct {
-	apiPkg.M
+	api.M
 
 	ApiKey  string `json:"apiKey" validate:"required,min=10"`
 	Version string `json:"version" validate:"required,oneof=v1 v2 v3"`
@@ -1349,4 +1344,9 @@ func (suite *BasicApiTestSuite) TestMissingMeta() {
 	suite.Contains(body, `"requestId":""`, "Should return empty request ID")
 	suite.Contains(body, `"clientIp":""`, "Should return empty client IP")
 	suite.Contains(body, `"userAgent":""`, "Should return empty user agent")
+}
+
+// TestApiBasicSuite runs the basic api test suite.
+func TestApiBasicSuite(t *testing.T) {
+	suite.Run(t, new(BasicApiTestSuite))
 }
