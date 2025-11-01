@@ -59,5 +59,6 @@
   "validator_decimal_max": "{0}必须小于或等于{1}",
   "validator_alphanum_us": "{0}只能包含字母、数字和下划线",
   "validator_alphanum_us_slash": "{0}只能包含字母、数字、下划线和斜线",
-  "validator_alphanum_us_dot": "{0}只能包含字母、数字、下划线和点"
+  "validator_alphanum_us_dot": "{0}只能包含字母、数字、下划线和点",
+  "monitor_not_ready": "监控数据尚未就绪, 请稍后重试"
 }

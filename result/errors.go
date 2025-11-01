@@ -7,87 +7,128 @@ import (
 )
 
 var (
-	ErrTokenExpired = ErrWithCodeAndStatus(
-		ErrCodeTokenExpired,
-		fiber.StatusUnauthorized,
+	// ErrTokenExpired is the error for expired token.
+	ErrTokenExpired = Err(
 		i18n.T(ErrMessageTokenExpired),
-	) // ErrTokenExpired is the error for expired token
-	ErrTokenInvalid = ErrWithCodeAndStatus(
-		ErrCodeTokenInvalid,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTokenExpired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTokenInvalid is the error for invalid token.
+	ErrTokenInvalid = Err(
 		i18n.T(ErrMessageTokenInvalid),
-	) // ErrTokenInvalid is the error for invalid token
-	ErrTokenNotValidYet = ErrWithCodeAndStatus(
-		ErrCodeTokenNotValidYet,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTokenInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTokenNotValidYet is the error for not valid yet token.
+	ErrTokenNotValidYet = Err(
 		i18n.T(ErrMessageTokenNotValidYet),
-	) // ErrTokenNotValidYet is the error for not valid yet token
-	ErrTokenInvalidIssuer = ErrWithCodeAndStatus(
-		ErrCodeTokenInvalidIssuer,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTokenNotValidYet),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTokenInvalidIssuer is the error for invalid issuer token.
+	ErrTokenInvalidIssuer = Err(
 		i18n.T(ErrMessageTokenInvalidIssuer),
-	) // ErrTokenInvalidIssuer is the error for invalid issuer token
-	ErrTokenInvalidAudience = ErrWithCodeAndStatus(
-		ErrCodeTokenInvalidAudience,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTokenInvalidIssuer),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTokenInvalidAudience is the error for invalid audience token.
+	ErrTokenInvalidAudience = Err(
 		i18n.T(ErrMessageTokenInvalidAudience),
-	) // ErrTokenInvalidAudience is the error for invalid audience token
-	ErrTokenMissingSubject = ErrWithCodeAndStatus(
-		ErrCodeTokenMissingSubject,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTokenInvalidAudience),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTokenMissingSubject is the error for missing subject token.
+	ErrTokenMissingSubject = Err(
 		i18n.T(ErrMessageTokenMissingSubject),
-	) // ErrTokenMissingSubject is the error for missing subject token
-	ErrTokenMissingTokenType = ErrWithCodeAndStatus(
-		ErrCodeTokenMissingTokenType,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTokenMissingSubject),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTokenMissingTokenType is the error for missing token type token.
+	ErrTokenMissingTokenType = Err(
 		i18n.T(ErrMessageTokenMissingTokenType),
-	) // ErrTokenMissingTokenType is the error for missing token type token
-	ErrAppIdRequired     = ErrWithCodeAndStatus(ErrCodeAppIdRequired, fiber.StatusUnauthorized, i18n.T(ErrMessageAppIdRequired)) // ErrAppIdRequired is the error for missing app id
-	ErrTimestampRequired = ErrWithCodeAndStatus(
-		ErrCodeTimestampRequired,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTokenMissingTokenType),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrAppIdRequired is the error for missing app id.
+	ErrAppIdRequired = Err(
+		i18n.T(ErrMessageAppIdRequired),
+		WithCode(ErrCodeAppIdRequired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTimestampRequired is the error for missing app timestamp.
+	ErrTimestampRequired = Err(
 		i18n.T(ErrMessageTimestampRequired),
-	) // ErrTimestampRequired is the error for missing app timestamp
-	ErrSignatureRequired = ErrWithCodeAndStatus(
-		ErrCodeSignatureRequired,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTimestampRequired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrSignatureRequired is the error for missing app signature.
+	ErrSignatureRequired = Err(
 		i18n.T(ErrMessageSignatureRequired),
-	) // ErrSignatureRequired is the error for missing app signature
-	ErrTimestampInvalid = ErrWithCodeAndStatus(
-		ErrCodeTimestampInvalid,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeSignatureRequired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrTimestampInvalid is the error for invalid app timestamp.
+	ErrTimestampInvalid = Err(
 		i18n.T(ErrMessageTimestampInvalid),
-	) // ErrTimestampInvalid is the error for invalid app timestamp
-	ErrSignatureExpired = ErrWithCodeAndStatus(
-		ErrCodeSignatureExpired,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeTimestampInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrSignatureExpired is the error for expired app signature.
+	ErrSignatureExpired = Err(
 		i18n.T(ErrMessageSignatureExpired),
-	) // ErrSignatureExpired is the error for expired app signature
-	ErrSignatureInvalid = ErrWithCodeAndStatus(
-		ErrCodeSignatureInvalid,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeSignatureExpired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrSignatureInvalid is the error for invalid app signature.
+	ErrSignatureInvalid = Err(
 		i18n.T(ErrMessageSignatureInvalid),
-	) // ErrSignatureInvalid is the error for invalid app signature
-	ErrExternalAppNotFound = ErrWithCodeAndStatus(
-		ErrCodeExternalAppNotFound,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeSignatureInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrExternalAppNotFound is the error for app not found.
+	ErrExternalAppNotFound = Err(
 		i18n.T(ErrMessageExternalAppNotFound),
-	) // ErrExternalAppNotFound is the error for app not found
-	ErrExternalAppDisabled = ErrWithCodeAndStatus(
-		ErrCodeExternalAppDisabled,
-		fiber.StatusUnauthorized,
+		WithCode(ErrCodeExternalAppNotFound),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrExternalAppDisabled is the error for app disabled.
+	ErrExternalAppDisabled = Err(
 		i18n.T(ErrMessageExternalAppDisabled),
-	) // ErrExternalAppDisabled is the error for app disabled
-	ErrIpNotAllowed    = ErrWithCodeAndStatus(ErrCodeIpNotAllowed, fiber.StatusUnauthorized, i18n.T(ErrMessageIpNotAllowed))       // ErrIpNotAllowed is the error for ip not allowed
-	ErrUnauthenticated = ErrWithCodeAndStatus(ErrCodeUnauthenticated, fiber.StatusUnauthorized, i18n.T(ErrMessageUnauthenticated)) // ErrUnauthenticated is the error for unauthenticated
-	ErrAccessDenied    = ErrWithCodeAndStatus(ErrCodeAccessDenied, fiber.StatusForbidden, i18n.T(ErrMessageAccessDenied))          // ErrAccessDenied is the error for access denied
-	ErrUnknown         = ErrWithCodeAndStatus(ErrCodeUnknown, fiber.StatusInternalServerError, i18n.T(ErrMessageUnknown))          // ErrUnknown is the error for unknown error
-	ErrRecordNotFound  = ErrWithCode(
-		ErrCodeRecordNotFound,
+		WithCode(ErrCodeExternalAppDisabled),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrIpNotAllowed is the error for ip not allowed.
+	ErrIpNotAllowed = Err(
+		i18n.T(ErrMessageIpNotAllowed),
+		WithCode(ErrCodeIpNotAllowed),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrUnauthenticated is the error for unauthenticated.
+	ErrUnauthenticated = Err(
+		i18n.T(ErrMessageUnauthenticated),
+		WithCode(ErrCodeUnauthenticated),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	// ErrAccessDenied is the error for access denied.
+	ErrAccessDenied = Err(
+		i18n.T(ErrMessageAccessDenied),
+		WithCode(ErrCodeAccessDenied),
+		WithStatus(fiber.StatusForbidden),
+	)
+	// ErrUnknown is the error for unknown error.
+	ErrUnknown = Err(
+		i18n.T(ErrMessageUnknown),
+		WithCode(ErrCodeUnknown),
+		WithStatus(fiber.StatusInternalServerError),
+	)
+	// ErrRecordNotFound is the error for record not found.
+	ErrRecordNotFound = Err(
 		i18n.T(ErrMessageRecordNotFound),
-	) // ErrRecordNotFound is the error for record not found
-	ErrRecordAlreadyExists = ErrWithCode(
-		ErrCodeRecordAlreadyExists,
+		WithCode(ErrCodeRecordNotFound),
+	)
+	// ErrRecordAlreadyExists is the error for record already exists.
+	ErrRecordAlreadyExists = Err(
 		i18n.T(ErrMessageRecordAlreadyExists),
-	) // ErrRecordAlreadyExists is the error for record already exists
+		WithCode(ErrCodeRecordAlreadyExists),
+	)
 )

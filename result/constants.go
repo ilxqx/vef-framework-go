@@ -30,9 +30,11 @@ const (
 	ErrMessageAccessDenied               = "access_denied"            // ErrMessageAccessDenied is the i18n key for access denied error
 	ErrMessageUnsupportedMediaType       = "unsupported_media_type"   // ErrMessageUnsupportedMediaType is the i18n key for unsupported media type error
 	ErrMessageRequestTimeout             = "request_timeout"          // ErrMessageRequestTimeout is the i18n key for request timeout error
+	ErrMessageMonitorNotReady            = "monitor_not_ready"        // ErrMessageMonitorNotReady is the i18n key for monitor data not ready error
 	ErrCodeDefault                       = 2000                       // ErrCodeDefault is the default code for error response (2000 and above are business error codes)
 	ErrCodeRecordNotFound                = 2001                       // ErrCodeRecordNotFound is the code for record not found error
 	ErrCodeRecordAlreadyExists           = 2002                       // ErrCodeRecordAlreadyExists is the code for record already exists error
+	ErrCodeMonitorNotReady               = 2100                       // ErrCodeMonitorNotReady is the code for monitor data not ready error
 	ErrCodeUnknown                       = 1900                       // ErrCodeUnknown is the code for unknown error
 	ErrCodeBadRequest                    = 1400                       // ErrCodeBadRequest is the code for bad request error
 	ErrCodeTooManyRequests               = 1401                       // ErrCodeTooManyRequests is the code for too many requests error
