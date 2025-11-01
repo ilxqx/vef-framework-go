@@ -3,6 +3,8 @@
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ilxqx/vef-framework-go/test.yml?branch=main)](https://github.com/ilxqx/vef-framework-go/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/ilxqx/vef-framework-go)](https://codecov.io/gh/ilxqx/vef-framework-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
 [![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
@@ -195,6 +197,16 @@ type UserParams struct {
 
 ### Step 2: Create Api Resource
 
+> **⚠️ IMPORTANT: Reserved System API Namespaces**
+>
+> The framework reserves the following resource namespaces for system APIs. **DO NOT** use these resource names in your custom API definitions, as they will conflict with built-in framework functionality and cause application startup failures:
+>
+> - `security/auth` - Authentication APIs (login, logout, refresh, get_user_info)
+> - `sys/storage` - Storage APIs (upload, get_presigned_url, stat, list)
+> - `sys/monitor` - Monitoring APIs (get_overview, get_cpu, get_memory, get_disk, etc.)
+>
+> The framework automatically detects duplicate API definitions and will fail to start if conflicts are found. Use custom resource namespaces like `app/`, `custom/`, or your own domain-specific prefixes to avoid conflicts.
+
 ```go
 package resources
 
@@ -214,7 +226,7 @@ type UserResource struct {
 
 func NewUserResource() api.Resource {
     return &UserResource{
-        Resource: api.NewResource("sys/user"),
+        Resource: api.NewResource("app/user"),  // ✓ Use custom namespace to avoid conflicts
         FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
         FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
         CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
@@ -1609,12 +1621,12 @@ The framework uses the following naming convention for uploaded files:
 
 #### Custom File Upload
 
-Inject `storage.Provider` in custom resources for file uploads:
+Inject `storage.Service` in custom resources for file uploads:
 
 ```go
 import (
     "mime/multipart"
-    
+
     "github.com/gofiber/fiber/v3"
     "github.com/ilxqx/vef-framework-go/api"
     "github.com/ilxqx/vef-framework-go/result"
@@ -1624,29 +1636,29 @@ import (
 // Define upload parameter struct
 type UploadAvatarParams struct {
     api.In
-    
+
     File *multipart.FileHeader `json:"file"`
 }
 
 func (r *UserResource) UploadAvatar(
     ctx fiber.Ctx,
-    provider storage.Provider,
+    service storage.Service,
     params UploadAvatarParams,
 ) error {
     // Check if file exists
     if params.File == nil {
         return result.Err("File is required")
     }
-    
+
     // Open uploaded file
     reader, err := params.File.Open()
     if err != nil {
         return err
     }
     defer reader.Close()
-    
+
     // Custom file path
-    info, err := provider.PutObject(ctx.Context(), storage.PutObjectOptions{
+    info, err := service.PutObject(ctx.Context(), storage.PutObjectOptions{
         Key:         "avatars/" + params.File.Filename,
         Reader:      reader,
         Size:        params.File.Size,

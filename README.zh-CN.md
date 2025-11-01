@@ -3,6 +3,8 @@
 📖 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ilxqx/vef-framework-go/test.yml?branch=main)](https://github.com/ilxqx/vef-framework-go/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/ilxqx/vef-framework-go)](https://codecov.io/gh/ilxqx/vef-framework-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
 [![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
@@ -195,6 +197,16 @@ type UserParams struct {
 
 ### 第二步：创建 Api 资源
 
+> **⚠️ 重要：系统保留的 API 命名空间**
+>
+> 框架为系统 API 保留了以下资源命名空间。**请勿**在自定义 API 定义中使用这些资源名称，否则会与内置框架功能冲突，导致应用启动失败:
+>
+> - `security/auth` - 认证 API（login, logout, refresh, get_user_info）
+> - `sys/storage` - 存储 API（upload, get_presigned_url, stat, list）
+> - `sys/monitor` - 监控 API（get_overview, get_cpu, get_memory, get_disk 等）
+>
+> 框架会自动检测重复的 API 定义，如果发现冲突将拒绝启动。请使用自定义的资源命名空间，如 `app/`、`custom/` 或您自己的领域特定前缀，以避免冲突。
+
 ```go
 package resources
 
@@ -214,7 +226,7 @@ type UserResource struct {
 
 func NewUserResource() api.Resource {
     return &UserResource{
-        Resource: api.NewResource("sys/user"),
+        Resource: api.NewResource("app/user"),  // ✓ 使用自定义命名空间以避免冲突
         FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
         FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
         CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
@@ -1600,12 +1612,12 @@ curl -X POST http://localhost:8080/api \
 
 #### 自定义文件上传
 
-在自定义资源中注入 `storage.Provider` 实现文件上传：
+在自定义资源中注入 `storage.Service` 实现文件上传：
 
 ```go
 import (
     "mime/multipart"
-    
+
     "github.com/gofiber/fiber/v3"
     "github.com/ilxqx/vef-framework-go/api"
     "github.com/ilxqx/vef-framework-go/result"
@@ -1615,29 +1627,29 @@ import (
 // 定义上传参数结构
 type UploadAvatarParams struct {
     api.In
-    
+
     File *multipart.FileHeader `json:"file"`
 }
 
 func (r *UserResource) UploadAvatar(
     ctx fiber.Ctx,
-    provider storage.Provider,
+    service storage.Service,
     params UploadAvatarParams,
 ) error {
     // 检查文件是否存在
     if params.File == nil {
         return result.Err("文件不能为空")
     }
-    
+
     // 打开上传的文件
     reader, err := params.File.Open()
     if err != nil {
         return err
     }
     defer reader.Close()
-    
+
     // 自定义文件路径
-    info, err := provider.PutObject(ctx.Context(), storage.PutObjectOptions{
+    info, err := service.PutObject(ctx.Context(), storage.PutObjectOptions{
         Key:         "avatars/" + params.File.Filename,
         Reader:      reader,
         Size:        params.File.Size,
