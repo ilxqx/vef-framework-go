@@ -5,13 +5,9 @@ import (
 	"io"
 )
 
-// Provider defines the core interface for object storage operations.
+// Service defines the core interface for object storage operations.
 // Implementations should support various cloud storage services like MinIO, S3, Aliyun OSS, Tencent COS, etc.
-type Provider interface {
-	// Setup initializes the storage provider (e.g., creating buckets, directories).
-	// This method should ONLY be called during application startup and MUST NOT be called at runtime.
-	Setup(ctx context.Context) error
-
+type Service interface {
 	// PutObject uploads an object to storage
 	PutObject(ctx context.Context, opts PutObjectOptions) (*ObjectInfo, error)
 	// GetObject retrieves an object from storage

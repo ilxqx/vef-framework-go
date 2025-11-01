@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/fx"
 
+	"github.com/ilxqx/vef-framework-go/internal/contract"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/storage"
 )
@@ -13,20 +14,23 @@ import (
 var logger = log.Named("storage")
 
 // Module is the FX module for storage functionality.
-var Module = fx.Module("storage",
+var Module = fx.Module(
+	"vef:storage",
 	fx.Provide(
 		fx.Annotate(
-			NewStorageProvider,
-			fx.OnStart(func(ctx context.Context, provider storage.Provider) error {
-				if err := provider.Setup(ctx); err != nil {
-					return fmt.Errorf("failed to setup storage provider: %w", err)
+			NewService,
+			fx.OnStart(func(ctx context.Context, service storage.Service) error {
+				if initializer, ok := service.(contract.Initializer); ok {
+					if err := initializer.Init(ctx); err != nil {
+						return fmt.Errorf("failed to initialize storage service: %w", err)
+					}
 				}
 
 				return nil
 			}),
 		),
 		fx.Annotate(
-			NewStorageResource,
+			NewResource,
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),
 	),

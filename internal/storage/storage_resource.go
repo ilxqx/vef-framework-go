@@ -25,15 +25,15 @@ const (
 	defaultExtension = ".bin"
 )
 
-// NewStorageResource creates a new storage resource with the provided storage provider.
-func NewStorageResource(provider storage.Provider) api.Resource {
+// NewResource creates a new storage resource with the provided storage service.
+func NewResource(service storage.Service) api.Resource {
 	// In test environment, make all Apis public (no authentication required)
 	isPublic := testhelpers.IsTestEnv()
 
-	return &StorageResource{
-		provider: provider,
+	return &Resource{
+		service: service,
 		Resource: api.NewResource(
-			"base/storage",
+			"sys/storage",
 			api.WithApis(
 				api.Spec{Action: "upload", Public: isPublic},
 				api.Spec{Action: "get_presigned_url", Public: isPublic},
@@ -44,11 +44,11 @@ func NewStorageResource(provider storage.Provider) api.Resource {
 	}
 }
 
-// StorageResource handles storage-related Api endpoints.
-type StorageResource struct {
+// Resource handles storage-related Api endpoints.
+type Resource struct {
 	api.Resource
 
-	provider storage.Provider
+	service storage.Service
 }
 
 // UploadParams represents the request parameters for file upload.
@@ -69,7 +69,7 @@ type UploadParams struct {
 // Example: temp/2025/01/15/550e8400-e29b-41d4-a716-446655440000.jpg
 //
 // The file should be uploaded via multipart form with field name "file".
-func (r *StorageResource) Upload(ctx fiber.Ctx, params UploadParams) error {
+func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 	if webhelpers.IsJson(ctx) {
 		return result.Err(i18n.T("upload_requires_multipart"))
 	}
@@ -107,7 +107,7 @@ func (r *StorageResource) Upload(ctx fiber.Ctx, params UploadParams) error {
 	metadata[storage.MetadataKeyOriginalFilename] = params.File.Filename
 
 	// Upload to storage provider
-	info, err := r.provider.PutObject(ctx.Context(), storage.PutObjectOptions{
+	info, err := r.service.PutObject(ctx.Context(), storage.PutObjectOptions{
 		Key:         key,
 		Reader:      file,
 		Size:        params.File.Size,
@@ -123,7 +123,7 @@ func (r *StorageResource) Upload(ctx fiber.Ctx, params UploadParams) error {
 
 // generateObjectKey generates a unique object key with date-based partitioning.
 // Format: temp/YYYY/MM/DD/{uuid}{extension}.
-func (r *StorageResource) generateObjectKey(filename string) string {
+func (r *Resource) generateObjectKey(filename string) string {
 	// Get current date for partitioning
 	now := time.Now()
 	datePath := now.Format(templateDatePath)
@@ -166,7 +166,7 @@ type GetPresignedUrlParams struct {
 }
 
 // GetPresignedUrl generates a presigned URL for temporary access to an object.
-func (r *StorageResource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) error {
+func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) error {
 	// Default values
 	expires := params.Expires
 	if expires <= 0 {
@@ -179,7 +179,7 @@ func (r *StorageResource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlP
 	}
 
 	// Generate presigned URL
-	url, err := r.provider.GetPresignedURL(ctx.Context(), storage.PresignedURLOptions{
+	url, err := r.service.GetPresignedURL(ctx.Context(), storage.PresignedURLOptions{
 		Key:     params.Key,
 		Expires: time.Duration(expires) * time.Second,
 		Method:  method,
@@ -200,8 +200,8 @@ type DeleteParams struct {
 }
 
 // Delete deletes a single object from storage.
-func (r *StorageResource) Delete(ctx fiber.Ctx, params DeleteParams) error {
-	err := r.provider.DeleteObject(ctx.Context(), storage.DeleteObjectOptions{
+func (r *Resource) Delete(ctx fiber.Ctx, params DeleteParams) error {
+	err := r.service.DeleteObject(ctx.Context(), storage.DeleteObjectOptions{
 		Key: params.Key,
 	})
 	if err != nil {
@@ -220,8 +220,8 @@ type DeleteManyParams struct {
 }
 
 // DeleteMany deletes multiple objects from storage in a batch operation.
-func (r *StorageResource) DeleteMany(ctx fiber.Ctx, params DeleteManyParams) error {
-	err := r.provider.DeleteObjects(ctx.Context(), storage.DeleteObjectsOptions{
+func (r *Resource) DeleteMany(ctx fiber.Ctx, params DeleteManyParams) error {
+	err := r.service.DeleteObjects(ctx.Context(), storage.DeleteObjectsOptions{
 		Keys: params.Keys,
 	})
 	if err != nil {
@@ -244,8 +244,8 @@ type ListParams struct {
 }
 
 // List lists objects in a bucket with optional filtering.
-func (r *StorageResource) List(ctx fiber.Ctx, params ListParams) error {
-	objects, err := r.provider.ListObjects(ctx.Context(), storage.ListObjectsOptions{
+func (r *Resource) List(ctx fiber.Ctx, params ListParams) error {
+	objects, err := r.service.ListObjects(ctx.Context(), storage.ListObjectsOptions{
 		Prefix:    params.Prefix,
 		Recursive: params.Recursive,
 		MaxKeys:   params.MaxKeys,
@@ -268,8 +268,8 @@ type CopyParams struct {
 }
 
 // Copy copies an object from source to destination.
-func (r *StorageResource) Copy(ctx fiber.Ctx, params CopyParams) error {
-	info, err := r.provider.CopyObject(ctx.Context(), storage.CopyObjectOptions{
+func (r *Resource) Copy(ctx fiber.Ctx, params CopyParams) error {
+	info, err := r.service.CopyObject(ctx.Context(), storage.CopyObjectOptions{
 		SourceKey: params.SourceKey,
 		DestKey:   params.DestKey,
 	})
@@ -291,8 +291,8 @@ type MoveParams struct {
 }
 
 // Move moves an object from source to destination (implemented as Copy + Delete).
-func (r *StorageResource) Move(ctx fiber.Ctx, params MoveParams) error {
-	info, err := r.provider.MoveObject(ctx.Context(), storage.MoveObjectOptions{
+func (r *Resource) Move(ctx fiber.Ctx, params MoveParams) error {
+	info, err := r.service.MoveObject(ctx.Context(), storage.MoveObjectOptions{
 		CopyObjectOptions: storage.CopyObjectOptions{
 			SourceKey: params.SourceKey,
 			DestKey:   params.DestKey,
@@ -314,8 +314,8 @@ type StatParams struct {
 }
 
 // Stat retrieves metadata information about an object.
-func (r *StorageResource) Stat(ctx fiber.Ctx, params StatParams) error {
-	info, err := r.provider.StatObject(ctx.Context(), storage.StatObjectOptions{
+func (r *Resource) Stat(ctx fiber.Ctx, params StatParams) error {
+	info, err := r.service.StatObject(ctx.Context(), storage.StatObjectOptions{
 		Key: params.Key,
 	})
 	if err != nil {
