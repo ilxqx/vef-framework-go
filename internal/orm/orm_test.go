@@ -31,45 +31,45 @@ func runAllOrmTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	// Create Select Suite
 	selectSuite := &SelectTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dsConfig.Type,
-			Db:     ormDb,
+			ctx:    ctx,
+			dbType: dsConfig.Type,
+			db:     ormDb,
 		},
 	}
 
 	// Create Insert Suite
 	insertSuite := &InsertTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dsConfig.Type,
-			Db:     ormDb,
+			ctx:    ctx,
+			dbType: dsConfig.Type,
+			db:     ormDb,
 		},
 	}
 
 	// Create Update Suite
 	updateSuite := &UpdateTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dsConfig.Type,
-			Db:     ormDb,
+			ctx:    ctx,
+			dbType: dsConfig.Type,
+			db:     ormDb,
 		},
 	}
 
 	// Create Delete Suite
 	deleteSuite := &DeleteTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dsConfig.Type,
-			Db:     ormDb,
+			ctx:    ctx,
+			dbType: dsConfig.Type,
+			db:     ormDb,
 		},
 	}
 
 	// Create Merge Suite
 	mergeSuite := &MergeTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dsConfig.Type,
-			Db:     ormDb,
+			ctx:    ctx,
+			dbType: dsConfig.Type,
+			db:     ormDb,
 		},
 	}
 
@@ -107,9 +107,9 @@ func runAllConditionBuilderTests(t *testing.T, ctx context.Context, dbType const
 	// Create base suite configuration
 	baseSuite := &ConditionBuilderTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
@@ -202,81 +202,81 @@ func runAllExprBuilderTests(t *testing.T, ctx context.Context, dbType constants.
 	// Create test suites
 	basicExpressionsSuite := &BasicExpressionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	aggregationFunctionsSuite := &AggregationFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	windowFunctionsSuite := &WindowFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	stringFunctionsSuite := &StringFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	dateTimeFunctionsSuite := &DateTimeFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	mathFunctionsSuite := &MathFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	conditionalFunctionsSuite := &ConditionalFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	typeConversionFunctionsSuite := &TypeConversionFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	jsonFunctionsSuite := &JsonFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 
 	utilityFunctionsSuite := &UtilityFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
-			Ctx:    ctx,
-			DbType: dbType,
-			Db:     db,
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
 		},
 	}
 

@@ -16,7 +16,7 @@ type SelectTestSuite struct {
 
 // TestCTE tests Common Table Expression methods (With, WithValues, WithRecursive).
 func (suite *SelectTestSuite) TestCTE() {
-	suite.T().Logf("Testing CTE methods for %s", suite.DbType)
+	suite.T().Logf("Testing CTE methods for %s", suite.dbType)
 
 	suite.Run("WithBasicCTE", func() {
 		type PostWithUser struct {
@@ -27,7 +27,7 @@ func (suite *SelectTestSuite) TestCTE() {
 
 		var postsWithUsers []PostWithUser
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			With("active_users", func(query SelectQuery) {
 				query.Model((*User)(nil)).
 					Select("id", "name").
@@ -46,7 +46,7 @@ func (suite *SelectTestSuite) TestCTE() {
 			}).
 			OrderBy("p.title").
 			Limit(3).
-			Scan(suite.Ctx, &postsWithUsers)
+			Scan(suite.ctx, &postsWithUsers)
 
 		suite.NoError(err, "WITH clause should work correctly")
 		suite.True(len(postsWithUsers) > 0, "Should return posts with user information")
@@ -76,7 +76,7 @@ func (suite *SelectTestSuite) TestCTE() {
 
 		var statusCounts []StatusInfo
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			WithValues("status_values", &statusValues).
 			Select("sv.status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -88,7 +88,7 @@ func (suite *SelectTestSuite) TestCTE() {
 			}).
 			GroupBy("sv.status").
 			OrderBy("sv.status").
-			Scan(suite.Ctx, &statusCounts)
+			Scan(suite.ctx, &statusCounts)
 
 		suite.NoError(err, "WITH VALUES should work correctly")
 		suite.True(len(statusCounts) > 0, "Should return status counts")
@@ -101,7 +101,7 @@ func (suite *SelectTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithRecursiveCTE", func() {
-		if suite.DbType == constants.DbSQLite {
+		if suite.dbType == constants.DbSQLite {
 			suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated UNION SQL")
 		}
 
@@ -114,7 +114,7 @@ func (suite *SelectTestSuite) TestCTE() {
 
 		var commentTree []CommentHierarchy
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			WithRecursive("comment_tree", func(query SelectQuery) {
 				query.Model((*Post)(nil)).
 					Select("id", "category_id", "title", "status").
@@ -138,7 +138,7 @@ func (suite *SelectTestSuite) TestCTE() {
 			Table("comment_tree").
 			OrderBy("level", "id").
 			Limit(10).
-			Scan(suite.Ctx, &commentTree)
+			Scan(suite.ctx, &commentTree)
 
 		suite.NoError(err, "WITH RECURSIVE should work when supported")
 
@@ -152,17 +152,17 @@ func (suite *SelectTestSuite) TestCTE() {
 
 // TestSelectAll tests SelectAll method.
 func (suite *SelectTestSuite) TestSelectAll() {
-	suite.T().Logf("Testing SelectAll for %s", suite.DbType)
+	suite.T().Logf("Testing SelectAll for %s", suite.dbType)
 
 	suite.Run("SelectAllUsers", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			SelectAll().
 			OrderBy("name").
 			Limit(3).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "SelectAll should work correctly")
 		suite.Len(users, 3, "Should return 3 users")
@@ -178,7 +178,7 @@ func (suite *SelectTestSuite) TestSelectAll() {
 
 // TestSelectAndSelectAs tests Select and SelectAs methods.
 func (suite *SelectTestSuite) TestSelectAndSelectAs() {
-	suite.T().Logf("Testing Select and SelectAs for %s", suite.DbType)
+	suite.T().Logf("Testing Select and SelectAs for %s", suite.dbType)
 
 	suite.Run("SelectSpecificColumns", func() {
 		type UserBasic struct {
@@ -189,12 +189,12 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 
 		var users []UserBasic
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "email").
 			OrderBy("name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "Select with specific columns should work")
 		suite.Len(users, 2, "Should return 2 users")
@@ -217,7 +217,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 
 		var posts []PostWithAlias
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectAs("status", "post_status").
@@ -226,7 +226,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 			}, "view_display").
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "SelectAs should work correctly")
 		suite.True(len(posts) > 0, "Should return posts")
@@ -243,7 +243,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 
 // TestSelectExpr tests SelectExpr method.
 func (suite *SelectTestSuite) TestSelectExpr() {
-	suite.T().Logf("Testing SelectExpr for %s", suite.DbType)
+	suite.T().Logf("Testing SelectExpr for %s", suite.dbType)
 
 	suite.Run("SelectExpression", func() {
 		type PostWithCalculated struct {
@@ -255,7 +255,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 		var posts []PostWithCalculated
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -279,7 +279,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 			}, "view_range").
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "SelectExpr should work correctly")
 		suite.True(len(posts) > 0, "Should return posts")
@@ -304,7 +304,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 		var users []UserWithStats
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -323,7 +323,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 			}, "age_group").
 			OrderBy("name").
 			Limit(3).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "Multiple SelectExpr should work correctly")
 		suite.True(len(users) > 0, "Should return users")
@@ -342,17 +342,17 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 // TestSelectModelColumns tests SelectModelColumns method.
 func (suite *SelectTestSuite) TestSelectModelColumns() {
-	suite.T().Logf("Testing SelectModelColumns for %s", suite.DbType)
+	suite.T().Logf("Testing SelectModelColumns for %s", suite.dbType)
 
 	suite.Run("SelectModelColumnsBasic", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			SelectModelColumns().
 			OrderBy("name").
 			Limit(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "SelectModelColumns should work correctly")
 		suite.Len(users, 2, "Should return 2 users")
@@ -379,7 +379,7 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 
 		var users []UserWithExpr
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelColumns().
 			Select("name").
@@ -388,7 +388,7 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 			}, "name_len").
 			OrderBy("name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "SelectModelColumns with SelectExpr should work")
 		suite.True(len(users) > 0, "Should return users")
@@ -406,7 +406,7 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 
 // TestSelectModelPks tests SelectModelPks method.
 func (suite *SelectTestSuite) TestSelectModelPks() {
-	suite.T().Logf("Testing SelectModelPks for %s", suite.DbType)
+	suite.T().Logf("Testing SelectModelPks for %s", suite.dbType)
 
 	suite.Run("SelectModelPksBasic", func() {
 		type UserIDOnly struct {
@@ -415,12 +415,12 @@ func (suite *SelectTestSuite) TestSelectModelPks() {
 
 		var users []UserIDOnly
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelPks().
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "SelectModelPks should work correctly")
 		suite.Len(users, 3, "Should return 3 users")
@@ -439,7 +439,7 @@ func (suite *SelectTestSuite) TestSelectModelPks() {
 
 		var users []UserWithExpr
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelPks().
 			SelectExpr(func(eb ExprBuilder) any {
@@ -447,7 +447,7 @@ func (suite *SelectTestSuite) TestSelectModelPks() {
 			}, "name_desc").
 			OrderBy("name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "SelectModelPks with SelectExpr should work")
 		suite.True(len(users) > 0, "Should return users")
@@ -463,7 +463,7 @@ func (suite *SelectTestSuite) TestSelectModelPks() {
 
 // TestExclude tests Exclude and ExcludeAll methods.
 func (suite *SelectTestSuite) TestExclude() {
-	suite.T().Logf("Testing Exclude methods for %s", suite.DbType)
+	suite.T().Logf("Testing Exclude methods for %s", suite.dbType)
 
 	suite.Run("ExcludeSpecificColumns", func() {
 		type UserWithoutSensitive struct {
@@ -477,12 +477,12 @@ func (suite *SelectTestSuite) TestExclude() {
 
 		var users []UserWithoutSensitive
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Exclude("name", "email", "age", "is_active", "meta").
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "Exclude should work correctly")
 		suite.Len(users, 2, "Should return 2 users")
@@ -504,7 +504,7 @@ func (suite *SelectTestSuite) TestExclude() {
 
 		var posts []PostWithExpr
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			ExcludeAll().
 			SelectExpr(func(eb ExprBuilder) any {
@@ -520,7 +520,7 @@ func (suite *SelectTestSuite) TestExclude() {
 			}, "view_category").
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "ExcludeAll should work correctly")
 		suite.True(len(posts) > 0, "Should return posts")
@@ -536,16 +536,16 @@ func (suite *SelectTestSuite) TestExclude() {
 
 // TestSelectMutualExclusivity tests that base column selection methods are mutually exclusive.
 func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
-	suite.T().Logf("Testing Select method mutual exclusivity for %s", suite.DbType)
+	suite.T().Logf("Testing Select method mutual exclusivity for %s", suite.dbType)
 
 	suite.Run("SelectAllOverridesSelect", func() {
 		var users1 []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users1).
 			Select("name").
 			SelectAll().
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "SelectAll should override Select")
 		suite.True(len(users1) > 0, "Should return results")
@@ -561,11 +561,11 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 		var users2 []UserNameOnly
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectAll().
 			Select("name").
-			Scan(suite.Ctx, &users2)
+			Scan(suite.ctx, &users2)
 
 		suite.NoError(err, "Select should override SelectAll")
 		suite.True(len(users2) > 0, "Should return results")
@@ -577,11 +577,11 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 	suite.Run("SelectModelColumnsOverridesSelectAll", func() {
 		var users3 []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users3).
 			SelectAll().
 			SelectModelColumns().
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "SelectModelColumns should override SelectAll")
 		suite.True(len(users3) > 0, "Should return results")
@@ -592,11 +592,11 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 	suite.Run("SelectAllOverridesSelectModelColumns", func() {
 		var users4 []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users4).
 			SelectModelColumns().
 			SelectAll().
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "SelectAll should override SelectModelColumns")
 		suite.True(len(users4) > 0, "Should return results")
@@ -611,11 +611,11 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 		var users5 []UserIDOnly
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelColumns().
 			SelectModelPks().
-			Scan(suite.Ctx, &users5)
+			Scan(suite.ctx, &users5)
 
 		suite.NoError(err, "SelectModelPks should override SelectModelColumns")
 		suite.True(len(users5) > 0, "Should return results")
@@ -627,11 +627,11 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 	suite.Run("SelectModelColumnsOverridesSelectModelPks", func() {
 		var users6 []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users6).
 			SelectModelPks().
 			SelectModelColumns().
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "SelectModelColumns should override SelectModelPks")
 		suite.True(len(users6) > 0, "Should return results")
@@ -643,7 +643,7 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 
 // TestSelectExprCumulative tests that SelectExpr is cumulative and works with any base selection.
 func (suite *SelectTestSuite) TestSelectExprCumulative() {
-	suite.T().Logf("Testing SelectExpr cumulative behavior for %s", suite.DbType)
+	suite.T().Logf("Testing SelectExpr cumulative behavior for %s", suite.dbType)
 
 	suite.Run("SelectExprWithSelectAll", func() {
 		type UserWithComputed struct {
@@ -656,7 +656,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users1 []UserWithComputed
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectAll().
 			SelectExpr(func(eb ExprBuilder) any {
@@ -668,7 +668,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 				})
 			}, "age_group").
 			OrderBy("name").
-			Scan(suite.Ctx, &users1)
+			Scan(suite.ctx, &users1)
 
 		suite.NoError(err, "SelectExpr should work with SelectAll")
 		suite.True(len(users1) > 0, "Should return results")
@@ -689,7 +689,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users2 []UserWithRowNum
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "email").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -698,7 +698,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 				})
 			}, "row_num").
 			OrderBy("name").
-			Scan(suite.Ctx, &users2)
+			Scan(suite.ctx, &users2)
 
 		suite.NoError(err, "SelectExpr should work with Select")
 		suite.True(len(users2) > 0, "Should return results")
@@ -719,7 +719,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users3 []UserWithMultipleComputed
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -729,7 +729,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 				return eb.Length(eb.Column("name"))
 			}, "name_len").
 			OrderBy("name").
-			Scan(suite.Ctx, &users3)
+			Scan(suite.ctx, &users3)
 
 		suite.NoError(err, "Multiple SelectExpr should be cumulative")
 		suite.True(len(users3) > 0, "Should return results")
@@ -754,7 +754,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users4 []UserAllWithComputed
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -764,7 +764,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 			}, "row_num").
 			SelectAll().
 			OrderBy("name").
-			Scan(suite.Ctx, &users4)
+			Scan(suite.ctx, &users4)
 
 		suite.NoError(err, "SelectExpr should be preserved when switching to SelectAll")
 		suite.True(len(users4) > 0, "Should return results")
@@ -794,7 +794,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 		var users5 []UserModelWithTotal
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelColumns().
 			SelectExpr(func(eb ExprBuilder) any {
@@ -803,7 +803,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 				})
 			}, "total_count").
 			OrderBy("name").
-			Scan(suite.Ctx, &users5)
+			Scan(suite.ctx, &users5)
 
 		suite.NoError(err, "SelectExpr should work with SelectModelColumns")
 		suite.True(len(users5) > 0, "Should return results")
@@ -818,17 +818,17 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 // TestSelectIdempotency tests that SelectModelColumns and SelectModelPks are idempotent.
 func (suite *SelectTestSuite) TestSelectIdempotency() {
-	suite.T().Logf("Testing Select method idempotency for %s", suite.DbType)
+	suite.T().Logf("Testing Select method idempotency for %s", suite.dbType)
 
 	suite.Run("MultipleSelectModelColumnsCalls", func() {
 		var users1 []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users1).
 			SelectModelColumns().
 			SelectModelColumns().
 			SelectModelColumns().
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Multiple SelectModelColumns should not cause errors")
 		suite.True(len(users1) > 0, "Should return results")
@@ -844,12 +844,12 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 
 		var users2 []UserIDOnly
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelPks().
 			SelectModelPks().
 			SelectModelPks().
-			Scan(suite.Ctx, &users2)
+			Scan(suite.ctx, &users2)
 
 		suite.NoError(err, "Multiple SelectModelPks should not cause errors")
 		suite.True(len(users2) > 0, "Should return results")
@@ -861,12 +861,12 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 	suite.Run("MultipleSelectAllCalls", func() {
 		var users3 []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users3).
 			SelectAll().
 			SelectAll().
 			SelectAll().
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Multiple SelectAll should not cause errors")
 		suite.True(len(users3) > 0, "Should return results")
@@ -878,7 +878,7 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 
 // TestDistinct tests Distinct, DistinctOnColumns, and DistinctOnExpr methods.
 func (suite *SelectTestSuite) TestDistinct() {
-	suite.T().Logf("Testing Distinct methods for %s", suite.DbType)
+	suite.T().Logf("Testing Distinct methods for %s", suite.dbType)
 
 	suite.Run("BasicDistinct", func() {
 		type DistinctStatus struct {
@@ -887,12 +887,12 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 		var statuses []DistinctStatus
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Distinct().
 			Select("status").
 			OrderBy("status").
-			Scan(suite.Ctx, &statuses)
+			Scan(suite.ctx, &statuses)
 
 		suite.NoError(err, "DISTINCT should work correctly")
 		suite.True(len(statuses) > 0, "Should return distinct statuses")
@@ -905,8 +905,8 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 	suite.Run("DistinctOnColumns", func() {
 		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
-		if suite.DbType != "postgres" {
-			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.DbType)
+		if suite.dbType != "postgres" {
+			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.dbType)
 
 			return
 		}
@@ -918,13 +918,13 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 		var posts []DistinctPost
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			DistinctOnColumns("title").
 			Select("title", "status").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "DISTINCT ON columns should work when supported")
 		suite.True(len(posts) > 0, "Should return distinct posts")
@@ -937,8 +937,8 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 	suite.Run("DistinctOnExpr", func() {
 		// DISTINCT ON is PostgreSQL-specific, not supported by MySQL or SQLite
-		if suite.DbType != "postgres" {
-			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.DbType)
+		if suite.dbType != "postgres" {
+			suite.T().Skipf("DISTINCT ON test skipped for %s", suite.dbType)
 
 			return
 		}
@@ -951,7 +951,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 		var posts []DistinctExpr
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			DistinctOnExpr(func(eb ExprBuilder) any {
 				return eb.Upper(eb.Column("title"))
@@ -964,7 +964,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 				return eb.Upper(eb.Column("title"))
 			}).
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "DISTINCT ON expression should work when supported")
 		suite.True(len(posts) > 0, "Should return distinct expression posts")
@@ -978,7 +978,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 
 // TestModelAndTable tests Model, ModelTable, Table, TableFrom, TableExpr, and TableSubQuery methods.
 func (suite *SelectTestSuite) TestModelAndTable() {
-	suite.T().Logf("Testing Model and Table methods for %s", suite.DbType)
+	suite.T().Logf("Testing Model and Table methods for %s", suite.dbType)
 
 	suite.Run("ModelAndModelTable", func() {
 		type PostFromUserTable struct {
@@ -988,7 +988,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 		var posts []PostFromUserTable
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			ModelTable("test_user", "u").
 			Select("u.id", "u.name").
 			Where(func(cb ConditionBuilder) {
@@ -996,7 +996,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 			}).
 			OrderBy("u.name").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "ModelTable should work correctly")
 		suite.True(len(posts) > 0, "Should return users from specified table")
@@ -1016,7 +1016,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 		var users []TableWithAlias
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Table("test_user", "u").
 			Select("u.id", "u.name", "u.email").
 			Where(func(cb ConditionBuilder) {
@@ -1024,7 +1024,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 			}).
 			OrderBy("u.name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "Table with alias should work correctly")
 		suite.True(len(users) > 0, "Should return users from table with alias")
@@ -1043,7 +1043,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 		var users []UserFromModel
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			TableFrom((*User)(nil), "u").
 			Select("u.id", "u.name").
 			Where(func(cb ConditionBuilder) {
@@ -1051,7 +1051,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 			}).
 			OrderBy("u.name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "TableFrom should work correctly")
 		suite.True(len(users) > 0, "Should return users from model")
@@ -1070,7 +1070,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 		var users []ExprTable
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			TableExpr(func(eb ExprBuilder) any {
 				return eb.Expr("(SELECT id, name FROM ? WHERE is_active = ?)",
 					bun.Name("test_user"),
@@ -1079,7 +1079,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 			Select("active_users.id", "active_users.name").
 			OrderBy("active_users.name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "TableExpr should work when supported")
 		suite.True(len(users) > 0, "Should return users from expression table")
@@ -1098,7 +1098,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 		var users []SubQueryTable
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			TableSubQuery(func(query SelectQuery) {
 				query.Model((*User)(nil)).
 					Select("id", "name").
@@ -1109,7 +1109,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 			Select("active_users.id", "active_users.name").
 			OrderBy("active_users.name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "TableSubQuery should work correctly")
 		suite.True(len(users) > 0, "Should return users from subquery table")
@@ -1123,7 +1123,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 // TestJoins tests all join types and variants.
 func (suite *SelectTestSuite) TestJoins() {
-	suite.T().Logf("Testing Join methods for %s", suite.DbType)
+	suite.T().Logf("Testing Join methods for %s", suite.dbType)
 
 	suite.Run("BasicInnerJoin", func() {
 		type PostWithUser struct {
@@ -1134,7 +1134,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var posts []PostWithUser
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectAs("u.name", "user_name").
@@ -1146,7 +1146,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "INNER JOIN should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with user info")
@@ -1166,7 +1166,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var categories []CategoryWithPostCount
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Category)(nil)).
 			Select("id", "name").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1177,7 +1177,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			}).
 			GroupBy("id", "name").
 			OrderBy("name").
-			Scan(suite.Ctx, &categories)
+			Scan(suite.ctx, &categories)
 
 		suite.NoError(err, "LEFT JOIN should work correctly")
 		suite.True(len(categories) > 0, "Should return categories with post counts")
@@ -1199,7 +1199,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var users []UserWithPosts
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			SelectAs("p.id", "post_id").
@@ -1212,7 +1212,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			}).
 			OrderBy("name").
 			Limit(3).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "RIGHT JOIN should work when supported")
 		suite.True(len(users) > 0, "Should return users with posts")
@@ -1223,7 +1223,7 @@ func (suite *SelectTestSuite) TestJoins() {
 	})
 
 	suite.Run("FullJoin", func() {
-		if suite.DbType == constants.DbMySQL {
+		if suite.dbType == constants.DbMySQL {
 			suite.T().Skip("Skipping for MySQL: FULL JOIN not supported (use LEFT JOIN UNION RIGHT JOIN instead)")
 
 			return
@@ -1238,7 +1238,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var users []UserWithPosts
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			SelectAs("p.id", "post_id").
@@ -1248,7 +1248,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			}).
 			OrderBy("name").
 			Limit(2).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "FULL JOIN should work when supported")
 		suite.True(len(users) > 0, "Should return users with full join")
@@ -1268,7 +1268,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var cross []UserCategoryCross
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Table("test_user", "u").
 			SelectAs("u.id", "user_id").
 			SelectAs("u.name", "user_name").
@@ -1280,7 +1280,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			}).
 			OrderBy("u.name", "c.name").
 			Limit(4).
-			Scan(suite.Ctx, &cross)
+			Scan(suite.ctx, &cross)
 
 		suite.NoError(err, "CROSS JOIN should work when supported")
 		suite.True(len(cross) > 0, "Should return cross product")
@@ -1299,7 +1299,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var posts []PostWithCategory
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectAs("c.name", "category_name").
@@ -1311,7 +1311,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "JOIN with table name should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with categories")
@@ -1331,7 +1331,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 		var posts []PostWithActiveUser
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectAs("active_users.name", "user_name").
@@ -1352,7 +1352,7 @@ func (suite *SelectTestSuite) TestJoins() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "JOIN with subquery should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with active users")
@@ -1366,7 +1366,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 // TestJoinRelations tests JoinRelations method with RelationSpec.
 func (suite *SelectTestSuite) TestJoinRelations() {
-	suite.T().Logf("Testing JoinRelations for %s", suite.DbType)
+	suite.T().Logf("Testing JoinRelations for %s", suite.dbType)
 
 	// Define result struct for JoinRelations tests
 	type PostWithUserName struct {
@@ -1378,7 +1378,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 	suite.Run("BasicJoinRelations", func() {
 		var posts []PostWithUserName
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
 			JoinRelations(&RelationSpec{
@@ -1394,7 +1394,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "JoinRelations should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with user names")
@@ -1416,7 +1416,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 		var posts []PostWithUserAndCategory
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
 			JoinRelations(
@@ -1442,7 +1442,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "Multiple JoinRelations should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with user and category names")
@@ -1464,7 +1464,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 		var posts []PostWithCategory
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
 			JoinRelations(&RelationSpec{
@@ -1481,7 +1481,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "JoinRelations with INNER JOIN should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with category names")
@@ -1500,7 +1500,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 		var posts []PostWithActiveUser
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("p.id", "p.title").
 			JoinRelations(&RelationSpec{
@@ -1519,7 +1519,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &posts)
+			Scan(suite.ctx, &posts)
 
 		suite.NoError(err, "JoinRelations with custom condition should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with active users only")
@@ -1528,7 +1528,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 	suite.Run("RelationMethod", func() {
 		var posts []Post
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&posts).
 			Relation("User").
 			Relation("Category").
@@ -1537,7 +1537,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Relation method should load related objects")
 		suite.True(len(posts) > 0, "Should return posts with relations")
@@ -1559,7 +1559,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 	suite.Run("RelationMethodWithApply", func() {
 		var posts []Post
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&posts).
 			Relation("User", func(query SelectQuery) {
 				// Customize User relation to only select specific columns
@@ -1570,7 +1570,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 			}).
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Relation with apply should work correctly")
 		suite.True(len(posts) > 0, "Should return posts with customized user relations")
@@ -1589,12 +1589,12 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 // TestWhere tests Where, WherePk, WhereDeleted, and IncludeDeleted methods.
 func (suite *SelectTestSuite) TestWhere() {
-	suite.T().Logf("Testing Where methods for %s", suite.DbType)
+	suite.T().Logf("Testing Where methods for %s", suite.dbType)
 
 	suite.Run("BasicWhere", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			Where(func(cb ConditionBuilder) {
 				cb.IsTrue("is_active").
@@ -1602,7 +1602,7 @@ func (suite *SelectTestSuite) TestWhere() {
 			}).
 			OrderBy("name").
 			Limit(3).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "WHERE with conditions should work correctly")
 		suite.True(len(users) > 0, "Should return active users older than 25")
@@ -1617,20 +1617,20 @@ func (suite *SelectTestSuite) TestWhere() {
 	suite.Run("WherePk", func() {
 		var firstUser User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&firstUser).
 			OrderBy("name").
 			Limit(1).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch first user")
 
 		var user User
 
 		user.Id = firstUser.Id
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&user).
 			WherePk().
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "WHERE PK should work correctly")
 		suite.Equal(firstUser.Id, user.Id, "Should find user by primary key")
@@ -1642,7 +1642,7 @@ func (suite *SelectTestSuite) TestWhere() {
 
 // TestGroupByAndHaving tests GroupBy, GroupByExpr, and Having methods.
 func (suite *SelectTestSuite) TestGroupByAndHaving() {
-	suite.T().Logf("Testing GroupBy and Having methods for %s", suite.DbType)
+	suite.T().Logf("Testing GroupBy and Having methods for %s", suite.dbType)
 
 	suite.Run("BasicGroupBy", func() {
 		type UserCount struct {
@@ -1652,7 +1652,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 		var userCounts []UserCount
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1660,7 +1660,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 			}, "count").
 			GroupBy("age").
 			OrderBy("age").
-			Scan(suite.Ctx, &userCounts)
+			Scan(suite.ctx, &userCounts)
 
 		suite.NoError(err, "GROUP BY should work correctly")
 		suite.True(len(userCounts) > 0, "Should return user counts by age")
@@ -1679,7 +1679,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 		var ageGroups []UserByAgeGroup
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Case(func(cb CaseBuilder) {
@@ -1708,7 +1708,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 				// Use positional reference to the first select column (age_group)
 				return 1
 			}).
-			Scan(suite.Ctx, &ageGroups)
+			Scan(suite.ctx, &ageGroups)
 
 		suite.NoError(err, "GROUP BY expression should work correctly")
 		suite.True(len(ageGroups) > 0, "Should return users by age group")
@@ -1727,7 +1727,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 		var ageStats []AgeStats
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1740,7 +1740,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 				})
 			}).
 			OrderBy("age").
-			Scan(suite.Ctx, &ageStats)
+			Scan(suite.ctx, &ageStats)
 
 		suite.NoError(err, "HAVING should work correctly")
 		suite.True(len(ageStats) > 0, "Should return ages with users")
@@ -1754,18 +1754,18 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 
 // TestOrderBy tests OrderBy, OrderByDesc, and OrderByExpr methods.
 func (suite *SelectTestSuite) TestOrderBy() {
-	suite.T().Logf("Testing OrderBy methods for %s", suite.DbType)
+	suite.T().Logf("Testing OrderBy methods for %s", suite.dbType)
 
 	suite.Run("OrderByColumns", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			Select("id", "name", "age").
 			OrderBy("age").
 			OrderByDesc("name").
 			Limit(5).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "ORDER BY should work correctly")
 		suite.Len(users, 3, "Should return 3 users")
@@ -1791,7 +1791,7 @@ func (suite *SelectTestSuite) TestOrderBy() {
 
 		var users []UserWithComputedOrder
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1815,7 +1815,7 @@ func (suite *SelectTestSuite) TestOrderBy() {
 				})
 			}).
 			Limit(5).
-			Scan(suite.Ctx, &users)
+			Scan(suite.ctx, &users)
 
 		suite.NoError(err, "ORDER BY expression should work correctly")
 		suite.True(len(users) > 0, "Should return users with computed ordering")
@@ -1829,23 +1829,23 @@ func (suite *SelectTestSuite) TestOrderBy() {
 
 // TestPagination tests Limit, Offset, and Paginate methods.
 func (suite *SelectTestSuite) TestPagination() {
-	suite.T().Logf("Testing Pagination methods for %s", suite.DbType)
+	suite.T().Logf("Testing Pagination methods for %s", suite.dbType)
 
 	suite.Run("LimitAndOffset", func() {
 		// Get total count first
-		totalCount, err := suite.Db.NewSelect().
+		totalCount, err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			Count(suite.Ctx)
+			Count(suite.ctx)
 		suite.NoError(err, "Should count total users")
 
 		// Get first page
 		var page1 []User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&page1).
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "First page should work")
 		suite.Len(page1, 2, "First page should have 2 users")
@@ -1853,12 +1853,12 @@ func (suite *SelectTestSuite) TestPagination() {
 		// Get second page
 		var page2 []User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&page2).
 			OrderBy("id").
 			Limit(2).
 			Offset(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Second page should work")
 		suite.True(len(page2) > 0, "Second page should have users")
@@ -1881,11 +1881,11 @@ func (suite *SelectTestSuite) TestPagination() {
 
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			OrderBy("id").
 			Paginate(pageable).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Paginate should work correctly")
 		suite.True(len(users) > 0, "Should return paginated results")
@@ -1897,10 +1897,10 @@ func (suite *SelectTestSuite) TestPagination() {
 
 // TestLocking tests ForShare and ForUpdate methods.
 func (suite *SelectTestSuite) TestLocking() {
-	suite.T().Logf("Testing Locking methods for %s", suite.DbType)
+	suite.T().Logf("Testing Locking methods for %s", suite.dbType)
 
 	// SQLite doesn't support row-level locking (FOR SHARE/FOR UPDATE)
-	if suite.DbType == constants.DbSQLite {
+	if suite.dbType == constants.DbSQLite {
 		suite.T().Skip("Skipping for SQLite: row-level locking (FOR SHARE/FOR UPDATE) not supported, uses database-level locking instead")
 
 		return
@@ -1909,14 +1909,14 @@ func (suite *SelectTestSuite) TestLocking() {
 	suite.Run("ForShare", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			ForShare().
 			Where(func(cb ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			Limit(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "FOR SHARE should work when supported")
 		suite.True(len(users) > 0, "Should return users with share lock")
@@ -1929,7 +1929,7 @@ func (suite *SelectTestSuite) TestLocking() {
 	suite.Run("ForUpdate", func() {
 		var posts []Post
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&posts).
 			ForUpdate().
 			Where(func(cb ConditionBuilder) {
@@ -1937,7 +1937,7 @@ func (suite *SelectTestSuite) TestLocking() {
 			}).
 			OrderBy("id").
 			Limit(1).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "FOR UPDATE should work when supported")
 		suite.True(len(posts) > 0, "Should return posts with update lock")
@@ -1950,7 +1950,7 @@ func (suite *SelectTestSuite) TestLocking() {
 	suite.Run("ForUpdateNoWait", func() {
 		var posts []Post
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&posts).
 			ForUpdateNoWait().
 			Where(func(cb ConditionBuilder) {
@@ -1958,7 +1958,7 @@ func (suite *SelectTestSuite) TestLocking() {
 			}).
 			OrderBy("id").
 			Limit(1).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "FOR UPDATE NOWAIT should work when supported")
 		suite.True(len(posts) > 0, "Should return posts with NOWAIT lock")
@@ -1971,7 +1971,7 @@ func (suite *SelectTestSuite) TestLocking() {
 	suite.Run("ForUpdateSkipLocked", func() {
 		var posts []Post
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&posts).
 			ForUpdateSkipLocked().
 			Where(func(cb ConditionBuilder) {
@@ -1979,7 +1979,7 @@ func (suite *SelectTestSuite) TestLocking() {
 			}).
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "FOR UPDATE SKIP LOCKED should work when supported")
 		suite.True(len(posts) > 0, "Should return posts with SKIP LOCKED option")
@@ -1992,9 +1992,9 @@ func (suite *SelectTestSuite) TestLocking() {
 
 // TestSetOperations tests Union, Intersect, and Except methods.
 func (suite *SelectTestSuite) TestSetOperations() {
-	suite.T().Logf("Testing Set Operations for %s", suite.DbType)
+	suite.T().Logf("Testing Set Operations for %s", suite.dbType)
 
-	if suite.DbType == constants.DbSQLite {
+	if suite.dbType == constants.DbSQLite {
 		suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated set operation SQL, resulting in syntax errors")
 
 		return
@@ -2008,7 +2008,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 
 		var results []CombinedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Table("test_user").
 			Select("name").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -2026,7 +2026,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 			}).
 			OrderBy("name").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "UNION should work correctly")
 		suite.True(len(results) > 0, "Should return combined results")
@@ -2046,7 +2046,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 
 		var results []CombinedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Table("test_user").
 			Select("name").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -2062,7 +2062,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 					Limit(1)
 			}).
 			OrderBy("type", "name").
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "UNION ALL should work correctly")
 		suite.True(len(results) > 0, "Should return combined results with duplicates")
@@ -2073,7 +2073,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 	})
 
 	suite.Run("Intersect", func() {
-		count, err := suite.Db.NewSelect().
+		count, err := suite.db.NewSelect().
 			TableSubQuery(func(query SelectQuery) {
 				query.Table("test_user").
 					Select("name").
@@ -2088,7 +2088,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 							})
 					})
 			}, "t").
-			Count(suite.Ctx)
+			Count(suite.ctx)
 
 		suite.NoError(err, "INTERSECT should work when supported")
 		suite.True(count >= 0, "Count should be non-negative")
@@ -2096,7 +2096,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 	})
 
 	suite.Run("Except", func() {
-		count, err := suite.Db.NewSelect().
+		count, err := suite.db.NewSelect().
 			TableSubQuery(func(query SelectQuery) {
 				query.Table("test_user").
 					Select("name").
@@ -2108,7 +2108,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 							})
 					})
 			}, "t").
-			Count(suite.Ctx)
+			Count(suite.ctx)
 
 		suite.NoError(err, "EXCEPT should work when supported")
 		suite.True(count >= 0, "Count should be non-negative")
@@ -2118,12 +2118,12 @@ func (suite *SelectTestSuite) TestSetOperations() {
 
 // TestApply tests Apply and ApplyIf methods.
 func (suite *SelectTestSuite) TestApply() {
-	suite.T().Logf("Testing Apply methods for %s", suite.DbType)
+	suite.T().Logf("Testing Apply methods for %s", suite.dbType)
 
 	suite.Run("BasicApply", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			Apply(
 				func(query SelectQuery) {
@@ -2136,7 +2136,7 @@ func (suite *SelectTestSuite) TestApply() {
 				},
 			).
 			Limit(3).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Apply should work correctly")
 		suite.Len(users, 2, "Should return 2 active users")
@@ -2150,7 +2150,7 @@ func (suite *SelectTestSuite) TestApply() {
 	suite.Run("ApplyIfTrue", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			ApplyIf(
 				true,
@@ -2164,7 +2164,7 @@ func (suite *SelectTestSuite) TestApply() {
 				},
 			).
 			Limit(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "ApplyIf(true) should apply functions")
 		suite.Len(users, 2, "Should return 2 users")
@@ -2177,7 +2177,7 @@ func (suite *SelectTestSuite) TestApply() {
 	suite.Run("ApplyIfFalse", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			ApplyIf(
 				false,
@@ -2188,7 +2188,7 @@ func (suite *SelectTestSuite) TestApply() {
 				},
 			).
 			Limit(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "ApplyIf(false) should skip functions")
 		suite.Len(users, 2, "Should return 2 users (no filter applied)")
@@ -2201,19 +2201,19 @@ func (suite *SelectTestSuite) TestApply() {
 
 // TestExecution tests Exec, Scan, Rows, ScanAndCount, Count, and Exists methods.
 func (suite *SelectTestSuite) TestExecution() {
-	suite.T().Logf("Testing Execution methods for %s", suite.DbType)
+	suite.T().Logf("Testing Execution methods for %s", suite.dbType)
 
 	suite.Run("BasicScan", func() {
 		var users []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model(&users).
 			Where(func(cb ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			OrderBy("name").
 			Limit(2).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 
 		suite.NoError(err, "Basic Scan should work")
 		suite.Len(users, 2, "Should return 2 users")
@@ -2224,12 +2224,12 @@ func (suite *SelectTestSuite) TestExecution() {
 	})
 
 	suite.Run("Count", func() {
-		count, err := suite.Db.NewSelect().
+		count, err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
-			Count(suite.Ctx)
+			Count(suite.ctx)
 
 		suite.NoError(err, "Count should work")
 		suite.True(count > 0, "Should have active users")
@@ -2238,12 +2238,12 @@ func (suite *SelectTestSuite) TestExecution() {
 	})
 
 	suite.Run("Exists", func() {
-		exists, err := suite.Db.NewSelect().
+		exists, err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
-			Exists(suite.Ctx)
+			Exists(suite.ctx)
 
 		suite.NoError(err, "Exists should work")
 		suite.True(exists, "Alice should exist")
@@ -2254,14 +2254,14 @@ func (suite *SelectTestSuite) TestExecution() {
 	suite.Run("ScanAndCount", func() {
 		var users []User
 
-		total, err := suite.Db.NewSelect().
+		total, err := suite.db.NewSelect().
 			Model(&users).
 			Where(func(cb ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			OrderBy("name").
 			Limit(2).
-			ScanAndCount(suite.Ctx)
+			ScanAndCount(suite.ctx)
 
 		suite.NoError(err, "ScanAndCount should work")
 		suite.Len(users, 2, "Should return 2 users")
@@ -2271,14 +2271,14 @@ func (suite *SelectTestSuite) TestExecution() {
 	})
 
 	suite.Run("Rows", func() {
-		rows, err := suite.Db.NewSelect().
+		rows, err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.IsTrue("is_active")
 			}).
 			OrderBy("name").
 			Limit(2).
-			Rows(suite.Ctx)
+			Rows(suite.ctx)
 
 		suite.NoError(err, "Rows should work")
 		suite.NotNil(rows, "Rows should not be nil")
@@ -2301,12 +2301,12 @@ func (suite *SelectTestSuite) TestExecution() {
 			Name string `bun:"name"`
 		}
 
-		_, err := suite.Db.NewSelect().
+		_, err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "alice@example.com")
 			}).
-			Exec(suite.Ctx, &result)
+			Exec(suite.ctx, &result)
 
 		suite.NoError(err, "Exec should work when supported")
 		suite.T().Logf("Exec result: %s", result.Name)

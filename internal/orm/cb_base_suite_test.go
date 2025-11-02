@@ -12,7 +12,7 @@ type ConditionBuilderTestSuite struct {
 func (suite *ConditionBuilderTestSuite) assertQueryReturnsUsers(query SelectQuery) []User {
 	var users []User
 
-	err := query.Scan(suite.Ctx, &users)
+	err := query.Scan(suite.ctx, &users)
 	suite.NoError(err, "Query should execute successfully")
 
 	return users
@@ -22,7 +22,7 @@ func (suite *ConditionBuilderTestSuite) assertQueryReturnsUsers(query SelectQuer
 func (suite *ConditionBuilderTestSuite) assertQueryReturnsPosts(query SelectQuery) []Post {
 	var posts []Post
 
-	err := query.Scan(suite.Ctx, &posts)
+	err := query.Scan(suite.ctx, &posts)
 	suite.NoError(err, "Query should execute successfully")
 
 	return posts

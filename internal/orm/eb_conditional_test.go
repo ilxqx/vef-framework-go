@@ -9,7 +9,7 @@ type ConditionalFunctionsTestSuite struct {
 
 // TestCoalesce tests the Coalesce function.
 func (suite *ConditionalFunctionsTestSuite) TestCoalesce() {
-	suite.T().Logf("Testing Coalesce function for %s", suite.DbType)
+	suite.T().Logf("Testing Coalesce function for %s", suite.dbType)
 
 	suite.Run("CoalesceWithDefaults", func() {
 		type CoalesceResult struct {
@@ -22,7 +22,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesce() {
 
 		var coalesceResults []CoalesceResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectAs("description", "description").
@@ -37,7 +37,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesce() {
 			}, "coalesce_number").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &coalesceResults)
+			Scan(suite.ctx, &coalesceResults)
 
 		suite.NoError(err, "Coalesce should work correctly")
 		suite.True(len(coalesceResults) > 0, "Should have coalesce results")
@@ -61,7 +61,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesce() {
 
 // TestNullIf tests the NullIf function.
 func (suite *ConditionalFunctionsTestSuite) TestNullIf() {
-	suite.T().Logf("Testing NullIf function for %s", suite.DbType)
+	suite.T().Logf("Testing NullIf function for %s", suite.dbType)
 
 	suite.Run("NullIfEqualityCheck", func() {
 		type NullIfResult struct {
@@ -73,7 +73,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIf() {
 
 		var nullIfResults []NullIfResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -84,7 +84,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIf() {
 			}, "check_views").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &nullIfResults)
+			Scan(suite.ctx, &nullIfResults)
 
 		suite.NoError(err, "NullIf should work correctly")
 		suite.True(len(nullIfResults) > 0, "Should have NullIf results")
@@ -105,7 +105,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIf() {
 
 // TestIfNull tests the IfNull function.
 func (suite *ConditionalFunctionsTestSuite) TestIfNull() {
-	suite.T().Logf("Testing IfNull function for %s", suite.DbType)
+	suite.T().Logf("Testing IfNull function for %s", suite.dbType)
 
 	suite.Run("IfNullWithDefaults", func() {
 		type IfNullResult struct {
@@ -116,7 +116,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNull() {
 
 		var ifNullResults []IfNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -127,7 +127,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNull() {
 			}, "view_count").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &ifNullResults)
+			Scan(suite.ctx, &ifNullResults)
 
 		suite.NoError(err, "IfNull should work correctly")
 		suite.True(len(ifNullResults) > 0, "Should have IfNull results")
@@ -144,7 +144,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNull() {
 
 // TestCombinedConditionalFunctions tests multiple conditional functions working together.
 func (suite *ConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
-	suite.T().Logf("Testing combined conditional functions for %s", suite.DbType)
+	suite.T().Logf("Testing combined conditional functions for %s", suite.dbType)
 
 	suite.Run("NestedConditionalFunctions", func() {
 		type CombinedResult struct {
@@ -158,7 +158,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
 
 		var combinedResults []CombinedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -189,7 +189,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
 			}, "view_category").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &combinedResults)
+			Scan(suite.ctx, &combinedResults)
 
 		suite.NoError(err, "Combined conditional functions should work")
 		suite.True(len(combinedResults) > 0, "Should have combined results")
@@ -208,7 +208,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCombinedConditionalFunctions() {
 
 // TestCoalesceBoundaryConditions tests Coalesce function with boundary conditions.
 func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
-	suite.T().Logf("Testing Coalesce boundary conditions for %s", suite.DbType)
+	suite.T().Logf("Testing Coalesce boundary conditions for %s", suite.dbType)
 
 	suite.Run("CoalesceSingleArgument", func() {
 		type SingleArgResult struct {
@@ -219,7 +219,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		var results []SingleArgResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -227,7 +227,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 			}, "single_value").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Coalesce with minimal arguments should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -247,7 +247,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		var results []AllNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -255,7 +255,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 			}, "all_null_val").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Coalesce with all NULL arguments should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -275,7 +275,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		var results []ManyArgsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -289,7 +289,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 			}, "final_value").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Coalesce with many arguments should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -303,7 +303,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 // TestNullIfWithNullArguments tests NullIf function with NULL arguments.
 func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
-	suite.T().Logf("Testing NullIf with NULL arguments for %s", suite.DbType)
+	suite.T().Logf("Testing NullIf with NULL arguments for %s", suite.dbType)
 
 	suite.Run("NullIfFirstArgumentNull", func() {
 		type FirstNullResult struct {
@@ -314,7 +314,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		var results []FirstNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -322,7 +322,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 			}, "result").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NullIf with NULL as first argument should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -342,7 +342,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		var results []SecondNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -350,7 +350,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 			}, "result").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NullIf with NULL as second argument should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -370,7 +370,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		var results []BothNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -378,7 +378,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 			}, "result").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NullIf with both NULL arguments should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -392,7 +392,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 // TestIfNullWithNullArguments tests IfNull function with NULL arguments.
 func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
-	suite.T().Logf("Testing IfNull with NULL arguments for %s", suite.DbType)
+	suite.T().Logf("Testing IfNull with NULL arguments for %s", suite.dbType)
 
 	suite.Run("IfNullDefaultValueNull", func() {
 		type DefaultNullResult struct {
@@ -403,7 +403,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 		var results []DefaultNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -411,7 +411,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 			}, "result").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "IfNull with NULL default value should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -432,7 +432,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 		var results []ValueNullDefaultResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -443,7 +443,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 			}).
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "IfNull with value and NULL default should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -458,7 +458,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 // TestConditionalFunctionsSpecialValues tests conditional functions with special values.
 func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValues() {
-	suite.T().Logf("Testing conditional functions with special values for %s", suite.DbType)
+	suite.T().Logf("Testing conditional functions with special values for %s", suite.dbType)
 
 	suite.Run("EmptyStringVsNull", func() {
 		type EmptyStringResult struct {
@@ -472,7 +472,7 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 
 		var results []EmptyStringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -489,7 +489,7 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 			}, "ifnull_empty_result").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Special value test should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -517,7 +517,7 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 
 		var results []ZeroVsNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -534,7 +534,7 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 			}, "ifnull_zero_result").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Zero vs NULL test should work")
 		suite.True(len(results) > 0, "Should have results")

@@ -18,7 +18,7 @@ type InsertTestSuite struct {
 
 // TestBasicInsert tests Model and Exec methods with single and bulk inserts.
 func (suite *InsertTestSuite) TestBasicInsert() {
-	suite.T().Logf("Testing basic INSERT for %s", suite.DbType)
+	suite.T().Logf("Testing basic INSERT for %s", suite.dbType)
 
 	suite.Run("InsertSingleRecord", func() {
 		user := &User{
@@ -28,32 +28,32 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert single user successfully")
 		suite.NotEmpty(user.Id, "User Id should be set after insert")
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "john@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve inserted user")
 		suite.Equal("John Doe", retrieved.Name)
 		suite.Equal("john@example.com", retrieved.Email)
 
 		suite.T().Logf("Inserted user: Id=%s, Name=%s", retrieved.Id, retrieved.Name)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "john@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -63,9 +63,9 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 			{Name: "Mike Wilson", Email: "mike@example.com", Age: 31, IsActive: false},
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(&users).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert multiple users successfully")
 
 		for _, user := range users {
@@ -74,21 +74,21 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 
 		var retrieved []User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.In("email", []any{"jane@example.com", "mike@example.com"})
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve all inserted users")
 		suite.Len(retrieved, 2, "Should have inserted 2 users")
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.In("email", []any{"jane@example.com", "mike@example.com"})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
@@ -96,10 +96,10 @@ func (suite *InsertTestSuite) TestBasicInsert() {
 // TestCTE tests With, WithValues, and WithRecursive methods.
 // MySQL does not support CTE in INSERT statements, so these tests are skipped for MySQL.
 func (suite *InsertTestSuite) TestCTE() {
-	suite.T().Logf("Testing CTE methods for %s", suite.DbType)
+	suite.T().Logf("Testing CTE methods for %s", suite.dbType)
 
-	if suite.DbType == constants.DbMySQL {
-		suite.T().Skipf("CTE in INSERT not supported on %s", suite.DbType)
+	if suite.dbType == constants.DbMySQL {
+		suite.T().Skipf("CTE in INSERT not supported on %s", suite.dbType)
 
 		return
 	}
@@ -110,7 +110,7 @@ func (suite *InsertTestSuite) TestCTE() {
 			Description: lo.ToPtr("Category created via CTE"),
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			With("existing_tech", func(sq SelectQuery) {
 				sq.Model((*Category)(nil)).
 					Select("name", "description").
@@ -119,18 +119,18 @@ func (suite *InsertTestSuite) TestCTE() {
 					})
 			}).
 			Model(category).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with CTE")
 		suite.NotEmpty(category.Id)
 
 		suite.T().Logf("Inserted via CTE: Id=%s, Name=%s", category.Id, category.Name)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*Category)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(category.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -151,21 +151,21 @@ func (suite *InsertTestSuite) TestCTE() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			WithValues("temp_data", &tempData).
 			Model(user).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with VALUES CTE")
 		suite.NotEmpty(user.Id)
 
 		suite.T().Logf("Inserted with VALUES CTE: Id=%s", user.Id)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "cte@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -177,7 +177,7 @@ func (suite *InsertTestSuite) TestCTE() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			WithRecursive("user_hierarchy", func(sq SelectQuery) {
 				sq.Model((*User)(nil)).
 					Select("id", "name").
@@ -187,18 +187,18 @@ func (suite *InsertTestSuite) TestCTE() {
 					Limit(1)
 			}).
 			Model(user).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with recursive CTE")
 		suite.NotEmpty(user.Id)
 
 		suite.T().Logf("Inserted with recursive CTE: Id=%s", user.Id)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "recursive@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
@@ -207,7 +207,7 @@ func (suite *InsertTestSuite) TestCTE() {
 // Note: Table/ModelTable/TableFrom/TableExpr/TableSubQuery are primarily for INSERT...SELECT queries.
 // Model() is the standard method for inserting from struct values.
 func (suite *InsertTestSuite) TestTableSpecification() {
-	suite.T().Logf("Testing table specification methods for %s", suite.DbType)
+	suite.T().Logf("Testing table specification methods for %s", suite.dbType)
 
 	suite.Run("ModelTableWithModel", func() {
 		user := &User{
@@ -217,20 +217,20 @@ func (suite *InsertTestSuite) TestTableSpecification() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert using Model (standard approach)")
 		suite.NotEmpty(user.Id)
 
 		suite.T().Logf("Inserted with Model: Id=%s", user.Id)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
@@ -238,7 +238,7 @@ func (suite *InsertTestSuite) TestTableSpecification() {
 // TestColumnSelection tests Select and Exclude methods.
 // Note: SelectAll and ExcludeAll are less commonly used with Model-based inserts.
 func (suite *InsertTestSuite) TestColumnSelection() {
-	suite.T().Logf("Testing column selection methods for %s", suite.DbType)
+	suite.T().Logf("Testing column selection methods for %s", suite.dbType)
 
 	suite.Run("ExcludeSpecificColumns", func() {
 		user := &User{
@@ -248,40 +248,40 @@ func (suite *InsertTestSuite) TestColumnSelection() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			Exclude("meta").
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert excluding specific columns")
 		suite.NotEmpty(user.Id)
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Exclude User", retrieved.Name)
 		suite.Equal("exclude@example.com", retrieved.Email)
 
 		suite.T().Logf("Inserted with Exclude: Id=%s, Name=%s", retrieved.Id, retrieved.Name)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
 
 // TestColumnValues tests Column and ColumnExpr methods.
 func (suite *InsertTestSuite) TestColumnValues() {
-	suite.T().Logf("Testing column value methods for %s", suite.DbType)
+	suite.T().Logf("Testing column value methods for %s", suite.dbType)
 
 	suite.Run("ColumnDirectValue", func() {
 		user := &User{
@@ -291,33 +291,33 @@ func (suite *InsertTestSuite) TestColumnValues() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			Column("name", "Overridden Name").
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with column override")
 		suite.NotEmpty(user.Id)
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "column@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Overridden Name", retrieved.Name, "Name should be overridden")
 		suite.Equal(int16(25), retrieved.Age, "Age should keep model value")
 
 		suite.T().Logf("Column override: Name=%s (overridden from Original Name)", retrieved.Name)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -329,34 +329,34 @@ func (suite *InsertTestSuite) TestColumnValues() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			ColumnExpr("name", func(eb ExprBuilder) any {
 				return eb.Upper(eb.Literal("Expr User"))
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with column expression")
 		suite.NotEmpty(user.Id)
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "expr@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("EXPR USER", retrieved.Name, "Name should be uppercased by expression")
 
 		suite.T().Logf("ColumnExpr result: Name=%s", retrieved.Name)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -368,23 +368,23 @@ func (suite *InsertTestSuite) TestColumnValues() {
 			IsActive: false,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			Column("name", "Multiple Override").
 			Column("age", 35).
 			Column("is_active", true).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with multiple column overrides")
 		suite.NotEmpty(user.Id)
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "multi@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Multiple Override", retrieved.Name)
 		suite.Equal(int16(35), retrieved.Age)
@@ -393,19 +393,19 @@ func (suite *InsertTestSuite) TestColumnValues() {
 		suite.T().Logf("Multiple overrides: Name=%s, Age=%d, IsActive=%v",
 			retrieved.Name, retrieved.Age, retrieved.IsActive)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
 
 // TestConflictHandling tests OnConflict with DO NOTHING and DO UPDATE.
 func (suite *InsertTestSuite) TestConflictHandling() {
-	suite.T().Logf("Testing conflict handling for %s", suite.DbType)
+	suite.T().Logf("Testing conflict handling for %s", suite.dbType)
 
 	suite.Run("OnConflictDoNothing", func() {
 		original := &User{
@@ -415,9 +415,9 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(original).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert original user")
 
 		duplicate := &User{
@@ -427,34 +427,34 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 			IsActive: false,
 		}
 
-		_, err = suite.Db.NewInsert().
+		_, err = suite.db.NewInsert().
 			Model(duplicate).
 			OnConflict(func(cb ConflictBuilder) {
 				cb.Columns("email").DoNothing()
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should handle conflict with DO NOTHING")
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "conflict@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Conflict User", retrieved.Name, "Original name should be unchanged")
 		suite.Equal(int16(30), retrieved.Age, "Original age should be unchanged")
 
 		suite.T().Logf("DO NOTHING: Name=%s, Age=%d (unchanged)", retrieved.Name, retrieved.Age)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "conflict@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -466,9 +466,9 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(original).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert original user")
 
 		update := &User{
@@ -478,7 +478,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 			IsActive: false,
 		}
 
-		_, err = suite.Db.NewInsert().
+		_, err = suite.db.NewInsert().
 			Model(update).
 			OnConflict(func(cb ConflictBuilder) {
 				cb.Columns("email").DoUpdate().
@@ -486,17 +486,17 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 					Set("age", 35).
 					Set("is_active", false)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should handle conflict with DO UPDATE")
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "update-conflict@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Update Modified", retrieved.Name, "Name should be updated")
 		suite.Equal(int16(35), retrieved.Age, "Age should be updated")
@@ -505,12 +505,12 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 		suite.T().Logf("DO UPDATE: Name=%s, Age=%d, IsActive=%v",
 			retrieved.Name, retrieved.Age, retrieved.IsActive)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "update-conflict@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -522,9 +522,9 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(original).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 
 		update := &User{
@@ -534,7 +534,7 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 			IsActive: true,
 		}
 
-		_, err = suite.Db.NewInsert().
+		_, err = suite.db.NewInsert().
 			Model(update).
 			OnConflict(func(cb ConflictBuilder) {
 				cb.Columns("email").DoUpdate().
@@ -543,28 +543,28 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 						wcb.GreaterThan("age", 35)
 					})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should handle conflict with conditional update")
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "conditional@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal(int16(45), retrieved.Age, "Age should be updated based on condition")
 
 		suite.T().Logf("Conditional UPDATE: Age=%d", retrieved.Age)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "conditional@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
@@ -572,10 +572,10 @@ func (suite *InsertTestSuite) TestConflictHandling() {
 // TestReturning tests Returning, ReturningAll, and ReturningNone.
 // RETURNING clause is only supported on PostgreSQL and SQLite.
 func (suite *InsertTestSuite) TestReturning() {
-	suite.T().Logf("Testing RETURNING clause for %s", suite.DbType)
+	suite.T().Logf("Testing RETURNING clause for %s", suite.dbType)
 
-	if suite.DbType == constants.DbMySQL {
-		suite.T().Skipf("RETURNING clause not supported on %s", suite.DbType)
+	if suite.dbType == constants.DbMySQL {
+		suite.T().Skipf("RETURNING clause not supported on %s", suite.dbType)
 
 		return
 	}
@@ -588,10 +588,10 @@ func (suite *InsertTestSuite) TestReturning() {
 			IsActive: true,
 		}
 
-		err := suite.Db.NewInsert().
+		err := suite.db.NewInsert().
 			Model(user).
 			Returning("id", "name", "email").
-			Scan(suite.Ctx, user)
+			Scan(suite.ctx, user)
 		suite.NoError(err, "Should insert with RETURNING specific columns")
 		suite.NotEmpty(user.Id, "Id should be returned")
 		suite.Equal("Return User", user.Name, "Name should be returned")
@@ -600,12 +600,12 @@ func (suite *InsertTestSuite) TestReturning() {
 		suite.T().Logf("RETURNING columns: Id=%s, Name=%s, Email=%s",
 			user.Id, user.Name, user.Email)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -617,10 +617,10 @@ func (suite *InsertTestSuite) TestReturning() {
 			IsActive: true,
 		}
 
-		err := suite.Db.NewInsert().
+		err := suite.db.NewInsert().
 			Model(user).
 			ReturningAll().
-			Scan(suite.Ctx, user)
+			Scan(suite.ctx, user)
 		suite.NoError(err, "Should insert with RETURNING all columns")
 		suite.NotEmpty(user.Id)
 		suite.Equal("Return All User", user.Name)
@@ -630,12 +630,12 @@ func (suite *InsertTestSuite) TestReturning() {
 		suite.T().Logf("RETURNING all: Id=%s, Name=%s, Age=%d",
 			user.Id, user.Name, user.Age)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -647,28 +647,28 @@ func (suite *InsertTestSuite) TestReturning() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			ReturningNone().
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert with RETURNING none")
 		suite.NotEmpty(user.Id, "Id should still be set by audit handler")
 
 		suite.T().Logf("RETURNING none: Id=%s (set by audit)", user.Id)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
 
 // TestApply tests Apply and ApplyIf methods.
 func (suite *InsertTestSuite) TestApply() {
-	suite.T().Logf("Testing Apply methods for %s", suite.DbType)
+	suite.T().Logf("Testing Apply methods for %s", suite.dbType)
 
 	suite.Run("ApplyUnconditional", func() {
 		user := &User{
@@ -682,32 +682,32 @@ func (suite *InsertTestSuite) TestApply() {
 			q.Column("name", "Applied Name")
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			Apply(applyFunc).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should apply function unconditionally")
 		suite.NotEmpty(user.Id)
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "apply@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Applied Name", retrieved.Name, "Name should be modified by Apply")
 
 		suite.T().Logf("Apply result: Name=%s", retrieved.Name)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -723,21 +723,21 @@ func (suite *InsertTestSuite) TestApply() {
 			q.Column("name", "Modified Name")
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user1).
 			ApplyIf(true, applyFunc).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 		suite.NotEmpty(user1.Id)
 
 		var retrieved1 User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved1).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "cond1@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Modified Name", retrieved1.Name, "ApplyIf(true) should apply function")
 
@@ -748,32 +748,32 @@ func (suite *InsertTestSuite) TestApply() {
 			IsActive: true,
 		}
 
-		_, err = suite.Db.NewInsert().
+		_, err = suite.db.NewInsert().
 			Model(user2).
 			ApplyIf(false, applyFunc).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 		suite.NotEmpty(user2.Id)
 
 		var retrieved2 User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved2).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "cond2@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Conditional User 2", retrieved2.Name, "ApplyIf(false) should not apply function")
 
 		suite.T().Logf("ApplyIf: true=%s, false=%s", retrieved1.Name, retrieved2.Name)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.In("email", []any{"cond1@example.com", "cond2@example.com"})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -795,21 +795,21 @@ func (suite *InsertTestSuite) TestApply() {
 			q.Column("is_active", true)
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			Apply(fn1, fn2, fn3).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should apply multiple functions")
 		suite.NotEmpty(user.Id)
 
 		var retrieved User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "multi-apply@example.com")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Equal("Step 1", retrieved.Name)
 		suite.Equal(int16(25), retrieved.Age)
@@ -818,12 +818,12 @@ func (suite *InsertTestSuite) TestApply() {
 		suite.T().Logf("Multiple Apply: Name=%s, Age=%d, IsActive=%v",
 			retrieved.Name, retrieved.Age, retrieved.IsActive)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -835,28 +835,28 @@ func (suite *InsertTestSuite) TestApply() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			Apply(nil).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should handle nil function safely")
 		suite.NotEmpty(user.Id)
 
 		suite.T().Logf("Nil function handled: Id=%s", user.Id)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.PkEquals(user.Id)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
 
 // TestBulkInsert tests bulk insert operations.
 func (suite *InsertTestSuite) TestBulkInsert() {
-	suite.T().Logf("Testing bulk INSERT for %s", suite.DbType)
+	suite.T().Logf("Testing bulk INSERT for %s", suite.dbType)
 
 	suite.Run("LargeBatchInsert", func() {
 		batchSize := 10
@@ -872,9 +872,9 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 		}
 
 		start := time.Now()
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(&users).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		duration := time.Since(start)
 
 		suite.NoError(err, "Should insert batch users successfully")
@@ -886,21 +886,21 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 
 		var retrieved []User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&retrieved).
 			Where(func(cb ConditionBuilder) {
 				cb.StartsWith("email", "batch")
 			}).
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 		suite.Len(retrieved, batchSize, "Should have inserted all batch users")
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.StartsWith("email", "batch")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -910,9 +910,9 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 			{Name: "Post Author 2", Email: "author2@bulk.com", Age: 25, IsActive: true},
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(&users).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert bulk users")
 
 		posts := []*Post{
@@ -935,9 +935,9 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 			},
 		}
 
-		_, err = suite.Db.NewInsert().
+		_, err = suite.db.NewInsert().
 			Model(&posts).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert related posts")
 
 		for _, post := range posts {
@@ -945,27 +945,27 @@ func (suite *InsertTestSuite) TestBulkInsert() {
 			suite.T().Logf("Bulk post: Id=%s, Title=%s, UserId=%s", post.Id, post.Title, post.UserId)
 		}
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*Post)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.StartsWith("title", "Bulk Post")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.In("email", []any{"author1@bulk.com", "author2@bulk.com"})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 }
 
 // TestErrorHandling tests error scenarios in insert operations.
 func (suite *InsertTestSuite) TestErrorHandling() {
-	suite.T().Logf("Testing error handling for %s", suite.DbType)
+	suite.T().Logf("Testing error handling for %s", suite.dbType)
 
 	suite.Run("UniqueConstraintViolation", func() {
 		original := &User{
@@ -975,9 +975,9 @@ func (suite *InsertTestSuite) TestErrorHandling() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(original).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Should insert original user")
 
 		duplicate := &User{
@@ -987,19 +987,19 @@ func (suite *InsertTestSuite) TestErrorHandling() {
 			IsActive: false,
 		}
 
-		_, err = suite.Db.NewInsert().
+		_, err = suite.db.NewInsert().
 			Model(duplicate).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.Error(err, "Insert with duplicate email should fail")
 
 		suite.T().Logf("Unique constraint violation handled correctly")
 
-		_, err = suite.Db.NewDelete().
+		_, err = suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("email", "unique@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err)
 	})
 
@@ -1009,11 +1009,11 @@ func (suite *InsertTestSuite) TestErrorHandling() {
 			Email: "",
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(invalid).
 			Column("name", nil).
 			Column("email", nil).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.Error(err, "Insert with null constraint violation should fail")
 
 		suite.T().Logf("NULL constraint violation handled correctly")
@@ -1027,10 +1027,10 @@ func (suite *InsertTestSuite) TestErrorHandling() {
 			IsActive: true,
 		}
 
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(user).
 			Column("age", "not a number").
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.Error(err, "Insert with invalid data type should fail")
 
 		suite.T().Logf("Invalid data type handled correctly")
@@ -1040,10 +1040,10 @@ func (suite *InsertTestSuite) TestErrorHandling() {
 // getCategoryId returns the first available category Id from fixture data.
 func (suite *InsertTestSuite) getCategoryId() string {
 	var category Category
-	if err := suite.Db.NewSelect().
+	if err := suite.db.NewSelect().
 		Model(&category).
 		Limit(1).
-		Scan(suite.Ctx); err != nil {
+		Scan(suite.ctx); err != nil {
 		suite.T().Fatalf("Failed to get category Id: %v", err)
 	}
 

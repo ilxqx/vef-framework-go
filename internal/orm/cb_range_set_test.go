@@ -8,11 +8,11 @@ type RangeSetOperationsTestSuite struct {
 
 // TestBetween tests the Between and OrBetween conditions.
 func (suite *RangeSetOperationsTestSuite) TestBetween() {
-	suite.T().Logf("Testing Between condition for %s", suite.DbType)
+	suite.T().Logf("Testing Between condition for %s", suite.dbType)
 
 	suite.Run("BasicBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Between("age", 25, 30)
@@ -31,7 +31,7 @@ func (suite *RangeSetOperationsTestSuite) TestBetween() {
 
 	suite.Run("OrBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Between("age", 25, 26).
@@ -53,11 +53,11 @@ func (suite *RangeSetOperationsTestSuite) TestBetween() {
 
 // TestNotBetween tests the NotBetween and OrNotBetween conditions.
 func (suite *RangeSetOperationsTestSuite) TestNotBetween() {
-	suite.T().Logf("Testing NotBetween condition for %s", suite.DbType)
+	suite.T().Logf("Testing NotBetween condition for %s", suite.dbType)
 
 	suite.Run("BasicNotBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotBetween("age", 26, 34)
@@ -76,7 +76,7 @@ func (suite *RangeSetOperationsTestSuite) TestNotBetween() {
 
 	suite.Run("OrNotBetween", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotBetween("age", 26, 29).
@@ -93,11 +93,11 @@ func (suite *RangeSetOperationsTestSuite) TestNotBetween() {
 
 // TestBetweenExpr tests the BetweenExpr and OrBetweenExpr conditions.
 func (suite *RangeSetOperationsTestSuite) TestBetweenExpr() {
-	suite.T().Logf("Testing BetweenExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing BetweenExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.BetweenExpr("age",
@@ -123,7 +123,7 @@ func (suite *RangeSetOperationsTestSuite) TestBetweenExpr() {
 
 	suite.Run("OrBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.BetweenExpr("age",
@@ -145,11 +145,11 @@ func (suite *RangeSetOperationsTestSuite) TestBetweenExpr() {
 
 // TestNotBetweenExpr tests the NotBetweenExpr and OrNotBetweenExpr conditions.
 func (suite *RangeSetOperationsTestSuite) TestNotBetweenExpr() {
-	suite.T().Logf("Testing NotBetweenExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing NotBetweenExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicNotBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotBetweenExpr("age",
@@ -171,7 +171,7 @@ func (suite *RangeSetOperationsTestSuite) TestNotBetweenExpr() {
 
 	suite.Run("OrNotBetweenExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotBetweenExpr("age",
@@ -193,11 +193,11 @@ func (suite *RangeSetOperationsTestSuite) TestNotBetweenExpr() {
 
 // TestIn tests the In and OrIn conditions.
 func (suite *RangeSetOperationsTestSuite) TestIn() {
-	suite.T().Logf("Testing In condition for %s", suite.DbType)
+	suite.T().Logf("Testing In condition for %s", suite.dbType)
 
 	suite.Run("BasicInWithStrings", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.In("email", []string{"alice@example.com", "bob@example.com"})
@@ -215,7 +215,7 @@ func (suite *RangeSetOperationsTestSuite) TestIn() {
 
 	suite.Run("BasicInWithIntegers", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.In("age", []int16{25, 35})
@@ -232,7 +232,7 @@ func (suite *RangeSetOperationsTestSuite) TestIn() {
 
 	suite.Run("OrIn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.In("age", []int16{25}).
@@ -249,11 +249,11 @@ func (suite *RangeSetOperationsTestSuite) TestIn() {
 
 // TestNotIn tests the NotIn and OrNotIn conditions.
 func (suite *RangeSetOperationsTestSuite) TestNotIn() {
-	suite.T().Logf("Testing NotIn condition for %s", suite.DbType)
+	suite.T().Logf("Testing NotIn condition for %s", suite.dbType)
 
 	suite.Run("BasicNotIn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotIn("email", []string{"charlie@example.com"})
@@ -272,7 +272,7 @@ func (suite *RangeSetOperationsTestSuite) TestNotIn() {
 
 	suite.Run("OrNotIn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotIn("age", []int16{25}).
@@ -289,11 +289,11 @@ func (suite *RangeSetOperationsTestSuite) TestNotIn() {
 
 // TestInExpr tests the InExpr and OrInExpr conditions.
 func (suite *RangeSetOperationsTestSuite) TestInExpr() {
-	suite.T().Logf("Testing InExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing InExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.InExpr("age", func(eb ExprBuilder) any {
@@ -310,7 +310,7 @@ func (suite *RangeSetOperationsTestSuite) TestInExpr() {
 
 	suite.Run("OrInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.InExpr("age", func(eb ExprBuilder) any {
@@ -330,11 +330,11 @@ func (suite *RangeSetOperationsTestSuite) TestInExpr() {
 
 // TestNotInExpr tests the NotInExpr and OrNotInExpr conditions.
 func (suite *RangeSetOperationsTestSuite) TestNotInExpr() {
-	suite.T().Logf("Testing NotInExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing NotInExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicNotInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotInExpr("age", func(eb ExprBuilder) any {
@@ -355,7 +355,7 @@ func (suite *RangeSetOperationsTestSuite) TestNotInExpr() {
 
 	suite.Run("OrNotInExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotInExpr("age", func(eb ExprBuilder) any {

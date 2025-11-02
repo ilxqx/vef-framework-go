@@ -21,7 +21,7 @@ type DateTimeFunctionsTestSuite struct {
 // TestCurrentDate tests the CurrentDate function.
 // CurrentDate returns the current date without time component.
 func (suite *DateTimeFunctionsTestSuite) TestCurrentDate() {
-	suite.T().Logf("Testing CurrentDate function for %s", suite.DbType)
+	suite.T().Logf("Testing CurrentDate function for %s", suite.dbType)
 
 	// Test 1: Get current date using CurrentDate()
 	suite.Run("GetCurrentDate", func() {
@@ -31,13 +31,13 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentDate() {
 
 		var result CurrentDateResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.CurrentDate()
 			}, "current_date").
 			Limit(1).
-			Scan(suite.Ctx, &result)
+			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "CurrentDate query should execute successfully")
 		suite.NotZero(result.CurrentDate, "CurrentDate should return a non-zero date value")
@@ -52,7 +52,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentDate() {
 // TestCurrentTime tests the CurrentTime function.
 // CurrentTime returns the current time without date component.
 func (suite *DateTimeFunctionsTestSuite) TestCurrentTime() {
-	suite.T().Logf("Testing CurrentTime function for %s", suite.DbType)
+	suite.T().Logf("Testing CurrentTime function for %s", suite.dbType)
 
 	// Test 1: Get current time using CurrentTime()
 	suite.Run("GetCurrentTime", func() {
@@ -62,13 +62,13 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTime() {
 
 		var result CurrentTimeResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.CurrentTime()
 			}, "current_time").
 			Limit(1).
-			Scan(suite.Ctx, &result)
+			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "CurrentTime query should execute successfully")
 		suite.NotZero(result.CurrentTime, "CurrentTime should return a non-zero time value")
@@ -80,7 +80,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTime() {
 // TestCurrentTimestamp tests the CurrentTimestamp function.
 // CurrentTimestamp returns the current date and time.
 func (suite *DateTimeFunctionsTestSuite) TestCurrentTimestamp() {
-	suite.T().Logf("Testing CurrentTimestamp function for %s", suite.DbType)
+	suite.T().Logf("Testing CurrentTimestamp function for %s", suite.dbType)
 
 	// Test 1: Get current timestamp using CurrentTimestamp()
 	suite.Run("GetCurrentTimestamp", func() {
@@ -90,13 +90,13 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 
 		var result CurrentTimestampResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.CurrentTimestamp()
 			}, "current_timestamp").
 			Limit(1).
-			Scan(suite.Ctx, &result)
+			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "CurrentTimestamp query should execute successfully")
 		suite.NotZero(result.CurrentTimestamp, "CurrentTimestamp should return a non-zero timestamp value")
@@ -111,7 +111,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCurrentTimestamp() {
 // TestNow tests the Now function.
 // Now returns the current timestamp (alias for CurrentTimestamp).
 func (suite *DateTimeFunctionsTestSuite) TestNow() {
-	suite.T().Logf("Testing Now function for %s", suite.DbType)
+	suite.T().Logf("Testing Now function for %s", suite.dbType)
 
 	// Test 1: Get current timestamp using Now()
 	suite.Run("GetNow", func() {
@@ -121,13 +121,13 @@ func (suite *DateTimeFunctionsTestSuite) TestNow() {
 
 		var result NowResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Now()
 			}, "now").
 			Limit(1).
-			Scan(suite.Ctx, &result)
+			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "Now query should execute successfully")
 		suite.NotZero(result.Now, "Now should return a non-zero timestamp value")
@@ -149,7 +149,7 @@ func (suite *DateTimeFunctionsTestSuite) TestNow() {
 
 		var result AllCurrentResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.CurrentDate()
@@ -164,7 +164,7 @@ func (suite *DateTimeFunctionsTestSuite) TestNow() {
 				return eb.Now()
 			}, "now").
 			Limit(1).
-			Scan(suite.Ctx, &result)
+			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "Combined current time functions query should execute successfully")
 		suite.NotZero(result.CurrentDate, "CurrentDate should return a non-zero value in combined query")
@@ -180,7 +180,7 @@ func (suite *DateTimeFunctionsTestSuite) TestNow() {
 // TestExtractYear tests the ExtractYear function.
 // ExtractYear extracts the year from a date/timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestExtractYear() {
-	suite.T().Logf("Testing ExtractYear function for %s", suite.DbType)
+	suite.T().Logf("Testing ExtractYear function for %s", suite.dbType)
 
 	// Test 1: Extract year from created_at column
 	suite.Run("ExtractYearFromCreatedAt", func() {
@@ -191,7 +191,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractYear() {
 
 		var results []YearResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -199,7 +199,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractYear() {
 			}, "year").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExtractYear query should execute successfully")
 		suite.True(len(results) > 0, "ExtractYear should return at least one result")
@@ -214,7 +214,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractYear() {
 // TestExtractMonth tests the ExtractMonth function.
 // ExtractMonth extracts the month from a date/timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestExtractMonth() {
-	suite.T().Logf("Testing ExtractMonth function for %s", suite.DbType)
+	suite.T().Logf("Testing ExtractMonth function for %s", suite.dbType)
 
 	// Test 1: Extract month from created_at column
 	suite.Run("ExtractMonthFromCreatedAt", func() {
@@ -225,7 +225,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMonth() {
 
 		var results []MonthResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -233,7 +233,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMonth() {
 			}, "month").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExtractMonth query should execute successfully")
 		suite.True(len(results) > 0, "ExtractMonth should return at least one result")
@@ -249,7 +249,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMonth() {
 // TestExtractDay tests the ExtractDay function.
 // ExtractDay extracts the day from a date/timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestExtractDay() {
-	suite.T().Logf("Testing ExtractDay function for %s", suite.DbType)
+	suite.T().Logf("Testing ExtractDay function for %s", suite.dbType)
 
 	// Test 1: Extract day from created_at column
 	suite.Run("ExtractDayFromCreatedAt", func() {
@@ -260,7 +260,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractDay() {
 
 		var results []DayResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -268,7 +268,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractDay() {
 			}, "day").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExtractDay query should execute successfully")
 		suite.True(len(results) > 0, "ExtractDay should return at least one result")
@@ -284,7 +284,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractDay() {
 // TestExtractHour tests the ExtractHour function.
 // ExtractHour extracts the hour from a timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestExtractHour() {
-	suite.T().Logf("Testing ExtractHour function for %s", suite.DbType)
+	suite.T().Logf("Testing ExtractHour function for %s", suite.dbType)
 
 	// Test 1: Extract hour from created_at column
 	suite.Run("ExtractHourFromCreatedAt", func() {
@@ -295,7 +295,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractHour() {
 
 		var results []HourResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -303,7 +303,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractHour() {
 			}, "hour").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExtractHour query should execute successfully")
 		suite.True(len(results) > 0, "ExtractHour should return at least one result")
@@ -319,7 +319,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractHour() {
 // TestExtractMinute tests the ExtractMinute function.
 // ExtractMinute extracts the minute from a timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestExtractMinute() {
-	suite.T().Logf("Testing ExtractMinute function for %s", suite.DbType)
+	suite.T().Logf("Testing ExtractMinute function for %s", suite.dbType)
 
 	// Test 1: Extract minute from created_at column
 	suite.Run("ExtractMinuteFromCreatedAt", func() {
@@ -330,7 +330,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMinute() {
 
 		var results []MinuteResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -338,7 +338,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMinute() {
 			}, "minute").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExtractMinute query should execute successfully")
 		suite.True(len(results) > 0, "ExtractMinute should return at least one result")
@@ -354,7 +354,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractMinute() {
 // TestExtractSecond tests the ExtractSecond function.
 // ExtractSecond extracts the second from a timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
-	suite.T().Logf("Testing ExtractSecond function for %s", suite.DbType)
+	suite.T().Logf("Testing ExtractSecond function for %s", suite.dbType)
 
 	// Test 1: Extract second from created_at column
 	suite.Run("ExtractSecondFromCreatedAt", func() {
@@ -366,7 +366,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 
 		var results []SecondResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -374,7 +374,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 			}, "second").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExtractSecond query should execute successfully")
 		suite.True(len(results) > 0, "ExtractSecond should return at least one result")
@@ -400,7 +400,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 
 		var results []AllExtractResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -423,7 +423,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 			}, "second").
 			OrderBy("created_at").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Combined extract functions query should execute successfully")
 		suite.True(len(results) > 0, "Combined extract query should return at least one result")
@@ -451,7 +451,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 // TestDateTrunc tests the DateTrunc function.
 // DateTrunc truncates date/timestamp to specified precision.
 func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
-	suite.T().Logf("Testing DateTrunc function for %s", suite.DbType)
+	suite.T().Logf("Testing DateTrunc function for %s", suite.dbType)
 
 	// Test 1: Truncate to different precisions (year, month, day, hour)
 	suite.Run("TruncateToDifferentPrecisions", func() {
@@ -465,7 +465,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
 
 		var results []TruncResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -482,7 +482,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
 			}, "trunc_hour").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DateTrunc query should execute successfully")
 		suite.True(len(results) > 0, "DateTrunc should return at least one result")
@@ -503,7 +503,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
 // TestDateAdd tests the DateAdd function.
 // DateAdd adds interval to date/timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
-	suite.T().Logf("Testing DateAdd function for %s", suite.DbType)
+	suite.T().Logf("Testing DateAdd function for %s", suite.dbType)
 
 	// Test 1: Add different intervals (7 days, 3 months, 1 year)
 	suite.Run("AddDifferentIntervals", func() {
@@ -516,7 +516,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 
 		var results []DateAddResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -530,7 +530,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 			}, "added_years").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DateAdd query should execute successfully")
 		suite.True(len(results) > 0, "DateAdd should return at least one result")
@@ -550,7 +550,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 // TestDateSubtract tests the DateSubtract function.
 // DateSubtract subtracts interval from date/timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
-	suite.T().Logf("Testing DateSubtract function for %s", suite.DbType)
+	suite.T().Logf("Testing DateSubtract function for %s", suite.dbType)
 
 	// Test 1: Subtract different intervals (5 days, 2 months)
 	suite.Run("SubtractDifferentIntervals", func() {
@@ -562,7 +562,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 
 		var results []DateSubtractResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -573,7 +573,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 			}, "subtracted_months").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DateSubtract query should execute successfully")
 		suite.True(len(results) > 0, "DateSubtract should return at least one result")
@@ -592,7 +592,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 // TestDateDiff tests the DateDiff function.
 // DateDiff returns the difference between two dates in specified unit.
 func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
-	suite.T().Logf("Testing DateDiff function for %s", suite.DbType)
+	suite.T().Logf("Testing DateDiff function for %s", suite.dbType)
 
 	// Test 1: Calculate date differences in different units (days, hours, minutes)
 	suite.Run("CalculateDateDifferences", func() {
@@ -606,7 +606,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 
 		var results []DateDiffResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at", "updated_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -620,7 +620,7 @@ func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 			}, "minutes_diff").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DateDiff query should execute successfully")
 		suite.True(len(results) > 0, "DateDiff should return at least one result")
@@ -636,12 +636,12 @@ func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 // TestAge tests the Age function.
 // Age returns the age (interval) between two timestamps (PostgreSQL only).
 func (suite *DateTimeFunctionsTestSuite) TestAge() {
-	suite.T().Logf("Testing Age function for %s", suite.DbType)
+	suite.T().Logf("Testing Age function for %s", suite.dbType)
 
 	// Test 1: Calculate age interval between updated_at and created_at (PostgreSQL only)
 	suite.Run("CalculateAgeInterval", func() {
-		if suite.DbType != constants.DbPostgres {
-			suite.T().Skipf("Age skipped for %s (PostgreSQL only)", suite.DbType)
+		if suite.dbType != constants.DbPostgres {
+			suite.T().Skipf("Age skipped for %s (PostgreSQL only)", suite.dbType)
 		}
 
 		type AgeResult struct {
@@ -653,7 +653,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 
 		var results []AgeResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "created_at", "updated_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -661,7 +661,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 				return eb.Age(eb.Column("updated_at"), eb.Column("created_at"))
 			}, "age").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Age query should execute successfully on PostgreSQL")
 		suite.True(len(results) > 0, "Age should return at least one result on PostgreSQL")
@@ -677,7 +677,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 // TestCombinedDateTimeFunctions tests using multiple date/time functions together.
 // This verifies that date/time functions can be nested and combined.
 func (suite *DateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
-	suite.T().Logf("Testing combined date/time functions for %s", suite.DbType)
+	suite.T().Logf("Testing combined date/time functions for %s", suite.dbType)
 
 	// Test 1: Nest and combine multiple date/time functions (Extract, DateDiff, DateTrunc, Now)
 	suite.Run("NestedDateTimeFunctions", func() {
@@ -690,7 +690,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 
 		var results []CombinedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -708,7 +708,7 @@ func (suite *DateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 			}, "formatted_date").
 			OrderBy("created_at").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Combined date/time functions query should execute successfully")
 		suite.True(len(results) > 0, "Combined date/time functions should return at least one result")

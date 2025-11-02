@@ -13,7 +13,7 @@ type LoaderFunc[T any] func(ctx context.Context) (T, error)
 // GetFunc reads a value from cache for the provided key.
 type GetFunc[T any] func(context.Context, string) (T, bool)
 
-// SetFunc writes a value into cache for the provided key and optional TTL.
+// SetFunc writes a value into cache for the provided key and optional Ttl.
 type SetFunc[T any] func(context.Context, string, T, ...time.Duration) error
 
 // SingleflightMixin provides reusable singleflight-backed GetOrLoad logic

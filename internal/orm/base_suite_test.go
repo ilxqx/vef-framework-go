@@ -4,7 +4,6 @@ import (
 	"context"
 	"html/template"
 	"os"
-	"time"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/uptrace/bun"
@@ -98,36 +97,19 @@ type SimpleModel struct {
 	Value int    `json:"value" bun:"value,notnull"`
 }
 
-// ComplexModel represents a complex test model with various data types.
-type ComplexModel struct {
-	bun.BaseModel `bun:"table:test_complex,alias:cm"`
-	Model         `bun:"extend"`
-
-	StringField string         `json:"stringField" bun:"string_field,notnull"`
-	IntField    int            `json:"intField"    bun:"int_field,notnull"`
-	FloatField  float64        `json:"floatField"  bun:"float_field,notnull"`
-	BoolField   bool           `json:"boolField"   bun:"bool_field,notnull"`
-	TimeField   time.Time      `json:"timeField"   bun:"time_field,notnull"`
-	NullString  *string        `json:"nullString"  bun:"null_string"`
-	NullInt     *int           `json:"nullInt"     bun:"null_int"`
-	NullTime    *time.Time     `json:"nullTime"    bun:"null_time"`
-	JSONField   map[string]any `json:"jsonField"   bun:"json_field"`
-	ArrayField  []string       `json:"arrayField"  bun:"array_field"` // PostgreSQL only
-}
-
 // OrmTestSuite contains all the actual test methods and works with orm.Db interface.
 // This suite will be run against multiple databases to verify cross-database compatibility.
 type OrmTestSuite struct {
 	suite.Suite
 
-	Ctx    context.Context
-	Db     Db
-	DbType constants.DbType
+	ctx    context.Context
+	db     Db
+	dbType constants.DbType
 }
 
 // SetupSuite initializes the test suite (called once per database).
 func (suite *OrmTestSuite) SetupSuite() {
-	suite.T().Logf("Setting up Orm test suite for %s", suite.DbType)
+	suite.T().Logf("Setting up Orm test suite for %s", suite.dbType)
 
 	db := suite.getBunDb()
 	db.RegisterModel(
@@ -137,7 +119,6 @@ func (suite *OrmTestSuite) SetupSuite() {
 		(*PostTag)(nil),
 		(*Category)(nil),
 		(*SimpleModel)(nil),
-		(*ComplexModel)(nil),
 	)
 
 	fixture := dbfixture.New(
@@ -153,20 +134,19 @@ func (suite *OrmTestSuite) SetupSuite() {
 		}),
 	)
 
-	err := fixture.Load(suite.Ctx, os.DirFS("testdata"), "fixture.yaml")
+	err := fixture.Load(suite.ctx, os.DirFS("testdata"), "fixture.yaml")
 	suite.Require().NoError(err, "Failed to load fixtures")
 
-	_, err = db.NewCreateTable().IfNotExists().Model((*SimpleModel)(nil)).Exec(suite.Ctx)
+	_, err = db.NewCreateTable().IfNotExists().Model((*SimpleModel)(nil)).Exec(suite.ctx)
 	suite.Require().NoError(err, "Failed to create simple model table")
-	_, err = db.NewCreateTable().IfNotExists().Model((*ComplexModel)(nil)).Exec(suite.Ctx)
 	suite.Require().NoError(err, "Failed to create complex model table")
 
-	suite.T().Logf("Test fixtures loaded for %s database", suite.DbType)
+	suite.T().Logf("Test fixtures loaded for %s database", suite.dbType)
 }
 
 // getBunDb extracts the underlying bun.DB from orm.Db interface.
 func (suite *OrmTestSuite) getBunDb() *bun.DB {
-	if db, ok := suite.Db.(*BunDb); ok {
+	if db, ok := suite.db.(*BunDb); ok {
 		if bunDB, ok := db.db.(*bun.DB); ok {
 			return bunDB
 		}
@@ -181,21 +161,21 @@ func (suite *OrmTestSuite) getBunDb() *bun.DB {
 
 // AssertCount verifies the count result of a select query.
 func (suite *OrmTestSuite) AssertCount(query SelectQuery, expectedCount int64) {
-	count, err := query.Count(suite.Ctx)
+	count, err := query.Count(suite.ctx)
 	suite.NoError(err)
-	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.DbType)
+	suite.Equal(expectedCount, count, "Count mismatch for %s", suite.dbType)
 }
 
 // AssertExists verifies that a query returns at least one result.
 func (suite *OrmTestSuite) AssertExists(query SelectQuery) {
-	exists, err := query.Exists(suite.Ctx)
+	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
-	suite.True(exists, "Query should return results for %s", suite.DbType)
+	suite.True(exists, "Query should return results for %s", suite.dbType)
 }
 
 // AssertNotExists verifies that a query returns no results.
 func (suite *OrmTestSuite) AssertNotExists(query SelectQuery) {
-	exists, err := query.Exists(suite.Ctx)
+	exists, err := query.Exists(suite.ctx)
 	suite.NoError(err)
-	suite.False(exists, "Query should not return results for %s", suite.DbType)
+	suite.False(exists, "Query should not return results for %s", suite.dbType)
 }

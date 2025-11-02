@@ -8,11 +8,11 @@ type LogicalGroupingTestSuite struct {
 
 // TestGroup tests the Group condition for AND grouping.
 func (suite *LogicalGroupingTestSuite) TestGroup() {
-	suite.T().Logf("Testing Group condition for %s", suite.DbType)
+	suite.T().Logf("Testing Group condition for %s", suite.dbType)
 
 	suite.Run("BasicGroup", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Group(func(cb ConditionBuilder) {
@@ -35,7 +35,7 @@ func (suite *LogicalGroupingTestSuite) TestGroup() {
 
 	suite.Run("MultipleGroups", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Group(func(cb ConditionBuilder) {
@@ -54,7 +54,7 @@ func (suite *LogicalGroupingTestSuite) TestGroup() {
 
 	suite.Run("NestedGroups", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Group(func(cb ConditionBuilder) {
@@ -81,11 +81,11 @@ func (suite *LogicalGroupingTestSuite) TestGroup() {
 
 // TestOrGroup tests the OrGroup condition for OR grouping.
 func (suite *LogicalGroupingTestSuite) TestOrGroup() {
-	suite.T().Logf("Testing OrGroup condition for %s", suite.DbType)
+	suite.T().Logf("Testing OrGroup condition for %s", suite.dbType)
 
 	suite.Run("BasicOrGroup", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.OrGroup(func(cb ConditionBuilder) {
@@ -105,7 +105,7 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 
 	suite.Run("MixedGroupAndOrGroup", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Group(func(cb ConditionBuilder) {
@@ -126,7 +126,7 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 	suite.Run("ComplexNestedGrouping", func() {
 		// (is_active = true AND age > 25) OR (name LIKE '%Alice%' OR name LIKE '%Bob%')
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Group(func(cb ConditionBuilder) {
@@ -148,7 +148,7 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 	suite.Run("DeeplyNestedGrouping", func() {
 		// ((age > 20 AND age < 40) OR (age > 50)) AND is_active = true
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Group(func(cb ConditionBuilder) {
@@ -171,12 +171,12 @@ func (suite *LogicalGroupingTestSuite) TestOrGroup() {
 
 // TestComplexLogicalCombinations tests complex combinations of Group and OrGroup.
 func (suite *LogicalGroupingTestSuite) TestComplexLogicalCombinations() {
-	suite.T().Logf("Testing complex logical combinations for %s", suite.DbType)
+	suite.T().Logf("Testing complex logical combinations for %s", suite.dbType)
 
 	suite.Run("ThreeLevelNesting", func() {
 		// (((age = 25 OR age = 30) AND is_active = true) OR (age = 35 AND name LIKE '%Charlie%'))
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Group(func(cb ConditionBuilder) {
@@ -200,7 +200,7 @@ func (suite *LogicalGroupingTestSuite) TestComplexLogicalCombinations() {
 	suite.Run("MultipleOrGroupsWithAnd", func() {
 		// (age = 25 OR age = 30) AND (is_active = true OR name LIKE '%Alice%')
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.OrGroup(func(cb ConditionBuilder) {

@@ -137,11 +137,11 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 	})
 }
 
-func (suite *RedisCacheTestSuite) TestRedisCacheTTL() {
+func (suite *RedisCacheTestSuite) TestRedisCacheTtl() {
 	userCache := suite.setupRedisCache("test-ttl-users")
 	defer userCache.Close()
 
-	suite.Run("CustomTTLExpiration", func() {
+	suite.Run("CustomTtlExpiration", func() {
 		user := TestUser{Id: 5, Name: "Eve", Age: 28}
 
 		err := userCache.Set(suite.ctx, "ttl-user", user, 100*time.Millisecond)
@@ -157,22 +157,22 @@ func (suite *RedisCacheTestSuite) TestRedisCacheTTL() {
 		suite.False(found)
 	})
 
-	suite.Run("DefaultTTL", func() {
-		cacheWithDefaultTTL := suite.setupRedisCache("test-default-ttl", WithRdsDefaultTTL(100*time.Millisecond))
-		defer cacheWithDefaultTTL.Close()
+	suite.Run("DefaultTtl", func() {
+		cacheWithDefaultTtl := suite.setupRedisCache("test-default-ttl", WithRdsDefaultTtl(100*time.Millisecond))
+		defer cacheWithDefaultTtl.Close()
 
 		user := TestUser{Id: 6, Name: "Frank", Age: 32}
 
-		err := cacheWithDefaultTTL.Set(suite.ctx, "default-ttl-user", user)
+		err := cacheWithDefaultTtl.Set(suite.ctx, "default-ttl-user", user)
 		suite.Require().NoError(err)
 
-		result, found := cacheWithDefaultTTL.Get(suite.ctx, "default-ttl-user")
+		result, found := cacheWithDefaultTtl.Get(suite.ctx, "default-ttl-user")
 		suite.True(found)
 		suite.Equal(user, result)
 
 		time.Sleep(150 * time.Millisecond)
 
-		_, found = cacheWithDefaultTTL.Get(suite.ctx, "default-ttl-user")
+		_, found = cacheWithDefaultTtl.Get(suite.ctx, "default-ttl-user")
 		suite.False(found)
 	})
 }

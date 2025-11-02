@@ -29,7 +29,7 @@
 go get github.com/ilxqx/vef-framework-go
 ```
 
-**环境要求：** Go 1.25 或更高版本
+**环境要求：** Go 1.25.0 或更高版本
 
 **问题排查：** 如果在执行 `go mod tidy` 时遇到 `google.golang.org/genproto` 的模糊依赖错误，请运行：
 
@@ -1250,7 +1250,7 @@ allow_origins = ["*"]
 
 - `VEF_CONFIG_PATH` - 配置文件路径
 - `VEF_LOG_LEVEL` - 日志级别（debug、info、warn、error）
-- `VEF_NODE_ID` - Snowflake 节点 ID，用于 ID 生成
+- `VEF_NODE_ID` - XID 节点标识符，用于 ID 生成
 - `VEF_I18N_LANGUAGE` - 语言设置（en、zh-CN）
 
 ## 高级功能
@@ -1268,14 +1268,14 @@ import (
 // 内存缓存
 memCache := cache.NewMemory[models.User](
     cache.WithMemMaxSize(1000),
-    cache.WithMemDefaultTTL(5 * time.Minute),
+    cache.WithMemDefaultTtl(5 * time.Minute),
 )
 
 // Redis 缓存
 redisCache := cache.NewRedis[models.User](
     redisClient,
     "users",
-    cache.WithRdsDefaultTTL(10 * time.Minute),
+    cache.WithRdsDefaultTtl(10 * time.Minute),
 )
 
 // 使用方式
@@ -1296,9 +1296,11 @@ import "github.com/ilxqx/vef-framework-go/event"
 func (r *UserResource) CreateUser(ctx fiber.Ctx, bus event.Bus, ...) error {
     // 创建用户逻辑
     
-    bus.Publish(event.NewBase("user.created", "user-service", map[string]string{
-        "userId": user.Id,
-    }))
+    bus.Publish(event.NewBaseEvent(
+        "user.created",
+        event.WithSource("user-service"),
+        event.WithMeta("userId", user.Id),
+    ))
     
     return result.Ok().Response(ctx)
 }
@@ -1306,10 +1308,10 @@ func (r *UserResource) CreateUser(ctx fiber.Ctx, bus event.Bus, ...) error {
 // 订阅事件
 func main() {
     vef.Run(
-        vef.Invoke(func(bus event.Bus) {
+        vef.Invoke(func(bus event.Bus, logger log.Logger) {
             unsubscribe := bus.Subscribe("user.created", func(ctx context.Context, e event.Event) {
                 // 处理事件
-                log.Infof("用户已创建: %s", e.Meta()["userId"])
+                logger.Infof("用户已创建: %s", e.Meta()["userId"])
             })
             
             // 可选：稍后取消订阅
@@ -1555,7 +1557,7 @@ vef.Invoke(func(scheduler cron.Scheduler) {
 
 #### 内置存储资源
 
-框架自动注册了 `base/storage` 资源，提供以下 Api 端点：
+框架自动注册了 `sys/storage` 资源，提供以下 Api 端点：
 
 | Action | 说明 |
 |--------|------|
@@ -1570,7 +1572,7 @@ vef.Invoke(func(scheduler cron.Scheduler) {
 # 使用内置的 upload Api
 curl -X POST http://localhost:8080/api \
   -H "Authorization: Bearer <token>" \
-  -F "resource=base/storage" \
+  -F "resource=sys/storage" \
   -F "action=upload" \
   -F "version=v1" \
   -F "params[file]=@/path/to/file.jpg" \
@@ -1734,6 +1736,44 @@ type UserParams struct {
 | `contains` | 包含指定子串 |
 | `startswith` | 以指定字符串开头 |
 | `endswith` | 以指定字符串结尾 |
+
+### CLI 工具
+
+VEF Framework 提供 `vef-cli` 命令行工具用于代码生成和项目脚手架任务。
+
+#### 生成构建信息
+
+`generate-build-info` 命令创建包含版本、提交哈希和构建时间戳的构建信息文件：
+
+```bash
+go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+```
+
+**选项：**
+- `-o, --output` - 输出文件路径（默认：`internal/version/build.go`）
+- `-p, --package` - 包名（默认：`version`）
+
+**在 go:generate 中使用：**
+
+```go
+//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+```
+
+生成的文件提供与监控模块兼容的 `BuildInfo` 结构：
+
+```go
+package version
+
+import "github.com/ilxqx/vef-framework-go/monitor"
+
+var Build = monitor.BuildInfo{
+    Version:   "v1.0.0",
+    Commit:    "abc123...",
+    BuildTime: "2025-01-15T10:30:00Z",
+}
+```
+
+关于 AI 辅助开发指南，请参阅 `cmd/vef-cli/CMD_DEV_GUIDELINES.md`。
 
 ## 最佳实践
 

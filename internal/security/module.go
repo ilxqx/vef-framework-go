@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -14,6 +15,18 @@ var logger = log.Named("security")
 // Module provides the security-related dependencies for the application.
 var Module = fx.Module(
 	"vef:security",
+	fx.Decorate(
+		fx.Annotate(
+			func(loader security.RolePermissionsLoader, bus event.Bus) security.RolePermissionsLoader {
+				if loader == nil {
+					return nil
+				}
+
+				return security.NewCachedRolePermissionsLoader(loader, bus)
+			},
+			fx.ParamTags(`optional:"true"`),
+		),
+	),
 	fx.Provide(
 		// Provide Jwt instance
 		fx.Annotate(

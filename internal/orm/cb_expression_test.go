@@ -8,11 +8,11 @@ type ExpressionOperationsTestSuite struct {
 
 // TestEqualsExpr tests the EqualsExpr and OrEqualsExpr conditions.
 func (suite *ExpressionOperationsTestSuite) TestEqualsExpr() {
-	suite.T().Logf("Testing EqualsExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing EqualsExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.EqualsExpr("age", func(eb ExprBuilder) any {
@@ -29,7 +29,7 @@ func (suite *ExpressionOperationsTestSuite) TestEqualsExpr() {
 
 	suite.Run("OrEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.EqualsExpr("age", func(eb ExprBuilder) any {
@@ -49,11 +49,11 @@ func (suite *ExpressionOperationsTestSuite) TestEqualsExpr() {
 
 // TestNotEqualsExpr tests the NotEqualsExpr and OrNotEqualsExpr conditions.
 func (suite *ExpressionOperationsTestSuite) TestNotEqualsExpr() {
-	suite.T().Logf("Testing NotEqualsExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing NotEqualsExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicNotEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotEqualsExpr("age", func(eb ExprBuilder) any {
@@ -74,7 +74,7 @@ func (suite *ExpressionOperationsTestSuite) TestNotEqualsExpr() {
 
 	suite.Run("OrNotEqualsExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotEqualsExpr("age", func(eb ExprBuilder) any {
@@ -94,11 +94,11 @@ func (suite *ExpressionOperationsTestSuite) TestNotEqualsExpr() {
 
 // TestGreaterThanExpr tests the GreaterThanExpr and OrGreaterThanExpr conditions.
 func (suite *ExpressionOperationsTestSuite) TestGreaterThanExpr() {
-	suite.T().Logf("Testing GreaterThanExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing GreaterThanExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicGreaterThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanExpr("age", func(eb ExprBuilder) any {
@@ -115,7 +115,7 @@ func (suite *ExpressionOperationsTestSuite) TestGreaterThanExpr() {
 
 	suite.Run("OrGreaterThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanExpr("age", func(eb ExprBuilder) any {
@@ -135,11 +135,11 @@ func (suite *ExpressionOperationsTestSuite) TestGreaterThanExpr() {
 
 // TestLessThanExpr tests the LessThanExpr and OrLessThanExpr conditions.
 func (suite *ExpressionOperationsTestSuite) TestLessThanExpr() {
-	suite.T().Logf("Testing LessThanExpr condition for %s", suite.DbType)
+	suite.T().Logf("Testing LessThanExpr condition for %s", suite.dbType)
 
 	suite.Run("BasicLessThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanExpr("age", func(eb ExprBuilder) any {
@@ -156,7 +156,7 @@ func (suite *ExpressionOperationsTestSuite) TestLessThanExpr() {
 
 	suite.Run("OrLessThanExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanExpr("age", func(eb ExprBuilder) any {
@@ -176,11 +176,11 @@ func (suite *ExpressionOperationsTestSuite) TestLessThanExpr() {
 
 // TestExpr tests the Expr and OrExpr conditions.
 func (suite *ExpressionOperationsTestSuite) TestExpr() {
-	suite.T().Logf("Testing Expr condition for %s", suite.DbType)
+	suite.T().Logf("Testing Expr condition for %s", suite.dbType)
 
 	suite.Run("BasicExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Expr(func(eb ExprBuilder) any {
@@ -197,7 +197,7 @@ func (suite *ExpressionOperationsTestSuite) TestExpr() {
 
 	suite.Run("OrExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Expr(func(eb ExprBuilder) any {
@@ -216,7 +216,7 @@ func (suite *ExpressionOperationsTestSuite) TestExpr() {
 
 	suite.Run("ComplexExpr", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Expr(func(eb ExprBuilder) any {

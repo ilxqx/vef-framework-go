@@ -7,7 +7,7 @@ type JsonFunctionsTestSuite struct {
 
 // TestJsonObject tests the JsonObject function.
 func (suite *JsonFunctionsTestSuite) TestJsonObject() {
-	suite.T().Logf("Testing JsonObject function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonObject function for %s", suite.dbType)
 
 	suite.Run("CreateJsonObjectFromColumns", func() {
 		type JsonObjectResult struct {
@@ -18,14 +18,14 @@ func (suite *JsonFunctionsTestSuite) TestJsonObject() {
 
 		var jsonObjectResults []JsonObjectResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonObject("user_id", eb.Column("id"), "user_name", eb.Column("name"), "user_age", eb.Column("age"), "is_active", eb.Column("is_active"))
 			}, "user_object").
 			OrderBy("name").
-			Scan(suite.Ctx, &jsonObjectResults)
+			Scan(suite.ctx, &jsonObjectResults)
 
 		suite.NoError(err, "JsonObject should work")
 		suite.True(len(jsonObjectResults) > 0, "Should have JSON object results")
@@ -41,7 +41,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonObject() {
 
 // TestJsonArray tests the JsonArray function.
 func (suite *JsonFunctionsTestSuite) TestJsonArray() {
-	suite.T().Logf("Testing JsonArray function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonArray function for %s", suite.dbType)
 
 	suite.Run("CreateJsonArrayFromColumns", func() {
 		type JsonArrayResult struct {
@@ -51,7 +51,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonArray() {
 
 		var jsonArrayResults []JsonArrayResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -59,7 +59,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonArray() {
 			}, "json_array").
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &jsonArrayResults)
+			Scan(suite.ctx, &jsonArrayResults)
 
 		suite.NoError(err, "JsonArray should work")
 		suite.True(len(jsonArrayResults) > 0, "Should have JSON array results")
@@ -73,7 +73,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonArray() {
 
 // TestJsonExtract tests the JsonExtract function.
 func (suite *JsonFunctionsTestSuite) TestJsonExtract() {
-	suite.T().Logf("Testing JsonExtract function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonExtract function for %s", suite.dbType)
 
 	suite.Run("ExtractJsonPathValue", func() {
 		type JsonExtractResult struct {
@@ -84,7 +84,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonExtract() {
 
 		var jsonExtractResults []JsonExtractResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -95,7 +95,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonExtract() {
 			}, "extracted_id").
 			OrderBy("title").
 			Limit(3).
-			Scan(suite.Ctx, &jsonExtractResults)
+			Scan(suite.ctx, &jsonExtractResults)
 
 		suite.NoError(err, "JsonExtract should work")
 		suite.True(len(jsonExtractResults) > 0, "Should have JSON extract results")
@@ -110,7 +110,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonExtract() {
 
 // TestJsonValid tests the JsonValid function.
 func (suite *JsonFunctionsTestSuite) TestJsonValid() {
-	suite.T().Logf("Testing JsonValid function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonValid function for %s", suite.dbType)
 
 	suite.Run("ValidateJsonObject", func() {
 		type JsonValidationResult struct {
@@ -121,7 +121,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonValid() {
 
 		var jsonValidResults []JsonValidationResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -132,7 +132,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonValid() {
 			}, "is_valid").
 			OrderBy("title").
 			Limit(2).
-			Scan(suite.Ctx, &jsonValidResults)
+			Scan(suite.ctx, &jsonValidResults)
 
 		suite.NoError(err, "JsonValid should work")
 		suite.True(len(jsonValidResults) > 0, "Should have JSON validation results")
@@ -147,7 +147,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonValid() {
 
 // TestJsonInsert tests the JsonInsert function.
 func (suite *JsonFunctionsTestSuite) TestJsonInsert() {
-	suite.T().Logf("Testing JsonInsert function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonInsert function for %s", suite.dbType)
 
 	suite.Run("InsertIntoJsonObject", func() {
 		type JsonModifyResult struct {
@@ -158,7 +158,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonInsert() {
 
 		var jsonModifyResults []JsonModifyResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -169,7 +169,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonInsert() {
 			}, "with_insert").
 			OrderBy("title").
 			Limit(2).
-			Scan(suite.Ctx, &jsonModifyResults)
+			Scan(suite.ctx, &jsonModifyResults)
 
 		suite.NoError(err, "JsonInsert should work")
 		suite.True(len(jsonModifyResults) > 0, "Should have JSON modify results")
@@ -186,7 +186,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonInsert() {
 
 // TestJsonReplace tests the JsonReplace function.
 func (suite *JsonFunctionsTestSuite) TestJsonReplace() {
-	suite.T().Logf("Testing JsonReplace function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonReplace function for %s", suite.dbType)
 
 	suite.Run("ReplaceJsonValue", func() {
 		type JsonModifyResult struct {
@@ -197,7 +197,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonReplace() {
 
 		var jsonModifyResults []JsonModifyResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -208,7 +208,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonReplace() {
 			}, "with_replace").
 			OrderBy("title").
 			Limit(2).
-			Scan(suite.Ctx, &jsonModifyResults)
+			Scan(suite.ctx, &jsonModifyResults)
 
 		suite.NoError(err, "JsonReplace should work")
 		suite.True(len(jsonModifyResults) > 0, "Should have JSON modify results")
@@ -224,7 +224,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonReplace() {
 
 // TestJsonLength tests the JsonLength function.
 func (suite *JsonFunctionsTestSuite) TestJsonLength() {
-	suite.T().Logf("Testing JsonLength function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonLength function for %s", suite.dbType)
 
 	suite.Run("GetJsonObjectLength", func() {
 		type JsonLengthResult struct {
@@ -235,14 +235,14 @@ func (suite *JsonFunctionsTestSuite) TestJsonLength() {
 
 		var results []JsonLengthResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonLength(eb.Column("meta"))
 			}, "meta_length").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "JsonLength should work for all databases")
 		suite.True(len(results) > 0, "Should have JsonLength results")
@@ -262,7 +262,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonLength() {
 
 		var results []JsonArrayLengthResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -274,7 +274,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonLength() {
 				)
 			}, "array_length").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "JsonLength should work for arrays")
 		suite.True(len(results) > 0, "Should have JsonLength array results")
@@ -288,7 +288,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonLength() {
 
 // TestJsonType tests the JsonType function.
 func (suite *JsonFunctionsTestSuite) TestJsonType() {
-	suite.T().Logf("Testing JsonType function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonType function for %s", suite.dbType)
 
 	suite.Run("GetJsonValueType", func() {
 		type JsonTypeResult struct {
@@ -299,16 +299,16 @@ func (suite *JsonFunctionsTestSuite) TestJsonType() {
 
 		var results []JsonTypeResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonType(eb.Column("meta"))
 			}, "meta_type").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonType should work for %s", suite.DbType)
+		suite.NoError(err, "JsonType should work for %s", suite.dbType)
 		suite.True(len(results) > 0, "Should have JsonType results")
 
 		for _, result := range results {
@@ -326,7 +326,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonType() {
 
 		var results []JsonTypesResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -336,7 +336,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonType() {
 				return eb.JsonType(eb.JsonObject("name", eb.Column("name"), "age", eb.Column("age")))
 			}, "object_type").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "JsonType should detect different types")
 		suite.True(len(results) > 0, "Should have JsonType results for different types")
@@ -352,7 +352,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonType() {
 
 // TestJsonKeys tests the JsonKeys function.
 func (suite *JsonFunctionsTestSuite) TestJsonKeys() {
-	suite.T().Logf("Testing JsonKeys function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonKeys function for %s", suite.dbType)
 
 	suite.Run("GetJsonObjectKeys", func() {
 		type JsonKeysResult struct {
@@ -363,16 +363,16 @@ func (suite *JsonFunctionsTestSuite) TestJsonKeys() {
 
 		var results []JsonKeysResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonKeys(eb.Column("meta"))
 			}, "meta_keys").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonKeys should work for %s", suite.DbType)
+		suite.NoError(err, "JsonKeys should work for %s", suite.dbType)
 		suite.True(len(results) > 0, "Should have JsonKeys results")
 
 		for _, result := range results {
@@ -389,7 +389,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonKeys() {
 
 		var results []JsonKeysPathResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -401,9 +401,9 @@ func (suite *JsonFunctionsTestSuite) TestJsonKeys() {
 				)
 			}, "attr_keys").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonKeys with constructed object should work for %s", suite.DbType)
+		suite.NoError(err, "JsonKeys with constructed object should work for %s", suite.dbType)
 		suite.True(len(results) > 0, "Should have JsonKeys with path results")
 
 		for _, result := range results {
@@ -415,7 +415,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonKeys() {
 
 // TestJsonContains tests the JsonContains function.
 func (suite *JsonFunctionsTestSuite) TestJsonContains() {
-	suite.T().Logf("Testing JsonContains function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonContains function for %s", suite.dbType)
 
 	suite.Run("CheckJsonContainsValue", func() {
 		type JsonContainsResult struct {
@@ -426,16 +426,16 @@ func (suite *JsonFunctionsTestSuite) TestJsonContains() {
 
 		var results []JsonContainsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonContains(eb.Column("meta"), `{"active": true}`)
 			}, "contains_test").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonContains should work for %s", suite.DbType)
+		suite.NoError(err, "JsonContains should work for %s", suite.dbType)
 		suite.True(len(results) > 0, "Should have JsonContains results")
 
 		for _, result := range results {
@@ -446,7 +446,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonContains() {
 
 // TestJsonContainsPath tests the JsonContainsPath function.
 func (suite *JsonFunctionsTestSuite) TestJsonContainsPath() {
-	suite.T().Logf("Testing JsonContainsPath function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonContainsPath function for %s", suite.dbType)
 
 	suite.Run("CheckJsonPathExists", func() {
 		type JsonContainsPathResult struct {
@@ -457,16 +457,16 @@ func (suite *JsonFunctionsTestSuite) TestJsonContainsPath() {
 
 		var results []JsonContainsPathResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonContainsPath(eb.Column("meta"), "$.role")
 			}, "path_exists").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonContainsPath should work for %s", suite.DbType)
+		suite.NoError(err, "JsonContainsPath should work for %s", suite.dbType)
 		suite.True(len(results) > 0, "Should have JsonContainsPath results")
 
 		for _, result := range results {
@@ -477,7 +477,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonContainsPath() {
 
 // TestJsonUnquote tests the JsonUnquote function.
 func (suite *JsonFunctionsTestSuite) TestJsonUnquote() {
-	suite.T().Logf("Testing JsonUnquote function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonUnquote function for %s", suite.dbType)
 
 	suite.Run("RemoveJsonQuotes", func() {
 		type JsonUnquoteResult struct {
@@ -488,16 +488,16 @@ func (suite *JsonFunctionsTestSuite) TestJsonUnquote() {
 
 		var results []JsonUnquoteResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonUnquote(eb.JsonExtract(eb.Column("meta"), "$.role"))
 			}, "unquoted").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonUnquote should work for %s", suite.DbType)
+		suite.NoError(err, "JsonUnquote should work for %s", suite.dbType)
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Meta: %s, Unquoted: %s", result.Id, result.Meta, result.Unquoted)
@@ -507,7 +507,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonUnquote() {
 
 // TestJsonSet tests the JsonSet function.
 func (suite *JsonFunctionsTestSuite) TestJsonSet() {
-	suite.T().Logf("Testing JsonSet function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonSet function for %s", suite.dbType)
 
 	suite.Run("SetJsonPathValue", func() {
 		type JsonSetResult struct {
@@ -518,16 +518,16 @@ func (suite *JsonFunctionsTestSuite) TestJsonSet() {
 
 		var results []JsonSetResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonSet(eb.Column("meta"), "$.updated", "true")
 			}, "updated_meta").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "JsonSet should work for %s", suite.DbType)
+		suite.NoError(err, "JsonSet should work for %s", suite.dbType)
 		suite.True(len(results) > 0, "Should have JsonSet results")
 
 		for _, result := range results {
@@ -538,7 +538,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonSet() {
 
 // TestJsonArrayAppend tests the JsonArrayAppend function.
 func (suite *JsonFunctionsTestSuite) TestJsonArrayAppend() {
-	suite.T().Logf("Testing JsonArrayAppend function for %s", suite.DbType)
+	suite.T().Logf("Testing JsonArrayAppend function for %s", suite.dbType)
 
 	suite.Run("AppendToJsonArray", func() {
 		type JsonArrayAppendResult struct {
@@ -549,18 +549,18 @@ func (suite *JsonFunctionsTestSuite) TestJsonArrayAppend() {
 
 		var results []JsonArrayAppendResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.JsonArrayAppend(eb.Column("meta"), "$.interests", `"testing"`)
 			}, "updated_meta").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 		if err != nil {
 			suite.T().Logf("JsonArrayAppend test completed (may have errors if no array fields): %v", err)
 		} else {
-			suite.True(len(results) >= 0, "JsonArrayAppend should execute for %s", suite.DbType)
+			suite.True(len(results) >= 0, "JsonArrayAppend should execute for %s", suite.dbType)
 
 			for _, result := range results {
 				suite.T().Logf("ID: %s, Original: %s, Updated: %s", result.Id, result.Meta, result.UpdatedMeta)
@@ -571,7 +571,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonArrayAppend() {
 
 // TestJsonEdgeCases tests JSON function edge cases and boundary conditions.
 func (suite *JsonFunctionsTestSuite) TestJsonEdgeCases() {
-	suite.T().Logf("Testing JSON edge cases for %s", suite.DbType)
+	suite.T().Logf("Testing JSON edge cases for %s", suite.dbType)
 
 	suite.Run("EmptyJsonObject", func() {
 		type EmptyObjectResult struct {
@@ -583,7 +583,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonEdgeCases() {
 
 		var results []EmptyObjectResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -596,7 +596,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonEdgeCases() {
 				return eb.JsonLength(eb.JsonObject())
 			}, "object_len").
 			Limit(1).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Empty JSON object should work")
 		suite.True(len(results) > 0, "Should have empty object results")
@@ -619,7 +619,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonEdgeCases() {
 
 		var results []EmptyArrayResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -632,7 +632,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonEdgeCases() {
 				return eb.JsonLength(eb.JsonArray())
 			}, "array_len").
 			Limit(1).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Empty JSON array should work")
 		suite.True(len(results) > 0, "Should have empty array results")
@@ -655,7 +655,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonEdgeCases() {
 
 		var results []JsonValidResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -668,7 +668,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonEdgeCases() {
 				return eb.JsonValid("not valid json")
 			}, "invalid_json").
 			Limit(1).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 		if err != nil {
 			suite.T().Logf("JsonValid edge cases test completed (expected for invalid JSON): %v", err)
 		} else {

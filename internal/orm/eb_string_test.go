@@ -18,7 +18,7 @@ type StringFunctionsTestSuite struct {
 
 // TestConcat tests the Concat function.
 func (suite *StringFunctionsTestSuite) TestConcat() {
-	suite.T().Logf("Testing Concat function for %s", suite.DbType)
+	suite.T().Logf("Testing Concat function for %s", suite.dbType)
 
 	suite.Run("ConcatTitleAndStatus", func() {
 		type ConcatResult struct {
@@ -30,7 +30,7 @@ func (suite *StringFunctionsTestSuite) TestConcat() {
 
 		var concatResults []ConcatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -41,7 +41,7 @@ func (suite *StringFunctionsTestSuite) TestConcat() {
 			}, "multi_concat").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &concatResults)
+			Scan(suite.ctx, &concatResults)
 
 		suite.NoError(err, "Concat function should work correctly")
 		suite.True(len(concatResults) > 0, "Should have concat results")
@@ -59,7 +59,7 @@ func (suite *StringFunctionsTestSuite) TestConcat() {
 
 // TestConcatWithSep tests the ConcatWithSep function.
 func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
-	suite.T().Logf("Testing ConcatWithSep function for %s", suite.DbType)
+	suite.T().Logf("Testing ConcatWithSep function for %s", suite.dbType)
 
 	suite.Run("ConcatWithDashSeparator", func() {
 		type ConcatWithSepResult struct {
@@ -69,7 +69,7 @@ func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
 
 		var concatResults []ConcatWithSepResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -77,7 +77,7 @@ func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
 			}, "joined").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &concatResults)
+			Scan(suite.ctx, &concatResults)
 
 		suite.NoError(err, "ConcatWithSep should work correctly")
 		suite.True(len(concatResults) > 0, "Should have concatenated results")
@@ -92,7 +92,7 @@ func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
 // TestSubString tests the SubString function.
 // SubString extracts a substring from a string starting at a 1-based position.
 func (suite *StringFunctionsTestSuite) TestSubString() {
-	suite.T().Logf("Testing SubString function for %s", suite.DbType)
+	suite.T().Logf("Testing SubString function for %s", suite.dbType)
 
 	suite.Run("ExtractSubstrings", func() {
 		type SubstringResult struct {
@@ -103,7 +103,7 @@ func (suite *StringFunctionsTestSuite) TestSubString() {
 
 		var substringResults []SubstringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -114,7 +114,7 @@ func (suite *StringFunctionsTestSuite) TestSubString() {
 			}, "middle3_chars").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &substringResults)
+			Scan(suite.ctx, &substringResults)
 
 		suite.NoError(err, "SubString function should work correctly")
 		suite.True(len(substringResults) > 0, "Should have substring results")
@@ -133,7 +133,7 @@ func (suite *StringFunctionsTestSuite) TestSubString() {
 
 // TestUpper tests the Upper function.
 func (suite *StringFunctionsTestSuite) TestUpper() {
-	suite.T().Logf("Testing Upper function for %s", suite.DbType)
+	suite.T().Logf("Testing Upper function for %s", suite.dbType)
 
 	suite.Run("ConvertToUppercase", func() {
 		type CaseResult struct {
@@ -145,7 +145,7 @@ func (suite *StringFunctionsTestSuite) TestUpper() {
 
 		var caseResults []CaseResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -156,7 +156,7 @@ func (suite *StringFunctionsTestSuite) TestUpper() {
 			}, "upper_status").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &caseResults)
+			Scan(suite.ctx, &caseResults)
 
 		suite.NoError(err, "Upper function should work correctly")
 		suite.True(len(caseResults) > 0, "Should have case conversion results")
@@ -171,7 +171,7 @@ func (suite *StringFunctionsTestSuite) TestUpper() {
 
 // TestLower tests the Lower function.
 func (suite *StringFunctionsTestSuite) TestLower() {
-	suite.T().Logf("Testing Lower function for %s", suite.DbType)
+	suite.T().Logf("Testing Lower function for %s", suite.dbType)
 
 	suite.Run("ConvertToLowercase", func() {
 		type CaseResult struct {
@@ -183,7 +183,7 @@ func (suite *StringFunctionsTestSuite) TestLower() {
 
 		var caseResults []CaseResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -194,7 +194,7 @@ func (suite *StringFunctionsTestSuite) TestLower() {
 			}, "lower_status").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &caseResults)
+			Scan(suite.ctx, &caseResults)
 
 		suite.NoError(err, "Lower function should work correctly")
 		suite.True(len(caseResults) > 0, "Should have case conversion results")
@@ -209,7 +209,7 @@ func (suite *StringFunctionsTestSuite) TestLower() {
 
 // TestTrim tests the Trim function.
 func (suite *StringFunctionsTestSuite) TestTrim() {
-	suite.T().Logf("Testing Trim function for %s", suite.DbType)
+	suite.T().Logf("Testing Trim function for %s", suite.dbType)
 
 	suite.Run("TrimWhitespace", func() {
 		type TrimResult struct {
@@ -219,7 +219,7 @@ func (suite *StringFunctionsTestSuite) TestTrim() {
 
 		var trimResults []TrimResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -227,7 +227,7 @@ func (suite *StringFunctionsTestSuite) TestTrim() {
 			}, "trimmed_status").
 			OrderBy("status").
 			Limit(5).
-			Scan(suite.Ctx, &trimResults)
+			Scan(suite.ctx, &trimResults)
 
 		suite.NoError(err, "Trim function should work correctly")
 		suite.True(len(trimResults) > 0, "Should have trim results")
@@ -244,7 +244,7 @@ func (suite *StringFunctionsTestSuite) TestTrim() {
 
 // TestTrimLeft tests the TrimLeft function.
 func (suite *StringFunctionsTestSuite) TestTrimLeft() {
-	suite.T().Logf("Testing TrimLeft function for %s", suite.DbType)
+	suite.T().Logf("Testing TrimLeft function for %s", suite.dbType)
 
 	suite.Run("TrimLeadingWhitespace", func() {
 		type TrimResult struct {
@@ -255,7 +255,7 @@ func (suite *StringFunctionsTestSuite) TestTrimLeft() {
 
 		var trimResults []TrimResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -265,7 +265,7 @@ func (suite *StringFunctionsTestSuite) TestTrimLeft() {
 				return eb.TrimLeft(eb.Concat("   ", eb.Column("status"), "   "))
 			}, "left_trimmed").
 			Limit(3).
-			Scan(suite.Ctx, &trimResults)
+			Scan(suite.ctx, &trimResults)
 
 		suite.NoError(err, "TrimLeft should work correctly")
 		suite.True(len(trimResults) > 0, "Should have trim results")
@@ -281,7 +281,7 @@ func (suite *StringFunctionsTestSuite) TestTrimLeft() {
 
 // TestTrimRight tests the TrimRight function.
 func (suite *StringFunctionsTestSuite) TestTrimRight() {
-	suite.T().Logf("Testing TrimRight function for %s", suite.DbType)
+	suite.T().Logf("Testing TrimRight function for %s", suite.dbType)
 
 	suite.Run("TrimTrailingWhitespace", func() {
 		type TrimResult struct {
@@ -292,7 +292,7 @@ func (suite *StringFunctionsTestSuite) TestTrimRight() {
 
 		var trimResults []TrimResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -302,7 +302,7 @@ func (suite *StringFunctionsTestSuite) TestTrimRight() {
 				return eb.TrimRight(eb.Concat("   ", eb.Column("status"), "   "))
 			}, "right_trimmed").
 			Limit(3).
-			Scan(suite.Ctx, &trimResults)
+			Scan(suite.ctx, &trimResults)
 
 		suite.NoError(err, "TrimRight should work correctly")
 		suite.True(len(trimResults) > 0, "Should have trim results")
@@ -318,7 +318,7 @@ func (suite *StringFunctionsTestSuite) TestTrimRight() {
 
 // TestLength tests the Length function.
 func (suite *StringFunctionsTestSuite) TestLength() {
-	suite.T().Logf("Testing Length function for %s", suite.DbType)
+	suite.T().Logf("Testing Length function for %s", suite.dbType)
 
 	suite.Run("CalculateStringLength", func() {
 		type LengthResult struct {
@@ -330,7 +330,7 @@ func (suite *StringFunctionsTestSuite) TestLength() {
 
 		var lengthResults []LengthResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -341,7 +341,7 @@ func (suite *StringFunctionsTestSuite) TestLength() {
 			}, "status_length").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &lengthResults)
+			Scan(suite.ctx, &lengthResults)
 
 		suite.NoError(err, "Length function should work correctly")
 		suite.True(len(lengthResults) > 0, "Should have length results")
@@ -357,7 +357,7 @@ func (suite *StringFunctionsTestSuite) TestLength() {
 
 // TestCharLength tests the CharLength function.
 func (suite *StringFunctionsTestSuite) TestCharLength() {
-	suite.T().Logf("Testing CharLength function for %s", suite.DbType)
+	suite.T().Logf("Testing CharLength function for %s", suite.dbType)
 
 	suite.Run("CalculateCharacterLength", func() {
 		type StringLengthResult struct {
@@ -367,7 +367,7 @@ func (suite *StringFunctionsTestSuite) TestCharLength() {
 
 		var lengthResults []StringLengthResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -375,7 +375,7 @@ func (suite *StringFunctionsTestSuite) TestCharLength() {
 			}, "char_len").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &lengthResults)
+			Scan(suite.ctx, &lengthResults)
 
 		suite.NoError(err, "CharLength should work correctly")
 		suite.True(len(lengthResults) > 0, "Should have character length results")
@@ -390,7 +390,7 @@ func (suite *StringFunctionsTestSuite) TestCharLength() {
 // TestPosition tests the Position function.
 // Position finds the position of a substring within a string (1-based, 0 if not found).
 func (suite *StringFunctionsTestSuite) TestPosition() {
-	suite.T().Logf("Testing Position function for %s", suite.DbType)
+	suite.T().Logf("Testing Position function for %s", suite.dbType)
 
 	suite.Run("FindSubstringPosition", func() {
 		type PositionResult struct {
@@ -400,7 +400,7 @@ func (suite *StringFunctionsTestSuite) TestPosition() {
 
 		var posResults []PositionResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -408,7 +408,7 @@ func (suite *StringFunctionsTestSuite) TestPosition() {
 			}, "pos").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &posResults)
+			Scan(suite.ctx, &posResults)
 
 		suite.NoError(err, "Position should work correctly")
 		suite.True(len(posResults) > 0, "Should have position results")
@@ -422,7 +422,7 @@ func (suite *StringFunctionsTestSuite) TestPosition() {
 
 // TestLeft tests the Left function.
 func (suite *StringFunctionsTestSuite) TestLeft() {
-	suite.T().Logf("Testing Left function for %s", suite.DbType)
+	suite.T().Logf("Testing Left function for %s", suite.dbType)
 
 	suite.Run("ExtractLeftmostCharacters", func() {
 		type LeftResult struct {
@@ -432,7 +432,7 @@ func (suite *StringFunctionsTestSuite) TestLeft() {
 
 		var leftResults []LeftResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -440,7 +440,7 @@ func (suite *StringFunctionsTestSuite) TestLeft() {
 			}, "left_part").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &leftResults)
+			Scan(suite.ctx, &leftResults)
 
 		suite.NoError(err, "Left function should work correctly")
 		suite.True(len(leftResults) > 0, "Should have left part results")
@@ -454,7 +454,7 @@ func (suite *StringFunctionsTestSuite) TestLeft() {
 
 // TestRight tests the Right function.
 func (suite *StringFunctionsTestSuite) TestRight() {
-	suite.T().Logf("Testing Right function for %s", suite.DbType)
+	suite.T().Logf("Testing Right function for %s", suite.dbType)
 
 	suite.Run("ExtractRightmostCharacters", func() {
 		type RightResult struct {
@@ -464,7 +464,7 @@ func (suite *StringFunctionsTestSuite) TestRight() {
 
 		var rightResults []RightResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -472,7 +472,7 @@ func (suite *StringFunctionsTestSuite) TestRight() {
 			}, "right_part").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &rightResults)
+			Scan(suite.ctx, &rightResults)
 
 		suite.NoError(err, "Right function should work correctly")
 		suite.True(len(rightResults) > 0, "Should have right part results")
@@ -486,7 +486,7 @@ func (suite *StringFunctionsTestSuite) TestRight() {
 
 // TestRepeat tests the Repeat function.
 func (suite *StringFunctionsTestSuite) TestRepeat() {
-	suite.T().Logf("Testing Repeat function for %s", suite.DbType)
+	suite.T().Logf("Testing Repeat function for %s", suite.dbType)
 
 	suite.Run("RepeatString", func() {
 		type RepeatResult struct {
@@ -496,14 +496,14 @@ func (suite *StringFunctionsTestSuite) TestRepeat() {
 
 		var repeatResults []RepeatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Repeat("*", 5)
 			}, "repeated").
 			Limit(3).
-			Scan(suite.Ctx, &repeatResults)
+			Scan(suite.ctx, &repeatResults)
 
 		suite.NoError(err, "Repeat should work correctly")
 		suite.True(len(repeatResults) > 0, "Should have repeat results")
@@ -517,7 +517,7 @@ func (suite *StringFunctionsTestSuite) TestRepeat() {
 
 // TestReplace tests the Replace function.
 func (suite *StringFunctionsTestSuite) TestReplace() {
-	suite.T().Logf("Testing Replace function for %s", suite.DbType)
+	suite.T().Logf("Testing Replace function for %s", suite.dbType)
 
 	suite.Run("ReplaceSubstring", func() {
 		type ReplaceResult struct {
@@ -527,7 +527,7 @@ func (suite *StringFunctionsTestSuite) TestReplace() {
 
 		var replaceResults []ReplaceResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -535,7 +535,7 @@ func (suite *StringFunctionsTestSuite) TestReplace() {
 			}, "replaced_status").
 			OrderBy("status").
 			Limit(5).
-			Scan(suite.Ctx, &replaceResults)
+			Scan(suite.ctx, &replaceResults)
 
 		suite.NoError(err, "Replace function should work correctly")
 		suite.True(len(replaceResults) > 0, "Should have replace results")
@@ -551,11 +551,11 @@ func (suite *StringFunctionsTestSuite) TestReplace() {
 // TestReverse tests the Reverse function.
 // Reverse reverses a string (not supported on SQLite).
 func (suite *StringFunctionsTestSuite) TestReverse() {
-	suite.T().Logf("Testing Reverse function for %s", suite.DbType)
+	suite.T().Logf("Testing Reverse function for %s", suite.dbType)
 
 	suite.Run("ReverseString", func() {
-		if suite.DbType == constants.DbSQLite {
-			suite.T().Skipf("Reverse not supported on %s (framework limitation: no simulation provided)", suite.DbType)
+		if suite.dbType == constants.DbSQLite {
+			suite.T().Skipf("Reverse not supported on %s (framework limitation: no simulation provided)", suite.dbType)
 		}
 
 		type ReverseResult struct {
@@ -565,14 +565,14 @@ func (suite *StringFunctionsTestSuite) TestReverse() {
 
 		var reverseResults []ReverseResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Reverse(eb.Column("title"))
 			}, "reversed").
 			Limit(3).
-			Scan(suite.Ctx, &reverseResults)
+			Scan(suite.ctx, &reverseResults)
 
 		suite.NoError(err, "Reverse should work on supported databases")
 		suite.True(len(reverseResults) > 0, "Should have reverse results")
@@ -587,7 +587,7 @@ func (suite *StringFunctionsTestSuite) TestReverse() {
 // TestCombinedStringFunctions tests using multiple string functions together.
 // This verifies that string functions can be nested and combined.
 func (suite *StringFunctionsTestSuite) TestCombinedStringFunctions() {
-	suite.T().Logf("Testing combined string functions for %s", suite.DbType)
+	suite.T().Logf("Testing combined string functions for %s", suite.dbType)
 
 	suite.Run("NestedStringFunctions", func() {
 		type CombinedStringResult struct {
@@ -599,7 +599,7 @@ func (suite *StringFunctionsTestSuite) TestCombinedStringFunctions() {
 
 		var combinedResults []CombinedStringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -617,7 +617,7 @@ func (suite *StringFunctionsTestSuite) TestCombinedStringFunctions() {
 			}, "combined_str").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &combinedResults)
+			Scan(suite.ctx, &combinedResults)
 
 		suite.NoError(err, "Combined string functions should work correctly")
 		suite.True(len(combinedResults) > 0, "Should have combined string results")

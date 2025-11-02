@@ -15,7 +15,7 @@ type BasicExpressionsTestSuite struct {
 }
 
 func (suite *BasicExpressionsTestSuite) TestColumn() {
-	suite.T().Logf("Testing Column expression for %s", suite.DbType)
+	suite.T().Logf("Testing Column expression for %s", suite.dbType)
 
 	// Test 1: Simple column reference
 	suite.Run("SimpleColumnReference", func() {
@@ -26,7 +26,7 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 
 		var results []ColumnResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Column("id")
@@ -36,7 +36,7 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 			}, "title").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Column references should work")
 		suite.True(len(results) > 0, "Should have column results")
@@ -58,7 +58,7 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 
 		var results []QualifiedColumnResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Join((*User)(nil), func(cb ConditionBuilder) {
 				cb.EqualsColumn("u.id", "p.user_id")
@@ -68,7 +68,7 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 			SelectAs("u.name", "user_name").
 			OrderBy("p.id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Qualified column references should work")
 		suite.True(len(results) > 0, "Should have qualified column results")
@@ -84,7 +84,7 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestNull() {
-	suite.T().Logf("Testing Null expression for %s", suite.DbType)
+	suite.T().Logf("Testing Null expression for %s", suite.dbType)
 
 	// Test: NULL value in SELECT
 	suite.Run("NullValueInSelect", func() {
@@ -96,7 +96,7 @@ func (suite *BasicExpressionsTestSuite) TestNull() {
 
 		var results []NullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -104,7 +104,7 @@ func (suite *BasicExpressionsTestSuite) TestNull() {
 			}, "null_value").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NULL expression should work")
 		suite.True(len(results) > 0, "Should have NULL results")
@@ -120,7 +120,7 @@ func (suite *BasicExpressionsTestSuite) TestNull() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestIsNull() {
-	suite.T().Logf("Testing IsNull function for %s", suite.DbType)
+	suite.T().Logf("Testing IsNull function for %s", suite.dbType)
 
 	// Test 1: IsNull - check for NULL values
 	suite.Run("CheckNullValues", func() {
@@ -132,7 +132,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 
 		var results []IsNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -142,7 +142,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 			}, "is_null").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "IsNull should work")
 		suite.True(len(results) > 0, "Should have IsNull results")
@@ -163,7 +163,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 
 		var results []NullCoalesceResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -175,7 +175,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 			}, "safe_value").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Coalesce with NULL checks should work")
 		suite.True(len(results) > 0, "Should have Coalesce results")
@@ -189,7 +189,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
-	suite.T().Logf("Testing IsNotNull function for %s", suite.DbType)
+	suite.T().Logf("Testing IsNotNull function for %s", suite.dbType)
 
 	// Test 1: IsNotNull - check for NOT NULL values
 	suite.Run("CheckNotNullValues", func() {
@@ -201,7 +201,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 
 		var results []IsNotNullResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -209,7 +209,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 			}, "is_not_null").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "IsNotNull should work")
 		suite.True(len(results) > 0, "Should have IsNotNull results")
@@ -233,7 +233,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 
 		var results []NullCheckResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -244,7 +244,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 			}, "has_status").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NULL checks in SELECT should work")
 		suite.True(len(results) > 0, "Should have NULL check results")
@@ -261,7 +261,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestLiteral() {
-	suite.T().Logf("Testing Literal expression for %s", suite.DbType)
+	suite.T().Logf("Testing Literal expression for %s", suite.dbType)
 
 	// Test: Literal values in expressions
 	suite.Run("LiteralValuesInExpressions", func() {
@@ -273,7 +273,7 @@ func (suite *BasicExpressionsTestSuite) TestLiteral() {
 
 		var results []LiteralResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -281,7 +281,7 @@ func (suite *BasicExpressionsTestSuite) TestLiteral() {
 			}, "literal_val").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Literal should work")
 		suite.True(len(results) > 0, "Should have literal results")
@@ -295,7 +295,7 @@ func (suite *BasicExpressionsTestSuite) TestLiteral() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestOrder() {
-	suite.T().Logf("Testing Order expression for %s", suite.DbType)
+	suite.T().Logf("Testing Order expression for %s", suite.dbType)
 
 	// Test 1: Simple ORDER BY expression
 	suite.Run("SimpleOrderBy", func() {
@@ -307,7 +307,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 
 		var results []OrderResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "age").
 			OrderByExpr(func(eb ExprBuilder) any {
@@ -316,7 +316,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 				})
 			}).
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Order should work")
 		suite.True(len(results) > 0, "Should have Order results")
@@ -346,7 +346,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 
 		var results []MultiOrderResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "is_active", "age").
 			OrderByExpr(func(eb ExprBuilder) any {
@@ -360,7 +360,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 				})
 			}).
 			Limit(10).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Multiple Order expressions should work")
 		suite.True(len(results) > 0, "Should have multi-order results")
@@ -374,7 +374,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestCase() {
-	suite.T().Logf("Testing Case expression for %s", suite.DbType)
+	suite.T().Logf("Testing Case expression for %s", suite.dbType)
 
 	// Test 1: Simple CASE expression
 	suite.Run("SimpleCaseExpression", func() {
@@ -386,7 +386,7 @@ func (suite *BasicExpressionsTestSuite) TestCase() {
 
 		var results []CaseResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -405,7 +405,7 @@ func (suite *BasicExpressionsTestSuite) TestCase() {
 			}, "category").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Simple CASE should work")
 		suite.True(len(results) > 0, "Should have CASE results")
@@ -427,7 +427,7 @@ func (suite *BasicExpressionsTestSuite) TestCase() {
 
 		var results []NestedCaseResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -438,7 +438,7 @@ func (suite *BasicExpressionsTestSuite) TestCase() {
 			}, "display_status").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Nested CASE with NULL handling should work")
 		suite.True(len(results) > 0, "Should have nested CASE results")
@@ -461,7 +461,7 @@ func (suite *BasicExpressionsTestSuite) TestCase() {
 
 		var results []ComplexCaseResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -486,7 +486,7 @@ func (suite *BasicExpressionsTestSuite) TestCase() {
 			}, "view_category").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Complex CASE should work")
 		suite.True(len(results) > 0, "Should have complex CASE results")
@@ -500,7 +500,7 @@ func (suite *BasicExpressionsTestSuite) TestCase() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestSubQuery() {
-	suite.T().Logf("Testing SubQuery expression for %s", suite.DbType)
+	suite.T().Logf("Testing SubQuery expression for %s", suite.dbType)
 
 	// Test 1: Simple subquery in SELECT clause
 	suite.Run("SimpleSubQueryInSelect", func() {
@@ -513,7 +513,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []SubQueryResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -526,7 +526,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 			}, "avg_views").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "SubQuery in SELECT should work")
 		suite.True(len(results) > 0, "Should have SubQuery results")
@@ -550,7 +550,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []FilteredResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -565,7 +565,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 			}).
 			OrderByDesc("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "SubQuery in WHERE clause should work")
 		suite.True(len(results) > 0, "Should have filtered results")
@@ -588,7 +588,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []CorrelatedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -604,7 +604,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 			}, "post_count").
 			OrderBy("name").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Correlated subquery should work")
 		suite.True(len(results) > 0, "Should have correlated subquery results")
@@ -630,7 +630,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 
 		var results []AggregateSubQueryResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -659,7 +659,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 			}, "is_top_views").
 			OrderByDesc("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "SubQuery with aggregate function should work")
 		suite.True(len(results) > 0, "Should have aggregate subquery results")
@@ -689,7 +689,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 
 // TestExists tests the Exists expression.
 func (suite *BasicExpressionsTestSuite) TestExists() {
-	suite.T().Logf("Testing Exists expression for %s", suite.DbType)
+	suite.T().Logf("Testing Exists expression for %s", suite.dbType)
 
 	suite.Run("ExistsInWhereClause", func() {
 		type ExistsResult struct {
@@ -700,7 +700,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 
 		var results []ExistsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "email").
 			Where(func(cb ConditionBuilder) {
@@ -716,7 +716,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 			}).
 			OrderBy("name").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "EXISTS in WHERE clause should work")
 		suite.True(len(results) > 0, "Should have users with posts")
@@ -737,7 +737,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 
 		var results []UserWithHighViewPosts
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			Where(func(cb ConditionBuilder) {
@@ -753,7 +753,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 				})
 			}).
 			OrderBy("name").
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "EXISTS with complex conditions should work")
 		suite.T().Logf("Found %d users with high-view posts", len(results))
@@ -774,7 +774,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 
 		var results []Result
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			Where(func(cb ConditionBuilder) {
@@ -792,7 +792,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 			}).
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "EXISTS combined with AND should work")
 		suite.T().Logf("Found %d posts", len(results))
@@ -806,7 +806,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 
 // TestNotExists tests the NotExists expression.
 func (suite *BasicExpressionsTestSuite) TestNotExists() {
-	suite.T().Logf("Testing NotExists expression for %s", suite.DbType)
+	suite.T().Logf("Testing NotExists expression for %s", suite.dbType)
 
 	suite.Run("NotExistsInWhereClause", func() {
 		type NotExistsResult struct {
@@ -817,7 +817,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 
 		var results []NotExistsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "email").
 			Where(func(cb ConditionBuilder) {
@@ -833,7 +833,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 			}).
 			OrderBy("name").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NOT EXISTS in WHERE clause should work")
 		suite.T().Logf("Found %d users without posts", len(results))
@@ -854,7 +854,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 
 		var results []UserWithoutHighViewPosts
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			Where(func(cb ConditionBuilder) {
@@ -870,7 +870,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 				})
 			}).
 			OrderBy("name").
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NOT EXISTS with complex conditions should work")
 		suite.T().Logf("Found %d users without high-view posts", len(results))
@@ -891,7 +891,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 
 		var results []CombinedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name").
 			Where(func(cb ConditionBuilder) {
@@ -917,7 +917,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 			}).
 			OrderBy("name").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "EXISTS and NOT EXISTS combined should work")
 		suite.T().Logf("Found %d users with posts but no high-view posts", len(results))
@@ -932,7 +932,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 
 // TestNot tests the Not method for negating boolean expressions.
 func (suite *BasicExpressionsTestSuite) TestNot() {
-	suite.T().Logf("Testing Not expression for %s", suite.DbType)
+	suite.T().Logf("Testing Not expression for %s", suite.dbType)
 
 	// Test 1: NOT with equality condition
 	suite.Run("NotWithEqualityCondition", func() {
@@ -944,7 +944,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 
 		var results []NotResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			Where(func(cb ConditionBuilder) {
@@ -954,7 +954,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 			}).
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NOT with equality condition should work")
 		suite.True(len(results) > 0, "Should have NOT results")
@@ -975,7 +975,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 
 		var results []ComparisonNotResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -985,7 +985,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 			}).
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NOT with comparison condition should work")
 		suite.True(len(results) > 0, "Should have comparison NOT results")
@@ -1006,7 +1006,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 
 		var results []NullNotResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "description").
 			Where(func(cb ConditionBuilder) {
@@ -1016,7 +1016,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 			}).
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NOT with NULL check should work")
 		suite.True(len(results) > 0, "Should have NULL NOT results")
@@ -1037,7 +1037,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 
 		var results []SelectNotResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1045,7 +1045,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 			}, "is_not_draft").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NOT in SELECT expression should work")
 		suite.True(len(results) > 0, "Should have SELECT NOT results")
@@ -1062,19 +1062,19 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *BasicExpressionsTestSuite) TestAny() {
-	if suite.DbType == constants.DbSQLite {
-		suite.T().Skipf("Test skipped for %s (ANY operator not supported and cannot be easily simulated)", suite.DbType)
+	if suite.dbType == constants.DbSQLite {
+		suite.T().Skipf("Test skipped for %s (ANY operator not supported and cannot be easily simulated)", suite.dbType)
 
 		return
 	}
 
-	if suite.DbType == constants.DbMySQL {
-		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.DbType)
+	if suite.dbType == constants.DbMySQL {
+		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
 
 		return
 	}
 
-	suite.T().Logf("Testing Any expression for %s", suite.DbType)
+	suite.T().Logf("Testing Any expression for %s", suite.dbType)
 
 	suite.Run("AnyWithEqualityCondition", func() {
 		type AnyResult struct {
@@ -1085,7 +1085,7 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 
 		var results []AnyResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "email").
 			Where(func(cb ConditionBuilder) {
@@ -1104,7 +1104,7 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 				})
 			}).
 			OrderBy("name").
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ANY with equality condition should work")
 		suite.True(len(results) > 0, "Should have ANY results")
@@ -1125,7 +1125,7 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 
 		var results []ViewCountAnyResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -1147,7 +1147,7 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ANY with greater than condition should work")
 		suite.True(len(results) > 0, "Should have view count ANY results")
@@ -1163,19 +1163,19 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *BasicExpressionsTestSuite) TestAll() {
-	if suite.DbType == constants.DbSQLite {
-		suite.T().Skipf("Test skipped for %s (ALL operator not supported and cannot be easily simulated)", suite.DbType)
+	if suite.dbType == constants.DbSQLite {
+		suite.T().Skipf("Test skipped for %s (ALL operator not supported and cannot be easily simulated)", suite.dbType)
 
 		return
 	}
 
-	if suite.DbType == constants.DbMySQL {
-		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.DbType)
+	if suite.dbType == constants.DbMySQL {
+		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
 
 		return
 	}
 
-	suite.T().Logf("Testing All expression for %s", suite.DbType)
+	suite.T().Logf("Testing All expression for %s", suite.dbType)
 
 	suite.Run("AllWithEqualityCondition", func() {
 		type AllResult struct {
@@ -1186,7 +1186,7 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 
 		var results []AllResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -1208,7 +1208,7 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ALL with greater than or equal condition should work")
 		suite.True(len(results) > 0, "Should have ALL results")
@@ -1228,7 +1228,7 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 
 		var results []LessThanAllResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -1250,7 +1250,7 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ALL with less than condition should work")
 		suite.True(len(results) > 0, "Should have less than ALL results")
@@ -1264,7 +1264,7 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 
 // TestArithmeticOperators tests the Add, Subtract, Multiply, Divide, and Paren methods.
 func (suite *BasicExpressionsTestSuite) TestArithmeticOperators() {
-	suite.T().Logf("Testing arithmetic operators for %s", suite.DbType)
+	suite.T().Logf("Testing arithmetic operators for %s", suite.dbType)
 
 	suite.Run("BasicArithmeticOperations", func() {
 		type ArithmeticResult struct {
@@ -1279,7 +1279,7 @@ func (suite *BasicExpressionsTestSuite) TestArithmeticOperators() {
 
 		var results []ArithmeticResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1305,7 +1305,7 @@ func (suite *BasicExpressionsTestSuite) TestArithmeticOperators() {
 			}, "complex").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Arithmetic operators should work")
 		suite.True(len(results) > 0, "Should have arithmetic results")
@@ -1327,7 +1327,7 @@ func (suite *BasicExpressionsTestSuite) TestArithmeticOperators() {
 
 // TestComparisonOperators tests the Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, and LessThanOrEqual methods.
 func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
-	suite.T().Logf("Testing comparison operators for %s", suite.DbType)
+	suite.T().Logf("Testing comparison operators for %s", suite.dbType)
 
 	// Test 1: Equals operator
 	suite.Run("EqualsOperator", func() {
@@ -1339,7 +1339,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 
 		var results []EqualsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			Where(func(cb ConditionBuilder) {
@@ -1349,7 +1349,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 			}).
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Equals operator should work")
 		suite.True(len(results) > 0, "Should have Equals results")
@@ -1370,7 +1370,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 
 		var results []NotEqualsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			Where(func(cb ConditionBuilder) {
@@ -1380,7 +1380,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 			}).
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "NotEquals operator should work")
 		suite.True(len(results) > 0, "Should have NotEquals results")
@@ -1401,7 +1401,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 
 		var results []GreaterThanResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -1411,7 +1411,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "GreaterThan operator should work")
 		suite.True(len(results) > 0, "Should have GreaterThan results")
@@ -1432,7 +1432,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 
 		var results []GreaterThanOrEqualResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -1442,7 +1442,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "GreaterThanOrEqual operator should work")
 		suite.True(len(results) > 0, "Should have GreaterThanOrEqual results")
@@ -1463,7 +1463,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 
 		var results []LessThanResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -1473,7 +1473,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 			}).
 			OrderByDesc("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "LessThan operator should work")
 		suite.True(len(results) > 0, "Should have LessThan results")
@@ -1494,7 +1494,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 
 		var results []LessThanOrEqualResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			Where(func(cb ConditionBuilder) {
@@ -1504,7 +1504,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 			}).
 			OrderByDesc("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "LessThanOrEqual operator should work")
 		suite.True(len(results) > 0, "Should have LessThanOrEqual results")
@@ -1527,7 +1527,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 
 		var results []CombinedComparisonResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1543,7 +1543,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 			}, "is_low_view").
 			OrderBy("view_count").
 			Limit(10).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Combined comparison operators should work")
 		suite.True(len(results) > 0, "Should have combined comparison results")
@@ -1571,7 +1571,7 @@ func (suite *BasicExpressionsTestSuite) TestComparisonOperators() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestExpr() {
-	suite.T().Logf("Testing Expr function for %s", suite.DbType)
+	suite.T().Logf("Testing Expr function for %s", suite.dbType)
 
 	// Test 1: Simple arithmetic expression
 	suite.Run("SimpleArithmeticExpression", func() {
@@ -1585,7 +1585,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 
 		var results []ExprResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1599,7 +1599,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 			}, "divided").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Arithmetic expressions should work")
 		suite.True(len(results) > 0, "Should have expression results")
@@ -1625,7 +1625,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 
 		var results []StringExprResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1633,7 +1633,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 			}, "title_with_status").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "String concatenation expressions should work")
 		suite.True(len(results) > 0, "Should have string expression results")
@@ -1660,15 +1660,15 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 		var results []ComplexExprResult
 
 		avgViewCount := float64(0)
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}).
-			Scan(suite.Ctx, &avgViewCount)
+			Scan(suite.ctx, &avgViewCount)
 		suite.NoError(err)
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1679,7 +1679,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 			}, "rounded_avg").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Complex expressions with functions should work")
 		suite.True(len(results) > 0, "Should have complex expression results")
@@ -1694,7 +1694,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestExprs() {
-	suite.T().Logf("Testing Exprs function for %s", suite.DbType)
+	suite.T().Logf("Testing Exprs function for %s", suite.dbType)
 
 	// Test: Combine multiple expressions with comma separator
 	suite.Run("CombineMultipleExpressions", func() {
@@ -1707,7 +1707,7 @@ func (suite *BasicExpressionsTestSuite) TestExprs() {
 
 		var results []ExprsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "email").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1718,7 +1718,7 @@ func (suite *BasicExpressionsTestSuite) TestExprs() {
 				)
 			}, "combined").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Exprs should work")
 		suite.True(len(results) > 0, "Should have Exprs results")
@@ -1731,7 +1731,7 @@ func (suite *BasicExpressionsTestSuite) TestExprs() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
-	suite.T().Logf("Testing ExprsWithSep function for %s", suite.DbType)
+	suite.T().Logf("Testing ExprsWithSep function for %s", suite.dbType)
 
 	// Test 1: Combine boolean expressions with OR
 	suite.Run("CombineConditionsWithOR", func() {
@@ -1745,7 +1745,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 
 		var results []ExprsWithSepResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "age", "is_active").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1758,7 +1758,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 			}, "matches_or").
 			OrderBy("name").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExprsWithSep with OR should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1783,7 +1783,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 
 		var results []ArithmeticResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1797,7 +1797,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 			}, "total").
 			OrderBy("name").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExprsWithSep with addition should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1813,7 +1813,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
-	suite.T().Logf("Testing ExprByDialect function for %s", suite.DbType)
+	suite.T().Logf("Testing ExprByDialect function for %s", suite.dbType)
 
 	// Test: Cross-database string concatenation
 	// Different databases use different syntax for string concatenation:
@@ -1829,7 +1829,7 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 
 		var results []ConcatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "email").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1851,7 +1851,7 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 			}, "full_info").
 			OrderBy("name").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExprByDialect should work for cross-database expressions")
 		suite.True(len(results) > 0, "Should have ExprByDialect results")
@@ -1878,7 +1878,7 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 
 		var results []CaseResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1903,7 +1903,7 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 			}, "category").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ExprByDialect should work with CASE expressions")
 		suite.True(len(results) > 0, "Should have case expression results")
@@ -1920,7 +1920,7 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 }
 
 func (suite *BasicExpressionsTestSuite) TestExecByDialect() {
-	suite.T().Logf("Testing ExecByDialect function for %s", suite.DbType)
+	suite.T().Logf("Testing ExecByDialect function for %s", suite.dbType)
 
 	// Test: Execute database-specific side effects
 	suite.Run("DatabaseSpecificSideEffects", func() {
@@ -1928,7 +1928,7 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialect() {
 		var executed string
 
 		// Create a simple query to test with
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 
 		// Get the expression builder from the query
 		eb := query.ExprBuilder()
@@ -1947,7 +1947,7 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialect() {
 		})
 
 		// Verify the correct callback was executed based on current database
-		switch suite.DbType {
+		switch suite.dbType {
 		case constants.DbPostgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
 		case constants.DbMySQL:
@@ -1964,7 +1964,7 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialect() {
 		var executed string
 
 		// Create a simple query to test with
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Only provide default callback
@@ -1976,19 +1976,19 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialect() {
 
 		// Default callback should be executed for all databases
 		suite.Equal("default", executed, "Default callback should be executed")
-		suite.T().Logf("Default callback executed for %s", suite.DbType)
+		suite.T().Logf("Default callback executed for %s", suite.dbType)
 	})
 }
 
 func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
-	suite.T().Logf("Testing ExecByDialectWithErr function for %s", suite.DbType)
+	suite.T().Logf("Testing ExecByDialectWithErr function for %s", suite.dbType)
 
 	// Test: Execute database-specific callbacks with error handling
 	suite.Run("DatabaseSpecificWithError", func() {
 		var executed string
 
 		// Create a simple query to test with
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Execute database-specific callbacks that return no error
@@ -2013,7 +2013,7 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
 		suite.NoError(err, "ExecByDialectWithErr should not return error on success")
 
 		// Verify the correct callback was executed
-		switch suite.DbType {
+		switch suite.dbType {
 		case constants.DbPostgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
 		case constants.DbMySQL:
@@ -2028,11 +2028,11 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
 	// Test: Error handling in database-specific callbacks
 	suite.Run("ErrorHandling", func() {
 		// Create a simple query to test with
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Execute callbacks that return an error
-		testErr := fmt.Errorf("test error from %s", suite.DbType)
+		testErr := fmt.Errorf("test error from %s", suite.dbType)
 		err := eb.ExecByDialectWithErr(DialectExecsWithErr{
 			Postgres: func() error {
 				return testErr
@@ -2047,12 +2047,12 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
 
 		suite.Error(err, "ExecByDialectWithErr should return error when callback fails")
 		suite.Equal(testErr, err, "Should return the exact error from callback")
-		suite.T().Logf("Error handling works correctly for %s: %v", suite.DbType, err)
+		suite.T().Logf("Error handling works correctly for %s: %v", suite.dbType, err)
 	})
 
 	// Test: Default callback with error
 	suite.Run("DefaultCallbackWithError", func() {
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Test successful default callback
@@ -2072,17 +2072,17 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
 		})
 		suite.Error(err, "Default callback error should be returned")
 		suite.Equal(testErr, err, "Should return the exact error from default callback")
-		suite.T().Logf("Default callback error handling works for %s", suite.DbType)
+		suite.T().Logf("Default callback error handling works for %s", suite.dbType)
 	})
 }
 
 func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
-	suite.T().Logf("Testing FragmentByDialect function for %s", suite.DbType)
+	suite.T().Logf("Testing FragmentByDialect function for %s", suite.dbType)
 
 	// Test: Generate database-specific query fragments
 	suite.Run("DatabaseSpecificFragments", func() {
 		// Create a simple query to test with
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Generate database-specific fragments
@@ -2103,7 +2103,7 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 
 		// Verify the correct fragment was generated
 		fragmentStr := string(fragment)
-		switch suite.DbType {
+		switch suite.dbType {
 		case constants.DbPostgres:
 			suite.Contains(fragmentStr, "PostgreSQL", "Should contain PostgreSQL fragment")
 		case constants.DbMySQL:
@@ -2112,12 +2112,12 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 			suite.Contains(fragmentStr, "SQLite", "Should contain SQLite fragment")
 		}
 
-		suite.T().Logf("Generated fragment for %s: %s", suite.DbType, fragmentStr)
+		suite.T().Logf("Generated fragment for %s: %s", suite.dbType, fragmentStr)
 	})
 
 	// Test: Error handling in fragment generation
 	suite.Run("FragmentErrorHandling", func() {
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Generate fragment that returns an error
@@ -2142,7 +2142,7 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 
 	// Test: Default fragment callback
 	suite.Run("DefaultFragmentCallback", func() {
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Use default callback
@@ -2155,12 +2155,12 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 
 		suite.NoError(err, "Default fragment callback should work")
 		suite.Equal(defaultFragment, fragment, "Should return default fragment")
-		suite.T().Logf("Default fragment works for %s: %s", suite.DbType, string(fragment))
+		suite.T().Logf("Default fragment works for %s: %s", suite.dbType, string(fragment))
 	})
 
 	// Test: Empty fragment (nil bytes)
 	suite.Run("EmptyFragment", func() {
-		query := suite.Db.NewSelect().Model((*Post)(nil)).Limit(1)
+		query := suite.db.NewSelect().Model((*Post)(nil)).Limit(1)
 		eb := query.ExprBuilder()
 
 		// Return empty/nil fragment
@@ -2172,6 +2172,6 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 
 		suite.NoError(err, "Empty fragment should not cause error")
 		suite.Nil(fragment, "Fragment should be nil when callback returns nil")
-		suite.T().Logf("Empty fragment handling works for %s", suite.DbType)
+		suite.T().Logf("Empty fragment handling works for %s", suite.dbType)
 	})
 }

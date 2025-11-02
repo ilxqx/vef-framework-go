@@ -38,6 +38,7 @@ func (suite *AppTestSuite) SetupSuite() {
 	originalEnv := os.Getenv("VEF_I18N_LANGUAGE")
 
 	_ = os.Unsetenv("VEF_I18N_LANGUAGE")
+
 	defer func() {
 		if originalEnv != "" {
 			_ = os.Setenv("VEF_I18N_LANGUAGE", originalEnv)

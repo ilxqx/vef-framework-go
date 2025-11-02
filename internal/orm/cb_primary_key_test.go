@@ -8,21 +8,21 @@ type PrimaryKeyConditionsTestSuite struct {
 
 // TestPkEquals tests the PkEquals and OrPkEquals conditions.
 func (suite *PrimaryKeyConditionsTestSuite) TestPkEquals() {
-	suite.T().Logf("Testing PkEquals condition for %s", suite.DbType)
+	suite.T().Logf("Testing PkEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicPkEquals", func() {
 		// Get a user first to get their ID
 		var firstUser User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(1).
-			Scan(suite.Ctx, &firstUser)
+			Scan(suite.ctx, &firstUser)
 		suite.NoError(err, "Should get a user")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkEquals(firstUser.Id)
@@ -39,16 +39,16 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPkEquals() {
 		// Get two users
 		var allUsers []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx, &allUsers)
+			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 		suite.Len(allUsers, 2, "Should have two users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkEquals(allUsers[0].Id).
@@ -67,21 +67,21 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPkEquals() {
 
 // TestPkNotEquals tests the PkNotEquals and OrPkNotEquals conditions.
 func (suite *PrimaryKeyConditionsTestSuite) TestPkNotEquals() {
-	suite.T().Logf("Testing PkNotEquals condition for %s", suite.DbType)
+	suite.T().Logf("Testing PkNotEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicPkNotEquals", func() {
 		// Get a user first
 		var firstUser User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(1).
-			Scan(suite.Ctx, &firstUser)
+			Scan(suite.ctx, &firstUser)
 		suite.NoError(err, "Should get a user")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkNotEquals(firstUser.Id)
@@ -101,15 +101,15 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPkNotEquals() {
 	suite.Run("OrPkNotEquals", func() {
 		var allUsers []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx, &allUsers)
+			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkNotEquals(allUsers[0].Id).
@@ -126,24 +126,24 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPkNotEquals() {
 
 // TestPkIn tests the PkIn and OrPkIn conditions.
 func (suite *PrimaryKeyConditionsTestSuite) TestPkIn() {
-	suite.T().Logf("Testing PkIn condition for %s", suite.DbType)
+	suite.T().Logf("Testing PkIn condition for %s", suite.dbType)
 
 	suite.Run("BasicPkIn", func() {
 		// Get two users
 		var allUsers []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx, &allUsers)
+			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 		suite.Len(allUsers, 2, "Should have two users")
 
 		ids := []string{allUsers[0].Id, allUsers[1].Id}
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkIn(ids)
@@ -161,15 +161,15 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPkIn() {
 	suite.Run("OrPkIn", func() {
 		var allUsers []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx, &allUsers)
+			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkIn([]string{allUsers[0].Id}).
@@ -186,21 +186,21 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPkIn() {
 
 // TestPkNotIn tests the PkNotIn and OrPkNotIn conditions.
 func (suite *PrimaryKeyConditionsTestSuite) TestPkNotIn() {
-	suite.T().Logf("Testing PkNotIn condition for %s", suite.DbType)
+	suite.T().Logf("Testing PkNotIn condition for %s", suite.dbType)
 
 	suite.Run("BasicPkNotIn", func() {
 		// Get one user to exclude
 		var firstUser User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(1).
-			Scan(suite.Ctx, &firstUser)
+			Scan(suite.ctx, &firstUser)
 		suite.NoError(err, "Should get a user")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkNotIn([]string{firstUser.Id})
@@ -220,15 +220,15 @@ func (suite *PrimaryKeyConditionsTestSuite) TestPkNotIn() {
 	suite.Run("OrPkNotIn", func() {
 		var allUsers []User
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			OrderBy("id").
 			Limit(2).
-			Scan(suite.Ctx, &allUsers)
+			Scan(suite.ctx, &allUsers)
 		suite.NoError(err, "Should get users")
 
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.PkNotIn([]string{allUsers[0].Id}).

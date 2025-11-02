@@ -19,6 +19,6 @@ func PrintBanner() {
 	cyan := color.New(color.FgCyan, color.Bold)
 	_, _ = cyan.Print(Banner)
 
-	_, _ = color.New(color.FgHiBlack).Printf("Version: %s | Commit: %s | Built: %s\n\n",
-		Version, Commit, Date)
+	_, _ = color.New(color.FgHiBlack).Printf("Version: %s | Built: %s\n\n",
+		Version, Date)
 }

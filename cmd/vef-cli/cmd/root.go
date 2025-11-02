@@ -8,12 +8,12 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/build_info"
 	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/create"
+	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/model_schema"
 )
 
 var (
-	Version = "dev"
-	Commit  = "none"
-	Date    = "unknown"
+	Version string
+	Date    string
 )
 
 var rootCmd = &cobra.Command{
@@ -24,20 +24,22 @@ var rootCmd = &cobra.Command{
 
 // Execute runs the root command.
 func Execute() {
+	rootCmd.Version = Version
+	rootCmd.SetVersionTemplate(Banner + fmt.Sprintf("\nVersion: %s | Built: %s\n", Version, Date))
+
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
+
 		os.Exit(1)
 	}
 }
 
 func init() {
-	rootCmd.Version = Version
-	rootCmd.SetVersionTemplate(Banner + fmt.Sprintf("\nVersion: %s | Commit: %s | Built: %s\n", Version, Commit, Date))
-
 	setupHelpColors(rootCmd)
 
 	rootCmd.AddCommand(create.Command())
 	rootCmd.AddCommand(build_info.Command())
+	rootCmd.AddCommand(model_schema.Command())
 
 	for _, cmd := range rootCmd.Commands() {
 		setupHelpColors(cmd)

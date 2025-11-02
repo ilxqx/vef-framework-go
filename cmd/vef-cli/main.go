@@ -4,16 +4,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd"
 )
 
-// Version information injected at build time via ldflags.
 var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
+	version = "0.0.1"
+	date    = "2025-11-02 22:22:09"
 )
 
 func main() {
-	cmd.Version = version
-	cmd.Commit = commit
-	cmd.Date = date
+	versionInfo := cmd.GetVersionInfo(version, date)
+
+	cmd.Version = versionInfo.Version
+	cmd.Date = versionInfo.Date
+
 	cmd.Execute()
 }

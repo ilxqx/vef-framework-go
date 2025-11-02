@@ -18,7 +18,7 @@ type TypeConversionFunctionsTestSuite struct {
 
 // TestToString tests the ToString function.
 func (suite *TypeConversionFunctionsTestSuite) TestToString() {
-	suite.T().Logf("Testing ToString function for %s", suite.DbType)
+	suite.T().Logf("Testing ToString function for %s", suite.dbType)
 
 	suite.Run("ConvertNumberToString", func() {
 		type ToStringResult struct {
@@ -29,7 +29,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToString() {
 
 		var toStringResults []ToStringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -37,7 +37,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToString() {
 			}, "count_str").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &toStringResults)
+			Scan(suite.ctx, &toStringResults)
 
 		suite.NoError(err, "ToString should work")
 		suite.True(len(toStringResults) > 0, "Should have ToString results")
@@ -52,7 +52,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToString() {
 
 // TestToInteger tests the ToInteger function.
 func (suite *TypeConversionFunctionsTestSuite) TestToInteger() {
-	suite.T().Logf("Testing ToInteger function for %s", suite.DbType)
+	suite.T().Logf("Testing ToInteger function for %s", suite.dbType)
 
 	suite.Run("ConvertStringToInteger", func() {
 		type ToIntegerResult struct {
@@ -63,7 +63,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToInteger() {
 
 		var toIntResults []ToIntegerResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -73,7 +73,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToInteger() {
 				return eb.ToInteger(eb.ToString(eb.Column("view_count")))
 			}, "int_value").
 			Limit(5).
-			Scan(suite.Ctx, &toIntResults)
+			Scan(suite.ctx, &toIntResults)
 
 		suite.NoError(err, "ToInteger should work")
 		suite.True(len(toIntResults) > 0, "Should have ToInteger results")
@@ -88,7 +88,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToInteger() {
 
 // TestToFloat tests the ToFloat function.
 func (suite *TypeConversionFunctionsTestSuite) TestToFloat() {
-	suite.T().Logf("Testing ToFloat function for %s", suite.DbType)
+	suite.T().Logf("Testing ToFloat function for %s", suite.dbType)
 
 	suite.Run("ConvertNumberToFloat", func() {
 		type ToFloatResult struct {
@@ -99,14 +99,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloat() {
 
 		var toFloatResults []ToFloatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToFloat(eb.Column("view_count"))
 			}, "float_value").
 			Limit(5).
-			Scan(suite.Ctx, &toFloatResults)
+			Scan(suite.ctx, &toFloatResults)
 
 		suite.NoError(err, "ToFloat should work")
 		suite.True(len(toFloatResults) > 0, "Should have ToFloat results")
@@ -121,7 +121,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloat() {
 
 // TestToDecimal tests the ToDecimal function.
 func (suite *TypeConversionFunctionsTestSuite) TestToDecimal() {
-	suite.T().Logf("Testing ToDecimal function for %s", suite.DbType)
+	suite.T().Logf("Testing ToDecimal function for %s", suite.dbType)
 
 	suite.Run("ConvertToDecimalWithPrecision", func() {
 		type ToDecimalResult struct {
@@ -132,14 +132,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimal() {
 
 		var toDecimalResults []ToDecimalResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"), 10, 2)
 			}, "decimal_value").
 			Limit(5).
-			Scan(suite.Ctx, &toDecimalResults)
+			Scan(suite.ctx, &toDecimalResults)
 
 		suite.NoError(err, "ToDecimal should work")
 		suite.True(len(toDecimalResults) > 0, "Should have ToDecimal results")
@@ -154,7 +154,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimal() {
 
 // TestToBool tests the ToBool function.
 func (suite *TypeConversionFunctionsTestSuite) TestToBool() {
-	suite.T().Logf("Testing ToBool function for %s", suite.DbType)
+	suite.T().Logf("Testing ToBool function for %s", suite.dbType)
 
 	suite.Run("ConvertExpressionToBoolean", func() {
 		type ToBoolResult struct {
@@ -165,14 +165,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBool() {
 
 		var toBoolResults []ToBoolResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToBool(eb.Expr("CASE WHEN ? > 0 THEN 1 ELSE 0 END", eb.Column("view_count")))
 			}, "is_positive").
 			Limit(5).
-			Scan(suite.Ctx, &toBoolResults)
+			Scan(suite.ctx, &toBoolResults)
 
 		suite.NoError(err, "ToBool should work")
 		suite.True(len(toBoolResults) > 0, "Should have ToBool results")
@@ -186,7 +186,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBool() {
 
 // TestToDate tests the ToDate function.
 func (suite *TypeConversionFunctionsTestSuite) TestToDate() {
-	suite.T().Logf("Testing ToDate function for %s", suite.DbType)
+	suite.T().Logf("Testing ToDate function for %s", suite.dbType)
 
 	suite.Run("ConvertTimestampToDate", func() {
 		type ToDateResult struct {
@@ -197,14 +197,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDate() {
 
 		var toDateResults []ToDateResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDate(eb.Column("created_at"))
 			}, "date_only").
 			Limit(5).
-			Scan(suite.Ctx, &toDateResults)
+			Scan(suite.ctx, &toDateResults)
 
 		suite.NoError(err, "ToDate should work")
 		suite.True(len(toDateResults) > 0, "Should have ToDate results")
@@ -219,7 +219,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDate() {
 
 // TestToTime tests the ToTime function.
 func (suite *TypeConversionFunctionsTestSuite) TestToTime() {
-	suite.T().Logf("Testing ToTime function for %s", suite.DbType)
+	suite.T().Logf("Testing ToTime function for %s", suite.dbType)
 
 	suite.Run("ConvertTimestampToTime", func() {
 		type ToTimeResult struct {
@@ -230,14 +230,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTime() {
 
 		var toTimeResults []ToTimeResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTime(eb.Column("created_at"))
 			}, "time_only").
 			Limit(5).
-			Scan(suite.Ctx, &toTimeResults)
+			Scan(suite.ctx, &toTimeResults)
 
 		suite.NoError(err, "ToTime should work")
 		suite.True(len(toTimeResults) > 0, "Should have ToTime results")
@@ -252,7 +252,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTime() {
 
 // TestToTimestamp tests the ToTimestamp function.
 func (suite *TypeConversionFunctionsTestSuite) TestToTimestamp() {
-	suite.T().Logf("Testing ToTimestamp function for %s", suite.DbType)
+	suite.T().Logf("Testing ToTimestamp function for %s", suite.dbType)
 
 	suite.Run("ConvertToTimestamp", func() {
 		type ToTimestampResult struct {
@@ -263,14 +263,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestamp() {
 
 		var toTimestampResults []ToTimestampResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTimestamp(eb.Column("created_at"))
 			}, "timestamp").
 			Limit(5).
-			Scan(suite.Ctx, &toTimestampResults)
+			Scan(suite.ctx, &toTimestampResults)
 
 		suite.NoError(err, "ToTimestamp should work")
 		suite.True(len(toTimestampResults) > 0, "Should have ToTimestamp results")
@@ -285,7 +285,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestamp() {
 
 // TestToJson tests the ToJson function.
 func (suite *TypeConversionFunctionsTestSuite) TestToJson() {
-	suite.T().Logf("Testing ToJson function for %s", suite.DbType)
+	suite.T().Logf("Testing ToJson function for %s", suite.dbType)
 
 	suite.Run("ConvertToJson", func() {
 		type ToJsonResult struct {
@@ -296,14 +296,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToJson() {
 
 		var toJsonResults []ToJsonResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToJson(eb.JsonObject("title", eb.Column("title"), "id", eb.Column("id")))
 			}, "json_value").
 			Limit(3).
-			Scan(suite.Ctx, &toJsonResults)
+			Scan(suite.ctx, &toJsonResults)
 
 		suite.NoError(err, "ToJson should work on supported databases")
 		suite.True(len(toJsonResults) > 0, "Should have ToJson results")
@@ -318,7 +318,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToJson() {
 
 // TestToStringNullHandling tests the ToString function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToStringNullHandling() {
-	suite.T().Logf("Testing ToString NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToString NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToString", func() {
 		type NullToStringResult struct {
@@ -329,14 +329,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringNullHandling() {
 
 		var results []NullToStringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToString(eb.Expr("NULL"))
 			}, "string_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToString(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -351,7 +351,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringNullHandling() {
 
 // TestToIntegerNullHandling tests the ToInteger function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
-	suite.T().Logf("Testing ToInteger NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToInteger NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToInteger", func() {
 		type NullToIntegerResult struct {
@@ -362,14 +362,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
 
 		var results []NullToIntegerResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("NULL"))
 			}, "int_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToInteger(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -384,7 +384,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
 
 // TestToFloatNullHandling tests the ToFloat function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
-	suite.T().Logf("Testing ToFloat NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToFloat NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToFloat", func() {
 		type NullToFloatResult struct {
@@ -395,14 +395,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
 
 		var results []NullToFloatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("NULL"))
 			}, "float_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToFloat(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -417,7 +417,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
 
 // TestToDecimalNullHandling tests the ToDecimal function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
-	suite.T().Logf("Testing ToDecimal NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToDecimal NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToDecimal", func() {
 		type NullToDecimalResult struct {
@@ -428,14 +428,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
 
 		var results []NullToDecimalResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDecimal(eb.Expr("NULL"), 10, 2)
 			}, "decimal_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToDecimal(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -450,7 +450,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
 
 // TestToBoolNullHandling tests the ToBool function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
-	suite.T().Logf("Testing ToBool NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToBool NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToBool", func() {
 		type NullToBoolResult struct {
@@ -461,14 +461,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
 
 		var results []NullToBoolResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToBool(eb.Expr("NULL"))
 			}, "bool_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToBool(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -483,7 +483,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
 
 // TestToDateNullHandling tests the ToDate function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToDateNullHandling() {
-	suite.T().Logf("Testing ToDate NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToDate NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToDate", func() {
 		type NullToDateResult struct {
@@ -494,14 +494,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateNullHandling() {
 
 		var results []NullToDateResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDate(eb.Expr("NULL"))
 			}, "date_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToDate(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -516,7 +516,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateNullHandling() {
 
 // TestToTimeNullHandling tests the ToTime function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
-	suite.T().Logf("Testing ToTime NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToTime NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToTime", func() {
 		type NullToTimeResult struct {
@@ -527,14 +527,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
 
 		var results []NullToTimeResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTime(eb.Expr("NULL"))
 			}, "time_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToTime(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -549,7 +549,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
 
 // TestToTimestampNullHandling tests the ToTimestamp function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
-	suite.T().Logf("Testing ToTimestamp NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToTimestamp NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToTimestamp", func() {
 		type NullToTimestampResult struct {
@@ -560,14 +560,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
 
 		var results []NullToTimestampResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTimestamp(eb.Expr("NULL"))
 			}, "timestamp_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToTimestamp(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -582,7 +582,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
 
 // TestToJsonNullHandling tests the ToJson function with NULL values.
 func (suite *TypeConversionFunctionsTestSuite) TestToJsonNullHandling() {
-	suite.T().Logf("Testing ToJson NULL handling for %s", suite.DbType)
+	suite.T().Logf("Testing ToJson NULL handling for %s", suite.dbType)
 
 	suite.Run("ConvertNullToJson", func() {
 		type NullToJsonResult struct {
@@ -593,14 +593,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToJsonNullHandling() {
 
 		var results []NullToJsonResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToJson(eb.Expr("NULL"))
 			}, "json_null").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToJson(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -615,7 +615,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToJsonNullHandling() {
 
 // TestToDecimalPrecisionVariations tests the ToDecimal function with different precision parameters.
 func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations() {
-	suite.T().Logf("Testing ToDecimal precision variations for %s", suite.DbType)
+	suite.T().Logf("Testing ToDecimal precision variations for %s", suite.dbType)
 
 	suite.Run("DecimalWithPrecisionAndScale", func() {
 		type DecimalPrecisionResult struct {
@@ -626,14 +626,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 		var results []DecimalPrecisionResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"), 10, 2)
 			}, "decimal_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToDecimal with precision and scale should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -653,14 +653,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 		var results []DecimalPrecisionOnlyResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"), 10)
 			}, "decimal_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToDecimal with precision only should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -680,14 +680,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 		var results []DecimalNoParamsResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDecimal(eb.Column("view_count"))
 			}, "decimal_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToDecimal without parameters should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -701,7 +701,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 // TestToDateWithFormat tests the ToDate function with format parameter.
 func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
-	suite.T().Logf("Testing ToDate with format for %s", suite.DbType)
+	suite.T().Logf("Testing ToDate with format for %s", suite.dbType)
 
 	suite.Run("DateWithoutFormat", func() {
 		type DateNoFormatResult struct {
@@ -712,14 +712,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 		var results []DateNoFormatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDate(eb.Column("created_at"))
 			}, "date_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToDate without format should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -740,7 +740,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 		var results []DateWithFormatResult
 
 		var formatStr string
-		switch suite.DbType {
+		switch suite.dbType {
 		case constants.DbPostgres:
 			formatStr = "YYYY-MM-DD"
 		case constants.DbMySQL:
@@ -749,14 +749,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 			formatStr = "YYYY-MM-DD"
 		}
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToDate(eb.Expr("?", "2024-01-15"), formatStr)
 			}, "date_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToDate with format should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -771,7 +771,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 // TestToTimeWithFormat tests the ToTime function with format parameter.
 func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
-	suite.T().Logf("Testing ToTime with format for %s", suite.DbType)
+	suite.T().Logf("Testing ToTime with format for %s", suite.dbType)
 
 	suite.Run("TimeWithoutFormat", func() {
 		type TimeNoFormatResult struct {
@@ -782,14 +782,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 		var results []TimeNoFormatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTime(eb.Column("created_at"))
 			}, "time_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToTime without format should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -810,7 +810,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 		var results []TimeWithFormatResult
 
 		var formatStr string
-		switch suite.DbType {
+		switch suite.dbType {
 		case constants.DbPostgres:
 			formatStr = "HH24:MI:SS"
 		case constants.DbMySQL:
@@ -819,14 +819,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 			formatStr = "HH24:MI:SS"
 		}
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTime(eb.Expr("?", "14:30:00"), formatStr)
 			}, "time_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToTime with format should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -841,7 +841,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 // TestToTimestampWithFormat tests the ToTimestamp function with format parameter.
 func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
-	suite.T().Logf("Testing ToTimestamp with format for %s", suite.DbType)
+	suite.T().Logf("Testing ToTimestamp with format for %s", suite.dbType)
 
 	suite.Run("TimestampWithoutFormat", func() {
 		type TimestampNoFormatResult struct {
@@ -852,14 +852,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 		var results []TimestampNoFormatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTimestamp(eb.Column("created_at"))
 			}, "timestamp_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToTimestamp without format should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -880,7 +880,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 		var results []TimestampWithFormatResult
 
 		var formatStr string
-		switch suite.DbType {
+		switch suite.dbType {
 		case constants.DbPostgres:
 			formatStr = "YYYY-MM-DD HH24:MI:SS"
 		case constants.DbMySQL:
@@ -889,14 +889,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 			formatStr = "YYYY-MM-DD HH24:MI:SS"
 		}
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToTimestamp(eb.Expr("?", "2024-01-15 14:30:00"), formatStr)
 			}, "timestamp_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToTimestamp with format should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -911,7 +911,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 // TestToStringFromDifferentTypes tests the ToString function with different source types.
 func (suite *TypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() {
-	suite.T().Logf("Testing ToString from different types for %s", suite.DbType)
+	suite.T().Logf("Testing ToString from different types for %s", suite.dbType)
 
 	suite.Run("ConvertBooleanToString", func() {
 		type BoolToStringResult struct {
@@ -922,14 +922,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() 
 
 		var results []BoolToStringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "is_active").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToString(eb.Column("is_active"))
 			}, "active_string").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToString(boolean) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -950,14 +950,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() 
 
 		var results []DateToStringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "created_at").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToString(eb.ToDate(eb.Column("created_at")))
 			}, "date_string").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToString(date) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -972,7 +972,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() 
 
 // TestToIntegerFromStrings tests the ToInteger function with string sources.
 func (suite *TypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
-	suite.T().Logf("Testing ToInteger from strings for %s", suite.DbType)
+	suite.T().Logf("Testing ToInteger from strings for %s", suite.dbType)
 
 	suite.Run("ConvertNegativeStringToInteger", func() {
 		type NegativeIntResult struct {
@@ -982,14 +982,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 		var results []NegativeIntResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", "-123"))
 			}, "int_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToInteger(negative string) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1008,14 +1008,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 		var results []ZeroIntResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", "0"))
 			}, "int_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToInteger('0') should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1029,7 +1029,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 // TestToFloatFromStrings tests the ToFloat function with string sources.
 func (suite *TypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
-	suite.T().Logf("Testing ToFloat from strings for %s", suite.DbType)
+	suite.T().Logf("Testing ToFloat from strings for %s", suite.dbType)
 
 	suite.Run("ConvertDecimalStringToFloat", func() {
 		type DecimalStringResult struct {
@@ -1039,14 +1039,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 		var results []DecimalStringResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", "3.14159"))
 			}, "float_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToFloat('3.14159') should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1065,14 +1065,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 		var results []NegativeFloatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", "-99.99"))
 			}, "float_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToFloat('-99.99') should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1086,7 +1086,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 // TestToBoolDirectConversion tests the ToBool function with direct numeric conversion.
 func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
-	suite.T().Logf("Testing ToBool direct conversion for %s", suite.DbType)
+	suite.T().Logf("Testing ToBool direct conversion for %s", suite.dbType)
 
 	suite.Run("ConvertPositiveIntegerToBool", func() {
 		type PositiveIntBoolResult struct {
@@ -1096,14 +1096,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		var results []PositiveIntBoolResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToBool(eb.Expr("?", 1))
 			}, "bool_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToBool(1) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1122,14 +1122,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		var results []ZeroBoolResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToBool(eb.Expr("?", 0))
 			}, "bool_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToBool(0) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1148,14 +1148,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		var results []NegativeIntBoolResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToBool(eb.Expr("?", -1))
 			}, "bool_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToBool(-1) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1169,7 +1169,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 // TestToIntegerBoundaryConditions tests the ToInteger function with boundary values.
 func (suite *TypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions() {
-	suite.T().Logf("Testing ToInteger boundary conditions for %s", suite.DbType)
+	suite.T().Logf("Testing ToInteger boundary conditions for %s", suite.dbType)
 
 	suite.Run("ConvertLargePositiveInteger", func() {
 		type LargePositiveResult struct {
@@ -1179,14 +1179,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions()
 
 		var results []LargePositiveResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", 2147483647))
 			}, "int_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToInteger(large positive) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1205,14 +1205,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions()
 
 		var results []LargeNegativeResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToInteger(eb.Expr("?", -2147483647))
 			}, "int_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToInteger(large negative) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1226,7 +1226,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions()
 
 // TestToFloatPrecisionAndBoundaries tests the ToFloat function with precision and boundary values.
 func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries() {
-	suite.T().Logf("Testing ToFloat precision and boundaries for %s", suite.DbType)
+	suite.T().Logf("Testing ToFloat precision and boundaries for %s", suite.dbType)
 
 	suite.Run("ConvertVerySmallFloat", func() {
 		type VerySmallFloatResult struct {
@@ -1236,14 +1236,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 		var results []VerySmallFloatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", 0.000001))
 			}, "float_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToFloat(very small) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1262,14 +1262,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 		var results []VeryLargeFloatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", 999999999.99))
 			}, "float_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToFloat(very large) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1288,14 +1288,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 		var results []ZeroFloatResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToFloat(eb.Expr("?", 0.0))
 			}, "float_value").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToFloat(0.0) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1309,7 +1309,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 // TestToBoolDatabaseSpecificBehavior tests ToBool function behavior across databases.
 func (suite *TypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehavior() {
-	suite.T().Logf("Testing ToBool database-specific behavior for %s", suite.DbType)
+	suite.T().Logf("Testing ToBool database-specific behavior for %s", suite.dbType)
 
 	suite.Run("VerifyBooleanRepresentation", func() {
 		type BoolRepresentationResult struct {
@@ -1320,14 +1320,14 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehavio
 
 		var results []BoolRepresentationResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "is_active").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.ToBool(eb.Column("is_active"))
 			}, "bool_as_bool").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "ToBool(column) should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -1335,7 +1335,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehavio
 		for _, result := range results {
 			suite.Equal(result.IsActive, result.BoolAsBool, "ToBool should preserve boolean value")
 			suite.T().Logf("ID: %s, IsActive: %v, BoolAsBool: %v (DB: %s)",
-				result.Id, result.IsActive, result.BoolAsBool, suite.DbType)
+				result.Id, result.IsActive, result.BoolAsBool, suite.dbType)
 		}
 	})
 }

@@ -110,6 +110,7 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 		if err != nil {
 			return result.Err(i18n.T("file_open_failed"))
 		}
+
 		defer func() {
 			if closeErr := file.Close(); closeErr != nil {
 				logger.Errorf("failed to close file: %v", closeErr)

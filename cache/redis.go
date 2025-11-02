@@ -14,7 +14,7 @@ import (
 )
 
 type redisConfig struct {
-	defaultTTL time.Duration
+	defaultTtl time.Duration
 }
 
 func defaultRedisConfig() *redisConfig {
@@ -26,7 +26,7 @@ type redisCache[T any] struct {
 	client     *redis.Client
 	keyBuilder KeyBuilder
 	basePrefix string
-	defaultTTL time.Duration
+	defaultTtl time.Duration
 	serializer Serializer[T]
 	loadMixin  SingleflightMixin[T]
 	closed     atomic.Bool
@@ -51,7 +51,7 @@ func newRedisCache[T any](client *redis.Client, keyBuilder KeyBuilder, cfg *redi
 		client:     client,
 		keyBuilder: keyBuilder,
 		basePrefix: keyBuilder.Build(),
-		defaultTTL: cfg.defaultTTL,
+		defaultTtl: cfg.defaultTtl,
 		serializer: newJSONSerializer[T](),
 	}
 }
@@ -61,8 +61,8 @@ func (c *redisCache[T]) getExpiration(ttl []time.Duration) time.Duration {
 		return ttl[0]
 	}
 
-	if c.defaultTTL > 0 {
-		return c.defaultTTL
+	if c.defaultTtl > 0 {
+		return c.defaultTtl
 	}
 
 	return 0
@@ -158,7 +158,7 @@ func (c *redisCache[T]) GetOrLoad(ctx context.Context, key string, loader Loader
 	)
 }
 
-// Set stores a value with the given key and optional TTL.
+// Set stores a value with the given key and optional Ttl.
 func (c *redisCache[T]) Set(ctx context.Context, key string, value T, ttl ...time.Duration) error {
 	cacheKey := c.keyBuilder.Build(key)
 

@@ -14,6 +14,18 @@ var logger = log.Named("mold")
 // It provides dependency injection configuration for all transformer components.
 var Module = fx.Module(
 	"vef:mold",
+	fx.Decorate(
+		fx.Annotate(
+			func(loader mold.DataDictLoader, bus event.Subscriber) mold.DataDictResolver {
+				if loader == nil {
+					return nil
+				}
+
+				return mold.NewCachedDataDictResolver(loader, bus)
+			},
+			fx.ParamTags(`optional:"true"`),
+		),
+	),
 	fx.Provide(
 		// NewTransformer constructor with grouped dependencies
 		// Collects all field transformers, struct transformers, and interceptors
@@ -32,17 +44,6 @@ var Module = fx.Module(
 			NewDataDictTranslator,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:mold:translators"`),
-		),
-		// Built-in cached data dictionary resolver
-		fx.Annotate(
-			func(loader mold.DataDictLoader, bus event.Subscriber) mold.DataDictResolver {
-				if loader == nil {
-					return nil
-				}
-
-				return mold.NewCachedDataDictResolver(loader, bus)
-			},
-			fx.ParamTags(`optional:"true"`),
 		),
 	),
 )

@@ -9,18 +9,18 @@ type MathFunctionsTestSuite struct {
 
 // TestAbs tests the Abs function.
 func (suite *MathFunctionsTestSuite) TestAbs() {
-	suite.T().Logf("Testing Abs function for %s", suite.DbType)
+	suite.T().Logf("Testing Abs function for %s", suite.dbType)
 
 	suite.Run("AbsoluteValue", func() {
 		// First get average view count
 		var avgViewCount float64
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.AvgColumn("view_count")
 			}).
-			Scan(suite.Ctx, &avgViewCount)
+			Scan(suite.ctx, &avgViewCount)
 		suite.NoError(err, "Average calculation should work")
 
 		type AbsResult struct {
@@ -32,7 +32,7 @@ func (suite *MathFunctionsTestSuite) TestAbs() {
 
 		var results []AbsResult
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -43,7 +43,7 @@ func (suite *MathFunctionsTestSuite) TestAbs() {
 			}, "abs_diff").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Abs should work correctly")
 		suite.True(len(results) > 0, "Should have abs results")
@@ -65,7 +65,7 @@ func (suite *MathFunctionsTestSuite) TestAbs() {
 
 // TestCeil tests the Ceil function.
 func (suite *MathFunctionsTestSuite) TestCeil() {
-	suite.T().Logf("Testing Ceil function for %s", suite.DbType)
+	suite.T().Logf("Testing Ceil function for %s", suite.dbType)
 
 	suite.Run("CeilDecimalValues", func() {
 		type CeilResult struct {
@@ -76,7 +76,7 @@ func (suite *MathFunctionsTestSuite) TestCeil() {
 
 		var results []CeilResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -87,7 +87,7 @@ func (suite *MathFunctionsTestSuite) TestCeil() {
 			}, "ceiled_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Ceil should work correctly")
 		suite.True(len(results) > 0, "Should have ceil results")
@@ -102,7 +102,7 @@ func (suite *MathFunctionsTestSuite) TestCeil() {
 
 // TestFloor tests the Floor function.
 func (suite *MathFunctionsTestSuite) TestFloor() {
-	suite.T().Logf("Testing Floor function for %s", suite.DbType)
+	suite.T().Logf("Testing Floor function for %s", suite.dbType)
 
 	suite.Run("FloorDecimalValues", func() {
 		type FloorResult struct {
@@ -113,7 +113,7 @@ func (suite *MathFunctionsTestSuite) TestFloor() {
 
 		var results []FloorResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -124,7 +124,7 @@ func (suite *MathFunctionsTestSuite) TestFloor() {
 			}, "floored_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Floor should work correctly")
 		suite.True(len(results) > 0, "Should have floor results")
@@ -139,7 +139,7 @@ func (suite *MathFunctionsTestSuite) TestFloor() {
 
 // TestRound tests the Round function.
 func (suite *MathFunctionsTestSuite) TestRound() {
-	suite.T().Logf("Testing Round function for %s", suite.DbType)
+	suite.T().Logf("Testing Round function for %s", suite.dbType)
 
 	suite.Run("RoundWithDifferentPrecisions", func() {
 		type RoundResult struct {
@@ -151,7 +151,7 @@ func (suite *MathFunctionsTestSuite) TestRound() {
 
 		var results []RoundResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -165,7 +165,7 @@ func (suite *MathFunctionsTestSuite) TestRound() {
 			}, "rounded_prec2").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Round should work correctly")
 		suite.True(len(results) > 0, "Should have round results")
@@ -182,7 +182,7 @@ func (suite *MathFunctionsTestSuite) TestRound() {
 
 // TestTrunc tests the Trunc function.
 func (suite *MathFunctionsTestSuite) TestTrunc() {
-	suite.T().Logf("Testing Trunc function for %s", suite.DbType)
+	suite.T().Logf("Testing Trunc function for %s", suite.dbType)
 
 	suite.Run("TruncateDecimalValues", func() {
 		type TruncResult struct {
@@ -193,7 +193,7 @@ func (suite *MathFunctionsTestSuite) TestTrunc() {
 
 		var results []TruncResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -204,7 +204,7 @@ func (suite *MathFunctionsTestSuite) TestTrunc() {
 			}, "trunc_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Trunc should work correctly")
 		suite.True(len(results) > 0, "Should have trunc results")
@@ -219,7 +219,7 @@ func (suite *MathFunctionsTestSuite) TestTrunc() {
 
 // TestPower tests the Power function.
 func (suite *MathFunctionsTestSuite) TestPower() {
-	suite.T().Logf("Testing Power function for %s", suite.DbType)
+	suite.T().Logf("Testing Power function for %s", suite.dbType)
 
 	suite.Run("PowerOfNumbers", func() {
 		type PowerResult struct {
@@ -230,7 +230,7 @@ func (suite *MathFunctionsTestSuite) TestPower() {
 
 		var results []PowerResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -241,7 +241,7 @@ func (suite *MathFunctionsTestSuite) TestPower() {
 			}, "cubed").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Power should work correctly")
 		suite.True(len(results) > 0, "Should have power results")
@@ -257,7 +257,7 @@ func (suite *MathFunctionsTestSuite) TestPower() {
 
 // TestSqrt tests the Sqrt function.
 func (suite *MathFunctionsTestSuite) TestSqrt() {
-	suite.T().Logf("Testing Sqrt function for %s", suite.DbType)
+	suite.T().Logf("Testing Sqrt function for %s", suite.dbType)
 
 	suite.Run("SquareRootOfNumbers", func() {
 		type SqrtResult struct {
@@ -267,7 +267,7 @@ func (suite *MathFunctionsTestSuite) TestSqrt() {
 
 		var results []SqrtResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -275,7 +275,7 @@ func (suite *MathFunctionsTestSuite) TestSqrt() {
 			}, "sqrt_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Sqrt should work correctly")
 		suite.True(len(results) > 0, "Should have sqrt results")
@@ -289,7 +289,7 @@ func (suite *MathFunctionsTestSuite) TestSqrt() {
 
 // TestExp tests the Exp function.
 func (suite *MathFunctionsTestSuite) TestExp() {
-	suite.T().Logf("Testing Exp function for %s", suite.DbType)
+	suite.T().Logf("Testing Exp function for %s", suite.dbType)
 
 	suite.Run("ExponentialFunction", func() {
 		type ExpResult struct {
@@ -299,7 +299,7 @@ func (suite *MathFunctionsTestSuite) TestExp() {
 
 		var results []ExpResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -307,7 +307,7 @@ func (suite *MathFunctionsTestSuite) TestExp() {
 			}, "exp_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Exp should work correctly")
 		suite.True(len(results) > 0, "Should have exp results")
@@ -322,7 +322,7 @@ func (suite *MathFunctionsTestSuite) TestExp() {
 
 // TestLn tests the Ln function.
 func (suite *MathFunctionsTestSuite) TestLn() {
-	suite.T().Logf("Testing Ln function for %s", suite.DbType)
+	suite.T().Logf("Testing Ln function for %s", suite.dbType)
 
 	suite.Run("NaturalLogarithm", func() {
 		type LnResult struct {
@@ -332,7 +332,7 @@ func (suite *MathFunctionsTestSuite) TestLn() {
 
 		var results []LnResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -343,7 +343,7 @@ func (suite *MathFunctionsTestSuite) TestLn() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Ln should work correctly")
 		suite.True(len(results) > 0, "Should have ln results")
@@ -357,7 +357,7 @@ func (suite *MathFunctionsTestSuite) TestLn() {
 
 // TestLog tests the Log function.
 func (suite *MathFunctionsTestSuite) TestLog() {
-	suite.T().Logf("Testing Log function for %s", suite.DbType)
+	suite.T().Logf("Testing Log function for %s", suite.dbType)
 
 	suite.Run("LogarithmBaseTen", func() {
 		type LogResult struct {
@@ -367,7 +367,7 @@ func (suite *MathFunctionsTestSuite) TestLog() {
 
 		var results []LogResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -378,7 +378,7 @@ func (suite *MathFunctionsTestSuite) TestLog() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Log should work correctly")
 		suite.True(len(results) > 0, "Should have log results")
@@ -392,7 +392,7 @@ func (suite *MathFunctionsTestSuite) TestLog() {
 
 // TestSin tests the Sin function.
 func (suite *MathFunctionsTestSuite) TestSin() {
-	suite.T().Logf("Testing Sin function for %s", suite.DbType)
+	suite.T().Logf("Testing Sin function for %s", suite.dbType)
 
 	suite.Run("SineTrigonometric", func() {
 		type SinResult struct {
@@ -402,7 +402,7 @@ func (suite *MathFunctionsTestSuite) TestSin() {
 
 		var results []SinResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -410,7 +410,7 @@ func (suite *MathFunctionsTestSuite) TestSin() {
 			}, "sin_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Sin should work correctly")
 		suite.True(len(results) > 0, "Should have sin results")
@@ -425,7 +425,7 @@ func (suite *MathFunctionsTestSuite) TestSin() {
 
 // TestCos tests the Cos function.
 func (suite *MathFunctionsTestSuite) TestCos() {
-	suite.T().Logf("Testing Cos function for %s", suite.DbType)
+	suite.T().Logf("Testing Cos function for %s", suite.dbType)
 
 	suite.Run("CosineTrigonometric", func() {
 		type CosResult struct {
@@ -435,7 +435,7 @@ func (suite *MathFunctionsTestSuite) TestCos() {
 
 		var results []CosResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -443,7 +443,7 @@ func (suite *MathFunctionsTestSuite) TestCos() {
 			}, "cos_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Cos should work correctly")
 		suite.True(len(results) > 0, "Should have cos results")
@@ -458,7 +458,7 @@ func (suite *MathFunctionsTestSuite) TestCos() {
 
 // TestTan tests the Tan function.
 func (suite *MathFunctionsTestSuite) TestTan() {
-	suite.T().Logf("Testing Tan function for %s", suite.DbType)
+	suite.T().Logf("Testing Tan function for %s", suite.dbType)
 
 	suite.Run("TangentTrigonometric", func() {
 		type TanResult struct {
@@ -468,7 +468,7 @@ func (suite *MathFunctionsTestSuite) TestTan() {
 
 		var results []TanResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -476,7 +476,7 @@ func (suite *MathFunctionsTestSuite) TestTan() {
 			}, "tan_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Tan should work correctly")
 		suite.True(len(results) > 0, "Should have tan results")
@@ -490,7 +490,7 @@ func (suite *MathFunctionsTestSuite) TestTan() {
 
 // TestAsin tests the Asin function.
 func (suite *MathFunctionsTestSuite) TestAsin() {
-	suite.T().Logf("Testing Asin function for %s", suite.DbType)
+	suite.T().Logf("Testing Asin function for %s", suite.dbType)
 
 	suite.Run("ArcsineInverse", func() {
 		type AsinResult struct {
@@ -500,7 +500,7 @@ func (suite *MathFunctionsTestSuite) TestAsin() {
 
 		var results []AsinResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Expr("? / 200.0", eb.Column("view_count"))
@@ -510,7 +510,7 @@ func (suite *MathFunctionsTestSuite) TestAsin() {
 			}, "asin_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Asin should work correctly")
 		suite.True(len(results) > 0, "Should have asin results")
@@ -524,7 +524,7 @@ func (suite *MathFunctionsTestSuite) TestAsin() {
 
 // TestAcos tests the Acos function.
 func (suite *MathFunctionsTestSuite) TestAcos() {
-	suite.T().Logf("Testing Acos function for %s", suite.DbType)
+	suite.T().Logf("Testing Acos function for %s", suite.dbType)
 
 	suite.Run("ArccosineInverse", func() {
 		type AcosResult struct {
@@ -534,7 +534,7 @@ func (suite *MathFunctionsTestSuite) TestAcos() {
 
 		var results []AcosResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Expr("? / 200.0", eb.Column("view_count"))
@@ -544,7 +544,7 @@ func (suite *MathFunctionsTestSuite) TestAcos() {
 			}, "acos_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Acos should work correctly")
 		suite.True(len(results) > 0, "Should have acos results")
@@ -558,7 +558,7 @@ func (suite *MathFunctionsTestSuite) TestAcos() {
 
 // TestAtan tests the Atan function.
 func (suite *MathFunctionsTestSuite) TestAtan() {
-	suite.T().Logf("Testing Atan function for %s", suite.DbType)
+	suite.T().Logf("Testing Atan function for %s", suite.dbType)
 
 	suite.Run("ArctangentInverse", func() {
 		type AtanResult struct {
@@ -568,7 +568,7 @@ func (suite *MathFunctionsTestSuite) TestAtan() {
 
 		var results []AtanResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Expr("? / 200.0", eb.Column("view_count"))
@@ -578,7 +578,7 @@ func (suite *MathFunctionsTestSuite) TestAtan() {
 			}, "atan_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Atan should work correctly")
 		suite.True(len(results) > 0, "Should have atan results")
@@ -591,7 +591,7 @@ func (suite *MathFunctionsTestSuite) TestAtan() {
 
 // TestPi tests the Pi function.
 func (suite *MathFunctionsTestSuite) TestPi() {
-	suite.T().Logf("Testing Pi function for %s", suite.DbType)
+	suite.T().Logf("Testing Pi function for %s", suite.dbType)
 
 	suite.Run("PiConstant", func() {
 		type PiResult struct {
@@ -602,7 +602,7 @@ func (suite *MathFunctionsTestSuite) TestPi() {
 
 		var results []PiResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Pi()
@@ -620,7 +620,7 @@ func (suite *MathFunctionsTestSuite) TestPi() {
 			}, "circumference").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Pi should work correctly")
 		suite.True(len(results) > 0, "Should have pi results")
@@ -637,7 +637,7 @@ func (suite *MathFunctionsTestSuite) TestPi() {
 
 // TestRandom tests the Random function.
 func (suite *MathFunctionsTestSuite) TestRandom() {
-	suite.T().Logf("Testing Random function for %s", suite.DbType)
+	suite.T().Logf("Testing Random function for %s", suite.dbType)
 
 	suite.Run("RandomNumberGeneration", func() {
 		type RandomResult struct {
@@ -647,7 +647,7 @@ func (suite *MathFunctionsTestSuite) TestRandom() {
 
 		var results []RandomResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -655,7 +655,7 @@ func (suite *MathFunctionsTestSuite) TestRandom() {
 			}, "random_val").
 			OrderBy("id").
 			Limit(3).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Random should work correctly")
 		suite.True(len(results) > 0, "Should have random results")
@@ -669,7 +669,7 @@ func (suite *MathFunctionsTestSuite) TestRandom() {
 
 // TestSign tests the Sign function.
 func (suite *MathFunctionsTestSuite) TestSign() {
-	suite.T().Logf("Testing Sign function for %s", suite.DbType)
+	suite.T().Logf("Testing Sign function for %s", suite.dbType)
 
 	suite.Run("SignFunction", func() {
 		type SignResult struct {
@@ -679,7 +679,7 @@ func (suite *MathFunctionsTestSuite) TestSign() {
 
 		var results []SignResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -687,7 +687,7 @@ func (suite *MathFunctionsTestSuite) TestSign() {
 			}, "sign_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Sign should work correctly")
 		suite.True(len(results) > 0, "Should have sign results")
@@ -701,7 +701,7 @@ func (suite *MathFunctionsTestSuite) TestSign() {
 
 // TestMod tests the Mod function.
 func (suite *MathFunctionsTestSuite) TestMod() {
-	suite.T().Logf("Testing Mod function for %s", suite.DbType)
+	suite.T().Logf("Testing Mod function for %s", suite.dbType)
 
 	suite.Run("ModuloOperation", func() {
 		type ModResult struct {
@@ -712,7 +712,7 @@ func (suite *MathFunctionsTestSuite) TestMod() {
 
 		var results []ModResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -723,7 +723,7 @@ func (suite *MathFunctionsTestSuite) TestMod() {
 			}, "mod10").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Mod should work correctly")
 		suite.True(len(results) > 0, "Should have mod results")
@@ -739,7 +739,7 @@ func (suite *MathFunctionsTestSuite) TestMod() {
 
 // TestGreatest tests the Greatest function.
 func (suite *MathFunctionsTestSuite) TestGreatest() {
-	suite.T().Logf("Testing Greatest function for %s", suite.DbType)
+	suite.T().Logf("Testing Greatest function for %s", suite.dbType)
 
 	suite.Run("GreatestValue", func() {
 		type GreatestResult struct {
@@ -749,7 +749,7 @@ func (suite *MathFunctionsTestSuite) TestGreatest() {
 
 		var results []GreatestResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -757,7 +757,7 @@ func (suite *MathFunctionsTestSuite) TestGreatest() {
 			}, "greatest").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Greatest should work correctly")
 		suite.True(len(results) > 0, "Should have greatest results")
@@ -771,7 +771,7 @@ func (suite *MathFunctionsTestSuite) TestGreatest() {
 
 // TestLeast tests the Least function.
 func (suite *MathFunctionsTestSuite) TestLeast() {
-	suite.T().Logf("Testing Least function for %s", suite.DbType)
+	suite.T().Logf("Testing Least function for %s", suite.dbType)
 
 	suite.Run("LeastValue", func() {
 		type LeastResult struct {
@@ -781,7 +781,7 @@ func (suite *MathFunctionsTestSuite) TestLeast() {
 
 		var results []LeastResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -789,7 +789,7 @@ func (suite *MathFunctionsTestSuite) TestLeast() {
 			}, "least").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Least should work correctly")
 		suite.True(len(results) > 0, "Should have least results")
@@ -803,7 +803,7 @@ func (suite *MathFunctionsTestSuite) TestLeast() {
 
 // TestCombinedMathFunctions tests multiple math functions working together.
 func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
-	suite.T().Logf("Testing combined math functions for %s", suite.DbType)
+	suite.T().Logf("Testing combined math functions for %s", suite.dbType)
 
 	suite.Run("BasicMathCombination", func() {
 		type CombinedBasicResult struct {
@@ -817,7 +817,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedBasicResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -834,7 +834,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 			}, "rounded_views").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Combined basic math functions should work correctly")
 		suite.True(len(results) > 0, "Should have combined math results")
@@ -860,7 +860,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedAdvancedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -877,7 +877,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 			}, "sign_result").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Combined advanced math functions should work correctly")
 		suite.True(len(results) > 0, "Should have combined advanced math results")
@@ -903,7 +903,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedTrigResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -917,7 +917,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 			}, "tan_value").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Combined trigonometric functions should work correctly")
 		suite.True(len(results) > 0, "Should have combined trigonometric results")
@@ -940,7 +940,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 
 		var results []CombinedLogResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -957,7 +957,7 @@ func (suite *MathFunctionsTestSuite) TestCombinedMathFunctions() {
 			}).
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "Combined logarithmic and trigonometric functions should work correctly")
 		suite.True(len(results) > 0, "Should have combined logarithmic results")

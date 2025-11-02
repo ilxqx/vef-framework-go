@@ -21,7 +21,7 @@ type WindowFunctionsTestSuite struct {
 
 // TestRowNumber tests the ROW_NUMBER window function.
 func (suite *WindowFunctionsTestSuite) TestRowNumber() {
-	suite.T().Logf("Testing RowNumber function for %s", suite.DbType)
+	suite.T().Logf("Testing RowNumber function for %s", suite.dbType)
 
 	suite.Run("SequentialRowNumbers", func() {
 		type UserWithRowNumber struct {
@@ -33,7 +33,7 @@ func (suite *WindowFunctionsTestSuite) TestRowNumber() {
 
 		var usersWithRowNum []UserWithRowNumber
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("id", "name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -42,7 +42,7 @@ func (suite *WindowFunctionsTestSuite) TestRowNumber() {
 				})
 			}, "row_num").
 			OrderBy("age").
-			Scan(suite.Ctx, &usersWithRowNum)
+			Scan(suite.ctx, &usersWithRowNum)
 
 		suite.NoError(err, "ROW_NUMBER should work correctly")
 		suite.Len(usersWithRowNum, 3, "Should have 3 users")
@@ -58,7 +58,7 @@ func (suite *WindowFunctionsTestSuite) TestRowNumber() {
 
 // TestRank tests the RANK window function.
 func (suite *WindowFunctionsTestSuite) TestRank() {
-	suite.T().Logf("Testing Rank function for %s", suite.DbType)
+	suite.T().Logf("Testing Rank function for %s", suite.dbType)
 
 	suite.Run("RankPartitionedByStatus", func() {
 		type PostWithRank struct {
@@ -71,7 +71,7 @@ func (suite *WindowFunctionsTestSuite) TestRank() {
 
 		var postsWithRank []PostWithRank
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -81,7 +81,7 @@ func (suite *WindowFunctionsTestSuite) TestRank() {
 			}, "rank").
 			OrderBy("status").
 			OrderByDesc("view_count").
-			Scan(suite.Ctx, &postsWithRank)
+			Scan(suite.ctx, &postsWithRank)
 
 		suite.NoError(err, "RANK should work with partitioning")
 		suite.True(len(postsWithRank) > 0, "Should have posts with rank")
@@ -104,7 +104,7 @@ func (suite *WindowFunctionsTestSuite) TestRank() {
 
 // TestDenseRank tests the DENSE_RANK window function.
 func (suite *WindowFunctionsTestSuite) TestDenseRank() {
-	suite.T().Logf("Testing DenseRank function for %s", suite.DbType)
+	suite.T().Logf("Testing DenseRank function for %s", suite.dbType)
 
 	suite.Run("DenseRankPartitionedByStatus", func() {
 		type PostWithDenseRank struct {
@@ -118,7 +118,7 @@ func (suite *WindowFunctionsTestSuite) TestDenseRank() {
 
 		var postsWithRank []PostWithDenseRank
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -133,7 +133,7 @@ func (suite *WindowFunctionsTestSuite) TestDenseRank() {
 			}, "dense_rank").
 			OrderBy("status").
 			OrderByDesc("view_count").
-			Scan(suite.Ctx, &postsWithRank)
+			Scan(suite.ctx, &postsWithRank)
 
 		suite.NoError(err, "DENSE_RANK should work with partitioning")
 		suite.True(len(postsWithRank) > 0, "Should have posts with dense rank")
@@ -157,7 +157,7 @@ func (suite *WindowFunctionsTestSuite) TestDenseRank() {
 
 // TestPercentRank tests the PERCENT_RANK window function.
 func (suite *WindowFunctionsTestSuite) TestPercentRank() {
-	suite.T().Logf("Testing PercentRank function for %s", suite.DbType)
+	suite.T().Logf("Testing PercentRank function for %s", suite.dbType)
 
 	suite.Run("PercentRankByViewCount", func() {
 		type PostAnalytics struct {
@@ -170,7 +170,7 @@ func (suite *WindowFunctionsTestSuite) TestPercentRank() {
 
 		var postAnalytics []PostAnalytics
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -185,7 +185,7 @@ func (suite *WindowFunctionsTestSuite) TestPercentRank() {
 			}, "percent_of_total").
 			OrderBy("status").
 			OrderByDesc("view_count").
-			Scan(suite.Ctx, &postAnalytics)
+			Scan(suite.ctx, &postAnalytics)
 
 		suite.NoError(err, "PERCENT_RANK should work correctly")
 		suite.True(len(postAnalytics) > 0, "Should have post analytics")
@@ -202,7 +202,7 @@ func (suite *WindowFunctionsTestSuite) TestPercentRank() {
 
 // TestCumeDist tests the CUME_DIST window function.
 func (suite *WindowFunctionsTestSuite) TestCumeDist() {
-	suite.T().Logf("Testing CumeDist function for %s", suite.DbType)
+	suite.T().Logf("Testing CumeDist function for %s", suite.dbType)
 
 	suite.Run("CumeDistByViewCount", func() {
 		type CumeDistResult struct {
@@ -213,7 +213,7 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 
 		var cumeDistResults []CumeDistResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -223,7 +223,7 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 			}, "cume_dist").
 			OrderBy("view_count").
 			Limit(5).
-			Scan(suite.Ctx, &cumeDistResults)
+			Scan(suite.ctx, &cumeDistResults)
 
 		suite.NoError(err, "CUME_DIST should work correctly")
 		suite.True(len(cumeDistResults) > 0, "Should have cume_dist results")
@@ -238,7 +238,7 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 
 // TestNtile tests the NTILE window function.
 func (suite *WindowFunctionsTestSuite) TestNtile() {
-	suite.T().Logf("Testing Ntile function for %s", suite.DbType)
+	suite.T().Logf("Testing Ntile function for %s", suite.dbType)
 
 	suite.Run("QuartilesUsingNtile", func() {
 		type UserWithQuartile struct {
@@ -249,7 +249,7 @@ func (suite *WindowFunctionsTestSuite) TestNtile() {
 
 		var usersWithQuartile []UserWithQuartile
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -258,7 +258,7 @@ func (suite *WindowFunctionsTestSuite) TestNtile() {
 				})
 			}, "quartile").
 			OrderBy("age").
-			Scan(suite.Ctx, &usersWithQuartile)
+			Scan(suite.ctx, &usersWithQuartile)
 
 		suite.NoError(err, "NTILE should work for quartile distribution")
 		suite.Len(usersWithQuartile, 3, "Should have 3 users")
@@ -274,7 +274,7 @@ func (suite *WindowFunctionsTestSuite) TestNtile() {
 
 // TestLag tests the LAG window function.
 func (suite *WindowFunctionsTestSuite) TestLag() {
-	suite.T().Logf("Testing Lag function for %s", suite.DbType)
+	suite.T().Logf("Testing Lag function for %s", suite.dbType)
 
 	suite.Run("LagWithDefaultOffset", func() {
 		type PostWithLag struct {
@@ -285,7 +285,7 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 
 		var postsWithLag []PostWithLag
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -294,7 +294,7 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 				})
 			}, "prev_view_count").
 			OrderBy("view_count").
-			Scan(suite.Ctx, &postsWithLag)
+			Scan(suite.ctx, &postsWithLag)
 
 		suite.NoError(err, "LAG should work with default offset")
 		suite.True(len(postsWithLag) > 0, "Should have posts with lag")
@@ -316,7 +316,7 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 
 		var advLag []PostWithLagAdvanced
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -325,7 +325,7 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 				})
 			}, "prev2_view_count").
 			OrderBy("view_count").
-			Scan(suite.Ctx, &advLag)
+			Scan(suite.ctx, &advLag)
 
 		suite.NoError(err, "LAG should work with custom offset")
 		suite.True(len(advLag) > 0, "Should have posts for advanced lag")
@@ -343,7 +343,7 @@ func (suite *WindowFunctionsTestSuite) TestLag() {
 
 // TestLead tests the LEAD window function.
 func (suite *WindowFunctionsTestSuite) TestLead() {
-	suite.T().Logf("Testing Lead function for %s", suite.DbType)
+	suite.T().Logf("Testing Lead function for %s", suite.dbType)
 
 	suite.Run("LeadWithDefaultOffset", func() {
 		type PostWithLead struct {
@@ -354,7 +354,7 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 
 		var postsWithLead []PostWithLead
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -363,7 +363,7 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 				})
 			}, "next_view_count").
 			OrderBy("view_count").
-			Scan(suite.Ctx, &postsWithLead)
+			Scan(suite.ctx, &postsWithLead)
 
 		suite.NoError(err, "LEAD should work with default offset")
 		suite.True(len(postsWithLead) > 0, "Should have posts with lead")
@@ -387,7 +387,7 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 
 		var advLead []PostWithLeadAdvanced
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -401,7 +401,7 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 				})
 			}, "next2_or_default").
 			OrderBy("view_count").
-			Scan(suite.Ctx, &advLead)
+			Scan(suite.ctx, &advLead)
 
 		suite.NoError(err, "LEAD should work with custom offset and default value")
 		suite.True(len(advLead) > 0, "Should have posts for advanced lead")
@@ -418,7 +418,7 @@ func (suite *WindowFunctionsTestSuite) TestLead() {
 
 // TestFirstValue tests the FIRST_VALUE window function.
 func (suite *WindowFunctionsTestSuite) TestFirstValue() {
-	suite.T().Logf("Testing FirstValue function for %s", suite.DbType)
+	suite.T().Logf("Testing FirstValue function for %s", suite.dbType)
 
 	suite.Run("FirstValuePartitionedByStatus", func() {
 		type PostWithFirstValue struct {
@@ -430,7 +430,7 @@ func (suite *WindowFunctionsTestSuite) TestFirstValue() {
 
 		var postsWithFirst []PostWithFirstValue
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -439,7 +439,7 @@ func (suite *WindowFunctionsTestSuite) TestFirstValue() {
 				})
 			}, "first_in_status").
 			OrderBy("status", "view_count").
-			Scan(suite.Ctx, &postsWithFirst)
+			Scan(suite.ctx, &postsWithFirst)
 
 		suite.NoError(err, "FIRST_VALUE should work with partitioning")
 		suite.True(len(postsWithFirst) > 0, "Should have posts with first value")
@@ -466,7 +466,7 @@ func (suite *WindowFunctionsTestSuite) TestFirstValue() {
 
 // TestLastValue tests the LAST_VALUE window function.
 func (suite *WindowFunctionsTestSuite) TestLastValue() {
-	suite.T().Logf("Testing LastValue function for %s", suite.DbType)
+	suite.T().Logf("Testing LastValue function for %s", suite.dbType)
 
 	suite.Run("LastValuePartitionedByStatus", func() {
 		type PostWithLastValue struct {
@@ -478,7 +478,7 @@ func (suite *WindowFunctionsTestSuite) TestLastValue() {
 
 		var postsWithLast []PostWithLastValue
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -487,7 +487,7 @@ func (suite *WindowFunctionsTestSuite) TestLastValue() {
 				})
 			}, "last_in_status").
 			OrderBy("status", "view_count").
-			Scan(suite.Ctx, &postsWithLast)
+			Scan(suite.ctx, &postsWithLast)
 
 		suite.NoError(err, "LAST_VALUE should work with partitioning")
 		suite.True(len(postsWithLast) > 0, "Should have posts with last value")
@@ -514,7 +514,7 @@ func (suite *WindowFunctionsTestSuite) TestLastValue() {
 
 // TestNthValue tests the NTH_VALUE window function.
 func (suite *WindowFunctionsTestSuite) TestNthValue() {
-	suite.T().Logf("Testing NthValue function for %s", suite.DbType)
+	suite.T().Logf("Testing NthValue function for %s", suite.dbType)
 
 	suite.Run("SecondValueInPartition", func() {
 		type PostWithNthValue struct {
@@ -525,7 +525,7 @@ func (suite *WindowFunctionsTestSuite) TestNthValue() {
 
 		var nthVals []PostWithNthValue
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -534,7 +534,7 @@ func (suite *WindowFunctionsTestSuite) TestNthValue() {
 				})
 			}, "second_from_end").
 			OrderBy("status", "view_count").
-			Scan(suite.Ctx, &nthVals)
+			Scan(suite.ctx, &nthVals)
 
 		suite.NoError(err, "NTH_VALUE should work with full frame")
 		suite.True(len(nthVals) > 0, "Should compute NTH_VALUE")
@@ -545,7 +545,7 @@ func (suite *WindowFunctionsTestSuite) TestNthValue() {
 
 // TestWinCount tests the COUNT window function.
 func (suite *WindowFunctionsTestSuite) TestWinCount() {
-	suite.T().Logf("Testing WinCount function for %s", suite.DbType)
+	suite.T().Logf("Testing WinCount function for %s", suite.dbType)
 
 	suite.Run("RunningCount", func() {
 		type UserWithRunningCount struct {
@@ -556,7 +556,7 @@ func (suite *WindowFunctionsTestSuite) TestWinCount() {
 
 		var usersWithCount []UserWithRunningCount
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -565,7 +565,7 @@ func (suite *WindowFunctionsTestSuite) TestWinCount() {
 				})
 			}, "running_count").
 			OrderBy("age").
-			Scan(suite.Ctx, &usersWithCount)
+			Scan(suite.ctx, &usersWithCount)
 
 		suite.NoError(err, "WinCount should work for running count")
 		suite.Len(usersWithCount, 3, "Should have 3 users")
@@ -581,7 +581,7 @@ func (suite *WindowFunctionsTestSuite) TestWinCount() {
 
 // TestWinSum tests the SUM window function.
 func (suite *WindowFunctionsTestSuite) TestWinSum() {
-	suite.T().Logf("Testing WinSum function for %s", suite.DbType)
+	suite.T().Logf("Testing WinSum function for %s", suite.dbType)
 
 	suite.Run("RunningTotal", func() {
 		type UserWithRunningTotal struct {
@@ -592,7 +592,7 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 
 		var usersWithSum []UserWithRunningTotal
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -601,7 +601,7 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 				})
 			}, "running_total").
 			OrderBy("age").
-			Scan(suite.Ctx, &usersWithSum)
+			Scan(suite.ctx, &usersWithSum)
 
 		suite.NoError(err, "WinSum should work for running total")
 		suite.Len(usersWithSum, 3, "Should have 3 users")
@@ -624,7 +624,7 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 
 		var postsWithCumulative []PostWithCumulativeViews
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "status", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -634,7 +634,7 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 			}, "cumulative_views").
 			OrderBy("status").
 			OrderByDesc("view_count").
-			Scan(suite.Ctx, &postsWithCumulative)
+			Scan(suite.ctx, &postsWithCumulative)
 
 		suite.NoError(err, "WinSum should work with partitioning")
 		suite.True(len(postsWithCumulative) > 0, "Should have posts with cumulative views")
@@ -649,7 +649,7 @@ func (suite *WindowFunctionsTestSuite) TestWinSum() {
 
 // TestWinAvg tests the AVG window function.
 func (suite *WindowFunctionsTestSuite) TestWinAvg() {
-	suite.T().Logf("Testing WinAvg function for %s", suite.DbType)
+	suite.T().Logf("Testing WinAvg function for %s", suite.dbType)
 
 	suite.Run("MovingAverage", func() {
 		type UserWithMovingAvg struct {
@@ -660,7 +660,7 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 
 		var usersWithAvg []UserWithMovingAvg
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			Select("name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -669,7 +669,7 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 				})
 			}, "moving_avg").
 			OrderBy("age").
-			Scan(suite.Ctx, &usersWithAvg)
+			Scan(suite.ctx, &usersWithAvg)
 
 		suite.NoError(err, "WinAvg should work for moving average")
 		suite.Len(usersWithAvg, 3, "Should have 3 users")
@@ -691,7 +691,7 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 
 		var movingAvgRows []PostWithMovingAvg
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -700,7 +700,7 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 				})
 			}, "mov_avg").
 			OrderBy("view_count").
-			Scan(suite.Ctx, &movingAvgRows)
+			Scan(suite.ctx, &movingAvgRows)
 
 		suite.NoError(err, "WinAvg should work with ROWS BETWEEN 2 PRECEDING AND CURRENT ROW")
 		suite.True(len(movingAvgRows) > 0, "Should have moving average values")
@@ -711,7 +711,7 @@ func (suite *WindowFunctionsTestSuite) TestWinAvg() {
 
 // TestWinMin tests the MIN window function.
 func (suite *WindowFunctionsTestSuite) TestWinMin() {
-	suite.T().Logf("Testing WinMin function for %s", suite.DbType)
+	suite.T().Logf("Testing WinMin function for %s", suite.dbType)
 
 	suite.Run("MinInStatusPartition", func() {
 		type WindowMinResult struct {
@@ -723,7 +723,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMin() {
 
 		var windowMinResults []WindowMinResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -733,7 +733,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMin() {
 			}, "min_in_status").
 			OrderBy("status", "id").
 			Limit(8).
-			Scan(suite.Ctx, &windowMinResults)
+			Scan(suite.ctx, &windowMinResults)
 
 		suite.NoError(err, "WinMin should work correctly")
 		suite.True(len(windowMinResults) > 0, "Should have window min results")
@@ -748,7 +748,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMin() {
 
 // TestWinMax tests the MAX window function.
 func (suite *WindowFunctionsTestSuite) TestWinMax() {
-	suite.T().Logf("Testing WinMax function for %s", suite.DbType)
+	suite.T().Logf("Testing WinMax function for %s", suite.dbType)
 
 	suite.Run("MaxInStatusPartition", func() {
 		type WindowMaxResult struct {
@@ -760,7 +760,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMax() {
 
 		var windowMaxResults []WindowMaxResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -770,7 +770,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMax() {
 			}, "max_in_status").
 			OrderBy("status", "id").
 			Limit(8).
-			Scan(suite.Ctx, &windowMaxResults)
+			Scan(suite.ctx, &windowMaxResults)
 
 		suite.NoError(err, "WinMax should work correctly")
 		suite.True(len(windowMaxResults) > 0, "Should have window max results")
@@ -786,11 +786,11 @@ func (suite *WindowFunctionsTestSuite) TestWinMax() {
 // TestWinStringAgg tests the STRING_AGG window function.
 // Note: MySQL does not support GROUP_CONCAT as a window function.
 func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
-	suite.T().Logf("Testing WinStringAgg function for %s", suite.DbType)
+	suite.T().Logf("Testing WinStringAgg function for %s", suite.dbType)
 
 	suite.Run("StringAggPartitionedByStatus", func() {
-		if suite.DbType == constants.DbMySQL {
-			suite.T().Skipf("WinStringAgg skipped for %s (MySQL does not support GROUP_CONCAT as window function)", suite.DbType)
+		if suite.dbType == constants.DbMySQL {
+			suite.T().Skipf("WinStringAgg skipped for %s (MySQL does not support GROUP_CONCAT as window function)", suite.dbType)
 
 			return
 		}
@@ -803,7 +803,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 
 		var windowStringAggResults []WindowStringAggResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -813,7 +813,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 			}, "title_agg").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowStringAggResults)
+			Scan(suite.ctx, &windowStringAggResults)
 
 		suite.NoError(err, "WinStringAgg should work correctly")
 		suite.True(len(windowStringAggResults) > 0, "Should have window string agg results")
@@ -828,11 +828,11 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 
 // TestWinArrayAgg tests the ARRAY_AGG window function (PostgreSQL only).
 func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
-	suite.T().Logf("Testing WinArrayAgg function for %s", suite.DbType)
+	suite.T().Logf("Testing WinArrayAgg function for %s", suite.dbType)
 
 	suite.Run("ArrayAggPartitionedByStatus", func() {
-		if suite.DbType != constants.DbPostgres {
-			suite.T().Skipf("WinArrayAgg skipped for %s (PostgreSQL only)", suite.DbType)
+		if suite.dbType != constants.DbPostgres {
+			suite.T().Skipf("WinArrayAgg skipped for %s (PostgreSQL only)", suite.dbType)
 		}
 
 		type WindowArrayAggResult struct {
@@ -843,7 +843,7 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 
 		var windowArrayAggResults []WindowArrayAggResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -853,7 +853,7 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 			}, "view_counts").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowArrayAggResults)
+			Scan(suite.ctx, &windowArrayAggResults)
 
 		suite.NoError(err, "WinArrayAgg should work correctly")
 		suite.True(len(windowArrayAggResults) > 0, "Should have window array agg results")
@@ -869,11 +869,11 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 // TestWinStdDev tests the STDDEV window function.
 // Note: SQLite does not support statistical functions.
 func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
-	suite.T().Logf("Testing WinStdDev function for %s", suite.DbType)
+	suite.T().Logf("Testing WinStdDev function for %s", suite.dbType)
 
 	suite.Run("StdDevInStatusPartition", func() {
-		if suite.DbType == constants.DbSQLite {
-			suite.T().Skipf("WinStdDev skipped for %s (SQLite does not support statistical functions)", suite.DbType)
+		if suite.dbType == constants.DbSQLite {
+			suite.T().Skipf("WinStdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 
 			return
 		}
@@ -887,7 +887,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 
 		var windowStdDevResults []WindowStdDevResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -897,7 +897,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 			}, "stddev_in_status").
 			OrderBy("status", "id").
 			Limit(8).
-			Scan(suite.Ctx, &windowStdDevResults)
+			Scan(suite.ctx, &windowStdDevResults)
 
 		suite.NoError(err, "WinStdDev should work correctly")
 		suite.True(len(windowStdDevResults) > 0, "Should have window stddev results")
@@ -913,11 +913,11 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 // TestWinVariance tests the VARIANCE window function.
 // Note: SQLite does not support statistical functions.
 func (suite *WindowFunctionsTestSuite) TestWinVariance() {
-	suite.T().Logf("Testing WinVariance function for %s", suite.DbType)
+	suite.T().Logf("Testing WinVariance function for %s", suite.dbType)
 
 	suite.Run("VarianceInStatusPartition", func() {
-		if suite.DbType == constants.DbSQLite {
-			suite.T().Skipf("WinVariance skipped for %s (SQLite does not support statistical functions)", suite.DbType)
+		if suite.dbType == constants.DbSQLite {
+			suite.T().Skipf("WinVariance skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 
 			return
 		}
@@ -931,7 +931,7 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 
 		var windowVarianceResults []WindowVarianceResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -941,7 +941,7 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 			}, "variance_in_status").
 			OrderBy("status", "id").
 			Limit(8).
-			Scan(suite.Ctx, &windowVarianceResults)
+			Scan(suite.ctx, &windowVarianceResults)
 
 		suite.NoError(err, "WinVariance should work correctly")
 		suite.True(len(windowVarianceResults) > 0, "Should have window variance results")
@@ -956,7 +956,7 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 
 // TestWinJsonObjectAgg tests the JSON_OBJECT_AGG window function.
 func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
-	suite.T().Logf("Testing WinJsonObjectAgg function for %s", suite.DbType)
+	suite.T().Logf("Testing WinJsonObjectAgg function for %s", suite.dbType)
 
 	suite.Run("JsonObjectAggPartitionedByStatus", func() {
 		type WindowJsonObjectResult struct {
@@ -967,7 +967,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
 
 		var windowJsonObjectResults []WindowJsonObjectResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -977,7 +977,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
 			}, "json_object_agg").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowJsonObjectResults)
+			Scan(suite.ctx, &windowJsonObjectResults)
 
 		suite.NoError(err, "WinJsonObjectAgg should work correctly")
 		suite.True(len(windowJsonObjectResults) > 0, "Should have window JSON object agg results")
@@ -993,7 +993,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
 
 // TestWinJsonArrayAgg tests the JSON_ARRAY_AGG window function.
 func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
-	suite.T().Logf("Testing WinJsonArrayAgg function for %s", suite.DbType)
+	suite.T().Logf("Testing WinJsonArrayAgg function for %s", suite.dbType)
 
 	suite.Run("JsonArrayAggPartitionedByStatus", func() {
 		type WindowJsonResult struct {
@@ -1004,7 +1004,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
 
 		var windowJsonResults []WindowJsonResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1014,7 +1014,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
 			}, "json_array_agg").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowJsonResults)
+			Scan(suite.ctx, &windowJsonResults)
 
 		suite.NoError(err, "WinJsonArrayAgg should work correctly")
 		suite.True(len(windowJsonResults) > 0, "Should have window JSON array agg results")
@@ -1033,7 +1033,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
 // Note: PostgreSQL and MySQL support native BIT_OR.
 // SQLite simulates it using MAX with CASE for boolean-like operations.
 func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
-	suite.T().Logf("Testing WinBitOr function for %s", suite.DbType)
+	suite.T().Logf("Testing WinBitOr function for %s", suite.dbType)
 
 	suite.Run("BitOrInStatusPartition", func() {
 		type WindowBitResult struct {
@@ -1045,7 +1045,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
 
 		var windowBitResults []WindowBitResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1055,7 +1055,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
 			}, "bit_or_result").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowBitResults)
+			Scan(suite.ctx, &windowBitResults)
 
 		suite.NoError(err, "WinBitOr should work correctly")
 		suite.True(len(windowBitResults) > 0, "Should have window bit OR results")
@@ -1073,7 +1073,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
 // Note: PostgreSQL and MySQL support native BIT_AND.
 // SQLite simulates it using MIN with CASE for boolean-like operations.
 func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
-	suite.T().Logf("Testing WinBitAnd function for %s", suite.DbType)
+	suite.T().Logf("Testing WinBitAnd function for %s", suite.dbType)
 
 	suite.Run("BitAndInStatusPartition", func() {
 		type WindowBitResult struct {
@@ -1085,7 +1085,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
 
 		var windowBitResults []WindowBitResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "view_count", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1095,7 +1095,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
 			}, "bit_and_result").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowBitResults)
+			Scan(suite.ctx, &windowBitResults)
 
 		suite.NoError(err, "WinBitAnd should work correctly")
 		suite.True(len(windowBitResults) > 0, "Should have window bit AND results")
@@ -1112,7 +1112,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
 // WinBoolOr performs boolean OR within a window frame.
 // Framework uses BOOL_OR (PostgreSQL), MAX+CASE simulation (MySQL/SQLite).
 func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
-	suite.T().Logf("Testing WinBoolOr function for %s", suite.DbType)
+	suite.T().Logf("Testing WinBoolOr function for %s", suite.dbType)
 
 	suite.Run("BoolOrInStatusPartition", func() {
 		type WindowBoolResult struct {
@@ -1123,7 +1123,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
 
 		var windowBoolResults []WindowBoolResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1133,7 +1133,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
 			}, "bool_or_result").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowBoolResults)
+			Scan(suite.ctx, &windowBoolResults)
 
 		suite.NoError(err, "WinBoolOr should work correctly")
 		suite.True(len(windowBoolResults) > 0, "Should have window bool OR results")
@@ -1149,7 +1149,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
 // WinBoolAnd performs boolean AND within a window frame.
 // Framework uses BOOL_AND (PostgreSQL), MIN+CASE simulation (MySQL/SQLite).
 func (suite *WindowFunctionsTestSuite) TestWinBoolAnd() {
-	suite.T().Logf("Testing WinBoolAnd function for %s", suite.DbType)
+	suite.T().Logf("Testing WinBoolAnd function for %s", suite.dbType)
 
 	suite.Run("BoolAndInStatusPartition", func() {
 		type WindowBoolResult struct {
@@ -1160,7 +1160,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolAnd() {
 
 		var windowBoolResults []WindowBoolResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -1170,7 +1170,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolAnd() {
 			}, "bool_and_result").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.Ctx, &windowBoolResults)
+			Scan(suite.ctx, &windowBoolResults)
 
 		suite.NoError(err, "WinBoolAnd should work correctly")
 		suite.True(len(windowBoolResults) > 0, "Should have window bool AND results")

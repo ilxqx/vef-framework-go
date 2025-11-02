@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestCache[T any](maxSize int64, defaultTTL time.Duration, evictionPolicy EvictionPolicy, gcInterval time.Duration) Cache[T] {
+func newTestCache[T any](maxSize int64, defaultTtl time.Duration, evictionPolicy EvictionPolicy, gcInterval time.Duration) Cache[T] {
 	return NewMemory[T](
 		WithMemMaxSize(maxSize),
-		WithMemDefaultTTL(defaultTTL),
+		WithMemDefaultTtl(defaultTtl),
 		WithMemEvictionPolicy(evictionPolicy),
 		WithMemGCInterval(gcInterval),
 	)
@@ -30,14 +30,14 @@ func TestNewMemoryOptions(t *testing.T) {
 
 		assert.Zero(t, mc.maxSize)
 		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
-		assert.Zero(t, mc.defaultTTL)
+		assert.Zero(t, mc.defaultTtl)
 		assert.Greater(t, mc.gcInterval, time.Duration(0))
 	})
 
 	t.Run("WithOptions", func(t *testing.T) {
 		cache := NewMemory[string](
 			WithMemMaxSize(128),
-			WithMemDefaultTTL(2*time.Minute),
+			WithMemDefaultTtl(2*time.Minute),
 			WithMemEvictionPolicy(EvictionPolicyLFU),
 			WithMemGCInterval(500*time.Millisecond),
 		)
@@ -47,7 +47,7 @@ func TestNewMemoryOptions(t *testing.T) {
 
 		assert.Equal(t, int64(128), mc.maxSize)
 		assert.Equal(t, EvictionPolicyLFU, mc.evictionPolicy)
-		assert.Equal(t, 2*time.Minute, mc.defaultTTL)
+		assert.Equal(t, 2*time.Minute, mc.defaultTtl)
 		assert.Equal(t, 500*time.Millisecond, mc.gcInterval)
 	})
 }
@@ -157,7 +157,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 func TestMemoryCacheExpiration(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("DefaultTTLExpiration", func(t *testing.T) {
+	t.Run("DefaultTtlExpiration", func(t *testing.T) {
 		cache := newTestCache[string](0, 100*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
@@ -173,7 +173,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		assert.False(t, found)
 	})
 
-	t.Run("CustomTTLExpiration", func(t *testing.T) {
+	t.Run("CustomTtlExpiration", func(t *testing.T) {
 		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
@@ -187,7 +187,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		assert.False(t, cache.Contains(ctx, "key1"))
 	})
 
-	t.Run("CustomTTLOverridesDefault", func(t *testing.T) {
+	t.Run("CustomTtlOverridesDefault", func(t *testing.T) {
 		cache := newTestCache[string](0, 1*time.Second, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
@@ -198,7 +198,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		assert.False(t, cache.Contains(ctx, "key1"))
 	})
 
-	t.Run("ZeroTTLMeansNoExpiration", func(t *testing.T) {
+	t.Run("ZeroTtlMeansNoExpiration", func(t *testing.T) {
 		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
@@ -209,7 +209,7 @@ func TestMemoryCacheExpiration(t *testing.T) {
 		assert.True(t, cache.Contains(ctx, "key1"))
 	})
 
-	t.Run("NegativeTTLIgnored", func(t *testing.T) {
+	t.Run("NegativeTtlIgnored", func(t *testing.T) {
 		cache := newTestCache[string](0, 100*time.Millisecond, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 

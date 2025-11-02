@@ -36,6 +36,7 @@ func TestSetLanguage(t *testing.T) {
 		originalEnv := os.Getenv("VEF_I18N_LANGUAGE")
 
 		os.Unsetenv("VEF_I18N_LANGUAGE")
+
 		defer func() {
 			if originalEnv != "" {
 				os.Setenv("VEF_I18N_LANGUAGE", originalEnv)

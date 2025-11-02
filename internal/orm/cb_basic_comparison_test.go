@@ -9,11 +9,11 @@ type BasicComparisonTestSuite struct {
 
 // TestEquals tests the Equals and OrEquals conditions.
 func (suite *BasicComparisonTestSuite) TestEquals() {
-	suite.T().Logf("Testing Equals condition for %s", suite.DbType)
+	suite.T().Logf("Testing Equals condition for %s", suite.dbType)
 
 	suite.Run("BasicEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("name", "Alice Johnson")
@@ -28,7 +28,7 @@ func (suite *BasicComparisonTestSuite) TestEquals() {
 
 	suite.Run("OrEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("name", "Alice Johnson").
@@ -47,7 +47,7 @@ func (suite *BasicComparisonTestSuite) TestEquals() {
 	suite.Run("EqualsWithDifferentTypes", func() {
 		// Test with integer
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("age", 30)
@@ -59,7 +59,7 @@ func (suite *BasicComparisonTestSuite) TestEquals() {
 
 		// Test with boolean
 		activeUsers := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("is_active", true)
@@ -78,11 +78,11 @@ func (suite *BasicComparisonTestSuite) TestEquals() {
 
 // TestNotEquals tests the NotEquals and OrNotEquals conditions.
 func (suite *BasicComparisonTestSuite) TestNotEquals() {
-	suite.T().Logf("Testing NotEquals condition for %s", suite.DbType)
+	suite.T().Logf("Testing NotEquals condition for %s", suite.dbType)
 
 	suite.Run("BasicNotEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotEquals("name", "Alice Johnson")
@@ -101,7 +101,7 @@ func (suite *BasicComparisonTestSuite) TestNotEquals() {
 
 	suite.Run("OrNotEquals", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotEquals("name", "Alice Johnson").
@@ -123,11 +123,11 @@ func (suite *BasicComparisonTestSuite) TestNotEquals() {
 
 // TestGreaterThan tests the GreaterThan and OrGreaterThan conditions.
 func (suite *BasicComparisonTestSuite) TestGreaterThan() {
-	suite.T().Logf("Testing GreaterThan condition for %s", suite.DbType)
+	suite.T().Logf("Testing GreaterThan condition for %s", suite.dbType)
 
 	suite.Run("BasicGreaterThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThan("age", 30)
@@ -143,7 +143,7 @@ func (suite *BasicComparisonTestSuite) TestGreaterThan() {
 
 	suite.Run("OrGreaterThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThan("age", 30).
@@ -165,11 +165,11 @@ func (suite *BasicComparisonTestSuite) TestGreaterThan() {
 
 // TestGreaterThanOrEqual tests the GreaterThanOrEqual and OrGreaterThanOrEqual conditions.
 func (suite *BasicComparisonTestSuite) TestGreaterThanOrEqual() {
-	suite.T().Logf("Testing GreaterThanOrEqual condition for %s", suite.DbType)
+	suite.T().Logf("Testing GreaterThanOrEqual condition for %s", suite.dbType)
 
 	suite.Run("BasicGreaterThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanOrEqual("age", 30)
@@ -188,7 +188,7 @@ func (suite *BasicComparisonTestSuite) TestGreaterThanOrEqual() {
 
 	suite.Run("OrGreaterThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanOrEqual("age", 35).
@@ -210,11 +210,11 @@ func (suite *BasicComparisonTestSuite) TestGreaterThanOrEqual() {
 
 // TestLessThan tests the LessThan and OrLessThan conditions.
 func (suite *BasicComparisonTestSuite) TestLessThan() {
-	suite.T().Logf("Testing LessThan condition for %s", suite.DbType)
+	suite.T().Logf("Testing LessThan condition for %s", suite.dbType)
 
 	suite.Run("BasicLessThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThan("age", 30)
@@ -230,7 +230,7 @@ func (suite *BasicComparisonTestSuite) TestLessThan() {
 
 	suite.Run("OrLessThan", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThan("age", 26).
@@ -252,11 +252,11 @@ func (suite *BasicComparisonTestSuite) TestLessThan() {
 
 // TestLessThanOrEqual tests the LessThanOrEqual and OrLessThanOrEqual conditions.
 func (suite *BasicComparisonTestSuite) TestLessThanOrEqual() {
-	suite.T().Logf("Testing LessThanOrEqual condition for %s", suite.DbType)
+	suite.T().Logf("Testing LessThanOrEqual condition for %s", suite.dbType)
 
 	suite.Run("BasicLessThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanOrEqual("age", 30)
@@ -275,7 +275,7 @@ func (suite *BasicComparisonTestSuite) TestLessThanOrEqual() {
 
 	suite.Run("OrLessThanOrEqual", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanOrEqual("age", 25).
@@ -297,11 +297,11 @@ func (suite *BasicComparisonTestSuite) TestLessThanOrEqual() {
 
 // TestEqualsColumn tests the EqualsColumn and OrEqualsColumn conditions.
 func (suite *BasicComparisonTestSuite) TestEqualsColumn() {
-	suite.T().Logf("Testing EqualsColumn condition for %s", suite.DbType)
+	suite.T().Logf("Testing EqualsColumn condition for %s", suite.dbType)
 
 	suite.Run("BasicEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.EqualsColumn("created_at", "updated_at")
@@ -315,7 +315,7 @@ func (suite *BasicComparisonTestSuite) TestEqualsColumn() {
 
 	suite.Run("OrEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.EqualsColumn("created_at", "updated_at").
@@ -331,11 +331,11 @@ func (suite *BasicComparisonTestSuite) TestEqualsColumn() {
 
 // TestNotEqualsColumn tests the NotEqualsColumn and OrNotEqualsColumn conditions.
 func (suite *BasicComparisonTestSuite) TestNotEqualsColumn() {
-	suite.T().Logf("Testing NotEqualsColumn condition for %s", suite.DbType)
+	suite.T().Logf("Testing NotEqualsColumn condition for %s", suite.dbType)
 
 	suite.Run("BasicNotEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotEqualsColumn("created_at", "updated_at")
@@ -349,7 +349,7 @@ func (suite *BasicComparisonTestSuite) TestNotEqualsColumn() {
 
 	suite.Run("OrNotEqualsColumn", func() {
 		users := suite.assertQueryReturnsUsers(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*User)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.NotEqualsColumn("name", "email").
@@ -365,11 +365,11 @@ func (suite *BasicComparisonTestSuite) TestNotEqualsColumn() {
 
 // TestGreaterThanColumn tests the GreaterThanColumn and OrGreaterThanColumn conditions.
 func (suite *BasicComparisonTestSuite) TestGreaterThanColumn() {
-	suite.T().Logf("Testing GreaterThanColumn condition for %s", suite.DbType)
+	suite.T().Logf("Testing GreaterThanColumn condition for %s", suite.dbType)
 
 	suite.Run("BasicGreaterThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanColumn("view_count", "view_count")
@@ -383,7 +383,7 @@ func (suite *BasicComparisonTestSuite) TestGreaterThanColumn() {
 
 	suite.Run("OrGreaterThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanColumn("view_count", "view_count").
@@ -399,11 +399,11 @@ func (suite *BasicComparisonTestSuite) TestGreaterThanColumn() {
 
 // TestGreaterThanOrEqualColumn tests the GreaterThanOrEqualColumn and OrGreaterThanOrEqualColumn conditions.
 func (suite *BasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
-	suite.T().Logf("Testing GreaterThanOrEqualColumn condition for %s", suite.DbType)
+	suite.T().Logf("Testing GreaterThanOrEqualColumn condition for %s", suite.dbType)
 
 	suite.Run("BasicGreaterThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanOrEqualColumn("view_count", "view_count")
@@ -417,7 +417,7 @@ func (suite *BasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
 
 	suite.Run("OrGreaterThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.GreaterThanOrEqualColumn("view_count", "view_count").
@@ -433,11 +433,11 @@ func (suite *BasicComparisonTestSuite) TestGreaterThanOrEqualColumn() {
 
 // TestLessThanColumn tests the LessThanColumn and OrLessThanColumn conditions.
 func (suite *BasicComparisonTestSuite) TestLessThanColumn() {
-	suite.T().Logf("Testing LessThanColumn condition for %s", suite.DbType)
+	suite.T().Logf("Testing LessThanColumn condition for %s", suite.dbType)
 
 	suite.Run("BasicLessThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanColumn("view_count", "view_count")
@@ -451,7 +451,7 @@ func (suite *BasicComparisonTestSuite) TestLessThanColumn() {
 
 	suite.Run("OrLessThanColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanColumn("view_count", "view_count").
@@ -467,11 +467,11 @@ func (suite *BasicComparisonTestSuite) TestLessThanColumn() {
 
 // TestLessThanOrEqualColumn tests the LessThanOrEqualColumn and OrLessThanOrEqualColumn conditions.
 func (suite *BasicComparisonTestSuite) TestLessThanOrEqualColumn() {
-	suite.T().Logf("Testing LessThanOrEqualColumn condition for %s", suite.DbType)
+	suite.T().Logf("Testing LessThanOrEqualColumn condition for %s", suite.dbType)
 
 	suite.Run("BasicLessThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanOrEqualColumn("view_count", "view_count")
@@ -485,7 +485,7 @@ func (suite *BasicComparisonTestSuite) TestLessThanOrEqualColumn() {
 
 	suite.Run("OrLessThanOrEqualColumn", func() {
 		posts := suite.assertQueryReturnsPosts(
-			suite.Db.NewSelect().
+			suite.db.NewSelect().
 				Model((*Post)(nil)).
 				Where(func(cb ConditionBuilder) {
 					cb.LessThanOrEqualColumn("view_count", "view_count").

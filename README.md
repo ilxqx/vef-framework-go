@@ -29,7 +29,7 @@ A modern Go web development framework built on Uber FX dependency injection and 
 go get github.com/ilxqx/vef-framework-go
 ```
 
-**Requirements:** Go 1.25 or higher
+**Requirements:** Go 1.25.0 or higher
 
 **Troubleshooting:** If you encounter ambiguous import errors with `google.golang.org/genproto` during `go mod tidy`, run:
 
@@ -1259,7 +1259,7 @@ Override configuration with environment variables:
 
 - `VEF_CONFIG_PATH` - Configuration file path
 - `VEF_LOG_LEVEL` - Log level (debug, info, warn, error)
-- `VEF_NODE_ID` - Snowflake node ID for ID generation
+- `VEF_NODE_ID` - XID node identifier for ID generation
 - `VEF_I18N_LANGUAGE` - Language (en, zh-CN)
 
 ## Advanced Features
@@ -1277,14 +1277,14 @@ import (
 // In-memory cache
 memCache := cache.NewMemory[models.User](
     cache.WithMemMaxSize(1000),
-    cache.WithMemDefaultTTL(5 * time.Minute),
+    cache.WithMemDefaultTtl(5 * time.Minute),
 )
 
 // Redis cache
 redisCache := cache.NewRedis[models.User](
     redisClient,
     "users",
-    cache.WithRdsDefaultTTL(10 * time.Minute),
+    cache.WithRdsDefaultTtl(10 * time.Minute),
 )
 
 // Usage
@@ -1305,9 +1305,11 @@ import "github.com/ilxqx/vef-framework-go/event"
 func (r *UserResource) CreateUser(ctx fiber.Ctx, bus event.Bus, ...) error {
     // Create user logic
     
-    bus.Publish(event.NewBase("user.created", "user-service", map[string]string{
-        "userId": user.Id,
-    }))
+    bus.Publish(event.NewBaseEvent(
+        "user.created",
+        event.WithSource("user-service"),
+        event.WithMeta("userId", user.Id),
+    ))
     
     return result.Ok().Response(ctx)
 }
@@ -1315,10 +1317,10 @@ func (r *UserResource) CreateUser(ctx fiber.Ctx, bus event.Bus, ...) error {
 // Subscribing to events
 func main() {
     vef.Run(
-        vef.Invoke(func(bus event.Bus) {
+        vef.Invoke(func(bus event.Bus, logger log.Logger) {
             unsubscribe := bus.Subscribe("user.created", func(ctx context.Context, e event.Event) {
                 // Handle event
-                log.Infof("User created: %s", e.Meta()["userId"])
+                logger.Infof("User created: %s", e.Meta()["userId"])
             })
             
             // Optionally unsubscribe later
@@ -1564,7 +1566,7 @@ The framework provides built-in file storage functionality with support for MinI
 
 #### Built-in Storage Resource
 
-The framework automatically registers the `base/storage` resource with the following Api endpoints:
+The framework automatically registers the `sys/storage` resource with the following Api endpoints:
 
 | Action | Description |
 |--------|-------------|
@@ -1579,7 +1581,7 @@ The framework automatically registers the `base/storage` resource with the follo
 # Using built-in upload Api
 curl -X POST http://localhost:8080/api \
   -H "Authorization: Bearer <token>" \
-  -F "resource=base/storage" \
+  -F "resource=sys/storage" \
   -F "action=upload" \
   -F "version=v1" \
   -F "params[file]=@/path/to/file.jpg" \
@@ -1743,6 +1745,44 @@ type UserParams struct {
 | `contains` | Contains substring |
 | `startswith` | Starts with string |
 | `endswith` | Ends with string |
+
+### CLI Tools
+
+VEF Framework provides the `vef-cli` command-line tool for code generation and project scaffolding tasks.
+
+#### Generate Build Info
+
+The `generate-build-info` command creates build information files with version, commit hash, and build timestamp:
+
+```bash
+go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+```
+
+**Options:**
+- `-o, --output` - Output file path (default: `internal/version/build.go`)
+- `-p, --package` - Package name (default: `version`)
+
+**Usage in go:generate:**
+
+```go
+//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+```
+
+The generated file provides a `BuildInfo` structure compatible with the monitor module:
+
+```go
+package version
+
+import "github.com/ilxqx/vef-framework-go/monitor"
+
+var Build = monitor.BuildInfo{
+    Version:   "v1.0.0",
+    Commit:    "abc123...",
+    BuildTime: "2025-01-15T10:30:00Z",
+}
+```
+
+For AI-assisted development guidelines, see `cmd/vef-cli/CMD_DEV_GUIDELINES.md`.
 
 ## Best Practices
 

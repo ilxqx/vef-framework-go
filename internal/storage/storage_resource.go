@@ -86,6 +86,7 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 	if err != nil {
 		return err
 	}
+
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 			logger.Errorf("failed to close file: %v", closeErr)

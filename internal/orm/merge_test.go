@@ -13,11 +13,11 @@ type MergeTestSuite struct {
 
 // TestBasicMerge tests MERGE with updates and inserts.
 func (suite *MergeTestSuite) TestBasicMerge() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing basic MERGE for %s", suite.DbType)
+	suite.T().Logf("Testing basic MERGE for %s", suite.dbType)
 
 	type UserMergeData struct {
 		Id       string `bun:"id"`
@@ -35,17 +35,17 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 
 	// Cleanup inserted data after test
 	defer func() {
-		_, _ = suite.Db.NewDelete().
+		_, _ = suite.db.NewDelete().
 			Model(&User{}).
 			Where(func(cb ConditionBuilder) {
 				cb.In("id", []string{"user4", "user5"})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 	}()
 
 	suite.T().Logf("Executing MERGE with %d source records (updates: user1, inserts: user4, user5)", len(sourceData))
 
-	result, err := suite.Db.NewMerge().
+	result, err := suite.db.NewMerge().
 		Model(&User{}).
 		WithValues("_source_data", &sourceData).
 		UsingTable("_source_data").
@@ -60,7 +60,7 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 		ThenInsert(func(ib MergeInsertBuilder) {
 			ib.Values("id", "name", "email", "age", "is_active")
 		}).
-		Exec(suite.Ctx)
+		Exec(suite.ctx)
 
 	suite.NoError(err, "MERGE operation should complete successfully")
 
@@ -72,13 +72,13 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 
 	var newUsers []User
 
-	err = suite.Db.NewSelect().
+	err = suite.db.NewSelect().
 		Model(&newUsers).
 		Where(func(cb ConditionBuilder) {
 			cb.In("id", []string{"user4", "user5"})
 		}).
 		OrderBy("name").
-		Scan(suite.Ctx)
+		Scan(suite.ctx)
 	suite.NoError(err, "Failed to query newly inserted users")
 	suite.T().Logf("Found %d new users after merge (user4, user5)", len(newUsers))
 
@@ -90,14 +90,14 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 
 // TestCteMethods tests CTE methods: With for named CTEs, WithValues for inline data CTEs.
 func (suite *MergeTestSuite) TestCteMethods() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing CTE methods for %s", suite.DbType)
+	suite.T().Logf("Testing CTE methods for %s", suite.dbType)
 
 	suite.Run("WithNamedCTE", func() {
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&Post{}).
 			With("high_view_posts", func(sq SelectQuery) {
 				sq.Model(&Post{}).
@@ -116,7 +116,7 @@ func (suite *MergeTestSuite) TestCteMethods() {
 					return eb.Expr("? + 1", eb.Column("high_view_posts.view_count"))
 				})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "MERGE with named CTE should work")
 
@@ -141,15 +141,15 @@ func (suite *MergeTestSuite) TestCteMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.In("id", []string{"cte1", "cte2"})
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("cte_source", &sourceData).
 			UsingTable("cte_source").
@@ -160,7 +160,7 @@ func (suite *MergeTestSuite) TestCteMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email", "age")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "MERGE with VALUES CTE should work")
 
@@ -173,11 +173,11 @@ func (suite *MergeTestSuite) TestCteMethods() {
 
 // TestTableSourceMethods tests target table specification: ModelTable, Table, TableExpr, TableSubQuery with/without aliases.
 func (suite *MergeTestSuite) TestTableSourceMethods() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing table source methods for %s", suite.DbType)
+	suite.T().Logf("Testing table source methods for %s", suite.dbType)
 
 	suite.Run("ModelTableBasic", func() {
 		type UserMergeData struct {
@@ -190,15 +190,15 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "mt1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			ModelTable("test_user").
 			WithValues("_src", &sourceData).
@@ -210,7 +210,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "ModelTable without alias should work")
 
@@ -231,15 +231,15 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "mt2")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			ModelTable("test_user", "u").
 			WithValues("_src", &sourceData).
@@ -251,7 +251,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "ModelTable with alias should work")
 
@@ -272,15 +272,15 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "t1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			Table("test_user").
 			WithValues("_src", &sourceData).
@@ -292,7 +292,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Table without alias should work")
 
@@ -313,15 +313,15 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "t2")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			Table("test_user", "u").
 			WithValues("_src", &sourceData).
@@ -333,7 +333,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Table with alias should work")
 
@@ -354,15 +354,15 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "te1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			TableExpr(func(eb ExprBuilder) any {
 				return eb.Expr("test_user")
@@ -376,7 +376,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "TableExpr should work")
 
@@ -397,15 +397,15 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "tsq1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			TableSubQuery(func(sq SelectQuery) {
 				sq.Model(&User{}).
@@ -423,7 +423,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "TableSubQuery should work")
 
@@ -436,11 +436,11 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 // TestUsingMethods tests source data specification: UsingTable, UsingExpr, UsingSubQuery with/without aliases.
 func (suite *MergeTestSuite) TestUsingMethods() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing Using methods for %s", suite.DbType)
+	suite.T().Logf("Testing Using methods for %s", suite.dbType)
 
 	suite.Run("UsingWithAlias", func() {
 		type UserMergeData struct {
@@ -453,15 +453,15 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "ua1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_source_data", &sourceData).
 			UsingTable("_source_data", "src").
@@ -472,7 +472,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Using with alias should work")
 
@@ -493,7 +493,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			{Id: "post1", Title: "Updated Post Title", ViewCount: 200},
 		}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&Post{}).
 			WithValues("_post_updates", &sourceData).
 			UsingTable("_post_updates").
@@ -506,7 +506,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 					return eb.Add(eb.Column("_post_updates.view_count"), 1)
 				})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "UsingTable without alias should work")
 
@@ -527,7 +527,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			{Id: "post1", Title: "Updated Post Title", ViewCount: 200},
 		}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&Post{}).
 			WithValues("_post_updates", &sourceData).
 			UsingTable("_post_updates", "src").
@@ -540,7 +540,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 					return eb.Expr("? + 1", eb.Column("src.view_count"))
 				})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "UsingTable with alias should work")
 
@@ -561,15 +561,15 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "ue1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_temp", &sourceData).
 			UsingTable("_temp").
@@ -580,7 +580,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "UsingExpr should work")
 
@@ -601,15 +601,15 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "uea1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_temp", &sourceData).
 			UsingTable("_temp", "src").
@@ -620,7 +620,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "UsingExpr with alias should work")
 
@@ -631,7 +631,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 	})
 
 	suite.Run("UsingSubQueryBasic", func() {
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&Post{}).
 			UsingSubQuery(func(sq SelectQuery) {
 				sq.Model(&Post{}).
@@ -649,7 +649,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 					return eb.Add(eb.Column("src.view_count"), 5)
 				})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "UsingSubQuery should work")
 
@@ -662,11 +662,11 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 // TestReturningMethods tests RETURNING clause: specific columns, all columns (*), or none.
 func (suite *MergeTestSuite) TestReturningMethods() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing RETURNING methods for %s", suite.DbType)
+	suite.T().Logf("Testing RETURNING methods for %s", suite.dbType)
 
 	suite.Run("ReturningSpecificColumns", func() {
 		type UserMergeData struct {
@@ -682,12 +682,12 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.In("id", []string{"ret1", "ret2"})
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
 		type ReturnResult struct {
@@ -697,7 +697,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 		var returnedUsers []ReturnResult
 
-		err := suite.Db.NewMerge().
+		err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -709,7 +709,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 				ib.Values("id", "name", "email")
 			}).
 			Returning("id", "name").
-			Scan(suite.Ctx, &returnedUsers)
+			Scan(suite.ctx, &returnedUsers)
 
 		suite.NoError(err, "RETURNING specific columns should work")
 		suite.T().Logf("RETURNING specific columns returned %d results", len(returnedUsers))
@@ -730,17 +730,17 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "reta1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
 		var returnedUsers []User
 
-		err := suite.Db.NewMerge().
+		err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -752,7 +752,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 				ib.Values("id", "name", "email")
 			}).
 			ReturningAll().
-			Scan(suite.Ctx, &returnedUsers)
+			Scan(suite.ctx, &returnedUsers)
 
 		suite.NoError(err, "RETURNING * should work")
 		suite.T().Logf("RETURNING * returned %d results", len(returnedUsers))
@@ -773,15 +773,15 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "retn1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -793,7 +793,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 				ib.Values("id", "name", "email")
 			}).
 			ReturningNone().
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "RETURNING NONE should work")
 
@@ -806,11 +806,11 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 // TestWhenNotMatchedByTarget tests insertion when row exists in source but not in target (with optional conditions).
 func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing WhenNotMatchedByTarget for %s", suite.DbType)
+	suite.T().Logf("Testing WhenNotMatchedByTarget for %s", suite.dbType)
 
 	suite.Run("BasicWhenNotMatchedByTarget", func() {
 		type UserMergeData struct {
@@ -823,15 +823,15 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "wnmbt1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -842,7 +842,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "WhenNotMatchedByTarget should work")
 
@@ -866,15 +866,15 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.In("id", []string{"wnmbtc1", "wnmbtc2"})
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -887,7 +887,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "WhenNotMatchedByTarget with condition should work")
 
@@ -900,11 +900,11 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 
 // TestWhenNotMatchedBySource tests updates/deletes when row exists in target but not in source (with optional conditions).
 func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing WhenNotMatchedBySource for %s", suite.DbType)
+	suite.T().Logf("Testing WhenNotMatchedBySource for %s", suite.dbType)
 
 	suite.Run("BasicWhenNotMatchedBySource", func() {
 		// Insert test users first
@@ -916,20 +916,20 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		testUsers[1].Id = "wnmbs2"
 
 		for _, user := range testUsers {
-			_, err := suite.Db.NewInsert().
+			_, err := suite.db.NewInsert().
 				Model(&user).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 			suite.NoError(err, "Failed to create test user")
 		}
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.In("id", []string{"wnmbs1", "wnmbs2"})
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
 		type UserMergeData struct {
@@ -943,7 +943,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			{Id: "wnmbs1", Name: "User to Keep Updated", Email: "keep_updated@example.com"},
 		}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -961,7 +961,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			ThenUpdate(func(ub MergeUpdateBuilder) {
 				ub.Set("is_active", false)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "WhenNotMatchedBySource should work")
 
@@ -973,13 +973,13 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		// Verify the results
 		var users []User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&users).
 			Where(func(cb ConditionBuilder) {
 				cb.In("id", []string{"wnmbs1", "wnmbs2"})
 			}).
 			OrderBy("id").
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 
 		// wnmbs1 should be updated from source
@@ -1005,20 +1005,20 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		testUsers[2].Id = "wnmbsc3"
 
 		for _, user := range testUsers {
-			_, err := suite.Db.NewInsert().
+			_, err := suite.db.NewInsert().
 				Model(&user).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 			suite.NoError(err, "Failed to create test user")
 		}
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.In("id", []string{"wnmbsc1", "wnmbsc2", "wnmbsc3"})
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
 		type UserMergeData struct {
@@ -1032,7 +1032,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			{Id: "wnmbsc1", Name: "Active User 1 Updated", Email: "active1_updated@example.com"},
 		}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1051,7 +1051,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			ThenUpdate(func(ub MergeUpdateBuilder) {
 				ub.Set("is_active", false)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "WhenNotMatchedBySource with condition should work")
 
@@ -1063,13 +1063,13 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		// Verify the results
 		var users []User
 
-		err = suite.Db.NewSelect().
+		err = suite.db.NewSelect().
 			Model(&users).
 			Where(func(cb ConditionBuilder) {
 				cb.In("id", []string{"wnmbsc1", "wnmbsc2", "wnmbsc3"})
 			}).
 			OrderBy("id").
-			Scan(suite.Ctx)
+			Scan(suite.ctx)
 		suite.NoError(err)
 
 		// wnmbsc1 should be updated from source and remain active
@@ -1089,11 +1089,11 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 
 // TestThenDoNothing tests no-op actions for matched/not-matched conditions.
 func (suite *MergeTestSuite) TestThenDoNothing() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing ThenDoNothing for %s", suite.DbType)
+	suite.T().Logf("Testing ThenDoNothing for %s", suite.dbType)
 
 	suite.Run("WhenMatchedDoNothing", func() {
 		type UserMergeData struct {
@@ -1109,15 +1109,15 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "dnm1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1130,7 +1130,7 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "WHEN MATCHED THEN DO NOTHING should work")
 
@@ -1151,7 +1151,7 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 			{Id: "dnn1", Name: "Should Not Insert"},
 		}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1164,7 +1164,7 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 			}).
 			WhenNotMatched().
 			ThenDoNothing().
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "WHEN NOT MATCHED THEN DO NOTHING should work")
 
@@ -1177,11 +1177,11 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 
 // TestThenUpdate tests update actions: Set, SetExpr, SetColumns, SetAll.
 func (suite *MergeTestSuite) TestThenUpdate() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing UpdateBuilder methods for %s", suite.DbType)
+	suite.T().Logf("Testing UpdateBuilder methods for %s", suite.dbType)
 
 	suite.Run("SetSingleValue", func() {
 		type UserMergeData struct {
@@ -1191,7 +1191,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 		sourceData := []UserMergeData{{Id: "user1", Name: "Set Single"}}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1202,7 +1202,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			ThenUpdate(func(ub MergeUpdateBuilder) {
 				ub.Set("name", "Set Single Value")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Set single value should work")
 
@@ -1221,7 +1221,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 		sourceData := []UserMergeData{{Id: "user1", Name: "Multiple", Age: 35}}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1233,7 +1233,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 				ub.Set("name", "Set Multiple Values").
 					Set("age", 40)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Set multiple values should work")
 
@@ -1251,7 +1251,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 		sourceData := []PostMergeData{{Id: "post1", ViewCount: 100}}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&Post{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1264,7 +1264,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 					return eb.Expr("? + ?", eb.Column("p.view_count"), 10)
 				})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "SetExpr should work")
 
@@ -1283,7 +1283,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 		sourceData := []UserMergeData{{Id: "user1", Name: "SetColumns Name", Email: "setcols@example.com"}}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1294,7 +1294,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			ThenUpdate(func(ub MergeUpdateBuilder) {
 				ub.SetColumns("name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "SetColumns should work")
 
@@ -1317,7 +1317,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			{Id: "user1", Name: "SetAll Name", Email: "setall@example.com", Age: 45, IsActive: true},
 		}
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1328,7 +1328,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 			ThenUpdate(func(ub MergeUpdateBuilder) {
 				ub.SetAll("id", "created_at", "created_by", "updated_at", "updated_by", "deleted_at", "deleted_by", "meta")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "SetAll with exclusions should work")
 
@@ -1341,11 +1341,11 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 // TestThenInsert tests insert actions: Value, ValueExpr, Values, ValuesAll.
 func (suite *MergeTestSuite) TestThenInsert() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing InsertBuilder methods for %s", suite.DbType)
+	suite.T().Logf("Testing InsertBuilder methods for %s", suite.dbType)
 
 	suite.Run("ValueSingleColumn", func() {
 		type UserMergeData struct {
@@ -1356,15 +1356,15 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "val1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1377,7 +1377,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 					Value("name", "Value Single User").
 					Value("email", "val1@example.com")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Value single column should work")
 
@@ -1396,15 +1396,15 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "valm1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1418,7 +1418,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 					Value("email", "valm1@example.com").
 					Value("age", 25)
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Value multiple columns should work")
 
@@ -1438,15 +1438,15 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "vale1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1461,7 +1461,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 						return eb.Concat(eb.Column("_src.name"), " (Expression)")
 					})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "ValueExpr should work")
 
@@ -1482,15 +1482,15 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "vals1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1501,7 +1501,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.Values("id", "name", "email")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "Values multiple columns should work")
 
@@ -1526,15 +1526,15 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 		// Cleanup inserted data after test
 		defer func() {
-			_, _ = suite.Db.NewDelete().
+			_, _ = suite.db.NewDelete().
 				Model(&User{}).
 				Where(func(cb ConditionBuilder) {
 					cb.Equals("id", "vala1")
 				}).
-				Exec(suite.Ctx)
+				Exec(suite.ctx)
 		}()
 
-		result, err := suite.Db.NewMerge().
+		result, err := suite.db.NewMerge().
 			Model(&User{}).
 			WithValues("_src", &sourceData).
 			UsingTable("_src").
@@ -1545,7 +1545,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 			ThenInsert(func(ib MergeInsertBuilder) {
 				ib.ValuesAll("created_at", "created_by", "updated_at", "updated_by", "deleted_at", "deleted_by", "meta")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 
 		suite.NoError(err, "ValuesAll with exclusions should work")
 
@@ -1558,11 +1558,11 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 // TestThenDelete tests deletion when rows exist in target but not in source.
 func (suite *MergeTestSuite) TestThenDelete() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing MERGE with DELETE for %s", suite.DbType)
+	suite.T().Logf("Testing MERGE with DELETE for %s", suite.dbType)
 
 	testPosts := []Post{
 		{Title: "Test Post 1", Status: "published", ViewCount: 100},
@@ -1577,21 +1577,21 @@ func (suite *MergeTestSuite) TestThenDelete() {
 	suite.T().Logf("Creating %d test posts for DELETE scenario", len(testPosts))
 
 	for i, post := range testPosts {
-		_, err := suite.Db.NewInsert().
+		_, err := suite.db.NewInsert().
 			Model(&post).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 		suite.NoError(err, "Failed to create test post %d (Id: %s)", i+1, post.Id)
 		suite.T().Logf("Created test post %d: %s - %s (views: %d)", i+1, post.Id, post.Title, post.ViewCount)
 	}
 
 	// Cleanup test posts after test (merge_test_3 should be deleted by MERGE)
 	defer func() {
-		_, _ = suite.Db.NewDelete().
+		_, _ = suite.db.NewDelete().
 			Model(&Post{}).
 			Where(func(cb ConditionBuilder) {
 				cb.In("id", []string{"merge_test_1", "merge_test_2"})
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 	}()
 
 	type PostUpdateData struct {
@@ -1608,7 +1608,7 @@ func (suite *MergeTestSuite) TestThenDelete() {
 
 	suite.T().Logf("Executing MERGE with DELETE - %d source records, missing merge_test_3 to test deletion", len(sourceData))
 
-	result, err := suite.Db.NewMerge().
+	result, err := suite.db.NewMerge().
 		Model(&Post{}).
 		WithValues("_source_data", &sourceData).
 		UsingTable("_source_data").
@@ -1623,7 +1623,7 @@ func (suite *MergeTestSuite) TestThenDelete() {
 			cb.LessThan("p.view_count", 30)
 		}).
 		ThenDelete().
-		Exec(suite.Ctx)
+		Exec(suite.ctx)
 
 	suite.NoError(err, "MERGE with DELETE should complete successfully")
 
@@ -1635,13 +1635,13 @@ func (suite *MergeTestSuite) TestThenDelete() {
 
 	var remainingPosts []Post
 
-	err = suite.Db.NewSelect().
+	err = suite.db.NewSelect().
 		Model(&remainingPosts).
 		Where(func(cb ConditionBuilder) {
 			cb.StartsWith("id", "merge_test_")
 		}).
 		OrderBy("id").
-		Scan(suite.Ctx)
+		Scan(suite.ctx)
 	suite.NoError(err, "Failed to query remaining posts after MERGE with DELETE")
 
 	suite.T().Logf("Remaining posts after MERGE with DELETE: %d", len(remainingPosts))
@@ -1654,11 +1654,11 @@ func (suite *MergeTestSuite) TestThenDelete() {
 
 // TestMergeWithConditions tests MERGE with conditional WHEN clauses (e.g., only update when source > target).
 func (suite *MergeTestSuite) TestMergeWithConditions() {
-	if suite.DbType != constants.DbPostgres {
-		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.DbType)
+	if suite.dbType != constants.DbPostgres {
+		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
-	suite.T().Logf("Testing MERGE with conditions for %s", suite.DbType)
+	suite.T().Logf("Testing MERGE with conditions for %s", suite.dbType)
 
 	type PostMergeData struct {
 		Id        string `bun:"id,pk"`
@@ -1675,17 +1675,17 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 
 	// Cleanup inserted post after test
 	defer func() {
-		_, _ = suite.Db.NewDelete().
+		_, _ = suite.db.NewDelete().
 			Model(&Post{}).
 			Where(func(cb ConditionBuilder) {
 				cb.Equals("id", "new1")
 			}).
-			Exec(suite.Ctx)
+			Exec(suite.ctx)
 	}()
 
 	suite.T().Logf("Executing conditional MERGE with %d source records", len(sourceData))
 
-	result, err := suite.Db.NewMerge().
+	result, err := suite.db.NewMerge().
 		Model(&Post{}).
 		WithValues("_source_data", &sourceData).
 		UsingTable("_source_data").
@@ -1704,7 +1704,7 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 		ThenInsert(func(ib MergeInsertBuilder) {
 			ib.Values("id", "title", "status", "view_count")
 		}).
-		Exec(suite.Ctx)
+		Exec(suite.ctx)
 
 	suite.NoError(err, "Conditional MERGE operation should complete successfully")
 
@@ -1716,13 +1716,13 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 
 	var updatedPosts []Post
 
-	err = suite.Db.NewSelect().
+	err = suite.db.NewSelect().
 		Model(&updatedPosts).
 		Where(func(cb ConditionBuilder) {
 			cb.In("id", []string{"post1", "post2", "new1"})
 		}).
 		OrderBy("id").
-		Scan(suite.Ctx)
+		Scan(suite.ctx)
 	suite.NoError(err, "Failed to query posts after conditional MERGE")
 
 	suite.T().Logf("Posts after conditional MERGE: %d", len(updatedPosts))

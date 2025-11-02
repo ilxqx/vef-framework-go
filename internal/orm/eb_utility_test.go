@@ -8,7 +8,7 @@ type UtilityFunctionsTestSuite struct {
 
 // TestDecode tests the Decode utility function.
 func (suite *UtilityFunctionsTestSuite) TestDecode() {
-	suite.T().Logf("Testing Decode utility function for %s", suite.DbType)
+	suite.T().Logf("Testing Decode utility function for %s", suite.dbType)
 
 	// Test 1: DECODE for status mapping with string results
 	suite.Run("DecodeStatusDescriptionMapping", func() {
@@ -21,7 +21,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var decodeStatusResults []DecodeStatusResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -35,7 +35,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}, "status_desc").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &decodeStatusResults)
+			Scan(suite.ctx, &decodeStatusResults)
 
 		suite.NoError(err, "DECODE should work for status description mapping")
 		suite.True(len(decodeStatusResults) > 0, "Should have decode status results")
@@ -70,7 +70,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var decodePriorityResults []DecodePriorityResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -84,7 +84,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}, "status_priority").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &decodePriorityResults)
+			Scan(suite.ctx, &decodePriorityResults)
 
 		suite.NoError(err, "DECODE should work for priority mapping")
 		suite.True(len(decodePriorityResults) > 0, "Should have decode priority results")
@@ -120,7 +120,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var decodeCombinedResults []DecodeCombinedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -143,7 +143,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}, "status_priority").
 			OrderBy("title").
 			Limit(5).
-			Scan(suite.Ctx, &decodeCombinedResults)
+			Scan(suite.ctx, &decodeCombinedResults)
 
 		suite.NoError(err, "Combined DECODE should work")
 		suite.True(len(decodeCombinedResults) > 0, "Should have combined decode results")
@@ -182,14 +182,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeInvalidResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Decode(eb.Column("status"))
 			}, "result").
 			Limit(1).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DECODE with invalid arguments should return NULL")
 		suite.True(len(results) > 0, "Should have results")
@@ -211,7 +211,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeMinimalResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -222,7 +222,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}, "label").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DECODE with minimal arguments should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -256,7 +256,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeNoDefaultResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "status").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -268,7 +268,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}, "tag").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DECODE without default should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -306,7 +306,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeNullMappingResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "description").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -319,7 +319,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}, "desc_label").
 			OrderBy("id").
 			Limit(5).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DECODE with NULL value mapping should work")
 		suite.True(len(results) > 0, "Should have results")
@@ -353,7 +353,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		var results []DecodeNestedResult
 
-		err := suite.Db.NewSelect().
+		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title", "view_count").
 			SelectExpr(func(eb ExprBuilder) any {
@@ -390,7 +390,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}, "category_label").
 			OrderBy("view_count").
 			Limit(8).
-			Scan(suite.Ctx, &results)
+			Scan(suite.ctx, &results)
 
 		suite.NoError(err, "DECODE with nested expression should work")
 		suite.True(len(results) > 0, "Should have results")
