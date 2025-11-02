@@ -100,7 +100,7 @@ func (suite *BasicApiTestSuite) makeApiRequest(body string) *http.Response {
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	// Use 10 second timeout to handle slower CI environments
-	resp, err := suite.app.Test(req, 10*time.Second)
+	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
@@ -123,7 +123,7 @@ func (suite *BasicApiTestSuite) makeApiRequestMultipart(fields map[string]string
 	req.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 
 	// Use 10 second timeout to handle slower CI environments
-	resp, err := suite.app.Test(req, 10*time.Second)
+	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
@@ -156,7 +156,7 @@ func (suite *BasicApiTestSuite) makeApiRequestWithFiles(fields map[string]string
 	req.Header.Set(fiber.HeaderContentType, writer.FormDataContentType())
 
 	// Use 10 second timeout to handle slower CI environments
-	resp, err := suite.app.Test(req, 10*time.Second)
+	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp

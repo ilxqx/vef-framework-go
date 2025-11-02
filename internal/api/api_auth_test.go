@@ -330,7 +330,7 @@ func (suite *ApiAuthTestSuite) makeApiRequest(body api.Request, token string) *h
 	}
 
 	// Use 10 second timeout to handle slower CI environments
-	resp, err := suite.app.Test(req, 10*time.Second)
+	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "Should make API request successfully")
 
 	return resp

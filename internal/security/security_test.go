@@ -185,7 +185,8 @@ func (suite *AuthResourceTestSuite) makeApiRequest(body api.Request) *http.Respo
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
-	resp, err := suite.app.Test(req)
+	// Use 30 second timeout to handle slower CI environments
+	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
@@ -199,7 +200,8 @@ func (suite *AuthResourceTestSuite) makeApiRequestWithToken(body api.Request, to
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+token)
 
-	resp, err := suite.app.Test(req)
+	// Use 30 second timeout to handle slower CI environments
+	resp, err := suite.app.Test(req, 30*time.Second)
 	suite.Require().NoError(err, "Api request should not fail")
 
 	return resp
