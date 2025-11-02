@@ -55,11 +55,89 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 50
+
+      - name: Generate Changelog
+        id: changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT_TAG=${{ github.ref_name }}
+          PREVIOUS_TAG=$(gh api repos/${{ github.repository }}/releases \
+            --jq '.[].tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' \
+            | head -2 | tail -1)
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git fetch --shallow-since="$(gh api repos/${{ github.repository }}/releases/tags/${PREVIOUS_TAG} --jq '.published_at')" || git fetch --unshallow
+          fi
+
+          echo "Generating changelog from ${PREVIOUS_TAG} to ${CURRENT_TAG}"
+
+          FEATURES=""
+          FIXES=""
+          DOCS=""
+          CHORE=""
+          REFACTOR=""
+          TEST=""
+          CI=""
+          OTHER=""
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"%s" $CURRENT_TAG)
+          else
+            COMMITS=$(git log --pretty=format:"%s" ${PREVIOUS_TAG}..${CURRENT_TAG})
+          fi
+
+          while IFS= read -r commit; do
+            case "$commit" in
+              feat:*|feat\(*)
+                FEATURES="${FEATURES}- ${commit#feat*: }\n"
+                ;;
+              fix:*|fix\(*)
+                FIXES="${FIXES}- ${commit#fix*: }\n"
+                ;;
+              docs:*|docs\(*)
+                DOCS="${DOCS}- ${commit#docs*: }\n"
+                ;;
+              chore:*|chore\(*)
+                CHORE="${CHORE}- ${commit#chore*: }\n"
+                ;;
+              refactor:*|refactor\(*)
+                REFACTOR="${REFACTOR}- ${commit#refactor*: }\n"
+                ;;
+              test:*|test\(*)
+                TEST="${TEST}- ${commit#test*: }\n"
+                ;;
+              ci:*|ci\(*)
+                CI="${CI}- ${commit#ci*: }\n"
+                ;;
+              *)
+                OTHER="${OTHER}- ${commit}\n"
+                ;;
+            esac
+          done <<< "$COMMITS"
+
+          CHANGELOG="## What's Changed\n\n"
+
+          [ -n "$FEATURES" ] && CHANGELOG="${CHANGELOG}### 🚀 New Features\n${FEATURES}\n"
+          [ -n "$FIXES" ] && CHANGELOG="${CHANGELOG}### 🐛 Bug Fixes\n${FIXES}\n"
+          [ -n "$REFACTOR" ] && CHANGELOG="${CHANGELOG}### ♻️ Refactoring\n${REFACTOR}\n"
+          [ -n "$CI" ] && CHANGELOG="${CHANGELOG}### 🔄 CI/CD\n${CI}\n"
+          [ -n "$TEST" ] && CHANGELOG="${CHANGELOG}### ✅ Testing\n${TEST}\n"
+          [ -n "$DOCS" ] && CHANGELOG="${CHANGELOG}### 📝 Documentation\n${DOCS}\n"
+          [ -n "$CHORE" ] && CHANGELOG="${CHANGELOG}### 🔧 Maintenance\n${CHORE}\n"
+          [ -n "$OTHER" ] && CHANGELOG="${CHANGELOG}### Other Changes\n${OTHER}\n"
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.changelog }}
           generate_release_notes: true
           draft: false
           prerelease: false

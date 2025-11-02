@@ -1,0 +1,48 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+    authors:
+      - dependabot
+  categories:
+    - title: 🚀 New Features
+      labels:
+        - feature
+        - enhancement
+      # Match commits with "feat:" prefix
+      rules:
+        - pattern: '^feat(\(.*\))?:'
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - fix
+      rules:
+        - pattern: '^fix(\(.*\))?:'
+    - title: 📝 Documentation
+      labels:
+        - documentation
+      rules:
+        - pattern: '^docs(\(.*\))?:'
+    - title: 🔧 Maintenance
+      labels:
+        - chore
+      rules:
+        - pattern: '^chore(\(.*\))?:'
+    - title: ♻️ Refactoring
+      labels:
+        - refactor
+      rules:
+        - pattern: '^refactor(\(.*\))?:'
+    - title: ✅ Testing
+      labels:
+        - test
+      rules:
+        - pattern: '^test(\(.*\))?:'
+    - title: 🔄 CI/CD
+      labels:
+        - ci
+      rules:
+        - pattern: '^ci(\(.*\))?:'
+    - title: Other Changes
+      labels:
+        - "*"
