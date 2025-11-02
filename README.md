@@ -139,7 +139,7 @@ import (
 
 type User struct {
     orm.BaseModel `bun:"table:sys_user,alias:su"`
-    orm.Model     `bun:"extend"`
+    orm.Model     
     
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
     Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"Email"`

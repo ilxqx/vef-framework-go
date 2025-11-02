@@ -17,7 +17,7 @@ import (
 // User represents a user in the system.
 type User struct {
 	bun.BaseModel `bun:"table:test_user,alias:u"`
-	Model         `bun:"extend"`
+	Model
 
 	Name  string `json:"name"     bun:"name,notnull"`
 	Email string `json:"email"    bun:"email,notnull,unique"`
@@ -36,7 +36,7 @@ type User struct {
 // Post represents a blog post or article.
 type Post struct {
 	bun.BaseModel `bun:"table:test_post,alias:p"`
-	Model         `bun:"extend"`
+	Model
 
 	Title       string  `json:"title"       bun:"title,notnull"`
 	Content     string  `json:"content"     bun:"content,notnull"`
@@ -54,7 +54,7 @@ type Post struct {
 // Tag represents a content tag.
 type Tag struct {
 	bun.BaseModel `bun:"table:test_tag,alias:t"`
-	Model         `bun:"extend"`
+	Model
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
@@ -63,7 +63,7 @@ type Tag struct {
 // PostTag represents the many-to-many relationship between posts and tags.
 type PostTag struct {
 	bun.BaseModel `bun:"table:test_post_tag,alias:pt"`
-	Model         `bun:"extend"`
+	Model
 
 	PostId string `json:"postId" bun:"post_id,notnull"`
 	TagId  string `json:"tagId"  bun:"tag_id,notnull"`
@@ -76,7 +76,7 @@ type PostTag struct {
 // Category represents a content category.
 type Category struct {
 	bun.BaseModel `bun:"table:test_category,alias:c"`
-	Model         `bun:"extend"`
+	Model
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
@@ -91,7 +91,7 @@ type Category struct {
 // SimpleModel represents a simple test model for subquery tests.
 type SimpleModel struct {
 	bun.BaseModel `bun:"table:test_simple,alias:s"`
-	Model         `bun:"extend"`
+	Model
 
 	Name  string `json:"name"  bun:"name,notnull"`
 	Value int    `json:"value" bun:"value,notnull"`

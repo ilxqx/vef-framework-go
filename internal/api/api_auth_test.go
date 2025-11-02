@@ -34,7 +34,7 @@ import (
 // TestAuthUser is a test user model for authentication and authorization tests.
 type TestAuthUser struct {
 	bun.BaseModel `bun:"table:test_auth_user,alias:tau"`
-	orm.Model     `bun:"extend"`
+	orm.Model
 
 	Username string `json:"username" bun:",unique,notnull"`
 	Password string `json:"-"        bun:",notnull"`

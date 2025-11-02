@@ -27,7 +27,7 @@ import (
 // TestAuditUser is a test model for audit user.
 type TestAuditUser struct {
 	bun.BaseModel `bun:"table:test_audit_user,alias:tau"`
-	orm.Model     `bun:"extend"`
+	orm.Model
 
 	Name string `json:"name" bun:",notnull"`
 }
@@ -35,7 +35,7 @@ type TestAuditUser struct {
 // TestUser is a test model for all tests.
 type TestUser struct {
 	bun.BaseModel `bun:"table:test_user,alias:tu"`
-	orm.Model     `bun:"extend"`
+	orm.Model
 
 	Name        string `json:"name"        bun:",notnull"`
 	Email       string `json:"email"       bun:",unique,notnull"`
@@ -58,7 +58,7 @@ type TestUserSearch struct {
 // TestCategory is a test model for tree-based tests.
 type TestCategory struct {
 	bun.BaseModel `bun:"table:test_category,alias:tc"`
-	orm.Model     `bun:"extend"`
+	orm.Model
 
 	Name        string  `json:"name"               bun:",notnull"`
 	Code        string  `json:"code"               bun:",unique,notnull"`
