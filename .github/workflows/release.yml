@@ -64,9 +64,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           CURRENT_TAG=${{ github.ref_name }}
+          # Get the most recent release tag (excluding the current one being created)
+          # Since this workflow runs before the release is created, head -1 gives us the previous release
           PREVIOUS_TAG=$(gh api repos/${{ github.repository }}/releases \
             --jq '.[].tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' \
-            | head -2 | tail -1)
+            | head -1)
 
           if [ -n "$PREVIOUS_TAG" ]; then
             git fetch --shallow-since="$(gh api repos/${{ github.repository }}/releases/tags/${PREVIOUS_TAG} --jq '.published_at')" || git fetch --unshallow
