@@ -45,6 +45,7 @@ func GetVersionInfo(ldflagsVersion, ldflagsDate string) VersionInfo {
 				if len(shortCommit) >= 7 {
 					shortCommit = shortCommit[:7]
 				}
+
 				info.Version = fmt.Sprintf("%s-%s", info.Version, shortCommit)
 			}
 		}

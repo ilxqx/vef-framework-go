@@ -1,12 +1,15 @@
 package model_schema
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
+
+var errInputOutputMismatch = errors.New("when input is a directory, output must also be a directory")
 
 // Command returns the generate-model-schema cobra command.
 func Command() *cobra.Command {
@@ -54,6 +57,7 @@ Example usage:
 			inputInfo, err := os.Stat(input)
 			if err != nil {
 				_, _ = red.Printf("✗ Input path does not exist: %s\n", input)
+
 				return fmt.Errorf("input path does not exist: %w", err)
 			}
 
@@ -63,7 +67,8 @@ Example usage:
 
 			if inputIsDir && !outputIsDir && err == nil {
 				_, _ = red.Println("✗ When input is a directory, output must also be a directory")
-				return fmt.Errorf("when input is a directory, output must also be a directory")
+
+				return errInputOutputMismatch
 			}
 
 			_, _ = cyan.Println("Generating model schemas...")
