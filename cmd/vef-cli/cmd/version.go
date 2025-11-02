@@ -35,7 +35,7 @@ func GetVersionInfo(ldflagsVersion, ldflagsDate string) VersionInfo {
 		switch setting.Key {
 		case "vcs.time":
 			if t, err := time.Parse(time.RFC3339, setting.Value); err == nil {
-				info.Date = t.Format("2006-01-02 15:04:05")
+				info.Date = t.Format(time.DateTime)
 			}
 		case "vcs.modified":
 			info.Dirty = setting.Value == "true"
