@@ -3,6 +3,7 @@
   "error": "Error",
   "record_not_found": "Record not found",
   "record_already_exists": "Record already exists",
+  "foreign_key_violation": "Cannot delete or update a record with existing references",
   "unknown_error": "An unexpected error occurred",
   "not_found": "Resource not found",
   "too_many_requests": "Too many requests",

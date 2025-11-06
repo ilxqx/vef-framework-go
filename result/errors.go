@@ -131,4 +131,9 @@ var (
 		i18n.T(ErrMessageRecordAlreadyExists),
 		WithCode(ErrCodeRecordAlreadyExists),
 	)
+	// ErrForeignKeyViolation is the error for foreign key constraint violation.
+	ErrForeignKeyViolation = Err(
+		i18n.T(ErrMessageForeignKeyViolation),
+		WithCode(ErrCodeForeignKeyViolation),
+	)
 )

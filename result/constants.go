@@ -7,6 +7,7 @@ const (
 	ErrMessage                           = "error"                    // ErrMessage is the i18n key for error response
 	ErrMessageRecordNotFound             = "record_not_found"         // ErrMessageRecordNotFound is the i18n key for record not found error
 	ErrMessageRecordAlreadyExists        = "record_already_exists"    // ErrMessageRecordAlreadyExists is the i18n key for record already exists error
+	ErrMessageForeignKeyViolation        = "foreign_key_violation"    // ErrMessageForeignKeyViolation is the i18n key for foreign key violation error
 	ErrMessageUnknown                    = "unknown_error"            // ErrMessageUnknown is the i18n key for unknown error
 	ErrMessageNotFound                   = "not_found"                // ErrMessageNotFound is the i18n key for not found error
 	ErrMessageTooManyRequests            = "too_many_requests"        // ErrMessageTooManyRequests is the i18n key for too many requests error
@@ -34,6 +35,7 @@ const (
 	ErrCodeDefault                       = 2000                       // ErrCodeDefault is the default code for error response (2000 and above are business error codes)
 	ErrCodeRecordNotFound                = 2001                       // ErrCodeRecordNotFound is the code for record not found error
 	ErrCodeRecordAlreadyExists           = 2002                       // ErrCodeRecordAlreadyExists is the code for record already exists error
+	ErrCodeForeignKeyViolation           = 2003                       // ErrCodeForeignKeyViolation is the code for foreign key violation error
 	ErrCodeMonitorNotReady               = 2100                       // ErrCodeMonitorNotReady is the code for monitor data not ready error
 	ErrCodeUnknown                       = 1900                       // ErrCodeUnknown is the code for unknown error
 	ErrCodeBadRequest                    = 1400                       // ErrCodeBadRequest is the code for bad request error

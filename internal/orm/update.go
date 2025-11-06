@@ -333,10 +333,18 @@ func (q *BunUpdateQuery) skipCreateAuditColumns(table *schema.Table) {
 func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
 	q.beforeUpdate()
 
-	if res, err = q.query.Exec(ctx, dest...); err != nil && dbhelpers.IsDuplicateKeyError(err) {
-		logger.Warnf("Record already exists: %v", err)
+	if res, err = q.query.Exec(ctx, dest...); err != nil {
+		if dbhelpers.IsDuplicateKeyError(err) {
+			logger.Warnf("Record already exists: %v", err)
 
-		return nil, result.ErrRecordAlreadyExists
+			return nil, result.ErrRecordAlreadyExists
+		}
+
+		if dbhelpers.IsForeignKeyError(err) {
+			logger.Warnf("Foreign key violation: %v", err)
+
+			return nil, result.ErrForeignKeyViolation
+		}
 	}
 
 	return res, err
@@ -345,10 +353,18 @@ func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (res sql.Result,
 func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) (err error) {
 	q.beforeUpdate()
 
-	if err = q.query.Scan(ctx, dest...); err != nil && dbhelpers.IsDuplicateKeyError(err) {
-		logger.Warnf("Record already exists: %v", err)
+	if err = q.query.Scan(ctx, dest...); err != nil {
+		if dbhelpers.IsDuplicateKeyError(err) {
+			logger.Warnf("Record already exists: %v", err)
 
-		return result.ErrRecordAlreadyExists
+			return result.ErrRecordAlreadyExists
+		}
+
+		if dbhelpers.IsForeignKeyError(err) {
+			logger.Warnf("Foreign key violation: %v", err)
+
+			return result.ErrForeignKeyViolation
+		}
 	}
 
 	return err
