@@ -78,7 +78,7 @@ func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
 		e.policy.BuildAuthenticationMiddleware(e.manager),
 		buildContextMiddleware(e.db, e.transformer),
 		buildAuthorizationMiddleware(e.manager, e.checker),
-		buildDataPermMiddleware(e.manager, e.resolver),
+		buildDataPermissionMiddleware(e.manager, e.resolver),
 		buildRateLimiterMiddleware(e.manager),
 		buildAuditMiddleware(e.manager, e.publisher),
 	}

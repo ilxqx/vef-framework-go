@@ -8,8 +8,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// buildDataPermMiddleware creates middleware that resolves and applies data permissions.
-func buildDataPermMiddleware(
+// buildDataPermissionMiddleware creates middleware that resolves and applies data permissions.
+func buildDataPermissionMiddleware(
 	manager api.Manager,
 	resolver security.DataPermissionResolver,
 ) fiber.Handler {

@@ -73,7 +73,7 @@ var Module = fx.Module(
 		),
 		// Provide RBAC data permission resolver (requires RolePermissionsLoader implementation from user)
 		fx.Annotate(
-			NewRbacDataPermResolver,
+			NewRbacDataPermissionResolver,
 			fx.ParamTags(`optional:"true"`),
 		),
 		// Provide auth resource

@@ -1,5 +1,7 @@
 package result
 
+import "fmt"
+
 type errOption func(*Error)
 
 // WithCode sets the error code.
@@ -22,5 +24,12 @@ type okOption func(*Result)
 func WithMessage(message string) okOption {
 	return func(r *Result) {
 		r.Message = message
+	}
+}
+
+// WithMessagef sets a formatted message for the result.
+func WithMessagef(messageFormat string, args ...any) okOption {
+	return func(r *Result) {
+		r.Message = fmt.Sprintf(messageFormat, args...)
 	}
 }

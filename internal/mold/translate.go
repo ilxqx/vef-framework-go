@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mold"
+	"github.com/ilxqx/vef-framework-go/null"
+	"github.com/ilxqx/vef-framework-go/reflectx"
 )
 
 const (
@@ -24,6 +27,10 @@ var (
 	ErrTranslatedFieldNotSettable = errors.New("target translated field is not settable")
 	// ErrNoTranslatorSupportsKind is returned when no translator supports the given kind.
 	ErrNoTranslatorSupportsKind = errors.New("no translator supports the given kind")
+	// ErrUnsupportedFieldType is returned when the field type is not supported for translation.
+	ErrUnsupportedFieldType = errors.New("unsupported field type for translation")
+
+	nullStringType = reflect.TypeFor[null.String]()
 )
 
 // TranslateTransformer is a translator-based transformer that converts values to readable names
@@ -31,6 +38,70 @@ var (
 type TranslateTransformer struct {
 	logger      log.Logger
 	translators []mold.Translator
+}
+
+// extractStringValue extracts string value from supported field types: string, *string, null.String.
+// Returns empty string and an error for unsupported types.
+func extractStringValue(fieldName string, field reflect.Value) (string, error) {
+	if !field.IsValid() {
+		return constants.Empty, fmt.Errorf("%w: field %q is invalid", ErrUnsupportedFieldType, fieldName)
+	}
+
+	fieldType := field.Type()
+
+	// Handle string
+	if fieldType.Kind() == reflect.String {
+		return field.String(), nil
+	}
+
+	// Handle *string
+	if reflectx.Indirect(fieldType).Kind() == reflect.String {
+		if field.IsNil() {
+			return constants.Empty, nil
+		}
+		return field.Elem().String(), nil
+	}
+
+	// Handle null.String
+	if fieldType == nullStringType {
+		nullStr := field.Interface().(null.String)
+		if !nullStr.Valid {
+			return constants.Empty, nil
+		}
+		return nullStr.String, nil
+	}
+
+	return constants.Empty, fmt.Errorf("%w: field %q has unsupported type %v (only string, *string, null.String are supported)", ErrUnsupportedFieldType, fieldName, fieldType)
+}
+
+// setTranslatedValue sets the translated string value to the target field.
+// Supports string, *string, and null.String types.
+func setTranslatedValue(translatedField reflect.Value, translated, translatedFieldName string) error {
+	translatedFieldType := translatedField.Type()
+
+	if translatedFieldType.Kind() == reflect.String {
+		translatedField.SetString(translated)
+		return nil
+	}
+
+	if translatedFieldType.Kind() == reflect.Pointer {
+		valueType := translatedFieldType.Elem()
+		if valueType.Kind() == reflect.String {
+			if translatedField.IsNil() {
+				translatedField.Set(reflect.New(valueType))
+			}
+			translatedField.Elem().SetString(translated)
+			return nil
+		}
+		return fmt.Errorf("%w: translated field %q has unsupported pointer type %v", ErrUnsupportedFieldType, translatedFieldName, translatedFieldType)
+	}
+
+	if translatedFieldType == nullStringType {
+		translatedField.Set(reflect.ValueOf(null.StringFrom(translated)))
+		return nil
+	}
+
+	return fmt.Errorf("%w: translated field %q has unsupported type %v", ErrUnsupportedFieldType, translatedFieldName, translatedFieldType)
 }
 
 // Tag returns the transformer tag name "translate".
@@ -43,16 +114,22 @@ func (*TranslateTransformer) Tag() string {
 func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel) error {
 	name := fl.Name()
 	field := fl.Field()
-	value := field.String()
+
+	// Extract string value from supported field types
+	value, err := extractStringValue(name, field)
+	if err != nil {
+		return err
+	}
 
 	// Skip empty value or name processing
 	if name == constants.Empty || value == constants.Empty {
 		return nil
 	}
 
-	translatedField, ok := fl.SiblingField(name + translatedFieldNameSuffix)
+	translatedFieldName := name + translatedFieldNameSuffix
+	translatedField, ok := fl.SiblingField(translatedFieldName)
 	if !ok {
-		return fmt.Errorf("%w: failed to get field %q for field %q with value %q", ErrTranslatedFieldNotFound, name+translatedFieldNameSuffix, name, value)
+		return fmt.Errorf("%w: failed to get field %q for field %q with value %q", ErrTranslatedFieldNotFound, translatedFieldName, name, value)
 	}
 
 	kind := fl.Param()
@@ -68,13 +145,11 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 				return err
 			}
 
-			if translatedField.CanSet() {
-				translatedField.SetString(translated)
-			} else {
-				return fmt.Errorf("%w: field %q for field %q with value %q", ErrTranslatedFieldNotSettable, name+translatedFieldNameSuffix, name, value)
+			if !translatedField.CanSet() {
+				return fmt.Errorf("%w: field %q for field %q with value %q", ErrTranslatedFieldNotSettable, translatedFieldName, name, value)
 			}
 
-			return nil
+			return setTranslatedValue(translatedField, translated, translatedFieldName)
 		}
 	}
 

@@ -6,16 +6,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// RbacDataPermResolver implements role-based data permission resolution.
+// RbacDataPermissionResolver implements role-based data permission resolution.
 // It delegates role permissions loading to a RolePermissionsLoader implementation.
-type RbacDataPermResolver struct {
+type RbacDataPermissionResolver struct {
 	loader security.RolePermissionsLoader
 }
 
-// NewRbacDataPermResolver creates a new RBAC data permission resolver.
+// NewRbacDataPermissionResolver creates a new RBAC data permission resolver.
 // loader: The strategy for loading role permissions.
-func NewRbacDataPermResolver(loader security.RolePermissionsLoader) security.DataPermissionResolver {
-	return &RbacDataPermResolver{
+func NewRbacDataPermissionResolver(loader security.RolePermissionsLoader) security.DataPermissionResolver {
+	return &RbacDataPermissionResolver{
 		loader: loader,
 	}
 }
@@ -24,7 +24,7 @@ func NewRbacDataPermResolver(loader security.RolePermissionsLoader) security.Dat
 // When a user has multiple roles with the same permission token but different data scopes,
 // this method collects all matching scopes and returns the one with the highest priority.
 // Returns nil if no matching permission is found.
-func (r *RbacDataPermResolver) ResolveDataScope(
+func (r *RbacDataPermissionResolver) ResolveDataScope(
 	ctx context.Context,
 	principal *security.Principal,
 	permToken string,
