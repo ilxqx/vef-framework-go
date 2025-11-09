@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/bwmarrin/snowflake v0.3.0
+	github.com/dop251/goja v0.0.0-20251103141225-af2ceb9156d7
 	github.com/dustin/go-humanize v1.0.1
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fatih/color v1.18.0
@@ -39,7 +40,6 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.39.0
 	github.com/testcontainers/testcontainers-go/modules/redis v0.39.0
 	github.com/tjfoc/gmsm v1.4.1
-	github.com/tommie/v8go v0.34.0
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dbfixture v1.2.15
 	github.com/uptrace/bun/dialect/mysqldialect v1.2.15
@@ -77,7 +77,6 @@ require (
 	github.com/docker/docker v28.5.1+incompatible // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/dop251/goja v0.0.0-20251103141225-af2ceb9156d7 // indirect
 	github.com/ebitengine/purego v0.9.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
@@ -139,12 +138,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
-	github.com/tommie/v8go/deps/android_amd64 v0.0.0-20250515043113-5dcc98077472 // indirect
-	github.com/tommie/v8go/deps/android_arm64 v0.0.0-20250515043113-5dcc98077472 // indirect
-	github.com/tommie/v8go/deps/darwin_amd64 v0.0.0-20250515043113-5dcc98077472 // indirect
-	github.com/tommie/v8go/deps/darwin_arm64 v0.0.0-20250515043113-5dcc98077472 // indirect
-	github.com/tommie/v8go/deps/linux_amd64 v0.0.0-20250515043113-5dcc98077472 // indirect
-	github.com/tommie/v8go/deps/linux_arm64 v0.0.0-20250515043113-5dcc98077472 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.68.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect

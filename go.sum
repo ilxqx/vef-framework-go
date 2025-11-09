@@ -10,6 +10,8 @@ github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c/go.mod h1:xomTg6
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
+github.com/Masterminds/semver/v3 v3.2.1 h1:RN9w6+7QoMeJVGyfmbcgs28Br8cvmnucEXnY0rYXWg0=
+github.com/Masterminds/semver/v3 v3.2.1/go.mod h1:qvl/7zhW3nngYb5+80sSMF+FG2BjYrf8m9wsX0PNOMQ=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=
@@ -133,8 +135,6 @@ github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMyw
 github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
-github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e h1:ijClszYn+mADRFY17kjQEVQ1XRhq2/JR1M3sGqeJoxs=
-github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e/go.mod h1:boTsfXsheKC2y+lKOCMpSfarhxDeIzfZG1jqGcPl3cA=
 github.com/google/pprof v0.0.0-20251007162407-5df77e3f7d1d h1:KJIErDwbSHjnp/SGzE5ed8Aol7JsKiI5X7yWKAtzhM0=
 github.com/google/pprof v0.0.0-20251007162407-5df77e3f7d1d/go.mod h1:I6V7YzU0XDpsHqbsyrghnFZLO1gwK6NPTNvmetQIk9U=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
@@ -308,20 +308,6 @@ github.com/tklauser/numcpus v0.10.0 h1:18njr6LDBk1zuna922MgdjQuJFjrdppsZG60sHGfj
 github.com/tklauser/numcpus v0.10.0/go.mod h1:BiTKazU708GQTYF4mB+cmlpT2Is1gLk7XVuEeem8LsQ=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc h1:9lRDQMhESg+zvGYmW5DyG0UqvY96Bu5QYsTLvCHdrgo=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc/go.mod h1:bciPuU6GHm1iF1pBvUfxfsH0Wmnc2VbpgvbI9ZWuIRs=
-github.com/tommie/v8go v0.34.0 h1:2NpX9bLE3DOO6cO2moOHsBkU70skMO6RB1tAY887G6c=
-github.com/tommie/v8go v0.34.0/go.mod h1:WX8r9Nwipf7pABuvwFpu6AFDpm3VSSvch2avhK2FMlg=
-github.com/tommie/v8go/deps/android_amd64 v0.0.0-20250515043113-5dcc98077472 h1:ALzwSQMOOUw1FN/tYp+a81w5AxkiR33N5jGEmFWBqfw=
-github.com/tommie/v8go/deps/android_amd64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:+SU4RWSqMXAx2oR/Gzkyc1YAG6F8SCzttMv3sZkh+qY=
-github.com/tommie/v8go/deps/android_arm64 v0.0.0-20250515043113-5dcc98077472 h1:XDh1sWxxWPEQv+vxj5mbQaRqUfEycVvb8Z0r0NGSYf0=
-github.com/tommie/v8go/deps/android_arm64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:cR4ynUc528GmLCLOb3c1iM2d6qZ5DCVHh+eAD7sJDBQ=
-github.com/tommie/v8go/deps/darwin_amd64 v0.0.0-20250515043113-5dcc98077472 h1:cPvHuTaPiOENBTLNaJ1ZyZqw151XWtENUdGFbGFPE1U=
-github.com/tommie/v8go/deps/darwin_amd64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:0qn9w9F7mniTrixPYggJNQQtpAkb9OKY3STy3SSEBi4=
-github.com/tommie/v8go/deps/darwin_arm64 v0.0.0-20250515043113-5dcc98077472 h1:oQcEJclfhEbB7P2u9lephEyIPjud3TEmqDppy9mwm1E=
-github.com/tommie/v8go/deps/darwin_arm64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:bd8hssu+JaGC4mIE9SukKia0TYs5v977mNodhgpJrdo=
-github.com/tommie/v8go/deps/linux_amd64 v0.0.0-20250515043113-5dcc98077472 h1:6gqHCPNsYbcSrne3RhsEHRycHHYORPhi/CHyc2WYzvE=
-github.com/tommie/v8go/deps/linux_amd64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:ZKG7g6Rah4/ZRzb07qFrQI/EPSm2PMj1cN/9y4fxgO8=
-github.com/tommie/v8go/deps/linux_arm64 v0.0.0-20250515043113-5dcc98077472 h1:M4fdTyPWq8UbO1OY/5nwCkC3iOIVVfD1YrxnNANRm4U=
-github.com/tommie/v8go/deps/linux_arm64 v0.0.0-20250515043113-5dcc98077472/go.mod h1:B/myVnZ82IRgW//OzDnHArcOzW8Yq7FbWnMnYPbZ0Hc=
 github.com/uptrace/bun v1.2.15 h1:Ut68XRBLDgp9qG9QBMa9ELWaZOmzHNdczHQdrOZbEFE=
 github.com/uptrace/bun v1.2.15/go.mod h1:Eghz7NonZMiTX/Z6oKYytJ0oaMEJ/eq3kEV4vSqG038=
 github.com/uptrace/bun/dbfixture v1.2.15 h1:0wncXVJ7L6iYIukWe7WtCpTIxKc3Z3vFX5tAFqV674c=
@@ -470,6 +456,8 @@ google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=
+gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
+gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
