@@ -59,6 +59,7 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 		if field.IsNil() {
 			return constants.Empty, nil
 		}
+
 		return field.Elem().String(), nil
 	}
 
@@ -68,6 +69,7 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 		if !nullStr.Valid {
 			return constants.Empty, nil
 		}
+
 		return nullStr.String, nil
 	}
 
@@ -81,6 +83,7 @@ func setTranslatedValue(translatedField reflect.Value, translated, translatedFie
 
 	if translatedFieldType.Kind() == reflect.String {
 		translatedField.SetString(translated)
+
 		return nil
 	}
 
@@ -90,14 +93,18 @@ func setTranslatedValue(translatedField reflect.Value, translated, translatedFie
 			if translatedField.IsNil() {
 				translatedField.Set(reflect.New(valueType))
 			}
+
 			translatedField.Elem().SetString(translated)
+
 			return nil
 		}
+
 		return fmt.Errorf("%w: translated field %q has unsupported pointer type %v", ErrUnsupportedFieldType, translatedFieldName, translatedFieldType)
 	}
 
 	if translatedFieldType == nullStringType {
 		translatedField.Set(reflect.ValueOf(null.StringFrom(translated)))
+
 		return nil
 	}
 
@@ -127,6 +134,7 @@ func (t *TranslateTransformer) Transform(ctx context.Context, fl mold.FieldLevel
 	}
 
 	translatedFieldName := name + translatedFieldNameSuffix
+
 	translatedField, ok := fl.SiblingField(translatedFieldName)
 	if !ok {
 		return fmt.Errorf("%w: failed to get field %q for field %q with value %q", ErrTranslatedFieldNotFound, translatedFieldName, name, value)

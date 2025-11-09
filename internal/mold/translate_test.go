@@ -44,6 +44,7 @@ func (m *MockDataDictLoader) Load(_ context.Context, key string) (map[string]str
 			"pending":  "Pending Status",
 			"*":        "Unknown Status",
 		}, nil
+
 	case "priority":
 		return map[string]string{
 			"high":   "High Priority",
@@ -51,6 +52,7 @@ func (m *MockDataDictLoader) Load(_ context.Context, key string) (map[string]str
 			"low":    "Low Priority",
 			"*":      "Normal Priority",
 		}, nil
+
 	default:
 		return map[string]string{}, nil
 	}
@@ -367,6 +369,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithResolverError() {
 		ctx := context.Background()
 
 		var transformer mold.Transformer
+
 		_, stop := appTest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
@@ -406,6 +409,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithMissingResolver() {
 		ctx := context.Background()
 
 		var transformer mold.Transformer
+
 		_, stop := appTest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
