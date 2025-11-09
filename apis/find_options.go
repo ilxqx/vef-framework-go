@@ -59,23 +59,23 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 		}
 
 		// Select only required columns
-		if config.ValueColumn == valueColumn {
+		if config.ValueColumn == ValueColumn {
 			query.Select(config.ValueColumn)
 		} else {
-			query.SelectAs(config.ValueColumn, valueColumn)
+			query.SelectAs(config.ValueColumn, ValueColumn)
 		}
 
-		if config.LabelColumn == labelColumn {
+		if config.LabelColumn == LabelColumn {
 			query.Select(config.LabelColumn)
 		} else {
-			query.SelectAs(config.LabelColumn, labelColumn)
+			query.SelectAs(config.LabelColumn, LabelColumn)
 		}
 
 		if config.DescriptionColumn != constants.Empty {
-			if config.DescriptionColumn == descriptionColumn {
+			if config.DescriptionColumn == DescriptionColumn {
 				query.Select(config.DescriptionColumn)
 			} else {
-				query.SelectAs(config.DescriptionColumn, descriptionColumn)
+				query.SelectAs(config.DescriptionColumn, DescriptionColumn)
 			}
 		}
 

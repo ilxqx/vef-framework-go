@@ -250,7 +250,7 @@ func (q *BunInsertQuery) Exec(ctx context.Context, dest ...any) (res sql.Result,
 		}
 	}
 
-	return
+	return res, err
 }
 
 func (q *BunInsertQuery) Scan(ctx context.Context, dest ...any) (err error) {
@@ -270,7 +270,7 @@ func (q *BunInsertQuery) Scan(ctx context.Context, dest ...any) (err error) {
 		}
 	}
 
-	return
+	return err
 }
 
 func (q *BunInsertQuery) Unwrap() *bun.InsertQuery {

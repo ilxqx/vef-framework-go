@@ -127,8 +127,8 @@ func NewFindTreeApi[TModel, TSearch any](
 	version ...string,
 ) FindTreeApi[TModel, TSearch] {
 	api := &findTreeApi[TModel, TSearch]{
-		idColumn:       idColumn,
-		parentIdColumn: parentIdColumn,
+		idColumn:       IdColumn,
+		parentIdColumn: ParentIdColumn,
 		treeBuilder:    treeBuilder,
 	}
 	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]](
@@ -142,8 +142,8 @@ func NewFindTreeApi[TModel, TSearch any](
 // NewFindTreeOptionsApi creates a new FindTreeOptionsApi with optional configurations.
 func NewFindTreeOptionsApi[TModel, TSearch any](version ...string) FindTreeOptionsApi[TModel, TSearch] {
 	api := &findTreeOptionsApi[TModel, TSearch]{
-		idColumn:       idColumn,
-		parentIdColumn: parentIdColumn,
+		idColumn:       IdColumn,
+		parentIdColumn: ParentIdColumn,
 	}
 	api.FindApi = NewFindApi[TModel, TSearch, []TreeDataOption, FindTreeOptionsApi[TModel, TSearch]](
 		api,

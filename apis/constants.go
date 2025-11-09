@@ -40,9 +40,9 @@ const (
 	// DefaultValueColumn is the default column name for option values.
 	defaultValueColumn = constants.ColumnId
 
-	idColumn          = constants.ColumnId
-	parentIdColumn    = "parent_id"
-	labelColumn       = "label"
-	valueColumn       = "value"
-	descriptionColumn = "description"
+	IdColumn          = constants.ColumnId
+	ParentIdColumn    = "parent_id"
+	LabelColumn       = "label"
+	ValueColumn       = "value"
+	DescriptionColumn = "description"
 )

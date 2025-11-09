@@ -110,16 +110,16 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 
 		// Helper function to apply column selections with proper aliasing
 		applyColumnSelections := func(query orm.SelectQuery) {
-			if a.idColumn == idColumn {
+			if a.idColumn == IdColumn {
 				query.Select(a.idColumn)
 			} else {
-				query.SelectAs(a.idColumn, idColumn)
+				query.SelectAs(a.idColumn, IdColumn)
 			}
 
-			if a.parentIdColumn == parentIdColumn {
+			if a.parentIdColumn == ParentIdColumn {
 				query.Select(a.parentIdColumn)
 			} else {
-				query.SelectAs(a.parentIdColumn, parentIdColumn)
+				query.SelectAs(a.parentIdColumn, ParentIdColumn)
 			}
 		}
 
@@ -155,7 +155,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 			}).
 			With("tmp_ids", func(query orm.SelectQuery) {
 				query.Table("tmp_tree", "tt").
-					Select(dbhelpers.ColumnWithAlias(idColumn, "tt")).
+					Select(dbhelpers.ColumnWithAlias(IdColumn, "tt")).
 					Distinct()
 			})
 
@@ -166,23 +166,23 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 
 		applyColumnSelections(query)
 
-		if config.LabelColumn == labelColumn {
+		if config.LabelColumn == LabelColumn {
 			query.Select(config.LabelColumn)
 		} else {
-			query.SelectAs(config.LabelColumn, labelColumn)
+			query.SelectAs(config.LabelColumn, LabelColumn)
 		}
 
-		if config.ValueColumn == valueColumn {
+		if config.ValueColumn == ValueColumn {
 			query.Select(config.ValueColumn)
 		} else {
-			query.SelectAs(config.ValueColumn, valueColumn)
+			query.SelectAs(config.ValueColumn, ValueColumn)
 		}
 
 		if config.DescriptionColumn != constants.Empty {
-			if config.DescriptionColumn == descriptionColumn {
+			if config.DescriptionColumn == DescriptionColumn {
 				query.Select(config.DescriptionColumn)
 			} else {
-				query.SelectAs(config.DescriptionColumn, descriptionColumn)
+				query.SelectAs(config.DescriptionColumn, DescriptionColumn)
 			}
 		}
 

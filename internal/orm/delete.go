@@ -8,6 +8,8 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/set"
 )
 
@@ -232,16 +234,32 @@ func (q *BunDeleteQuery) beforeDelete() {
 	}
 }
 
-func (q *BunDeleteQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
+func (q *BunDeleteQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
 	q.beforeDelete()
 
-	return q.query.Exec(ctx, dest...)
+	if res, err = q.query.Exec(ctx, dest...); err != nil {
+		if dbhelpers.IsForeignKeyError(err) {
+			logger.Warnf("Foreign key violation: %v", err)
+
+			return nil, result.ErrForeignKeyViolation
+		}
+	}
+
+	return res, err
 }
 
-func (q *BunDeleteQuery) Scan(ctx context.Context, dest ...any) error {
+func (q *BunDeleteQuery) Scan(ctx context.Context, dest ...any) (err error) {
 	q.beforeDelete()
 
-	return q.query.Scan(ctx, dest...)
+	if err = q.query.Scan(ctx, dest...); err != nil {
+		if dbhelpers.IsForeignKeyError(err) {
+			logger.Warnf("Foreign key violation: %v", err)
+
+			return result.ErrForeignKeyViolation
+		}
+	}
+
+	return err
 }
 
 func (q *BunDeleteQuery) Unwrap() *bun.DeleteQuery {
