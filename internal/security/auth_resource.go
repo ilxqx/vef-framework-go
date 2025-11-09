@@ -4,18 +4,22 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
+	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
 // NewAuthResource creates a new authentication resource with the provided auth manager and token generator.
-func NewAuthResource(authManager security.AuthManager, tokenGenerator security.TokenGenerator, userInfoLoader security.UserInfoLoader) api.Resource {
+func NewAuthResource(authManager security.AuthManager, tokenGenerator security.TokenGenerator, userInfoLoader security.UserInfoLoader, publisher event.Publisher) api.Resource {
 	return &AuthResource{
 		authManager:    authManager,
 		tokenGenerator: tokenGenerator,
 		userInfoLoader: userInfoLoader,
+		publisher:      publisher,
 		Resource: api.NewResource(
 			"security/auth",
 			api.WithApis(
@@ -48,6 +52,7 @@ type AuthResource struct {
 	authManager    security.AuthManager
 	tokenGenerator security.TokenGenerator
 	userInfoLoader security.UserInfoLoader
+	publisher      event.Publisher
 }
 
 // LoginParams represents the request parameters for user login.
@@ -59,21 +64,61 @@ type LoginParams struct {
 }
 
 // Login authenticates a user and returns token credentials.
-// It validates the provided credentials and generates access tokens upon successful authentication.
 func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
-	// Authenticate user credentials using the auth manager
+	loginIp := webhelpers.GetIp(ctx)
+	userAgent := ctx.Get(fiber.HeaderUserAgent)
+	traceId := contextx.RequestId(ctx)
+	username := params.Principal
+
 	principal, err := a.authManager.Authenticate(ctx.Context(), params.Authentication)
 	if err != nil {
+		var (
+			failReason string
+			errorCode  int
+		)
+
+		if resErr, ok := result.AsErr(err); ok {
+			failReason = resErr.Message
+			errorCode = resErr.Code
+		} else {
+			failReason = err.Error()
+			errorCode = result.ErrCodeUnknown
+		}
+
+		loginEvent := security.NewLoginEvent(
+			params.Type,
+			constants.Empty,
+			username,
+			loginIp,
+			userAgent,
+			traceId,
+			false,
+			failReason,
+			errorCode,
+		)
+		a.publisher.Publish(loginEvent)
+
 		return err
 	}
 
-	// Generate tokens for the authenticated user
 	credentials, err := a.tokenGenerator.Generate(principal)
 	if err != nil {
 		return err
 	}
 
-	// Return the generated credentials as a successful response
+	loginEvent := security.NewLoginEvent(
+		params.Type,
+		principal.Id,
+		username,
+		loginIp,
+		userAgent,
+		traceId,
+		true,
+		constants.Empty,
+		0,
+	)
+	a.publisher.Publish(loginEvent)
+
 	return result.Ok(credentials).Response(ctx)
 }
 
@@ -81,15 +126,12 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 type RefreshParams struct {
 	api.P
 
-	// RefreshToken is the Jwt refresh token used to generate new access tokens
 	RefreshToken string `json:"refreshToken"`
 }
 
 // Refresh refreshes the access token using a valid refresh token.
-// It validates the refresh token and generates new access tokens.
-// Note: The user data reload logic is now handled by JwtRefreshAuthenticator.
+// User data reload logic is handled by JwtRefreshAuthenticator.
 func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
-	// Validate and extract/reload user information from the refresh token
 	principal, err := a.authManager.Authenticate(ctx.Context(), security.Authentication{
 		Type:      AuthTypeRefresh,
 		Principal: params.RefreshToken,
@@ -98,31 +140,27 @@ func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
 		return err
 	}
 
-	// Generate new access and refresh tokens for the authenticated user
 	credentials, err := a.tokenGenerator.Generate(principal)
 	if err != nil {
 		return err
 	}
 
-	// Return the generated credentials as a successful response
 	return result.Ok(credentials).Response(ctx)
 }
 
-// Logout logs out the authenticated user and invalidates their session.
-// This is a client-side logout implementation that returns success immediately.
+// Logout returns success immediately.
 // Token invalidation should be handled on the client side by removing stored tokens.
 func (a *AuthResource) Logout(ctx fiber.Ctx) error {
 	return result.Ok().Response(ctx)
 }
 
-// GetUserInfo retrieves detailed information about the currently authenticated user.
-// It requires a UserInfoLoader implementation to be provided.
+// GetUserInfo retrieves user information via UserInfoLoader.
+// Requires a UserInfoLoader implementation to be provided.
 func (a *AuthResource) GetUserInfo(ctx fiber.Ctx, principal *security.Principal) error {
 	if a.userInfoLoader == nil {
 		return result.Err(i18n.T("user_info_loader_not_implemented"), result.WithCode(result.ErrCodeNotImplemented))
 	}
 
-	// Get API request from context to extract params
 	var params map[string]any
 	if req := contextx.ApiRequest(ctx); req != nil {
 		params = req.Params
@@ -132,7 +170,6 @@ func (a *AuthResource) GetUserInfo(ctx fiber.Ctx, principal *security.Principal)
 		params = make(map[string]any)
 	}
 
-	// Load user information using the UserInfoLoader
 	userInfo, err := a.userInfoLoader.LoadUserInfo(ctx.Context(), principal, params)
 	if err != nil {
 		return err
