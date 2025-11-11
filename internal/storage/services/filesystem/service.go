@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -29,7 +30,7 @@ func New(cfg config.FilesystemConfig) (storage.Service, error) {
 		root = "./storage"
 	}
 
-	if err := os.MkdirAll(root, 0755); err != nil {
+	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create storage root directory: %w", err)
 	}
 
@@ -44,7 +45,7 @@ func (s *Service) resolvePath(key string) string {
 func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	path := s.resolvePath(opts.Key)
 
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
 
@@ -52,7 +53,8 @@ func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file: %w", err)
 	}
-	defer file.Close()
+
+	defer func() { _ = file.Close() }()
 
 	hasher := md5.New()
 	writer := io.MultiWriter(file, hasher)
@@ -89,6 +91,7 @@ func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) 
 		if os.IsNotExist(err) {
 			return nil, storage.ErrObjectNotFound
 		}
+
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 
@@ -132,6 +135,7 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 			if os.IsPermission(err) || os.IsNotExist(err) {
 				return nil
 			}
+
 			return err
 		}
 
@@ -180,7 +184,7 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 		return nil
 	})
 
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("failed to list objects: %w", err)
 	}
 
@@ -190,6 +194,7 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 // GetPresignedUrl generates a file:// Url for local filesystem.
 func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
 	path := s.resolvePath(opts.Key)
+
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to get absolute path: %w", err)
@@ -203,7 +208,7 @@ func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions
 	srcPath := s.resolvePath(opts.SourceKey)
 	destPath := s.resolvePath(opts.DestKey)
 
-	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
@@ -212,15 +217,18 @@ func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions
 		if os.IsNotExist(err) {
 			return nil, storage.ErrObjectNotFound
 		}
+
 		return nil, fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer src.Close()
+
+	defer func() { _ = src.Close() }()
 
 	dest, err := os.Create(destPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer dest.Close()
+
+	defer func() { _ = dest.Close() }()
 
 	hasher := md5.New()
 	writer := io.MultiWriter(dest, hasher)
@@ -272,6 +280,7 @@ func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions
 		if os.IsNotExist(err) {
 			return nil, storage.ErrObjectNotFound
 		}
+
 		return nil, fmt.Errorf("failed to stat file: %w", err)
 	}
 
@@ -310,11 +319,7 @@ func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.O
 
 // cleanupEmptyDirs removes empty parent directories up to root.
 func (s *Service) cleanupEmptyDirs(dir string) {
-	for {
-		if dir == s.root || !strings.HasPrefix(dir, s.root) {
-			break
-		}
-
+	for dir != s.root && strings.HasPrefix(dir, s.root) {
 		if err := os.Remove(dir); err != nil {
 			break
 		}
@@ -329,7 +334,8 @@ func (s *Service) calculateMd5(path string) (string, error) {
 	if err != nil {
 		return constants.Empty, err
 	}
-	defer file.Close()
+
+	defer func() { _ = file.Close() }()
 
 	hasher := md5.New()
 	if _, err := io.Copy(hasher, file); err != nil {
