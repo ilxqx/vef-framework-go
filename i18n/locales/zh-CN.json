@@ -55,7 +55,7 @@
   "upload_requires_multipart": "上传请求必须使用 'multipart/form-data' 格式",
   "upload_requires_file": "未上传文件",
   "object_not_found": "对象不存在",
-  "invalid_temp_key": "只能通过此接口删除临时文件（以 'temp/' 为前缀的文件）",
+  "invalid_temp_key": "只能通过此接口删除临时文件",
   "invalid_file_key": "无效的文件标识",
   "file_not_found": "文件不存在",
   "failed_to_get_file": "获取文件失败",

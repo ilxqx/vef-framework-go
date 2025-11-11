@@ -117,8 +117,7 @@ func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) 
 
 // DeleteObject deletes a single object from MinIO.
 func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
-	err := s.client.RemoveObject(ctx, s.bucket, opts.Key, minio.RemoveObjectOptions{})
-	if err != nil {
+	if err := s.client.RemoveObject(ctx, s.bucket, opts.Key, minio.RemoveObjectOptions{}); err != nil {
 		return s.translateError(err)
 	}
 

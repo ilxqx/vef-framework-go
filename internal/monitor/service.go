@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"errors"
 	"os"
 	"sync/atomic"
 	"time"
@@ -454,6 +455,10 @@ func (s *DefaultService) Close() error {
 func (s *DefaultService) sampleCpu(ctx context.Context) {
 	cpuInfo, err := s.sampleCpuInfo(ctx)
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return
+		}
+
 		logger.Errorf("Failed to sample cpu info: %v", err)
 
 		return
@@ -508,6 +513,10 @@ func (s *DefaultService) sampleCpuInfo(ctx context.Context) (*monitor.CpuInfo, e
 func (s *DefaultService) sampleProcess(ctx context.Context) {
 	processInfo, err := s.sampleProcessInfo(ctx)
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return
+		}
+
 		logger.Errorf("Failed to sample process info: %v", err)
 
 		return

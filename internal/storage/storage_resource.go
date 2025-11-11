@@ -228,10 +228,9 @@ type DeleteParams struct {
 
 // Delete deletes a single object from storage.
 func (r *Resource) Delete(ctx fiber.Ctx, params DeleteParams) error {
-	err := r.service.DeleteObject(ctx.Context(), storage.DeleteObjectOptions{
+	if err := r.service.DeleteObject(ctx.Context(), storage.DeleteObjectOptions{
 		Key: params.Key,
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
@@ -248,10 +247,9 @@ type DeleteManyParams struct {
 
 // DeleteMany deletes multiple objects from storage in a batch operation.
 func (r *Resource) DeleteMany(ctx fiber.Ctx, params DeleteManyParams) error {
-	err := r.service.DeleteObjects(ctx.Context(), storage.DeleteObjectsOptions{
+	if err := r.service.DeleteObjects(ctx.Context(), storage.DeleteObjectsOptions{
 		Keys: params.Keys,
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 

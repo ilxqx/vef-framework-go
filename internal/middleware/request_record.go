@@ -1,36 +1,137 @@
 package middleware
 
 import (
+	"path"
+	"strings"
+
 	"github.com/gofiber/fiber/v3"
-	"github.com/samber/lo"
 	"github.com/spf13/cast"
 
 	loggerMiddleware "github.com/gofiber/fiber/v3/middleware/logger"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/internal/app"
+	"github.com/ilxqx/vef-framework-go/middleware"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
+// simplifyUserAgent extracts key information from User-Agent string.
+// Returns a simplified string like "Chrome/Mac", "Safari/iOS", "Android", etc.
+func simplifyUserAgent(ua string) string {
+	if ua == constants.Empty {
+		return "Unknown"
+	}
+
+	ua = strings.ToLower(ua)
+
+	// Detect OS
+	var os string
+	switch {
+	case strings.Contains(ua, "android"):
+		os = "Android"
+	case strings.Contains(ua, "iphone") || strings.Contains(ua, "ipad"):
+		os = "iOS"
+	case strings.Contains(ua, "mac os x") || strings.Contains(ua, "macintosh"):
+		os = "Mac"
+	case strings.Contains(ua, "windows"):
+		os = "Windows"
+	case strings.Contains(ua, "linux"):
+		os = "Linux"
+	default:
+		os = "Unknown"
+	}
+
+	// Detect Browser/Client
+	var client string
+	switch {
+	case strings.Contains(ua, "micromessenger"):
+		client = "WeChat"
+	case strings.Contains(ua, "dingtalk"):
+		client = "DingTalk"
+	case strings.Contains(ua, "alipay"):
+		client = "Alipay"
+	case strings.Contains(ua, "edg/") || strings.Contains(ua, "edge/"):
+		client = "Edge"
+	case strings.Contains(ua, "chrome/") && !strings.Contains(ua, "edg"):
+		client = "Chrome"
+	case strings.Contains(ua, "safari/") && !strings.Contains(ua, "chrome"):
+		client = "Safari"
+	case strings.Contains(ua, "firefox/"):
+		client = "Firefox"
+	case strings.Contains(ua, "postman"):
+		client = "Postman"
+	case strings.Contains(ua, "curl"):
+		client = "cURL"
+	case strings.Contains(ua, "okhttp"):
+		client = "OkHttp"
+	default:
+		client = constants.Empty
+	}
+
+	// Format output
+	if client != constants.Empty && os != "Unknown" {
+		return client + "/" + os
+	} else if client != constants.Empty {
+		return client
+	}
+
+	return os
+}
+
+// isSpaStaticRequest checks if the request is for SPA static resources.
+func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SpaConfig) bool {
+	// Only check GET requests
+	if ctx.Method() != fiber.MethodGet {
+		return false
+	}
+
+	reqPath := ctx.Path()
+	for _, config := range spaConfigs {
+		spaPath := config.Path
+		if spaPath == constants.Empty {
+			spaPath = constants.Slash
+		}
+
+		staticPath := path.Join(spaPath, "static/")
+		if reqPath == spaPath || strings.HasPrefix(reqPath, staticPath) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // NewRequestRecordMiddleware returns a middleware that records request metrics.
-// It logs IP, latency (ms/μs), and status code and reports structured errors if present.
-func NewRequestRecordMiddleware() app.Middleware {
+func NewRequestRecordMiddleware(spaConfigs []*middleware.SpaConfig) app.Middleware {
 	handler := loggerMiddleware.New(loggerMiddleware.Config{
+		Next: func(ctx fiber.Ctx) bool {
+			// Skip logging for SPA static resources
+			return isSpaStaticRequest(ctx, spaConfigs)
+		},
 		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, config loggerMiddleware.Config) error {
-			ip := webhelpers.GetIp(ctx)
-			latency := data.Stop.Sub(data.Start)
+			method, path := ctx.Method(), ctx.Path()
+			ip, latency, status := webhelpers.GetIp(ctx), data.Stop.Sub(data.Start), ctx.Response().StatusCode()
+			ua := simplifyUserAgent(ctx.Get(fiber.HeaderUserAgent))
+
+			// Format latency: use ms if >= 1ms, otherwise use μs
+			var latencyStr string
+			if ms := latency.Milliseconds(); ms > 0 {
+				latencyStr = cast.ToString(ms) + "ms"
+			} else {
+				latencyStr = cast.ToString(latency.Microseconds()) + "μs"
+			}
 
 			logger := contextx.Logger(ctx)
 			logger.Infof(
-				"Request completed | ip: %s | latency: %s | status: %d",
+				"Request completed | %s %s | ip: %s | ua: %s | latency: %s | status: %d",
+				method,
+				path,
 				ip,
-				lo.TernaryF(latency.Milliseconds() > 0, func() string {
-					return cast.ToString(latency.Milliseconds()) + "ms"
-				}, func() string {
-					return cast.ToString(latency.Microseconds()) + "μs"
-				}),
-				ctx.Response().StatusCode(),
+				ua,
+				latencyStr,
+				status,
 			)
 
 			if data.ChainErr != nil {

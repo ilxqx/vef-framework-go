@@ -19,6 +19,7 @@ var Module = fx.Module(
 		),
 		fx.Annotate(
 			NewRequestRecordMiddleware,
+			fx.ParamTags(`group:"vef:spa"`),
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(

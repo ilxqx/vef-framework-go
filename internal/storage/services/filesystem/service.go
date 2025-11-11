@@ -102,8 +102,7 @@ func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) 
 func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
 	path := s.resolvePath(opts.Key)
 
-	err := os.Remove(path)
-	if err != nil && !os.IsNotExist(err) {
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete file: %w", err)
 	}
 

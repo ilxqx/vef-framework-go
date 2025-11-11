@@ -7,10 +7,10 @@ import (
 )
 
 // queryVersion queries the SQLite version using sqlite_version() function.
-func queryVersion(db *bun.DB) (version string, err error) {
-	err = db.NewSelect().
+func queryVersion(db *bun.DB) (string, error) {
+	var version string
+
+	return version, db.NewSelect().
 		ColumnExpr("sqlite_version()").
 		Scan(context.Background(), &version)
-
-	return version, err
 }

@@ -613,12 +613,12 @@ func (suite *StorageResourceTestSuite) TestUploadWithContentType() {
 	suite.Equal("application/json", info.ContentType, "Content type should match")
 }
 
-// TestDeleteTemp tests deleting temporary uploaded files.
+// TestDeleteTemp tests the delete_temp action for removing temporary uploaded files.
+// Tests cover successful deletion, rejection of non-temp keys, idempotent deletion, and missing parameter validation.
 func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 	suite.T().Log("Testing delete temporary file functionality")
 
 	suite.Run("Success", func() {
-		// Upload a temporary file first
 		uploadData := []byte("Temporary file to delete")
 		params := map[string]string{
 			"resource": "sys/storage",
@@ -635,14 +635,13 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 		uploadResult := suite.readDataAsMap(uploadBody.Data)
 		tempKey := uploadResult["key"].(string)
 		suite.True(strings.HasPrefix(tempKey, "temp/"), "Uploaded key should have temp/ prefix")
+		suite.T().Logf("Uploaded temp file: %s", tempKey)
 
-		// Verify file exists
 		_, err := suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
 			Key: tempKey,
 		})
 		suite.Require().NoError(err, "Uploaded file should exist")
 
-		// Delete the temporary file
 		deleteResp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
@@ -658,8 +657,9 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 
 		deleteBody := suite.readBody(deleteResp)
 		suite.True(deleteBody.IsOk(), "Delete temp should succeed")
+		suite.Equal(i18n.T(result.OkMessage), deleteBody.Message, "Should return success message")
+		suite.T().Logf("Deleted temp file: %s", tempKey)
 
-		// Verify file is deleted
 		_, err = suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
 			Key: tempKey,
 		})
@@ -667,7 +667,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 	})
 
 	suite.Run("NonTempKeyRejected", func() {
-		// Try to delete a non-temp file (should fail)
+		nonTempKey := "permanent/file.txt"
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
@@ -675,7 +675,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"key": "permanent/file.txt",
+				"key": nonTempKey,
 			},
 		})
 
@@ -683,11 +683,12 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Delete temp should fail for non-temp key")
-		suite.Contains(body.Message, "temp/", "Error message should mention temp/ prefix requirement")
+		suite.Contains(body.Message, "temporary files", "Error message should indicate temp file restriction")
+		suite.T().Logf("Rejected non-temp key: %s (message: %s)", nonTempKey, body.Message)
 	})
 
 	suite.Run("NonExistentFile", func() {
-		// Try to delete a non-existent temp file
+		nonExistentKey := "temp/non-existent-file.txt"
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
@@ -695,19 +696,18 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"key": "temp/non-existent-file.txt",
+				"key": nonExistentKey,
 			},
 		})
 
 		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
 
 		body := suite.readBody(resp)
-		// Should succeed even if file doesn't exist (idempotent)
 		suite.True(body.IsOk(), "Delete temp should succeed even for non-existent file")
+		suite.T().Logf("Idempotent deletion for non-existent key: %s", nonExistentKey)
 	})
 
 	suite.Run("MissingKey", func() {
-		// Try to delete without providing key
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/storage",
@@ -721,6 +721,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Delete temp should fail without key")
+		suite.T().Logf("Rejected request without key (message: %s)", body.Message)
 	})
 }
 

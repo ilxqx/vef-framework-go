@@ -7,10 +7,10 @@ import (
 )
 
 // queryVersion queries the MySQL version using version() function.
-func queryVersion(db *bun.DB) (version string, err error) {
-	err = db.NewSelect().
+func queryVersion(db *bun.DB) (string, error) {
+	var version string
+
+	return version, db.NewSelect().
 		ColumnExpr("version()").
 		Scan(context.Background(), &version)
-
-	return version, err
 }

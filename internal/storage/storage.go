@@ -25,9 +25,6 @@ func NewService(cfg *config.StorageConfig, appCfg *config.AppConfig) (storage.Se
 		return memory.New(), nil
 	case constants.StorageFilesystem:
 		return filesystem.New(cfg.Filesystem)
-		// TODO: Add other services here
-		// case constants.StorageOSS:
-		//     return oss.New(...)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedStorageProvider, cfg.Provider)
 	}

@@ -21,7 +21,7 @@ type ProxyMiddleware struct {
 }
 
 func (p *ProxyMiddleware) Name() string {
-	return "storage-proxy"
+	return "storage_proxy"
 }
 
 func (p *ProxyMiddleware) Order() int {
@@ -30,13 +30,12 @@ func (p *ProxyMiddleware) Order() int {
 }
 
 func (p *ProxyMiddleware) Apply(router fiber.Router) {
-	logger.Info("Registering storage proxy: GET /files/*")
-	router.Get("/files/+", p.handleFileProxy)
+	router.Get("/storage/files/+", p.handleFileProxy)
 }
 
 // handleFileProxy handles file proxy requests.
-// URL format: GET /files/{key}
-// Example: GET /files/temp/2025/01/15/abc123.jpg
+// URL format: GET /storage/files/{key}
+// Example: GET /storage/files/temp/2025/01/15/abc123.jpg.
 func (p *ProxyMiddleware) handleFileProxy(ctx fiber.Ctx) error {
 	// Decode URL-encoded characters (e.g., %E6%B5%8B -> 测)
 	key, err := url.PathUnescape(ctx.Params("+"))
@@ -59,6 +58,7 @@ func (p *ProxyMiddleware) handleFileProxy(ctx fiber.Ctx) error {
 		}
 
 		logger.Errorf("Failed to get object %s: %v", key, err)
+
 		return result.Err(i18n.T(result.ErrMessageFailedToGetFile))
 	}
 
@@ -88,6 +88,7 @@ func (p *ProxyMiddleware) handleFileProxy(ctx fiber.Ctx) error {
 	}
 
 	ctx.Set(fiber.HeaderCacheControl, "public, max-age=86400, must-revalidate")
+
 	if stat != nil && stat.ETag != constants.Empty {
 		ctx.Set(fiber.HeaderETag, stat.ETag)
 	}

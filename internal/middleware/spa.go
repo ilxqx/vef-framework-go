@@ -66,7 +66,7 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 		}),
 	)
 
-	group.Get(constants.Empty, static.New("index.html", static.Config{
+	group.Get("/", static.New("index.html", static.Config{
 		FS:            config.FS,
 		Browse:        false,
 		Download:      false,
@@ -75,7 +75,7 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 		Compress:      true,
 	}))
 
-	group.Get("static*", static.New(constants.Empty, static.Config{
+	group.Get("/static/+", static.New(constants.Empty, static.Config{
 		FS:            config.FS,
 		Browse:        false,
 		Download:      false,
