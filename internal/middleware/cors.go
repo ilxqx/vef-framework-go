@@ -26,6 +26,8 @@ func NewCorsMiddleware(config *config.CorsConfig) app.Middleware {
 		AllowHeaders: []string{
 			fiber.HeaderContentType,
 			fiber.HeaderAuthorization,
+			fiber.HeaderXRequestedWith,
+			constants.HeaderXRequestId,
 			constants.HeaderXAppId,
 			constants.HeaderXTimestamp,
 			constants.HeaderXSignature,
