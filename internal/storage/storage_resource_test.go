@@ -683,7 +683,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Delete temp should fail for non-temp key")
-		suite.Contains(body.Message, "temporary files", "Error message should indicate temp file restriction")
+		suite.Equal(body.Message, i18n.T("invalid_temp_key"), "Error message should indicate temp file restriction")
 		suite.T().Logf("Rejected non-temp key: %s (message: %s)", nonTempKey, body.Message)
 	})
 
