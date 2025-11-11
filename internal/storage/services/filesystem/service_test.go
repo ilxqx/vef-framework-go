@@ -460,7 +460,7 @@ func TestEdgeCases(t *testing.T) {
 		service, cleanup := setupTestService(t)
 		defer cleanup()
 
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			_, err := service.PutObject(ctx, storage.PutObjectOptions{
 				Key:    filepath.Join("test", "file"+string(rune('0'+i))+".txt"),
 				Reader: bytes.NewReader([]byte("content")),
@@ -530,7 +530,7 @@ func TestEdgeCases(t *testing.T) {
 		defer cleanup()
 
 		longPath := ""
-		for i := 0; i < 20; i++ {
+		for range 20 {
 			longPath += "verylongdirectoryname/"
 		}
 		longPath += "file.txt"
@@ -631,7 +631,7 @@ func TestConcurrency(t *testing.T) {
 		concurrency := 10
 		done := make(chan bool, concurrency)
 
-		for i := 0; i < concurrency; i++ {
+		for i := range concurrency {
 			go func(id int) {
 				key := filepath.Join("concurrent", "put", "file"+string(rune('0'+id))+".txt")
 				data := []byte("concurrent content " + string(rune('0'+id)))
@@ -645,7 +645,7 @@ func TestConcurrency(t *testing.T) {
 			}(i)
 		}
 
-		for i := 0; i < concurrency; i++ {
+		for range concurrency {
 			<-done
 		}
 
@@ -671,7 +671,7 @@ func TestConcurrency(t *testing.T) {
 		concurrency := 20
 		done := make(chan bool, concurrency)
 
-		for i := 0; i < concurrency; i++ {
+		for range concurrency {
 			go func() {
 				reader, err := service.GetObject(ctx, storage.GetObjectOptions{Key: key})
 				assert.NoError(t, err)
@@ -685,7 +685,7 @@ func TestConcurrency(t *testing.T) {
 			}()
 		}
 
-		for i := 0; i < concurrency; i++ {
+		for range concurrency {
 			<-done
 		}
 	})
@@ -693,7 +693,7 @@ func TestConcurrency(t *testing.T) {
 	t.Run("ConcurrentDeleteDifferentFiles", func(t *testing.T) {
 		concurrency := 10
 
-		for i := 0; i < concurrency; i++ {
+		for i := range concurrency {
 			key := filepath.Join("concurrent", "delete", "file"+string(rune('0'+i))+".txt")
 			_, err := service.PutObject(ctx, storage.PutObjectOptions{
 				Key:    key,
@@ -704,7 +704,7 @@ func TestConcurrency(t *testing.T) {
 		}
 
 		done := make(chan bool, concurrency)
-		for i := 0; i < concurrency; i++ {
+		for i := range concurrency {
 			go func(id int) {
 				key := filepath.Join("concurrent", "delete", "file"+string(rune('0'+id))+".txt")
 				err := service.DeleteObject(ctx, storage.DeleteObjectOptions{Key: key})
@@ -713,7 +713,7 @@ func TestConcurrency(t *testing.T) {
 			}(i)
 		}
 
-		for i := 0; i < concurrency; i++ {
+		for range concurrency {
 			<-done
 		}
 
