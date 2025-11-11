@@ -33,5 +33,9 @@ var Module = fx.Module(
 			NewResource,
 			fx.ResultTags(`group:"vef:api:resources"`),
 		),
+		fx.Annotate(
+			NewProxyMiddleware,
+			fx.ResultTags(`group:"vef:app:middlewares"`),
+		),
 	),
 )

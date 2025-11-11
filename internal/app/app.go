@@ -90,18 +90,16 @@ func (a *App) Test(req *http.Request, timeout ...time.Duration) (*http.Response,
 }
 
 // AppParams contains all dependencies required to create a VEF application.
-// It is used with Uber FX dependency injection.
 type AppParams struct {
 	fx.In
 
 	Config        *config.AppConfig
 	Middlewares   []Middleware `group:"vef:app:middlewares"`
-	ApiEngine     api.Engine   `                            name:"vef:api:engine"`
-	OpenApiEngine api.Engine   `                            name:"vef:openapi:engine"`
+	ApiEngine     api.Engine   `name:"vef:api:engine"`
+	OpenApiEngine api.Engine   `name:"vef:openapi:engine"`
 }
 
 // New creates a new VEF application instance with the provided dependencies.
-// It initializes the Fiber application, applies middlewares, and registers Api routes.
 // Returns an error if the application cannot be configured properly.
 func New(params AppParams) (*App, error) {
 	logger.Info("Initializing VEF application...")
@@ -111,7 +109,6 @@ func New(params AppParams) (*App, error) {
 		return nil, fmt.Errorf("failed to create fiber app: %w", err)
 	}
 
-	// Configure Fiber app with middlewares and routes
 	configureFiberApp(fiberApp, params.Middlewares, params.ApiEngine, params.OpenApiEngine)
 
 	return &App{

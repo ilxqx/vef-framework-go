@@ -16,8 +16,6 @@ import (
 )
 
 // createFiberApp creates a new Fiber application with the given configuration.
-// It parses the body limit, sets up custom context, and configures various Fiber settings
-// including timeouts, encoders, validators, and error handlers.
 func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
 	specifiedLimit := strings.TrimSpace(cfg.BodyLimit)
 
@@ -69,7 +67,6 @@ func configureFiberApp(
 	apiEngine api.Engine,
 	openApiEngine api.Engine,
 ) {
-	// Separate middlewares into before and after groups based on order
 	beforeMiddlewares := lo.Filter(middlewares, func(mid Middleware, _ int) bool {
 		return mid != nil && mid.Order() < 0
 	})
@@ -77,7 +74,6 @@ func configureFiberApp(
 		return mid != nil && mid.Order() > 0
 	})
 
-	// Sort middlewares by order ascending
 	slices.SortFunc(beforeMiddlewares, func(a, b Middleware) int {
 		return a.Order() - b.Order()
 	})
@@ -85,17 +81,14 @@ func configureFiberApp(
 		return a.Order() - b.Order()
 	})
 
-	// Apply before middlewares
 	for _, mid := range beforeMiddlewares {
 		logger.Infof("Applying before middleware %q", mid.Name())
 		mid.Apply(app)
 	}
 
-	// Connect Api engines
 	apiEngine.Connect(app)
 	openApiEngine.Connect(app)
 
-	// Apply after middlewares
 	for _, mid := range afterMiddlewares {
 		logger.Infof("Applying after middleware %q", mid.Name())
 		mid.Apply(app)
