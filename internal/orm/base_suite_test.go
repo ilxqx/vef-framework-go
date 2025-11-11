@@ -22,9 +22,8 @@ type User struct {
 	Name  string `json:"name"     bun:"name,notnull"`
 	Email string `json:"email"    bun:"email,notnull,unique"`
 	Age   int16  `json:"age"      bun:"age,notnull,default:0"`
-	// TODO: There is a bug: when fixtures explicitly set this field to true,
-	// Bun still applies the default value defined here. This likely stems from
-	// zero-value detection logic during fixture loading/merging.
+	// Bun applies the struct default even when fixtures explicitly set this field to true, so we
+	// avoid declaring a default to keep fixture values intact.
 	// IsActive bool           `json:"isActive" bun:"is_active,notnull,default:TRUE"`
 	IsActive bool           `json:"isActive" bun:"is_active,notnull"`
 	Meta     map[string]any `json:"meta"     bun:"meta"`

@@ -30,6 +30,7 @@ func setupTestService(t *testing.T) (storage.Service, func()) {
 
 func TestFilesystemService(t *testing.T) {
 	ctx := context.Background()
+
 	service, cleanup := setupTestService(t)
 	defer cleanup()
 
@@ -62,6 +63,7 @@ func TestFilesystemService(t *testing.T) {
 		})
 
 		require.NoError(t, err)
+
 		require.NotNil(t, reader)
 		defer reader.Close()
 
@@ -105,6 +107,7 @@ func TestFilesystemService(t *testing.T) {
 			Key: "test-copy.txt",
 		})
 		require.NoError(t, err)
+
 		defer reader.Close()
 
 		data, err := io.ReadAll(reader)
@@ -134,6 +137,7 @@ func TestFilesystemService(t *testing.T) {
 			Key: "test-moved.txt",
 		})
 		require.NoError(t, err)
+
 		defer reader.Close()
 	})
 
@@ -177,6 +181,7 @@ func TestFilesystemService(t *testing.T) {
 			})
 
 			require.NoError(t, err)
+
 			for _, obj := range objects {
 				assert.NotContains(t, obj.Key, "folder/")
 			}
@@ -204,6 +209,7 @@ func TestFilesystemService(t *testing.T) {
 			Key: "2025/01/15/test.txt",
 		})
 		require.NoError(t, err)
+
 		defer reader.Close()
 	})
 
@@ -257,6 +263,7 @@ func TestFilesystemService(t *testing.T) {
 			Key: nestedKey,
 		})
 		require.NoError(t, err)
+
 		defer reader.Close()
 
 		readData, err := io.ReadAll(reader)
@@ -280,8 +287,8 @@ func TestCleanupEmptyDirs(t *testing.T) {
 	service := &Service{root: tempDir}
 
 	nestedPath := filepath.Join(tempDir, "a", "b", "c", "test.txt")
-	require.NoError(t, os.MkdirAll(filepath.Dir(nestedPath), 0755))
-	require.NoError(t, os.WriteFile(nestedPath, []byte("test"), 0644))
+	require.NoError(t, os.MkdirAll(filepath.Dir(nestedPath), 0o755))
+	require.NoError(t, os.WriteFile(nestedPath, []byte("test"), 0o644))
 
 	require.NoError(t, os.Remove(nestedPath))
 
@@ -310,6 +317,7 @@ func TestEdgeCases(t *testing.T) {
 
 		reader, err := service.GetObject(ctx, storage.GetObjectOptions{Key: "empty.txt"})
 		require.NoError(t, err)
+
 		defer reader.Close()
 
 		data, err := io.ReadAll(reader)
@@ -340,6 +348,7 @@ func TestEdgeCases(t *testing.T) {
 
 			reader, err := service.GetObject(ctx, storage.GetObjectOptions{Key: key})
 			require.NoError(t, err, "Failed to get object with key: %s", key)
+
 			defer reader.Close()
 
 			readData, err := io.ReadAll(reader)
@@ -373,6 +382,7 @@ func TestEdgeCases(t *testing.T) {
 
 		reader, err := service.GetObject(ctx, storage.GetObjectOptions{Key: key})
 		require.NoError(t, err)
+
 		defer reader.Close()
 
 		readData, err := io.ReadAll(reader)
@@ -533,6 +543,7 @@ func TestEdgeCases(t *testing.T) {
 		for range 20 {
 			longPath += "verylongdirectoryname/"
 		}
+
 		longPath += "file.txt"
 
 		data := []byte("test")
@@ -545,6 +556,7 @@ func TestEdgeCases(t *testing.T) {
 
 		reader, err := service.GetObject(ctx, storage.GetObjectOptions{Key: longPath})
 		require.NoError(t, err)
+
 		defer reader.Close()
 	})
 
@@ -560,6 +572,7 @@ func TestEdgeCases(t *testing.T) {
 		tempDir := t.TempDir()
 		err = os.Chdir(tempDir)
 		require.NoError(t, err)
+
 		defer os.Chdir(originalWd)
 
 		service, err := New(config.FilesystemConfig{})
@@ -624,6 +637,7 @@ func TestEdgeCases(t *testing.T) {
 
 func TestConcurrency(t *testing.T) {
 	ctx := context.Background()
+
 	service, cleanup := setupTestService(t)
 	defer cleanup()
 
@@ -641,6 +655,7 @@ func TestConcurrency(t *testing.T) {
 					Size:   int64(len(data)),
 				})
 				assert.NoError(t, err)
+
 				done <- true
 			}(i)
 		}
@@ -675,12 +690,15 @@ func TestConcurrency(t *testing.T) {
 			go func() {
 				reader, err := service.GetObject(ctx, storage.GetObjectOptions{Key: key})
 				assert.NoError(t, err)
+
 				if reader != nil {
 					defer reader.Close()
+
 					data, err := io.ReadAll(reader)
 					assert.NoError(t, err)
 					assert.Equal(t, expectedData, data)
 				}
+
 				done <- true
 			}()
 		}
@@ -709,6 +727,7 @@ func TestConcurrency(t *testing.T) {
 				key := filepath.Join("concurrent", "delete", "file"+string(rune('0'+id))+".txt")
 				err := service.DeleteObject(ctx, storage.DeleteObjectOptions{Key: key})
 				assert.NoError(t, err)
+
 				done <- true
 			}(i)
 		}
@@ -728,11 +747,13 @@ func TestConcurrency(t *testing.T) {
 
 func TestLargeFile(t *testing.T) {
 	ctx := context.Background()
+
 	service, cleanup := setupTestService(t)
 	defer cleanup()
 
 	t.Run("LargeFileUploadAndDownload", func(t *testing.T) {
 		size := 10 * 1024 * 1024 // 10MB
+
 		data := make([]byte, size)
 		for i := range data {
 			data[i] = byte(i % 256)
@@ -749,6 +770,7 @@ func TestLargeFile(t *testing.T) {
 
 		reader, err := service.GetObject(ctx, storage.GetObjectOptions{Key: key})
 		require.NoError(t, err)
+
 		defer reader.Close()
 
 		readData, err := io.ReadAll(reader)

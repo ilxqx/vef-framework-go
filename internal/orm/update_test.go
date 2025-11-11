@@ -2,6 +2,9 @@ package orm
 
 import (
 	"database/sql"
+	"time"
+
+	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 )
@@ -493,7 +496,91 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 	})
 
 	suite.Run("WhereDeletedAndIncludeDeleted", func() {
-		// TODO
+		type SoftDeleteArticle struct {
+			bun.BaseModel `bun:"table:test_update_soft_delete,alias:tusd"`
+			Model
+
+			Title     string    `json:"title" bun:"title,notnull"`
+			Status    string    `json:"status" bun:"status,notnull"`
+			DeletedAt time.Time `json:"deletedAt" bun:",soft_delete,nullzero"`
+		}
+
+		bunDB := suite.getBunDb()
+		_, err := bunDB.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
+		suite.Require().NoError(err, "Should drop existing soft delete table")
+
+		_, err = bunDB.NewCreateTable().Model((*SoftDeleteArticle)(nil)).IfNotExists().Exec(suite.ctx)
+
+		suite.Require().NoError(err, "Should create soft delete table")
+		defer func() {
+			_, dropErr := bunDB.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
+			suite.Require().NoError(dropErr, "Should cleanup soft delete table")
+		}()
+
+		records := []*SoftDeleteArticle{
+			{Title: "Soft delete target", Status: "draft"},
+			{Title: "Active record", Status: "draft"},
+		}
+
+		_, err = suite.db.NewInsert().Model(&records).Exec(suite.ctx)
+		suite.Require().NoError(err, "Should insert soft delete records")
+
+		_, err = suite.db.NewDelete().
+			Model((*SoftDeleteArticle)(nil)).
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("id", records[0].Id)
+			}).
+			Exec(suite.ctx)
+		suite.Require().NoError(err, "Should soft delete first record")
+
+		result, err := suite.db.NewUpdate().
+			Model((*SoftDeleteArticle)(nil)).
+			Set("status", "archived").
+			Where(func(cb ConditionBuilder) {
+				cb.Equals("id", records[0].Id)
+			}).
+			WhereDeleted().
+			Exec(suite.ctx)
+		suite.Require().NoError(err, "WhereDeleted should target soft-deleted rows")
+
+		rowsAffected, _ := result.RowsAffected()
+		suite.Equal(int64(1), rowsAffected, "WhereDeleted should update exactly one record")
+
+		result, err = suite.db.NewUpdate().
+			Model((*SoftDeleteArticle)(nil)).
+			Set("status", "reviewed").
+			IncludeDeleted().
+			Where(func(cb ConditionBuilder) {
+				cb.In("id", []string{records[0].Id, records[1].Id})
+			}).
+			Exec(suite.ctx)
+		suite.Require().NoError(err, "IncludeDeleted should allow updating soft-deleted rows")
+
+		rowsAffected, _ = result.RowsAffected()
+		suite.Equal(int64(2), rowsAffected, "IncludeDeleted should update both records")
+
+		var fetched []SoftDeleteArticle
+
+		err = suite.db.NewSelect().
+			Model(&fetched).
+			IncludeDeleted().
+			Where(func(cb ConditionBuilder) {
+				cb.In("id", []string{records[0].Id, records[1].Id})
+			}).
+			OrderBy("title").
+			Scan(suite.ctx)
+		suite.Require().NoError(err, "Should fetch all records including deleted")
+		suite.Len(fetched, 2, "Should return two records")
+
+		for _, record := range fetched {
+			suite.Equal("reviewed", record.Status, "Status should reflect IncludeDeleted update")
+
+			if record.Id == records[0].Id {
+				suite.False(record.DeletedAt.IsZero(), "First record should remain soft deleted")
+			} else {
+				suite.True(record.DeletedAt.IsZero(), "Second record should remain active")
+			}
+		}
 	})
 }
 

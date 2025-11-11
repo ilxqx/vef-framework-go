@@ -5,7 +5,7 @@ import "time"
 // Test container image constants.
 const (
 	// PostgresImage is the default PostgreSQL test container image.
-	PostgresImage = "postgres:17-alpine"
+	PostgresImage = "postgres:18-alpine"
 	// MySQLImage is the default MySQL test container image.
 	MySQLImage = "mysql:lts"
 	// RedisImage is the default Redis test container image.

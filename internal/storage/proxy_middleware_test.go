@@ -16,16 +16,16 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-// mockStorageService is a mock implementation of storage.Service for testing
-type mockStorageService struct {
+// MockStorageService is a mock implementation of storage.Service for testing.
+type MockStorageService struct {
 	mock.Mock
 }
 
-func (m *mockStorageService) PutObject(_ context.Context, _ storage.PutObjectOptions) (*storage.ObjectInfo, error) {
+func (m *MockStorageService) PutObject(_ context.Context, _ storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *mockStorageService) GetObject(_ context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
+func (m *MockStorageService) GetObject(_ context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
 	args := m.Called(opts)
 
 	if args.Get(0) == nil {
@@ -35,31 +35,31 @@ func (m *mockStorageService) GetObject(_ context.Context, opts storage.GetObject
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
 
-func (m *mockStorageService) DeleteObject(_ context.Context, _ storage.DeleteObjectOptions) error {
+func (m *MockStorageService) DeleteObject(_ context.Context, _ storage.DeleteObjectOptions) error {
 	return nil
 }
 
-func (m *mockStorageService) DeleteObjects(_ context.Context, _ storage.DeleteObjectsOptions) error {
+func (m *MockStorageService) DeleteObjects(_ context.Context, _ storage.DeleteObjectsOptions) error {
 	return nil
 }
 
-func (m *mockStorageService) ListObjects(_ context.Context, _ storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
+func (m *MockStorageService) ListObjects(_ context.Context, _ storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *mockStorageService) GetPresignedUrl(_ context.Context, _ storage.PresignedURLOptions) (string, error) {
+func (m *MockStorageService) GetPresignedUrl(_ context.Context, _ storage.PresignedURLOptions) (string, error) {
 	return "", nil
 }
 
-func (m *mockStorageService) CopyObject(_ context.Context, _ storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
+func (m *MockStorageService) CopyObject(_ context.Context, _ storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *mockStorageService) MoveObject(_ context.Context, _ storage.MoveObjectOptions) (*storage.ObjectInfo, error) {
+func (m *MockStorageService) MoveObject(_ context.Context, _ storage.MoveObjectOptions) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *mockStorageService) StatObject(_ context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
+func (m *MockStorageService) StatObject(_ context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
 	args := m.Called(opts)
 
 	if args.Get(0) == nil {
@@ -69,7 +69,7 @@ func (m *mockStorageService) StatObject(_ context.Context, opts storage.StatObje
 	return args.Get(0).(*storage.ObjectInfo), args.Error(1)
 }
 
-func (m *mockStorageService) PromoteObject(_ context.Context, _ string) (*storage.ObjectInfo, error) {
+func (m *MockStorageService) PromoteObject(_ context.Context, _ string) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 
@@ -84,8 +84,8 @@ func TestProxyMiddleware(t *testing.T) {
 		})
 	}
 
-	t.Run("successful file download", func(t *testing.T) {
-		mockService := new(mockStorageService)
+	t.Run("SuccessfulFileDownload", func(t *testing.T) {
+		mockService := new(MockStorageService)
 		fileContent := []byte("test file content")
 
 		// Setup expectations
@@ -104,7 +104,7 @@ func TestProxyMiddleware(t *testing.T) {
 		middleware := NewProxyMiddleware(mockService)
 		middleware.Apply(app)
 
-		req := httptest.NewRequest(http.MethodGet, "/files/temp/2025/01/15/test.jpg", nil)
+		req := httptest.NewRequest(http.MethodGet, "/storage/files/temp/2025/01/15/test.jpg", nil)
 		resp, err := app.Test(req)
 
 		assert.NoError(t, err)
@@ -117,8 +117,8 @@ func TestProxyMiddleware(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
-	t.Run("file not found", func(t *testing.T) {
-		mockService := new(mockStorageService)
+	t.Run("FileNotFound", func(t *testing.T) {
+		mockService := new(MockStorageService)
 
 		// Setup expectations
 		mockService.On("GetObject", storage.GetObjectOptions{
@@ -129,7 +129,7 @@ func TestProxyMiddleware(t *testing.T) {
 		middleware := NewProxyMiddleware(mockService)
 		middleware.Apply(app)
 
-		req := httptest.NewRequest(http.MethodGet, "/files/nonexistent.jpg", nil)
+		req := httptest.NewRequest(http.MethodGet, "/storage/files/nonexistent.jpg", nil)
 		resp, err := app.Test(req)
 
 		assert.NoError(t, err)
@@ -138,20 +138,20 @@ func TestProxyMiddleware(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
-	t.Run("empty file key", func(t *testing.T) {
+	t.Run("EmptyFileKey", func(t *testing.T) {
 		app := createApp()
 		middleware := NewProxyMiddleware(nil)
 		middleware.Apply(app)
 
-		req := httptest.NewRequest(http.MethodGet, "/files/", nil)
+		req := httptest.NewRequest(http.MethodGet, "/storage/files/", nil)
 		resp, err := app.Test(req)
 
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("URL encoded file key", func(t *testing.T) {
-		mockService := new(mockStorageService)
+	t.Run("URLEncodedFileKey", func(t *testing.T) {
+		mockService := new(MockStorageService)
 		fileContent := []byte("test content")
 
 		// Setup expectations - the key should be decoded
@@ -170,7 +170,7 @@ func TestProxyMiddleware(t *testing.T) {
 		middleware.Apply(app)
 
 		// URL encode the Chinese characters
-		req := httptest.NewRequest(http.MethodGet, "/files/temp/%E6%B5%8B%E8%AF%95%E6%96%87%E4%BB%B6.jpg", nil)
+		req := httptest.NewRequest(http.MethodGet, "/storage/files/temp/%E6%B5%8B%E8%AF%95%E6%96%87%E4%BB%B6.jpg", nil)
 		resp, err := app.Test(req)
 
 		assert.NoError(t, err)
@@ -179,8 +179,8 @@ func TestProxyMiddleware(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
-	t.Run("storage error", func(t *testing.T) {
-		mockService := new(mockStorageService)
+	t.Run("StorageError", func(t *testing.T) {
+		mockService := new(MockStorageService)
 
 		// Setup expectations
 		mockService.On("GetObject", storage.GetObjectOptions{
@@ -191,7 +191,7 @@ func TestProxyMiddleware(t *testing.T) {
 		middleware := NewProxyMiddleware(mockService)
 		middleware.Apply(app)
 
-		req := httptest.NewRequest(http.MethodGet, "/files/error.jpg", nil)
+		req := httptest.NewRequest(http.MethodGet, "/storage/files/error.jpg", nil)
 		resp, err := app.Test(req)
 
 		assert.NoError(t, err)
@@ -200,8 +200,8 @@ func TestProxyMiddleware(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
-	t.Run("content type fallback from extension when stat fails", func(t *testing.T) {
-		mockService := new(mockStorageService)
+	t.Run("ContentTypeFallbackWhenStatFails", func(t *testing.T) {
+		mockService := new(MockStorageService)
 		fileContent := []byte("test content")
 
 		mockService.On("GetObject", storage.GetObjectOptions{
@@ -217,7 +217,7 @@ func TestProxyMiddleware(t *testing.T) {
 		middleware := NewProxyMiddleware(mockService)
 		middleware.Apply(app)
 
-		req := httptest.NewRequest(http.MethodGet, "/files/test.png", nil)
+		req := httptest.NewRequest(http.MethodGet, "/storage/files/test.png", nil)
 		resp, err := app.Test(req)
 
 		assert.NoError(t, err)
@@ -227,8 +227,8 @@ func TestProxyMiddleware(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
-	t.Run("content type fallback from extension when content type empty", func(t *testing.T) {
-		mockService := new(mockStorageService)
+	t.Run("ContentTypeFallbackWhenEmpty", func(t *testing.T) {
+		mockService := new(MockStorageService)
 		fileContent := []byte("test content")
 
 		mockService.On("GetObject", storage.GetObjectOptions{
@@ -247,7 +247,7 @@ func TestProxyMiddleware(t *testing.T) {
 		middleware := NewProxyMiddleware(mockService)
 		middleware.Apply(app)
 
-		req := httptest.NewRequest(http.MethodGet, "/files/document.pdf", nil)
+		req := httptest.NewRequest(http.MethodGet, "/storage/files/document.pdf", nil)
 		resp, err := app.Test(req)
 
 		assert.NoError(t, err)
