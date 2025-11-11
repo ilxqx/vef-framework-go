@@ -613,6 +613,117 @@ func (suite *StorageResourceTestSuite) TestUploadWithContentType() {
 	suite.Equal("application/json", info.ContentType, "Content type should match")
 }
 
+// TestDeleteTemp tests deleting temporary uploaded files.
+func (suite *StorageResourceTestSuite) TestDeleteTemp() {
+	suite.T().Log("Testing delete temporary file functionality")
+
+	suite.Run("Success", func() {
+		// Upload a temporary file first
+		uploadData := []byte("Temporary file to delete")
+		params := map[string]string{
+			"resource": "sys/storage",
+			"action":   "upload",
+			"version":  "v1",
+		}
+
+		uploadResp := suite.makeMultipartRequest(params, "file", "temp.txt", uploadData)
+		suite.Equal(200, uploadResp.StatusCode, "Upload should return 200 OK")
+
+		uploadBody := suite.readBody(uploadResp)
+		suite.True(uploadBody.IsOk(), "Upload should succeed")
+
+		uploadResult := suite.readDataAsMap(uploadBody.Data)
+		tempKey := uploadResult["key"].(string)
+		suite.True(strings.HasPrefix(tempKey, "temp/"), "Uploaded key should have temp/ prefix")
+
+		// Verify file exists
+		_, err := suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
+			Key: tempKey,
+		})
+		suite.Require().NoError(err, "Uploaded file should exist")
+
+		// Delete the temporary file
+		deleteResp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "sys/storage",
+				Action:   "delete_temp",
+				Version:  "v1",
+			},
+			Params: map[string]any{
+				"key": tempKey,
+			},
+		})
+
+		suite.Equal(200, deleteResp.StatusCode, "Should return 200 OK")
+
+		deleteBody := suite.readBody(deleteResp)
+		suite.True(deleteBody.IsOk(), "Delete temp should succeed")
+
+		// Verify file is deleted
+		_, err = suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
+			Key: tempKey,
+		})
+		suite.Error(err, "File should not exist after deletion")
+	})
+
+	suite.Run("NonTempKeyRejected", func() {
+		// Try to delete a non-temp file (should fail)
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "sys/storage",
+				Action:   "delete_temp",
+				Version:  "v1",
+			},
+			Params: map[string]any{
+				"key": "permanent/file.txt",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+
+		body := suite.readBody(resp)
+		suite.False(body.IsOk(), "Delete temp should fail for non-temp key")
+		suite.Contains(body.Message, "temp/", "Error message should mention temp/ prefix requirement")
+	})
+
+	suite.Run("NonExistentFile", func() {
+		// Try to delete a non-existent temp file
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "sys/storage",
+				Action:   "delete_temp",
+				Version:  "v1",
+			},
+			Params: map[string]any{
+				"key": "temp/non-existent-file.txt",
+			},
+		})
+
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+
+		body := suite.readBody(resp)
+		// Should succeed even if file doesn't exist (idempotent)
+		suite.True(body.IsOk(), "Delete temp should succeed even for non-existent file")
+	})
+
+	suite.Run("MissingKey", func() {
+		// Try to delete without providing key
+		resp := suite.makeApiRequest(api.Request{
+			Identifier: api.Identifier{
+				Resource: "sys/storage",
+				Action:   "delete_temp",
+				Version:  "v1",
+			},
+			Params: map[string]any{},
+		})
+
+		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+
+		body := suite.readBody(resp)
+		suite.False(body.IsOk(), "Delete temp should fail without key")
+	})
+}
+
 // TestConcurrentUploads tests concurrent file uploads for thread safety.
 func (suite *StorageResourceTestSuite) TestConcurrentUploads() {
 	suite.T().Log("Testing concurrent uploads")

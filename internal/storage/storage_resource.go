@@ -37,6 +37,7 @@ func NewResource(service storage.Service) api.Resource {
 			api.WithApis(
 				api.Spec{Action: "upload", Public: isPublic},
 				api.Spec{Action: "get_presigned_url", Public: isPublic},
+				api.Spec{Action: "delete_temp", Public: isPublic},
 				api.Spec{Action: "stat", Public: isPublic},
 				api.Spec{Action: "list", Public: isPublic},
 			),
@@ -190,6 +191,31 @@ func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) 
 	}
 
 	return result.Ok(fiber.Map{"url": url}).Response(ctx)
+}
+
+// DeleteTempParams represents the request parameters for deleting a temporary file.
+type DeleteTempParams struct {
+	api.P
+
+	// Key is the unique identifier of the temporary object to delete
+	Key string `json:"key" validate:"required"`
+}
+
+// DeleteTemp deletes a temporary file from storage.
+// Only files with keys starting with "temp/" can be deleted through this endpoint.
+func (r *Resource) DeleteTemp(ctx fiber.Ctx, params DeleteTempParams) error {
+	// Validate that the key is for a temporary file
+	if !strings.HasPrefix(params.Key, storage.TempPrefix) {
+		return result.Err(i18n.T("invalid_temp_key"))
+	}
+
+	if err := r.service.DeleteObject(ctx.Context(), storage.DeleteObjectOptions{
+		Key: params.Key,
+	}); err != nil {
+		return err
+	}
+
+	return result.Ok().Response(ctx)
 }
 
 // DeleteParams represents the request parameters for deleting an object.
