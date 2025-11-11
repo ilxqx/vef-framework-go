@@ -32,6 +32,9 @@ const (
 	ErrMessageUnsupportedMediaType       = "unsupported_media_type"   // ErrMessageUnsupportedMediaType is the i18n key for unsupported media type error
 	ErrMessageRequestTimeout             = "request_timeout"          // ErrMessageRequestTimeout is the i18n key for request timeout error
 	ErrMessageMonitorNotReady            = "monitor_not_ready"        // ErrMessageMonitorNotReady is the i18n key for monitor data not ready error
+	ErrMessageInvalidFileKey             = "invalid_file_key"         // ErrMessageInvalidFileKey is the i18n key for invalid file key error
+	ErrMessageFileNotFound               = "file_not_found"           // ErrMessageFileNotFound is the i18n key for file not found error
+	ErrMessageFailedToGetFile            = "failed_to_get_file"       // ErrMessageFailedToGetFile is the i18n key for failed to get file error
 	ErrCodeDefault                       = 2000                       // ErrCodeDefault is the default code for error response (2000 and above are business error codes)
 	ErrCodeRecordNotFound                = 2001                       // ErrCodeRecordNotFound is the code for record not found error
 	ErrCodeRecordAlreadyExists           = 2002                       // ErrCodeRecordAlreadyExists is the code for record already exists error
@@ -65,4 +68,6 @@ const (
 	ErrCodeUnsupportedMediaType          = 1300                       // ErrCodeUnsupportedMediaType is the code for unsupported media type error
 	ErrCodeRequestTimeout                = 1400                       // ErrCodeRequestTimeout is the code for request timeout error
 	ErrCodeNotImplemented                = 1500                       // ErrCodeNotImplemented is the code for not implemented error
+	ErrCodeInvalidFileKey                = 2200                       // ErrCodeInvalidFileKey is the code for invalid file key error
+	ErrCodeFileNotFound                  = 2201                       // ErrCodeFileNotFound is the code for file not found error
 )
