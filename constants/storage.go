@@ -1,9 +1,9 @@
 package constants
 
-type StorageType string
+type StorageProvider string
 
 const (
-	StorageMinIO      StorageType = "minio"
-	StorageMemory     StorageType = "memory"
-	StorageFilesystem StorageType = "filesystem"
+	StorageMinIO      StorageProvider = "minio"
+	StorageMemory     StorageProvider = "memory"
+	StorageFilesystem StorageProvider = "filesystem"
 )

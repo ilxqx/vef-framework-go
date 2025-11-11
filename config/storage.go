@@ -5,7 +5,7 @@ import "github.com/ilxqx/vef-framework-go/constants"
 // StorageConfig represents the configuration for storage providers.
 type StorageConfig struct {
 	// Provider specifies which storage provider to use
-	Provider constants.StorageType `config:"provider"`
+	Provider constants.StorageProvider `config:"provider"`
 	// MinIO contains MinIO-specific configuration
 	MinIO MinIOConfig `config:"minio"`
 	// Filesystem contains filesystem-specific configuration

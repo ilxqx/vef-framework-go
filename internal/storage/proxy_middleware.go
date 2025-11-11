@@ -62,11 +62,9 @@ func (p *ProxyMiddleware) handleFileProxy(ctx fiber.Ctx) error {
 		return result.Err(i18n.T(result.ErrMessageFailedToGetFile))
 	}
 
-	defer func() {
-		if closeErr := reader.Close(); closeErr != nil {
-			logger.Errorf("Failed to close file reader: %v", closeErr)
-		}
-	}()
+	// Note: Do not close reader here with defer. Fiber's SendStream will automatically
+	// close the io.ReadCloser after sending the data to the client. Closing it early
+	// with defer causes "file already closed" errors during transmission.
 
 	stat, err := p.service.StatObject(ctx.Context(), storage.StatObjectOptions{
 		Key: key,
