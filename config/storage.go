@@ -6,9 +6,10 @@ import "github.com/ilxqx/vef-framework-go/constants"
 type StorageConfig struct {
 	// Provider specifies which storage provider to use
 	Provider constants.StorageType `config:"provider"`
-
 	// MinIO contains MinIO-specific configuration
 	MinIO MinIOConfig `config:"minio"`
+	// Filesystem contains filesystem-specific configuration
+	Filesystem FilesystemConfig `config:"filesystem"`
 }
 
 // MinIOConfig contains configuration for MinIO storage provider.
@@ -25,4 +26,10 @@ type MinIOConfig struct {
 	Region string `config:"region"`
 	// Bucket is the default bucket for all storage operations
 	Bucket string `config:"bucket"`
+}
+
+// FilesystemConfig contains configuration for filesystem storage provider.
+type FilesystemConfig struct {
+	// Root is the root directory for file storage (e.g., "./storage", "/var/app/files")
+	Root string `config:"root"`
 }
