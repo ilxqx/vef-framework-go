@@ -28,7 +28,7 @@ func TestNew(t *testing.T) {
 			},
 			expectError: false,
 			validateType: func(t *testing.T, service storage.Service) {
-				_, ok := service.(*memory.MemoryService)
+				_, ok := service.(*memory.Service)
 				assert.True(t, ok, "Service should be MemoryService")
 			},
 		},

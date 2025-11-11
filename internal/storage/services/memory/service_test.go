@@ -14,7 +14,7 @@ import (
 
 func TestMemoryService(t *testing.T) {
 	ctx := context.Background()
-	service := NewMemoryService()
+	service := New()
 
 	t.Run("PutObject", func(t *testing.T) {
 		data := []byte("Hello, Memory Storage!")

@@ -180,7 +180,7 @@ func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) 
 	}
 
 	// Generate presigned URL
-	url, err := r.service.GetPresignedURL(ctx.Context(), storage.PresignedURLOptions{
+	url, err := r.service.GetPresignedUrl(ctx.Context(), storage.PresignedURLOptions{
 		Key:     params.Key,
 		Expires: time.Duration(expires) * time.Second,
 		Method:  method,

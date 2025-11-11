@@ -16,9 +16,9 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-// MemoryService implements the storage.Service interface using in-memory storage.
+// Service implements the storage.Service interface using in-memory storage.
 // This service is intended for testing purposes only.
-type MemoryService struct {
+type Service struct {
 	mu      sync.RWMutex
 	objects map[string]*objectData
 }
@@ -30,15 +30,15 @@ type objectData struct {
 	lastModified time.Time
 }
 
-// NewMemoryService creates a new in-memory storage service.
-func NewMemoryService() storage.Service {
-	return &MemoryService{
+// New creates a new in-memory storage service.
+func New() storage.Service {
+	return &Service{
 		objects: make(map[string]*objectData),
 	}
 }
 
 // PutObject stores an object in memory.
-func (s *MemoryService) PutObject(ctx context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	data, err := io.ReadAll(opts.Reader)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (s *MemoryService) PutObject(ctx context.Context, opts storage.PutObjectOpt
 }
 
 // GetObject retrieves an object from memory.
-func (s *MemoryService) GetObject(ctx context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
+func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -80,7 +80,7 @@ func (s *MemoryService) GetObject(ctx context.Context, opts storage.GetObjectOpt
 }
 
 // DeleteObject deletes a single object from memory.
-func (s *MemoryService) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
+func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -90,7 +90,7 @@ func (s *MemoryService) DeleteObject(ctx context.Context, opts storage.DeleteObj
 }
 
 // DeleteObjects deletes multiple objects from memory.
-func (s *MemoryService) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
+func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -102,7 +102,7 @@ func (s *MemoryService) DeleteObjects(ctx context.Context, opts storage.DeleteOb
 }
 
 // ListObjects lists objects in memory.
-func (s *MemoryService) ListObjects(ctx context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
+func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -143,14 +143,14 @@ func (s *MemoryService) ListObjects(ctx context.Context, opts storage.ListObject
 	return objects, nil
 }
 
-// GetPresignedURL generates a mock presigned URL for in-memory storage.
-func (s *MemoryService) GetPresignedURL(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
+// GetPresignedUrl generates a mock presigned Url for in-memory storage.
+func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
 	// For memory provider, just return a mock URL
 	return fmt.Sprintf("memory://%s?method=%s&expires=%d", opts.Key, opts.Method, opts.Expires), nil
 }
 
 // CopyObject copies an object within memory storage.
-func (s *MemoryService) CopyObject(ctx context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -187,7 +187,7 @@ func (s *MemoryService) CopyObject(ctx context.Context, opts storage.CopyObjectO
 }
 
 // MoveObject moves an object by copying and then deleting the source.
-func (s *MemoryService) MoveObject(ctx context.Context, opts storage.MoveObjectOptions) (info *storage.ObjectInfo, err error) {
+func (s *Service) MoveObject(ctx context.Context, opts storage.MoveObjectOptions) (info *storage.ObjectInfo, err error) {
 	// Copy the object
 	if info, err = s.CopyObject(ctx, opts.CopyObjectOptions); err != nil {
 		return info, err
@@ -204,7 +204,7 @@ func (s *MemoryService) MoveObject(ctx context.Context, opts storage.MoveObjectO
 }
 
 // StatObject retrieves metadata about an object.
-func (s *MemoryService) StatObject(ctx context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -225,7 +225,7 @@ func (s *MemoryService) StatObject(ctx context.Context, opts storage.StatObjectO
 }
 
 // PromoteObject moves an object from temporary storage to permanent storage.
-func (s *MemoryService) PromoteObject(ctx context.Context, tempKey string) (*storage.ObjectInfo, error) {
+func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.ObjectInfo, error) {
 	// Check if the key starts with temp/ prefix
 	if !strings.HasPrefix(tempKey, storage.TempPrefix) {
 		return nil, nil
