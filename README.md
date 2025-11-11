@@ -619,12 +619,12 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
     WithCsvOptions(&csv.ExportOptions{            // CSV-specific options
         Delimiter: ',',
     }).
-    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx) ([]User, error) {
+    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx, db orm.Db) error {
         // Modify data before export (e.g., data masking)
         for i := range users {
             users[i].Password = "***"
         }
-        return users, nil
+        return nil
     }).
     WithFilenameBuilder(func(search UserSearch, ctx fiber.Ctx) string {
         // Generate dynamic filename
@@ -638,7 +638,7 @@ Add custom business logic before/after CRUD operations:
 
 ```go
 CreateApi: apis.NewCreateApi[User, UserParams]().
-    PreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
         // Hash password before creating user
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
         if err != nil {
@@ -647,7 +647,7 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
         model.Password = string(hashed)
         return nil
     }).
-    PostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.Db) error {
+    WithPostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.Db) error {
         // Send welcome email after user creation (within transaction)
         return sendWelcomeEmail(model.Email)
     }),
@@ -657,20 +657,20 @@ Available hooks:
 
 **Single Record Operations:**
 
-- `PreCreate`, `PostCreate` - Before/after creation (PostCreate runs in transaction)
-- `PreUpdate`, `PostUpdate` - Before/after update (receives both old and new model, PostUpdate runs in transaction)
-- `PreDelete`, `PostDelete` - Before/after deletion (PostDelete runs in transaction)
+- `WithPreCreate`, `WithPostCreate` - Before/after creation (`WithPostCreate` runs in transaction)
+- `WithPreUpdate`, `WithPostUpdate` - Before/after update (receives both old and new model, `WithPostUpdate` runs in transaction)
+- `WithPreDelete`, `WithPostDelete` - Before/after deletion (`WithPostDelete` runs in transaction)
 
 **Batch Operations:**
 
-- `PreCreateMany`, `PostCreateMany` - Before/after batch creation (PostCreateMany runs in transaction)
-- `PreUpdateMany`, `PostUpdateMany` - Before/after batch update (receives old and new model arrays, PostUpdateMany runs in transaction)
-- `PreDeleteMany`, `PostDeleteMany` - Before/after batch deletion (PostDeleteMany runs in transaction)
+- `WithPreCreateMany`, `WithPostCreateMany` - Before/after batch creation (`WithPostCreateMany` runs in transaction)
+- `WithPreUpdateMany`, `WithPostUpdateMany` - Before/after batch update (receives old and new model arrays, `WithPostUpdateMany` runs in transaction)
+- `WithPreDeleteMany`, `WithPostDeleteMany` - Before/after batch deletion (`WithPostDeleteMany` runs in transaction)
 
 **Import/Export Operations:**
 
-- `PreImport`, `PostImport` - Before/after import (PreImport for validation, PostImport runs in transaction)
-- `PreExport` - Before export (for data formatting)
+- `WithPreImport`, `WithPostImport` - Before/after import (`WithPreImport` for validation, `WithPostImport` runs in transaction)
+- `WithPreExport` - Before export (for data formatting)
 
 ### Custom Handlers
 
@@ -922,7 +922,7 @@ func (l *MyUserLoader) LoadByUsername(ctx context.Context, username string) (*se
             cb.Equals("username", username)
         }).
         Scan(ctx); err != nil {
-        return nil, constants.Empty, err
+        return nil, "", err
     }
 
     principal := &security.Principal{
@@ -1230,7 +1230,7 @@ schema = "public"        # PostgreSQL schema
 token_expires = "2h"     # Jwt token expiration time
 
 [vef.storage]
-provider = "minio"       # Storage provider: memory, minio
+provider = "minio"       # Storage provider: memory, filesystem, minio (default: memory)
 
 [vef.storage.minio]
 endpoint = "localhost:9000"
@@ -1239,6 +1239,9 @@ secret_key = "minioadmin"
 use_ssl = false
 region = "us-east-1"
 bucket = "mybucket"
+
+[vef.storage.filesystem]
+root = "./storage"       # Used when provider = "filesystem"
 
 [vef.redis]
 host = "localhost"
@@ -1562,7 +1565,7 @@ vef.Invoke(func(scheduler cron.Scheduler) {
 
 ### File Storage
 
-The framework provides built-in file storage functionality with support for MinIO and in-memory storage.
+The framework provides built-in file storage functionality with support for MinIO, filesystem, and in-memory storage.
 
 #### Built-in Storage Resource
 
@@ -1689,11 +1692,11 @@ info, err := provider.PromoteObject(ctx.Context(), "temp/2025/01/15/xxx.jpg")
 
 #### Storage Configuration
 
-Configure storage in `application.toml`:
+Set `vef.storage.provider` to `minio`, `filesystem`, or `memory` (default) and configure the matching section in `application.toml`:
 
 ```toml
 [vef.storage]
-provider = "minio"  # or "memory" (for testing)
+provider = "minio"  # options: minio, filesystem, memory
 
 [vef.storage.minio]
 endpoint = "localhost:9000"
@@ -1702,6 +1705,9 @@ secret_key = "minioadmin"
 use_ssl = false
 region = "us-east-1"
 bucket = "mybucket"
+
+[vef.storage.filesystem]
+root = "./storage"       # Base directory when provider = "filesystem"
 ```
 
 ### Data Validation
@@ -1782,7 +1788,7 @@ var Build = monitor.BuildInfo{
 }
 ```
 
-For AI-assisted development guidelines, see `cmd/vef-cli/CMD_DEV_GUIDELINES.md`.
+For AI-assisted development guidelines, see `cmd/CMD_DEV_GUIDELINES.md`.
 
 ## Best Practices
 

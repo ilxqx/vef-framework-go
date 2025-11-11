@@ -1,10 +1,13 @@
 package create
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
 )
+
+var ErrNotImplemented = errors.New("vef-cli create is not implemented yet, please generate the project manually")
 
 // Command returns the create cobra command.
 func Command() *cobra.Command {
@@ -28,8 +31,7 @@ This command will set up a complete project skeleton including:
 			_, _ = fmt.Printf("  Path: %s\n", path)
 			_, _ = fmt.Printf("  Module: %s\n", module)
 
-			// TODO: Implement project creation logic
-			return nil
+			return ErrNotImplemented
 		},
 	}
 

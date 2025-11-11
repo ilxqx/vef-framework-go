@@ -619,12 +619,12 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
     WithCsvOptions(&csv.ExportOptions{            // CSV 特定选项
         Delimiter: ',',
     }).
-    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx) ([]User, error) {
+    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx, db orm.Db) error {
         // 导出前修改数据（例如数据脱敏）
         for i := range users {
             users[i].Password = "***"
         }
-        return users, nil
+        return nil
     }).
     WithFilenameBuilder(func(search UserSearch, ctx fiber.Ctx) string {
         // 生成动态文件名
@@ -638,7 +638,7 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
 
 ```go
 CreateApi: apis.NewCreateApi[User, UserParams]().
-    PreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
         // 创建用户前对密码进行哈希
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
         if err != nil {
@@ -647,7 +647,7 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
         model.Password = string(hashed)
         return nil
     }).
-    PostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.Db) error {
+    WithPostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.Db) error {
         // 用户创建后发送欢迎邮件（在事务内执行）
         return sendWelcomeEmail(model.Email)
     }),
@@ -656,18 +656,18 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
 可用的钩子：
 
 **单条记录操作：**
-- `PreCreate`、`PostCreate` - 创建前/后（PostCreate 在事务内运行）
-- `PreUpdate`、`PostUpdate` - 更新前/后（接收旧模型和新模型，PostUpdate 在事务内运行）
-- `PreDelete`、`PostDelete` - 删除前/后（PostDelete 在事务内运行）
+- `WithPreCreate`、`WithPostCreate` - 创建前/后（`WithPostCreate` 在事务内运行）
+- `WithPreUpdate`、`WithPostUpdate` - 更新前/后（接收旧模型和新模型，`WithPostUpdate` 在事务内运行）
+- `WithPreDelete`、`WithPostDelete` - 删除前/后（`WithPostDelete` 在事务内运行）
 
 **批量操作：**
-- `PreCreateMany`、`PostCreateMany` - 批量创建前/后（PostCreateMany 在事务内运行）
-- `PreUpdateMany`、`PostUpdateMany` - 批量更新前/后（接收旧模型数组和新模型数组，PostUpdateMany 在事务内运行）
-- `PreDeleteMany`、`PostDeleteMany` - 批量删除前/后（PostDeleteMany 在事务内运行）
+- `WithPreCreateMany`、`WithPostCreateMany` - 批量创建前/后（`WithPostCreateMany` 在事务内运行）
+- `WithPreUpdateMany`、`WithPostUpdateMany` - 批量更新前/后（接收旧模型数组和新模型数组，`WithPostUpdateMany` 在事务内运行）
+- `WithPreDeleteMany`、`WithPostDeleteMany` - 批量删除前/后（`WithPostDeleteMany` 在事务内运行）
 
 **导入导出操作：**
-- `PreImport`、`PostImport` - 导入前/后（PreImport 用于验证，PostImport 在事务内运行）
-- `PreExport` - 导出前（用于数据格式化）
+- `WithPreImport`、`WithPostImport` - 导入前/后（`WithPreImport` 用于验证，`WithPostImport` 在事务内运行）
+- `WithPreExport` - 导出前（用于数据格式化）
 
 ### 自定义处理器
 
@@ -913,7 +913,7 @@ func (l *MyUserLoader) LoadByUsername(ctx context.Context, username string) (*se
             cb.Equals("username", username)
         }).
         Scan(ctx); err != nil {
-        return nil, constants.Empty, err
+        return nil, "", err
     }
     
     principal := &security.Principal{
@@ -1221,7 +1221,7 @@ schema = "public"        # PostgreSQL schema
 token_expires = "2h"     # Jwt token 过期时间
 
 [vef.storage]
-provider = "minio"       # 存储提供者：memory、minio
+provider = "minio"       # 存储提供者：memory、filesystem、minio（默认：memory）
 
 [vef.storage.minio]
 endpoint = "localhost:9000"
@@ -1230,6 +1230,9 @@ secret_key = "minioadmin"
 use_ssl = false
 region = "us-east-1"
 bucket = "mybucket"
+
+[vef.storage.filesystem]
+root = "./storage"       # 当 provider = "filesystem" 时的根目录
 
 [vef.redis]
 host = "localhost"
@@ -1553,7 +1556,7 @@ vef.Invoke(func(scheduler cron.Scheduler) {
 
 ### 文件存储
 
-框架内置了文件存储功能，支持 MinIO 和内存存储两种方式。
+框架内置了文件存储功能，支持 MinIO、文件系统以及内存存储。
 
 #### 内置存储资源
 
@@ -1680,11 +1683,11 @@ info, err := provider.PromoteObject(ctx.Context(), "temp/2025/01/15/xxx.jpg")
 
 #### 配置存储提供者
 
-在 `application.toml` 中配置：
+将 `vef.storage.provider` 设置为 `minio`、`filesystem` 或 `memory`（默认）并在 `application.toml` 中进行配置：
 
 ```toml
 [vef.storage]
-provider = "minio"  # 或 "memory"（测试环境）
+provider = "minio"  # 选项：minio、filesystem、memory
 
 [vef.storage.minio]
 endpoint = "localhost:9000"
@@ -1693,6 +1696,9 @@ secret_key = "minioadmin"
 use_ssl = false
 region = "us-east-1"
 bucket = "mybucket"
+
+[vef.storage.filesystem]
+root = "./storage"       # 当 provider = "filesystem" 时的根目录
 ```
 
 ### 数据验证
@@ -1773,7 +1779,7 @@ var Build = monitor.BuildInfo{
 }
 ```
 
-关于 AI 辅助开发指南，请参阅 `cmd/vef-cli/CMD_DEV_GUIDELINES.md`。
+关于 AI 辅助开发指南，请参阅 `cmd/CMD_DEV_GUIDELINES.md`。
 
 ## 最佳实践
 
