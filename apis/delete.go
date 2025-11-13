@@ -9,9 +9,11 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 type deleteApi[TModel any] struct {
@@ -46,11 +48,11 @@ func (d *deleteApi[TModel]) DisableDataPerm() DeleteApi[TModel] {
 	return d
 }
 
-func (d *deleteApi[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) error, error) {
+func (d *deleteApi[TModel]) delete(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db) error, error) {
+	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPkFields((*TModel)(nil))
 
-	// Validate schema has primary keys
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
@@ -62,7 +64,6 @@ func (d *deleteApi[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 			req        = contextx.ApiRequest(ctx)
 		)
 
-		// Extract and set primary key values using pre-computed metadata
 		for _, pk := range pks {
 			value, ok := req.Params[pk.Name]
 			if !ok {
@@ -74,7 +75,6 @@ func (d *deleteApi[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 			}
 		}
 
-		// Build query with data permission filtering
 		query := db.NewSelect().Model(&model).WherePk()
 		if !d.dataPermDisabled {
 			if err := ApplyDataPermission(query, ctx); err != nil {
@@ -82,29 +82,29 @@ func (d *deleteApi[TModel]) delete(db orm.Db) (func(ctx fiber.Ctx, db orm.Db) er
 			}
 		}
 
-		// Load the existing model
 		if err := query.Scan(ctx.Context(), &model); err != nil {
 			return err
 		}
 
-		// Execute pre-delete hook if configured
-		if d.preDelete != nil {
-			if err := d.preDelete(&model, ctx, db); err != nil {
-				return err
-			}
-		}
-
-		// Execute delete operation within transaction
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			if d.preDelete != nil {
+				if err := d.preDelete(&model, ctx, db); err != nil {
+					return err
+				}
+			}
+
 			if _, err := tx.NewDelete().Model(&model).WherePk().Exec(txCtx); err != nil {
 				return err
 			}
 
-			// Execute post-delete hook if configured
 			if d.postDelete != nil {
 				if err := d.postDelete(&model, ctx, tx); err != nil {
 					return err
 				}
+			}
+
+			if err := promoter.Promote(txCtx, nil, &model); err != nil {
+				return fmt.Errorf("delete succeeded but cleanup files failed: %w", err)
 			}
 
 			return result.Ok().Response(ctx)

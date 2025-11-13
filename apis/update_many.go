@@ -9,9 +9,11 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 type updateManyApi[TModel, TParams any] struct {
@@ -46,11 +48,11 @@ func (u *updateManyApi[TModel, TParams]) DisableDataPerm() UpdateManyApi[TModel,
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params UpdateManyParams[TParams]) error, error) {
+func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params UpdateManyParams[TParams]) error, error) {
+	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPkFields((*TModel)(nil))
 
-	// Validate schema has primary keys
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
@@ -63,13 +65,11 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.C
 		oldModels := make([]TModel, len(params.List))
 		models := make([]TModel, len(params.List))
 
-		// Copy params to models and validate primary keys
 		for i := range params.List {
 			if err := copier.Copy(&params.List[i], &models[i]); err != nil {
 				return err
 			}
 
-			// Validate primary key is not empty
 			modelValue := reflect.ValueOf(&models[i]).Elem()
 			for _, pk := range pks {
 				pkValue, err := pk.Value(modelValue)
@@ -82,7 +82,6 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.C
 				}
 			}
 
-			// Build query with data permission filtering
 			query := db.NewSelect().Model(&models[i]).WherePk()
 			if !u.dataPermDisabled {
 				if err := ApplyDataPermission(query, ctx); err != nil {
@@ -90,34 +89,47 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db) (func(ctx fiber.C
 				}
 			}
 
-			// Load existing model
 			if err := query.Scan(ctx.Context(), &oldModels[i]); err != nil {
 				return err
 			}
 		}
 
-		if u.preUpdateMany != nil {
-			if err := u.preUpdateMany(oldModels, models, params.List, ctx, db); err != nil {
-				return err
-			}
-		}
-
-		// Merge new values into old models
-		for i := range models {
-			if err := copier.Copy(&models[i], &oldModels[i], copier.WithIgnoreEmpty()); err != nil {
-				return err
-			}
-		}
-
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			if u.preUpdateMany != nil {
+				if err := u.preUpdateMany(oldModels, models, params.List, ctx, db); err != nil {
+					return err
+				}
+			}
+
+			for i := range models {
+				if err := copier.Copy(&models[i], &oldModels[i], copier.WithIgnoreEmpty()); err != nil {
+					return err
+				}
+			}
+
+			for i := range oldModels {
+				if err := promoter.Promote(txCtx, &oldModels[i], &models[i]); err != nil {
+					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, i); rollbackErr != nil {
+						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %v", i, err, rollbackErr)
+					}
+					return fmt.Errorf("promote files for model %d failed: %w", i, err)
+				}
+			}
+
 			for i := range oldModels {
 				if _, err := tx.NewUpdate().Model(&oldModels[i]).WherePk().Exec(txCtx); err != nil {
+					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
+						return fmt.Errorf("batch update failed: %w; rollback files also failed: %v", err, rollbackErr)
+					}
 					return err
 				}
 			}
 
 			if u.postUpdateMany != nil {
 				if err := u.postUpdateMany(oldModels, models, params.List, ctx, tx); err != nil {
+					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
+						return fmt.Errorf("post-update-many failed: %w; rollback files also failed: %v", err, rollbackErr)
+					}
 					return err
 				}
 			}

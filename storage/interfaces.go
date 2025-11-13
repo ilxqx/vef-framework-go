@@ -29,8 +29,22 @@ type Service interface {
 
 	// PromoteObject moves an object from temporary storage (temp/ prefix) to permanent storage.
 	// It removes the "temp/" prefix from the object key, effectively promoting a temporary upload
-	// to a permanent file. This is useful for handling multi-step upload workflows where files
+	// to a permanent file.
+	// This is useful for handling multistep upload workflows where files
 	// are initially uploaded to temp/ and only moved to permanent storage after business logic commits.
 	// If the key does not start with "temp/", this method does nothing and returns nil.
 	PromoteObject(ctx context.Context, tempKey string) (*ObjectInfo, error)
+}
+
+// Promoter defines the interface for automatic file field promotion and cleanup.
+// It supports three types of meta information fields:
+// - uploaded_file: Direct file fields (string, *string, null.String, []string)
+// - richtext: Rich text fields (string, *string, null.String), automatically extracts and processes resource references in HTML
+// - markdown: Markdown fields (string, *string, null.String), automatically extracts and processes resource references in Markdown.
+type Promoter[T any] interface {
+	// Promote handles file promotion and cleanup based on the scenario:
+	// - newModel != nil && oldModel == nil: Create (promote new files)
+	// - newModel != nil && oldModel != nil: Update (promote new files + cleanup replaced files)
+	// - newModel == nil && oldModel != nil: Delete (cleanup all files)
+	Promote(ctx context.Context, newModel, oldModel *T) error
 }

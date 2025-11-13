@@ -9,9 +9,11 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 type updateApi[TModel, TParams any] struct {
@@ -46,11 +48,11 @@ func (u *updateApi[TModel, TParams]) DisableDataPerm() UpdateApi[TModel, TParams
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
+func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
+	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPkFields((*TModel)(nil))
 
-	// Validate schema has primary keys
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
@@ -66,7 +68,6 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 			return err
 		}
 
-		// Validate primary key is not empty
 		for _, pk := range pks {
 			pkValue, err := pk.Value(modelValue)
 			if err != nil {
@@ -78,7 +79,6 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 			}
 		}
 
-		// Build query with data permission filtering
 		query := db.NewSelect().Model(&model).WherePk()
 		if !u.dataPermDisabled {
 			if err := ApplyDataPermission(query, ctx); err != nil {
@@ -90,23 +90,33 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db) (func(ctx fiber.Ctx, db o
 			return err
 		}
 
-		if u.preUpdate != nil {
-			if err := u.preUpdate(&oldModel, &model, &params, ctx, db); err != nil {
+		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			if u.preUpdate != nil {
+				if err := u.preUpdate(&oldModel, &model, &params, ctx, db); err != nil {
+					return err
+				}
+			}
+
+			if err := copier.Copy(&model, &oldModel, copier.WithIgnoreEmpty()); err != nil {
 				return err
 			}
-		}
 
-		if err := copier.Copy(&model, &oldModel, copier.WithIgnoreEmpty()); err != nil {
-			return err
-		}
+			if err := promoter.Promote(txCtx, &oldModel, &model); err != nil {
+				return fmt.Errorf("promote files failed: %w", err)
+			}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 			if _, err := tx.NewUpdate().Model(&oldModel).WherePk().Exec(txCtx); err != nil {
+				if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
+					return fmt.Errorf("update failed: %w; rollback files also failed: %v", err, cleanupErr)
+				}
 				return err
 			}
 
 			if u.postUpdate != nil {
 				if err := u.postUpdate(&oldModel, &model, &params, ctx, tx); err != nil {
+					if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
+						return fmt.Errorf("post-update failed: %w; rollback files also failed: %v", err, cleanupErr)
+					}
 					return err
 				}
 			}

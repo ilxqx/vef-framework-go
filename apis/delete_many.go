@@ -8,9 +8,11 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 type deleteManyApi[TModel any] struct {
@@ -45,11 +47,11 @@ func (d *deleteManyApi[TModel]) DisableDataPerm() DeleteManyApi[TModel] {
 	return d
 }
 
-func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error, error) {
+func (d *deleteManyApi[TModel]) deleteMany(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error, error) {
+	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
 	pks := db.ModelPkFields((*TModel)(nil))
 
-	// Validate schema has primary keys
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
@@ -61,13 +63,11 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 
 		models := make([]TModel, len(params.Pks))
 
-		// Process each primary key value
 		for i, pkValue := range params.Pks {
 			modelValue := reflect.ValueOf(&models[i]).Elem()
 
 			// Try to interpret pkValue as a map first (works for both single and composite Pks)
 			if pkMap, ok := pkValue.(map[string]any); ok {
-				// Map format - set each Pk field from the map
 				for _, pk := range pks {
 					value, ok := pkMap[pk.Name]
 					if !ok {
@@ -89,7 +89,6 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 				}
 			}
 
-			// Build query with data permission filtering
 			query := db.NewSelect().Model(&models[i]).WherePk()
 			if !d.dataPermDisabled {
 				if err := ApplyDataPermission(query, ctx); err != nil {
@@ -97,32 +96,35 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db) (func(ctx fiber.Ctx, db or
 				}
 			}
 
-			// Load the existing model
 			if err := query.Scan(ctx.Context(), &models[i]); err != nil {
 				return err
 			}
 		}
 
-		// Execute pre-delete hook if configured
-		if d.preDeleteMany != nil {
-			if err := d.preDeleteMany(models, ctx, db); err != nil {
-				return err
-			}
-		}
-
-		// Execute delete operation within transaction
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
-			for i := range models {
-				if _, err := tx.NewDelete().Model(&models[i]).WherePk().Exec(txCtx); err != nil {
+			if d.preDeleteMany != nil {
+				if err := d.preDeleteMany(models, ctx, db); err != nil {
 					return err
 				}
 			}
 
-			// Execute post-delete hook if configured
+			for i := range models {
+				if _, err := tx.NewDelete().
+					Model(&models[i]).
+					WherePk().
+					Exec(txCtx); err != nil {
+					return err
+				}
+			}
+
 			if d.postDeleteMany != nil {
 				if err := d.postDeleteMany(models, ctx, tx); err != nil {
 					return err
 				}
+			}
+
+			if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
+				return fmt.Errorf("delete succeeded but cleanup files failed: %w", cleanupErr)
 			}
 
 			return result.Ok().Response(ctx)
