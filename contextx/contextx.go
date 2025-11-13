@@ -7,7 +7,6 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -20,7 +19,6 @@ const (
 	KeyPrincipal
 	KeyLogger
 	KeyDb
-	KeyTransformer
 	KeyDataPermApplier
 )
 
@@ -106,23 +104,6 @@ func SetDb(ctx context.Context, db orm.Db) context.Context {
 		return c
 	default:
 		return context.WithValue(ctx, KeyDb, db)
-	}
-}
-
-func Transformer(ctx context.Context) mold.Transformer {
-	transformer, _ := ctx.Value(KeyTransformer).(mold.Transformer)
-
-	return transformer
-}
-
-func SetTransformer(ctx context.Context, transformer mold.Transformer) context.Context {
-	switch c := ctx.(type) {
-	case fiber.Ctx:
-		c.Locals(KeyTransformer, transformer)
-
-		return c
-	default:
-		return context.WithValue(ctx, KeyTransformer, transformer)
 	}
 }
 

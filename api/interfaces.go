@@ -35,20 +35,20 @@ type Resource interface {
 // HandlerParamResolver declares a pluggable strategy to resolve a single handler
 // parameter from the current request context. Implementations should be pure and
 // fast, as they are invoked for every handler call.
-//
-// Contract:
-//   - Type() must return the exact parameter type this resolver handles.
-//   - Resolve(ctx) returns the concrete value for that type (or nil if unavailable).
-//     Returning nil signals "not resolvable" for the current request.
-//
-// Extensibility:
-//   - Multiple resolvers can be registered. When types overlap, user-provided
-//     resolvers override built-in ones at composition time.
-//   - Prefer inexpensive lookups (e.g., values cached in context) to avoid
-//     per-request overhead.
 type HandlerParamResolver interface {
 	Type() reflect.Type
 	Resolve(ctx fiber.Ctx) (reflect.Value, error)
+}
+
+// FactoryParamResolver resolves parameters for handler factory functions.
+// Unlike HandlerParamResolver, it executes during resource registration (application startup)
+// and does not depend on a specific HTTP request context.
+type FactoryParamResolver interface {
+	// Type returns the parameter type this resolver handles
+	Type() reflect.Type
+	// Resolve returns an instance of the type (as reflect.Value)
+	// Called during resource registration, resolver should return instances already injected via DI
+	Resolve() reflect.Value
 }
 
 // Provider defines the interface for providing Api specifications.
