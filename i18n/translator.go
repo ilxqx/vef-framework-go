@@ -58,6 +58,7 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 	message, err := t.Te(messageId, templateData...)
 	if err != nil {
 		logger.Warnf("Translation failed for messageId %q: %v", messageId, err)
+
 		return messageId
 	}
 

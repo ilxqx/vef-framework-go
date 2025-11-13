@@ -110,8 +110,9 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 			for i := range oldModels {
 				if err := promoter.Promote(txCtx, &oldModels[i], &models[i]); err != nil {
 					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, i); rollbackErr != nil {
-						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %v", i, err, rollbackErr)
+						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %w", i, err, rollbackErr)
 					}
+
 					return fmt.Errorf("promote files for model %d failed: %w", i, err)
 				}
 			}
@@ -119,8 +120,9 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 			for i := range oldModels {
 				if _, err := tx.NewUpdate().Model(&oldModels[i]).WherePk().Exec(txCtx); err != nil {
 					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
-						return fmt.Errorf("batch update failed: %w; rollback files also failed: %v", err, rollbackErr)
+						return fmt.Errorf("batch update failed: %w; rollback files also failed: %w", err, rollbackErr)
 					}
+
 					return err
 				}
 			}
@@ -128,8 +130,9 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 			if u.postUpdateMany != nil {
 				if err := u.postUpdateMany(oldModels, models, params.List, ctx, tx); err != nil {
 					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
-						return fmt.Errorf("post-update-many failed: %w; rollback files also failed: %v", err, rollbackErr)
+						return fmt.Errorf("post-update-many failed: %w; rollback files also failed: %w", err, rollbackErr)
 					}
+
 					return err
 				}
 			}

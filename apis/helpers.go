@@ -216,15 +216,17 @@ func batchCleanup[TModel any](
 			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
 		}
 	}
+
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
+
 	return nil
 }
 
 // batchRollback rolls back files in batch, collecting all errors.
 // Used in update operations to rollback to old files when failures occur.
-// count specifies how many models to rollback (typically the index where the error occurred).
+// Count specifies how many models to rollback (typically the index where the error occurred).
 func batchRollback[TModel any](
 	ctx context.Context,
 	promoter storage.Promoter[TModel],
@@ -237,8 +239,10 @@ func batchRollback[TModel any](
 			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
 		}
 	}
+
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
+
 	return nil
 }

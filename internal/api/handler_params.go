@@ -75,7 +75,7 @@ func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType re
 // findFieldInStruct uses a multi-pass search strategy to balance explicitness with flexibility:
 // 1. Direct fields first (most explicit, avoids ambiguity)
 // 2. Fields with api:"in" tag (explicit opt-in for deep nesting)
-// 3. Embedded anonymous structs last (traditional Go embedding, most implicit)
+// 3. Embedded anonymous structs last (traditional Go embedding, most implicit).
 func findFieldInStruct(target reflect.Value, paramType reflect.Type) reflect.Value {
 	if found := searchDirectFields(target, paramType); found.IsValid() {
 		return found
@@ -206,6 +206,7 @@ func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
 		request := contextx.ApiRequest(ctx)
+
 		paramValue := reflect.New(t)
 		if err := request.Params.Decode(paramValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err
@@ -228,6 +229,7 @@ func buildMetaResolver(metaType reflect.Type) ParamResolverFunc {
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
 		request := contextx.ApiRequest(ctx)
+
 		metaValue := reflect.New(t)
 		if err := request.Meta.Decode(metaValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err

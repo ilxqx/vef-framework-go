@@ -122,7 +122,7 @@ func (r *TestMoldFactoryResource) VerifyFactory(transformer mold.Transformer) fu
 
 	return func(ctx fiber.Ctx) error {
 		return result.Ok(map[string]any{
-			"factory_injected":  factoryInjected,
+			"factory_injected": factoryInjected,
 			"transformer_type": "mold.Transformer",
 		}).Response(ctx)
 	}

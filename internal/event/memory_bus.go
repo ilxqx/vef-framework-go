@@ -163,6 +163,7 @@ func (b *MemoryBus) deliverEvent(evt event.Event) error {
 	defer b.mu.RUnlock()
 
 	eventType := evt.Type()
+
 	processedEvent := evt
 	for _, middleware := range b.middlewares {
 		if err := middleware.Process(b.ctx, processedEvent, func(ctx context.Context, e event.Event) error {

@@ -10,8 +10,9 @@ import (
 	"fmt"
 	"hash"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/tjfoc/gmsm/sm3"
+
+	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 func Md5(data string) string {

@@ -61,16 +61,18 @@ func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.
 
 			if _, err := tx.NewInsert().Model(&model).Exec(txCtx); err != nil {
 				if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
-					return fmt.Errorf("insert failed: %w; cleanup files also failed: %v", err, cleanupErr)
+					return fmt.Errorf("insert failed: %w; cleanup files also failed: %w", err, cleanupErr)
 				}
+
 				return err
 			}
 
 			if c.postCreate != nil {
 				if err := c.postCreate(&model, &params, ctx, tx); err != nil {
 					if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
-						return fmt.Errorf("post-create failed: %w; cleanup files also failed: %v", err, cleanupErr)
+						return fmt.Errorf("post-create failed: %w; cleanup files also failed: %w", err, cleanupErr)
 					}
+
 					return err
 				}
 			}
@@ -78,8 +80,9 @@ func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.
 			pks, err := db.ModelPks(&model)
 			if err != nil {
 				if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
-					return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %v", err, cleanupErr)
+					return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %w", err, cleanupErr)
 				}
+
 				return err
 			}
 

@@ -64,24 +64,27 @@ func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publishe
 			for i := range models {
 				if err := promoter.Promote(txCtx, &models[i], nil); err != nil {
 					if rollbackErr := batchCleanup(txCtx, promoter, models[:i]); rollbackErr != nil {
-						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %v", i, err, rollbackErr)
+						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %w", i, err, rollbackErr)
 					}
+
 					return fmt.Errorf("promote files for model %d failed: %w", i, err)
 				}
 			}
 
 			if _, err := tx.NewInsert().Model(&models).Exec(txCtx); err != nil {
 				if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
-					return fmt.Errorf("batch create failed: %w; cleanup files also failed: %v", err, cleanupErr)
+					return fmt.Errorf("batch create failed: %w; cleanup files also failed: %w", err, cleanupErr)
 				}
+
 				return err
 			}
 
 			if c.postCreateMany != nil {
 				if err := c.postCreateMany(models, params.List, ctx, tx); err != nil {
 					if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
-						return fmt.Errorf("post-create-many failed: %w; cleanup files also failed: %v", err, cleanupErr)
+						return fmt.Errorf("post-create-many failed: %w; cleanup files also failed: %w", err, cleanupErr)
 					}
+
 					return err
 				}
 			}
@@ -91,8 +94,9 @@ func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publishe
 				pk, err := db.ModelPks(&models[i])
 				if err != nil {
 					if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
-						return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %v", err, cleanupErr)
+						return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %w", err, cleanupErr)
 					}
+
 					return err
 				}
 

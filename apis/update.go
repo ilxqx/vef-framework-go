@@ -107,16 +107,18 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 
 			if _, err := tx.NewUpdate().Model(&oldModel).WherePk().Exec(txCtx); err != nil {
 				if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
-					return fmt.Errorf("update failed: %w; rollback files also failed: %v", err, cleanupErr)
+					return fmt.Errorf("update failed: %w; rollback files also failed: %w", err, cleanupErr)
 				}
+
 				return err
 			}
 
 			if u.postUpdate != nil {
 				if err := u.postUpdate(&oldModel, &model, &params, ctx, tx); err != nil {
 					if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
-						return fmt.Errorf("post-update failed: %w; rollback files also failed: %v", err, cleanupErr)
+						return fmt.Errorf("post-update failed: %w; rollback files also failed: %w", err, cleanupErr)
 					}
+
 					return err
 				}
 			}

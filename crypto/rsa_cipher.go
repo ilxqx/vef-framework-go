@@ -69,6 +69,7 @@ func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 			if err2 != nil {
 				return nil, nil, fmt.Errorf("failed to parse private key (tried PKCS1 and PKCS8): %w", err)
 			}
+
 			var ok bool
 			if privateKey, ok = key.(*rsa.PrivateKey); !ok {
 				return nil, nil, ErrNotRSAPrivateKey

@@ -30,6 +30,7 @@ func NewJwtTokenGenerator(jwt *security.Jwt, securityConfig *config.SecurityConf
 
 func (g *JwtTokenGenerator) Generate(principal *security.Principal) (*security.AuthTokens, error) {
 	jwtId := id.GenerateUuid()
+
 	accessToken, err := g.generateAccessToken(jwtId, principal)
 	if err != nil {
 		logger.Errorf("Failed to generate access token for principal %q: %v", principal.Id, err)

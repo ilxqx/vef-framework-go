@@ -10,7 +10,7 @@ import (
 
 var logger = log.Named("mold")
 
-// Module defines the fx module for the transformer package
+// Module defines the fx module for the transformer package.
 var Module = fx.Module(
 	"vef:mold",
 	fx.Decorate(

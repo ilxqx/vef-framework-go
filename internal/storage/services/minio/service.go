@@ -266,6 +266,7 @@ func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.O
 	}
 
 	permanentKey := strings.TrimPrefix(tempKey, storage.TempPrefix)
+
 	return s.MoveObject(ctx, storage.MoveObjectOptions{
 		CopyObjectOptions: storage.CopyObjectOptions{
 			SourceKey: tempKey,

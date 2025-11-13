@@ -26,6 +26,7 @@ func (s *SyncHashSet[T]) Add(elements ...T) bool {
 	for _, element := range elements {
 		if _, loaded := s.data.LoadOrStore(element, struct{}{}); !loaded {
 			s.size.Add(1)
+
 			added = true
 		}
 	}
@@ -40,6 +41,7 @@ func (s *SyncHashSet[T]) Remove(elements ...T) bool {
 	for _, element := range elements {
 		if _, loaded := s.data.LoadAndDelete(element); loaded {
 			s.size.Add(-1)
+
 			removed = true
 		}
 	}
@@ -101,6 +103,7 @@ func (s *SyncHashSet[T]) RemoveIf(predicate func(element T) bool) int {
 		if predicate(element) {
 			if _, loaded := s.data.LoadAndDelete(element); loaded {
 				s.size.Add(-1)
+
 				count++
 			}
 		}
@@ -118,6 +121,7 @@ func (s *SyncHashSet[T]) Values() []T {
 	values := make([]T, 0, s.Size())
 	s.data.Range(func(element T, _ struct{}) bool {
 		values = append(values, element)
+
 		return true
 	})
 
