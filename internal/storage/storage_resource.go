@@ -16,7 +16,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/storage"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
@@ -25,51 +24,38 @@ const (
 	defaultExtension = ".bin"
 )
 
-// NewResource creates a new storage resource with the provided storage service.
 func NewResource(service storage.Service) api.Resource {
-	// In test environment, make all Apis public (no authentication required)
-	isPublic := testhelpers.IsTestEnv()
-
 	return &Resource{
 		service: service,
 		Resource: api.NewResource(
 			"sys/storage",
 			api.WithApis(
-				api.Spec{Action: "upload", Public: isPublic},
-				api.Spec{Action: "get_presigned_url", Public: isPublic},
-				api.Spec{Action: "delete_temp", Public: isPublic},
-				api.Spec{Action: "stat", Public: isPublic},
-				api.Spec{Action: "list", Public: isPublic},
+				api.Spec{Action: "upload", Public: isStorageApiPublic},
+				api.Spec{Action: "get_presigned_url", Public: isStorageApiPublic},
+				api.Spec{Action: "delete_temp", Public: isStorageApiPublic},
+				api.Spec{Action: "stat", Public: isStorageApiPublic},
+				api.Spec{Action: "list", Public: isStorageApiPublic},
 			),
 		),
 	}
 }
 
-// Resource handles storage-related Api endpoints.
 type Resource struct {
 	api.Resource
 
 	service storage.Service
 }
 
-// UploadParams represents the request parameters for file upload.
 type UploadParams struct {
 	api.P
 
-	// File is the file to upload
 	File *multipart.FileHeader
 
-	// ContentType specifies the MIME type of the object (optional, auto-detected if not provided)
-	ContentType string `json:"contentType"`
-	// Metadata contains custom key-value pairs to associate with the object
-	Metadata map[string]string `json:"metadata"`
+	ContentType string            `json:"contentType"`
+	Metadata    map[string]string `json:"metadata"`
 }
 
-// Upload uploads a file to storage with auto-generated key.
-// Key generation format: temp/YYYY/MM/DD/{uuid}{extension}
-// Example: temp/2025/01/15/550e8400-e29b-41d4-a716-446655440000.jpg
-//
-// The file should be uploaded via multipart form with field name "file".
+// Upload generates date-partitioned keys (temp/YYYY/MM/DD/{uuid}{ext}) to organize uploads and avoid conflicts.
 func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 	if webhelpers.IsJson(ctx) {
 		return result.Err(i18n.T("upload_requires_multipart"))
@@ -79,10 +65,8 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 		return result.Err(i18n.T("upload_requires_file"))
 	}
 
-	// Generate unique key with date-based partitioning
 	key := r.generateObjectKey(params.File.Filename)
 
-	// Open the uploaded file
 	file, err := params.File.Open()
 	if err != nil {
 		return err
@@ -94,13 +78,11 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 		}
 	}()
 
-	// Determine content type if not provided
 	contentType := params.ContentType
 	if contentType == constants.Empty {
 		contentType = params.File.Header.Get(fiber.HeaderContentType)
 	}
 
-	// Merge user metadata with original filename
 	metadata := params.Metadata
 	if metadata == nil {
 		metadata = make(map[string]string)
@@ -108,7 +90,6 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 
 	metadata[storage.MetadataKeyOriginalFilename] = params.File.Filename
 
-	// Upload to storage provider
 	info, err := r.service.PutObject(ctx.Context(), storage.PutObjectOptions{
 		Key:         key,
 		Reader:      file,
@@ -123,53 +104,39 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 	return result.Ok(info).Response(ctx)
 }
 
-// generateObjectKey generates a unique object key with date-based partitioning.
-// Format: temp/YYYY/MM/DD/{uuid}{extension}.
 func (r *Resource) generateObjectKey(filename string) string {
-	// Get current date for partitioning
 	now := time.Now()
 	datePath := now.Format(templateDatePath)
 
-	// Generate UUID for uniqueness
 	id := id.GenerateUuid()
 
-	// Extract file extension (including the dot)
 	ext := filepath.Ext(filename)
 	if ext == constants.Empty {
 		ext = defaultExtension
 	}
 
-	// Build the key
 	var keyBuilder strings.Builder
 
 	_, _ = keyBuilder.WriteString(storage.TempPrefix)
 
-	// Add date path
 	_, _ = keyBuilder.WriteString(datePath)
 	_ = keyBuilder.WriteByte(constants.ByteSlash)
 
-	// Add UUID and extension
 	_, _ = keyBuilder.WriteString(id)
 	_, _ = keyBuilder.WriteString(ext)
 
 	return keyBuilder.String()
 }
 
-// GetPresignedUrlParams represents the request parameters for getting presigned URL.
 type GetPresignedUrlParams struct {
 	api.P
 
-	// Key is the unique identifier of the object
-	Key string `json:"key" validate:"required"`
-	// Expires specifies URL validity duration in seconds (default: 3600)
-	Expires int `json:"expires"`
-	// Method specifies the HTTP method (GET for download, PUT for upload)
-	Method string `json:"method"`
+	Key     string `json:"key" validate:"required"`
+	Expires int    `json:"expires"`
+	Method  string `json:"method"`
 }
 
-// GetPresignedUrl generates a presigned URL for temporary access to an object.
 func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) error {
-	// Default values
 	expires := params.Expires
 	if expires <= 0 {
 		expires = 3600 // 1 hour default
@@ -180,7 +147,6 @@ func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) 
 		method = http.MethodGet
 	}
 
-	// Generate presigned URL
 	url, err := r.service.GetPresignedUrl(ctx.Context(), storage.PresignedURLOptions{
 		Key:     params.Key,
 		Expires: time.Duration(expires) * time.Second,
@@ -193,18 +159,14 @@ func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) 
 	return result.Ok(fiber.Map{"url": url}).Response(ctx)
 }
 
-// DeleteTempParams represents the request parameters for deleting a temporary file.
 type DeleteTempParams struct {
 	api.P
 
-	// Key is the unique identifier of the temporary object to delete
 	Key string `json:"key" validate:"required"`
 }
 
-// DeleteTemp deletes a temporary file from storage.
-// Only files with keys starting with "temp/" can be deleted through this endpoint.
+// DeleteTemp restricts deletion to temp/ prefix to prevent accidental removal of permanent files.
 func (r *Resource) DeleteTemp(ctx fiber.Ctx, params DeleteTempParams) error {
-	// Validate that the key is for a temporary file
 	if !strings.HasPrefix(params.Key, storage.TempPrefix) {
 		return result.Err(i18n.T("invalid_temp_key"))
 	}
@@ -218,15 +180,12 @@ func (r *Resource) DeleteTemp(ctx fiber.Ctx, params DeleteTempParams) error {
 	return result.Ok().Response(ctx)
 }
 
-// DeleteParams represents the request parameters for deleting an object.
 type DeleteParams struct {
 	api.P
 
-	// Key is the unique identifier of the object to delete
 	Key string `json:"key" validate:"required"`
 }
 
-// Delete deletes a single object from storage.
 func (r *Resource) Delete(ctx fiber.Ctx, params DeleteParams) error {
 	if err := r.service.DeleteObject(ctx.Context(), storage.DeleteObjectOptions{
 		Key: params.Key,
@@ -237,15 +196,12 @@ func (r *Resource) Delete(ctx fiber.Ctx, params DeleteParams) error {
 	return result.Ok().Response(ctx)
 }
 
-// DeleteManyParams represents the request parameters for batch deleting objects.
 type DeleteManyParams struct {
 	api.P
 
-	// Keys is the list of object identifiers to delete
 	Keys []string `json:"keys" validate:"required,min=1"`
 }
 
-// DeleteMany deletes multiple objects from storage in a batch operation.
 func (r *Resource) DeleteMany(ctx fiber.Ctx, params DeleteManyParams) error {
 	if err := r.service.DeleteObjects(ctx.Context(), storage.DeleteObjectsOptions{
 		Keys: params.Keys,
@@ -256,19 +212,14 @@ func (r *Resource) DeleteMany(ctx fiber.Ctx, params DeleteManyParams) error {
 	return result.Ok().Response(ctx)
 }
 
-// ListParams represents the request parameters for listing objects.
 type ListParams struct {
 	api.P
 
-	// Prefix filters objects by key prefix
-	Prefix string `json:"prefix"`
-	// Recursive determines whether to list objects recursively
-	Recursive bool `json:"recursive"`
-	// MaxKeys limits the maximum number of objects to return
-	MaxKeys int `json:"maxKeys"`
+	Prefix    string `json:"prefix"`
+	Recursive bool   `json:"recursive"`
+	MaxKeys   int    `json:"maxKeys"`
 }
 
-// List lists objects in a bucket with optional filtering.
 func (r *Resource) List(ctx fiber.Ctx, params ListParams) error {
 	objects, err := r.service.ListObjects(ctx.Context(), storage.ListObjectsOptions{
 		Prefix:    params.Prefix,
@@ -282,17 +233,13 @@ func (r *Resource) List(ctx fiber.Ctx, params ListParams) error {
 	return result.Ok(objects).Response(ctx)
 }
 
-// CopyParams represents the request parameters for copying an object.
 type CopyParams struct {
 	api.P
 
-	// SourceKey is the identifier of the source object
 	SourceKey string `json:"sourceKey" validate:"required"`
-	// DestKey is the identifier for the copied object
-	DestKey string `json:"destKey" validate:"required"`
+	DestKey   string `json:"destKey" validate:"required"`
 }
 
-// Copy copies an object from source to destination.
 func (r *Resource) Copy(ctx fiber.Ctx, params CopyParams) error {
 	info, err := r.service.CopyObject(ctx.Context(), storage.CopyObjectOptions{
 		SourceKey: params.SourceKey,
@@ -305,17 +252,13 @@ func (r *Resource) Copy(ctx fiber.Ctx, params CopyParams) error {
 	return result.Ok(info).Response(ctx)
 }
 
-// MoveParams represents the request parameters for moving an object.
 type MoveParams struct {
 	api.P
 
-	// SourceKey is the identifier of the source object
 	SourceKey string `json:"sourceKey" validate:"required"`
-	// DestKey is the identifier for the moved object
-	DestKey string `json:"destKey" validate:"required"`
+	DestKey   string `json:"destKey" validate:"required"`
 }
 
-// Move moves an object from source to destination (implemented as Copy + Delete).
 func (r *Resource) Move(ctx fiber.Ctx, params MoveParams) error {
 	info, err := r.service.MoveObject(ctx.Context(), storage.MoveObjectOptions{
 		CopyObjectOptions: storage.CopyObjectOptions{
@@ -330,15 +273,12 @@ func (r *Resource) Move(ctx fiber.Ctx, params MoveParams) error {
 	return result.Ok(info).Response(ctx)
 }
 
-// StatParams represents the request parameters for getting object metadata.
 type StatParams struct {
 	api.P
 
-	// Key is the unique identifier of the object
 	Key string `json:"key" validate:"required"`
 }
 
-// Stat retrieves metadata information about an object.
 func (r *Resource) Stat(ctx fiber.Ctx, params StatParams) error {
 	info, err := r.service.StatObject(ctx.Context(), storage.StatObjectOptions{
 		Key: params.Key,

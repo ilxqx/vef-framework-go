@@ -129,18 +129,17 @@ func TestMD5Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := Md5Hmac(key, data)
-
-	// MD5 produces 16 bytes = 32 hex chars
+	result, err := Md5Hmac(key, data)
+	assert.NoError(t, err)
 	assert.Len(t, result, 32)
 
-	// Test consistency
-	result2 := Md5Hmac(key, data)
+	result2, err := Md5Hmac(key, data)
+	assert.NoError(t, err)
 	assert.Equal(t, result, result2, "MD5Hmac should produce consistent results")
 
-	// Test different key produces different result
 	differentKey := []byte("different-key")
-	result3 := Md5Hmac(differentKey, data)
+	result3, err := Md5Hmac(differentKey, data)
+	assert.NoError(t, err)
 	assert.NotEqual(t, result, result3, "MD5Hmac with different keys should produce different results")
 }
 
@@ -148,9 +147,8 @@ func TestSHA1Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := Sha1Hmac(key, data)
-
-	// SHA-1 produces 20 bytes = 40 hex chars
+	result, err := Sha1Hmac(key, data)
+	assert.NoError(t, err)
 	assert.Len(t, result, 40)
 }
 
@@ -158,12 +156,10 @@ func TestSHA256Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := Sha256Hmac(key, data)
-
-	// SHA-256 produces 32 bytes = 64 hex chars
+	result, err := Sha256Hmac(key, data)
+	assert.NoError(t, err)
 	assert.Len(t, result, 64)
 
-	// Test with known values
 	testCases := []struct {
 		name     string
 		key      string
@@ -180,7 +176,8 @@ func TestSHA256Hmac(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := Sha256Hmac([]byte(tc.key), []byte(tc.data))
+			result, err := Sha256Hmac([]byte(tc.key), []byte(tc.data))
+			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -190,9 +187,8 @@ func TestSHA512Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := Sha512Hmac(key, data)
-
-	// SHA-512 produces 64 bytes = 128 hex chars
+	result, err := Sha512Hmac(key, data)
+	assert.NoError(t, err)
 	assert.Len(t, result, 128)
 }
 
@@ -200,13 +196,12 @@ func TestSM3Hmac(t *testing.T) {
 	key := []byte("secret-key")
 	data := []byte("test message")
 
-	result := Sm3Hmac(key, data)
-
-	// SM3 produces 32 bytes = 64 hex chars
+	result, err := Sm3Hmac(key, data)
+	assert.NoError(t, err)
 	assert.Len(t, result, 64)
 
-	// Test consistency
-	result2 := Sm3Hmac(key, data)
+	result2, err := Sm3Hmac(key, data)
+	assert.NoError(t, err)
 	assert.Equal(t, result, result2, "SM3Hmac should produce consistent results")
 }
 
@@ -230,17 +225,20 @@ func TestHashFunctions_NilInput(t *testing.T) {
 
 func TestHmacFunctions_EmptyKeyOrData(t *testing.T) {
 	t.Run("SHA256Hmac with empty key", func(t *testing.T) {
-		result := Sha256Hmac([]byte{}, []byte("data"))
+		result, err := Sha256Hmac([]byte{}, []byte("data"))
+		assert.NoError(t, err)
 		assert.Len(t, result, 64)
 	})
 
 	t.Run("SHA256Hmac with empty data", func(t *testing.T) {
-		result := Sha256Hmac([]byte("key"), []byte{})
+		result, err := Sha256Hmac([]byte("key"), []byte{})
+		assert.NoError(t, err)
 		assert.Len(t, result, 64)
 	})
 
 	t.Run("SHA256Hmac with both empty", func(t *testing.T) {
-		result := Sha256Hmac([]byte{}, []byte{})
+		result, err := Sha256Hmac([]byte{}, []byte{})
+		assert.NoError(t, err)
 		assert.Len(t, result, 64)
 	})
 }
@@ -321,7 +319,7 @@ func BenchmarkSHA256Hmac(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			Sha256Hmac(key, data)
+			_, _ = Sha256Hmac(key, data)
 		}
 	})
 }

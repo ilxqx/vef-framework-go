@@ -52,28 +52,28 @@ func TestIndirect(t *testing.T) {
 	}{
 		{
 			name:     "PointerToInt",
-			input:    reflect.TypeOf((*int)(nil)),
-			expected: reflect.TypeOf(int(0)),
+			input:    reflect.TypeFor[*int](),
+			expected: reflect.TypeFor[int](),
 		},
 		{
 			name:     "PointerToString",
-			input:    reflect.TypeOf((*string)(nil)),
-			expected: reflect.TypeOf(""),
+			input:    reflect.TypeFor[*string](),
+			expected: reflect.TypeFor[string](),
 		},
 		{
 			name:     "NonPointerInt",
-			input:    reflect.TypeOf(int(0)),
-			expected: reflect.TypeOf(int(0)),
+			input:    reflect.TypeFor[int](),
+			expected: reflect.TypeFor[int](),
 		},
 		{
 			name:     "NonPointerStruct",
-			input:    reflect.TypeOf(BaseStruct{}),
-			expected: reflect.TypeOf(BaseStruct{}),
+			input:    reflect.TypeFor[BaseStruct](),
+			expected: reflect.TypeFor[BaseStruct](),
 		},
 		{
 			name:     "PointerToStruct",
-			input:    reflect.TypeOf((*BaseStruct)(nil)),
-			expected: reflect.TypeOf(BaseStruct{}),
+			input:    reflect.TypeFor[*BaseStruct](),
+			expected: reflect.TypeFor[BaseStruct](),
 		},
 	}
 
@@ -87,32 +87,32 @@ func TestIndirect(t *testing.T) {
 
 func TestIsSimilarType(t *testing.T) {
 	t.Run("IdenticalTypes", func(t *testing.T) {
-		t1 := reflect.TypeOf(int(0))
-		t2 := reflect.TypeOf(int(0))
+		t1 := reflect.TypeFor[int]()
+		t2 := reflect.TypeFor[int]()
 		assert.True(t, IsSimilarType(t1, t2), "Identical types should be similar")
 	})
 
 	t.Run("DifferentBasicTypes", func(t *testing.T) {
-		t1 := reflect.TypeOf(int(0))
-		t2 := reflect.TypeOf(string(""))
+		t1 := reflect.TypeFor[int]()
+		t2 := reflect.TypeFor[string]()
 		assert.False(t, IsSimilarType(t1, t2), "Different basic types should not be similar")
 	})
 
 	t.Run("GenericTypesWithSameBase", func(t *testing.T) {
-		t1 := reflect.TypeOf(GenericStruct[int]{})
-		t2 := reflect.TypeOf(GenericStruct[string]{})
+		t1 := reflect.TypeFor[GenericStruct[int]]()
+		t2 := reflect.TypeFor[GenericStruct[string]]()
 		assert.True(t, IsSimilarType(t1, t2), "Generic types with same base should be similar")
 	})
 
 	t.Run("DifferentPackagePath", func(t *testing.T) {
-		t1 := reflect.TypeOf(BaseStruct{})
-		t2 := reflect.TypeOf(reflect.Value{})
+		t1 := reflect.TypeFor[BaseStruct]()
+		t2 := reflect.TypeFor[reflect.Value]()
 		assert.False(t, IsSimilarType(t1, t2), "Types from different packages should not be similar")
 	})
 
 	t.Run("NonGenericTypes", func(t *testing.T) {
-		t1 := reflect.TypeOf(BaseStruct{})
-		t2 := reflect.TypeOf(EmbeddedStruct{})
+		t1 := reflect.TypeFor[BaseStruct]()
+		t2 := reflect.TypeFor[EmbeddedStruct]()
 		assert.False(t, IsSimilarType(t1, t2), "Different non-generic types should not be similar")
 	})
 }
@@ -323,7 +323,7 @@ func BenchmarkFindMethod(b *testing.B) {
 }
 
 func BenchmarkIndirect(b *testing.B) {
-	ptrType := reflect.TypeOf((*BaseStruct)(nil))
+	ptrType := reflect.TypeFor[*BaseStruct]()
 
 	b.ResetTimer()
 
@@ -350,58 +350,58 @@ type AnotherStruct struct {
 
 func TestIsTypeCompatible(t *testing.T) {
 	t.Run("ExactTypeMatch", func(t *testing.T) {
-		stringType := reflect.TypeOf("")
+		stringType := reflect.TypeFor[string]()
 		assert.True(t, IsTypeCompatible(stringType, stringType), "Exact type match should be compatible")
 	})
 
 	t.Run("AssignableTypes", func(t *testing.T) {
-		intType := reflect.TypeOf(int(0))
-		int32Type := reflect.TypeOf(int32(0))
+		intType := reflect.TypeFor[int]()
+		int32Type := reflect.TypeFor[int32]()
 
 		assert.False(t, IsTypeCompatible(intType, int32Type), "int is not assignable to int32")
 		assert.True(t, IsTypeCompatible(intType, intType), "Same types should be assignable")
 	})
 
 	t.Run("InterfaceImplementation", func(t *testing.T) {
-		testStructType := reflect.TypeOf(TestStruct{})
-		testInterfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
+		testStructType := reflect.TypeFor[TestStruct]()
+		testInterfaceType := reflect.TypeFor[*TestInterface]().Elem()
 
 		assert.True(t, IsTypeCompatible(testStructType, testInterfaceType), "TestStruct implements TestInterface")
 
-		anotherStructType := reflect.TypeOf(AnotherStruct{})
+		anotherStructType := reflect.TypeFor[AnotherStruct]()
 		assert.False(t, IsTypeCompatible(anotherStructType, testInterfaceType), "AnotherStruct does not implement TestInterface")
 	})
 
 	t.Run("PointerToPointerCompatibility", func(t *testing.T) {
-		stringPtrType := reflect.TypeOf((*string)(nil))
-		stringPtrType2 := reflect.TypeOf((*string)(nil))
-		intPtrType := reflect.TypeOf((*int)(nil))
+		stringPtrType := reflect.TypeFor[*string]()
+		stringPtrType2 := reflect.TypeFor[*string]()
+		intPtrType := reflect.TypeFor[*int]()
 
 		assert.True(t, IsTypeCompatible(stringPtrType, stringPtrType2), "Same pointer types should be compatible")
 		assert.False(t, IsTypeCompatible(stringPtrType, intPtrType), "Different pointer types should not be compatible")
 	})
 
 	t.Run("ValueToPointerCompatibility", func(t *testing.T) {
-		stringType := reflect.TypeOf("")
-		stringPtrType := reflect.TypeOf((*string)(nil))
-		intType := reflect.TypeOf(int(0))
+		stringType := reflect.TypeFor[string]()
+		stringPtrType := reflect.TypeFor[*string]()
+		intType := reflect.TypeFor[int]()
 
 		assert.True(t, IsTypeCompatible(stringType, stringPtrType), "string -> *string should be compatible")
 		assert.False(t, IsTypeCompatible(intType, stringPtrType), "int -> *string should not be compatible")
 	})
 
 	t.Run("PointerToValueCompatibility", func(t *testing.T) {
-		stringType := reflect.TypeOf("")
-		stringPtrType := reflect.TypeOf((*string)(nil))
-		intPtrType := reflect.TypeOf((*int)(nil))
+		stringType := reflect.TypeFor[string]()
+		stringPtrType := reflect.TypeFor[*string]()
+		intPtrType := reflect.TypeFor[*int]()
 
 		assert.True(t, IsTypeCompatible(stringPtrType, stringType), "*string -> string should be compatible")
 		assert.False(t, IsTypeCompatible(intPtrType, stringType), "*int -> string should not be compatible")
 	})
 
 	t.Run("InterfacePointerCompatibility", func(t *testing.T) {
-		testStructPtrType := reflect.TypeOf((*TestStruct)(nil))
-		testInterfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
+		testStructPtrType := reflect.TypeFor[*TestStruct]()
+		testInterfaceType := reflect.TypeFor[*TestInterface]().Elem()
 
 		assert.True(t, IsTypeCompatible(testStructPtrType, testInterfaceType), "*TestStruct implements TestInterface")
 	})
@@ -410,7 +410,7 @@ func TestIsTypeCompatible(t *testing.T) {
 func TestConvertValue(t *testing.T) {
 	t.Run("SameTypesNoConversionNeeded", func(t *testing.T) {
 		original := reflect.ValueOf("hello")
-		result, err := ConvertValue(original, reflect.TypeOf(""))
+		result, err := ConvertValue(original, reflect.TypeFor[string]())
 
 		require.NoError(t, err, "Should not error for same types")
 		assert.Equal(t, "hello", result.String(), "Should return original value")
@@ -419,7 +419,7 @@ func TestConvertValue(t *testing.T) {
 	t.Run("PointerToValueConversion", func(t *testing.T) {
 		str := "test"
 		ptrValue := reflect.ValueOf(&str)
-		stringType := reflect.TypeOf("")
+		stringType := reflect.TypeFor[string]()
 
 		result, err := ConvertValue(ptrValue, stringType)
 
@@ -431,7 +431,7 @@ func TestConvertValue(t *testing.T) {
 		var str *string
 
 		ptrValue := reflect.ValueOf(str)
-		stringType := reflect.TypeOf("")
+		stringType := reflect.TypeFor[string]()
 
 		result, err := ConvertValue(ptrValue, stringType)
 
@@ -441,7 +441,7 @@ func TestConvertValue(t *testing.T) {
 
 	t.Run("ValueToPointerConversion", func(t *testing.T) {
 		original := reflect.ValueOf("hello")
-		stringPtrType := reflect.TypeOf((*string)(nil))
+		stringPtrType := reflect.TypeFor[*string]()
 
 		result, err := ConvertValue(original, stringPtrType)
 
@@ -453,7 +453,7 @@ func TestConvertValue(t *testing.T) {
 	t.Run("PointerToPointerConversion", func(t *testing.T) {
 		str := "test"
 		ptrValue := reflect.ValueOf(&str)
-		stringPtrType := reflect.TypeOf((*string)(nil))
+		stringPtrType := reflect.TypeFor[*string]()
 
 		result, err := ConvertValue(ptrValue, stringPtrType)
 
@@ -466,7 +466,7 @@ func TestConvertValue(t *testing.T) {
 		var str *string
 
 		ptrValue := reflect.ValueOf(str)
-		stringPtrType := reflect.TypeOf((*string)(nil))
+		stringPtrType := reflect.TypeFor[*string]()
 
 		result, err := ConvertValue(ptrValue, stringPtrType)
 
@@ -477,7 +477,7 @@ func TestConvertValue(t *testing.T) {
 	t.Run("InterfaceImplementationConversion", func(t *testing.T) {
 		testStruct := TestStruct{Value: "interface test"}
 		original := reflect.ValueOf(testStruct)
-		interfaceType := reflect.TypeOf((*TestInterface)(nil)).Elem()
+		interfaceType := reflect.TypeFor[*TestInterface]().Elem()
 
 		result, err := ConvertValue(original, interfaceType)
 
@@ -489,7 +489,7 @@ func TestConvertValue(t *testing.T) {
 
 	t.Run("IncompatibleTypeConversion", func(t *testing.T) {
 		intValue := reflect.ValueOf(42)
-		stringType := reflect.TypeOf("")
+		stringType := reflect.TypeFor[string]()
 
 		_, err := ConvertValue(intValue, stringType)
 
@@ -500,7 +500,7 @@ func TestConvertValue(t *testing.T) {
 	t.Run("StructConversion", func(t *testing.T) {
 		testStruct := TestStruct{Value: "test"}
 		original := reflect.ValueOf(testStruct)
-		testStructType := reflect.TypeOf(TestStruct{})
+		testStructType := reflect.TypeFor[TestStruct]()
 
 		result, err := ConvertValue(original, testStructType)
 

@@ -10,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/database"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
 )
 
 // runAllOrmTests executes all Orm test suites on the given database configuration.

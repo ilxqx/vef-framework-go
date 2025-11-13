@@ -6,7 +6,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
-// setup initializes preset validation rules and type functions.
 func setup() {
 	if err := RegisterValidationRules(presetValidationRules...); err != nil {
 		panic(err)

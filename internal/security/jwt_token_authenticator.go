@@ -11,32 +11,24 @@ import (
 )
 
 const (
-	// Token authentication type.
 	AuthTypeToken = "token"
 )
 
-// JwtTokenAuthenticator implements the Authenticator interface for Jwt token authentication.
-// It validates Jwt tokens and extracts principal information from them.
 type JwtTokenAuthenticator struct {
 	jwt *security.Jwt
 }
 
-// NewJwtAuthenticator creates a new Jwt authenticator.
 func NewJwtAuthenticator(jwt *security.Jwt) security.Authenticator {
 	return &JwtTokenAuthenticator{
 		jwt: jwt,
 	}
 }
 
-// Supports checks if this authenticator can handle Jwt authentication.
 func (*JwtTokenAuthenticator) Supports(authType string) bool {
 	return authType == AuthTypeToken
 }
 
-// Authenticate validates the Jwt token and returns the principal.
-// The credentials field should contain the Jwt access token.
 func (ja *JwtTokenAuthenticator) Authenticate(_ context.Context, authentication security.Authentication) (*security.Principal, error) {
-	// Extract the token from credentials
 	token := authentication.Principal
 	if token == constants.Empty {
 		return nil, result.Err(
@@ -45,7 +37,6 @@ func (ja *JwtTokenAuthenticator) Authenticate(_ context.Context, authentication 
 		)
 	}
 
-	// Parse the Jwt access token
 	claimsAccessor, err := ja.jwt.Parse(token)
 	if err != nil {
 		return nil, err
@@ -58,7 +49,6 @@ func (ja *JwtTokenAuthenticator) Authenticate(_ context.Context, authentication 
 		)
 	}
 
-	// Subject format: id@name, where '@' is defined by constants.At
 	subjectParts := strings.SplitN(claimsAccessor.Subject(), constants.At, 2)
 	principal := security.NewUser(subjectParts[0], subjectParts[1], claimsAccessor.Roles()...)
 	principal.AttemptUnmarshalDetails(claimsAccessor.Details())

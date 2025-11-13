@@ -17,8 +17,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// buildRateLimiterMiddleware creates a rate limiting middleware.
-// It uses a sliding window algorithm and generates keys based on resource, version, action, IP, and user ID.
+// buildRateLimiterMiddleware uses a sliding window algorithm and generates keys based on resource, version, action, IP, and user ID.
 func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
 	handler := limiter.New(limiter.Config{
 		LimiterMiddleware: limiter.SlidingWindow{},

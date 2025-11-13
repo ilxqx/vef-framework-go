@@ -16,8 +16,7 @@ var baseModelType = reflect.TypeFor[schema.BaseModel]()
 
 // parseStruct parses the tabular columns from a struct using visitor pattern.
 func parseStruct(t reflect.Type) []*Column {
-	t = reflectx.Indirect(t)
-	if t.Kind() != reflect.Struct {
+	if t = reflectx.Indirect(t); t.Kind() != reflect.Struct {
 		logger.Warnf("Invalid value type, expected struct, got %s", t.Name())
 
 		return nil
@@ -34,33 +33,25 @@ func parseStruct(t reflect.Type) []*Column {
 
 			tag, hasTag := field.Tag.Lookup(TagTabular)
 
-			// If has tag, parse it
 			if hasTag {
-				// Skip ignored fields
 				if tag == IgnoreField {
 					return reflectx.SkipChildren
 				}
 
-				// Skip dive fields - visitor will handle recursion automatically
 				if tag == AttrDive {
 					return reflectx.Continue
 				}
 
-				// Parse tag attributes
-				attrs := strhelpers.ParseTagAttrs(tag)
+				attrs := strhelpers.ParseTag(tag)
 
-				// Build column from attributes
 				column := buildColumn(field, attrs, columnOrder)
 				columns = append(columns, column)
 				columnOrder++
 			} else {
-				// No tag found
-				// For anonymous (embedded) fields without tags, skip them to avoid exporting the struct itself
 				if field.Anonymous {
 					return reflectx.SkipChildren
 				}
 
-				// For regular fields without tags: use default configuration
 				column := buildColumn(field, make(map[string]string), columnOrder)
 				columns = append(columns, column)
 				columnOrder++
@@ -85,8 +76,8 @@ func buildColumn(field reflect.StructField, attrs map[string]string, autoOrder i
 	// Get column name - support default value (name=用户ID or just 用户ID)
 	name := attrs[AttrName]
 	if name == constants.Empty {
-		// Use default value from ParseTagAttrs (when tag is just "用户ID" without key)
-		name = lo.CoalesceOrEmpty(attrs[strhelpers.TagAttrDefaultKey], field.Name)
+		// Use default value from ParseTag (when tag is just "用户ID" without key)
+		name = lo.CoalesceOrEmpty(attrs[strhelpers.DefaultKey], field.Name)
 	}
 
 	// Parse width

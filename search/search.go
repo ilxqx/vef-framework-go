@@ -20,26 +20,18 @@ var (
 	rangeType = reflect.TypeFor[monad.Range[int]]()
 )
 
-// Search contains multiple conditions.
 type Search struct {
 	conditions []Condition
 }
 
-// Condition is a condition item.
 type Condition struct {
-	// Index is the field index in the struct
-	Index []int
-	// Alias is the table alias for the condition
-	Alias string
-	// Columns are the column names for the condition
-	Columns []string
-	// Operator is the comparison operator
+	Index    []int
+	Alias    string
+	Columns  []string
 	Operator Operator
-	// Params contains additional parameters for the condition
-	Params map[string]string
+	Params   map[string]string
 }
 
-// Apply applies the search to the condition builder.
 func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...string) {
 	value := reflect.Indirect(reflect.ValueOf(target))
 	if value.Kind() != reflect.Struct {
@@ -145,7 +137,6 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 	}
 }
 
-// getColumnAlias gets the alias of the column.
 func getColumnAlias(alias string, defaultAlias ...string) string {
 	if alias == constants.Empty {
 		if len(defaultAlias) > 0 {
@@ -158,9 +149,7 @@ func getColumnAlias(alias string, defaultAlias ...string) string {
 	return alias
 }
 
-// applyCondition applies the condition to the query.
 func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, value any) {
-	// Handle different conditions based on the operator.
 	switch c.Operator {
 	case Equals, NotEquals, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual:
 		applyComparisonCondition(cb, columns[0], c.Operator, value)
@@ -177,7 +166,6 @@ func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, valu
 	}
 }
 
-// applyComparisonCondition applies the comparison operator to the condition builder.
 func applyComparisonCondition(cb orm.ConditionBuilder, column string, operator Operator, value any) {
 	switch operator {
 	case Equals:
@@ -195,7 +183,6 @@ func applyComparisonCondition(cb orm.ConditionBuilder, column string, operator O
 	}
 }
 
-// applyBetweenCondition applies the between operator to the condition builder.
 func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Operator, value any, conditionParams map[string]string) {
 	start, end, ok := getRangeValue(value, conditionParams)
 	if !ok {
@@ -210,11 +197,9 @@ func applyBetweenCondition(cb orm.ConditionBuilder, column string, operator Oper
 	}
 }
 
-// applyInCondition applies the in operator to the condition builder.
 func applyInCondition(cb orm.ConditionBuilder, column string, fieldValue any, operator Operator, conditionParams map[string]string) {
 	var values []any
 
-	// Handle string types first
 	switch v := fieldValue.(type) {
 	case string:
 		values = parseStringInCondition(v, conditionParams)
@@ -242,7 +227,6 @@ func applyInCondition(cb orm.ConditionBuilder, column string, fieldValue any, op
 	}
 }
 
-// parseStringInCondition parses the string in condition.
 func parseStringInCondition(slice string, conditionParams map[string]string) []any {
 	var values []any
 	if slice == constants.Empty {
@@ -262,8 +246,7 @@ func parseStringInCondition(slice string, conditionParams map[string]string) []a
 	return values
 }
 
-// applyNullCondition applies the null operator to the condition builder.
-// It checks if the value is a boolean and true, then applies IsNull or IsNotNull condition.
+// applyNullCondition only applies condition when value is boolean true.
 func applyNullCondition(cb orm.ConditionBuilder, column string, fieldValue any, operator Operator) {
 	var shouldApply bool
 	switch value := fieldValue.(type) {
@@ -285,7 +268,6 @@ func applyNullCondition(cb orm.ConditionBuilder, column string, fieldValue any, 
 	}
 }
 
-// applyLikeCondition applies the like operator to the condition builder.
 func applyLikeCondition(cb orm.ConditionBuilder, columns []string, fieldValue any, operator Operator) {
 	var content string
 	switch value := fieldValue.(type) {
@@ -308,7 +290,7 @@ func applyLikeCondition(cb orm.ConditionBuilder, columns []string, fieldValue an
 	applySingleColumnLikeCondition(cb, columns[0], content, operator)
 }
 
-// applyMultiColumnLikeCondition applies like condition for multiple columns with OR logic.
+// applyMultiColumnLikeCondition uses OR logic across multiple columns.
 func applyMultiColumnLikeCondition(cb orm.ConditionBuilder, columns []string, content string, operator Operator) {
 	cb.Group(func(cb orm.ConditionBuilder) {
 		for _, col := range columns {
@@ -317,12 +299,10 @@ func applyMultiColumnLikeCondition(cb orm.ConditionBuilder, columns []string, co
 	})
 }
 
-// applySingleColumnLikeCondition applies like condition for a single column.
 func applySingleColumnLikeCondition(cb orm.ConditionBuilder, column, content string, operator Operator) {
 	applyLikeOperation(cb, column, content, operator, false)
 }
 
-// applyLikeOperation applies the specific like operation on a column.
 func applyLikeOperation(cb orm.ConditionBuilder, column, content string, operator Operator, useOr bool) {
 	switch operator {
 	case Contains:

@@ -15,30 +15,25 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// provider implements databaseProvider for MySQL.
 type provider struct {
 	dbType constants.DbType
 }
 
-// NewProvider creates a new MySQL provider.
 func NewProvider() *provider {
 	return &provider{
 		dbType: constants.DbMySQL,
 	}
 }
 
-// Type returns the database type.
 func (p *provider) Type() constants.DbType {
 	return p.dbType
 }
 
-// Connect establishes a MySQL database connection.
 func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(config); err != nil {
 		return nil, nil, err
 	}
 
-	// Build MySQL DSN (Data Source Name)
 	dsn := p.buildDSN(config)
 
 	db, err := sql.Open("mysql", dsn)
@@ -49,9 +44,7 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 	return db, mysqldialect.New(), nil
 }
 
-// ValidateConfig validates MySQL configuration.
 func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
-	// MySQL requires at least database name
 	if config.Database == constants.Empty {
 		return ErrMySQLDatabaseRequired
 	}
@@ -59,12 +52,10 @@ func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
 	return nil
 }
 
-// QueryVersion queries the MySQL version.
 func (p *provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
-// buildDSN constructs MySQL Data Source Name.
 func (p *provider) buildDSN(config *config.DatasourceConfig) string {
 	host := lo.Ternary(config.Host != constants.Empty, config.Host, "127.0.0.1")
 	port := lo.Ternary(config.Port != 0, config.Port, uint16(3306))
@@ -72,10 +63,8 @@ func (p *provider) buildDSN(config *config.DatasourceConfig) string {
 	password := config.Password
 	database := config.Database
 
-	// Build basic DSN: user:password@tcp(host:port)/database
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, database)
 
-	// Add common MySQL parameters for better compatibility
 	dsn += "?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"
 
 	return dsn

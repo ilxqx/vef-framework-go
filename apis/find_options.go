@@ -45,20 +45,17 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 			query   = db.NewSelect().Model((*TModel)(nil))
 		)
 
-		// Merge column mapping with defaults and validate
 		mergeOptionColumnMapping(&config.DataOptionColumnMapping, a.defaultColumnMapping)
 
 		if err := validateOptionColumns(table, &config.DataOptionColumnMapping); err != nil {
 			return err
 		}
 
-		// Parse and validate meta columns
 		metaColumns := parseMetaColumns(config.MetaColumns)
 		if err := validateMetaColumns(table, metaColumns); err != nil {
 			return err
 		}
 
-		// Select only required columns
 		if config.ValueColumn == ValueColumn {
 			query.Select(config.ValueColumn)
 		} else {
@@ -79,7 +76,6 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 			}
 		}
 
-		// Build and select meta column as JSON object
 		query.ApplyIf(len(metaColumns) > 0, func(sq orm.SelectQuery) {
 			sq.SelectExpr(
 				func(eb orm.ExprBuilder) any {
@@ -93,7 +89,6 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 			return err
 		}
 
-		// Execute query with limit
 		if err := query.Limit(maxOptionsLimit).
 			Scan(ctx.Context(), &options); err != nil {
 			return err

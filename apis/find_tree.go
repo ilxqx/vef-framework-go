@@ -110,7 +110,6 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 				// Base query - the starting point of the tree traversal
 				baseQuery := cteQuery.Model((*TModel)(nil)).SelectModelColumns()
 
-				// Apply QueryBase and QueryAll options (including search conditions and data permissions)
 				if err := a.ConfigureQuery(baseQuery, search, ctx, QueryBase); err != nil {
 					// Store error for later return
 					SetQueryError(ctx, err)
@@ -122,7 +121,6 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 				cteQuery.UnionAll(func(recursiveQuery orm.SelectQuery) {
 					recursiveQuery.Model((*TModel)(nil)).SelectModelColumns()
 
-					// Apply QueryRecursive and QueryAll options
 					if err := a.ConfigureQuery(recursiveQuery, search, ctx, QueryRecursive); err != nil {
 						SetQueryError(ctx, err)
 
@@ -142,12 +140,10 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 			Distinct().
 			Table("tmp_tree")
 
-		// Check for errors during query building
 		if queryErr := QueryError(ctx); queryErr != nil {
 			return queryErr
 		}
 
-		// Apply QueryRoot and QueryAll options to the outer query (sorting, etc.)
 		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
 			return err
 		}
@@ -157,7 +153,6 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 			return err
 		}
 
-		// Transform models if there are any results
 		if len(flatModels) > 0 {
 			for i := range flatModels {
 				if err := transformer.Struct(ctx.Context(), &flatModels[i]); err != nil {

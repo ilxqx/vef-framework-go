@@ -5,14 +5,11 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// buildContextMiddleware creates middleware that sets up contextual database and logger.
-// It injects the current user's ID into the database context and creates a named logger.
-func buildContextMiddleware(db orm.Db, transformer mold.Transformer) fiber.Handler {
+func buildContextMiddleware(db orm.Db) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		principal := contextx.Principal(ctx)
 		if principal == nil {
@@ -38,11 +35,6 @@ func buildContextMiddleware(db orm.Db, transformer mold.Transformer) fiber.Handl
 				logger.Named(request.Resource+constants.Colon+request.Action+constants.At+request.Version).
 					Named(string(principal.Type)+constants.Colon+principal.Id+constants.At+principal.Name),
 			),
-		)
-
-		contextx.SetTransformer(ctx, transformer)
-		ctx.SetContext(
-			contextx.SetTransformer(ctx.Context(), transformer),
 		)
 
 		return ctx.Next()

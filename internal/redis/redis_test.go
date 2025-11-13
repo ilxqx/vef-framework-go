@@ -9,10 +9,9 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
 )
 
-// RedisTestSuite tests Redis client creation, connection, and health checks using Testcontainers.
 type RedisTestSuite struct {
 	suite.Suite
 
@@ -31,7 +30,6 @@ func (suite *RedisTestSuite) TearDownSuite() {
 	}
 }
 
-// TestNewClient tests Redis client creation with various configurations.
 func (suite *RedisTestSuite) TestNewClient() {
 	suite.T().Log("Testing Redis client creation")
 
@@ -93,7 +91,6 @@ func (suite *RedisTestSuite) TestNewClient() {
 	})
 }
 
-// TestRedisConnection tests actual Redis connection and operations using Testcontainers.
 func (suite *RedisTestSuite) TestRedisConnection() {
 	suite.T().Log("Testing Redis connection and operations")
 
@@ -145,7 +142,6 @@ func (suite *RedisTestSuite) TestRedisConnection() {
 	})
 }
 
-// TestHealthCheck tests Redis health check functionality.
 func (suite *RedisTestSuite) TestHealthCheck() {
 	suite.T().Log("Testing Redis health check")
 
@@ -185,7 +181,6 @@ func (suite *RedisTestSuite) TestHealthCheck() {
 	})
 }
 
-// TestBuildRedisAddr tests the Redis address building function.
 func TestBuildRedisAddr(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -234,7 +229,6 @@ func TestBuildRedisAddr(t *testing.T) {
 	}
 }
 
-// TestGetPoolSize tests the pool size calculation.
 func TestGetPoolSize(t *testing.T) {
 	poolSize := getPoolSize()
 
@@ -244,7 +238,6 @@ func TestGetPoolSize(t *testing.T) {
 	t.Logf("Calculated pool size: %d", poolSize)
 }
 
-// TestGetConnectionConfig tests the connection configuration.
 func TestGetConnectionConfig(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -274,7 +267,6 @@ func TestGetConnectionConfig(t *testing.T) {
 	}
 }
 
-// TestRedisSuite runs the test suite.
 func TestRedisSuite(t *testing.T) {
 	suite.Run(t, new(RedisTestSuite))
 }

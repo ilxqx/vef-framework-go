@@ -19,7 +19,6 @@ func NewApiBuilder[T any](self T, version ...string) ApiBuilder[T] {
 	}
 }
 
-// NewCreateApi creates a new CreateApi instance.
 func NewCreateApi[TModel, TParams any](version ...string) CreateApi[TModel, TParams] {
 	api := new(createApi[TModel, TParams])
 	api.ApiBuilder = NewApiBuilder[CreateApi[TModel, TParams]](api, version...)
@@ -27,7 +26,6 @@ func NewCreateApi[TModel, TParams any](version ...string) CreateApi[TModel, TPar
 	return api.Action(ActionCreate)
 }
 
-// NewUpdateApi creates a new UpdateApi instance.
 func NewUpdateApi[TModel, TParams any](version ...string) UpdateApi[TModel, TParams] {
 	api := new(updateApi[TModel, TParams])
 	api.ApiBuilder = NewApiBuilder[UpdateApi[TModel, TParams]](api, version...)
@@ -35,7 +33,6 @@ func NewUpdateApi[TModel, TParams any](version ...string) UpdateApi[TModel, TPar
 	return api.Action(ActionUpdate)
 }
 
-// NewDeleteApi creates a new DeleteApi instance.
 func NewDeleteApi[TModel any](version ...string) DeleteApi[TModel] {
 	api := new(deleteApi[TModel])
 	api.ApiBuilder = NewApiBuilder[DeleteApi[TModel]](api, version...)
@@ -164,7 +161,6 @@ func NewExportApi[TModel, TSearch any](version ...string) ExportApi[TModel, TSea
 	return api.Action(ActionExport)
 }
 
-// NewImportApi creates a new ImportApi instance.
 func NewImportApi[TModel any](version ...string) ImportApi[TModel] {
 	api := new(importApi[TModel])
 	api.ApiBuilder = NewApiBuilder[ImportApi[TModel]](api, version...)

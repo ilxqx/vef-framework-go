@@ -7,14 +7,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// Database error types.
 var (
 	ErrUnsupportedDBType  = errors.New("unsupported database type")
 	errPingFailed         = errors.New("database ping failed")
 	errVersionQueryFailed = errors.New("database version query failed")
 )
 
-// DatabaseError represents a database-specific error with additional context.
 type DatabaseError struct {
 	Type    constants.DbType
 	Op      string
@@ -34,7 +32,6 @@ func (e *DatabaseError) Unwrap() error {
 	return e.Err
 }
 
-// newDatabaseError creates a new DatabaseError.
 func newDatabaseError(dbType constants.DbType, operation string, err error, context map[string]any) *DatabaseError {
 	return &DatabaseError{
 		Type:    dbType,
@@ -44,7 +41,6 @@ func newDatabaseError(dbType constants.DbType, operation string, err error, cont
 	}
 }
 
-// Helper functions for common error scenarios.
 func wrapPingError(dbType constants.DbType, err error) error {
 	return newDatabaseError(dbType, "ping", fmt.Errorf("%w: %w", errPingFailed, err), nil)
 }

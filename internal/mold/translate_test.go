@@ -11,7 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
+	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/null"
 )
@@ -63,7 +63,7 @@ func (suite *TranslateTransformerTestSuite) SetupSuite() {
 
 	suite.ctx = context.Background()
 
-	suite.app, suite.stop = appTest.NewTestApp(
+	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(&config.DatasourceConfig{
 			Type: constants.DbSQLite,
@@ -370,7 +370,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithResolverError() {
 
 		var transformer mold.Transformer
 
-		_, stop := appTest.NewTestApp(
+		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
 				Type: constants.DbSQLite,
@@ -410,7 +410,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithMissingResolver() {
 
 		var transformer mold.Transformer
 
-		_, stop := appTest.NewTestApp(
+		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
 				Type: constants.DbSQLite,

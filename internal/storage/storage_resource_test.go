@@ -21,10 +21,10 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
+	"github.com/ilxqx/vef-framework-go/internal/apptest"
+	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
 	"github.com/ilxqx/vef-framework-go/result"
-	storagePkg "github.com/ilxqx/vef-framework-go/storage"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 // StorageResourceTestSuite tests the storage API resource functionality.
@@ -36,7 +36,7 @@ type StorageResourceTestSuite struct {
 	app            *app.App
 	stop           func()
 	minioContainer *testhelpers.MinIOContainer
-	service        storagePkg.Service
+	service        storage.Service
 
 	testBucketName  string
 	testObjectKey   string
@@ -59,13 +59,13 @@ func (suite *StorageResourceTestSuite) SetupSuite() {
 	suite.setupTestApp()
 
 	reader := bytes.NewReader(suite.testObjectData)
-	_, err := suite.service.PutObject(suite.ctx, storagePkg.PutObjectOptions{
+	_, err := suite.service.PutObject(suite.ctx, storage.PutObjectOptions{
 		Key:         suite.testObjectKey,
 		Reader:      reader,
 		Size:        int64(len(suite.testObjectData)),
 		ContentType: suite.testContentType,
 		Metadata: map[string]string{
-			storagePkg.MetadataKeyOriginalFilename: "test.txt",
+			storage.MetadataKeyOriginalFilename: "test.txt",
 		},
 	})
 	suite.Require().NoError(err, "Should upload test object for read operations")
@@ -92,7 +92,7 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 	// Create MinIO config with bucket
 	minioConfig := *suite.minioContainer.Config
 
-	suite.app, suite.stop = appTest.NewTestApp(
+	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		// Replace storage config with test values
 		fx.Replace(
@@ -203,7 +203,7 @@ func (suite *StorageResourceTestSuite) TestUpload() {
 		suite.GreaterOrEqual(len(parts), 4, "Key should have date-based path structure")
 		suite.True(strings.HasSuffix(key, ".txt"), "Key should end with .txt")
 
-		reader, err := suite.service.GetObject(suite.ctx, storagePkg.GetObjectOptions{
+		reader, err := suite.service.GetObject(suite.ctx, storage.GetObjectOptions{
 			Key: key,
 		})
 		suite.Require().NoError(err, "Should retrieve uploaded file")
@@ -214,12 +214,12 @@ func (suite *StorageResourceTestSuite) TestUpload() {
 		suite.Require().NoError(err, "Should read file content")
 		suite.Equal(uploadData, content, "File content should match uploaded data")
 
-		info, err := suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
+		info, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
 			Key: key,
 		})
 		suite.Require().NoError(err, "Should get file metadata")
 		suite.NotNil(info.Metadata, "Metadata should not be nil")
-		suite.Equal("test.txt", info.Metadata[storagePkg.MetadataKeyOriginalFilename], "Original filename should be preserved in metadata")
+		suite.Equal("test.txt", info.Metadata[storage.MetadataKeyOriginalFilename], "Original filename should be preserved in metadata")
 	})
 
 	suite.Run("MissingFile", func() {
@@ -414,7 +414,7 @@ func (suite *StorageResourceTestSuite) TestStatObject() {
 		suite.NotZero(data["size"], "Size should not be zero")
 		suite.Equal(suite.testContentType, data["contentType"], "Content type should match")
 		suite.NotZero(data["lastModified"], "Last modified should not be zero")
-		suite.Equal("test.txt", suite.readDataAsMap(data["metadata"])[storagePkg.MetadataKeyOriginalFilename], "Original filename should be in metadata")
+		suite.Equal("test.txt", suite.readDataAsMap(data["metadata"])[storage.MetadataKeyOriginalFilename], "Original filename should be in metadata")
 	})
 
 	suite.Run("NotFound", func() {
@@ -449,7 +449,7 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 
 		for key, content := range objects {
 			reader := bytes.NewReader(content)
-			_, err := suite.service.PutObject(suite.ctx, storagePkg.PutObjectOptions{
+			_, err := suite.service.PutObject(suite.ctx, storage.PutObjectOptions{
 				Key:         key,
 				Reader:      reader,
 				Size:        int64(len(content)),
@@ -488,7 +488,7 @@ func (suite *StorageResourceTestSuite) TestListObjects() {
 
 		for key, content := range objects {
 			reader := bytes.NewReader(content)
-			_, err := suite.service.PutObject(suite.ctx, storagePkg.PutObjectOptions{
+			_, err := suite.service.PutObject(suite.ctx, storage.PutObjectOptions{
 				Key:         key,
 				Reader:      reader,
 				Size:        int64(len(content)),
@@ -572,7 +572,7 @@ func (suite *StorageResourceTestSuite) TestUploadWithMetadata() {
 	data := suite.readDataAsMap(body.Data)
 	uploadKey := data["key"].(string)
 
-	info, err := suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
+	info, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
 		Key: uploadKey,
 	})
 	suite.Require().NoError(err, "Should get object metadata")
@@ -580,7 +580,7 @@ func (suite *StorageResourceTestSuite) TestUploadWithMetadata() {
 
 	suite.Equal("test-suite", info.Metadata["Author"], "Author metadata should match")
 	suite.Equal("1.0", info.Metadata["Version"], "Version metadata should match")
-	suite.Equal("test-metadata.txt", info.Metadata[storagePkg.MetadataKeyOriginalFilename], "Original filename should be preserved")
+	suite.Equal("test-metadata.txt", info.Metadata[storage.MetadataKeyOriginalFilename], "Original filename should be preserved")
 }
 
 // TestUploadWithContentType tests uploading file with custom content type.
@@ -606,7 +606,7 @@ func (suite *StorageResourceTestSuite) TestUploadWithContentType() {
 	data := suite.readDataAsMap(body.Data)
 	uploadKey := data["key"].(string)
 
-	info, err := suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
+	info, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
 		Key: uploadKey,
 	})
 	suite.Require().NoError(err, "Should get object metadata")
@@ -637,7 +637,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 		suite.True(strings.HasPrefix(tempKey, "temp/"), "Uploaded key should have temp/ prefix")
 		suite.T().Logf("Uploaded temp file: %s", tempKey)
 
-		_, err := suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
+		_, err := suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
 			Key: tempKey,
 		})
 		suite.Require().NoError(err, "Uploaded file should exist")
@@ -660,7 +660,7 @@ func (suite *StorageResourceTestSuite) TestDeleteTemp() {
 		suite.Equal(i18n.T(result.OkMessage), deleteBody.Message, "Should return success message")
 		suite.T().Logf("Deleted temp file: %s", tempKey)
 
-		_, err = suite.service.StatObject(suite.ctx, storagePkg.StatObjectOptions{
+		_, err = suite.service.StatObject(suite.ctx, storage.StatObjectOptions{
 			Key: tempKey,
 		})
 		suite.Error(err, "File should not exist after deletion")

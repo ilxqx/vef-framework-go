@@ -17,8 +17,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// simplifyUserAgent extracts key information from User-Agent string.
-// Returns a simplified string like "Chrome/Mac", "Safari/iOS", "Android", etc.
+// simplifyUserAgent reduces verbose UA strings to concise "Client/OS" format for log readability.
 func simplifyUserAgent(ua string) string {
 	if ua == constants.Empty {
 		return "Unknown"
@@ -26,7 +25,6 @@ func simplifyUserAgent(ua string) string {
 
 	ua = strings.ToLower(ua)
 
-	// Detect OS
 	var os string
 	switch {
 	case strings.Contains(ua, "android"):
@@ -43,7 +41,6 @@ func simplifyUserAgent(ua string) string {
 		os = "Unknown"
 	}
 
-	// Detect Browser/Client
 	var client string
 	switch {
 	case strings.Contains(ua, "micromessenger"):
@@ -70,7 +67,6 @@ func simplifyUserAgent(ua string) string {
 		client = constants.Empty
 	}
 
-	// Format output
 	if client != constants.Empty && os != "Unknown" {
 		return client + "/" + os
 	} else if client != constants.Empty {
@@ -80,9 +76,7 @@ func simplifyUserAgent(ua string) string {
 	return os
 }
 
-// isSpaStaticRequest checks if the request is for SPA static resources.
 func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SpaConfig) bool {
-	// Only check GET requests
 	if ctx.Method() != fiber.MethodGet {
 		return false
 	}
@@ -103,11 +97,10 @@ func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SpaConfig) bool 
 	return false
 }
 
-// NewRequestRecordMiddleware returns a middleware that records request metrics.
+// NewRequestRecordMiddleware skips SPA static assets to reduce log noise while capturing API traffic.
 func NewRequestRecordMiddleware(spaConfigs []*middleware.SpaConfig) app.Middleware {
 	handler := loggerMiddleware.New(loggerMiddleware.Config{
 		Next: func(ctx fiber.Ctx) bool {
-			// Skip logging for SPA static resources
 			return isSpaStaticRequest(ctx, spaConfigs)
 		},
 		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, config loggerMiddleware.Config) error {
@@ -115,7 +108,6 @@ func NewRequestRecordMiddleware(spaConfigs []*middleware.SpaConfig) app.Middlewa
 			ip, latency, status := webhelpers.GetIp(ctx), data.Stop.Sub(data.Start), ctx.Response().StatusCode()
 			ua := simplifyUserAgent(ctx.Get(fiber.HeaderUserAgent))
 
-			// Format latency: use ms if >= 1ms, otherwise use μs
 			var latencyStr string
 			if ms := latency.Milliseconds(); ms > 0 {
 				latencyStr = cast.ToString(ms) + "ms"

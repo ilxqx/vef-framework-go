@@ -35,7 +35,6 @@ func init() {
 	rangeEndFieldIndex = field.Index
 }
 
-// getRangeValue gets the start and end values of the value.
 func getRangeValue(fieldValue any, conditionParams map[string]string) (any, any, bool) {
 	value := reflect.Indirect(reflect.ValueOf(fieldValue))
 	valueType := value.Type()
@@ -52,9 +51,7 @@ func getRangeValue(fieldValue any, conditionParams map[string]string) (any, any,
 	return nil, nil, false
 }
 
-// parseStringRange parses the string range.
 func parseStringRange(value string, conditionParams map[string]string) (any, any, bool) {
-	// Skip empty strings silently
 	if value == constants.Empty {
 		return nil, nil, false
 	}
@@ -68,7 +65,6 @@ func parseStringRange(value string, conditionParams map[string]string) (any, any
 		return nil, nil, false
 	}
 
-	// Map type to corresponding parser function
 	parserMap := map[string]func([]string) (any, any, bool){
 		constants.TypeInt:      parseIntRange,
 		constants.TypeDecimal:  parseDecimalRange,
@@ -84,9 +80,7 @@ func parseStringRange(value string, conditionParams map[string]string) (any, any
 	return nil, nil, false
 }
 
-// parseSliceRange parses slice range values.
 func parseSliceRange(value reflect.Value) (any, any, bool) {
-	// Skip empty or nil slices silently
 	if value.Len() == 0 {
 		return nil, nil, false
 	}
@@ -100,7 +94,6 @@ func parseSliceRange(value reflect.Value) (any, any, bool) {
 	return value.Index(0).Interface(), value.Index(1).Interface(), true
 }
 
-// parseIntRange parses integer range values.
 func parseIntRange(values []string) (any, any, bool) {
 	start, err := cast.ToIntE(values[0])
 	if err != nil {
@@ -119,7 +112,6 @@ func parseIntRange(values []string) (any, any, bool) {
 	return start, end, true
 }
 
-// parseDecimalRange parses decimal range values.
 func parseDecimalRange(values []string) (any, any, bool) {
 	start, err := decimal.NewFromString(values[0])
 	if err != nil {
@@ -138,7 +130,6 @@ func parseDecimalRange(values []string) (any, any, bool) {
 	return start, end, true
 }
 
-// parseDateRange parses date range values.
 func parseDateRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.DateOnly, values[0], time.Local)
 	if err != nil {
@@ -157,7 +148,6 @@ func parseDateRange(values []string) (any, any, bool) {
 	return start, end, true
 }
 
-// parseTimeRange parses time range values.
 func parseTimeRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.TimeOnly, values[0], time.Local)
 	if err != nil {
@@ -176,7 +166,6 @@ func parseTimeRange(values []string) (any, any, bool) {
 	return start, end, true
 }
 
-// parseDateTimeRange parses datetime range values.
 func parseDateTimeRange(values []string) (any, any, bool) {
 	start, err := time.ParseInLocation(time.DateTime, values[0], time.Local)
 	if err != nil {

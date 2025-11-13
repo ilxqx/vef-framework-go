@@ -1,14 +1,14 @@
 package cron
 
 import (
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	ilog "github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/log"
 )
 
 // cronLogger implements gocron.Logger interface to integrate with the framework's logging system.
 // It adapts the framework's logger to the gocron logger interface.
 type cronLogger struct {
-	logger logPkg.Logger
+	logger log.Logger
 }
 
 func (l *cronLogger) Debug(msg string, args ...any) {
@@ -27,9 +27,8 @@ func (l *cronLogger) Warn(msg string, args ...any) {
 	l.logger.Warnf(msg, args...)
 }
 
-// newCronLogger creates a new CronLogger that implements gocron.Logger interface.
 func newCronLogger() *cronLogger {
 	return &cronLogger{
-		logger: log.Named("cron"),
+		logger: ilog.Named("cron"),
 	}
 }

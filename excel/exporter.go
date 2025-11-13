@@ -11,7 +11,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/tabular"
 )
 
-// exporter is the excel implementation of Exporter.
 type exporter struct {
 	schema     *tabular.Schema
 	formatters map[string]tabular.Formatter
@@ -19,7 +18,6 @@ type exporter struct {
 	typ        reflect.Type
 }
 
-// newExporter creates a new exporter with the specified type.
 func newExporter(typ reflect.Type, opts ...ExportOption) *exporter {
 	options := exportOptions{
 		sheetName: "Sheet1",
@@ -36,14 +34,11 @@ func newExporter(typ reflect.Type, opts ...ExportOption) *exporter {
 	}
 }
 
-// RegisterFormatter registers a custom formatter with the given name.
 func (e *exporter) RegisterFormatter(name string, formatter tabular.Formatter) {
 	e.formatters[name] = formatter
 }
 
-// ExportToFile exports data to an Excel file.
 func (e *exporter) ExportToFile(data any, filename string) error {
-	// Create Excel file
 	f, err := e.doExport(data)
 	if err != nil {
 		return err
@@ -55,7 +50,6 @@ func (e *exporter) ExportToFile(data any, filename string) error {
 		}
 	}()
 
-	// Save file
 	if err := f.SaveAs(filename); err != nil {
 		return fmt.Errorf("save file %s: %w", filename, err)
 	}
@@ -63,7 +57,6 @@ func (e *exporter) ExportToFile(data any, filename string) error {
 	return nil
 }
 
-// Export exports data to a bytes.Buffer.
 func (e *exporter) Export(data any) (*bytes.Buffer, error) {
 	f, err := e.doExport(data)
 	if err != nil {
@@ -84,12 +77,9 @@ func (e *exporter) Export(data any) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
-// doExport exports data to an excelize.File.
 func (e *exporter) doExport(data any) (*excelize.File, error) {
-	// Create Excel file
 	f := excelize.NewFile()
 
-	// Create or use existing sheet
 	sheetIndex, err := f.GetSheetIndex(e.options.sheetName)
 	if err != nil {
 		return nil, fmt.Errorf("get sheet index: %w", err)
@@ -102,40 +92,33 @@ func (e *exporter) doExport(data any) (*excelize.File, error) {
 		}
 	}
 
-	// Write header row
 	if err := e.writeHeader(f, e.options.sheetName); err != nil {
 		return nil, fmt.Errorf("write header: %w", err)
 	}
 
-	// Write data rows
 	if err := e.writeData(f, e.options.sheetName, data); err != nil {
 		return nil, fmt.Errorf("write data: %w", err)
 	}
 
-	// Set active sheet
 	f.SetActiveSheet(sheetIndex)
 
 	return f, nil
 }
 
-// writeHeader writes the header row to the Excel sheet.
 func (e *exporter) writeHeader(f *excelize.File, sheetName string) error {
 	columns := e.schema.Columns()
 
 	for colIdx, col := range columns {
-		// Column letter (A, B, C, ...)
 		colLetter, err := excelize.ColumnNumberToName(colIdx + 1)
 		if err != nil {
 			return fmt.Errorf("convert column number to name: %w", err)
 		}
 
-		// Set header cell value
 		cell := fmt.Sprintf("%s1", colLetter)
 		if err := f.SetCellValue(sheetName, cell, col.Name); err != nil {
 			return fmt.Errorf("set header cell %s: %w", cell, err)
 		}
 
-		// Set column width if specified
 		if col.Width > 0 {
 			if err := f.SetColWidth(sheetName, colLetter, colLetter, col.Width); err != nil {
 				return fmt.Errorf("set column width for %s: %w", colLetter, err)
@@ -146,11 +129,9 @@ func (e *exporter) writeHeader(f *excelize.File, sheetName string) error {
 	return nil
 }
 
-// writeData writes data rows to the Excel sheet.
 func (e *exporter) writeData(f *excelize.File, sheetName string, data any) error {
 	columns := e.schema.Columns()
 
-	// Convert data to slice using reflection
 	dataValue := reflect.ValueOf(data)
 	if dataValue.Kind() != reflect.Slice {
 		return fmt.Errorf("%w, got %s", ErrDataMustBeSlice, dataValue.Kind())
@@ -158,13 +139,11 @@ func (e *exporter) writeData(f *excelize.File, sheetName string, data any) error
 
 	for rowIdx := 0; rowIdx < dataValue.Len(); rowIdx++ {
 		item := dataValue.Index(rowIdx)
-		excelRow := rowIdx + 2 // Excel rows start at 1, header is row 1
+		excelRow := rowIdx + 2
 
 		for colIdx, col := range columns {
-			// Get field value
 			fieldValue := item.FieldByIndex(col.Index)
 
-			// Format value
 			cellValue, err := e.formatValue(fieldValue.Interface(), col)
 			if err != nil {
 				return tabular.ExportError{
@@ -175,13 +154,11 @@ func (e *exporter) writeData(f *excelize.File, sheetName string, data any) error
 				}
 			}
 
-			// Column letter
 			colLetter, err := excelize.ColumnNumberToName(colIdx + 1)
 			if err != nil {
 				return fmt.Errorf("convert column number to name: %w", err)
 			}
 
-			// Set cell value
 			cell := fmt.Sprintf("%s%d", colLetter, excelRow)
 			if err := f.SetCellValue(sheetName, cell, cellValue); err != nil {
 				return fmt.Errorf("set cell %s: %w", cell, err)
@@ -192,9 +169,9 @@ func (e *exporter) writeData(f *excelize.File, sheetName string, data any) error
 	return nil
 }
 
-// formatValue formats a field value to Excel cell string.
+// formatValue falls back to default formatter when custom formatter is missing,
+// preventing export failures due to configuration errors.
 func (e *exporter) formatValue(value any, col *tabular.Column) (string, error) {
-	// Use custom formatter if specified
 	if col.Formatter != constants.Empty {
 		if formatter, ok := e.formatters[col.Formatter]; ok {
 			return formatter.Format(value)
@@ -203,7 +180,6 @@ func (e *exporter) formatValue(value any, col *tabular.Column) (string, error) {
 		logger.Warnf("Formatter %s not found, using default formatter", col.Formatter)
 	}
 
-	// Use default formatter
 	formatter := tabular.NewDefaultFormatter(col.Format)
 
 	return formatter.Format(value)

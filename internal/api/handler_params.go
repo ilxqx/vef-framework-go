@@ -22,28 +22,26 @@ var (
 	withLoggerMethod = "WithLogger"
 )
 
-// ParamResolverFunc resolves a value from the current request context.
 type ParamResolverFunc func(ctx fiber.Ctx) (reflect.Value, error)
 
-// HandlerParamResolverManager aggregates all handler parameter resolvers.
-// Resolution uses exact type matching. If needed in the future, assignable/interface
-// matching (e.g., Implements/AssignableTo) can be added without changing the public Api.
+// HandlerParamResolverManager uses exact type matching for resolution.
+// If needed in the future, assignable/interface matching (e.g., Implements/AssignableTo)
+// can be added without changing the public API.
 type HandlerParamResolverManager struct {
-	// resolvers is a map from concrete type to its resolver function.
 	resolvers map[reflect.Type]ParamResolverFunc
 }
 
-// NewHandlerParamResolverManager builds a composite resolver by merging preset and user-provided resolvers.
-// If the same type is registered multiple times, the last one wins (user-provided overrides preset).
-// This constructor is intended to be used by the DI layer to assemble resolvers from groups.
+// NewHandlerParamResolverManager merges preset and user-provided resolvers.
+// User-provided resolvers override preset ones for the same type.
+// Intended to be used by the DI layer to assemble resolvers from groups.
 func NewHandlerParamResolverManager(userResolvers []api.HandlerParamResolver) *HandlerParamResolverManager {
 	merged := make(map[reflect.Type]ParamResolverFunc, len(userResolvers)+len(presetParamResolvers))
-	// preset first
+	// Preset first
 	for _, resolver := range presetParamResolvers {
 		t := resolver.Type()
 		merged[t] = resolver.Resolve
 	}
-	// user-provided override
+	// User-provided override
 	for _, resolver := range userResolvers {
 		t := resolver.Type()
 		merged[t] = resolver.Resolve
@@ -54,54 +52,39 @@ func NewHandlerParamResolverManager(userResolvers []api.HandlerParamResolver) *H
 	}
 }
 
-// Resolve looks up a resolver function for the given parameter type.
-// It does not perform the actual value conversion; callers should invoke the returned
-// function with a request context to obtain the value.
-// Returns (resolver, nil) on success, or (nil, error) when no resolver is found.
 func (m *HandlerParamResolverManager) Resolve(target reflect.Value, paramType reflect.Type) (ParamResolverFunc, error) {
 	if resolver, ok := m.resolvers[paramType]; ok {
 		return resolver, nil
-		// if value := resolver(ctx); value != nil {
-		// 	return reflect.ValueOf(value).Convert(targetType)
-		// }
 	}
 
-	// Try resolve params from api request if paramType is struct and embeds api.P
 	if embedsApiP(paramType) {
 		return buildParamsResolver(paramType), nil
 	}
 
-	// Try resolve meta from api request if paramType is struct and embeds api.M
 	if embedsApiM(paramType) {
 		return buildMetaResolver(paramType), nil
 	}
 
-	// Try resolve params from target struct fields (including embedded structs)
 	if field := findFieldInStruct(target, paramType); field.IsValid() {
 		return buildFieldResolver(field, paramType), nil
 	}
 
-	return nil, fmt.Errorf("%w: %s", ErrResolveParamType, paramType.String())
+	return nil, fmt.Errorf("%w: %s", ErrResolveHandlerParamType, paramType.String())
 }
 
-// findFieldInStruct searches for a field with the specified type in the target struct,
-// including embedded anonymous structs and tagged fields using multiple targeted visitor passes.
-// Search strategy (in order of priority):
-// 1. Direct fields (non-embedded) with matching types
-// 2. Fields with api:"in" tag (deep search into tagged structs)
-// 3. Embedded anonymous structs (traditional embedding).
+// findFieldInStruct uses a multi-pass search strategy to balance explicitness with flexibility:
+// 1. Direct fields first (most explicit, avoids ambiguity)
+// 2. Fields with api:"in" tag (explicit opt-in for deep nesting)
+// 3. Embedded anonymous structs last (traditional Go embedding, most implicit)
 func findFieldInStruct(target reflect.Value, paramType reflect.Type) reflect.Value {
-	// Priority 1: Search direct fields first (non-recursive, non-embedded only)
 	if found := searchDirectFields(target, paramType); found.IsValid() {
 		return found
 	}
 
-	// Priority 2: Search in fields with api:"in" tag (recursive)
 	if found := searchTaggedFields(target, paramType); found.IsValid() {
 		return found
 	}
 
-	// Priority 3: Search in embedded anonymous structs (recursive)
 	if found := searchEmbeddedFields(target, paramType); found.IsValid() {
 		return found
 	}
@@ -109,13 +92,11 @@ func findFieldInStruct(target reflect.Value, paramType reflect.Type) reflect.Val
 	return reflect.Value{}
 }
 
-// searchDirectFields searches for direct (non-embedded) fields with matching types.
 func searchDirectFields(target reflect.Value, paramType reflect.Type) reflect.Value {
 	var foundField reflect.Value
 
 	visitor := reflectx.Visitor{
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) reflectx.VisitAction {
-			// Only check direct (non-embedded) fields
 			if !field.Anonymous && reflectx.IsTypeCompatible(fieldValue.Type(), paramType) {
 				foundField = fieldValue
 
@@ -131,18 +112,15 @@ func searchDirectFields(target reflect.Value, paramType reflect.Type) reflect.Va
 	return foundField
 }
 
-// searchTaggedFields searches recursively in fields with api:"in" tag.
 func searchTaggedFields(target reflect.Value, paramType reflect.Type) reflect.Value {
 	var foundField reflect.Value
 
 	visitor := reflectx.Visitor{
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) reflectx.VisitAction {
-			// Skip embedded fields (handled in third pass)
 			if field.Anonymous {
 				return reflectx.SkipChildren
 			}
 
-			// Check for matching type in any depth
 			if reflectx.IsTypeCompatible(fieldValue.Type(), paramType) {
 				foundField = fieldValue
 
@@ -153,24 +131,21 @@ func searchTaggedFields(target reflect.Value, paramType reflect.Type) reflect.Va
 		},
 	}
 
-	// Use dive tag to recurse into api:"in" tagged fields
+	// Recurse only into fields explicitly tagged with api:"in"
 	reflectx.Visit(target, visitor, reflectx.WithDiveTag("api", "in"))
 
 	return foundField
 }
 
-// searchEmbeddedFields searches recursively in embedded anonymous structs.
 func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.Value {
 	var foundField reflect.Value
 
 	visitor := reflectx.Visitor{
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) reflectx.VisitAction {
-			// Only process embedded fields
 			if !field.Anonymous {
 				return reflectx.SkipChildren
 			}
 
-			// Check for matching type
 			if reflectx.IsTypeCompatible(fieldValue.Type(), paramType) {
 				foundField = fieldValue
 
@@ -181,30 +156,26 @@ func searchEmbeddedFields(target reflect.Value, paramType reflect.Type) reflect.
 		},
 	}
 
-	// Default recursive behavior will handle anonymous embedded fields
 	reflectx.Visit(target, visitor)
 
 	return foundField
 }
 
-// embedsApiP checks if the given struct type embeds api.P.
 func embedsApiP(t reflect.Type) bool {
 	return embedsSentinelType(t, apiPType)
 }
 
-// embedsApiM checks if the given struct type embeds api.M.
 func embedsApiM(t reflect.Type) bool {
 	return embedsSentinelType(t, apiMType)
 }
 
-// embedsSentinelType checks if the given struct type embeds a sentinel type (api.P or api.M).
+// embedsSentinelType uses breadth-first search to handle deeply nested embeddings correctly.
 func embedsSentinelType(t, sentinelType reflect.Type) bool {
 	t = reflectx.Indirect(t)
 	if t.Kind() != reflect.Struct {
 		return false
 	}
 
-	// We are going to do a breadth-first search of all embedded fields.
 	types := list.New()
 	types.PushBack(t)
 
@@ -230,13 +201,11 @@ func embedsSentinelType(t, sentinelType reflect.Type) bool {
 	return false
 }
 
-// buildParamsResolver constructs a parameter resolver for parameter structs that embed api.P.
 func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 	t := reflectx.Indirect(paramType)
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
 		request := contextx.ApiRequest(ctx)
-		// Create a new instance of the param type
 		paramValue := reflect.New(t)
 		if err := request.Params.Decode(paramValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err
@@ -254,13 +223,11 @@ func buildParamsResolver(paramType reflect.Type) ParamResolverFunc {
 	}
 }
 
-// buildMetaResolver constructs a meta resolver for meta structs that embed api.M.
 func buildMetaResolver(metaType reflect.Type) ParamResolverFunc {
 	t := reflectx.Indirect(metaType)
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
 		request := contextx.ApiRequest(ctx)
-		// Create a new instance of the meta type
 		metaValue := reflect.New(t)
 		if err := request.Meta.Decode(metaValue.Interface()); err != nil {
 			return lo.Empty[reflect.Value](), err
@@ -278,8 +245,8 @@ func buildMetaResolver(metaType reflect.Type) ParamResolverFunc {
 	}
 }
 
-// buildFieldResolver builds a resolver function for a struct field with type conversion support.
-// It handles pointer compatibility and WithLogger method calls if applicable.
+// buildFieldResolver handles pointer compatibility and WithLogger method calls
+// to support fields that need request-scoped configuration.
 func buildFieldResolver(field reflect.Value, targetType reflect.Type) ParamResolverFunc {
 	fieldType := field.Type()
 	requiresConfigureLogger := hasWithLoggerMethod(fieldType)
@@ -294,18 +261,15 @@ func buildFieldResolver(field reflect.Value, targetType reflect.Type) ParamResol
 			resolvedValue = field
 		}
 
-		// Perform type conversion if needed
 		return reflectx.ConvertValue(resolvedValue, targetType)
 	}
 }
 
-// hasWithLoggerMethod checks if the given type has a WithLogger method.
 func hasWithLoggerMethod(t reflect.Type) bool {
-	// First try to find method on the type itself
 	method, found := t.MethodByName(withLoggerMethod)
 	if !found {
-		// If not found, and it's not already a pointer, try pointer type
-		// because WithLogger might be defined on pointer receiver
+		// Check pointer receiver if not already a pointer
+		// because WithLogger is often defined on pointer receivers
 		if t.Kind() != reflect.Pointer {
 			ptrType := reflect.PointerTo(t)
 			method, found = ptrType.MethodByName(withLoggerMethod)
@@ -316,22 +280,18 @@ func hasWithLoggerMethod(t reflect.Type) bool {
 		return false
 	}
 
-	// Check method has exactly 2 inputs: receiver + one parameter
 	if method.Type.NumIn() != 2 {
 		return false
 	}
 
-	// Check the parameter (index 1, receiver is index 0) is log.Logger type
 	paramType := method.Type.In(1)
 
 	return loggerType.AssignableTo(paramType)
 }
 
-// callWithLogger calls the WithLogger method on the value with the given logger.
 func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
 	method := reflectx.FindMethod(field, withLoggerMethod)
 	if method.IsValid() {
-		// Call WithLogger method with the logger
 		results := method.Call([]reflect.Value{reflect.ValueOf(logger)})
 		if len(results) > 0 {
 			return results[0]

@@ -24,7 +24,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
+	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -273,7 +273,7 @@ func (suite *ApiAuthTestSuite) SetupSuite() {
 		),
 	}
 
-	suite.app, suite.stop = appTest.NewTestApp(suite.T(), opts...)
+	suite.app, suite.stop = apptest.NewTestApp(suite.T(), opts...)
 
 	// Login and get tokens for each user
 	suite.adminToken = suite.loginAndGetToken("admin", "admin123")

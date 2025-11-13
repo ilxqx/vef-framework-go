@@ -95,14 +95,12 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 			query       = db.NewSelect().Model((*TModel)(nil))
 		)
 
-		// Merge column mapping from params with defaults
 		mergeOptionColumnMapping(&config.DataOptionColumnMapping, a.defaultColumnMapping)
 
 		if err := validateOptionColumns(table, &config.DataOptionColumnMapping); err != nil {
 			return err
 		}
 
-		// Parse and validate meta columns
 		metaColumns := parseMetaColumns(config.MetaColumns)
 		if err := validateMetaColumns(table, metaColumns); err != nil {
 			return err
@@ -159,7 +157,6 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 					Distinct()
 			})
 
-		// Check for errors during query building
 		if queryErr := QueryError(ctx); queryErr != nil {
 			return queryErr
 		}
@@ -201,12 +198,10 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 			})
 		})
 
-		// Apply QueryRoot and QueryAll options to the outer query
 		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
 			return err
 		}
 
-		// Execute recursive CTE query
 		if err := query.Limit(maxOptionsLimit).
 			Scan(ctx.Context(), &flatOptions); err != nil {
 			return err

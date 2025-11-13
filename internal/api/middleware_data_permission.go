@@ -8,7 +8,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// buildDataPermissionMiddleware creates middleware that resolves and applies data permissions.
 func buildDataPermissionMiddleware(
 	manager api.Manager,
 	resolver security.DataPermissionResolver,
@@ -24,7 +23,6 @@ func buildDataPermissionMiddleware(
 		request := contextx.ApiRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
 
-		// Skip data permission for public endpoints or endpoints without permission requirements
 		if !definition.RequiresPermission() {
 			logger.Debugf("Endpoint %s does not require permission, skipping data permission", request.Identifier)
 
@@ -33,12 +31,10 @@ func buildDataPermissionMiddleware(
 
 		principal := contextx.Principal(ctx)
 
-		// System principals have access to all data, skip data permission resolution
 		if principal.Type == security.PrincipalTypeSystem {
 			return ctx.Next()
 		}
 
-		// Resolve data scope for this principal and permission token
 		dataScope, err := resolver.ResolveDataScope(
 			ctx.Context(),
 			principal,
@@ -51,7 +47,6 @@ func buildDataPermissionMiddleware(
 			return fiber.ErrInternalServerError
 		}
 
-		// Log resolved data scope
 		if dataScope != nil {
 			logger.Debugf("Resolved data scope %q for principal %s",
 				dataScope.Key(), principal.Id)
@@ -60,7 +55,6 @@ func buildDataPermissionMiddleware(
 				principal.Id, definition.PermToken)
 		}
 
-		// Construct request-scoped data permission applier using factory
 		applier := security.NewRequestScopedDataPermApplier(
 			principal,
 			dataScope,

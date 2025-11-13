@@ -49,7 +49,6 @@ func (b *MemoryBus) Start() error {
 		return ErrEventBusAlreadyStarted
 	}
 
-	// Start event processor goroutine
 	b.wg.Go(b.processEvents)
 	b.started = true
 
@@ -68,11 +67,9 @@ func (b *MemoryBus) Shutdown(ctx context.Context) error {
 
 	b.mu.Unlock()
 
-	// Signal shutdown
 	b.cancel()
 	close(b.eventCh)
 
-	// Wait for shutdown with timeout
 	done := make(chan struct{})
 
 	go func() {
@@ -118,7 +115,6 @@ func (b *MemoryBus) Subscribe(eventType string, handler event.HandlerFunc) event
 	b.subscribers[eventType][id] = sub
 	b.mu.Unlock()
 
-	// Return unsubscribe function
 	unsubscribe := func() {
 		b.mu.Lock()
 		defer b.mu.Unlock()
@@ -167,7 +163,6 @@ func (b *MemoryBus) deliverEvent(evt event.Event) error {
 	defer b.mu.RUnlock()
 
 	eventType := evt.Type()
-	// Process middleware chain first
 	processedEvent := evt
 	for _, middleware := range b.middlewares {
 		if err := middleware.Process(b.ctx, processedEvent, func(ctx context.Context, e event.Event) error {
@@ -179,7 +174,6 @@ func (b *MemoryBus) deliverEvent(evt event.Event) error {
 		}
 	}
 
-	// Deliver to specific subscribers
 	if subs, exists := b.subscribers[eventType]; exists {
 		for _, sub := range subs {
 			sub.handler(b.ctx, processedEvent)

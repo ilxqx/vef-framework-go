@@ -37,7 +37,6 @@ func NewAES(key, iv []byte, mode ...AesMode) (Cipher, error) {
 		return nil, fmt.Errorf("%w: %d bytes (must be 16, 24, or 32)", ErrInvalidAESKeySize, len(key))
 	}
 
-	// Default to GCM mode if not specified
 	selectedMode := AesModeGCM
 	if len(mode) > 0 {
 		selectedMode = mode[0]
@@ -64,7 +63,6 @@ func NewAESFromHex(keyHex, ivHex string, mode ...AesMode) (Cipher, error) {
 		return nil, fmt.Errorf("failed to decode key from hex: %w", err)
 	}
 
-	// Default to GCM mode if not specified
 	selectedMode := AesModeGCM
 	if len(mode) > 0 {
 		selectedMode = mode[0]
@@ -89,7 +87,6 @@ func NewAESFromBase64(keyBase64, ivBase64 string, mode ...AesMode) (Cipher, erro
 		return nil, fmt.Errorf("failed to decode key from base64: %w", err)
 	}
 
-	// Default to GCM mode if not specified
 	selectedMode := AesModeGCM
 	if len(mode) > 0 {
 		selectedMode = mode[0]
@@ -131,7 +128,6 @@ func (a *AesCipher) encryptCBC(plaintext string) (string, error) {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
 	}
 
-	// PKCS7 padding
 	paddedData := pkcs7Padding([]byte(plaintext), aes.BlockSize)
 
 	ciphertext := make([]byte, len(paddedData))
@@ -161,7 +157,6 @@ func (a *AesCipher) decryptCBC(ciphertext string) (string, error) {
 	mode := cipher.NewCBCDecrypter(block, a.iv)
 	mode.CryptBlocks(plaintext, encryptedData)
 
-	// Remove PKCS7 padding
 	unpaddedData, err := pkcs7Unpadding(plaintext)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to remove padding: %w", err)
@@ -182,13 +177,11 @@ func (a *AesCipher) encryptGCM(plaintext string) (string, error) {
 		return constants.Empty, fmt.Errorf("failed to create GCM: %w", err)
 	}
 
-	// Generate random nonce
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return constants.Empty, fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
-	// Encrypt and authenticate (nonce is prepended to ciphertext)
 	ciphertext := gcm.Seal(nonce, nonce, []byte(plaintext), nil)
 
 	return encoding.ToBase64(ciphertext), nil
@@ -250,7 +243,6 @@ func pkcs7Unpadding(data []byte) ([]byte, error) {
 		return nil, ErrInvalidPadding
 	}
 
-	// Verify padding
 	for i := range padding {
 		if data[length-1-i] != byte(padding) {
 			return nil, ErrInvalidPadding

@@ -43,7 +43,6 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.Db, conf
 			table = db.TableOf((*TModel)(nil))
 		)
 
-		// Apply search
 		opt := withSearchApplier[TSearch](
 			lo.Ternary(qp.Condition != nil, qp.Condition, []QueryPart{QueryRoot})...,
 		)
@@ -74,7 +73,6 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.Db, conf
 			a.options = append(a.options, opt)
 		}
 
-		// Apply default sorting
 		if a.defaultSort == nil {
 			if len(table.PKs) == 1 {
 				opt := withSort(
@@ -128,7 +126,6 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) ConfigureQuery(query 
 	// Track applied options to avoid duplicates when an option targets both specific part and QueryAll
 	applied := make(map[*FindApiOption]bool)
 
-	// Apply options for the specific query part
 	for _, opt := range a.optionsByPart[part] {
 		if !applied[opt] {
 			if err := opt.Applier(query, search, ctx); err != nil {

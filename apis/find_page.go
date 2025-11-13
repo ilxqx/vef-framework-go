@@ -53,32 +53,27 @@ func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 			return err
 		}
 
-		// Execute paginated query and get total count
 		if total, err = query.ScanAndCount(ctx.Context()); err != nil {
 			return err
 		}
 
 		if total > 0 {
-			// Apply transformation to each model
 			for i := range models {
 				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
 					return err
 				}
 			}
 
-			// Apply post-processing if configured
 			processedModels := a.Process(models, search, ctx)
 			if models, ok := processedModels.([]TModel); ok {
 				return result.Ok(page.New(pageable, total, models)).Response(ctx)
 			}
 
-			// Check if processor returned a slice
 			modelsValue := reflect.Indirect(reflect.ValueOf(processedModels))
 			if modelsValue.Kind() != reflect.Slice {
 				return result.Errf("processor must return a slice, got %T", processedModels)
 			}
 
-			// Convert slice to []any for page.New
 			items := make([]any, modelsValue.Len())
 			for i := range modelsValue.Len() {
 				items[i] = modelsValue.Index(i).Interface()

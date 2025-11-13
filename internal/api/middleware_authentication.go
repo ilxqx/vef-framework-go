@@ -14,15 +14,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/security"
+	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/result"
-	securityPkg "github.com/ilxqx/vef-framework-go/security"
+	"github.com/ilxqx/vef-framework-go/security"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// buildAuthenticationMiddleware creates a keyauth middleware for Api authentication.
-// It extracts tokens from Authorization header or query parameter and validates them.
-func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthManager) fiber.Handler {
+func buildAuthenticationMiddleware(manager api.Manager, auth security.AuthManager) fiber.Handler {
 	return keyauth.New(keyauth.Config{
 		Extractor: extractors.Chain(
 			extractors.FromAuthHeader(constants.AuthSchemeBearer),
@@ -42,8 +40,8 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 			return err
 		},
 		Validator: func(ctx fiber.Ctx, accessToken string) (bool, error) {
-			principal, err := auth.Authenticate(ctx.Context(), securityPkg.Authentication{
-				Type:      security.AuthTypeToken,
+			principal, err := auth.Authenticate(ctx.Context(), security.Authentication{
+				Type:      isecurity.AuthTypeToken,
 				Principal: accessToken,
 			})
 			if err != nil {
@@ -60,9 +58,7 @@ func buildAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthMan
 	})
 }
 
-// buildOpenApiAuthenticationMiddleware creates middleware for OpenApi authentication.
-// It allows public endpoints to pass through and validates OpenApi tokens for protected endpoints.
-func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth securityPkg.AuthManager) fiber.Handler {
+func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth security.AuthManager) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		request := contextx.ApiRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
@@ -71,21 +67,18 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 			return ctx.Next()
 		}
 
-		// Extract headers
 		appId := ctx.Get(constants.HeaderXAppId)
 		timestamp := ctx.Get(constants.HeaderXTimestamp)
 		signatureHex := ctx.Get(constants.HeaderXSignature)
 
-		// Compute bodySha256Base64 from raw body bytes
 		body := ctx.Body()
 		sum := sha256.Sum256(body)
 		bodySha256Base64 := base64.StdEncoding.EncodeToString(sum[:])
 
-		// Build credentials: "<signatureHex>@<timestamp>@<bodySha256Base64>"
 		credentials := signatureHex + constants.At + timestamp + constants.At + bodySha256Base64
 
-		principal, err := auth.Authenticate(ctx.Context(), securityPkg.Authentication{
-			Type:        security.AuthTypeOpenApi,
+		principal, err := auth.Authenticate(ctx.Context(), security.Authentication{
+			Type:        isecurity.AuthTypeOpenApi,
 			Principal:   appId,
 			Credentials: credentials,
 		})
@@ -93,10 +86,9 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 			return err
 		}
 
-		// Optional external app config enforcement
 		if principal != nil && principal.Details != nil {
 			switch cfg := principal.Details.(type) {
-			case securityPkg.ExternalAppConfig:
+			case security.ExternalAppConfig:
 				if !cfg.Enabled {
 					return result.ErrExternalAppDisabled
 				}
@@ -107,7 +99,7 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 					}
 				}
 
-			case *securityPkg.ExternalAppConfig:
+			case *security.ExternalAppConfig:
 				if cfg != nil {
 					if !cfg.Enabled {
 						return result.ErrExternalAppDisabled
@@ -128,7 +120,6 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth securityPkg.
 	}
 }
 
-// ipAllowed checks if client IP is in whitelist (comma-separated IP or CIDR list).
 func ipAllowed(clientIP, whitelist string) bool {
 	if strings.TrimSpace(whitelist) == constants.Empty {
 		return true

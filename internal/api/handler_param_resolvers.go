@@ -8,19 +8,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/log"
-	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// presetParamResolvers defines the built-in parameter resolvers available by default.
-// Additional resolvers can be supplied via DI and will override these when type overlaps.
 var presetParamResolvers = []api.HandlerParamResolver{
 	new(CtxParamResolver),
 	new(DbParamResolver),
 	new(LoggerParamResolver),
 	new(PrincipalParamResolver),
-	new(TransformerParamResolver),
 }
 
 type CtxParamResolver struct{}
@@ -61,14 +57,4 @@ func (*PrincipalParamResolver) Type() reflect.Type {
 
 func (*PrincipalParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(contextx.Principal(ctx)), nil
-}
-
-type TransformerParamResolver struct{}
-
-func (*TransformerParamResolver) Type() reflect.Type {
-	return reflect.TypeFor[mold.Transformer]()
-}
-
-func (*TransformerParamResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
-	return reflect.ValueOf(contextx.Transformer(ctx)), nil
 }

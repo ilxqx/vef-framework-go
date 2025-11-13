@@ -20,7 +20,6 @@ var logger = log.Named("monitor")
 var Module = fx.Module(
 	"vef:monitor",
 	fx.Decorate(func(cfg *config.MonitorConfig) *config.MonitorConfig {
-		// Merge with default config
 		cfgToUse := DefaultConfig()
 		if cfg != nil {
 			if cfg.SampleInterval > 0 {

@@ -12,11 +12,11 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/log"
 )
 
 type queryHook struct {
-	logger logPkg.Logger
+	logger log.Logger
 	output *termenv.Output
 }
 
@@ -76,8 +76,8 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 
 	if event.Err != nil && !errors.Is(event.Err, sql.ErrNoRows) {
 		var (
-			errorMessage strings.Builder // errorMessage builds the error message string
-			message      strings.Builder // message builds the final log message string
+			errorMessage strings.Builder
+			message      strings.Builder
 		)
 
 		_ = errorMessage.WriteByte(constants.ByteSpace)
@@ -98,7 +98,6 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 		return
 	}
 
-	// message builds the final log message string
 	var message strings.Builder
 
 	_, _ = message.WriteString(operationStyle.String())
@@ -113,8 +112,7 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 	}
 }
 
-// addQueryHook adds a query hook to the database with a custom logger.
-func addQueryHook(db *bun.DB, logger logPkg.Logger) {
+func addQueryHook(db *bun.DB, logger log.Logger) {
 	db.AddQueryHook(&queryHook{
 		logger: logger,
 		output: termenv.DefaultOutput(),

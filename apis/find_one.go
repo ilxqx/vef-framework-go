@@ -45,7 +45,6 @@ func (a *findOneApi[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db
 			return err
 		}
 
-		// Apply transformation to the model
 		if err := transformer.Struct(ctx.Context(), &model); err != nil {
 			return err
 		}

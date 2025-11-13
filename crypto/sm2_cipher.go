@@ -26,7 +26,6 @@ func NewSM2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (Cipher, error
 		return nil, ErrAtLeastOneKeyRequired
 	}
 
-	// If only private key is provided, derive public key
 	if publicKey == nil && privateKey != nil {
 		publicKey = &privateKey.PublicKey
 	}
@@ -71,26 +70,18 @@ func NewSM2FromHex(privateKeyHex, publicKeyHex string) (Cipher, error) {
 		publicKey  *sm2.PublicKey
 	)
 
-	if privateKeyHex != "" {
-		keyBytes, err := encoding.FromHex(privateKeyHex)
-		if err != nil {
+	if privateKeyHex != constants.Empty {
+		if keyBytes, err := encoding.FromHex(privateKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from hex: %w", err)
-		}
-
-		privateKey, err = x509.ParseSm2PrivateKey(keyBytes)
-		if err != nil {
+		} else if privateKey, err = x509.ParseSm2PrivateKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
 		}
 	}
 
-	if publicKeyHex != "" {
-		keyBytes, err := encoding.FromHex(publicKeyHex)
-		if err != nil {
+	if publicKeyHex != constants.Empty {
+		if keyBytes, err := encoding.FromHex(publicKeyHex); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from hex: %w", err)
-		}
-
-		publicKey, err = x509.ParseSm2PublicKey(keyBytes)
-		if err != nil {
+		} else if publicKey, err = x509.ParseSm2PublicKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
 		}
 	}
@@ -107,25 +98,17 @@ func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (Cipher, error) 
 	)
 
 	if privateKeyBase64 != constants.Empty {
-		keyBytes, err := encoding.FromBase64(privateKeyBase64)
-		if err != nil {
+		if keyBytes, err := encoding.FromBase64(privateKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode private key from base64: %w", err)
-		}
-
-		privateKey, err = x509.ParseSm2PrivateKey(keyBytes)
-		if err != nil {
+		} else if privateKey, err = x509.ParseSm2PrivateKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
 		}
 	}
 
 	if publicKeyBase64 != constants.Empty {
-		keyBytes, err := encoding.FromBase64(publicKeyBase64)
-		if err != nil {
+		if keyBytes, err := encoding.FromBase64(publicKeyBase64); err != nil {
 			return nil, fmt.Errorf("failed to decode public key from base64: %w", err)
-		}
-
-		publicKey, err = x509.ParseSm2PublicKey(keyBytes)
-		if err != nil {
+		} else if publicKey, err = x509.ParseSm2PublicKey(keyBytes); err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
 		}
 	}

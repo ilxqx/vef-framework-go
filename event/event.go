@@ -105,7 +105,6 @@ func (e *BaseEvent) UnmarshalJSON(data []byte) error {
 }
 
 // NewBaseEvent creates a new BaseEvent with the specified type.
-// It automatically generates a unique ID and sets the current time.
 // Optional source and metadata can be set using WithSource and WithMeta options.
 func NewBaseEvent(eventType string, opts ...baseEventOption) BaseEvent {
 	event := BaseEvent{

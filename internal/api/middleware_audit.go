@@ -16,28 +16,19 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// buildAuditMiddleware creates middleware that captures Api request/response information
-// and publishes audit events to the event bus for enabled endpoints.
 func buildAuditMiddleware(manager api.Manager, publisher event.Publisher) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		request := contextx.ApiRequest(ctx)
 		definition := manager.Lookup(request.Identifier)
 
-		// Skip if audit is not enabled for this endpoint
 		if !definition.EnableAudit {
 			return ctx.Next()
 		}
 
-		// Record start time
 		startTime := time.Now()
-
-		// Execute handler and capture error
 		handlerErr := ctx.Next()
-
-		// Calculate elapsed time in milliseconds
 		elapsed := int(time.Since(startTime).Milliseconds())
 
-		// Build and publish audit event
 		auditEvent, err := buildAuditEvent(ctx, request, elapsed, handlerErr)
 		if err != nil {
 			contextx.Logger(ctx).Errorf("failed to build audit event: %v", err)
@@ -51,9 +42,7 @@ func buildAuditMiddleware(manager api.Manager, publisher event.Publisher) fiber.
 	}
 }
 
-// buildAuditEvent constructs an AuditEvent from the request context.
 func buildAuditEvent(ctx fiber.Ctx, request *api.Request, elapsed int, handlerErr error) (*api.AuditEvent, error) {
-	// Extract user information
 	principal := contextx.Principal(ctx)
 
 	var userId string
@@ -61,19 +50,16 @@ func buildAuditEvent(ctx fiber.Ctx, request *api.Request, elapsed int, handlerEr
 		userId = principal.Id
 	}
 
-	// Extract request information
 	requestId := contextx.RequestId(ctx)
 	requestIP := webhelpers.GetIp(ctx)
 	userAgent := utils.CopyString(ctx.Get(fiber.HeaderUserAgent))
 
-	// Extract response information
 	var (
 		resultCode    int
 		resultMessage string
 		resultData    any
 	)
 
-	// Determine result based on handler error and response status
 	if handlerErr == nil {
 		res, err := encoding.FromJson[result.Result](string(utils.CopyBytes(ctx.Response().Body())))
 		if err != nil {

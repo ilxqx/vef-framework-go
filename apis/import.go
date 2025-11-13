@@ -90,10 +90,8 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 			return result.Err(i18n.T("import_requires_file"))
 		}
 
-		// Determine format: use param format if provided, otherwise use default
 		format := lo.CoalesceOrEmpty(config.Format, i.defaultFormat, FormatExcel)
 
-		// Select pre-created importer based on format
 		var importer tabular.Importer
 
 		switch format {
@@ -105,7 +103,6 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 			return result.Err(i18n.T("unsupported_import_format"))
 		}
 
-		// Open uploaded file
 		file, err := params.File.Open()
 		if err != nil {
 			return result.Err(i18n.T("file_open_failed"))
@@ -117,16 +114,13 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 			}
 		}()
 
-		// Import data from file
 		modelsAny, importErrors, err := importer.Import(file)
 		if err != nil {
 			return err
 		}
 
-		// Type assert to slice of models
 		models := modelsAny.([]TModel)
 
-		// Return errors if any
 		if len(importErrors) > 0 {
 			return result.Result{
 				Code:    result.ErrCodeDefault,
@@ -137,14 +131,12 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 			}.Response(ctx)
 		}
 
-		// Apply pre-import processor
 		if i.preImport != nil {
 			if err := i.preImport(models, ctx, db); err != nil {
 				return err
 			}
 		}
 
-		// Save models to database in a transaction
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
 			if len(models) > 0 {
 				if _, err := tx.NewInsert().Model(&models).Exec(txCtx); err != nil {
@@ -152,7 +144,6 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 				}
 			}
 
-			// Apply post-import processor
 			if i.postImport != nil {
 				if err := i.postImport(models, ctx, tx); err != nil {
 					return err

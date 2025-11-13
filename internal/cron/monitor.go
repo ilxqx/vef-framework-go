@@ -10,15 +10,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// jobMonitor implements gocron.Monitor interface to track job execution metrics.
-// It provides detailed logging for job lifecycle events including timing and status.
+// jobMonitor implements gocron.Monitor interface to track job execution metrics. It provides detailed logging for job lifecycle events including timing and status.
 type jobMonitor struct{}
 
 func (m *jobMonitor) RecordJobTimingWithStatus(startTime, endTime time.Time, id uuid.UUID, name string, tags []string, status gocron.JobStatus, err error) {
 	switch status {
 	case gocron.Success:
 		logger.Infof(
-			"job %s completed | id: %s | tags: %s | elapsed: %s | status: %s",
+			"Job %q completed | id: %s | tags: %s | elapsed: %s | status: %s",
 			name,
 			id.String(),
 			strings.Join(tags, constants.CommaSpace),
@@ -28,7 +27,7 @@ func (m *jobMonitor) RecordJobTimingWithStatus(startTime, endTime time.Time, id 
 
 	case gocron.Fail:
 		logger.Errorf(
-			"job %s completed | id: %s | tags: %s | elapsed: %s | status: %s | error: %v",
+			"Job %q completed | id: %s | tags: %s | elapsed: %s | status: %s | error: %v",
 			name,
 			id.String(),
 			strings.Join(tags, constants.CommaSpace),
@@ -39,7 +38,7 @@ func (m *jobMonitor) RecordJobTimingWithStatus(startTime, endTime time.Time, id 
 
 	default:
 		logger.Warnf(
-			"job %s completed | id: %s | tags: %s | elapsed: %s | status: %s",
+			"Job %q completed | id: %s | tags: %s | elapsed: %s | status: %s",
 			name,
 			id.String(),
 			strings.Join(tags, constants.CommaSpace),
@@ -51,7 +50,7 @@ func (m *jobMonitor) RecordJobTimingWithStatus(startTime, endTime time.Time, id 
 
 func (m *jobMonitor) IncrementJob(id uuid.UUID, name string, tags []string, status gocron.JobStatus) {
 	logger.Infof(
-		"job %s scheduled | id: %s | tags: %s | status: %s",
+		"Job %q scheduled | id: %s | tags: %s | status: %s",
 		name,
 		id.String(),
 		strings.Join(tags, constants.CommaSpace),
@@ -61,7 +60,7 @@ func (m *jobMonitor) IncrementJob(id uuid.UUID, name string, tags []string, stat
 
 func (m *jobMonitor) RecordJobTiming(startTime, endTime time.Time, id uuid.UUID, name string, tags []string) {
 	logger.Infof(
-		"job %s completed | id: %s | tags: %s | elapsed: %s",
+		"Job %q completed | id: %s | tags: %s | elapsed: %s",
 		name,
 		id.String(),
 		strings.Join(tags, constants.CommaSpace),
@@ -69,7 +68,6 @@ func (m *jobMonitor) RecordJobTiming(startTime, endTime time.Time, id uuid.UUID,
 	)
 }
 
-// newJobMonitor creates a new JobMonitor that implements gocron.Monitor interface.
 func newJobMonitor() *jobMonitor {
-	return &jobMonitor{}
+	return new(jobMonitor)
 }

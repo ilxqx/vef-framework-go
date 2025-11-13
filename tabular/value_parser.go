@@ -37,12 +37,10 @@ type defaultParser struct {
 
 // Parse implements the ValueParser interface for common Go types.
 func (p *defaultParser) Parse(cellValue string, targetType reflect.Type) (any, error) {
-	// Handle empty cell
 	if cellValue == constants.Empty {
 		return reflect.Zero(targetType).Interface(), nil
 	}
 
-	// Handle pointer types
 	if targetType.Kind() == reflect.Pointer {
 		elemType := targetType.Elem()
 
@@ -50,7 +48,7 @@ func (p *defaultParser) Parse(cellValue string, targetType reflect.Type) (any, e
 		if err != nil {
 			return nil, err
 		}
-		// Create pointer to the value
+
 		ptr := reflect.New(elemType)
 		ptr.Elem().Set(reflect.ValueOf(value))
 
@@ -62,17 +60,14 @@ func (p *defaultParser) Parse(cellValue string, targetType reflect.Type) (any, e
 
 // parseValue parses the cell value to the target type.
 func (p *defaultParser) parseValue(cellValue string, targetType reflect.Type) (any, error) {
-	// Try parsing null types first
 	if value, ok, err := p.parseNullType(cellValue, targetType); ok {
 		return value, err
 	}
 
-	// Try parsing struct types
 	if value, ok, err := p.parseStructType(cellValue, targetType); ok {
 		return value, err
 	}
 
-	// Parse basic types by kind
 	return p.parseBasicType(cellValue, targetType)
 }
 

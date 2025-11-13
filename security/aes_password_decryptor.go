@@ -7,23 +7,15 @@ import (
 	"github.com/ilxqx/vef-framework-go/crypto"
 )
 
-// AesPasswordDecryptor implements PasswordDecryptor using AES encryption.
-// It supports AES-128, AES-192, and AES-256 based on the key length.
-// The encrypted password should be base64-encoded.
 type AesPasswordDecryptor struct {
 	cipher crypto.Cipher
 }
 
-// NewAesPasswordDecryptor creates a new AES password decryptor.
-// The key length must be 16, 24, or 32 bytes for AES-128, AES-192, or AES-256 respectively.
-// The iv (initialization vector) must be 16 bytes for AES block size.
-// If iv is nil, it will use the first 16 bytes of the key as IV (not recommended for production).
 func NewAesPasswordDecryptor(key, iv []byte) (PasswordDecryptor, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		return nil, fmt.Errorf("%w: %d (must be 16, 24, or 32 bytes)", ErrInvalidAESKeyLength, len(key))
 	}
 
-	// If no IV provided, derive from key (simple fallback, not cryptographically ideal)
 	if iv == nil {
 		if len(key) >= 16 {
 			iv = key[:16]
@@ -36,7 +28,6 @@ func NewAesPasswordDecryptor(key, iv []byte) (PasswordDecryptor, error) {
 		return nil, fmt.Errorf("%w: %d (must be %d bytes)", ErrInvalidIVLength, len(iv), aes.BlockSize)
 	}
 
-	// Use crypto package's AES cipher with CBC mode
 	cipher, err := crypto.NewAES(key, iv, crypto.AesModeCBC)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrCreateAESCipherFailed, err)
@@ -47,9 +38,7 @@ func NewAesPasswordDecryptor(key, iv []byte) (PasswordDecryptor, error) {
 	}, nil
 }
 
-// NewAesPasswordDecryptorFromHex creates a new AES password decryptor from hex-encoded key and IV.
 func NewAesPasswordDecryptorFromHex(keyHex, ivHex string) (PasswordDecryptor, error) {
-	// Use crypto package's AES cipher from hex
 	cipher, err := crypto.NewAESFromHex(keyHex, ivHex, crypto.AesModeCBC)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrCreateAESCipherFailed, err)
@@ -60,9 +49,7 @@ func NewAesPasswordDecryptorFromHex(keyHex, ivHex string) (PasswordDecryptor, er
 	}, nil
 }
 
-// NewAesPasswordDecryptorFromBase64 creates a new AES password decryptor from base64-encoded key and IV.
 func NewAesPasswordDecryptorFromBase64(keyBase64, ivBase64 string) (PasswordDecryptor, error) {
-	// Use crypto package's AES cipher from base64
 	cipher, err := crypto.NewAESFromBase64(keyBase64, ivBase64, crypto.AesModeCBC)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrCreateAESCipherFailed, err)
@@ -73,8 +60,6 @@ func NewAesPasswordDecryptorFromBase64(keyBase64, ivBase64 string) (PasswordDecr
 	}, nil
 }
 
-// Decrypt decrypts the base64-encoded AES-encrypted password.
-// The encrypted password is expected to be in the format: base64(AES-CBC(plaintext)).
 func (d *AesPasswordDecryptor) Decrypt(encryptedPassword string) (string, error) {
 	return d.cipher.Decrypt(encryptedPassword)
 }

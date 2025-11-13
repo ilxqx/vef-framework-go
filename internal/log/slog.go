@@ -8,26 +8,26 @@ import (
 	"github.com/spf13/cast"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/log"
 )
 
 type sLogHandler struct {
-	logger      logPkg.Logger // logger is the underlying logger instance
-	attrs       []slog.Attr   // attrs contains the log attributes
-	levelFilter logPkg.Level  // levelFilter indicates the minimum log level
+	logger      log.Logger  // logger is the underlying logger instance
+	attrs       []slog.Attr // attrs contains the log attributes
+	levelFilter log.Level   // levelFilter indicates the minimum log level
 }
 
 func (s sLogHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	zapLevel := logPkg.LevelInfo
+	zapLevel := log.LevelInfo
 	switch {
 	case level >= slog.LevelError:
-		zapLevel = logPkg.LevelError
+		zapLevel = log.LevelError
 	case level >= slog.LevelWarn:
-		zapLevel = logPkg.LevelWarn
+		zapLevel = log.LevelWarn
 	case level >= slog.LevelInfo:
-		zapLevel = logPkg.LevelInfo
+		zapLevel = log.LevelInfo
 	case level >= slog.LevelDebug:
-		zapLevel = logPkg.LevelDebug
+		zapLevel = log.LevelDebug
 	}
 
 	return s.logger.Enabled(zapLevel) && zapLevel >= s.levelFilter
@@ -107,8 +107,8 @@ func formatAttr(attr slog.Attr) string {
 	}
 }
 
-func NewSLogHandler(name string, callerSkip int, levelFilter ...logPkg.Level) slog.Handler {
-	level := logPkg.LevelInfo
+func NewSLogHandler(name string, callerSkip int, levelFilter ...log.Level) slog.Handler {
+	level := log.LevelInfo
 	if len(levelFilter) > 0 {
 		level = levelFilter[0]
 	}
@@ -119,6 +119,6 @@ func NewSLogHandler(name string, callerSkip int, levelFilter ...logPkg.Level) sl
 	}
 }
 
-func NewSLogger(name string, callerSkip int, levelFilter ...logPkg.Level) *slog.Logger {
+func NewSLogger(name string, callerSkip int, levelFilter ...log.Level) *slog.Logger {
 	return slog.New(NewSLogHandler(name, callerSkip, levelFilter...))
 }

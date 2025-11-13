@@ -6,7 +6,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// queryVersion queries the MySQL version using version() function.
 func queryVersion(db *bun.DB) (string, error) {
 	var version string
 

@@ -3,36 +3,36 @@ package log
 import (
 	"go.uber.org/zap"
 
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/log"
 )
 
 type zapLogger struct {
 	logger *zap.SugaredLogger
 }
 
-func (l *zapLogger) Named(name string) logPkg.Logger {
+func (l *zapLogger) Named(name string) log.Logger {
 	return &zapLogger{
 		logger: l.logger.Named(name),
 	}
 }
 
-func (l *zapLogger) WithCallerSkip(skip int) logPkg.Logger {
+func (l *zapLogger) WithCallerSkip(skip int) log.Logger {
 	return &zapLogger{
 		logger: l.logger.WithOptions(zap.AddCallerSkip(skip)),
 	}
 }
 
-func (l *zapLogger) Enabled(level logPkg.Level) bool {
+func (l *zapLogger) Enabled(level log.Level) bool {
 	switch level {
-	case logPkg.LevelDebug:
+	case log.LevelDebug:
 		return l.logger.Level().Enabled(zap.DebugLevel)
-	case logPkg.LevelInfo:
+	case log.LevelInfo:
 		return l.logger.Level().Enabled(zap.InfoLevel)
-	case logPkg.LevelWarn:
+	case log.LevelWarn:
 		return l.logger.Level().Enabled(zap.WarnLevel)
-	case logPkg.LevelError:
+	case log.LevelError:
 		return l.logger.Level().Enabled(zap.ErrorLevel)
-	case logPkg.LevelPanic:
+	case log.LevelPanic:
 		return l.logger.Level().Enabled(zap.PanicLevel)
 	}
 

@@ -37,7 +37,6 @@ func NewSM4(key, iv []byte, mode ...Sm4Mode) (Cipher, error) {
 		return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidSM4KeySize, len(key), sm4.BlockSize)
 	}
 
-	// Default to CBC mode if not specified
 	selectedMode := Sm4ModeCBC
 	if len(mode) > 0 {
 		selectedMode = mode[0]
@@ -64,7 +63,6 @@ func NewSM4FromHex(keyHex, ivHex string, mode ...Sm4Mode) (Cipher, error) {
 		return nil, fmt.Errorf("failed to decode key from hex: %w", err)
 	}
 
-	// Default to CBC mode if not specified
 	selectedMode := Sm4ModeCBC
 	if len(mode) > 0 {
 		selectedMode = mode[0]
@@ -89,7 +87,6 @@ func NewSM4FromBase64(keyBase64, ivBase64 string, mode ...Sm4Mode) (Cipher, erro
 		return nil, fmt.Errorf("failed to decode key from base64: %w", err)
 	}
 
-	// Default to CBC mode if not specified
 	selectedMode := Sm4ModeCBC
 	if len(mode) > 0 {
 		selectedMode = mode[0]
@@ -126,7 +123,6 @@ func (s *Sm4Cipher) Decrypt(ciphertext string) (string, error) {
 
 // encryptECB encrypts plaintext using SM4-ECB mode with PKCS7 padding.
 func (s *Sm4Cipher) encryptECB(plaintext string) (string, error) {
-	// PKCS7 padding
 	paddedData := pkcs7Padding([]byte(plaintext), sm4.BlockSize)
 
 	ciphertext, err := sm4.Sm4Ecb(s.key, paddedData, true)
@@ -149,7 +145,6 @@ func (s *Sm4Cipher) decryptECB(ciphertext string) (string, error) {
 		return constants.Empty, fmt.Errorf("failed to decrypt: %w", err)
 	}
 
-	// Remove PKCS7 padding
 	unpaddedData, err := pkcs7Unpadding(plaintext)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to remove padding: %w", err)
@@ -165,7 +160,6 @@ func (s *Sm4Cipher) encryptCBC(plaintext string) (string, error) {
 		return constants.Empty, fmt.Errorf("failed to create SM4 cipher: %w", err)
 	}
 
-	// PKCS7 padding
 	paddedData := pkcs7Padding([]byte(plaintext), sm4.BlockSize)
 
 	ciphertext := make([]byte, len(paddedData))
@@ -195,7 +189,6 @@ func (s *Sm4Cipher) decryptCBC(ciphertext string) (string, error) {
 	mode := cipher.NewCBCDecrypter(block, s.iv)
 	mode.CryptBlocks(plaintext, encryptedData)
 
-	// Remove PKCS7 padding
 	unpaddedData, err := pkcs7Unpadding(plaintext)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to remove padding: %w", err)

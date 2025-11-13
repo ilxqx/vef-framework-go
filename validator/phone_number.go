@@ -6,10 +6,8 @@ import (
 	v "github.com/go-playground/validator/v10"
 )
 
-// phoneNumberRegex validates 11-digit phone numbers.
 var phoneNumberRegex = regexp.MustCompile(`^1[3-9]\d{9}$`)
 
-// newPhoneNumberRule creates a new validation rule for phone numbers.
 func newPhoneNumberRule() ValidationRule {
 	return ValidationRule{
 		RuleTag:                  "phone_number",

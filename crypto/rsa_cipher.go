@@ -38,13 +38,11 @@ func NewRSA(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, mode ...RsaMod
 		return nil, ErrAtLeastOneKeyRequired
 	}
 
-	// Default to OAEP mode if not specified
 	selectedMode := RsaModeOAEP
 	if len(mode) > 0 {
 		selectedMode = mode[0]
 	}
 
-	// If only private key is provided, derive public key
 	if publicKey == nil && privateKey != nil {
 		publicKey = &privateKey.PublicKey
 	}
@@ -71,28 +69,22 @@ func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 			if err2 != nil {
 				return nil, nil, fmt.Errorf("failed to parse private key (tried PKCS1 and PKCS8): %w", err)
 			}
-
 			var ok bool
-
-			privateKey, ok = key.(*rsa.PrivateKey)
-			if !ok {
+			if privateKey, ok = key.(*rsa.PrivateKey); !ok {
 				return nil, nil, ErrNotRSAPrivateKey
 			}
 		}
 	}
 
 	if len(publicKeyBytes) > 0 {
-		var key any
-		if key, err = x509.ParsePKIXPublicKey(publicKeyBytes); err != nil {
-			publicKey, err = x509.ParsePKCS1PublicKey(publicKeyBytes)
-			if err != nil {
+		key, err := x509.ParsePKIXPublicKey(publicKeyBytes)
+		if err != nil {
+			if publicKey, err = x509.ParsePKCS1PublicKey(publicKeyBytes); err != nil {
 				return nil, nil, fmt.Errorf("failed to parse public key (tried PKIX and PKCS1): %w", err)
 			}
 		} else {
 			var ok bool
-
-			publicKey, ok = key.(*rsa.PublicKey)
-			if !ok {
+			if publicKey, ok = key.(*rsa.PublicKey); !ok {
 				return nil, nil, ErrNotRSAPublicKey
 			}
 		}
@@ -246,12 +238,10 @@ func parseRSAPrivateKeyFromPEM(pemData []byte) (*rsa.PrivateKey, error) {
 		return nil, ErrFailedDecodePEMBlock
 	}
 
-	// Try PKCS1 format first
 	if block.Type == "RSA PRIVATE KEY" {
 		return x509.ParsePKCS1PrivateKey(block.Bytes)
 	}
 
-	// Try PKCS8 format
 	if block.Type == "PRIVATE KEY" {
 		key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 		if err != nil {
@@ -276,7 +266,6 @@ func parseRSAPublicKeyFromPEM(pemData []byte) (*rsa.PublicKey, error) {
 		return nil, ErrFailedDecodePEMBlock
 	}
 
-	// Try PKIX format
 	if block.Type == "PUBLIC KEY" {
 		key, err := x509.ParsePKIXPublicKey(block.Bytes)
 		if err != nil {
@@ -291,7 +280,6 @@ func parseRSAPublicKeyFromPEM(pemData []byte) (*rsa.PublicKey, error) {
 		return rsaKey, nil
 	}
 
-	// Try PKCS1 format
 	if block.Type == "RSA PUBLIC KEY" {
 		return x509.ParsePKCS1PublicKey(block.Bytes)
 	}

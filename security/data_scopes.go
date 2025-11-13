@@ -5,10 +5,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/orm"
 )
 
-// Data scope priority constants.
-// Higher values indicate broader access permissions.
-// When a user has multiple roles with the same permission token but different data scopes,
-// the framework will select the scope with the highest priority.
 const (
 	// PrioritySelf indicates access only to data created by the user themselves.
 	// This is the most restrictive data scope.

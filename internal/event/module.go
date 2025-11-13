@@ -52,6 +52,14 @@ var (
 				fx.As(new(event.Subscriber)),
 				fx.As(new(event.Publisher)),
 			),
+			fx.Annotate(
+				NewPublisherHandlerParamResolver,
+				fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+			),
+			fx.Annotate(
+				NewPublisherFactoryParamResolver,
+				fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
+			),
 		),
 	)
 )

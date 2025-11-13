@@ -11,9 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
-// NewLoggerMiddleware returns a middleware that initializes a request-scoped logger.
-// The logger is stored in fiber context via contextx.SetLogger and can be retrieved later.
-// This middleware depends on requestid middleware to ensure request id is available.
+// NewLoggerMiddleware creates request-scoped loggers to correlate all log entries within a request.
 func NewLoggerMiddleware() app.Middleware {
 	return &SimpleMiddleware{
 		handler: func(ctx fiber.Ctx) error {

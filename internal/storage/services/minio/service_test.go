@@ -10,12 +10,12 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	minioPkg "github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7"
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/contract"
+	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
 	"github.com/ilxqx/vef-framework-go/storage"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
 // MinIOServiceTestSuite tests MinIO storage service implementation.
@@ -25,7 +25,7 @@ type MinIOServiceTestSuite struct {
 	ctx            context.Context
 	minioContainer *testhelpers.MinIOContainer
 	service        storage.Service
-	minioClient    *minioPkg.Client
+	minioClient    *minio.Client
 
 	testBucketName  string
 	testObjectKey   string
@@ -55,7 +55,7 @@ func (suite *MinIOServiceTestSuite) SetupSuite() {
 }
 
 func (suite *MinIOServiceTestSuite) TearDownSuite() {
-	objectsCh := suite.minioClient.ListObjects(suite.ctx, suite.testBucketName, minioPkg.ListObjectsOptions{
+	objectsCh := suite.minioClient.ListObjects(suite.ctx, suite.testBucketName, minio.ListObjectsOptions{
 		Recursive: true,
 	})
 
@@ -64,7 +64,7 @@ func (suite *MinIOServiceTestSuite) TearDownSuite() {
 			continue
 		}
 
-		_ = suite.minioClient.RemoveObject(suite.ctx, suite.testBucketName, object.Key, minioPkg.RemoveObjectOptions{})
+		_ = suite.minioClient.RemoveObject(suite.ctx, suite.testBucketName, object.Key, minio.RemoveObjectOptions{})
 	}
 
 	_ = suite.minioClient.RemoveBucket(suite.ctx, suite.testBucketName)
@@ -75,7 +75,7 @@ func (suite *MinIOServiceTestSuite) TearDownSuite() {
 }
 
 func (suite *MinIOServiceTestSuite) SetupTest() {
-	objectsCh := suite.minioClient.ListObjects(suite.ctx, suite.testBucketName, minioPkg.ListObjectsOptions{
+	objectsCh := suite.minioClient.ListObjects(suite.ctx, suite.testBucketName, minio.ListObjectsOptions{
 		Recursive: true,
 	})
 
@@ -84,7 +84,7 @@ func (suite *MinIOServiceTestSuite) SetupTest() {
 			continue
 		}
 
-		_ = suite.minioClient.RemoveObject(suite.ctx, suite.testBucketName, object.Key, minioPkg.RemoveObjectOptions{})
+		_ = suite.minioClient.RemoveObject(suite.ctx, suite.testBucketName, object.Key, minio.RemoveObjectOptions{})
 	}
 }
 

@@ -8,8 +8,10 @@ import (
 )
 
 var (
-	// ErrResolveParamType indicates failing to resolve handler parameter type.
-	ErrResolveParamType = errors.New("failed to resolve api handler parameter type")
+	// ErrResolveHandlerParamType indicates failing to resolve handler parameter type.
+	ErrResolveHandlerParamType = errors.New("failed to resolve api handler parameter type")
+	// ErrResolveFactoryParamType indicates failing to resolve factory function parameter type.
+	ErrResolveFactoryParamType = errors.New("failed to resolve factory parameter type")
 	// ErrProvidedHandlerNil indicates provided handler is nil.
 	ErrProvidedHandlerNil = errors.New("provided handler cannot be nil")
 	// ErrProvidedHandlerMustFunc indicates provided handler must be a function.
@@ -38,7 +40,6 @@ type DuplicateApiError struct {
 	New        *api.Definition
 }
 
-// Error returns a formatted error message with details about the duplicate Api.
 func (e *DuplicateApiError) Error() string {
 	return fmt.Sprintf(
 		"duplicate api definition: resource=%q, action=%q, version=%q (attempting to override existing api)",

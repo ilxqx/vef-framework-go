@@ -7,8 +7,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	ilog "github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/log"
 )
 
 const (
@@ -47,7 +47,7 @@ func PublishDataDictChangedEvent(publisher event.Publisher, keys ...string) {
 type CachedDataDictResolver struct {
 	loader    DataDictLoader
 	dictCache cache.Cache[map[string]string]
-	logger    logPkg.Logger
+	logger    log.Logger
 }
 
 // NewCachedDataDictResolver constructs a caching resolver for dictionary lookups.
@@ -66,7 +66,7 @@ func NewCachedDataDictResolver(
 	resolver := &CachedDataDictResolver{
 		loader:    loader,
 		dictCache: cache.NewMemory[map[string]string](),
-		logger:    log.Named("translate:cached_data_dict_resolver"),
+		logger:    ilog.Named("translate:cached_data_dict_resolver"),
 	}
 
 	bus.Subscribe(eventTypeDataDictChanged, resolver.handleInvalidation)

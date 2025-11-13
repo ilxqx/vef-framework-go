@@ -14,24 +14,20 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// provider implements databaseProvider for PostgreSQL.
 type provider struct {
 	dbType constants.DbType
 }
 
-// NewProvider creates a new PostgreSQL provider.
 func NewProvider() *provider {
 	return &provider{
 		dbType: constants.DbPostgres,
 	}
 }
 
-// Type returns the database type.
 func (p *provider) Type() constants.DbType {
 	return p.dbType
 }
 
-// Connect establishes a PostgreSQL database connection.
 func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(config); err != nil {
 		return nil, nil, err
@@ -59,14 +55,11 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 	return sql.OpenDB(connector), pgdialect.New(), nil
 }
 
-// ValidateConfig validates PostgreSQL configuration.
+// PostgreSQL allows defaults for all connection parameters and validates during connection.
 func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
-	// PostgreSQL is more flexible with defaults, so minimal validation is needed
-	// The connection attempt will catch most configuration issues
 	return nil
 }
 
-// QueryVersion queries the PostgreSQL version.
 func (p *provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }

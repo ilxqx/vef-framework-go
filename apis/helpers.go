@@ -1,6 +1,8 @@
 package apis
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,6 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
+	"github.com/ilxqx/vef-framework-go/storage"
 )
 
 // validateColumnsExist validates that the specified columns exist in the model schema.
@@ -102,7 +105,6 @@ func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.Relat
 		nc = nameColumn[0]
 	}
 
-	// Create RelationSpecs for creator and updater
 	relations := []*orm.RelationSpec{
 		{
 			Model:         userModel,
@@ -195,9 +197,48 @@ func buildMetaJsonExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.
 	// Build JSON_OBJECT arguments: key1, value1, key2, value2, ...
 	jsonArgs := make([]any, 0, len(metaColumns)*2)
 	for _, col := range metaColumns {
-		// Add key-value pair: alias as key, column expression as value
 		jsonArgs = append(jsonArgs, col.Alias, eb.Column(col.Name))
 	}
 
 	return eb.JsonObject(jsonArgs...)
+}
+
+// batchCleanup cleans up files in batch, collecting all errors.
+// Used in create/delete operations to cleanup files.
+func batchCleanup[TModel any](
+	ctx context.Context,
+	promoter storage.Promoter[TModel],
+	models []TModel,
+) error {
+	var errs []error
+	for i := range models {
+		if err := promoter.Promote(ctx, nil, &models[i]); err != nil {
+			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
+		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// batchRollback rolls back files in batch, collecting all errors.
+// Used in update operations to rollback to old files when failures occur.
+// count specifies how many models to rollback (typically the index where the error occurred).
+func batchRollback[TModel any](
+	ctx context.Context,
+	promoter storage.Promoter[TModel],
+	oldModels, newModels []TModel,
+	count int,
+) error {
+	var errs []error
+	for i := range count {
+		if err := promoter.Promote(ctx, &newModels[i], &oldModels[i]); err != nil {
+			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
+		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
 }

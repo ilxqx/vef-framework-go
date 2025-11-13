@@ -10,7 +10,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
-// NewRecoveryMiddleware is a middleware that recovers from panics.
 func NewRecoveryMiddleware() app.Middleware {
 	handler := recover.New(recover.Config{
 		EnableStackTrace: true,

@@ -7,28 +7,24 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/monitor"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
 )
 
 // NewResource creates a new monitor resource with the provided service.
 func NewResource(service monitor.Service) api.Resource {
-	// In test environment, make all actions public (no authentication required)
-	isPublic := testhelpers.IsTestEnv()
-
 	return &Resource{
 		service: service,
 		Resource: api.NewResource(
 			"sys/monitor",
 			api.WithApis(
-				api.Spec{Action: "get_overview", Public: isPublic},
-				api.Spec{Action: "get_cpu", Public: isPublic},
-				api.Spec{Action: "get_memory", Public: isPublic},
-				api.Spec{Action: "get_disk", Public: isPublic},
-				api.Spec{Action: "get_network", Public: isPublic},
-				api.Spec{Action: "get_host", Public: isPublic},
-				api.Spec{Action: "get_process", Public: isPublic},
-				api.Spec{Action: "get_load", Public: isPublic},
-				api.Spec{Action: "get_build_info", Public: isPublic},
+				api.Spec{Action: "get_overview", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_cpu", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_memory", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_disk", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_network", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_host", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_process", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_load", Public: isMonitorApiPublic},
+				api.Spec{Action: "get_build_info", Public: isMonitorApiPublic},
 			),
 		),
 	}

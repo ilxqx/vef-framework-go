@@ -19,7 +19,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
+	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
 )
@@ -121,7 +121,7 @@ func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 		return bunDb
 	})
 
-	suite.app, suite.stop = appTest.NewTestApp(
+	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		opts...,
 	)

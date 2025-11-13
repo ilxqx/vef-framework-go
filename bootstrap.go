@@ -12,7 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/cron"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/event"
-	"github.com/ilxqx/vef-framework-go/internal/log"
+	ilog "github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/internal/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/mold"
 	"github.com/ilxqx/vef-framework-go/internal/monitor"
@@ -20,7 +20,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/redis"
 	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/storage"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	"github.com/ilxqx/vef-framework-go/log"
 )
 
 // Default timeout for framework startup and shutdown.
@@ -28,7 +28,7 @@ const defaultTimeout = 30 * time.Second
 
 func newFxLogger() fxevent.Logger {
 	return &fxevent.SlogLogger{
-		Logger: log.NewSLogger("vef", 5, logPkg.LevelWarn),
+		Logger: ilog.NewSLogger("vef", 5, log.LevelWarn),
 	}
 }
 

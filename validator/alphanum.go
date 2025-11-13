@@ -6,17 +6,12 @@ import (
 	v "github.com/go-playground/validator/v10"
 )
 
-// Regex patterns for alphanum variations.
 var (
-	// AlphanumUsRegex validates strings containing only alphanumeric characters and underscores.
-	alphanumUsRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-	// AlphanumUsSlashRegex validates strings containing alphanumeric characters, underscores, and slashes.
+	alphanumUsRegex      = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 	alphanumUsSlashRegex = regexp.MustCompile(`^[a-zA-Z0-9_/]+$`)
-	// AlphanumUsDotRegex validates strings containing alphanumeric characters, underscores, and dots.
-	alphanumUsDotRegex = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`)
+	alphanumUsDotRegex   = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`)
 )
 
-// newAlphanumUsRule creates a validation rule for alphanumeric characters with underscores.
 func newAlphanumUsRule() ValidationRule {
 	return ValidationRule{
 		RuleTag:                  "alphanum_us",
@@ -32,7 +27,6 @@ func newAlphanumUsRule() ValidationRule {
 	}
 }
 
-// newAlphanumUsSlashRule creates a validation rule for alphanumeric characters with underscores and slashes.
 func newAlphanumUsSlashRule() ValidationRule {
 	return ValidationRule{
 		RuleTag:                  "alphanum_us_slash",
@@ -48,7 +42,6 @@ func newAlphanumUsSlashRule() ValidationRule {
 	}
 }
 
-// newAlphanumUsDotRule creates a validation rule for alphanumeric characters with underscores and dots.
 func newAlphanumUsDotRule() ValidationRule {
 	return ValidationRule{
 		RuleTag:                  "alphanum_us_dot",

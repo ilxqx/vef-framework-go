@@ -21,22 +21,17 @@ var (
 						return db, err
 					}
 
-					// Get provider for StartHook validation
 					provider, exists := registry.provider(config.Type)
 					if !exists {
 						return nil, newUnsupportedDbTypeError(config.Type)
 					}
 
-					// Register lifecycle hooks for proper startup and shutdown
 					lc.Append(
 						fx.StartStopHook(
 							func(ctx context.Context) error {
-								// Validate connection
 								if err := db.PingContext(ctx); err != nil {
 									return wrapPingError(provider.Type(), err)
 								}
-
-								// Log database version
 								if err := logDbVersion(provider, db, logger); err != nil {
 									return err
 								}

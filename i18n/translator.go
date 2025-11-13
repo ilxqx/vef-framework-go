@@ -57,10 +57,7 @@ type i18nTranslator struct {
 func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) string {
 	message, err := t.Te(messageId, templateData...)
 	if err != nil {
-		// Log the warning but don't fail - return the original messageId as fallback
-		// This ensures the application continues to work even with missing translations
 		logger.Warnf("Translation failed for messageId %q: %v", messageId, err)
-
 		return messageId
 	}
 
@@ -70,18 +67,15 @@ func (t *i18nTranslator) T(messageId string, templateData ...map[string]any) str
 // Te implements the Translator interface with explicit error reporting.
 // It attempts to localize the message using the underlying go-i18n library.
 func (t *i18nTranslator) Te(messageId string, templateData ...map[string]any) (string, error) {
-	// Validate messageId is not empty
 	if messageId == constants.Empty {
 		return constants.Empty, ErrMessageIdEmpty
 	}
 
-	// Extract template data if provided (only use the first map)
 	var data map[string]any
 	if len(templateData) > 0 {
 		data = templateData[0]
 	}
 
-	// Attempt to localize the message using go-i18n
 	result, err := t.localizer.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageId,
 		TemplateData: data,

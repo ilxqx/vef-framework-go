@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	eventPkg "github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/internal/event"
+	"github.com/ilxqx/vef-framework-go/event"
+	ievent "github.com/ilxqx/vef-framework-go/internal/event"
 )
 
 // CachedDataDictResolverTestSuite tests the CachedDataDictResolver component.
@@ -21,13 +21,13 @@ type CachedDataDictResolverTestSuite struct {
 	suite.Suite
 
 	ctx context.Context
-	bus eventPkg.Bus
+	bus event.Bus
 }
 
 func (s *CachedDataDictResolverTestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
-	s.bus = event.NewMemoryBus([]eventPkg.Middleware{})
+	s.bus = ievent.NewMemoryBus([]event.Middleware{})
 
 	err := s.bus.Start()
 	s.Require().NoError(err)

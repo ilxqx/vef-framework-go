@@ -23,7 +23,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
+	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/result"
@@ -77,7 +77,7 @@ func (suite *BasicApiTestSuite) SetupSuite() {
 	opts[len(opts)-1] = fx.Populate(&suite.bus)
 
 	// Create test app
-	suite.app, suite.stop = appTest.NewTestApp(suite.T(), opts...)
+	suite.app, suite.stop = apptest.NewTestApp(suite.T(), opts...)
 
 	suite.T().Log("BasicApiTestSuite setup complete - App instance ready")
 }

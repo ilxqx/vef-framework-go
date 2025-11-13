@@ -7,24 +7,25 @@ var Module = fx.Module(
 	fx.Provide(
 		fx.Annotate(
 			NewHandlerParamResolverManager,
-			fx.ParamTags(`group:"vef:api:param_resolvers"`),
+			fx.ParamTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewFactoryParamResolverManager,
+			fx.ParamTags(`group:"vef:api:factory_param_resolvers"`),
 		),
 		fx.Private,
 	),
 	fx.Provide(
-		// provide managers
 		fx.Annotate(
 			NewManager,
-			fx.ParamTags(`group:"vef:api:resources"`, `optional:"true"`),
+			fx.ParamTags(`group:"vef:api:resources"`),
 			fx.ResultTags(`name:"vef:api:manager"`),
 		),
 		fx.Annotate(
 			NewManager,
-			fx.ParamTags(`group:"vef:openapi:resources"`, `optional:"true"`),
+			fx.ParamTags(`group:"vef:openapi:resources"`),
 			fx.ResultTags(`name:"vef:openapi:manager"`),
 		),
-
-		// provide policies
 		fx.Annotate(
 			NewDefaultApiPolicy,
 			fx.ResultTags(`name:"vef:api:policy"`),
@@ -33,8 +34,6 @@ var Module = fx.Module(
 			NewOpenApiPolicy,
 			fx.ResultTags(`name:"vef:openapi:policy"`),
 		),
-
-		// provide engines
 		fx.Annotate(
 			NewEngine,
 			fx.ParamTags(
@@ -43,7 +42,6 @@ var Module = fx.Module(
 				`optional:"true"`, // PermissionChecker
 				`optional:"true"`, // DataPermissionResolver
 				``,                // orm.Db
-				``,                // mold.Transformer
 				``,                // event.Publisher
 			),
 			fx.ResultTags(`name:"vef:api:engine"`),
@@ -56,7 +54,6 @@ var Module = fx.Module(
 				`optional:"true"`, // PermissionChecker
 				`optional:"true"`, // DataPermissionResolver
 				``,                // orm.Db
-				``,                // mold.Transformer
 				``,                // event.Publisher
 			),
 			fx.ResultTags(`name:"vef:openapi:engine"`),

@@ -23,22 +23,17 @@ import (
 )
 
 const (
-	// TagLabel is the struct tag name for field labels.
-	tagLabel = "label"
-	// TagLabelI18n is the struct tag name for internationalized field labels.
+	tagLabel     = "label"
 	tagLabelI18n = "label_i18n"
 )
 
 var (
-	logger = log.Named("validator")
-	// Translator handles error message translations.
+	logger     = log.Named("validator")
 	translator ut.Translator
-	// Validator is the main validation instance.
-	validator *v.Validate
+	validator  *v.Validate
 )
 
 func init() {
-	// Initialize validator with i18n support based on environment configuration
 	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
 	localeTranslator := lo.TernaryF(
 		preferredLanguage == constants.DefaultI18NLanguage,
@@ -56,7 +51,6 @@ func init() {
 	)
 	validator = v.New(v.WithRequiredStructEnabled())
 
-	// Register translations
 	if err := lo.TernaryF(
 		preferredLanguage == constants.DefaultI18NLanguage,
 		func() error {
@@ -71,7 +65,6 @@ func init() {
 		)
 	}
 
-	// Register field name function
 	validator.RegisterTagNameFunc(func(field reflect.StructField) string {
 		label := field.Tag.Get(tagLabel)
 		if label != constants.Empty {
@@ -89,7 +82,6 @@ func init() {
 	setup()
 }
 
-// RegisterValidationRules registers custom validation rules.
 func RegisterValidationRules(rules ...ValidationRule) error {
 	for _, rule := range rules {
 		if err := rule.register(validator); err != nil {
@@ -100,15 +92,12 @@ func RegisterValidationRules(rules ...ValidationRule) error {
 	return nil
 }
 
-// CustomTypeFunc defines a custom type function for validation that extracts values from custom types.
 type CustomTypeFunc = func(field reflect.Value) any
 
-// RegisterTypeFunc registers a custom type function for specified types.
 func RegisterTypeFunc(fn CustomTypeFunc, types ...any) {
 	validator.RegisterCustomTypeFunc(fn, types...)
 }
 
-// RegisterNullValueTypeFunc registers a type function for null.Value[T] types.
 func RegisterNullValueTypeFunc[T any]() {
 	validator.RegisterCustomTypeFunc(
 		func(field reflect.Value) any {
@@ -122,7 +111,6 @@ func RegisterNullValueTypeFunc[T any]() {
 	)
 }
 
-// Validate validates the value.
 func Validate(value any) error {
 	if err := validator.Struct(value); err != nil {
 		var validationErrors v.ValidationErrors

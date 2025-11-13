@@ -15,7 +15,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
 )
 
 type TestUser struct {

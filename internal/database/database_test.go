@@ -12,7 +12,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/testhelpers"
+	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
 )
 
 // DatabaseTestSuite tests database connection and configuration for PostgreSQL, MySQL, and SQLite.

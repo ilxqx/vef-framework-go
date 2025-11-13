@@ -8,27 +8,27 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/ilxqx/vef-framework-go"
-	apiPkg "github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
-	appTest "github.com/ilxqx/vef-framework-go/internal/app/test"
+	"github.com/ilxqx/vef-framework-go/internal/apptest"
 )
 
 // TestDuplicateApiDetection tests that duplicate Api definitions are properly detected and rejected.
 func TestDuplicateApiDetection(t *testing.T) {
 	t.Run("DetectDuplicateInSameResource", func(t *testing.T) {
 		resource := &DuplicateActionResource{
-			Resource: apiPkg.NewResource(
+			Resource: api.NewResource(
 				"test/duplicate",
-				apiPkg.WithApis(
-					apiPkg.Spec{Action: "test_action"},
-					apiPkg.Spec{Action: "test_action"}, // ❌ Duplicate!
+				api.WithApis(
+					api.Spec{Action: "test_action"},
+					api.Spec{Action: "test_action"}, // ❌ Duplicate!
 				),
 			),
 		}
 
 		opts := []fx.Option{
-			vef.ProvideApiResource(func() apiPkg.Resource {
+			vef.ProvideApiResource(func() api.Resource {
 				return resource
 			}),
 			fx.Replace(&config.DatasourceConfig{
@@ -36,7 +36,7 @@ func TestDuplicateApiDetection(t *testing.T) {
 			}),
 		}
 
-		_, stop, err := appTest.NewTestAppWithErr(t, opts...)
+		_, stop, err := apptest.NewTestAppWithErr(t, opts...)
 		if stop != nil {
 			defer stop()
 		}
@@ -53,28 +53,28 @@ func TestDuplicateApiDetection(t *testing.T) {
 
 	t.Run("DetectDuplicateAcrossResources", func(t *testing.T) {
 		resource1 := &DuplicateActionResource{
-			Resource: apiPkg.NewResource(
+			Resource: api.NewResource(
 				"test/conflict",
-				apiPkg.WithApis(
-					apiPkg.Spec{Action: "shared_action"},
+				api.WithApis(
+					api.Spec{Action: "shared_action"},
 				),
 			),
 		}
 
 		resource2 := &DuplicateActionResource{
-			Resource: apiPkg.NewResource(
+			Resource: api.NewResource(
 				"test/conflict", // ❌ Same resource name!
-				apiPkg.WithApis(
-					apiPkg.Spec{Action: "shared_action"}, // ❌ Same action!
+				api.WithApis(
+					api.Spec{Action: "shared_action"}, // ❌ Same action!
 				),
 			),
 		}
 
 		opts := []fx.Option{
-			vef.ProvideApiResource(func() apiPkg.Resource {
+			vef.ProvideApiResource(func() api.Resource {
 				return resource1
 			}),
-			vef.ProvideApiResource(func() apiPkg.Resource {
+			vef.ProvideApiResource(func() api.Resource {
 				return resource2
 			}),
 			fx.Replace(&config.DatasourceConfig{
@@ -82,7 +82,7 @@ func TestDuplicateApiDetection(t *testing.T) {
 			}),
 		}
 
-		_, stop, err := appTest.NewTestAppWithErr(t, opts...)
+		_, stop, err := apptest.NewTestAppWithErr(t, opts...)
 		if stop != nil {
 			defer stop()
 		}
@@ -99,17 +99,17 @@ func TestDuplicateApiDetection(t *testing.T) {
 
 	t.Run("AllowDifferentVersions", func(t *testing.T) {
 		resource := &DuplicateActionResource{
-			Resource: apiPkg.NewResource(
+			Resource: api.NewResource(
 				"test/versioned",
-				apiPkg.WithApis(
-					apiPkg.Spec{Action: "test_action", Version: "v1"},
-					apiPkg.Spec{Action: "test_action", Version: "v2"}, // ✓ Different version - OK
+				api.WithApis(
+					api.Spec{Action: "test_action", Version: "v1"},
+					api.Spec{Action: "test_action", Version: "v2"}, // ✓ Different version - OK
 				),
 			),
 		}
 
 		opts := []fx.Option{
-			vef.ProvideApiResource(func() apiPkg.Resource {
+			vef.ProvideApiResource(func() api.Resource {
 				return resource
 			}),
 			fx.Replace(&config.DatasourceConfig{
@@ -117,7 +117,7 @@ func TestDuplicateApiDetection(t *testing.T) {
 			}),
 		}
 
-		_, stop, err := appTest.NewTestAppWithErr(t, opts...)
+		_, stop, err := apptest.NewTestAppWithErr(t, opts...)
 		if stop != nil {
 			defer stop()
 		}
@@ -127,16 +127,16 @@ func TestDuplicateApiDetection(t *testing.T) {
 
 	t.Run("DetectSystemApiOverride", func(t *testing.T) {
 		resource := &DuplicateActionResource{
-			Resource: apiPkg.NewResource(
+			Resource: api.NewResource(
 				"security/auth", // ❌ System resource!
-				apiPkg.WithApis(
-					apiPkg.Spec{Action: "login"}, // ❌ System action!
+				api.WithApis(
+					api.Spec{Action: "login"}, // ❌ System action!
 				),
 			),
 		}
 
 		opts := []fx.Option{
-			vef.ProvideApiResource(func() apiPkg.Resource {
+			vef.ProvideApiResource(func() api.Resource {
 				return resource
 			}),
 			fx.Replace(&config.DatasourceConfig{
@@ -144,7 +144,7 @@ func TestDuplicateApiDetection(t *testing.T) {
 			}),
 		}
 
-		_, stop, err := appTest.NewTestAppWithErr(t, opts...)
+		_, stop, err := apptest.NewTestAppWithErr(t, opts...)
 		if stop != nil {
 			defer stop()
 		}
@@ -161,16 +161,16 @@ func TestDuplicateApiDetection(t *testing.T) {
 
 	t.Run("DetectStorageApiOverride", func(t *testing.T) {
 		resource := &DuplicateActionResource{
-			Resource: apiPkg.NewResource(
+			Resource: api.NewResource(
 				"sys/storage", // ❌ System resource!
-				apiPkg.WithApis(
-					apiPkg.Spec{Action: "upload"}, // ❌ System action!
+				api.WithApis(
+					api.Spec{Action: "upload"}, // ❌ System action!
 				),
 			),
 		}
 
 		opts := []fx.Option{
-			vef.ProvideApiResource(func() apiPkg.Resource {
+			vef.ProvideApiResource(func() api.Resource {
 				return resource
 			}),
 			fx.Replace(&config.DatasourceConfig{
@@ -178,7 +178,7 @@ func TestDuplicateApiDetection(t *testing.T) {
 			}),
 		}
 
-		_, stop, err := appTest.NewTestAppWithErr(t, opts...)
+		_, stop, err := apptest.NewTestAppWithErr(t, opts...)
 		if stop != nil {
 			defer stop()
 		}
@@ -196,7 +196,7 @@ func TestDuplicateApiDetection(t *testing.T) {
 
 // DuplicateActionResource is a test resource used for duplicate detection tests.
 type DuplicateActionResource struct {
-	apiPkg.Resource
+	api.Resource
 }
 
 // TestAction is a placeholder handler.

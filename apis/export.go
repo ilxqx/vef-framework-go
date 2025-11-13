@@ -89,7 +89,6 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 
 	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, config exportConfig, search TSearch) error {
 		var (
-			// Determine format: use param format if provided, otherwise use default
 			format                       = lo.CoalesceOrEmpty(config.Format, a.defaultFormat, FormatExcel)
 			exporter                     tabular.Exporter
 			contentType, defaultFilename string
@@ -122,7 +121,6 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 			return err
 		}
 
-		// Apply transformation to each model
 		if len(models) > 0 {
 			for i := range models {
 				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
@@ -131,26 +129,22 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 			}
 		}
 
-		// Apply pre-export processor
 		if a.preExport != nil {
 			if err := a.preExport(models, search, ctx, db); err != nil {
 				return err
 			}
 		}
 
-		// Export to buffer
 		buf, err := exporter.Export(models)
 		if err != nil {
 			return err
 		}
 
-		// Build filename
 		filename := defaultFilename
 		if a.filenameBuilder != nil {
 			filename = a.filenameBuilder(search, ctx)
 		}
 
-		// Set response headers for file download
 		ctx.Set(fiber.HeaderContentType, contentType)
 		ctx.Set(fiber.HeaderContentDisposition, "attachment; filename="+filename)
 

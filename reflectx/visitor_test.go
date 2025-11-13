@@ -360,7 +360,7 @@ func TestVisitType_DepthFirst(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(VisitorTestNested{}), visitor)
+	VisitType(reflect.TypeFor[VisitorTestNested](), visitor)
 
 	// Verify types are visited in depth-first order
 	expectedTypes := []string{"VisitorTestNested", "VisitorTestEmbedded", "VisitorTestBase", "VisitorTestServices", "VisitorTestLogger", "VisitorTestCache"}
@@ -394,7 +394,7 @@ func TestVisitType_BreadthFirst(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(VisitorTestNested{}), visitor, WithTraversalMode(BreadthFirst))
+	VisitType(reflect.TypeFor[VisitorTestNested](), visitor, WithTraversalMode(BreadthFirst))
 
 	// Verify breadth-first ordering
 	require.Len(t, visitedTypes, 6)
@@ -426,7 +426,7 @@ func TestVisitType_MaxDepth(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(VisitorTestNested{}), visitor, WithMaxDepth(2))
+	VisitType(reflect.TypeFor[VisitorTestNested](), visitor, WithMaxDepth(2))
 
 	// Should not visit deeper structures due to MaxDepth
 	assert.NotContains(t, visitedTypes, "VisitorTestLogger")
@@ -446,7 +446,7 @@ func TestVisitType_StopAction(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(VisitorTestNested{}), visitor)
+	VisitType(reflect.TypeFor[VisitorTestNested](), visitor)
 
 	// Should stop after finding VisitorTestEmbedded
 	assert.Contains(t, visitedTypes, "VisitorTestEmbedded")
@@ -471,7 +471,7 @@ func TestVisitType_SkipChildrenAction(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(VisitorTestEmbedded{}), visitor)
+	VisitType(reflect.TypeFor[VisitorTestEmbedded](), visitor)
 
 	// Should not visit VisitorTestServices or its nested structures due to SkipChildren
 	assert.NotContains(t, visitedTypes, "VisitorTestServices")
@@ -489,7 +489,7 @@ func TestVisitType_NonStruct(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf("not a struct"), visitor)
+	VisitType(reflect.TypeFor[string](), visitor)
 
 	// Should not visit anything for non-struct types
 	assert.Empty(t, visitedTypes)
@@ -506,7 +506,7 @@ func TestVisitType_PointerToStruct(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf((*VisitorTestBase)(nil)), visitor)
+	VisitType(reflect.TypeFor[*VisitorTestBase](), visitor)
 
 	// Should visit the underlying struct type
 	assert.Contains(t, visitedTypes, "VisitorTestBase")
@@ -917,7 +917,7 @@ func TestVisitType_FieldIndexPath_TaggedDive(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(VisitorTestEmbedded{}), visitor)
+	VisitType(reflect.TypeFor[VisitorTestEmbedded](), visitor)
 
 	// Services field is at [2] in VisitorTestEmbedded
 	assert.NotNil(t, fieldIndexMap["Services"])
@@ -1063,7 +1063,7 @@ func TestVisitType_FieldIndexPath_AllTraversalModes(t *testing.T) {
 					},
 				}
 
-				VisitType(reflect.TypeOf(VisitorTestEmbedded{}), visitor, WithTraversalMode(tc.mode))
+				VisitType(reflect.TypeFor[VisitorTestEmbedded](), visitor, WithTraversalMode(tc.mode))
 			}
 
 			assert.Equal(t, tc.expected, foundIndex, "Field %s should have correct index path", tc.fieldName)
@@ -1105,7 +1105,7 @@ func TestVisit_FieldIndexPath_DeepNesting(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(Level1{}), visitor)
+	VisitType(reflect.TypeFor[Level1](), visitor)
 
 	// Verify deep nesting paths
 	assert.Equal(t, []int{0, 0, 0, 0}, fieldIndexMap["DeepValue"], "DeepValue at level 4 should have 4-element path")
@@ -1144,7 +1144,7 @@ func TestVisit_FieldIndexPath_MixedEmbedding(t *testing.T) {
 		},
 	}
 
-	VisitType(reflect.TypeOf(Outer{}), visitor, WithDiveTag("visit", "dive"))
+	VisitType(reflect.TypeFor[Outer](), visitor, WithDiveTag("visit", "dive"))
 
 	// Anonymous InnerField should be at [0, 0, 0]
 	anonymousInnerIndex, found := fieldIndexMap["InnerField"]

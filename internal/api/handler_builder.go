@@ -6,17 +6,17 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-// buildHandler creates a Fiber handler from a reflected method.
-// It supports parameter injection via handlerParamResolverManager and a single optional error return.
+// buildHandler resolves all handler parameters at startup and caches resolvers
+// to avoid repeated type lookups during request handling.
 func buildHandler(target, handler reflect.Value, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
-	t := handler.Type()
-	numIn := t.NumIn()
+	var (
+		handlerType           = handler.Type()
+		numIn                 = handlerType.NumIn()
+		handlerParamResolvers = make([]ParamResolverFunc, numIn)
+	)
 
-	handlerParamResolvers := make([]ParamResolverFunc, numIn)
 	for i := range numIn {
-		paramType := t.In(i)
-		// Resolve parameter value via resolver
-		resolver, err := paramResolver.Resolve(target, paramType)
+		resolver, err := paramResolver.Resolve(target, handlerType.In(i))
 		if err != nil {
 			return nil, err
 		}

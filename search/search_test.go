@@ -94,7 +94,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewFromType(t *testing.T) {
-	search := New(reflect.TypeOf(SimpleSearch{}))
+	search := New(reflect.TypeFor[SimpleSearch]())
 
 	assert.NotNil(t, search.conditions, "Conditions should be initialized")
 	assert.Len(t, search.conditions, 4, "Should have all fields including no-tag field")
@@ -349,9 +349,9 @@ func TestNewFromTypeWithNonStruct(t *testing.T) {
 		name      string
 		inputType reflect.Type
 	}{
-		{"String", reflect.TypeOf("string")},
-		{"Int", reflect.TypeOf(42)},
-		{"Slice", reflect.TypeOf([]string{})},
+		{"String", reflect.TypeFor[string]()},
+		{"Int", reflect.TypeFor[int]()},
+		{"Slice", reflect.TypeFor[[]string]()},
 	}
 
 	for _, tt := range tests {

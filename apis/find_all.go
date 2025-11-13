@@ -45,14 +45,12 @@ func (a *findAllApi[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db
 		}
 
 		if len(models) > 0 {
-			// Apply transformation to each model
 			for i := range models {
 				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
 					return err
 				}
 			}
 
-			// Apply post-processing if configured
 			return result.Ok(a.Process(models, search, ctx)).Response(ctx)
 		} else {
 			// Ensure empty slice instead of nil for consistent JSON response

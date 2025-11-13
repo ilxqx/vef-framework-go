@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	// Refresh authentication type.
 	AuthTypeRefresh = "refresh"
 )
 
@@ -44,7 +43,6 @@ func (j *JwtRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 		)
 	}
 
-	// Parse the Jwt refresh token
 	claimsAccessor, err := j.jwt.Parse(token)
 	if err != nil {
 		logger.Warnf("Jwt refresh token validation failed: %v", err)
@@ -59,11 +57,10 @@ func (j *JwtRefreshAuthenticator) Authenticate(ctx context.Context, authenticati
 		)
 	}
 
-	// Subject format: id@name, where '@' is defined by constants.At
 	subjectParts := strings.SplitN(claimsAccessor.Subject(), constants.At, 2)
 	userId := subjectParts[0]
 
-	// Reload the latest user data by ID to ensure current user state (permissions, status, etc.)
+	// Reload user to get latest permissions/status instead of relying on stale token data.
 	principal, err := j.userLoader.LoadById(ctx, userId)
 	if err != nil {
 		logger.Warnf("Failed to reload user by Id %q: %v", userId, err)

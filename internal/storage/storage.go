@@ -11,7 +11,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-// NewService creates a storage service based on configuration.
 func NewService(cfg *config.StorageConfig, appCfg *config.AppConfig) (storage.Service, error) {
 	provider := cfg.Provider
 	if provider == constants.Empty {

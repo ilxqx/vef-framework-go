@@ -17,13 +17,11 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-// Service implements the storage.Service interface using MinIO.
 type Service struct {
 	client *minio.Client
 	bucket string
 }
 
-// New creates a new MinIO storage service.
 func New(cfg config.MinIOConfig, appCfg *config.AppConfig) (storage.Service, error) {
 	client, err := minio.New(cfg.Endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, constants.Empty),
@@ -40,15 +38,12 @@ func New(cfg config.MinIOConfig, appCfg *config.AppConfig) (storage.Service, err
 	}, nil
 }
 
-// Init initializes the MinIO provider by ensuring the bucket exists.
 func (s *Service) Init(ctx context.Context) error {
-	// Check if bucket exists
 	exists, err := s.client.BucketExists(ctx, s.bucket)
 	if err != nil {
 		return fmt.Errorf("failed to check bucket existence: %w", err)
 	}
 
-	// Create bucket if it doesn't exist
 	if !exists {
 		if err := s.client.MakeBucket(ctx, s.bucket, minio.MakeBucketOptions{}); err != nil {
 			return fmt.Errorf("failed to create bucket %s: %w", s.bucket, err)
@@ -75,7 +70,6 @@ func (s *Service) Init(ctx context.Context) error {
 	return nil
 }
 
-// PutObject uploads an object to MinIO.
 func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	uploadOpts := minio.PutObjectOptions{
 		ContentType:  opts.ContentType,
@@ -98,14 +92,12 @@ func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) 
 	}, nil
 }
 
-// GetObject retrieves an object from MinIO.
 func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
 	object, err := s.client.GetObject(ctx, s.bucket, opts.Key, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, s.translateError(err)
 	}
 
-	// Verify the object exists by calling Stat
 	if _, err = object.Stat(); err != nil {
 		_ = object.Close()
 
@@ -115,7 +107,6 @@ func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) 
 	return object, nil
 }
 
-// DeleteObject deletes a single object from MinIO.
 func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
 	if err := s.client.RemoveObject(ctx, s.bucket, opts.Key, minio.RemoveObjectOptions{}); err != nil {
 		return s.translateError(err)
@@ -124,11 +115,9 @@ func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOpt
 	return nil
 }
 
-// DeleteObjects deletes multiple objects from MinIO.
 func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
 	objectsCh := make(chan minio.ObjectInfo, len(opts.Keys))
 
-	// Send object keys to delete
 	go func() {
 		defer close(objectsCh)
 
@@ -137,10 +126,8 @@ func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsO
 		}
 	}()
 
-	// Remove objects
 	errorCh := s.client.RemoveObjects(ctx, s.bucket, objectsCh, minio.RemoveObjectsOptions{})
 
-	// Check for errors
 	for err := range errorCh {
 		if err.Err != nil {
 			return s.translateError(err.Err)
@@ -150,7 +137,6 @@ func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsO
 	return nil
 }
 
-// ListObjects lists objects in a MinIO bucket.
 func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
 	listOpts := minio.ListObjectsOptions{
 		Prefix:       opts.Prefix,
@@ -176,7 +162,6 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 			Metadata:     object.UserMetadata,
 		})
 
-		// Enforce MaxKeys limit if specified
 		if opts.MaxKeys > 0 && len(objects) >= opts.MaxKeys {
 			break
 		}
@@ -185,7 +170,6 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 	return objects, nil
 }
 
-// GetPresignedUrl generates a presigned Url for temporary access.
 func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
 	var (
 		urlStr string
@@ -220,7 +204,6 @@ func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURL
 	return urlStr, nil
 }
 
-// CopyObject copies an object within MinIO.
 func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
 	src := minio.CopySrcOptions{
 		Bucket: s.bucket,
@@ -246,14 +229,11 @@ func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions
 	}, nil
 }
 
-// MoveObject moves an object by copying and then deleting the source.
 func (s *Service) MoveObject(ctx context.Context, opts storage.MoveObjectOptions) (info *storage.ObjectInfo, err error) {
-	// Copy the object
 	if info, err = s.CopyObject(ctx, opts.CopyObjectOptions); err != nil {
 		return info, err
 	}
 
-	// Delete the source object
 	if err = s.DeleteObject(ctx, storage.DeleteObjectOptions{
 		Key: opts.SourceKey,
 	}); err != nil {
@@ -263,7 +243,6 @@ func (s *Service) MoveObject(ctx context.Context, opts storage.MoveObjectOptions
 	return info, err
 }
 
-// StatObject retrieves metadata about an object.
 func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
 	info, err := s.client.StatObject(ctx, s.bucket, opts.Key, minio.StatObjectOptions{})
 	if err != nil {
@@ -281,17 +260,12 @@ func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions
 	}, nil
 }
 
-// PromoteObject moves an object from temporary storage to permanent storage.
 func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.ObjectInfo, error) {
-	// Check if the key starts with temp/ prefix
 	if !strings.HasPrefix(tempKey, storage.TempPrefix) {
 		return nil, nil
 	}
 
-	// Remove the temp/ prefix to get the permanent key
 	permanentKey := strings.TrimPrefix(tempKey, storage.TempPrefix)
-
-	// Move the object
 	return s.MoveObject(ctx, storage.MoveObjectOptions{
 		CopyObjectOptions: storage.CopyObjectOptions{
 			SourceKey: tempKey,
@@ -300,17 +274,13 @@ func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.O
 	})
 }
 
-// translateError converts MinIO errors to storage package errors.
 func (s *Service) translateError(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	// Convert minio-specific errors to storage errors
 	var minioErr minio.ErrorResponse
-
-	ok := errors.As(err, &minioErr)
-	if !ok {
+	if ok := errors.As(err, &minioErr); !ok {
 		return err
 	}
 

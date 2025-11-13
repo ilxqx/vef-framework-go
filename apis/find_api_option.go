@@ -231,7 +231,6 @@ func withRelation(relation *orm.RelationSpec, parts ...QueryPart) *FindApiOption
 // withAuditUserNames adds joins to fetch audit user names (created_by_name, updated_by_name).
 // Allows specifying a custom column name for the user's display name.
 func withAuditUserNames(userModel any, nameColumn string, parts ...QueryPart) *FindApiOption {
-	// Create RelationSpecs for creator and updater
 	relations := GetAuditUserNameRelations(userModel, nameColumn)
 
 	return &FindApiOption{

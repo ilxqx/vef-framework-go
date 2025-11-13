@@ -13,7 +13,6 @@ import (
 
 var logger = log.Named("storage")
 
-// Module is the FX module for storage functionality.
 var Module = fx.Module(
 	"vef:storage",
 	fx.Provide(
@@ -36,6 +35,14 @@ var Module = fx.Module(
 		fx.Annotate(
 			NewProxyMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
+		),
+		fx.Annotate(
+			NewStorageServiceHandlerParamResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewStorageServiceFactoryParamResolver,
+			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
 		),
 	),
 )

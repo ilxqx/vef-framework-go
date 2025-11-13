@@ -6,17 +6,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
-// NewHeadersMiddleware returns a middleware that sets security-related response headers.
-// It adds X-Content-Type-Options, Strict-Transport-Security (for HTTPS), and a default Cache-Control if missing.
+// NewHeadersMiddleware sets headers after handler execution to avoid being overwritten by application code.
 func NewHeadersMiddleware() app.Middleware {
 	return &SimpleMiddleware{
 		handler: func(ctx fiber.Ctx) error {
-			// Continue stack
 			if err := ctx.Next(); err != nil {
 				return err
 			}
 
-			// Set headers
 			ctx.Set(fiber.HeaderXContentTypeOptions, "nosniff")
 
 			if ctx.Protocol() == "https" {

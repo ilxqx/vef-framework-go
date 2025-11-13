@@ -1,20 +1,13 @@
 package csv
 
-// importOptions contains configuration options for CSV import.
 type importOptions struct {
-	// delimiter is the field delimiter (default: ',')
 	delimiter rune
-	// hasHeader indicates whether the CSV has a header row (default: true)
 	hasHeader bool
-	// skipRows is the number of rows to skip before the header row (default: 0)
-	skipRows int
-	// trimSpace indicates whether to trim leading/trailing spaces (default: true)
+	skipRows  int
 	trimSpace bool
-	// comment is the comment character (default: 0, disabled)
-	comment rune
+	comment   rune
 }
 
-// ImportOption is a function that configures importOptions.
 type ImportOption func(*importOptions)
 
 func WithImportDelimiter(delimiter rune) ImportOption {
@@ -23,8 +16,6 @@ func WithImportDelimiter(delimiter rune) ImportOption {
 	}
 }
 
-// WithoutHeader indicates the CSV file does not have a header row.
-// By default, hasHeader is true, so calling this function sets it to false.
 func WithoutHeader() ImportOption {
 	return func(o *importOptions) {
 		o.hasHeader = false
@@ -37,8 +28,6 @@ func WithSkipRows(rows int) ImportOption {
 	}
 }
 
-// WithoutTrimSpace disables trimming of leading/trailing spaces.
-// By default, trimSpace is true, so calling this function sets it to false.
 func WithoutTrimSpace() ImportOption {
 	return func(o *importOptions) {
 		o.trimSpace = false
@@ -51,17 +40,12 @@ func WithComment(comment rune) ImportOption {
 	}
 }
 
-// exportOptions contains configuration options for CSV export.
 type exportOptions struct {
-	// delimiter is the field delimiter (default: ',')
-	delimiter rune
-	// writeHeader indicates whether to write the header row (default: true)
+	delimiter   rune
 	writeHeader bool
-	// useCrlf indicates whether to use \r\n as line terminator (default: false)
-	useCrlf bool
+	useCrlf     bool
 }
 
-// ExportOption is a function that configures exportOptions.
 type ExportOption func(*exportOptions)
 
 func WithExportDelimiter(delimiter rune) ExportOption {
@@ -70,16 +54,13 @@ func WithExportDelimiter(delimiter rune) ExportOption {
 	}
 }
 
-// WithoutWriteHeader disables writing the header row.
-// By default, writeHeader is true, so calling this function sets it to false.
 func WithoutWriteHeader() ExportOption {
 	return func(o *exportOptions) {
 		o.writeHeader = false
 	}
 }
 
-// WithCrlf enables using \r\n as line terminator instead of \n.
-// By default, useCRLF is false, so calling this function sets it to true.
+// WithCrlf enables Windows-style line endings for compatibility with legacy systems.
 func WithCrlf() ExportOption {
 	return func(o *exportOptions) {
 		o.useCrlf = true

@@ -6,26 +6,21 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-// Adapter defines the adapter for building trees from arbitrary data.
 type Adapter[T any] struct {
-	GetId       func(T) string // extracts the unique identifier
-	GetParentId func(T) string // extracts the parent identifier
-	GetChildren func(T) []T    // extracts the children slice
-	SetChildren func(*T, []T)  // sets the children slice (requires pointer)
+	GetId       func(T) string
+	GetParentId func(T) string
+	GetChildren func(T) []T
+	SetChildren func(*T, []T)
 }
 
-// Build converts a flat slice of nodes into a tree structure using the provided adapter.
-// Time complexity: O(n), Space complexity: O(n).
 func Build[T any](nodes []T, adapter Adapter[T]) []T {
 	if len(nodes) == 0 {
 		return make([]T, 0)
 	}
 
-	// Build lookup maps - use pointers for modification
 	nodeMap := make(map[string]*T, len(nodes))
 	childrenMap := make(map[string][]*T)
 
-	// First pass: build node map with pointers
 	for i := range nodes {
 		node := &nodes[i]
 		if id := adapter.GetId(*node); id != constants.Empty {
@@ -33,7 +28,6 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 		}
 	}
 
-	// Second pass: build parent-child relationships with pointers
 	for i := range nodes {
 		node := &nodes[i]
 		if parentId := adapter.GetParentId(*node); parentId != constants.Empty {
@@ -41,7 +35,6 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 		}
 	}
 
-	// Third pass: recursively build tree structure with cycle detection
 	visited := make(map[string]bool)
 
 	var setChildrenRecursively func(*T)
@@ -60,12 +53,10 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 		visited[id] = true
 
 		if childrenPtrs, exists := childrenMap[id]; exists {
-			// First, recursively set children for all child nodes
 			for _, childPtr := range childrenPtrs {
 				setChildrenRecursively(childPtr)
 			}
 
-			// Then convert to values and set children for this node
 			children := make([]T, len(childrenPtrs))
 			for j, childPtr := range childrenPtrs {
 				children[j] = *childPtr
@@ -74,28 +65,23 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 			adapter.SetChildren(nodePtr, children)
 		}
 
-		// Reset visited for this node after processing its subtree
 		visited[id] = false
 	}
 
-	// Apply recursive children setting to all nodes
 	for i := range nodes {
 		setChildrenRecursively(&nodes[i])
 	}
 
-	// Fourth pass: collect roots
 	var roots []T
 
 	for i := range nodes {
 		node := &nodes[i]
 
-		// Check if this is a root node
 		parentId := adapter.GetParentId(*node)
 		if parentId == constants.Empty {
 			roots = append(roots, *node)
 		} else {
 			if _, exists := nodeMap[parentId]; !exists {
-				// Parent doesn't exist, treat as root (orphan)
 				roots = append(roots, *node)
 			}
 		}
@@ -104,7 +90,6 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 	return roots
 }
 
-// FindNode finds a node by Id in the tree structure built with Adapter.
 func FindNode[T any](roots []T, targetId string, adapter Adapter[T]) (T, bool) {
 	if targetId == constants.Empty {
 		return lo.Empty[T](), false
@@ -127,7 +112,6 @@ func FindNodePath[T any](roots []T, targetId string, adapter Adapter[T]) ([]T, b
 	return nil, false
 }
 
-// findNodeRecursive recursively searches for a node by ID using adapter.
 func findNodeRecursive[T any](nodes []T, targetKey string, adapter Adapter[T]) (T, bool) {
 	for _, node := range nodes {
 		if id := adapter.GetId(node); id == targetKey {
@@ -142,7 +126,6 @@ func findNodeRecursive[T any](nodes []T, targetKey string, adapter Adapter[T]) (
 	return lo.Empty[T](), false
 }
 
-// findNodePathRecursive recursively builds the path to a target node using adapter.
 func findNodePathRecursive[T any](node T, targetKey string, currentPath []T, adapter Adapter[T]) ([]T, bool) {
 	path := append(currentPath, node)
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/cache"
 	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/internal/log"
-	logPkg "github.com/ilxqx/vef-framework-go/log"
+	ilog "github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/log"
 )
 
 const (
@@ -37,7 +37,7 @@ func PublishRolePermissionsChangedEvent(publisher event.Publisher, roles ...stri
 type CachedRolePermissionsLoader struct {
 	loader    RolePermissionsLoader
 	permCache cache.Cache[map[string]DataScope]
-	logger    logPkg.Logger
+	logger    log.Logger
 }
 
 // NewCachedRolePermissionsLoader creates a new cached role permissions loader.
@@ -49,7 +49,7 @@ func NewCachedRolePermissionsLoader(
 	cached := &CachedRolePermissionsLoader{
 		loader:    loader,
 		permCache: cache.NewMemory[map[string]DataScope](),
-		logger:    log.Named("security:cached_role_permissions_loader"),
+		logger:    ilog.Named("security:cached_role_permissions_loader"),
 	}
 
 	// Subscribe to role permissions change events

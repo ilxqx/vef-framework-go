@@ -7,58 +7,55 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
-	apiPkg "github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/internal/log"
-	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 )
 
 var (
 	errorType    = reflect.TypeFor[error]()
-	dbType       = reflect.TypeFor[orm.Db]()
-	providerType = reflect.TypeFor[apiPkg.Provider]()
+	providerType = reflect.TypeFor[api.Provider]()
 	logger       = log.Named("api")
 )
 
-// parseResource processes a single resource and extracts all its Api definitions.
-// It creates handlers for each Api action and builds a complete resource definition.
-func parseResource(resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (ResourceDefinition, error) {
+func parseResource(
+	resource api.Resource,
+	factoryParamResolver *FactoryParamResolverManager,
+	handlerParamResolver *HandlerParamResolverManager,
+) (ResourceDefinition, error) {
 	resourceApis := collectAllApis(resource)
-	apiDefinitions := make([]*apiPkg.Definition, 0, len(resourceApis))
+	apiDefinitions := make([]*api.Definition, 0, len(resourceApis))
 	defaultVersion := resource.Version()
 	resourceName := resource.Name()
 
-	for _, api := range resourceApis {
-		// Parse the handler for this Api specification
-		handler, err := resolveApiHandler(api, resource, db, paramResolver)
+	for _, apiSpec := range resourceApis {
+		handler, err := resolveApiHandler(apiSpec, resource, factoryParamResolver, handlerParamResolver)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"failed to resolve handler for resource %q action %q: %w",
-				resourceName, api.Action, err,
+				resourceName, apiSpec.Action, err,
 			)
 		}
 
-		// Determine the Api version (Api-specific version overrides resource default)
-		apiVersion, _ := lo.Coalesce(api.Version, defaultVersion, apiPkg.VersionV1)
-
-		definition := &apiPkg.Definition{
-			Identifier: apiPkg.Identifier{
+		apiVersion := lo.CoalesceOrEmpty(apiSpec.Version, defaultVersion, api.VersionV1)
+		definition := &api.Definition{
+			Identifier: api.Identifier{
 				Version:  apiVersion,
 				Resource: resourceName,
-				Action:   api.Action,
+				Action:   apiSpec.Action,
 			},
-			EnableAudit: api.EnableAudit,
-			Timeout:     api.Timeout,
-			Public:      api.Public,
-			PermToken:   api.PermToken,
-			Limit:       api.Limit,
+			EnableAudit: apiSpec.EnableAudit,
+			Timeout:     apiSpec.Timeout,
+			Public:      apiSpec.Public,
+			PermToken:   apiSpec.PermToken,
+			Limit:       apiSpec.Limit,
 			Handler:     handler,
 		}
 
 		logger.Infof(
 			"Registered Api | Resource: %s, Action: %s, Version: %s, Type: %s",
 			resourceName,
-			api.Action,
+			apiSpec.Action,
 			apiVersion,
 			reflect.TypeOf(resource).String(),
 		)
@@ -71,37 +68,31 @@ func parseResource(resource apiPkg.Resource, db orm.Db, paramResolver *HandlerPa
 	}, nil
 }
 
-// collectAllApis collects all Api specs from a resource, including those from embedded anonymous structs
-// that implement the api.Provider interface.
-func collectAllApis(resource apiPkg.Resource) []apiPkg.Spec {
-	var allSpecs []apiPkg.Spec
+// collectAllApis includes specs from embedded anonymous structs implementing api.Provider.
+func collectAllApis(resource api.Resource) []api.Spec {
+	var allSpecs []api.Spec
 
-	// First, collect specs from embedded anonymous structs that implement api.Provider
 	embeddedSpecs := collectEmbeddedProviderSpecs(resource)
 	allSpecs = append(allSpecs, embeddedSpecs...)
 
-	// Then, collect specs from the resource's own Apis() method
 	resourceSpecs := resource.Apis()
 	allSpecs = append(allSpecs, resourceSpecs...)
 
 	return allSpecs
 }
 
-// collectEmbeddedProviderSpecs recursively scans for embedded anonymous structs that implement api.Provider
-// and collects their Api specifications using the visitor pattern.
-func collectEmbeddedProviderSpecs(resource apiPkg.Resource) []apiPkg.Spec {
-	var specs []apiPkg.Spec
+// collectEmbeddedProviderSpecs uses the visitor pattern to avoid manual recursion complexity.
+func collectEmbeddedProviderSpecs(resource api.Resource) []api.Spec {
+	var specs []api.Spec
 
 	visitor := reflectx.Visitor{
 		VisitField: func(field reflect.StructField, fieldValue reflect.Value, depth int) reflectx.VisitAction {
-			// Only process anonymous (embedded) fields
 			if !field.Anonymous {
 				return reflectx.Continue
 			}
 
-			// Check if the field implements api.Provider interface
 			if isProviderImplementation(fieldValue) {
-				if provider, ok := fieldValue.Interface().(apiPkg.Provider); ok {
+				if provider, ok := fieldValue.Interface().(api.Provider); ok {
 					spec := provider.Provide()
 					specs = append(specs, spec)
 					logger.Infof(
@@ -111,7 +102,6 @@ func collectEmbeddedProviderSpecs(resource apiPkg.Resource) []apiPkg.Spec {
 				}
 			}
 
-			// Continue recursive traversal into embedded fields
 			return reflectx.Continue
 		},
 	}
@@ -121,31 +111,30 @@ func collectEmbeddedProviderSpecs(resource apiPkg.Resource) []apiPkg.Spec {
 	return specs
 }
 
-// isProviderImplementation checks if a value implements the api.Provider interface.
 func isProviderImplementation(value reflect.Value) bool {
-	// Get the interface type of the value
-	valueType := value.Type()
-
-	// Check if the type implements Provider interface
-	return valueType.Implements(providerType)
+	return value.Type().Implements(providerType)
 }
 
-// resolveApiHandler resolves the appropriate handler for an Api specification.
-// It prioritizes the Handler field if provided, otherwise falls back to Action-based method lookup.
-func resolveApiHandler(api apiPkg.Spec, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
-	if api.Handler != nil {
-		// Use provided Handler field
-		return parseProvidedHandler(api.Handler, resource, db, paramResolver)
+// resolveApiHandler prioritizes explicit Handler over Action-based method lookup.
+func resolveApiHandler(
+	apiSpec api.Spec,
+	resource api.Resource,
+	factoryParamResolver *FactoryParamResolverManager,
+	handlerParamResolver *HandlerParamResolverManager,
+) (fiber.Handler, error) {
+	if apiSpec.Handler != nil {
+		return parseProvidedHandler(apiSpec.Handler, resource, factoryParamResolver, handlerParamResolver)
 	}
 
-	// Fallback to Action-based method lookup
-	return parseHandler(lo.PascalCase(api.Action), resource, db, paramResolver)
+	return parseHandler(lo.PascalCase(apiSpec.Action), resource, factoryParamResolver, handlerParamResolver)
 }
 
-// parseProvidedHandler creates a Fiber handler from a user-provided handler value.
-// The handler value must be a non-nil function that conforms to the framework's handler signature.
-// It supports both regular handler functions and handler factory functions.
-func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
+func parseProvidedHandler(
+	handlerValue any,
+	resource api.Resource,
+	factoryParamResolver *FactoryParamResolverManager,
+	handlerParamResolver *HandlerParamResolverManager,
+) (fiber.Handler, error) {
 	if handlerValue == nil {
 		return nil, ErrProvidedHandlerNil
 	}
@@ -161,32 +150,30 @@ func parseProvidedHandler(handlerValue any, resource apiPkg.Resource, db orm.Db,
 
 	target := reflect.ValueOf(resource)
 
-	// Check if this is a handler factory function (takes db, returns handler)
+	// Factory functions support dependency injection at startup time
 	if isHandlerFactory(handlerReflect.Type()) {
-		if db == nil {
-			return nil, ErrHandlerFactoryRequireDB
-		}
-
-		handler, err := createHandler(handlerReflect, db)
+		handler, err := createHandler(handlerReflect, target, factoryParamResolver)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create handler from factory: %w", err)
 		}
 
-		return buildHandler(target, handler, paramResolver)
+		return buildHandler(target, handler, handlerParamResolver)
 	}
 
-	// Regular handler function validation
 	if err := checkHandlerMethod(handlerReflect.Type()); err != nil {
 		return nil, err
 	}
 
-	return buildHandler(target, handlerReflect, paramResolver)
+	return buildHandler(target, handlerReflect, handlerParamResolver)
 }
 
-// parseHandler creates a Fiber handler from a resource method.
-// It supports both regular handler methods and handler factory methods.
-// Handler factory methods take orm.Db as input and return a handler function.
-func parseHandler(methodName string, resource apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (fiber.Handler, error) {
+// parseHandler supports both regular handlers and factory methods with arbitrary parameters.
+func parseHandler(
+	methodName string,
+	resource api.Resource,
+	factoryParamResolver *FactoryParamResolverManager,
+	handlerParamResolver *HandlerParamResolverManager,
+) (fiber.Handler, error) {
 	target := reflect.ValueOf(resource)
 
 	method, err := findHandlerMethod(target, methodName)
@@ -194,30 +181,23 @@ func parseHandler(methodName string, resource apiPkg.Resource, db orm.Db, paramR
 		return nil, err
 	}
 
-	// Check if this is a handler factory method (takes db, returns handler)
+	// Factory methods allow dependencies to be injected at resource registration
 	if isHandlerFactory(method.Type()) {
-		if db == nil {
-			return nil, fmt.Errorf("%w: %s", ErrHandlerFactoryMethodRequireDB, methodName)
-		}
-
-		handler, err := createHandler(method, db)
+		handler, err := createHandler(method, target, factoryParamResolver)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create handler for method %q: %w", methodName, err)
 		}
 
-		return buildHandler(target, handler, paramResolver)
+		return buildHandler(target, handler, handlerParamResolver)
 	}
 
-	// Regular handler method validation
 	if err = checkHandlerMethod(method.Type()); err != nil {
 		return nil, err
 	}
 
-	return buildHandler(target, method, paramResolver)
+	return buildHandler(target, method, handlerParamResolver)
 }
 
-// findHandlerMethod locates a method by name on the given resource target.
-// Returns the method if found, or an error with details about the resource type.
 func findHandlerMethod(target reflect.Value, methodName string) (reflect.Value, error) {
 	method := reflectx.FindMethod(target, methodName)
 	if method.IsValid() {
@@ -227,18 +207,15 @@ func findHandlerMethod(target reflect.Value, methodName string) (reflect.Value, 
 	return method, fmt.Errorf("%w %q in resource %q", ErrApiMethodNotFound, methodName, target.Type().String())
 }
 
-// checkHandlerMethod validates that a method conforms to the framework's handler signature.
-// Handler methods can have any number of parameters (resolved via handlerParamResolverManager)
-// but must return either nothing or a single error value.
+// checkHandlerMethod allows flexible parameters (resolved at runtime)
+// but constrains return values to maintain predictable error handling.
 func checkHandlerMethod(method reflect.Type) error {
 	numOut := method.NumOut()
 
-	// No return value is valid
 	if numOut == 0 {
 		return nil
 	}
 
-	// Single return value must be error type
 	if numOut == 1 {
 		if method.Out(0) == errorType {
 			return nil
@@ -248,33 +225,24 @@ func checkHandlerMethod(method reflect.Type) error {
 			ErrHandlerMethodInvalidReturn, method.String(), method.Out(0).String())
 	}
 
-	// Multiple return values are not allowed
 	return fmt.Errorf("%w: %q has %d returns",
 		ErrHandlerMethodTooManyReturns, method.String(), numOut)
 }
 
-// isHandlerFactory checks if a method is a handler factory function.
-// A handler factory has one of these signatures:
-//   - func() func(...) [error]                 // returns handler (no parameters)
-//   - func() (func(...) [error], error)        // returns handler and error (no parameters)
-//   - func(orm.Db) func(...) [error]           // returns handler (with db parameter)
-//   - func(orm.Db) (func(...) [error], error)  // returns handler and error (with db parameter)
+// isHandlerFactory checks for factory signatures that return handler closures.
+// Factory functions enable dependency injection at startup while keeping handlers clean.
 //
-// The returned function can have any number of parameters (resolved by handlerParamResolverManager)
-// but must have either no return value or a single error return value.
+// Supported signatures:
+//   - func(...any) func(...) [error]
+//   - func(...any) (func(...) [error], error)
+//
+// Parameters resolved via FactoryParamResolver; returned handler validated via checkHandlerMethod.
 func isHandlerFactory(method reflect.Type) bool {
-	// Must have 0 or 1 input parameter and 1 or 2 output parameters
-	numIn := method.NumIn()
-	if numIn > 1 || (method.NumOut() != 1 && method.NumOut() != 2) {
+	numOut := method.NumOut()
+	if numOut < 1 || numOut > 2 {
 		return false
 	}
 
-	// If there's an input parameter, it must be orm.Db
-	if numIn == 1 && method.In(0) != dbType {
-		return false
-	}
-
-	// First return value must be a valid handler function
 	handlerType := method.Out(0)
 	if handlerType.Kind() != reflect.Func {
 		return false
@@ -284,39 +252,49 @@ func isHandlerFactory(method reflect.Type) bool {
 		return false
 	}
 
-	// If there's a second return value, it must be error
-	if method.NumOut() == 2 {
-		return method.Out(1) == errorType
+	if numOut == 2 && method.Out(1) != errorType {
+		return false
 	}
 
 	return true
 }
 
-// createHandler invokes a handler factory function with the provided database connection
-// and returns the created handler function. Supports both single return value (handler)
-// and dual return values (handler, error) patterns. Also supports factories with no parameters.
-func createHandler(method reflect.Value, db orm.Db) (reflect.Value, error) {
-	// Determine if factory needs db parameter
-	var results []reflect.Value
-	if method.Type().NumIn() == 0 {
-		// func() func(...) [error] or func() (func(...) [error], error)
-		results = method.Call([]reflect.Value{})
-	} else {
-		// func(orm.Db) func(...) [error] or func(orm.Db) (func(...) [error], error)
-		results = method.Call([]reflect.Value{reflect.ValueOf(db)})
+// createHandler executes factory functions at startup to fail fast on misconfiguration.
+func createHandler(
+	method reflect.Value,
+	target reflect.Value,
+	factoryParamResolver *FactoryParamResolverManager,
+) (reflect.Value, error) {
+	var (
+		methodType    = method.Type()
+		numIn         = methodType.NumIn()
+		factoryParams = make([]reflect.Value, numIn)
+	)
+
+	for i := range numIn {
+		paramType := methodType.In(i)
+
+		resolverFn, err := factoryParamResolver.Resolve(target, paramType)
+		if err != nil {
+			return reflect.Value{}, fmt.Errorf(
+				"failed to resolve factory parameter %d (type %s): %w",
+				i, paramType, err,
+			)
+		}
+
+		factoryParams[i] = resolverFn()
 	}
+
+	results := method.Call(factoryParams)
 
 	switch len(results) {
 	case 1:
-		// func([orm.Db]) func(...) [error] pattern
 		return results[0], nil
 
 	case 2:
-		// func([orm.Db]) (func(...) [error], error) pattern
 		handler := results[0]
 		err := results[1]
 
-		// Check if the error is not nil
 		if !err.IsNil() {
 			return reflect.Value{}, err.Interface().(error)
 		}
@@ -324,16 +302,22 @@ func createHandler(method reflect.Value, db orm.Db) (reflect.Value, error) {
 		return handler, nil
 
 	default:
-		return reflect.Value{}, fmt.Errorf("%w, got %d", ErrHandlerFactoryInvalidReturn, len(results))
+		return reflect.Value{}, fmt.Errorf(
+			"%w, got %d",
+			ErrHandlerFactoryInvalidReturn,
+			len(results),
+		)
 	}
 }
 
-// parse processes a list of resources and returns a composite resource definition.
-// It parses each resource and combines them into a single definition.
-func parse(resources []apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (ResourceDefinition, error) {
+func parse(
+	resources []api.Resource,
+	factoryParamResolver *FactoryParamResolverManager,
+	handlerParamResolver *HandlerParamResolverManager,
+) (ResourceDefinition, error) {
 	definitions := make([]ResourceDefinition, 0, len(resources))
 	for _, resource := range resources {
-		definition, err := parseResource(resource, db, paramResolver)
+		definition, err := parseResource(resource, factoryParamResolver, handlerParamResolver)
 		if err != nil {
 			return nil, err
 		}

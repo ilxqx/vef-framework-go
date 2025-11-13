@@ -9,7 +9,6 @@ changelog:
       labels:
         - feature
         - enhancement
-      # Match commits with "feat:" prefix
       rules:
         - pattern: '^feat(\(.*\))?:'
     - title: 🐛 Bug Fixes

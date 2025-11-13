@@ -6,50 +6,41 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/event"
-	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// Engine defines the interface for Api engines that can connect to a router.
-// It provides the ability to register Api endpoints with a Fiber router.
 type Engine interface {
-	// Connect registers the Api engine with the given router.
 	Connect(router fiber.Router)
 }
 
-// NewEngine creates an Engine with the given policy.
 func NewEngine(
 	manager api.Manager,
 	policy Policy,
 	checker security.PermissionChecker,
 	resolver security.DataPermissionResolver,
 	db orm.Db,
-	transformer mold.Transformer,
 	publisher event.Publisher,
 ) Engine {
 	return &DefaultEngine{
-		manager:     manager,
-		policy:      policy,
-		checker:     checker,
-		resolver:    resolver,
-		db:          db,
-		transformer: transformer,
-		publisher:   publisher,
+		manager:   manager,
+		policy:    policy,
+		checker:   checker,
+		resolver:  resolver,
+		db:        db,
+		publisher: publisher,
 	}
 }
 
 type DefaultEngine struct {
-	manager     api.Manager
-	policy      Policy
-	checker     security.PermissionChecker
-	resolver    security.DataPermissionResolver
-	db          orm.Db
-	transformer mold.Transformer
-	publisher   event.Publisher
+	manager   api.Manager
+	policy    Policy
+	checker   security.PermissionChecker
+	resolver  security.DataPermissionResolver
+	db        orm.Db
+	publisher event.Publisher
 }
 
-// Connect registers the Api engine with the given router.
 func (e *DefaultEngine) Connect(router fiber.Router) {
 	middlewares := e.buildMiddlewares()
 	middlewares = append(middlewares, e.dispatch)
@@ -61,8 +52,7 @@ func (e *DefaultEngine) Connect(router fiber.Router) {
 	)
 }
 
-// dispatch handles the Api request by looking up the definition and calling its handler.
-// The definition lookup is guaranteed to succeed as requestMiddleware already validates it exists.
+// dispatch relies on requestMiddleware having already validated the identifier exists.
 func (e *DefaultEngine) dispatch(ctx fiber.Ctx) error {
 	request := contextx.ApiRequest(ctx)
 	definition := e.manager.Lookup(request.Identifier)
@@ -70,13 +60,13 @@ func (e *DefaultEngine) dispatch(ctx fiber.Ctx) error {
 	return definition.Handler(ctx)
 }
 
-// buildMiddlewares constructs the middleware chain for the Api engine.
-// The middleware order is important: request parsing, authentication, context setup, authorization, data permission, rate limiting, and audit.
+// buildMiddlewares constructs the middleware chain.
+// Ordering matters: request parsing → auth → context → authorization → data permission → rate limiting → audit.
 func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
 	return []fiber.Handler{
 		requestMiddleware(e.manager),
 		e.policy.BuildAuthenticationMiddleware(e.manager),
-		buildContextMiddleware(e.db, e.transformer),
+		buildContextMiddleware(e.db),
 		buildAuthorizationMiddleware(e.manager, e.checker),
 		buildDataPermissionMiddleware(e.manager, e.resolver),
 		buildRateLimiterMiddleware(e.manager),

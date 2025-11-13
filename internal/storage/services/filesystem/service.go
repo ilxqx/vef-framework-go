@@ -18,12 +18,10 @@ import (
 	"github.com/ilxqx/vef-framework-go/storage"
 )
 
-// Service implements storage.Service using local filesystem.
 type Service struct {
 	root string
 }
 
-// New creates a new filesystem storage service.
 func New(cfg config.FilesystemConfig) (storage.Service, error) {
 	root := cfg.Root
 	if root == constants.Empty {
@@ -41,7 +39,6 @@ func (s *Service) resolvePath(key string) string {
 	return filepath.Join(s.root, filepath.FromSlash(key))
 }
 
-// PutObject stores a file on the filesystem.
 func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	path := s.resolvePath(opts.Key)
 
@@ -82,7 +79,6 @@ func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) 
 	}, nil
 }
 
-// GetObject retrieves a file from the filesystem.
 func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
 	path := s.resolvePath(opts.Key)
 
@@ -98,7 +94,6 @@ func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) 
 	return file, nil
 }
 
-// DeleteObject deletes a file from the filesystem.
 func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
 	path := s.resolvePath(opts.Key)
 
@@ -111,7 +106,6 @@ func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOpt
 	return nil
 }
 
-// DeleteObjects deletes multiple files in batch.
 func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
 	for _, key := range opts.Keys {
 		if err := s.DeleteObject(ctx, storage.DeleteObjectOptions{Key: key}); err != nil {
@@ -122,7 +116,6 @@ func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsO
 	return nil
 }
 
-// ListObjects lists files with optional prefix filtering.
 func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
 	var objects []storage.ObjectInfo
 
@@ -190,7 +183,6 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 	return objects, nil
 }
 
-// GetPresignedUrl generates a file:// Url for local filesystem.
 func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
 	path := s.resolvePath(opts.Key)
 
@@ -202,7 +194,6 @@ func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURL
 	return fmt.Sprintf("file://%s", absPath), nil
 }
 
-// CopyObject copies a file within the filesystem.
 func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
 	srcPath := s.resolvePath(opts.SourceKey)
 	destPath := s.resolvePath(opts.DestKey)
@@ -256,7 +247,6 @@ func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions
 	}, nil
 }
 
-// MoveObject moves a file by copying and deleting the source.
 func (s *Service) MoveObject(ctx context.Context, opts storage.MoveObjectOptions) (*storage.ObjectInfo, error) {
 	info, err := s.CopyObject(ctx, opts.CopyObjectOptions)
 	if err != nil {
@@ -270,7 +260,6 @@ func (s *Service) MoveObject(ctx context.Context, opts storage.MoveObjectOptions
 	return info, nil
 }
 
-// StatObject retrieves file metadata.
 func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
 	path := s.resolvePath(opts.Key)
 
@@ -300,7 +289,6 @@ func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions
 	}, nil
 }
 
-// PromoteObject moves a file from temp/ to permanent storage.
 func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.ObjectInfo, error) {
 	if !strings.HasPrefix(tempKey, storage.TempPrefix) {
 		return nil, nil
@@ -316,7 +304,6 @@ func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.O
 	})
 }
 
-// cleanupEmptyDirs removes empty parent directories up to root.
 func (s *Service) cleanupEmptyDirs(dir string) {
 	for dir != s.root && strings.HasPrefix(dir, s.root) {
 		if err := os.Remove(dir); err != nil {
@@ -327,7 +314,6 @@ func (s *Service) cleanupEmptyDirs(dir string) {
 	}
 }
 
-// calculateMd5 calculates the MD5 hash of a file.
 func (s *Service) calculateMd5(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {

@@ -97,7 +97,7 @@ func (s *TreeSet[T]) RemoveIf(predicate func(element T) bool) int {
 			toRemove = append(toRemove, element)
 		}
 	}
-	// Remove collected elements
+
 	for _, element := range toRemove {
 		s.tree.Remove(element)
 

@@ -14,8 +14,6 @@ import (
 
 var apiInType = reflect.TypeFor[api.P]()
 
-// New creates a Search instance by parsing struct fields with search tags from the given reflect.Type.
-// Returns an empty Search if the type is not a struct.
 func New(typ reflect.Type) Search {
 	typ = reflectx.Indirect(typ)
 	if typ.Kind() != reflect.Struct {
@@ -27,13 +25,10 @@ func New(typ reflect.Type) Search {
 	return Search{conditions: parseStruct(typ)}
 }
 
-// NewFor creates a Search instance by parsing struct fields with search tags from type T.
-// This is a generic convenience function that calls New with reflect.TypeFor[T]().
 func NewFor[T any]() Search {
 	return New(reflect.TypeFor[T]())
 }
 
-// parseStruct parses the search conditions from a struct using visitor pattern.
 func parseStruct(t reflect.Type) []Condition {
 	conditions := make([]Condition, 0)
 
@@ -45,27 +40,23 @@ func parseStruct(t reflect.Type) []Condition {
 
 			tag, hasTag := field.Tag.Lookup(TagSearch)
 
-			// If has tag, parse it
 			if hasTag {
-				// Skip ignored fields (search:"-")
 				if tag == IgnoreField {
 					return reflectx.SkipChildren
 				}
 
-				// Skip dive fields - visitor will handle recursion automatically
 				if tag == AttrDive {
 					return reflectx.Continue
 				}
 
-				attrs := strhelpers.ParseTagAttrs(tag)
-				// Handle regular search fields
+				attrs := strhelpers.ParseTag(tag)
 				conditions = append(conditions, buildCondition(field, attrs))
 			} else {
 				if field.Anonymous {
 					return reflectx.SkipChildren
 				}
 
-				// No tag: use default configuration (eq operator with snake_case column name)
+				// Default to eq operator with snake_case column when no tag specified
 				conditions = append(conditions, buildCondition(field, make(map[string]string)))
 			}
 
@@ -82,7 +73,6 @@ func parseStruct(t reflect.Type) []Condition {
 	return conditions
 }
 
-// buildCondition builds a condition from a struct field and attributes.
 func buildCondition(field reflect.StructField, attrs map[string]string) Condition {
 	var (
 		column  = attrs[AttrColumn]
@@ -96,7 +86,7 @@ func buildCondition(field reflect.StructField, attrs map[string]string) Conditio
 
 	operator := attrs[AttrOperator]
 	if operator == constants.Empty {
-		operator = lo.CoalesceOrEmpty(attrs[strhelpers.TagAttrDefaultKey], string(Equals))
+		operator = lo.CoalesceOrEmpty(attrs[strhelpers.DefaultKey], string(Equals))
 	}
 
 	return Condition{
@@ -110,7 +100,10 @@ func buildCondition(field reflect.StructField, attrs map[string]string) Conditio
 				return make(map[string]string)
 			},
 			func() map[string]string {
-				return strhelpers.ParseTagArgs(attrs[AttrParams])
+				return strhelpers.ParseTag(attrs[AttrParams],
+					strhelpers.WithSpacePairDelimiter(),
+					strhelpers.WithValueDelimiter(constants.ByteColon),
+				)
 			},
 		),
 	}

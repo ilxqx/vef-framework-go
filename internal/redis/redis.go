@@ -17,19 +17,14 @@ import (
 
 var logger = log.Named("redis")
 
-// NewClient creates a new Redis client with optimized configuration.
-// It applies sensible defaults for connection pooling based on runtime environment,
-// while allowing customization through the config structure.
+// NewClient creates a Redis client with adaptive pool sizing to balance performance and resource usage.
 func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client {
 	clientName := lo.CoalesceOrEmpty(appCfg.Name, "vef-app")
 
-	// Calculate optimal connection pool settings
 	poolSize := getPoolSize()
 	poolTimeout, idleTimeout, maxRetries := getConnectionConfig(poolSize)
 
-	// Build configuration with defaults and user overrides
 	options := &redis.Options{
-		// Basic connection settings
 		ClientName:            clientName,
 		IdentitySuffix:        "vef",
 		Protocol:              3,
@@ -40,17 +35,14 @@ func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client 
 		Password:              cfg.Password,
 		DB:                    int(cfg.Database),
 
-		// Optimized connection pool settings
 		PoolSize:    poolSize,
 		PoolTimeout: poolTimeout,
 		MaxRetries:  maxRetries,
 
-		// Performance optimizations
-		MinIdleConns:    poolSize / 4,     // Keep 25% of pool as idle connections
-		ConnMaxLifetime: 30 * time.Minute, // Rotate connections every 30 minutes
-		ConnMaxIdleTime: idleTimeout,      // Maximum idle time for connections
+		MinIdleConns:    poolSize / 4,
+		ConnMaxLifetime: 30 * time.Minute,
+		ConnMaxIdleTime: idleTimeout,
 
-		// Timeout configurations
 		DialTimeout:  10 * time.Second,
 		ReadTimeout:  6 * time.Second,
 		WriteTimeout: 6 * time.Second,
@@ -58,7 +50,6 @@ func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client 
 
 	client := redis.NewClient(options)
 
-	// Log configuration for debugging
 	logger.Infof(
 		"Redis client configured - Pool: %d, Timeout: %v, Idle: %v, Retries: %d",
 		poolSize, poolTimeout, idleTimeout, maxRetries,
@@ -67,41 +58,30 @@ func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client 
 	return client
 }
 
-// getPoolSize calculates a reasonable default pool size based on runtime environment.
-// It considers GOMAXPROCS and provides sensible bounds for different deployment scenarios.
+// getPoolSize scales pool size with CPU cores (2x GOMAXPROCS) to handle concurrent requests efficiently
+// while capping at 100 to prevent resource exhaustion on large machines.
 func getPoolSize() int {
 	maxProcessors := runtime.GOMAXPROCS(0)
-	// Base pool size: 2x GOMAXPROCS, with reasonable bounds
-	poolSize := min( // Cap maximum pool size for large deployments
-		max(maxProcessors*2, 4), // Ensure minimum pool size for small deployments
-		100,
-	)
+	poolSize := min(max(maxProcessors*2, 4), 100)
 
 	return poolSize
 }
 
-// getConnectionConfig returns optimized connection settings based on pool size.
+// getConnectionConfig scales pool timeout with pool size to reduce contention under load.
 func getConnectionConfig(poolSize int) (poolTimeout, idleTimeout time.Duration, maxRetries int) {
-	// Pool timeout: scale with pool size but cap at reasonable limits
 	poolTimeout = min(max(time.Duration(poolSize*50)*time.Millisecond, 1*time.Second), 5*time.Second)
-
-	// Idle timeout: reasonable default for connection reuse
 	idleTimeout = 5 * time.Minute
-
-	// Max retries: conservative default
 	maxRetries = 3
 
 	return poolTimeout, idleTimeout, maxRetries
 }
 
-// logRedisServerInfo queries and logs Redis server information.
 func logRedisServerInfo(ctx context.Context, client *redis.Client) error {
 	info, err := client.Info(ctx, "server").Result()
 	if err != nil {
 		return fmt.Errorf("failed to get redis server info: %w", err)
 	}
 
-	// Parse version info from INFO command result
 	version := "unknown"
 
 	for line := range strings.SplitSeq(info, constants.CarriageReturnNewline) {
@@ -117,7 +97,6 @@ func logRedisServerInfo(ctx context.Context, client *redis.Client) error {
 	return nil
 }
 
-// buildRedisAddr constructs the Redis server address from configuration.
 func buildRedisAddr(cfg *config.RedisConfig) string {
 	host := lo.Ternary(cfg.Host != constants.Empty, cfg.Host, "127.0.0.1")
 	port := lo.Ternary(cfg.Port != 0, cfg.Port, 6379)
@@ -125,8 +104,7 @@ func buildRedisAddr(cfg *config.RedisConfig) string {
 	return fmt.Sprintf("%s:%d", host, port)
 }
 
-// HealthCheck performs a health check on the Redis client.
-// It returns an error if the Redis server is not responding.
+// HealthCheck verifies Redis availability for monitoring endpoints.
 func HealthCheck(ctx context.Context, client *redis.Client) error {
 	return client.Ping(ctx).Err()
 }

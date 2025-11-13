@@ -4,49 +4,41 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/timeout"
 	"github.com/puzpuzpuz/xsync/v4"
 
-	apiPkg "github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/orm"
+	"github.com/ilxqx/vef-framework-go/api"
 )
 
-// apiManager implements the Manager interface using xsync.Map for thread-safe operations.
+// apiManager uses xsync.Map for thread-safe concurrent access.
 type apiManager struct {
-	apis *xsync.Map[apiPkg.Identifier, *apiPkg.Definition]
+	apis *xsync.Map[api.Identifier, *api.Definition]
 }
 
-// Register adds a new Api definition to the manager.
-// The handler will be wrapped with timeout middleware.
-// Returns an error if an Api with the same identifier already exists.
-func (m *apiManager) Register(api *apiPkg.Definition) error {
-	if existing, loaded := m.apis.LoadOrStore(api.Identifier, wrapHandler(api)); loaded {
+func (m *apiManager) Register(apiDef *api.Definition) error {
+	if existing, loaded := m.apis.LoadOrStore(apiDef.Identifier, wrapHandler(apiDef)); loaded {
 		return &DuplicateApiError{
-			Identifier: api.Identifier,
+			Identifier: apiDef.Identifier,
 			Existing:   existing,
-			New:        api,
+			New:        apiDef,
 		}
 	}
 
 	return nil
 }
 
-// Remove removes an Api definition by its identifier.
-func (m *apiManager) Remove(id apiPkg.Identifier) {
+func (m *apiManager) Remove(id api.Identifier) {
 	m.apis.Delete(id)
 }
 
-// Lookup retrieves an Api definition by its identifier.
-// Returns nil if the definition is not found.
-func (m *apiManager) Lookup(id apiPkg.Identifier) *apiPkg.Definition {
-	if api, ok := m.apis.Load(id); ok {
-		return api
+func (m *apiManager) Lookup(id api.Identifier) *api.Definition {
+	if apiDef, ok := m.apis.Load(id); ok {
+		return apiDef
 	}
 
 	return nil
 }
 
-// List returns all registered Api definitions.
-func (m *apiManager) List() []*apiPkg.Definition {
-	var definitions []*apiPkg.Definition
-	m.apis.Range(func(key apiPkg.Identifier, value *apiPkg.Definition) bool {
+func (m *apiManager) List() []*api.Definition {
+	var definitions []*api.Definition
+	m.apis.Range(func(key api.Identifier, value *api.Definition) bool {
 		definitions = append(definitions, value)
 
 		return true
@@ -55,29 +47,29 @@ func (m *apiManager) List() []*apiPkg.Definition {
 	return definitions
 }
 
-// wrapHandler wraps the original handler with timeout middleware.
-// If no timeout is specified, it defaults to 30 seconds.
-func wrapHandler(api *apiPkg.Definition) *apiPkg.Definition {
-	originalHandler := api.Handler
+func wrapHandler(apiDef *api.Definition) *api.Definition {
+	originalHandler := apiDef.Handler
 	handler := timeout.New(
 		originalHandler,
 		timeout.Config{
-			Timeout: api.GetTimeout(),
+			Timeout: apiDef.GetTimeout(),
 		},
 	)
-	api.Handler = handler
+	apiDef.Handler = handler
 
-	return api
+	return apiDef
 }
 
-// NewManager creates a new Api manager and registers all provided resources.
-// Returns an error if any API registration fails, including duplicate definitions.
-func NewManager(resources []apiPkg.Resource, db orm.Db, paramResolver *HandlerParamResolverManager) (apiPkg.Manager, error) {
+func NewManager(
+	resources []api.Resource,
+	factoryParamResolver *FactoryParamResolverManager,
+	handlerParamResolver *HandlerParamResolverManager,
+) (api.Manager, error) {
 	manager := &apiManager{
-		apis: xsync.NewMap[apiPkg.Identifier, *apiPkg.Definition](),
+		apis: xsync.NewMap[api.Identifier, *api.Definition](),
 	}
 
-	definition, err := parse(resources, db, paramResolver)
+	definition, err := parse(resources, factoryParamResolver, handlerParamResolver)
 	if err != nil {
 		return nil, err
 	}

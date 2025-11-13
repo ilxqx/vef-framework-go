@@ -9,7 +9,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
-// NewCorsMiddleware is a middleware that handles CORS.
 func NewCorsMiddleware(config *config.CorsConfig) app.Middleware {
 	handler := cors.New(cors.Config{
 		Next: func(ctx fiber.Ctx) bool {

@@ -8,7 +8,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
-// NewRequestIdMiddleware returns a middleware that generates a request ID.
 func NewRequestIdMiddleware() app.Middleware {
 	handler := requestid.New(requestid.Config{
 		Generator: id.GenerateUuid,

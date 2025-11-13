@@ -11,7 +11,6 @@ import (
 var logger = log.Named("mold")
 
 // Module defines the fx module for the transformer package
-// It provides dependency injection configuration for all transformer components.
 var Module = fx.Module(
 	"vef:mold",
 	fx.Decorate(
@@ -44,6 +43,16 @@ var Module = fx.Module(
 			NewDataDictTranslator,
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:mold:translators"`),
+		),
+		// Handler parameter resolver
+		fx.Annotate(
+			NewTransformerHandlerParamResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		// Factory parameter resolver
+		fx.Annotate(
+			NewTransformerFactoryParamResolver,
+			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
 		),
 	),
 )

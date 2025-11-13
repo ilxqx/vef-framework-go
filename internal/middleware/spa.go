@@ -48,7 +48,6 @@ func (s *spaMiddleware) Apply(router fiber.Router) {
 	})
 }
 
-// applySpa applies the SPA middleware to the router.
 func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 	group := router.Group(
 		config.Path,
@@ -90,7 +89,6 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 	}))
 }
 
-// NewSpaMiddleware creates a new SPA middleware.
 func NewSpaMiddleware(configs []*middleware.SpaConfig) app.Middleware {
 	if len(configs) == 0 {
 		return nil

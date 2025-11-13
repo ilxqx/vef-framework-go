@@ -2,6 +2,7 @@ package strhelpers
 
 import (
 	"strings"
+	"unicode"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
@@ -10,64 +11,123 @@ import (
 var logger = log.Named("strhelpers")
 
 const (
-	// TagAttrDefaultKey is the default key for tag attributes.
-	TagAttrDefaultKey = "__default"
+	// DefaultKey is the key used for values without an explicit key.
+	DefaultKey = "__default"
 )
 
-// ParseTagAttrs parses the tag attributes.
-func ParseTagAttrs(tag string) map[string]string {
-	attrs := make(map[string]string)
+// BareValueMode defines how to treat values without a separator.
+type BareValueMode int
 
-	for attr := range strings.SplitSeq(tag, constants.Comma) {
-		attr = strings.TrimSpace(attr)
-		if attr == constants.Empty {
-			continue // Skip empty attributes
-		}
+const (
+	// BareAsValue treats bare values as values under DefaultKey (default behavior).
+	// Example: "required,optional" → {"__default": "required"} (optional is ignored with warning).
+	BareAsValue BareValueMode = iota
+	// BareAsKey treats bare values as keys with empty values.
+	// Example: "required,optional" → {"required": "", "optional": ""}.
+	BareAsKey
+)
 
-		idx := strings.IndexByte(attr, constants.ByteEquals)
-		if idx == -1 {
-			if _, ok := attrs[TagAttrDefaultKey]; ok {
-				logger.Warnf("Ignoring duplicate default attribute [%s] of tag: %s", attr, tag)
+// ParseOption configures the tag parser behavior.
+type ParseOption func(*parseConfig)
 
-				continue
-			}
-
-			attrs[TagAttrDefaultKey] = attr
-
-			continue
-		}
-
-		attrs[attr[:idx]] = attr[idx+1:]
-	}
-
-	return attrs
+type parseConfig struct {
+	pairSeparator  func(rune) bool
+	valueSeparator rune
+	bareValueMode  BareValueMode
 }
 
-// ParseTagArgs parses the tag args.
-func ParseTagArgs(args string) map[string]string {
-	kvs := make(map[string]string)
+// defaultParseConfig returns comma-separated key=value pairs as the default format.
+func defaultParseConfig() *parseConfig {
+	return &parseConfig{
+		pairSeparator:  func(r rune) bool { return r == constants.ByteComma },
+		valueSeparator: constants.ByteEquals,
+		bareValueMode:  BareAsValue,
+	}
+}
 
-	for kv := range strings.SplitSeq(args, constants.Space) {
-		kv = strings.TrimSpace(kv)
-		if kv == constants.Empty {
-			continue // Skip empty parameters
+// ParseTag parses a tag string into a map of key-value pairs with configurable separators.
+// By default, it parses comma-separated key=value pairs (e.g., "contains,column=name,operator=eq").
+// Use ParseOption functions to customize the separator behavior.
+func ParseTag(input string, opts ...ParseOption) map[string]string {
+	cfg := defaultParseConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	result := make(map[string]string)
+
+	for pair := range strings.FieldsFuncSeq(input, cfg.pairSeparator) {
+		pair = strings.TrimSpace(pair)
+		if pair == constants.Empty {
+			continue
 		}
 
-		idx := strings.IndexByte(kv, constants.ByteColon)
+		idx := strings.IndexRune(pair, cfg.valueSeparator)
 		if idx == -1 {
-			if _, ok := kvs[TagAttrDefaultKey]; ok {
-				logger.Warnf("Ignoring duplicate default key [%s] of arg: %s", kv, args)
+			switch cfg.bareValueMode {
+			case BareAsKey:
+				result[pair] = constants.Empty
+			case BareAsValue:
+				if _, ok := result[DefaultKey]; ok {
+					logger.Warnf("Ignoring duplicate default value %q in input: %s", pair, input)
 
-				continue
+					continue
+				}
+
+				result[DefaultKey] = pair
 			}
-
-			kvs[TagAttrDefaultKey] = kv
 
 			continue
 		}
 
-		kvs[kv[:idx]] = kv[idx+1:]
+		result[pair[:idx]] = pair[idx+1:]
 	}
 
-	return kvs
+	return result
+}
+
+// WithPairDelimiter uses a single rune to separate pairs.
+func WithPairDelimiter(delimiter rune) ParseOption {
+	return func(c *parseConfig) {
+		c.pairSeparator = func(r rune) bool {
+			return r == delimiter
+		}
+	}
+}
+
+// WithPairDelimiterFunc allows custom separator logic for complex cases.
+func WithPairDelimiterFunc(fn func(rune) bool) ParseOption {
+	return func(c *parseConfig) {
+		c.pairSeparator = fn
+	}
+}
+
+// WithSpacePairDelimiter is a convenient shorthand for space-separated formats
+// commonly used in query strings and CLI arguments.
+func WithSpacePairDelimiter() ParseOption {
+	return func(c *parseConfig) {
+		c.pairSeparator = unicode.IsSpace
+	}
+}
+
+// WithValueDelimiter changes the key-value separator (default is '=').
+func WithValueDelimiter(delimiter rune) ParseOption {
+	return func(c *parseConfig) {
+		c.valueSeparator = delimiter
+	}
+}
+
+// WithBareValueMode sets how to treat values without a separator.
+//
+// BareAsValue (default): Treats bare values as values under DefaultKey.
+// Only the first bare value is kept, subsequent ones are ignored with a warning.
+// Example: ParseTag("required,optional") → {"__default": "required"} (optional ignored)
+//
+// BareAsKey: Treats bare values as keys with empty values.
+// Multiple bare values are allowed.
+// Example: ParseTag("required,optional", WithBareValueMode(BareAsKey)) → {"required": "", "optional": ""}.
+func WithBareValueMode(mode BareValueMode) ParseOption {
+	return func(c *parseConfig) {
+		c.bareValueMode = mode
+	}
 }
