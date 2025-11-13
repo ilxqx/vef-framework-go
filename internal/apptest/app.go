@@ -1,4 +1,4 @@
-package test
+package apptest
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 
-	configPkg "github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
-	"github.com/ilxqx/vef-framework-go/internal/config"
+	iconfig "github.com/ilxqx/vef-framework-go/internal/config"
 	"github.com/ilxqx/vef-framework-go/internal/cron"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/event"
@@ -29,7 +29,6 @@ const testTimeout = fx.DefaultTimeout
 type MockConfig struct{}
 
 func (m *MockConfig) Unmarshal(key string, target any) error {
-	// No-op for testing - we'll use fx.Replace for specific configs
 	return nil
 }
 
@@ -92,24 +91,20 @@ func buildOptions(options ...fx.Option) []fx.Option {
 	// Build fx options
 	opts := []fx.Option{
 		fx.NopLogger,
-		// Provide context for event bus
-		fx.Provide(func() context.Context {
-			return context.Background()
-		}),
 		// Replace configs - must replace config.Config to avoid file reading
 		fx.Replace(
 			fx.Annotate(
 				&MockConfig{},
-				fx.As(new(configPkg.Config)),
+				fx.As(new(config.Config)),
 			),
-			&configPkg.AppConfig{
+			&config.AppConfig{
 				Name:      "test-app",
 				Port:      0, // Random port
 				BodyLimit: "100mib",
 			},
 		),
 		// Core framework modules
-		config.Module,
+		iconfig.Module,
 		database.Module,
 		orm.Module,
 		middleware.Module,
