@@ -17,10 +17,8 @@ func Named(name string) log.Logger {
 }
 
 func newLogger() *zapLogger {
-	// level is the default log level
-	level := zap.InfoLevel
-	// levelString gets log level from environment
-	levelString := strings.ToLower(os.Getenv(constants.EnvLogLevel))
+	level, levelString := zap.InfoLevel, strings.ToLower(os.Getenv(constants.EnvLogLevel))
+
 	switch levelString {
 	case "debug":
 		level = zap.DebugLevel

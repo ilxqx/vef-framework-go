@@ -14,7 +14,7 @@ type apiManager struct {
 
 func (m *apiManager) Register(apiDef *api.Definition) error {
 	if existing, loaded := m.apis.LoadOrStore(apiDef.Identifier, wrapHandler(apiDef)); loaded {
-		return &DuplicateApiError{
+		return &DuplicateError{
 			Identifier: apiDef.Identifier,
 			Existing:   existing,
 			New:        apiDef,

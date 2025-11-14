@@ -3,7 +3,7 @@ package build_info
 import (
 	"fmt"
 
-	"github.com/fatih/color"
+	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 )
 
@@ -30,24 +30,22 @@ Example usage in go:generate:
 
 `,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			output, _ := cmd.Flags().GetString("output")
+			outputFile, _ := cmd.Flags().GetString("output")
 			pkg, _ := cmd.Flags().GetString("package")
 
-			gray := color.New(color.FgHiBlack)
-			green := color.New(color.FgGreen)
-			cyan := color.New(color.FgCyan)
+			output := termenv.DefaultOutput()
 
-			_, _ = cyan.Println("Generating build info...")
-			_, _ = gray.Print("  Output file: ")
-			_, _ = fmt.Println(output)
-			_, _ = gray.Print("  Package: ")
+			_, _ = fmt.Println(output.String("Generating build info...").Foreground(termenv.ANSICyan))
+			_, _ = fmt.Print(output.String("  Output file: ").Foreground(termenv.ANSIBrightBlack))
+			_, _ = fmt.Println(outputFile)
+			_, _ = fmt.Print(output.String("  Package: ").Foreground(termenv.ANSIBrightBlack))
 			_, _ = fmt.Println(pkg)
 
-			if err := Generate(output, pkg); err != nil {
+			if err := Generate(outputFile, pkg); err != nil {
 				return fmt.Errorf("failed to generate build info: %w", err)
 			}
 
-			_, _ = green.Println("✓ Successfully generated build info file")
+			_, _ = fmt.Println(output.String("✓ Successfully generated build info file").Foreground(termenv.ANSIGreen))
 
 			return nil
 		},

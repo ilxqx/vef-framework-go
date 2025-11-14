@@ -49,6 +49,8 @@
   "api_request_version": "Version",
   "api_request_resource": "Resource",
   "api_request_action": "Action",
+  "api_request_params_invalid_json": "The 'params' field must be valid JSON",
+  "api_request_meta_invalid_json": "The 'meta' field must be valid JSON",
   "batch_create_list": "Create params list",
   "batch_update_list": "Update params list",
   "batch_delete_pks": "Delete primary keys list",

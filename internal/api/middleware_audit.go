@@ -31,7 +31,7 @@ func buildAuditMiddleware(manager api.Manager, publisher event.Publisher) fiber.
 
 		auditEvent, err := buildAuditEvent(ctx, request, elapsed, handlerErr)
 		if err != nil {
-			contextx.Logger(ctx).Errorf("failed to build audit event: %v", err)
+			contextx.Logger(ctx).Errorf("Failed to build audit event: %v", err)
 
 			return handlerErr
 		}

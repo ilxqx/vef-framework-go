@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fatih/color"
+	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 )
 
@@ -46,50 +46,47 @@ Example usage:
 `,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			input, _ := cmd.Flags().GetString("input")
-			output, _ := cmd.Flags().GetString("output")
+			outputPath, _ := cmd.Flags().GetString("output")
 			pkg, _ := cmd.Flags().GetString("package")
 
-			cyan := color.New(color.FgCyan)
-			green := color.New(color.FgGreen)
-			gray := color.New(color.FgHiBlack)
-			red := color.New(color.FgRed)
+			output := termenv.DefaultOutput()
 
 			inputInfo, err := os.Stat(input)
 			if err != nil {
-				_, _ = red.Printf("✗ Input path does not exist: %s\n", input)
+				_, _ = fmt.Print(output.String(fmt.Sprintf("✗ Input path does not exist: %s\n", input)).Foreground(termenv.ANSIRed).String())
 
 				return fmt.Errorf("input path does not exist: %w", err)
 			}
 
-			outputInfo, err := os.Stat(output)
+			outputInfo, err := os.Stat(outputPath)
 			outputIsDir := err == nil && outputInfo.IsDir()
 			inputIsDir := inputInfo.IsDir()
 
 			if inputIsDir && !outputIsDir && err == nil {
-				_, _ = red.Println("✗ When input is a directory, output must also be a directory")
+				_, _ = fmt.Println(output.String("✗ When input is a directory, output must also be a directory").Foreground(termenv.ANSIRed))
 
 				return errInputOutputMismatch
 			}
 
-			_, _ = cyan.Println("Generating model schemas...")
-			_, _ = gray.Print("  Input: ")
+			_, _ = fmt.Println(output.String("Generating model schemas...").Foreground(termenv.ANSICyan))
+			_, _ = fmt.Print(output.String("  Input: ").Foreground(termenv.ANSIBrightBlack))
 			_, _ = fmt.Println(input)
-			_, _ = gray.Print("  Output: ")
-			_, _ = fmt.Println(output)
-			_, _ = gray.Print("  Package: ")
+			_, _ = fmt.Print(output.String("  Output: ").Foreground(termenv.ANSIBrightBlack))
+			_, _ = fmt.Println(outputPath)
+			_, _ = fmt.Print(output.String("  Package: ").Foreground(termenv.ANSIBrightBlack))
 			_, _ = fmt.Println(pkg)
 
 			if inputIsDir {
-				if err := GenerateDirectory(input, output, pkg); err != nil {
+				if err := GenerateDirectory(input, outputPath, pkg); err != nil {
 					return fmt.Errorf("failed to generate schemas: %w", err)
 				}
 			} else {
-				if err := GenerateFile(input, output, pkg); err != nil {
+				if err := GenerateFile(input, outputPath, pkg); err != nil {
 					return fmt.Errorf("failed to generate schema: %w", err)
 				}
 			}
 
-			_, _ = green.Println("✓ Successfully generated schema files")
+			_, _ = fmt.Println(output.String("✓ Successfully generated schema files").Foreground(termenv.ANSIGreen))
 
 			return nil
 		},

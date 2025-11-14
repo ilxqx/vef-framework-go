@@ -49,6 +49,8 @@
   "api_request_version": "版本",
   "api_request_resource": "资源",
   "api_request_action": "操作",
+  "api_request_params_invalid_json": "参数字段JSON格式错误",
+  "api_request_meta_invalid_json": "元信息字段JSON格式错误",
   "batch_create_list": "创建参数列表",
   "batch_update_list": "更新参数列表",
   "batch_delete_pks": "删除主键列表",

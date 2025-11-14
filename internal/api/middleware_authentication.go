@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/extractors"
 	"github.com/gofiber/fiber/v3/middleware/keyauth"
+	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -32,12 +33,11 @@ func buildAuthenticationMiddleware(manager api.Manager, auth security.AuthManage
 
 			return definition.IsPublic()
 		},
-		ErrorHandler: func(_ fiber.Ctx, err error) error {
-			if errors.Is(err, keyauth.ErrMissingOrMalformedAPIKey) {
-				return fiber.ErrUnauthorized
+		ErrorHandler: func(ctx fiber.Ctx, err error) error {
+			return &Error{
+				Identifier: contextx.ApiRequest(ctx).Identifier,
+				Err:        lo.Ternary[error](errors.Is(err, keyauth.ErrMissingOrMalformedAPIKey), fiber.ErrUnauthorized, err),
 			}
-
-			return err
 		},
 		Validator: func(ctx fiber.Ctx, accessToken string) (bool, error) {
 			principal, err := auth.Authenticate(ctx.Context(), security.Authentication{
@@ -83,31 +83,46 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth security.Aut
 			Credentials: credentials,
 		})
 		if err != nil {
-			return err
+			return &Error{
+				Identifier: request.Identifier,
+				Err:        err,
+			}
 		}
 
 		if principal != nil && principal.Details != nil {
 			switch cfg := principal.Details.(type) {
 			case security.ExternalAppConfig:
 				if !cfg.Enabled {
-					return result.ErrExternalAppDisabled
+					return &Error{
+						Identifier: request.Identifier,
+						Err:        result.ErrExternalAppDisabled,
+					}
 				}
 
 				if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
 					if !ipAllowed(webhelpers.GetIp(ctx), cfg.IpWhitelist) {
-						return result.ErrIpNotAllowed
+						return &Error{
+							Identifier: request.Identifier,
+							Err:        result.ErrIpNotAllowed,
+						}
 					}
 				}
 
 			case *security.ExternalAppConfig:
 				if cfg != nil {
 					if !cfg.Enabled {
-						return result.ErrExternalAppDisabled
+						return &Error{
+							Identifier: request.Identifier,
+							Err:        result.ErrExternalAppDisabled,
+						}
 					}
 
 					if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
 						if !ipAllowed(webhelpers.GetIp(ctx), cfg.IpWhitelist) {
-							return result.ErrIpNotAllowed
+							return &Error{
+								Identifier: request.Identifier,
+								Err:        result.ErrIpNotAllowed,
+							}
 						}
 					}
 				}

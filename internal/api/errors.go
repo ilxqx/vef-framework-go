@@ -32,15 +32,35 @@ var (
 	ErrHandlerFactoryInvalidReturn = errors.New("handler factory method should return 1 or 2 values")
 )
 
-// DuplicateApiError represents an error when attempting to register a duplicate Api definition.
-// It contains information about both the existing and new Api definitions.
-type DuplicateApiError struct {
+// Error represents an error that occurred during API request processing.
+type Error struct {
+	Identifier api.Identifier
+	Err        error
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf(
+		"resource=%q action=%q version=%q - %v",
+		e.Identifier.Resource,
+		e.Identifier.Action,
+		e.Identifier.Version,
+		e.Err,
+	)
+}
+
+// Unwrap returns the underlying error, allowing errors.As and errors.Is to work correctly.
+func (e *Error) Unwrap() error {
+	return e.Err
+}
+
+// DuplicateError represents an error when attempting to register a duplicate Api definition.
+type DuplicateError struct {
 	Identifier api.Identifier
 	Existing   *api.Definition
 	New        *api.Definition
 }
 
-func (e *DuplicateApiError) Error() string {
+func (e *DuplicateError) Error() string {
 	return fmt.Sprintf(
 		"duplicate api definition: resource=%q, action=%q, version=%q (attempting to override existing api)",
 		e.Identifier.Resource,

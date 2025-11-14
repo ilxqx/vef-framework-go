@@ -50,6 +50,7 @@ func IsDuplicateKeyError(err error) bool {
 	if strings.Contains(message, "violation of primary key constraint") ||
 		strings.Contains(message, "violation of unique key constraint") ||
 		strings.Contains(message, "cannot insert duplicate key") {
+
 		return true
 	}
 
@@ -91,6 +92,7 @@ func IsForeignKeyError(err error) bool {
 	// PostgreSQL
 	if strings.Contains(message, "violates foreign key constraint") ||
 		strings.Contains(message, "foreign key violation") {
+
 		return true
 	}
 
@@ -98,6 +100,7 @@ func IsForeignKeyError(err error) bool {
 	if strings.Contains(message, "a foreign key constraint fails") ||
 		strings.Contains(message, "cannot add or update a child row") ||
 		strings.Contains(message, "cannot delete or update a parent row") {
+
 		return true
 	}
 
@@ -105,12 +108,14 @@ func IsForeignKeyError(err error) bool {
 	if strings.Contains(message, "foreign key constraint failed") ||
 		strings.Contains(message, "sqlite_constraint_foreignkey") ||
 		strings.Contains(message, "foreign key mismatch") {
+
 		return true
 	}
 
 	// SQL Server (Msg 547)
 	if strings.Contains(message, "conflicted with the foreign key constraint") ||
 		strings.Contains(message, "statement conflicted with the foreign key") {
+
 		return true
 	}
 

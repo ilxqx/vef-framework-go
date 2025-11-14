@@ -1,7 +1,9 @@
 package cmd
 
 import (
-	"github.com/fatih/color"
+	"fmt"
+
+	"github.com/muesli/termenv"
 )
 
 // Banner is the VEF CLI ASCII art logo.
@@ -16,9 +18,10 @@ const Banner = `
 
 // PrintBanner prints the banner and version info.
 func PrintBanner() {
-	cyan := color.New(color.FgCyan, color.Bold)
-	_, _ = cyan.Print(Banner)
+	output := termenv.DefaultOutput()
 
-	_, _ = color.New(color.FgHiBlack).Printf("Version: %s | Built: %s\n\n",
-		Version, Date)
+	_, _ = fmt.Print(output.String(Banner).Foreground(termenv.ANSICyan).Bold())
+
+	versionInfo := fmt.Sprintf("Version: %s | Built: %s\n\n", Version, Date)
+	_, _ = fmt.Print(output.String(versionInfo).Foreground(termenv.ANSIBrightBlack))
 }

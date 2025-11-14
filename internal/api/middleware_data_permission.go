@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -13,7 +15,6 @@ func buildDataPermissionMiddleware(
 	resolver security.DataPermissionResolver,
 ) fiber.Handler {
 	return func(ctx fiber.Ctx) error {
-		// If no resolver is provided, skip data permission resolution
 		if resolver == nil {
 			logger.Debug("No DataPermissionResolver provided, skipping data permission middleware")
 
@@ -24,7 +25,7 @@ func buildDataPermissionMiddleware(
 		definition := manager.Lookup(request.Identifier)
 
 		if !definition.RequiresPermission() {
-			logger.Debugf("Endpoint %s does not require permission, skipping data permission", request.Identifier)
+			logger.Debugf("Endpoint %q does not require permission, skipping data permission", request.Identifier)
 
 			return ctx.Next()
 		}
@@ -41,17 +42,19 @@ func buildDataPermissionMiddleware(
 			definition.PermToken,
 		)
 		if err != nil {
-			logger.Errorf("Failed to resolve data scope for principal %s on permission %s: %v",
-				principal.Id, definition.PermToken, err)
-
-			return fiber.ErrInternalServerError
+			return fmt.Errorf(
+				"failed to resolve data scope for principal %q on permission %q: %w",
+				principal.Id,
+				definition.PermToken,
+				err,
+			)
 		}
 
 		if dataScope != nil {
-			logger.Debugf("Resolved data scope %q for principal %s",
+			logger.Debugf("Resolved data scope %q for principal %q",
 				dataScope.Key(), principal.Id)
 		} else {
-			logger.Debugf("No data scope resolved for principal %s on permission %s",
+			logger.Debugf("No data scope resolved for principal %q on permission %q",
 				principal.Id, definition.PermToken)
 		}
 
@@ -61,7 +64,6 @@ func buildDataPermissionMiddleware(
 			contextx.Logger(ctx),
 		)
 
-		// Store applier in context for use by handlers
 		contextx.SetDataPermApplier(ctx, applier)
 		ctx.SetContext(contextx.SetDataPermApplier(ctx.Context(), applier))
 

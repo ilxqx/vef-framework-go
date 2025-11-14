@@ -4,16 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 func setupHelpColors(cmd *cobra.Command) {
-	headerColor := color.New(color.FgCyan, color.Bold)
-	commandColor := color.New(color.FgGreen)
-	flagColor := color.New(color.FgGreen)
+	output := termenv.DefaultOutput()
 
 	cmd.SetUsageFunc(func(cmd *cobra.Command) error {
 		if cmd.Parent() == nil {
@@ -28,7 +26,7 @@ func setupHelpColors(cmd *cobra.Command) {
 			_, _ = fmt.Fprintln(cmd.OutOrStdout())
 		}
 
-		_, _ = headerColor.Fprintln(cmd.OutOrStdout(), "Usage:")
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Usage:").Foreground(termenv.ANSICyan).Bold())
 		if cmd.Runnable() {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s [flags]\n", cmd.CommandPath())
 		}
@@ -40,7 +38,7 @@ func setupHelpColors(cmd *cobra.Command) {
 		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 
 		if cmd.HasAvailableSubCommands() {
-			_, _ = headerColor.Fprintln(cmd.OutOrStdout(), "Available Commands:")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Available Commands:").Foreground(termenv.ANSICyan).Bold())
 
 			maxLen := 0
 			for _, c := range cmd.Commands() {
@@ -58,7 +56,7 @@ func setupHelpColors(cmd *cobra.Command) {
 					continue
 				}
 
-				_, _ = commandColor.Fprintf(cmd.OutOrStdout(), "  %s", c.Name())
+				_, _ = fmt.Fprint(cmd.OutOrStdout(), output.String(fmt.Sprintf("  %s", c.Name())).Foreground(termenv.ANSIGreen))
 				spacing := maxLen - len(c.Name()) + 2
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%*s", spacing, constants.Space)
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), c.Short)
@@ -68,15 +66,15 @@ func setupHelpColors(cmd *cobra.Command) {
 		}
 
 		if cmd.HasAvailableLocalFlags() || cmd.HasAvailablePersistentFlags() {
-			_, _ = headerColor.Fprintln(cmd.OutOrStdout(), "Flags:")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Flags:").Foreground(termenv.ANSICyan).Bold())
 
 			if cmd.HasAvailableLocalFlags() {
-				printFlags(cmd, cmd.LocalFlags(), flagColor)
+				printFlags(cmd, cmd.LocalFlags(), output)
 			}
 
 			if cmd.HasAvailableInheritedFlags() {
-				_, _ = headerColor.Fprintln(cmd.OutOrStdout(), "\nGlobal Flags:")
-				printFlags(cmd, cmd.InheritedFlags(), flagColor)
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("\nGlobal Flags:").Foreground(termenv.ANSICyan).Bold())
+				printFlags(cmd, cmd.InheritedFlags(), output)
 			}
 
 			_, _ = fmt.Fprintln(cmd.OutOrStdout())
@@ -94,7 +92,7 @@ func setupHelpColors(cmd *cobra.Command) {
 	})
 }
 
-func printFlags(cmd *cobra.Command, flags any, flagColor *color.Color) {
+func printFlags(cmd *cobra.Command, flags any, output *termenv.Output) {
 	type FlagSet interface {
 		FlagUsages() string
 	}
@@ -127,7 +125,7 @@ func printFlags(cmd *cobra.Command, flags any, flagColor *color.Color) {
 		flagPart := parts[0]
 		descPart := strings.TrimLeft(parts[1], constants.Space)
 
-		_, _ = flagColor.Fprint(cmd.OutOrStdout(), flagPart)
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), output.String(flagPart).Foreground(termenv.ANSIGreen))
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s\n", descPart)
 	}
 }

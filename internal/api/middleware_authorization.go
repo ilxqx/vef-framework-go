@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -21,28 +23,32 @@ func buildAuthorizationMiddleware(manager api.Manager, checker security.Permissi
 			}
 
 			if checker == nil {
-				logger.Warnf("No PermissionChecker provided, denying access to permission: %s", definition.PermToken)
-
-				return fiber.ErrForbidden
+				return fmt.Errorf(
+					"%w: no 'PermissionChecker' provided, denying access to permission %q",
+					fiber.ErrForbidden,
+					definition.PermToken,
+				)
 			}
 
 			hasPermission, err := checker.HasPermission(ctx.Context(), principal, definition.PermToken)
 			if err != nil {
-				logger.Errorf("Permission check failed for principal %s on permission %s: %v",
-					principal.Id, definition.PermToken, err)
-
-				return fiber.ErrInternalServerError
+				return fmt.Errorf(
+					"permission check failed for principal %q on permission %q: %w",
+					principal.Id,
+					definition.PermToken,
+					err,
+				)
 			}
 
 			if !hasPermission {
-				logger.Infof("Permission denied for principal %s (type=%s) on permission %s",
-					principal.Id, principal.Type, definition.PermToken)
-
-				return fiber.ErrForbidden
+				return fmt.Errorf(
+					"%w: principal %q (type=%s) does not have permission %q",
+					fiber.ErrForbidden,
+					principal.Id,
+					principal.Type,
+					definition.PermToken,
+				)
 			}
-
-			logger.Debugf("Permission granted for principal %s on permission %s",
-				principal.Id, definition.PermToken)
 		}
 
 		return ctx.Next()

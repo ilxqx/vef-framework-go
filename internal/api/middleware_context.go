@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -24,19 +26,38 @@ func buildContextMiddleware(db orm.Db) fiber.Handler {
 
 		request := contextx.ApiRequest(ctx)
 		logger := contextx.Logger(ctx)
-		contextx.SetLogger(
-			ctx,
-			logger.Named(request.Resource+constants.Colon+request.Action+constants.At+request.Version).
-				Named(string(principal.Type)+constants.Colon+principal.Id+constants.At+principal.Name),
-		)
-		ctx.SetContext(
-			contextx.SetLogger(
-				ctx.Context(),
-				logger.Named(request.Resource+constants.Colon+request.Action+constants.At+request.Version).
-					Named(string(principal.Type)+constants.Colon+principal.Id+constants.At+principal.Name),
-			),
-		)
+
+		resourceLoggerName := buildRequestLoggerName(request.Resource, request.Action, request.Version)
+		principalLoggerName := buildPrincipalLoggerName(principal)
+		scopedLogger := logger.Named(resourceLoggerName).Named(principalLoggerName)
+
+		contextx.SetLogger(ctx, scopedLogger)
+		ctx.SetContext(contextx.SetLogger(ctx.Context(), scopedLogger))
 
 		return ctx.Next()
 	}
+}
+
+func buildRequestLoggerName(resource, action, version string) string {
+	var sb strings.Builder
+
+	_, _ = sb.WriteString(resource)
+	_ = sb.WriteByte(constants.ByteColon)
+	_, _ = sb.WriteString(action)
+	_ = sb.WriteByte(constants.ByteAt)
+	_, _ = sb.WriteString(version)
+
+	return sb.String()
+}
+
+func buildPrincipalLoggerName(principal *security.Principal) string {
+	var sb strings.Builder
+
+	_, _ = sb.WriteString(string(principal.Type))
+	_ = sb.WriteByte(constants.ByteColon)
+	_, _ = sb.WriteString(principal.Id)
+	_ = sb.WriteByte(constants.ByteAt)
+	_, _ = sb.WriteString(principal.Name)
+
+	return sb.String()
 }

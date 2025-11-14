@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fatih/color"
+	"github.com/muesli/termenv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -12,6 +12,7 @@ import (
 )
 
 func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
+	output := termenv.DefaultOutput()
 	config := zap.Config{
 		Level:       zap.NewAtomicLevelAt(level),
 		Development: false,
@@ -31,13 +32,19 @@ func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
 
 				return func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 					enc.AppendString(
-						color.CyanString(t.Format(layout)),
+						output.String(t.Format(layout)).
+							Foreground(termenv.ANSIBrightBlack).
+							String(),
 					)
 				}
 			}(),
 			EncodeDuration: zapcore.StringDurationEncoder,
 			EncodeName: func(name string, enc zapcore.PrimitiveArrayEncoder) {
-				enc.AppendString(constants.LeftBracket + color.HiGreenString(name) + constants.RightBracket)
+				enc.AppendString(
+					output.String(constants.LeftBracket + name + constants.RightBracket).
+						Foreground(termenv.ANSIBrightMagenta).
+						String(),
+				)
 			},
 		},
 		DisableStacktrace: true,
@@ -45,15 +52,12 @@ func newZapLogger(level zapcore.Level) *zap.SugaredLogger {
 		ErrorOutputPaths:  []string{"stderr"},
 	}
 
-	// Build creates the logger without caller information
 	logger, err := config.Build(zap.WithCaller(false))
 	if err != nil {
-		// Panic if logger creation fails
 		panic(
 			fmt.Errorf("failed to build zap logger: %w", err),
 		)
 	}
 
-	// Sugar returns a sugared logger for easier usage
 	return logger.Sugar()
 }

@@ -19,7 +19,7 @@ import (
 
 // buildRateLimiterMiddleware uses a sliding window algorithm and generates keys based on resource, version, action, IP, and user ID.
 func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
-	handler := limiter.New(limiter.Config{
+	return limiter.New(limiter.Config{
 		LimiterMiddleware: limiter.SlidingWindow{},
 		Max:               20,
 		MaxFunc: func(ctx fiber.Ctx) int {
@@ -68,8 +68,4 @@ func buildRateLimiterMiddleware(manager api.Manager) fiber.Handler {
 			return r.Response(ctx, fiber.StatusTooManyRequests)
 		},
 	})
-
-	return func(ctx fiber.Ctx) error {
-		return handler(ctx)
-	}
 }

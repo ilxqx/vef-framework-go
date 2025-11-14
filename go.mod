@@ -8,7 +8,6 @@ require (
 	github.com/dop251/goja v0.0.0-20251103141225-af2ceb9156d7
 	github.com/dustin/go-humanize v1.0.1
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
-	github.com/fatih/color v1.18.0
 	github.com/go-co-op/gocron/v2 v2.18.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
