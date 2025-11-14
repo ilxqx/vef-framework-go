@@ -7,6 +7,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/ilxqx/vef-framework-go)](https://codecov.io/gh/ilxqx/vef-framework-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ilxqx/vef-framework-go)
 [![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
 
 A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
@@ -91,11 +92,12 @@ VEF uses a single-endpoint approach where all Api requests go through `POST /api
   "action": "find_page",
   "version": "v1",
   "params": {
-    "page": 1,
-    "size": 20,
     "keyword": "john"
   },
-  "meta": {}
+  "meta": {
+    "page": 1,
+    "size": 20
+  }
 }
 ```
 
@@ -113,6 +115,10 @@ VEF uses a single-endpoint approach where all Api requests go through `POST /api
   }
 }
 ```
+
+Params vs Meta:
+- `params` carries business data (e.g., search filters, create/update fields). Define your structs embedding `api.P`.
+- `meta` carries request-level options (e.g., pagination for `find_page`, export/import format). Define your structs embedding `api.M` (e.g., `page.Pageable`).
 
 ### Dependency Injection
 
@@ -176,7 +182,7 @@ package payloads
 import "github.com/ilxqx/vef-framework-go/api"
 
 type UserSearch struct {
-    api.In
+    api.P
     Keyword string `json:"keyword" search:"contains,column=username|email"`
     IsActive *bool `json:"isActive" search:"eq"`
 }
@@ -186,7 +192,7 @@ type UserSearch struct {
 
 ```go
 type UserParams struct {
-    api.In
+    api.P
     Id       string      `json:"id"` // Required for updates
 
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
@@ -202,7 +208,7 @@ type UserParams struct {
 > The framework reserves the following resource namespaces for system APIs. **DO NOT** use these resource names in your custom API definitions, as they will conflict with built-in framework functionality and cause application startup failures:
 >
 > - `security/auth` - Authentication APIs (login, logout, refresh, get_user_info)
-> - `sys/storage` - Storage APIs (upload, get_presigned_url, stat, list)
+> - `sys/storage` - Storage APIs (upload, get_presigned_url, delete_temp, stat, list)
 > - `sys/monitor` - Monitoring APIs (get_overview, get_cpu, get_memory, get_disk, etc.)
 >
 > The framework automatically detects duplicate API definitions and will fail to start if conflicts are found. Use custom resource namespaces like `app/`, `custom/`, or your own domain-specific prefixes to avoid conflicts.
@@ -321,14 +327,14 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
         return users
     }),
 
-// Example: Adding computed fields
+// Example: Adding computed fields in paged results (processor receives items slice)
 FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
-    WithProcessor(func(page page.Page[Order], search OrderSearch, ctx fiber.Ctx) any {
-        for i := range page.Items {
+    WithProcessor(func(items []Order, search OrderSearch, ctx fiber.Ctx) any {
+        for i := range items {
             // Calculate total amount
-            page.Items[i].TotalAmount = page.Items[i].Quantity * page.Items[i].UnitPrice
+            items[i].TotalAmount = items[i].Quantity * items[i].UnitPrice
         }
-        return page
+        return items
     }),
 
 // Example: Nested structure transformation
@@ -552,9 +558,7 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
 `FindTreeOptionsApi` follows the same configuration pattern as `FindTreeApi`:
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](
-    buildCategoryTree,
-).
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -599,7 +603,7 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
 Combines both options and tree configuration:
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](buildTree).
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -612,7 +616,7 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](buildTr
 
 ```go
 ExportApi: apis.NewExportApi[User, UserSearch]().
-    WithDefaultFormat("xlsx").                    // Default export format: "xlsx" or "csv"
+    WithDefaultFormat("excel").                   // Default export format: "excel" or "csv"
     WithExcelOptions(&excel.ExportOptions{        // Excel-specific options
         SheetName: "Users",
     }).
@@ -713,6 +717,7 @@ func (r *UserResource) ResetPassword(
 - `*security.Principal` - Current authenticated user
 - `page.Pageable` - Pagination parameters
 - Custom structs embedding `api.P`
+- Custom structs embedding `api.M` (request metadata)
 - Resource struct fields (direct fields, `api:"in"` tagged fields, or embedded structs)
 
 **Example of Resource Field Injection:**
@@ -804,7 +809,7 @@ Automatically apply query conditions using `search` tags:
 
 ```go
 type UserSearch struct {
-    api.In
+    api.P
     Username string `search:"eq"`                                    // username = ?
     Email    string `search:"contains"`                              // email LIKE ?
     Age      int    `search:"gte"`                                   // age >= ?
@@ -1574,7 +1579,8 @@ The framework automatically registers the `sys/storage` resource with the follow
 | Action | Description |
 |--------|-------------|
 | `upload` | Upload file (auto-generates unique filename) |
-| `getPresignedUrl` | Get presigned URL (for direct access or upload) |
+| `get_presigned_url` | Get presigned URL (for direct access or upload) |
+| `delete_temp` | Delete temporary file (only keys under `temp/`) |
 | `stat` | Get file metadata |
 | `list` | List files |
 
@@ -1640,7 +1646,7 @@ import (
 
 // Define upload parameter struct
 type UploadAvatarParams struct {
-    api.In
+    api.P
 
     File *multipart.FileHeader `json:"file"`
 }

@@ -7,6 +7,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/ilxqx/vef-framework-go)](https://codecov.io/gh/ilxqx/vef-framework-go)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ilxqx/vef-framework-go.svg)](https://pkg.go.dev/github.com/ilxqx/vef-framework-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ilxqx/vef-framework-go)](https://goreportcard.com/report/github.com/ilxqx/vef-framework-go)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/ilxqx/vef-framework-go)
 [![License](https://img.shields.io/github/license/ilxqx/vef-framework-go)](https://github.com/ilxqx/vef-framework-go/blob/main/LICENSE)
 
 一个基于 Uber FX 依赖注入和 Fiber 构建的现代化 Go Web 开发框架，采用约定优于配置的设计理念，为企业级应用快速开发提供开箱即用的完整功能。
@@ -91,11 +92,12 @@ VEF 采用单一端点方式，所有 Api 请求通过 `POST /api`（或 `POST /
   "action": "find_page",
   "version": "v1",
   "params": {
-    "page": 1,
-    "size": 20,
     "keyword": "john"
   },
-  "meta": {}
+  "meta": {
+    "page": 1,
+    "size": 20
+  }
 }
 ```
 
@@ -113,6 +115,10 @@ VEF 采用单一端点方式，所有 Api 请求通过 `POST /api`（或 `POST /
   }
 }
 ```
+
+参数与元数据：
+- `params`：业务参数（如查询筛选、创建/更新字段）。定义的结构体需嵌入 `api.P`。
+- `meta`：请求级控制信息（如 `find_page` 的分页、导入导出的格式等）。定义的结构体需嵌入 `api.M`（例如 `page.Pageable`）。
 
 ### 依赖注入
 
@@ -176,7 +182,7 @@ package payloads
 import "github.com/ilxqx/vef-framework-go/api"
 
 type UserSearch struct {
-    api.In
+    api.P
     Keyword string `json:"keyword" search:"contains,column=username|email"`
     IsActive *bool `json:"isActive" search:"eq"`
 }
@@ -186,7 +192,7 @@ type UserSearch struct {
 
 ```go
 type UserParams struct {
-    api.In
+    api.P
     Id       string      `json:"id"` // 更新操作时必需
 
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"用户名"`
@@ -202,7 +208,7 @@ type UserParams struct {
 > 框架为系统 API 保留了以下资源命名空间。**请勿**在自定义 API 定义中使用这些资源名称，否则会与内置框架功能冲突，导致应用启动失败:
 >
 > - `security/auth` - 认证 API（login, logout, refresh, get_user_info）
-> - `sys/storage` - 存储 API（upload, get_presigned_url, stat, list）
+> - `sys/storage` - 存储 API（upload, get_presigned_url, delete_temp, stat, list）
 > - `sys/monitor` - 监控 API（get_overview, get_cpu, get_memory, get_disk 等）
 >
 > 框架会自动检测重复的 API 定义，如果发现冲突将拒绝启动。请使用自定义的资源命名空间，如 `app/`、`custom/` 或您自己的领域特定前缀，以避免冲突。
@@ -321,14 +327,14 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
         return users
     }),
 
-// 示例：添加计算字段
+// 示例：分页结果中添加计算字段（处理器接收 items 切片）
 FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
-    WithProcessor(func(page page.Page[Order], search OrderSearch, ctx fiber.Ctx) any {
-        for i := range page.Items {
+    WithProcessor(func(items []Order, search OrderSearch, ctx fiber.Ctx) any {
+        for i := range items {
             // 计算总金额
-            page.Items[i].TotalAmount = page.Items[i].Quantity * page.Items[i].UnitPrice
+            items[i].TotalAmount = items[i].Quantity * items[i].UnitPrice
         }
-        return page
+        return items
     }),
 
 // 示例：嵌套结构转换
@@ -552,9 +558,7 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
 `FindTreeOptionsApi` 遵循与 `FindTreeApi` 相同的配置模式：
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](
-    buildCategoryTree,
-).
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -599,7 +603,7 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
 结合选项和树形配置：
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](buildTree).
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -612,7 +616,7 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch](buildTr
 
 ```go
 ExportApi: apis.NewExportApi[User, UserSearch]().
-    WithDefaultFormat("xlsx").                    // 默认导出格式："xlsx" 或 "csv"
+    WithDefaultFormat("excel").                   // 默认导出格式："excel" 或 "csv"
     WithExcelOptions(&excel.ExportOptions{        // Excel 特定选项
         SheetName: "Users",
     }).
@@ -710,6 +714,7 @@ func (r *UserResource) ResetPassword(
 - `*security.Principal` - 当前认证用户
 - `page.Pageable` - 分页参数
 - 嵌入 `api.P` 的自定义结构体
+- 嵌入 `api.M` 的自定义结构体（请求元数据）
 - Resource 结构体字段（直接字段、带 `api:"in"` 标签的字段或嵌入的结构体）
 
 **Resource 字段注入示例：**
@@ -801,7 +806,7 @@ err := db.NewSelect().
 
 ```go
 type UserSearch struct {
-    api.In
+    api.P
     Username string `search:"eq"`                                    // username = ?
     Email    string `search:"contains"`                              // email LIKE ?
     Age      int    `search:"gte"`                                   // age >= ?
@@ -1565,7 +1570,8 @@ vef.Invoke(func(scheduler cron.Scheduler) {
 | Action | 说明 |
 |--------|------|
 | `upload` | 上传文件（自动生成唯一文件名） |
-| `getPresignedUrl` | 获取预签名 URL（用于直接访问或上传） |
+| `get_presigned_url` | 获取预签名 URL（用于直接访问或上传） |
+| `delete_temp` | 删除临时文件（仅允许 `temp/` 前缀） |
 | `stat` | 获取文件元数据 |
 | `list` | 列出文件 |
 
@@ -1631,7 +1637,7 @@ import (
 
 // 定义上传参数结构
 type UploadAvatarParams struct {
-    api.In
+    api.P
 
     File *multipart.FileHeader `json:"file"`
 }

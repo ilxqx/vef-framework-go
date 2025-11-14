@@ -61,7 +61,7 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 			CrossOriginEmbedderPolicy: "require-corp",
 			CrossOriginOpenerPolicy:   "same-origin-allow-popups",
 			CrossOriginResourcePolicy: "same-origin",
-			ContentSecurityPolicy:     "default-src 'self'; img-src * data:; script-src 'self'; style-src 'self' 'unsafe-inline'",
+			ContentSecurityPolicy:     "default-src 'self'; img-src * data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
 		}),
 	)
 
@@ -74,7 +74,7 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 		Compress:      true,
 	}))
 
-	group.Get("/static/+", static.New(constants.Empty, static.Config{
+	group.Get("/static/*", static.New(constants.Empty, static.Config{
 		FS:            config.FS,
 		Browse:        false,
 		Download:      false,
