@@ -69,8 +69,8 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 		FS:            config.FS,
 		Browse:        false,
 		Download:      false,
-		CacheDuration: 10 * time.Minute,
-		MaxAge:        int((8 * time.Hour).Seconds()),
+		CacheDuration: 30 * time.Second,
+		MaxAge:        0,
 		Compress:      true,
 	}))
 
