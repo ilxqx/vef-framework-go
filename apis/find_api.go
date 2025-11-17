@@ -178,7 +178,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithOptions(opts ...*
 }
 
 // WithSelect adds a column to the SELECT clause.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+// Applies to the root/main query by default (QueryRoot) unless specific parts are provided.
 func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelect(column string, parts ...QueryPart) TApi {
 	a.options = append(a.options, withSelect(column, parts...))
 
@@ -186,7 +186,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelect(column str
 }
 
 // WithSelectAs adds a column with an alias to the SELECT clause.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+// Applies to the root/main query by default (QueryRoot) unless specific parts are provided.
 func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelectAs(column, alias string, parts ...QueryPart) TApi {
 	a.options = append(a.options, withSelectAs(column, alias, parts...))
 
@@ -235,7 +235,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithCondition(fn func
 }
 
 // WithRelation adds a relation join to the query.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+// Applies to the root/main query by default (QueryRoot) unless specific parts are provided.
 func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) TApi {
 	a.options = append(a.options, withRelation(relation, parts...))
 

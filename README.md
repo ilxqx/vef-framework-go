@@ -78,6 +78,99 @@ go run main.go
 
 Your Api server is now running at `http://localhost:8080`.
 
+## Project Structure
+
+### Recommended Module Organization
+
+VEF Framework applications follow a modular architecture pattern where business domains are organized into self-contained modules. This pattern is demonstrated in production applications and provides clear separation of concerns.
+
+**Directory Structure:**
+
+```
+my-app/
+├── cmd/
+│   └── server/
+│       └── main.go           # Application entry - composes all modules
+├── configs/
+│   └── application.toml       # Configuration file
+└── internal/
+    ├── auth/                  # Authentication providers
+    │   ├── module.go          # Auth module definition
+    │   ├── user_loader.go     # UserLoader implementation
+    │   └── user_info_loader.go
+    ├── sys/                   # System/admin features
+    │   ├── models/            # Data models
+    │   ├── payloads/          # API parameters
+    │   ├── resources/         # API resources
+    │   ├── schemas/           # Generated from models (via vef-cli)
+    │   └── module.go          # System module definition
+    ├── [domain]/              # Business domains (e.g., order, inventory)
+    │   ├── models/
+    │   ├── payloads/
+    │   ├── resources/
+    │   ├── schemas/
+    │   └── module.go
+    ├── vef/                   # VEF framework integrations
+    │   ├── module.go
+    │   ├── build_info.go      # Generated build metadata
+    │   ├── *_subscriber.go    # Event subscribers
+    │   └── *_loader.go        # Data loaders
+    └── web/                   # SPA frontend integration (optional)
+        ├── dist/              # Static assets
+        └── module.go
+```
+
+### Module Composition
+
+Each module exports a `vef.Module()` that encapsulates its dependencies and resources. The main.go composes these modules in dependency order:
+
+```go
+package main
+
+import (
+    "github.com/ilxqx/vef-framework-go"
+    "my-app/internal/auth"
+    "my-app/internal/sys"
+    ivef "my-app/internal/vef"
+    "my-app/internal/web"
+)
+
+func main() {
+    vef.Run(
+        ivef.Module,     // Framework integrations (your app's vef module)
+        web.Module,      // SPA serving (optional)
+        auth.Module,     // Authentication providers
+        sys.Module,      // System resources
+        // Add your business domain modules here
+    )
+}
+```
+
+**Module Definition Example:**
+
+```go
+// internal/sys/module.go
+package sys
+
+import (
+    "github.com/ilxqx/vef-framework-go"
+    "my-app/internal/sys/resources"
+)
+
+var Module = vef.Module(
+    "app:sys",
+    vef.ProvideApiResource(resources.NewUserResource),
+    vef.ProvideApiResource(resources.NewRoleResource),
+    // Register other resources and services
+)
+```
+
+**Benefits of this pattern:**
+- **Clear boundaries**: Each module owns its models, APIs, and business logic
+- **Testability**: Modules can be tested independently
+- **Scalability**: Easy to add new domains without affecting existing code
+- **Maintainability**: Changes are localized to specific modules
+
 ## Architecture
 
 ### Single-Endpoint Design
@@ -168,9 +261,136 @@ type User struct {
 - `updated_at`, `updated_by` - Last update timestamp and user ID
 - `updated_by_name` - Updater name (scan-only, not stored in database)
 
+Note: Database columns use snake_case (e.g., `created_at`), while JSON fields use camelCase (e.g., `createdAt`) as shown in the model tags.
+
 **Null Types:** Use `null.String`, `null.Int`, `null.Bool`, etc. for nullable fields.
 
+### Field Types for Boolean Columns
+
+Choosing the right type depends on your target database and whether you need tri‑state (NULL) semantics.
+
+Key guidance:
+- Prefer `bool` in most cases. Modern mainstream databases natively support boolean types, and plain `bool` maps well.
+- Use `sql.Bool` when you need to store booleans as numeric types (e.g., tinyint/smallint with 0/1) for databases that lack native boolean or when you explicitly require numeric storage for compatibility.
+- Use `null.Bool` when you need tri‑state: NULL, false, true. It serializes to database values as NULL/1/0.
+
+Decision guide:
+
+| Use Case | Preferred Type | Database Column |
+|----------|----------------|-----------------|
+| Non‑nullable boolean on DBs with native boolean | `bool` | boolean/true native type |
+| Nullable boolean (tri‑state) | `null.Bool` | boolean or numeric (often smallint/tinyint) |
+| Target DB without native boolean or require numeric 0/1 storage | `sql.Bool` (non‑null) / `null.Bool` (nullable) | smallint/tinyint with 0/1 |
+| Go‑only/computed (not stored) | `bool` with `bun:"-"` | N/A |
+
+Type details and examples:
+
+1) Plain `bool` — recommended for native boolean columns
+```go
+type User struct {
+    orm.Model
+    // Database: boolean (native), NOT NULL as needed
+    IsActive bool `json:"isActive"` // bun tag usually not required when using native boolean
+}
+```
+
+2) `sql.Bool` — numeric 0/1 storage for compatibility
+```go
+import "github.com/ilxqx/vef-framework-go/sql"
+
+type User struct {
+    orm.Model
+    // Database: numeric boolean (0/1), for DBs without native boolean or enforced numeric schema
+    IsActive sql.Bool `json:"isActive" bun:"type:smallint,notnull,default:0"`
+    IsLocked sql.Bool `json:"isLocked" bun:"type:smallint,notnull,default:0"`
+}
+```
+When you don’t have to support non‑boolean databases, prefer plain `bool` for simplicity.
+
+3) `null.Bool` — tri‑state (NULL/false/true)
+```go
+import "github.com/ilxqx/vef-framework-go/null"
+
+type User struct {
+    orm.Model
+    // Database: allows NULL; stored as NULL/0/1 (use numeric column for maximum compatibility)
+    IsVerified null.Bool `json:"isVerified" bun:"type:smallint"`
+}
+```
+Three‑state logic:
+- `null.Bool{Valid: false}` → NULL in database
+- `null.Bool{Valid: true, Bool: false}` → 0/false
+- `null.Bool{Valid: true, Bool: true}` → 1/true
+
+4) Go‑only fields (not stored)
+```go
+type User struct {
+    orm.Model
+    Username string `json:"username"`
+
+    // Computed field — not stored in database
+    HasPermissions bool `json:"hasPermissions" bun:"-"`
+}
+```
+
+Common patterns:
+```go
+// Native boolean DBs (recommended)
+type UserNative struct {
+    orm.Model
+    IsActive bool      `json:"isActive"`
+    IsLocked bool      `json:"isLocked"`
+    IsEmailVerified null.Bool `json:"isEmailVerified"` // use NULL when needed
+}
+
+// Numeric storage for compatibility
+type UserNumeric struct {
+    orm.Model
+    IsActive sql.Bool       `json:"isActive" bun:"type:smallint,notnull,default:0"`
+    IsLocked sql.Bool       `json:"isLocked" bun:"type:smallint,notnull,default:0"`
+    IsEmailVerified null.Bool `json:"isEmailVerified" bun:"type:smallint"`
+}
+```
+
 ## Building CRUD Apis
+
+### Resource Naming Best Practices
+
+When defining API resources, follow a consistent naming convention to avoid conflicts and make API ownership clear.
+
+**Recommended Pattern: `{app}/{domain}/{entity}`**
+
+This three-level namespace pattern is used in production applications and provides several benefits:
+
+```go
+// Good examples with application namespace
+api.NewResource("smp/sys/user")           // System user resource
+api.NewResource("smp/md/organization")    // Master data organization
+api.NewResource("erp/order/item")         // Clear domain separation
+
+// Acceptable for single-app projects
+api.NewResource("sys/user")               // No app namespace
+
+// Avoid - too generic, risks conflicts
+api.NewResource("user")                   // ❌ No namespace
+```
+
+**Benefits of Application Namespacing:**
+
+- **Conflict Prevention**: Avoids API resource collisions in shared deployments or when merging codebases
+- **Clear Ownership**: Immediately identifies which application owns the resource
+- **Modularity**: Supports multiple applications or microservices using the same framework
+- **Migration Safety**: Easy to identify and migrate resources when restructuring
+
+**Framework Reserved Namespaces:**
+
+The following resource namespaces are reserved for system APIs and must not be used in custom API definitions:
+
+- `security/auth` - Authentication APIs
+- `sys/storage` - Storage APIs
+- `sys/monitor` - Monitoring APIs
+
+Using these reserved names will cause application startup failures due to duplicate API definitions.
 
 ### Step 1: Define Parameter Structures
 
@@ -201,6 +421,48 @@ type UserParams struct {
 }
 ```
 
+**Separate Create and Update Parameters:**
+
+When Create and Update operations have different validation requirements, use struct embedding to share common fields while allowing operation-specific validation:
+
+```go
+// Shared fields
+type UserParams struct {
+    api.P
+    Id       string
+    Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
+    Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"Email"`
+    IsActive bool        `json:"isActive"`
+}
+
+// Create requires password
+type UserCreateParams struct {
+    UserParams      `json:",inline"`
+    Password        string `json:"password" validate:"required,min=6,max=16" label:"Password"`
+    PasswordConfirm string `json:"passwordConfirm" validate:"required,eqfield=Password" label:"Confirm Password"`
+}
+
+// Update has optional password
+type UserUpdateParams struct {
+    UserParams      `json:",inline"`
+    Password        null.String `json:"password" validate:"omitempty,min=6,max=16" label:"Password"`
+    PasswordConfirm null.String `json:"passwordConfirm" validate:"omitempty,eqfield=Password" label:"Confirm Password"`
+}
+```
+
+Then use the specific params in your resource:
+
+```go
+CreateApi: apis.NewCreateApi[models.User, payloads.UserCreateParams](),
+UpdateApi: apis.NewUpdateApi[models.User, payloads.UserUpdateParams](),
+```
+
+**Benefits:**
+- **Type-safe validation**: Different rules for Create vs Update (required vs optional password)
+- **Clear contracts**: API requirements are explicit in code
+- **Better error messages**: Validation errors match the operation's actual requirements
+- **Code reuse**: Common fields are defined once and embedded
+
 ### Step 2: Create Api Resource
 
 > **⚠️ IMPORTANT: Reserved System API Namespaces**
@@ -223,16 +485,16 @@ import (
 
 type UserResource struct {
     api.Resource
-    *apis.FindAllApi[models.User, payloads.UserSearch]
-    *apis.FindPageApi[models.User, payloads.UserSearch]
-    *apis.CreateApi[models.User, payloads.UserParams]
-    *apis.UpdateApi[models.User, payloads.UserParams]
-    *apis.DeleteApi[models.User]
+    apis.FindAllApi[models.User, payloads.UserSearch]
+    apis.FindPageApi[models.User, payloads.UserSearch]
+    apis.CreateApi[models.User, payloads.UserParams]
+    apis.UpdateApi[models.User, payloads.UserParams]
+    apis.DeleteApi[models.User]
 }
 
 func NewUserResource() api.Resource {
     return &UserResource{
-        Resource: api.NewResource("app/user"),  // ✓ Use custom namespace to avoid conflicts
+        Resource: api.NewResource("smp/sys/user"),  // ✓ Use app/domain/entity to avoid conflicts
         FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
         FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
         CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
@@ -297,11 +559,11 @@ All FindApi types (FindOneApi, FindAllApi, FindPageApi, FindTreeApi, FindOptions
 |--------|-------------|-------------------|-----------------|
 | `WithProcessor` | Set post-processing function for query results | N/A | All FindApi |
 | `WithOptions` | Add multiple FindApiOptions | N/A | All FindApi |
-| `WithSelect` | Add column to SELECT clause | QueryAll | All FindApi |
-| `WithSelectAs` | Add column with alias to SELECT clause | QueryAll | All FindApi |
+| `WithSelect` | Add column to SELECT clause | QueryRoot | All FindApi |
+| `WithSelectAs` | Add column with alias to SELECT clause | QueryRoot | All FindApi |
 | `WithDefaultSort` | Set default sorting specifications | QueryRoot | All FindApi |
 | `WithCondition` | Add WHERE condition using ConditionBuilder | QueryRoot | All FindApi |
-| `WithRelation` | Add relation join | QueryAll | All FindApi |
+| `WithRelation` | Add relation join | QueryRoot | All FindApi |
 | `WithAuditUserNames` | Fetch audit user names (created_by_name, updated_by_name) | QueryRoot | All FindApi |
 | `WithQueryApplier` | Add custom query applier function | QueryRoot | All FindApi |
 | `DisableDataPerm` | Disable data permission filtering | N/A | All FindApi |
@@ -381,6 +643,22 @@ FindPageApi: apis.NewFindPageApi[User, UserSearch]().
         Column:    "created_at",
         Direction: sort.OrderDesc,
     }),
+
+// Production pattern: Use schema-generated column names for type safety
+import "my-app/internal/sys/schemas"
+
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    schemas.User.CreatedAt(true), // Type-safe column with table prefix
+        Direction: sort.OrderDesc,
+    }),
+
+// For tree structures, use sort_order field
+FindTreeApi: apis.NewFindTreeApi[Menu, MenuSearch](buildMenuTree).
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    schemas.Menu.SortOrder(true),
+        Direction: sort.OrderAsc,
+    }),
 ```
 
 Pass empty arguments to disable default sorting:
@@ -405,7 +683,14 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 ```go
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     WithRelation(&orm.RelationSpec{
-        Name: "Profile",
+        // Join the Profile model; foreign/referenced keys are auto-resolved
+        Model: (*Profile)(nil),
+        // Optional: customize alias/columns
+        // Alias: "p",
+        SelectedColumns: []orm.ColumnInfo{
+            {Name: "name", AutoAlias: true},
+            {Name: "email", AutoAlias: true},
+        },
     }),
 ```
 
@@ -414,10 +699,15 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 ```go
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     WithAuditUserNames(&User{}), // Uses "name" column by default
-    
+
 // Or specify custom column name
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     WithAuditUserNames(&User{}, "username"),
+
+// Production pattern: Use package-level model instance
+// In models package: var UserModel = &User{}
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithAuditUserNames(models.UserModel), // Recommended for consistency
 ```
 
 **WithQueryApplier Example:**
@@ -460,14 +750,14 @@ The `parts` parameter in configuration methods specifies which part(s) of the qu
 
 **Default Behavior:**
 
-- `WithSelect`, `WithSelectAs`, `WithRelation`: Default to `QueryAll` (applies to all parts)
+- `WithSelect`, `WithSelectAs`, `WithRelation`: Default to `QueryRoot` (applies to the main/root query)
 - `WithCondition`, `WithQueryApplier`, `WithDefaultSort`: Default to `QueryRoot` (applies to root query only)
 
 **Normal Query Example:**
 
 ```go
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
-    WithSelect("username").              // Applies to QueryAll (main query)
+    WithSelect("username").              // Applies to QueryRoot (main query)
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_active", true)     // Applies to QueryRoot (main query)
     }),
@@ -540,7 +830,11 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
     
     // Add relation to both queries
     WithRelation(&orm.RelationSpec{
-        Name: "Metadata",
+        Model: (*Metadata)(nil),
+        SelectedColumns: []orm.ColumnInfo{
+            {Name: "icon", AutoAlias: true},
+            {Name: "sort_order", Alias: "sortOrder"},
+        },
     }, apis.QueryBase, apis.QueryRecursive).
     
     // Fetch audit user names
@@ -588,29 +882,88 @@ FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
         ValueColumn:       "id",          // Column for option value (default: "id")
         DescriptionColumn: "description", // Optional description column
     }),
+
+// Advanced: Include additional metadata in options
+FindOptionsApi: apis.NewFindOptionsApi[Menu, MenuSearch]().
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn:       "name",
+        ValueColumn:       "id",
+        DescriptionColumn: "remark",
+        MetaColumns: []string{
+            "type",                  // Menu type (D=Directory, M=Menu, B=Button)
+            "icon",                  // Icon identifier
+            "sort_order AS sortOrder", // Display order with alias
+        },
+    }),
 ```
 
 **FindTreeApi:**
 
+For hierarchical data structures, use `FindTreeApi` with the `treebuilder` package to convert flat database results into nested tree structures:
+
 ```go
-FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+import "github.com/ilxqx/vef-framework-go/treebuilder"
+
+FindTreeApi: apis.NewFindTreeApi[models.Organization, payloads.OrganizationSearch](
+    buildOrganizationTree,
+).
     WithIdColumn("id").              // ID column name (default: "id")
-    WithParentIdColumn("parent_id"), // Parent ID column name (default: "parent_id")
+    WithParentIdColumn("parent_id"). // Parent ID column name (default: "parent_id")
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "sort_order",
+        Direction: sort.OrderAsc,
+    })
+
+func buildOrganizationTree(flatModels []models.Organization) []models.Organization {
+    return treebuilder.Build(
+        flatModels,
+        treebuilder.Adapter[models.Organization]{
+            GetId:       func(m models.Organization) string { return m.Id },
+            GetParentId: func(m models.Organization) string { return m.ParentId.ValueOrZero() },
+            SetChildren: func(m *models.Organization, children []models.Organization) {
+                m.Children = children
+            },
+        },
+    )
+}
 ```
+
+**Model Requirements:**
+
+Your model must have:
+- A parent ID field (typically `null.String` to support root nodes)
+- A children field (slice of same model type, marked with `bun:"-"` since it's computed)
+
+```go
+type Organization struct {
+    orm.Model
+    Name     string          `json:"name"`
+    ParentId null.String     `json:"parentId" bun:"type:varchar(20)"` // NULL for root nodes
+    Children []Organization  `json:"children" bun:"-"`                // Computed, not in DB
+}
+```
+
+The `treebuilder.Build` function handles the conversion from flat list to hierarchical structure, properly nesting children under their parents.
 
 **FindTreeOptionsApi:**
 
-Combines both options and tree configuration:
+Combines both options and tree configuration to return hierarchical option lists:
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.OrganizationSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
     }).
     WithIdColumn("id").
-    WithParentIdColumn("parent_id"),
+    WithParentIdColumn("parent_id").
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "sort_order",
+        Direction: sort.OrderAsc,
+    })
 ```
+
+The tree options API automatically uses the internal tree builder to convert flat results into nested option structures, perfect for cascading selectors or hierarchical menus.
 
 **ExportApi:**
 
@@ -676,7 +1029,131 @@ Available hooks:
 - `WithPreImport`, `WithPostImport` - Before/after import (`WithPreImport` for validation, `WithPostImport` runs in transaction)
 - `WithPreExport` - Before export (for data formatting)
 
+**Production Patterns:**
+
+```go
+// System user protection - Prevent deletion of critical system users
+DeleteApi: apis.NewDeleteApi[User]().
+    WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.Db) error {
+        // Protect system-internal users from deletion
+        switch model.Username {
+        case "system", "anonymous", "cron":
+            return result.Err("Cannot delete system internal user")
+        }
+        return nil
+    }),
+
+// Conditional password hashing - Only hash if password is being changed
+UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
+    WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+        // Only hash password if it's being updated
+        if params.Password.Valid && params.Password.String != "" {
+            hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password.String), bcrypt.DefaultCost)
+            if err != nil {
+                return err
+            }
+            newModel.Password = string(hashed)
+        } else {
+            // Preserve existing password
+            newModel.Password = oldModel.Password
+        }
+        return nil
+    }),
+
+// Business validation - Validate business rules before operation
+CreateApi: apis.NewCreateApi[Order, OrderParams]().
+    WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.Db) error {
+        // Validate order total matches item totals
+        if model.TotalAmount <= 0 {
+            return result.Err("Order total must be greater than zero")
+        }
+
+        // Check inventory availability
+        if !checkInventoryAvailable(model.Items) {
+            return result.Err("Insufficient inventory for one or more items")
+        }
+
+        return nil
+    }),
+```
+
 ### Custom Handlers
+
+#### Mixing Generated and Custom APIs
+
+You can combine pre-built CRUD APIs with custom actions using `api.WithApis()`. This allows you to extend resources with domain-specific operations while maintaining the framework's conventions.
+
+```go
+package resources
+
+import (
+    "github.com/ilxqx/vef-framework-go/api"
+    "github.com/ilxqx/vef-framework-go/apis"
+)
+
+type RoleResource struct {
+    api.Resource
+    apis.FindPageApi[models.Role, payloads.RoleSearch]
+    apis.CreateApi[models.Role, payloads.RoleParams]
+    apis.UpdateApi[models.Role, payloads.RoleParams]
+    apis.DeleteApi[models.Role]
+}
+
+func NewRoleResource() api.Resource {
+    return &RoleResource{
+        Resource: api.NewResource(
+            "app/sys/role",
+            api.WithApis(
+                api.Spec{
+                    Action: "find_role_permissions",
+                },
+                api.Spec{
+                    Action:      "save_role_permissions",
+                    EnableAudit: true,  // Enable audit logging for this action
+                },
+            ),
+        ),
+        FindPageApi: apis.NewFindPageApi[models.Role, payloads.RoleSearch](),
+        CreateApi:   apis.NewCreateApi[models.Role, payloads.RoleParams](),
+        UpdateApi:   apis.NewUpdateApi[models.Role, payloads.RoleParams](),
+        DeleteApi:   apis.NewDeleteApi[models.Role](),
+    }
+}
+
+// Custom handler method for find_role_permissions action
+func (r *RoleResource) FindRolePermissions(
+    ctx fiber.Ctx,
+    db orm.Db,
+    params payloads.RolePermissionQuery,
+) error {
+    // Custom business logic
+    // ...
+    return result.Ok(permissions).Response(ctx)
+}
+
+// Custom handler method for save_role_permissions action
+func (r *RoleResource) SaveRolePermissions(
+    ctx fiber.Ctx,
+    db orm.Db,
+    params payloads.RolePermissionParams,
+) error {
+    // Transaction-based custom logic
+    return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+        // Save permissions in transaction
+        // ...
+        return nil
+    })
+}
+```
+
+**Key Points:**
+
+- **Method Naming**: Handler method names must be in PascalCase matching the snake_case action name (e.g., `find_role_permissions` → `FindRolePermissions`)
+- **API Spec Configuration**: Each custom action can have its own configuration (permissions, audit, rate limiting)
+- **Injection Rules**: Custom handler methods follow the same parameter injection rules as generated handlers
+- **Mixed APIs**: You can freely mix generated CRUD APIs with custom actions in the same resource
+
+#### Simple Custom Handlers
 
 Add custom endpoints by defining methods on your resource:
 
@@ -1338,6 +1815,148 @@ func main() {
 }
 ```
 
+### Lifecycle Hooks
+
+The framework provides lifecycle management through `vef.Lifecycle`, allowing you to register hooks that execute during application startup and shutdown. This is essential for proper resource cleanup, particularly for event subscribers.
+
+#### Event Subscriber Cleanup
+
+When registering event subscribers, you should clean up subscriptions on shutdown to prevent resource leaks:
+
+```go
+import (
+    "github.com/ilxqx/vef-framework-go"
+    "github.com/ilxqx/vef-framework-go/event"
+    "github.com/ilxqx/vef-framework-go/orm"
+)
+
+var Module = vef.Module(
+    "app:vef",
+    vef.Invoke(
+        func(lc vef.Lifecycle, db orm.Db, subscriber event.Subscriber) {
+            // Create and register audit event subscriber
+            auditSub := NewAuditEventSubscriber(db, subscriber)
+
+            // Register cleanup hook
+            lc.Append(vef.StopHook(func() {
+                auditSub.Unsubscribe()  // Cleanup on shutdown
+            }))
+
+            // Create and register login event subscriber
+            loginSub := NewLoginEventSubscriber(db, subscriber)
+
+            // Register cleanup hook
+            lc.Append(vef.StopHook(func() {
+                loginSub.Unsubscribe()  // Cleanup on shutdown
+            }))
+        },
+    ),
+)
+```
+
+**Key Patterns:**
+
+1. **Store unsubscribe function**: Event subscriber constructors should return an `UnsubscribeFunc` when they call `bus.Subscribe()`
+2. **Register stop hooks**: Use `lc.Append(vef.StopHook(...))` to register cleanup functions
+3. **Call unsubscribe in hooks**: Invoke the stored `Unsubscribe()` function during shutdown
+
+**Example Event Subscriber Implementation:**
+
+```go
+type AuditEventSubscriber struct {
+    db           orm.Db
+    unsubscribe  event.UnsubscribeFunc
+}
+
+func NewAuditEventSubscriber(db orm.Db, subscriber event.Subscriber) *AuditEventSubscriber {
+    sub := &AuditEventSubscriber{db: db}
+
+    // Subscribe and store unsubscribe function
+    sub.unsubscribe = subscriber.Subscribe("*.created", sub.handleAuditEvent)
+
+    return sub
+}
+
+func (s *AuditEventSubscriber) handleAuditEvent(ctx context.Context, e event.Event) {
+    // Handle audit logging
+}
+
+func (s *AuditEventSubscriber) Unsubscribe() {
+    if s.unsubscribe != nil {
+        s.unsubscribe()
+    }
+}
+```
+
+This pattern ensures graceful shutdown without resource leaks or orphaned subscriptions.
+
+### Context Helpers
+
+The `contextx` package provides utility functions to access request-scoped resources when dependency injection is not available. These helpers are useful in custom handlers, hooks, or other scenarios where you need to access framework-provided resources from the Fiber context.
+
+```go
+import "github.com/ilxqx/vef-framework-go/contextx"
+
+func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
+    // Get request-scoped database (with operator pre-configured)
+    db := contextx.Db(ctx)
+
+    // Get current authenticated user
+    principal := contextx.Principal(ctx)
+
+    // Get request-scoped logger (includes request ID)
+    logger := contextx.Logger(ctx)
+
+    // Get mold transformer for data sanitization
+    transformer := contextx.Transformer(ctx)
+
+    // Use the resources
+    logger.Infof("User %s performing custom operation", principal.Id)
+
+    var model models.SomeModel
+    if err := db.NewSelect().Model(&model).Scan(ctx.Context()); err != nil {
+        return err
+    }
+
+    return result.Ok(model).Response(ctx)
+}
+```
+
+**Available Helpers:**
+
+- **`contextx.Db(ctx)`** - Returns request-scoped `orm.Db` with audit fields (like `operator`) pre-configured
+- **`contextx.Principal(ctx)`** - Returns current `*security.Principal` (authenticated user or anonymous)
+- **`contextx.Logger(ctx)`** - Returns request-scoped `log.Logger` with request ID for correlation
+- **`contextx.Transformer(ctx)`** - Returns `mold.Transformer` for data transformation and sanitization
+
+**When to Use:**
+
+- **Use contextx helpers**: In custom handlers where you cannot use parameter injection, or in utility functions that only receive `fiber.Ctx`
+- **Prefer parameter injection**: When defining API handler methods, let the framework inject dependencies directly as parameters for better testability and clarity
+
+**Example - Using Both Patterns:**
+
+```go
+// Prefer this: Parameter injection in handler
+func (r *UserResource) UpdateProfile(
+    ctx fiber.Ctx,
+    db orm.Db,           // Injected by framework
+    logger log.Logger,   // Injected by framework
+    params ProfileParams,
+) error {
+    logger.Infof("Updating profile")
+    // ...
+}
+
+// Use contextx when injection not available
+func helperFunction(ctx fiber.Ctx) error {
+    db := contextx.Db(ctx)       // Extract from context
+    logger := contextx.Logger(ctx)
+    logger.Infof("Helper function")
+    // ...
+}
+```
+
 ### Cron Scheduler
 
 The framework provides cron job scheduling based on [gocron](https://github.com/go-co-op/gocron).
@@ -1764,35 +2383,101 @@ VEF Framework provides the `vef-cli` command-line tool for code generation and p
 
 #### Generate Build Info
 
-The `generate-build-info` command creates build information files with version, commit hash, and build timestamp:
+The `generate-build-info` command creates a build_info.go file with app version, commit hash, and build timestamp:
 
 ```bash
-go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
 ```
 
 **Options:**
-- `-o, --output` - Output file path (default: `internal/version/build.go`)
-- `-p, --package` - Package name (default: `version`)
+- `-o, --output` - Output file path (default: `build_info.go`)
+- `-p, --package` - Package name (default: current directory name)
 
 **Usage in go:generate:**
 
 ```go
-//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
 ```
 
-The generated file provides a `BuildInfo` structure compatible with the monitor module:
+The generated file provides a `BuildInfo` variable compatible with the monitor module:
 
 ```go
-package version
+package vef
 
 import "github.com/ilxqx/vef-framework-go/monitor"
 
-var Build = monitor.BuildInfo{
-    Version:   "v1.0.0",
-    Commit:    "abc123...",
-    BuildTime: "2025-01-15T10:30:00Z",
+// BuildInfo is a pointer to build metadata used by the monitor module.
+var BuildInfo = &monitor.BuildInfo{
+    AppVersion: "v1.0.0",               // From git tags (or "dev")
+    BuildTime:  "2025-01-15T10:30:00Z", // Build timestamp
+    GitCommit:  "abc123...",            // Git commit SHA
 }
 ```
+
+**Generated Fields:**
+- **Version**: Extracted from git tags (e.g., `v1.0.0`). Falls back to `"dev"` if no tags exist.
+- **Commit**: Full git commit SHA from current HEAD.
+- **BuildTime**: UTC timestamp when the file was generated.
+
+#### Generate Model Schema
+
+The `generate-model-schema` command generates type-safe field accessor functions for your models:
+
+```bash
+go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
+```
+
+**Options:**
+- `-i, --input` - Input directory containing model files (required)
+- `-o, --output` - Output directory for generated schema files (required)
+- `-p, --package` - Package name for generated files (required)
+
+**Usage in go:generate:**
+
+```go
+//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
+```
+
+The generated schema provides type-safe field accessors:
+
+```go
+package schemas
+
+var User = struct {
+    Id        func(withTablePrefix ...bool) string
+    Username  func(withTablePrefix ...bool) string
+    Email     func(withTablePrefix ...bool) string
+    CreatedAt func(withTablePrefix ...bool) string
+    // ... other fields
+}{
+    Id:        field("id", "su"),
+    Username:  field("username", "su"),
+    Email:     field("email", "su"),
+    CreatedAt: field("created_at", "su"),
+}
+```
+
+**Usage in queries:**
+
+```go
+import "my-app/internal/sys/schemas"
+
+// Type-safe column references
+db.NewSelect().
+    Model(&users).
+    Where(func(cb orm.ConditionBuilder) {
+        cb.Equals(schemas.User.Username(), "admin")
+        cb.IsNotNull(schemas.User.Email())
+    }).
+    OrderBy(schemas.User.CreatedAt(true) + " DESC"). // With table prefix
+    Scan(ctx)
+```
+
+**Benefits:**
+- **Type safety**: Catch typos at compile time
+- **IDE autocomplete**: Field names are discoverable
+- **Refactoring support**: Renaming fields updates all references
+- **Table prefix handling**: Optionally include table alias in column names
 
 For AI-assisted development guidelines, see `cmd/CMD_DEV_GUIDELINES.md`.
 

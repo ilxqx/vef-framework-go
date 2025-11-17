@@ -40,7 +40,7 @@ func (a *findTreeApi[TModel, TSearch]) WithParentIdColumn(name string) FindTreeA
 }
 
 // WithSelect adds a column to the SELECT clause.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+// Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
 func (a *findTreeApi[TModel, TSearch]) WithSelect(column string, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
 	a.FindApi.WithSelect(column, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
@@ -48,7 +48,7 @@ func (a *findTreeApi[TModel, TSearch]) WithSelect(column string, parts ...QueryP
 }
 
 // WithSelectAs adds a column with an alias to the SELECT clause.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+// Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
 func (a *findTreeApi[TModel, TSearch]) WithSelectAs(column, alias string, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
 	a.FindApi.WithSelectAs(column, alias, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
@@ -56,7 +56,7 @@ func (a *findTreeApi[TModel, TSearch]) WithSelectAs(column, alias string, parts 
 }
 
 // WithCondition adds a WHERE condition using ConditionBuilder.
-// Applies to root query only by default (QueryRoot) unless specific parts are provided.
+// Defaults to QueryBase (filter starting nodes) unless specific parts are provided.
 func (a *findTreeApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTreeApi[TModel, TSearch] {
 	a.FindApi.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
@@ -64,7 +64,7 @@ func (a *findTreeApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBui
 }
 
 // WithRelation adds a relation join to the query.
-// Applies to all query parts by default (QueryAll) unless specific parts are provided.
+// Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
 func (a *findTreeApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
 	a.FindApi.WithRelation(relation, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
@@ -72,7 +72,7 @@ func (a *findTreeApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, 
 }
 
 // WithQueryApplier adds a custom query applier function.
-// Applies to root query only by default (QueryRoot) unless specific parts are provided.
+// Defaults to QueryBase (apply during base CTE selection) unless specific parts are provided.
 func (a *findTreeApi[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
 	a.FindApi.WithQueryApplier(applier, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 

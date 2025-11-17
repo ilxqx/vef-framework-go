@@ -78,6 +78,99 @@ go run main.go
 
 您的 Api 服务现已运行在 `http://localhost:8080`。
 
+## 项目结构
+
+### 推荐的模块组织方式
+
+VEF Framework 应用程序遵循模块化架构模式，将业务领域组织成独立的模块。这种模式在生产应用中得到验证，提供了清晰的关注点分离。
+
+**目录结构：**
+
+```
+my-app/
+├── cmd/
+│   └── server/
+│       └── main.go           # 应用入口 - 组合所有模块
+├── configs/
+│   └── application.toml       # 配置文件
+└── internal/
+    ├── auth/                  # 认证提供者
+    │   ├── module.go          # 认证模块定义
+    │   ├── user_loader.go     # UserLoader 实现
+    │   └── user_info_loader.go
+    ├── sys/                   # 系统/管理功能
+    │   ├── models/            # 数据模型
+    │   ├── payloads/          # API 参数
+    │   ├── resources/         # API 资源
+    │   ├── schemas/           # 从模型生成（通过 vef-cli）
+    │   └── module.go          # 系统模块定义
+    ├── [domain]/              # 业务领域（如 order、inventory）
+    │   ├── models/
+    │   ├── payloads/
+    │   ├── resources/
+    │   ├── schemas/
+    │   └── module.go
+    ├── vef/                   # VEF 框架集成
+    │   ├── module.go
+    │   ├── build_info.go      # 生成的构建元数据
+    │   ├── *_subscriber.go    # 事件订阅者
+    │   └── *_loader.go        # 数据加载器
+    └── web/                   # SPA 前端集成（可选）
+        ├── dist/              # 静态资源
+        └── module.go
+```
+
+### 模块组合
+
+每个模块导出一个 `vef.Module()`，封装其依赖和资源。main.go 按依赖顺序组合这些模块：
+
+```go
+package main
+
+import (
+    "github.com/ilxqx/vef-framework-go"
+    "my-app/internal/auth"
+    "my-app/internal/sys"
+    ivef "my-app/internal/vef"
+    "my-app/internal/web"
+)
+
+func main() {
+    vef.Run(
+        ivef.Module,     // 框架集成（应用内 vef 模块）
+        web.Module,      // SPA 服务（可选）
+        auth.Module,     // 认证提供者
+        sys.Module,      // 系统资源
+        // 在此添加您的业务领域模块
+    )
+}
+```
+
+**模块定义示例：**
+
+```go
+// internal/sys/module.go
+package sys
+
+import (
+    "github.com/ilxqx/vef-framework-go"
+    "my-app/internal/sys/resources"
+)
+
+var Module = vef.Module(
+    "app:sys",
+    vef.ProvideApiResource(resources.NewUserResource),
+    vef.ProvideApiResource(resources.NewRoleResource),
+    // 注册其他资源和服务
+)
+```
+
+**此模式的优势：**
+- **清晰边界**：每个模块拥有自己的模型、API 和业务逻辑
+- **可测试性**：模块可以独立测试
+- **可扩展性**：易于添加新领域而不影响现有代码
+- **可维护性**：变更局限于特定模块
+
 ## 架构设计
 
 ### 单一端点设计
@@ -168,9 +261,135 @@ type User struct {
 - `updated_at`, `updated_by` - 最后更新时间戳和用户 ID
 - `updated_by_name` - 更新者名称（仅扫描，不存储到数据库）
 
+说明：数据库列名使用下划线命名（如 `created_at`），JSON 字段使用驼峰命名（如 `createdAt`），以模型中的标签为准。
 **可空类型：** 使用 `null.String`、`null.Int`、`null.Bool` 等处理可空字段。
 
+### 布尔列的字段类型
+
+是否使用 `bool`、`sql.Bool` 或 `null.Bool` 取决于目标数据库与是否需要三态（NULL）。
+
+核心建议：
+- 大多数场景推荐使用原生 `bool`。主流数据库已原生支持布尔类型，直接映射最简洁。
+- 当需要将布尔值以数值型（0/1）存储（如 tinyint/smallint），或者目标数据库不支持原生布尔类型时，使用 `sql.Bool`（非空）或 `null.Bool`（可空）。
+- 需要三态（NULL/false/true）时使用 `null.Bool`，其数据库序列化为 NULL/1/0。
+
+决策指南：
+
+| 使用场景 | 首选类型 | 数据库列类型 |
+|---------|----------|--------------|
+| 数据库原生布尔、非空列 | `bool` | boolean/布尔原生类型 |
+| 可空布尔（三态） | `null.Bool` | boolean 或 数值型（常见为 smallint/tinyint） |
+| 兼容无布尔数据库，或强制数值存储 0/1 | `sql.Bool`（非空）/ `null.Bool`（可空） | smallint/tinyint（0/1） |
+| 仅 Go 计算字段（不入库） | `bool` 且 `bun:"-"` | N/A |
+
+类型说明与示例：
+
+1) 原生 `bool` —— 推荐用于原生布尔列
+```go
+type User struct {
+    orm.Model
+    // 数据库：布尔原生类型；是否 NOT NULL 由列定义决定
+    IsActive bool `json:"isActive"` // 使用原生布尔时通常无需额外 bun 标签
+}
+```
+
+2) `sql.Bool` —— 数值化存储（0/1），用于兼容性
+```go
+import "github.com/ilxqx/vef-framework-go/sql"
+
+type User struct {
+    orm.Model
+    // 数据库：以数值 0/1 存储；适用于无原生布尔或需统一数值化存储的场景
+    IsActive sql.Bool `json:"isActive" bun:"type:smallint,notnull,default:0"`
+    IsLocked sql.Bool `json:"isLocked" bun:"type:smallint,notnull,default:0"`
+}
+```
+如果项目不需要兼容无布尔数据库，直接使用 `bool` 更简单。
+
+3) `null.Bool` —— 三态（NULL/false/true）
+```go
+import "github.com/ilxqx/vef-framework-go/null"
+
+type User struct {
+    orm.Model
+    // 数据库：允许为 NULL；序列化为 NULL/0/1（为最大兼容性建议列类型使用数值型）
+    IsVerified null.Bool `json:"isVerified" bun:"type:smallint"`
+}
+```
+三态语义：
+- `null.Bool{Valid: false}` → 数据库为 NULL
+- `null.Bool{Valid: true, Bool: false}` → 0/false
+- `null.Bool{Valid: true, Bool: true}` → 1/true
+
+4) 仅 Go 字段（不入库）
+```go
+type User struct {
+    orm.Model
+    Username string `json:"username"`
+
+    // 计算字段 —— 不入库
+    HasPermissions bool `json:"hasPermissions" bun:"-"`
+}
+```
+
+常见模式：
+```go
+// 使用原生布尔（推荐）
+type UserNative struct {
+    orm.Model
+    IsActive bool        `json:"isActive"`
+    IsLocked bool        `json:"isLocked"`
+    IsEmailVerified null.Bool `json:"isEmailVerified"` // 需要 NULL 时使用
+}
+
+// 为兼容性使用数值化存储
+type UserNumeric struct {
+    orm.Model
+    IsActive sql.Bool        `json:"isActive" bun:"type:smallint,notnull,default:0"`
+    IsLocked sql.Bool        `json:"isLocked" bun:"type:smallint,notnull,default:0"`
+    IsEmailVerified null.Bool `json:"isEmailVerified" bun:"type:smallint"`
+}
+```
+
 ## 构建 CRUD Api
+
+### 资源命名最佳实践
+
+在定义 API 资源时，遵循一致的命名约定以避免冲突并明确 API 的所有权。
+
+**推荐模式：`{app}/{domain}/{entity}`**
+
+这种三级命名空间模式在生产应用中广泛使用，提供了多项优势：
+
+```go
+// 带应用命名空间的良好示例
+api.NewResource("smp/sys/user")           // 系统用户资源
+api.NewResource("smp/md/organization")    // 主数据组织
+api.NewResource("erp/order/item")         // 清晰的领域分离
+
+// 单应用项目中可接受
+api.NewResource("sys/user")               // 无应用命名空间
+
+// 避免使用 - 过于泛化，存在冲突风险
+api.NewResource("user")                   // ❌ 无命名空间
+```
+
+**应用命名空间的优势：**
+
+- **防止冲突**：避免在共享部署或合并代码库时出现 API 资源冲突
+- **明确所有权**：立即识别哪个应用拥有该资源
+- **模块化**：支持多个应用或微服务使用同一框架
+- **迁移安全**：在重构时易于识别和迁移资源
+
+**框架保留的命名空间：**
+
+以下资源命名空间保留给系统 API，不得用于自定义 API 定义：
+
+- `security/auth` - 认证 API
+- `sys/storage` - 存储 API
+- `sys/monitor` - 监控 API
+
+使用这些保留名称会因 API 定义重复而导致应用启动失败。
 
 ### 第一步：定义参数结构
 
@@ -201,6 +420,48 @@ type UserParams struct {
 }
 ```
 
+**分离创建和更新参数：**
+
+当创建和更新操作具有不同的验证要求时，使用结构体嵌入来共享公共字段，同时允许特定于操作的验证：
+
+```go
+// 共享字段
+type UserParams struct {
+    api.P
+    Id       string
+    Username string      `json:"username" validate:"required,alphanum,max=32" label:"用户名"`
+    Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"邮箱"`
+    IsActive bool        `json:"isActive"`
+}
+
+// 创建需要密码
+type UserCreateParams struct {
+    UserParams      `json:",inline"`
+    Password        string `json:"password" validate:"required,min=6,max=16" label:"密码"`
+    PasswordConfirm string `json:"passwordConfirm" validate:"required,eqfield=Password" label:"确认密码"`
+}
+
+// 更新有可选密码
+type UserUpdateParams struct {
+    UserParams      `json:",inline"`
+    Password        null.String `json:"password" validate:"omitempty,min=6,max=16" label:"密码"`
+    PasswordConfirm null.String `json:"passwordConfirm" validate:"omitempty,eqfield=Password" label:"确认密码"`
+}
+```
+
+然后在您的资源中使用特定参数：
+
+```go
+CreateApi: apis.NewCreateApi[models.User, payloads.UserCreateParams](),
+UpdateApi: apis.NewUpdateApi[models.User, payloads.UserUpdateParams](),
+```
+
+**优势：**
+- **类型安全的验证**：创建和更新的不同规则（必需与可选密码）
+- **清晰的契约**：API 要求在代码中是明确的
+- **更好的错误消息**：验证错误与操作的实际要求匹配
+- **代码重用**：公共字段仅定义一次并嵌入
+
 ### 第二步：创建 Api 资源
 
 > **⚠️ 重要：系统保留的 API 命名空间**
@@ -223,16 +484,16 @@ import (
 
 type UserResource struct {
     api.Resource
-    *apis.FindAllApi[models.User, payloads.UserSearch]
-    *apis.FindPageApi[models.User, payloads.UserSearch]
-    *apis.CreateApi[models.User, payloads.UserParams]
-    *apis.UpdateApi[models.User, payloads.UserParams]
-    *apis.DeleteApi[models.User]
+    apis.FindAllApi[models.User, payloads.UserSearch]
+    apis.FindPageApi[models.User, payloads.UserSearch]
+    apis.CreateApi[models.User, payloads.UserParams]
+    apis.UpdateApi[models.User, payloads.UserParams]
+    apis.DeleteApi[models.User]
 }
 
 func NewUserResource() api.Resource {
     return &UserResource{
-        Resource: api.NewResource("app/user"),  // ✓ 使用自定义命名空间以避免冲突
+        Resource: api.NewResource("smp/sys/user"),  // ✓ 使用 应用/领域/实体 命名避免冲突
         FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
         FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
         CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
@@ -297,11 +558,11 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
 |------|------|---------------|----------|
 | `WithProcessor` | 设置查询结果的后处理函数 | N/A | 所有 FindApi |
 | `WithOptions` | 添加多个 FindApiOptions | N/A | 所有 FindApi |
-| `WithSelect` | 添加列到 SELECT 子句 | QueryAll | 所有 FindApi |
-| `WithSelectAs` | 添加带别名的列到 SELECT 子句 | QueryAll | 所有 FindApi |
+| `WithSelect` | 添加列到 SELECT 子句 | QueryRoot | 所有 FindApi |
+| `WithSelectAs` | 添加带别名的列到 SELECT 子句 | QueryRoot | 所有 FindApi |
 | `WithDefaultSort` | 设置默认排序规范 | QueryRoot | 所有 FindApi |
 | `WithCondition` | 使用 ConditionBuilder 添加 WHERE 条件 | QueryRoot | 所有 FindApi |
-| `WithRelation` | 添加关联查询 | QueryAll | 所有 FindApi |
+| `WithRelation` | 添加关联查询 | QueryRoot | 所有 FindApi |
 | `WithAuditUserNames` | 获取审计用户名（created_by_name、updated_by_name） | QueryRoot | 所有 FindApi |
 | `WithQueryApplier` | 添加自定义查询应用函数 | QueryRoot | 所有 FindApi |
 | `DisableDataPerm` | 禁用数据权限过滤 | N/A | 所有 FindApi |
@@ -381,6 +642,22 @@ FindPageApi: apis.NewFindPageApi[User, UserSearch]().
         Column:    "created_at",
         Direction: sort.OrderDesc,
     }),
+
+// 生产模式：使用 schema 生成的列名以实现类型安全
+import "my-app/internal/sys/schemas"
+
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    schemas.User.CreatedAt(true), // 类型安全的列名，带表前缀
+        Direction: sort.OrderDesc,
+    }),
+
+// 对于树形结构，使用 sort_order 字段
+FindTreeApi: apis.NewFindTreeApi[Menu, MenuSearch](buildMenuTree).
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    schemas.Menu.SortOrder(true),
+        Direction: sort.OrderAsc,
+    }),
 ```
 
 传入空参数可禁用默认排序：
@@ -405,7 +682,14 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 ```go
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     WithRelation(&orm.RelationSpec{
-        Name: "Profile",
+        // 关联 Profile 模型；外键/主键按约定自动解析
+        Model: (*Profile)(nil),
+        // 可选：自定义别名/选择列
+        // Alias: "p",
+        SelectedColumns: []orm.ColumnInfo{
+            {Name: "name", AutoAlias: true},
+            {Name: "email", AutoAlias: true},
+        },
     }),
 ```
 
@@ -414,10 +698,15 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 ```go
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     WithAuditUserNames(&User{}), // 默认使用 "name" 列
-    
+
 // 或指定自定义列名
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     WithAuditUserNames(&User{}, "username"),
+
+// 生产模式：使用包级别的模型实例
+// 在 models 包中：var UserModel = &User{}
+FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+    WithAuditUserNames(models.UserModel), // 推荐用于一致性
 ```
 
 **WithQueryApplier 示例：**
@@ -460,14 +749,14 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 
 **默认行为：**
 
-- `WithSelect`、`WithSelectAs`、`WithRelation`：默认为 `QueryAll`（应用于所有部分）
+- `WithSelect`、`WithSelectAs`、`WithRelation`：默认为 `QueryRoot`（应用于主/根查询）
 - `WithCondition`、`WithQueryApplier`、`WithDefaultSort`：默认为 `QueryRoot`（仅应用于根查询）
 
 **普通查询示例：**
 
 ```go
 FindAllApi: apis.NewFindAllApi[User, UserSearch]().
-    WithSelect("username").              // 应用于 QueryAll（主查询）
+    WithSelect("username").              // 应用于 QueryRoot（主查询）
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_active", true)     // 应用于 QueryRoot（主查询）
     }),
@@ -540,7 +829,11 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
     
     // 向两个查询添加关联
     WithRelation(&orm.RelationSpec{
-        Name: "Metadata",
+        Model: (*Metadata)(nil),
+        SelectedColumns: []orm.ColumnInfo{
+            {Name: "icon", AutoAlias: true},
+            {Name: "sort_order", Alias: "sortOrder"},
+        },
     }, apis.QueryBase, apis.QueryRecursive).
     
     // 获取审计用户名
@@ -588,29 +881,88 @@ FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
         ValueColumn:       "id",          // 选项值列（默认："id"）
         DescriptionColumn: "description", // 可选描述列
     }),
+
+// 高级用法：在选项中包含额外的元数据
+FindOptionsApi: apis.NewFindOptionsApi[Menu, MenuSearch]().
+    WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
+        LabelColumn:       "name",
+        ValueColumn:       "id",
+        DescriptionColumn: "remark",
+        MetaColumns: []string{
+            "type",                    // 菜单类型（D=目录，M=菜单，B=按钮）
+            "icon",                    // 图标标识
+            "sort_order AS sortOrder", // 显示顺序（带别名）
+        },
+    }),
 ```
 
 **FindTreeApi：**
 
+对于层次数据结构，使用 `FindTreeApi` 配合 `treebuilder` 包将扁平数据库结果转换为嵌套树结构：
+
 ```go
-FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+import "github.com/ilxqx/vef-framework-go/treebuilder"
+
+FindTreeApi: apis.NewFindTreeApi[models.Organization, payloads.OrganizationSearch](
+    buildOrganizationTree,
+).
     WithIdColumn("id").              // ID 列名（默认："id"）
-    WithParentIdColumn("parent_id"), // 父 ID 列名（默认："parent_id"）
+    WithParentIdColumn("parent_id"). // 父 ID 列名（默认："parent_id"）
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "sort_order",
+        Direction: sort.OrderAsc,
+    })
+
+func buildOrganizationTree(flatModels []models.Organization) []models.Organization {
+    return treebuilder.Build(
+        flatModels,
+        treebuilder.Adapter[models.Organization]{
+            GetId:       func(m models.Organization) string { return m.Id },
+            GetParentId: func(m models.Organization) string { return m.ParentId.ValueOrZero() },
+            SetChildren: func(m *models.Organization, children []models.Organization) {
+                m.Children = children
+            },
+        },
+    )
+}
 ```
+
+**模型要求：**
+
+您的模型必须具有：
+- 父 ID 字段（通常为 `null.String` 以支持根节点）
+- 子节点字段（同类型模型的切片，标记为 `bun:"-"` 因为它是计算的）
+
+```go
+type Organization struct {
+    orm.Model
+    Name     string          `json:"name"`
+    ParentId null.String     `json:"parentId" bun:"type:varchar(20)"` // 根节点为 NULL
+    Children []Organization  `json:"children" bun:"-"`                // 计算字段，不在数据库中
+}
+```
+
+`treebuilder.Build` 函数处理从扁平列表到层次结构的转换，正确地将子节点嵌套在其父节点下。
 
 **FindTreeOptionsApi：**
 
-结合选项和树形配置：
+结合选项和树形配置以返回层次选项列表：
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
+FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.OrganizationSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
     }).
     WithIdColumn("id").
-    WithParentIdColumn("parent_id"),
+    WithParentIdColumn("parent_id").
+    WithDefaultSort(&sort.OrderSpec{
+        Column:    "sort_order",
+        Direction: sort.OrderAsc,
+    })
 ```
+
+树形选项 API 自动使用内部树构建器将扁平结果转换为嵌套选项结构，非常适合级联选择器或层次菜单。
 
 **ExportApi：**
 
@@ -673,7 +1025,131 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
 - `WithPreImport`、`WithPostImport` - 导入前/后（`WithPreImport` 用于验证，`WithPostImport` 在事务内运行）
 - `WithPreExport` - 导出前（用于数据格式化）
 
+**生产模式：**
+
+```go
+// 系统用户保护 - 防止删除关键系统用户
+DeleteApi: apis.NewDeleteApi[User]().
+    WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.Db) error {
+        // 保护系统内部用户不被删除
+        switch model.Username {
+        case "system", "anonymous", "cron":
+            return result.Err("禁止删除系统内部用户")
+        }
+        return nil
+    }),
+
+// 条件密码哈希 - 仅在密码被修改时进行哈希
+UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
+    WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+        // 仅在密码被更新时进行哈希
+        if params.Password.Valid && params.Password.String != "" {
+            hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password.String), bcrypt.DefaultCost)
+            if err != nil {
+                return err
+            }
+            newModel.Password = string(hashed)
+        } else {
+            // 保留现有密码
+            newModel.Password = oldModel.Password
+        }
+        return nil
+    }),
+
+// 业务验证 - 在操作前验证业务规则
+CreateApi: apis.NewCreateApi[Order, OrderParams]().
+    WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.Db) error {
+        // 验证订单总额是否匹配项目总额
+        if model.TotalAmount <= 0 {
+            return result.Err("订单总额必须大于零")
+        }
+
+        // 检查库存可用性
+        if !checkInventoryAvailable(model.Items) {
+            return result.Err("一个或多个商品库存不足")
+        }
+
+        return nil
+    }),
+```
+
 ### 自定义处理器
+
+#### 混合生成和自定义 API
+
+您可以使用 `api.WithApis()` 将预构建的 CRUD API 与自定义操作结合。这允许您使用特定领域的操作扩展资源，同时保持框架的约定。
+
+```go
+package resources
+
+import (
+    "github.com/ilxqx/vef-framework-go/api"
+    "github.com/ilxqx/vef-framework-go/apis"
+)
+
+type RoleResource struct {
+    api.Resource
+    apis.FindPageApi[models.Role, payloads.RoleSearch]
+    apis.CreateApi[models.Role, payloads.RoleParams]
+    apis.UpdateApi[models.Role, payloads.RoleParams]
+    apis.DeleteApi[models.Role]
+}
+
+func NewRoleResource() api.Resource {
+    return &RoleResource{
+        Resource: api.NewResource(
+            "app/sys/role",
+            api.WithApis(
+                api.Spec{
+                    Action: "find_role_permissions",
+                },
+                api.Spec{
+                    Action:      "save_role_permissions",
+                    EnableAudit: true,  // 为此操作启用审计日志
+                },
+            ),
+        ),
+        FindPageApi: apis.NewFindPageApi[models.Role, payloads.RoleSearch](),
+        CreateApi:   apis.NewCreateApi[models.Role, payloads.RoleParams](),
+        UpdateApi:   apis.NewUpdateApi[models.Role, payloads.RoleParams](),
+        DeleteApi:   apis.NewDeleteApi[models.Role](),
+    }
+}
+
+// find_role_permissions 操作的自定义处理器方法
+func (r *RoleResource) FindRolePermissions(
+    ctx fiber.Ctx,
+    db orm.Db,
+    params payloads.RolePermissionQuery,
+) error {
+    // 自定义业务逻辑
+    // ...
+    return result.Ok(permissions).Response(ctx)
+}
+
+// save_role_permissions 操作的自定义处理器方法
+func (r *RoleResource) SaveRolePermissions(
+    ctx fiber.Ctx,
+    db orm.Db,
+    params payloads.RolePermissionParams,
+) error {
+    // 基于事务的自定义逻辑
+    return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+        // 在事务中保存权限
+        // ...
+        return nil
+    })
+}
+```
+
+**关键要点：**
+
+- **方法命名**：处理器方法名必须为 PascalCase，与 snake_case 操作名匹配（例如 `find_role_permissions` → `FindRolePermissions`）
+- **API Spec 配置**：每个自定义操作都可以有自己的配置（权限、审计、速率限制）
+- **注入规则**：自定义处理器方法遵循与生成的处理器相同的参数注入规则
+- **混合 API**：您可以在同一资源中自由混合生成的 CRUD API 和自定义操作
+
+#### 简单自定义处理器
 
 通过在资源上定义方法添加自定义端点：
 
@@ -1329,6 +1805,148 @@ func main() {
 }
 ```
 
+### 生命周期钩子
+
+框架通过 `vef.Lifecycle` 提供生命周期管理，允许您注册在应用启动和关闭期间执行的钩子。这对于正确的资源清理至关重要，特别是对于事件订阅者。
+
+#### 事件订阅者清理
+
+注册事件订阅者时，应在关闭时清理订阅以防止资源泄漏：
+
+```go
+import (
+    "github.com/ilxqx/vef-framework-go"
+    "github.com/ilxqx/vef-framework-go/event"
+    "github.com/ilxqx/vef-framework-go/orm"
+)
+
+var Module = vef.Module(
+    "app:vef",
+    vef.Invoke(
+        func(lc vef.Lifecycle, db orm.Db, subscriber event.Subscriber) {
+            // 创建并注册审计事件订阅者
+            auditSub := NewAuditEventSubscriber(db, subscriber)
+
+            // 注册清理钩子
+            lc.Append(vef.StopHook(func() {
+                auditSub.Unsubscribe()  // 关闭时清理
+            }))
+
+            // 创建并注册登录事件订阅者
+            loginSub := NewLoginEventSubscriber(db, subscriber)
+
+            // 注册清理钩子
+            lc.Append(vef.StopHook(func() {
+                loginSub.Unsubscribe()  // 关闭时清理
+            }))
+        },
+    ),
+)
+```
+
+**关键模式：**
+
+1. **存储取消订阅函数**：事件订阅者构造函数在调用 `bus.Subscribe()` 时应返回 `UnsubscribeFunc`
+2. **注册停止钩子**：使用 `lc.Append(vef.StopHook(...))` 注册清理函数
+3. **在钩子中调用取消订阅**：在关闭期间调用存储的 `Unsubscribe()` 函数
+
+**事件订阅者实现示例：**
+
+```go
+type AuditEventSubscriber struct {
+    db           orm.Db
+    unsubscribe  event.UnsubscribeFunc
+}
+
+func NewAuditEventSubscriber(db orm.Db, subscriber event.Subscriber) *AuditEventSubscriber {
+    sub := &AuditEventSubscriber{db: db}
+
+    // 订阅并存储取消订阅函数
+    sub.unsubscribe = subscriber.Subscribe("*.created", sub.handleAuditEvent)
+
+    return sub
+}
+
+func (s *AuditEventSubscriber) handleAuditEvent(ctx context.Context, e event.Event) {
+    // 处理审计日志
+}
+
+func (s *AuditEventSubscriber) Unsubscribe() {
+    if s.unsubscribe != nil {
+        s.unsubscribe()
+    }
+}
+```
+
+这种模式确保优雅关闭，不会出现资源泄漏或孤立订阅。
+
+### 上下文助手
+
+`contextx` 包提供实用函数，用于在依赖注入不可用时访问请求范围的资源。这些助手在自定义处理器、钩子或其他需要从 Fiber 上下文访问框架提供的资源的场景中很有用。
+
+```go
+import "github.com/ilxqx/vef-framework-go/contextx"
+
+func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
+    // 获取请求范围的数据库（已预配置 operator）
+    db := contextx.Db(ctx)
+
+    // 获取当前认证用户
+    principal := contextx.Principal(ctx)
+
+    // 获取请求范围的日志记录器（包含请求 ID）
+    logger := contextx.Logger(ctx)
+
+    // 获取 mold 转换器用于数据清理
+    transformer := contextx.Transformer(ctx)
+
+    // 使用这些资源
+    logger.Infof("用户 %s 正在执行自定义操作", principal.Id)
+
+    var model models.SomeModel
+    if err := db.NewSelect().Model(&model).Scan(ctx.Context()); err != nil {
+        return err
+    }
+
+    return result.Ok(model).Response(ctx)
+}
+```
+
+**可用助手：**
+
+- **`contextx.Db(ctx)`** - 返回请求范围的 `orm.Db`，已预配置审计字段（如 `operator`）
+- **`contextx.Principal(ctx)`** - 返回当前 `*security.Principal`（认证用户或匿名用户）
+- **`contextx.Logger(ctx)`** - 返回请求范围的 `log.Logger`，包含请求 ID 用于关联
+- **`contextx.Transformer(ctx)`** - 返回 `mold.Transformer` 用于数据转换和清理
+
+**何时使用：**
+
+- **使用 contextx 助手**：在无法使用参数注入的自定义处理器中，或在仅接收 `fiber.Ctx` 的实用函数中
+- **优先使用参数注入**：在定义 API 处理器方法时，让框架直接注入依赖作为参数，以获得更好的可测试性和清晰度
+
+**示例 - 使用两种模式：**
+
+```go
+// 优先使用：处理器中的参数注入
+func (r *UserResource) UpdateProfile(
+    ctx fiber.Ctx,
+    db orm.Db,           // 由框架注入
+    logger log.Logger,   // 由框架注入
+    params ProfileParams,
+) error {
+    logger.Infof("正在更新配置文件")
+    // ...
+}
+
+// 在注入不可用时使用 contextx
+func helperFunction(ctx fiber.Ctx) error {
+    db := contextx.Db(ctx)       // 从上下文提取
+    logger := contextx.Logger(ctx)
+    logger.Infof("助手函数")
+    // ...
+}
+```
+
 ### 定时任务
 
 框架基于 [gocron](https://github.com/go-co-op/gocron) 提供定时任务调度功能。
@@ -1758,32 +2376,98 @@ VEF Framework 提供 `vef-cli` 命令行工具用于代码生成和项目脚手�
 `generate-build-info` 命令创建包含版本、提交哈希和构建时间戳的构建信息文件：
 
 ```bash
-go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
 ```
 
 **选项：**
-- `-o, --output` - 输出文件路径（默认：`internal/version/build.go`）
-- `-p, --package` - 包名（默认：`version`）
+- `-o, --output` - 输出文件路径（默认：`build_info.go`）
+- `-p, --package` - 包名（默认：当前目录名）
 
 **在 go:generate 中使用：**
 
 ```go
-//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/version/build.go -p version
+//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-build-info -o internal/vef/build_info.go -p vef
 ```
 
-生成的文件提供与监控模块兼容的 `BuildInfo` 结构：
+生成的文件提供与监控模块兼容的 `BuildInfo` 变量：
 
 ```go
-package version
+package vef
 
 import "github.com/ilxqx/vef-framework-go/monitor"
 
-var Build = monitor.BuildInfo{
-    Version:   "v1.0.0",
-    Commit:    "abc123...",
-    BuildTime: "2025-01-15T10:30:00Z",
+// BuildInfo 指向构建元数据，用于 monitor 模块
+var BuildInfo = &monitor.BuildInfo{
+    AppVersion: "v1.0.0",               // 来自 git tags（或 "dev"）
+    BuildTime:  "2025-01-15T10:30:00Z", // 构建时间戳
+    GitCommit:  "abc123...",            // Git 提交 SHA
 }
 ```
+
+**生成的字段：**
+- **Version**：从 git tags 提取（例如 `v1.0.0`）。如果没有 tags 则回退到 `"dev"`。
+- **Commit**：当前 HEAD 的完整 git 提交 SHA。
+- **BuildTime**：文件生成时的 UTC 时间戳。
+
+#### 生成模型 Schema
+
+`generate-model-schema` 命令为模型生成类型安全的字段访问器函数：
+
+```bash
+go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
+```
+
+**选项：**
+- `-i, --input` - 包含模型文件的输入目录（必需）
+- `-o, --output` - 生成 schema 文件的输出目录（必需）
+- `-p, --package` - 生成文件的包名（必需）
+
+**在 go:generate 中使用：**
+
+```go
+//go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i ./models -o ./schemas -p schemas
+```
+
+生成的 schema 提供类型安全的字段访问器：
+
+```go
+package schemas
+
+var User = struct {
+    Id        func(withTablePrefix ...bool) string
+    Username  func(withTablePrefix ...bool) string
+    Email     func(withTablePrefix ...bool) string
+    CreatedAt func(withTablePrefix ...bool) string
+    // ... 其他字段
+}{
+    Id:        field("id", "su"),
+    Username:  field("username", "su"),
+    Email:     field("email", "su"),
+    CreatedAt: field("created_at", "su"),
+}
+```
+
+**在查询中使用：**
+
+```go
+import "my-app/internal/sys/schemas"
+
+// 类型安全的列引用
+db.NewSelect().
+    Model(&users).
+    Where(func(cb orm.ConditionBuilder) {
+        cb.Equals(schemas.User.Username(), "admin")
+        cb.IsNotNull(schemas.User.Email())
+    }).
+    OrderBy(schemas.User.CreatedAt(true) + " DESC"). // 带表前缀
+    Scan(ctx)
+```
+
+**优势：**
+- **类型安全**：在编译时捕获拼写错误
+- **IDE 自动完成**：字段名可被发现
+- **重构支持**：重命名字段会更新所有引用
+- **表前缀处理**：可选地在列名中包含表别名
 
 关于 AI 辅助开发指南，请参阅 `cmd/CMD_DEV_GUIDELINES.md`。
 

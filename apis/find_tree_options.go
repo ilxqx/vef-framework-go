@@ -48,7 +48,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithParentIdColumn(name string) Fi
 }
 
 // WithCondition adds a WHERE condition using ConditionBuilder.
-// Applies to root query only by default (QueryRoot) unless specific parts are provided.
+// Defaults to QueryBase for tree options unless specific parts are provided.
 func (a *findTreeOptionsApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTreeOptionsApi[TModel, TSearch] {
 	a.FindApi.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
@@ -56,7 +56,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithCondition(fn func(cb orm.Condi
 }
 
 // WithQueryApplier adds a custom query applier function.
-// Applies to root query only by default (QueryRoot) unless specific parts are provided.
+// Defaults to QueryBase for tree options unless specific parts are provided.
 func (a *findTreeOptionsApi[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTreeOptionsApi[TModel, TSearch] {
 	a.FindApi.WithQueryApplier(applier, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
