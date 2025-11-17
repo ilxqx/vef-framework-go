@@ -48,6 +48,7 @@ func (c *compositeEncoder) Matches(password, encodedPassword string) bool {
 	}
 
 	rawEncoded := c.stripPrefix(encodedPassword)
+
 	return encoder.Matches(password, rawEncoded)
 }
 
@@ -64,6 +65,7 @@ func (c *compositeEncoder) UpgradeEncoding(encodedPassword string) bool {
 	}
 
 	rawEncoded := c.stripPrefix(encodedPassword)
+
 	return encoder.UpgradeEncoding(rawEncoded)
 }
 
@@ -71,10 +73,12 @@ func (c *compositeEncoder) extractEncoderId(encodedPassword string) EncoderId {
 	if !strings.HasPrefix(encodedPassword, "{") {
 		return EncoderId(constants.Empty)
 	}
+
 	end := strings.Index(encodedPassword, "}")
 	if end == -1 {
 		return EncoderId(constants.Empty)
 	}
+
 	return EncoderId(encodedPassword[1:end])
 }
 
@@ -82,9 +86,11 @@ func (c *compositeEncoder) stripPrefix(encodedPassword string) string {
 	if !strings.HasPrefix(encodedPassword, "{") {
 		return encodedPassword
 	}
+
 	end := strings.Index(encodedPassword, "}")
 	if end == -1 {
 		return encodedPassword
 	}
+
 	return encodedPassword[end+1:]
 }

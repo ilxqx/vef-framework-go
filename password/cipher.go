@@ -24,6 +24,7 @@ func (e *cipherEncoder) Encode(password string) (string, error) {
 	if e.cipher == nil {
 		return constants.Empty, ErrCipherRequired
 	}
+
 	if e.encoder == nil {
 		return constants.Empty, ErrEncoderRequired
 	}
@@ -53,5 +54,6 @@ func (e *cipherEncoder) UpgradeEncoding(encodedPassword string) bool {
 	if e.encoder == nil {
 		return false
 	}
+
 	return e.encoder.UpgradeEncoding(encodedPassword)
 }

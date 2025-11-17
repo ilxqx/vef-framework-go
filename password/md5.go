@@ -64,6 +64,7 @@ func (e *md5Encoder) Encode(password string) (string, error) {
 	if e.salt != constants.Empty {
 		return fmt.Sprintf("{md5}$%s$%s", e.salt, hexHash), nil
 	}
+
 	return hexHash, nil
 }
 
@@ -73,6 +74,7 @@ func (e *md5Encoder) Matches(password, encodedPassword string) bool {
 		if len(parts) != 3 {
 			return false
 		}
+
 		salt := parts[1]
 		expectedHash := parts[2]
 
@@ -82,13 +84,16 @@ func (e *md5Encoder) Matches(password, encodedPassword string) bool {
 		} else {
 			input = password + salt
 		}
+
 		hash := md5.Sum([]byte(input))
 		actualHash := hex.EncodeToString(hash[:])
+
 		return actualHash == expectedHash
 	}
 
 	hash := md5.Sum([]byte(password))
 	actualHash := hex.EncodeToString(hash[:])
+
 	return actualHash == encodedPassword
 }
 

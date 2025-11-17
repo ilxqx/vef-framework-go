@@ -67,9 +67,11 @@ func (e *argon2Encoder) Encode(password string) (string, error) {
 	if e.memory < 8 {
 		return constants.Empty, ErrInvalidMemory
 	}
+
 	if e.iterations < 1 {
 		return constants.Empty, ErrInvalidIterations
 	}
+
 	if e.parallelism < 1 {
 		return constants.Empty, ErrInvalidParallelism
 	}
@@ -128,6 +130,7 @@ func (e *argon2Encoder) decodeHash(encodedPassword string) (*argon2Params, []byt
 	if _, err := fmt.Sscanf(parts[2], "v=%d", &version); err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
+
 	if version != argon2.Version {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}

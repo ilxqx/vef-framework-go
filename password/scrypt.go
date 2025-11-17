@@ -67,9 +67,11 @@ func (e *scryptEncoder) Encode(password string) (string, error) {
 	if e.n < 2 {
 		return constants.Empty, ErrInvalidIterations
 	}
+
 	if e.r < 1 {
 		return constants.Empty, ErrInvalidIterations
 	}
+
 	if e.p < 1 {
 		return constants.Empty, ErrInvalidParallelism
 	}

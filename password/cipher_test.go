@@ -19,6 +19,7 @@ func (m *mockCipher) Encrypt(plaintext string) (string, error) {
 	if m.encryptFunc != nil {
 		return m.encryptFunc(plaintext)
 	}
+
 	return base64.StdEncoding.EncodeToString([]byte(plaintext)), nil
 }
 
@@ -26,10 +27,12 @@ func (m *mockCipher) Decrypt(ciphertext string) (string, error) {
 	if m.decryptFunc != nil {
 		return m.decryptFunc(ciphertext)
 	}
+
 	decoded, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", err
 	}
+
 	return string(decoded), nil
 }
 
