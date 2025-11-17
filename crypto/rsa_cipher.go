@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -12,51 +13,65 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// RsaMode defines the RSA encryption mode.
 type RsaMode string
 
 const (
-	// RsaModeOAEP uses RSA-OAEP mode with SHA-256 (recommended).
-	RsaModeOAEP RsaMode = "OAEP"
-	// RsaModePKCS1v15 uses RSA-PKCS1v15 mode (legacy, less secure).
-	RsaModePKCS1v15 RsaMode = "PKCS1v15"
+	RsaModeOaep     RsaMode = "OAEP"
+	RsaModePkcs1v15 RsaMode = "PKCS1v15"
 )
 
-// RsaCipher implements Cipher interface using RSA encryption.
-type RsaCipher struct {
+type RsaSignMode string
+
+const (
+	RsaSignModePss      RsaSignMode = "PSS"
+	RsaSignModePkcs1v15 RsaSignMode = "PKCS1v15"
+)
+
+type rsaCipher struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
 	mode       RsaMode
+	signMode   RsaSignMode
 }
 
-// NewRSA creates a new RSA cipher with the given private and public keys and optional mode.
-// For encryption-only operations, privateKey can be nil.
-// For decryption-only operations, publicKey can be nil.
-// If mode is not specified, defaults to RsaModeOAEP (recommended).
-func NewRSA(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, mode ...RsaMode) (Cipher, error) {
+type RsaOption func(*rsaCipher)
+
+func WithRsaMode(mode RsaMode) RsaOption {
+	return func(c *rsaCipher) {
+		c.mode = mode
+	}
+}
+
+func WithRsaSignMode(signMode RsaSignMode) RsaOption {
+	return func(c *rsaCipher) {
+		c.signMode = signMode
+	}
+}
+
+func NewRsa(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, opts ...RsaOption) (CipherSigner, error) {
 	if privateKey == nil && publicKey == nil {
 		return nil, ErrAtLeastOneKeyRequired
 	}
 
-	selectedMode := RsaModeOAEP
-	if len(mode) > 0 {
-		selectedMode = mode[0]
+	cipher := &rsaCipher{
+		privateKey: privateKey,
+		publicKey:  publicKey,
+		mode:       RsaModeOaep,
+		signMode:   RsaSignModePss,
+	}
+
+	for _, opt := range opts {
+		opt(cipher)
 	}
 
 	if publicKey == nil && privateKey != nil {
-		publicKey = &privateKey.PublicKey
+		cipher.publicKey = &privateKey.PublicKey
 	}
 
-	return &RsaCipher{
-		privateKey: privateKey,
-		publicKey:  publicKey,
-		mode:       selectedMode,
-	}, nil
+	return cipher, nil
 }
 
-// parseRSAKeysFromBytes tries to parse RSA private/public keys from DER bytes.
-// It tries multiple formats for robustness.
-func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.PrivateKey, *rsa.PublicKey, error) {
+func parseRsaKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	var (
 		privateKey *rsa.PrivateKey
 		publicKey  *rsa.PublicKey
@@ -65,28 +80,26 @@ func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 
 	if len(privateKeyBytes) > 0 {
 		if privateKey, err = x509.ParsePKCS1PrivateKey(privateKeyBytes); err != nil {
-			key, err2 := x509.ParsePKCS8PrivateKey(privateKeyBytes)
-			if err2 != nil {
+			if key, err := x509.ParsePKCS8PrivateKey(privateKeyBytes); err != nil {
 				return nil, nil, fmt.Errorf("failed to parse private key (tried PKCS1 and PKCS8): %w", err)
-			}
-
-			var ok bool
-			if privateKey, ok = key.(*rsa.PrivateKey); !ok {
-				return nil, nil, ErrNotRSAPrivateKey
+			} else {
+				var ok bool
+				if privateKey, ok = key.(*rsa.PrivateKey); !ok {
+					return nil, nil, ErrNotRsaPrivateKey
+				}
 			}
 		}
 	}
 
 	if len(publicKeyBytes) > 0 {
-		key, err := x509.ParsePKIXPublicKey(publicKeyBytes)
-		if err != nil {
+		if key, err := x509.ParsePKIXPublicKey(publicKeyBytes); err != nil {
 			if publicKey, err = x509.ParsePKCS1PublicKey(publicKeyBytes); err != nil {
 				return nil, nil, fmt.Errorf("failed to parse public key (tried PKIX and PKCS1): %w", err)
 			}
 		} else {
 			var ok bool
 			if publicKey, ok = key.(*rsa.PublicKey); !ok {
-				return nil, nil, ErrNotRSAPublicKey
+				return nil, nil, ErrNotRsaPublicKey
 			}
 		}
 	}
@@ -94,37 +107,29 @@ func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 	return privateKey, publicKey, nil
 }
 
-// NewRSAFromPEM creates a new RSA cipher from PEM-encoded keys.
-// Either privatePEM or publicPEM can be nil, but not both.
-// If mode is not specified, defaults to RsaModeOAEP (recommended).
-func NewRSAFromPEM(privatePEM, publicPEM []byte, mode ...RsaMode) (Cipher, error) {
+func NewRsaFromPem(privatePem, publicPem []byte, opts ...RsaOption) (CipherSigner, error) {
 	var (
 		privateKey *rsa.PrivateKey
 		publicKey  *rsa.PublicKey
 		err        error
 	)
 
-	if privatePEM != nil {
-		privateKey, err = parseRSAPrivateKeyFromPEM(privatePEM)
-		if err != nil {
+	if privatePem != nil {
+		if privateKey, err = parseRsaPrivateKeyFromPem(privatePem); err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
 		}
 	}
 
-	if publicPEM != nil {
-		publicKey, err = parseRSAPublicKeyFromPEM(publicPEM)
-		if err != nil {
+	if publicPem != nil {
+		if publicKey, err = parseRsaPublicKeyFromPem(publicPem); err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
 		}
 	}
 
-	return NewRSA(privateKey, publicKey, mode...)
+	return NewRsa(privateKey, publicKey, opts...)
 }
 
-// NewRSAFromHex creates a new RSA cipher from hex-encoded DER keys.
-// Either privateKeyHex or publicKeyHex can be empty, but not both.
-// If mode is not specified, defaults to RsaModeOAEP (recommended).
-func NewRSAFromHex(privateKeyHex, publicKeyHex string, mode ...RsaMode) (Cipher, error) {
+func NewRsaFromHex(privateKeyHex, publicKeyHex string, opts ...RsaOption) (CipherSigner, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -143,18 +148,15 @@ func NewRSAFromHex(privateKeyHex, publicKeyHex string, mode ...RsaMode) (Cipher,
 		}
 	}
 
-	privateKey, publicKey, err := parseRSAKeysFromBytes(privateBytes, publicBytes)
+	privateKey, publicKey, err := parseRsaKeysFromBytes(privateBytes, publicBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRSA(privateKey, publicKey, mode...)
+	return NewRsa(privateKey, publicKey, opts...)
 }
 
-// NewRSAFromBase64 creates a new RSA cipher from base64-encoded DER keys.
-// Either privateKeyBase64 or publicKeyBase64 can be empty, but not both.
-// If mode is not specified, defaults to RsaModeOAEP (recommended).
-func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, mode ...RsaMode) (Cipher, error) {
+func NewRsaFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...RsaOption) (CipherSigner, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -173,16 +175,15 @@ func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, mode ...RsaMode)
 		}
 	}
 
-	privateKey, publicKey, err := parseRSAKeysFromBytes(privateBytes, publicBytes)
+	privateKey, publicKey, err := parseRsaKeysFromBytes(privateBytes, publicBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRSA(privateKey, publicKey, mode...)
+	return NewRsa(privateKey, publicKey, opts...)
 }
 
-// Encrypt encrypts the plaintext using RSA public key and returns base64-encoded ciphertext.
-func (r *RsaCipher) Encrypt(plaintext string) (string, error) {
+func (r *rsaCipher) Encrypt(plaintext string) (string, error) {
 	if r.publicKey == nil {
 		return constants.Empty, ErrPublicKeyRequiredForEncrypt
 	}
@@ -192,7 +193,7 @@ func (r *RsaCipher) Encrypt(plaintext string) (string, error) {
 		err        error
 	)
 
-	if r.mode == RsaModeOAEP {
+	if r.mode == RsaModeOaep {
 		hash := sha256.New()
 		ciphertext, err = rsa.EncryptOAEP(hash, rand.Reader, r.publicKey, []byte(plaintext), nil)
 	} else {
@@ -206,8 +207,7 @@ func (r *RsaCipher) Encrypt(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// Decrypt decrypts the base64-encoded ciphertext using RSA private key and returns plaintext.
-func (r *RsaCipher) Decrypt(ciphertext string) (string, error) {
+func (r *rsaCipher) Decrypt(ciphertext string) (string, error) {
 	if r.privateKey == nil {
 		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
 	}
@@ -218,7 +218,7 @@ func (r *RsaCipher) Decrypt(ciphertext string) (string, error) {
 	}
 
 	var plaintext []byte
-	if r.mode == RsaModeOAEP {
+	if r.mode == RsaModeOaep {
 		hash := sha256.New()
 		plaintext, err = rsa.DecryptOAEP(hash, rand.Reader, r.privateKey, encryptedData, nil)
 	} else {
@@ -232,11 +232,10 @@ func (r *RsaCipher) Decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// parseRSAPrivateKeyFromPEM parses RSA private key from PEM-encoded data.
-func parseRSAPrivateKeyFromPEM(pemData []byte) (*rsa.PrivateKey, error) {
+func parseRsaPrivateKeyFromPem(pemData []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, ErrFailedDecodePEMBlock
+		return nil, ErrFailedDecodePemBlock
 	}
 
 	if block.Type == "RSA PRIVATE KEY" {
@@ -251,20 +250,19 @@ func parseRSAPrivateKeyFromPEM(pemData []byte) (*rsa.PrivateKey, error) {
 
 		rsaKey, ok := key.(*rsa.PrivateKey)
 		if !ok {
-			return nil, ErrNotRSAPrivateKey
+			return nil, ErrNotRsaPrivateKey
 		}
 
 		return rsaKey, nil
 	}
 
-	return nil, fmt.Errorf("%w: %s", ErrUnsupportedPEMType, block.Type)
+	return nil, fmt.Errorf("%w: %s", ErrUnsupportedPemType, block.Type)
 }
 
-// parseRSAPublicKeyFromPEM parses RSA public key from PEM-encoded data.
-func parseRSAPublicKeyFromPEM(pemData []byte) (*rsa.PublicKey, error) {
+func parseRsaPublicKeyFromPem(pemData []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, ErrFailedDecodePEMBlock
+		return nil, ErrFailedDecodePemBlock
 	}
 
 	if block.Type == "PUBLIC KEY" {
@@ -275,7 +273,7 @@ func parseRSAPublicKeyFromPEM(pemData []byte) (*rsa.PublicKey, error) {
 
 		rsaKey, ok := key.(*rsa.PublicKey)
 		if !ok {
-			return nil, ErrNotRSAPublicKey
+			return nil, ErrNotRsaPublicKey
 		}
 
 		return rsaKey, nil
@@ -285,5 +283,55 @@ func parseRSAPublicKeyFromPEM(pemData []byte) (*rsa.PublicKey, error) {
 		return x509.ParsePKCS1PublicKey(block.Bytes)
 	}
 
-	return nil, fmt.Errorf("%w: %s", ErrUnsupportedPEMType, block.Type)
+	return nil, fmt.Errorf("%w: %s", ErrUnsupportedPemType, block.Type)
+}
+
+func (r *rsaCipher) Sign(data string) (string, error) {
+	if r.privateKey == nil {
+		return constants.Empty, ErrPrivateKeyRequiredForSign
+	}
+
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(data))
+	hashed := hash.Sum(nil)
+
+	var (
+		signature []byte
+		err       error
+	)
+
+	if r.signMode == RsaSignModePss {
+		signature, err = rsa.SignPSS(rand.Reader, r.privateKey, crypto.SHA256, hashed, nil)
+	} else {
+		signature, err = rsa.SignPKCS1v15(rand.Reader, r.privateKey, crypto.SHA256, hashed)
+	}
+
+	if err != nil {
+		return constants.Empty, fmt.Errorf("failed to sign: %w", err)
+	}
+
+	return encoding.ToBase64(signature), nil
+}
+
+func (r *rsaCipher) Verify(data, signature string) (bool, error) {
+	if r.publicKey == nil {
+		return false, ErrPublicKeyRequiredForVerify
+	}
+
+	signatureBytes, err := encoding.FromBase64(signature)
+	if err != nil {
+		return false, fmt.Errorf("%w: %w", ErrInvalidSignature, err)
+	}
+
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(data))
+	hashed := hash.Sum(nil)
+
+	if r.signMode == RsaSignModePss {
+		err = rsa.VerifyPSS(r.publicKey, crypto.SHA256, hashed, signatureBytes, nil)
+	} else {
+		err = rsa.VerifyPKCS1v15(r.publicKey, crypto.SHA256, hashed, signatureBytes)
+	}
+
+	return err == nil, nil
 }

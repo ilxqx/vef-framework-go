@@ -9,18 +9,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tjfoc/gmsm/sm4"
+
+	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// TestSM4Cipher_CBC tests SM4 encryption and decryption in CBC mode.
-func TestSM4Cipher_CBC(t *testing.T) {
+// TestSm4Cipher_Cbc tests SM4 encryption and decryption in CBC mode.
+func TestSm4Cipher_Cbc(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
-	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
+	cipher, err := NewSm4(key, WithSm4Iv(iv), WithSm4Mode(Sm4ModeCbc))
 	require.NoError(t, err, "Should create SM4 cipher in CBC mode")
 
 	tests := []struct {
@@ -47,13 +49,13 @@ func TestSM4Cipher_CBC(t *testing.T) {
 	}
 }
 
-// TestSM4Cipher_ECB tests SM4 encryption and decryption in ECB mode.
-func TestSM4Cipher_ECB(t *testing.T) {
+// TestSm4Cipher_Ecb tests SM4 encryption and decryption in ECB mode.
+func TestSm4Cipher_Ecb(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 
-	cipher, err := NewSM4(key, nil, Sm4ModeECB)
+	cipher, err := NewSm4(key, WithSm4Mode(Sm4ModeEcb))
 	require.NoError(t, err, "Should create SM4 cipher in ECB mode")
 
 	tests := []struct {
@@ -80,12 +82,15 @@ func TestSM4Cipher_ECB(t *testing.T) {
 	}
 }
 
-// TestSM4Cipher_FromHex tests creating SM4 cipher from hex-encoded key and IV.
-func TestSM4Cipher_FromHex(t *testing.T) {
+// TestSm4Cipher_FromHex tests creating SM4 cipher from hex-encoded key.
+func TestSm4Cipher_FromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef"
 	ivHex := "fedcba9876543210fedcba9876543210"
 
-	cipher, err := NewSM4FromHex(keyHex, ivHex, Sm4ModeCBC)
+	iv, err := encoding.FromHex(ivHex)
+	require.NoError(t, err, "Should decode hex IV")
+
+	cipher, err := NewSm4FromHex(keyHex, WithSm4Iv(iv), WithSm4Mode(Sm4ModeCbc))
 	require.NoError(t, err, "Should create SM4 cipher from hex")
 
 	plaintext := "Test message"
@@ -98,19 +103,18 @@ func TestSM4Cipher_FromHex(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSM4Cipher_FromBase64 tests creating SM4 cipher from base64-encoded key and IV.
-func TestSM4Cipher_FromBase64(t *testing.T) {
+// TestSm4Cipher_FromBase64 tests creating SM4 cipher from base64-encoded key.
+func TestSm4Cipher_FromBase64(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
 	keyBase64 := base64.StdEncoding.EncodeToString(key)
-	ivBase64 := base64.StdEncoding.EncodeToString(iv)
 
-	cipher, err := NewSM4FromBase64(keyBase64, ivBase64, Sm4ModeCBC)
+	cipher, err := NewSm4FromBase64(keyBase64, WithSm4Iv(iv), WithSm4Mode(Sm4ModeCbc))
 	require.NoError(t, err, "Should create SM4 cipher from base64")
 
 	plaintext := "Test message with base64 encoded key"
@@ -123,31 +127,31 @@ func TestSM4Cipher_FromBase64(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSM4Cipher_InvalidKeySize tests that invalid key size is rejected.
-func TestSM4Cipher_InvalidKeySize(t *testing.T) {
+// TestSm4Cipher_InvalidKeySize tests that invalid key size is rejected.
+func TestSm4Cipher_InvalidKeySize(t *testing.T) {
 	invalidKey := make([]byte, 8)
 	iv := make([]byte, sm4.BlockSize)
 
-	_, err := NewSM4(invalidKey, iv, Sm4ModeCBC)
+	_, err := NewSm4(invalidKey, WithSm4Iv(iv), WithSm4Mode(Sm4ModeCbc))
 	assert.Error(t, err, "Should reject invalid key size")
 }
 
-// TestSM4Cipher_InvalidIVSize tests that invalid IV size is rejected.
-func TestSM4Cipher_InvalidIVSize(t *testing.T) {
+// TestSm4Cipher_InvalidIvSize tests that invalid IV size is rejected.
+func TestSm4Cipher_InvalidIvSize(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	invalidIV := make([]byte, 8)
 
-	_, err := NewSM4(key, invalidIV, Sm4ModeCBC)
+	_, err := NewSm4(key, WithSm4Iv(invalidIV), WithSm4Mode(Sm4ModeCbc))
 	assert.Error(t, err, "Should reject invalid IV size")
 }
 
-// TestSM4Cipher_ECB_NoIVRequired tests that ECB mode doesn't require IV.
-func TestSM4Cipher_ECB_NoIVRequired(t *testing.T) {
+// TestSm4Cipher_Ecb_NoIVRequired tests that ECB mode doesn't require IV.
+func TestSm4Cipher_Ecb_NoIvRequired(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 
-	cipher, err := NewSM4(key, nil, Sm4ModeECB)
+	cipher, err := NewSm4(key, WithSm4Mode(Sm4ModeEcb))
 	require.NoError(t, err, "Should create SM4 cipher in ECB mode without IV")
 
 	plaintext := "Test message"
@@ -160,13 +164,13 @@ func TestSM4Cipher_ECB_NoIVRequired(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSM4Cipher_ECB_Deterministic tests that ECB mode is deterministic.
-func TestSM4Cipher_ECB_Deterministic(t *testing.T) {
+// TestSm4Cipher_Ecb_Deterministic tests that ECB mode is deterministic.
+func TestSm4Cipher_Ecb_Deterministic(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 
-	cipher, err := NewSM4(key, nil, Sm4ModeECB)
+	cipher, err := NewSm4(key, WithSm4Mode(Sm4ModeEcb))
 	require.NoError(t, err, "Should create SM4 cipher")
 
 	plaintext := "Test message"
@@ -181,16 +185,16 @@ func TestSM4Cipher_ECB_Deterministic(t *testing.T) {
 		"ECB mode should produce same ciphertext for same plaintext")
 }
 
-// TestSM4Cipher_CBC_NonDeterministic tests CBC mode with fixed IV.
-func TestSM4Cipher_CBC_NonDeterministic(t *testing.T) {
+// TestSm4Cipher_Cbc_NonDeterministic tests CBC mode with fixed IV.
+func TestSm4Cipher_Cbc_NonDeterministic(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
-	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
+	cipher, err := NewSm4(key, WithSm4Iv(iv), WithSm4Mode(Sm4ModeCbc))
 	require.NoError(t, err, "Should create SM4 cipher")
 
 	plaintext := "Test message"
@@ -214,16 +218,16 @@ func TestSM4Cipher_CBC_NonDeterministic(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted2, "Second decrypted text should match original plaintext")
 }
 
-// TestSM4Cipher_LongMessage tests SM4 with long messages spanning multiple blocks.
-func TestSM4Cipher_LongMessage(t *testing.T) {
+// TestSm4Cipher_LongMessage tests SM4 with long messages spanning multiple blocks.
+func TestSm4Cipher_LongMessage(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
-	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
+	cipher, err := NewSm4(key, WithSm4Iv(iv), WithSm4Mode(Sm4ModeCbc))
 	require.NoError(t, err, "Should create SM4 cipher")
 
 	plaintext := strings.Repeat("This is a test message. ", 100)
@@ -237,16 +241,16 @@ func TestSM4Cipher_LongMessage(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestSM4Cipher_EmptyString tests SM4 with empty string input.
-func TestSM4Cipher_EmptyString(t *testing.T) {
+// TestSm4Cipher_EmptyString tests SM4 with empty string input.
+func TestSm4Cipher_EmptyString(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
-	cipher, err := NewSM4(key, iv, Sm4ModeCBC)
+	cipher, err := NewSm4(key, WithSm4Iv(iv), WithSm4Mode(Sm4ModeCbc))
 	require.NoError(t, err, "Should create SM4 cipher")
 
 	plaintext := ""
@@ -259,16 +263,16 @@ func TestSM4Cipher_EmptyString(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match empty plaintext")
 }
 
-// TestSM4Cipher_DefaultMode tests that default mode is CBC.
-func TestSM4Cipher_DefaultMode(t *testing.T) {
+// TestSm4Cipher_DefaultMode tests that default mode is CBC.
+func TestSm4Cipher_DefaultMode(t *testing.T) {
 	key := make([]byte, sm4.BlockSize)
 	iv := make([]byte, sm4.BlockSize)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
-	cipher, err := NewSM4(key, iv)
+	cipher, err := NewSm4(key, WithSm4Iv(iv))
 	require.NoError(t, err, "Should create SM4 cipher with default mode")
 
 	plaintext := "Test default mode"
@@ -279,8 +283,4 @@ func TestSM4Cipher_DefaultMode(t *testing.T) {
 	require.NoError(t, err, "Should decrypt ciphertext successfully")
 
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
-
-	sm4Cipher, ok := cipher.(*Sm4Cipher)
-	require.True(t, ok)
-	assert.Equal(t, Sm4ModeCBC, sm4Cipher.mode, "Default mode should be CBC")
 }

@@ -12,16 +12,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// Sm2Cipher implements Cipher interface using SM2 encryption (国密算法).
-type Sm2Cipher struct {
+type sm2Cipher struct {
 	privateKey *sm2.PrivateKey
 	publicKey  *sm2.PublicKey
 }
 
-// NewSM2 creates a new SM2 cipher with the given private and public keys.
-// For encryption-only operations, privateKey can be nil.
-// For decryption-only operations, publicKey can be nil.
-func NewSM2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (Cipher, error) {
+func NewSm2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (CipherSigner, error) {
 	if privateKey == nil && publicKey == nil {
 		return nil, ErrAtLeastOneKeyRequired
 	}
@@ -30,41 +26,37 @@ func NewSM2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (Cipher, error
 		publicKey = &privateKey.PublicKey
 	}
 
-	return &Sm2Cipher{
+	return &sm2Cipher{
 		privateKey: privateKey,
 		publicKey:  publicKey,
 	}, nil
 }
 
-// NewSM2FromPEM creates a new SM2 cipher from PEM-encoded keys.
-// Either privatePEM or publicPEM can be nil, but not both.
-func NewSM2FromPEM(privatePEM, publicPEM []byte) (Cipher, error) {
+func NewSm2FromPem(privatePem, publicPem []byte) (CipherSigner, error) {
 	var (
 		privateKey *sm2.PrivateKey
 		publicKey  *sm2.PublicKey
 		err        error
 	)
 
-	if privatePEM != nil {
-		privateKey, err = parseSM2PrivateKeyFromPEM(privatePEM)
+	if privatePem != nil {
+		privateKey, err = parseSm2PrivateKeyFromPem(privatePem)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
 		}
 	}
 
-	if publicPEM != nil {
-		publicKey, err = parseSM2PublicKeyFromPEM(publicPEM)
+	if publicPem != nil {
+		publicKey, err = parseSm2PublicKeyFromPem(publicPem)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
 		}
 	}
 
-	return NewSM2(privateKey, publicKey)
+	return NewSm2(privateKey, publicKey)
 }
 
-// NewSM2FromHex creates a new SM2 cipher from hex-encoded keys.
-// Either privateKeyHex or publicKeyHex can be empty, but not both.
-func NewSM2FromHex(privateKeyHex, publicKeyHex string) (Cipher, error) {
+func NewSm2FromHex(privateKeyHex, publicKeyHex string) (CipherSigner, error) {
 	var (
 		privateKey *sm2.PrivateKey
 		publicKey  *sm2.PublicKey
@@ -86,12 +78,10 @@ func NewSM2FromHex(privateKeyHex, publicKeyHex string) (Cipher, error) {
 		}
 	}
 
-	return NewSM2(privateKey, publicKey)
+	return NewSm2(privateKey, publicKey)
 }
 
-// NewSM2FromBase64 creates a new SM2 cipher from base64-encoded keys.
-// Either privateKeyBase64 or publicKeyBase64 can be empty, but not both.
-func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (Cipher, error) {
+func NewSm2FromBase64(privateKeyBase64, publicKeyBase64 string) (CipherSigner, error) {
 	var (
 		privateKey *sm2.PrivateKey
 		publicKey  *sm2.PublicKey
@@ -113,11 +103,10 @@ func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (Cipher, error) 
 		}
 	}
 
-	return NewSM2(privateKey, publicKey)
+	return NewSm2(privateKey, publicKey)
 }
 
-// Encrypt encrypts the plaintext using SM2 public key and returns base64-encoded ciphertext.
-func (s *Sm2Cipher) Encrypt(plaintext string) (string, error) {
+func (s *sm2Cipher) Encrypt(plaintext string) (string, error) {
 	if s.publicKey == nil {
 		return constants.Empty, ErrPublicKeyRequiredForEncrypt
 	}
@@ -130,8 +119,7 @@ func (s *Sm2Cipher) Encrypt(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// Decrypt decrypts the base64-encoded ciphertext using SM2 private key and returns plaintext.
-func (s *Sm2Cipher) Decrypt(ciphertext string) (string, error) {
+func (s *sm2Cipher) Decrypt(ciphertext string) (string, error) {
 	if s.privateKey == nil {
 		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
 	}
@@ -149,22 +137,48 @@ func (s *Sm2Cipher) Decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// parseSM2PrivateKeyFromPEM parses SM2 private key from PEM-encoded data.
-func parseSM2PrivateKeyFromPEM(pemData []byte) (*sm2.PrivateKey, error) {
+func parseSm2PrivateKeyFromPem(pemData []byte) (*sm2.PrivateKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, ErrFailedDecodePEMBlock
+		return nil, ErrFailedDecodePemBlock
 	}
 
 	return x509.ParseSm2PrivateKey(block.Bytes)
 }
 
-// parseSM2PublicKeyFromPEM parses SM2 public key from PEM-encoded data.
-func parseSM2PublicKeyFromPEM(pemData []byte) (*sm2.PublicKey, error) {
+func parseSm2PublicKeyFromPem(pemData []byte) (*sm2.PublicKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
-		return nil, ErrFailedDecodePEMBlock
+		return nil, ErrFailedDecodePemBlock
 	}
 
 	return x509.ParseSm2PublicKey(block.Bytes)
+}
+
+func (s *sm2Cipher) Sign(data string) (string, error) {
+	if s.privateKey == nil {
+		return constants.Empty, ErrPrivateKeyRequiredForSign
+	}
+
+	signature, err := s.privateKey.Sign(rand.Reader, []byte(data), nil)
+	if err != nil {
+		return constants.Empty, fmt.Errorf("failed to sign: %w", err)
+	}
+
+	return encoding.ToBase64(signature), nil
+}
+
+func (s *sm2Cipher) Verify(data, signature string) (bool, error) {
+	if s.publicKey == nil {
+		return false, ErrPublicKeyRequiredForVerify
+	}
+
+	signatureBytes, err := encoding.FromBase64(signature)
+	if err != nil {
+		return false, fmt.Errorf("%w: %w", ErrInvalidSignature, err)
+	}
+
+	valid := s.publicKey.Verify([]byte(data), signatureBytes)
+
+	return valid, nil
 }

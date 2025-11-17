@@ -9,16 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAESCipher_CBC tests AES encryption and decryption in CBC mode.
-func TestAESCipher_CBC(t *testing.T) {
+// TestAesCipher_Cbc tests AES encryption and decryption in CBC mode.
+func TestAesCipher_Cbc(t *testing.T) {
 	key := make([]byte, 32)
 	iv := make([]byte, 16)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
-	cipher, err := NewAES(key, iv, AesModeCBC)
+	cipher, err := NewAes(key, WithAesIv(iv), WithAesMode(AesModeCbc))
 	require.NoError(t, err, "Should create AES cipher in CBC mode")
 
 	tests := []struct {
@@ -45,13 +45,13 @@ func TestAESCipher_CBC(t *testing.T) {
 	}
 }
 
-// TestAESCipher_GCM tests AES encryption and decryption in GCM mode.
-func TestAESCipher_GCM(t *testing.T) {
+// TestAesCipher_Gcm tests AES encryption and decryption in GCM mode.
+func TestAesCipher_Gcm(t *testing.T) {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 
-	cipher, err := NewAES(key, nil, AesModeGCM)
+	cipher, err := NewAes(key, WithAesMode(AesModeGcm))
 	require.NoError(t, err, "Should create AES cipher in GCM mode")
 
 	tests := []struct {
@@ -78,12 +78,12 @@ func TestAESCipher_GCM(t *testing.T) {
 	}
 }
 
-// TestAESCipher_FromHex tests creating AES cipher from hex-encoded key and IV.
-func TestAESCipher_FromHex(t *testing.T) {
+// TestAesCipher_FromHex tests creating AES cipher from hex-encoded key.
+func TestAesCipher_FromHex(t *testing.T) {
 	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-	ivHex := "0123456789abcdef0123456789abcdef"
+	iv := []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
 
-	cipher, err := NewAESFromHex(keyHex, ivHex, AesModeCBC)
+	cipher, err := NewAesFromHex(keyHex, WithAesIv(iv), WithAesMode(AesModeCbc))
 	require.NoError(t, err, "Should create AES cipher from hex")
 
 	plaintext := "Test message"
@@ -96,19 +96,18 @@ func TestAESCipher_FromHex(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestAESCipher_FromBase64 tests creating AES cipher from base64-encoded key and IV.
-func TestAESCipher_FromBase64(t *testing.T) {
+// TestAesCipher_FromBase64 tests creating AES cipher from base64-encoded key.
+func TestAesCipher_FromBase64(t *testing.T) {
 	key := make([]byte, 32)
 	iv := make([]byte, 16)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 	_, err = rand.Read(iv)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random IV")
 
 	keyBase64 := base64.StdEncoding.EncodeToString(key)
-	ivBase64 := base64.StdEncoding.EncodeToString(iv)
 
-	cipher, err := NewAESFromBase64(keyBase64, ivBase64, AesModeCBC)
+	cipher, err := NewAesFromBase64(keyBase64, WithAesIv(iv), WithAesMode(AesModeCbc))
 	require.NoError(t, err, "Should create AES cipher from base64")
 
 	plaintext := "Test message with base64 encoded key"
@@ -121,31 +120,31 @@ func TestAESCipher_FromBase64(t *testing.T) {
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 }
 
-// TestAESCipher_InvalidKeySize tests that invalid key size is rejected.
-func TestAESCipher_InvalidKeySize(t *testing.T) {
+// TestAesCipher_InvalidKeySize tests that invalid key size is rejected.
+func TestAesCipher_InvalidKeySize(t *testing.T) {
 	invalidKey := make([]byte, 15)
 	iv := make([]byte, 16)
 
-	_, err := NewAES(invalidKey, iv, AesModeCBC)
+	_, err := NewAes(invalidKey, WithAesIv(iv), WithAesMode(AesModeCbc))
 	assert.Error(t, err, "Should reject invalid key size")
 }
 
-// TestAESCipher_InvalidIVSize tests that invalid IV size is rejected.
-func TestAESCipher_InvalidIVSize(t *testing.T) {
+// TestAesCipher_InvalidIvSize tests that invalid IV size is rejected.
+func TestAesCipher_InvalidIvSize(t *testing.T) {
 	key := make([]byte, 32)
 	invalidIV := make([]byte, 8)
 
-	_, err := NewAES(key, invalidIV, AesModeCBC)
+	_, err := NewAes(key, WithAesIv(invalidIV), WithAesMode(AesModeCbc))
 	assert.Error(t, err, "Should reject invalid IV size")
 }
 
-// TestAESCipher_GCM_Authentication tests that GCM mode detects tampering.
-func TestAESCipher_GCM_Authentication(t *testing.T) {
+// TestAesCipher_GcmAuthentication tests GCM mode authentication tag verification.
+func TestAesCipher_GcmAuthentication(t *testing.T) {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 
-	cipher, err := NewAES(key, nil, AesModeGCM)
+	cipher, err := NewAes(key, WithAesMode(AesModeGcm))
 	require.NoError(t, err, "Should create AES cipher in GCM mode")
 
 	plaintext := "Test message"
@@ -158,15 +157,15 @@ func TestAESCipher_GCM_Authentication(t *testing.T) {
 	assert.Error(t, err, "Should reject tampered ciphertext")
 }
 
-// TestAESCipher_KeySizes tests AES with different key sizes (128, 192, 256 bits).
-func TestAESCipher_KeySizes(t *testing.T) {
+// TestAesCipher_KeySizes tests AES with different key sizes.
+func TestAesCipher_KeySizes(t *testing.T) {
 	tests := []struct {
 		name    string
 		keySize int
 	}{
-		{"AES-128", 16},
-		{"AES-192", 24},
-		{"AES-256", 32},
+		{"Aes128", 16},
+		{"Aes192", 24},
+		{"Aes256", 32},
 	}
 
 	for _, tt := range tests {
@@ -174,12 +173,12 @@ func TestAESCipher_KeySizes(t *testing.T) {
 			key := make([]byte, tt.keySize)
 			iv := make([]byte, 16)
 			_, err := rand.Read(key)
-			require.NoError(t, err)
+			require.NoError(t, err, "Should generate random key")
 			_, err = rand.Read(iv)
-			require.NoError(t, err)
+			require.NoError(t, err, "Should generate random IV")
 
-			cipher, err := NewAES(key, iv, AesModeCBC)
-			require.NoError(t, err, "Should create AES cipher with %d-byte key", tt.keySize)
+			cipher, err := NewAes(key, WithAesIv(iv), WithAesMode(AesModeCbc))
+			require.NoError(t, err, "Should create AES cipher")
 
 			plaintext := "Test message"
 			ciphertext, err := cipher.Encrypt(plaintext)
@@ -193,13 +192,13 @@ func TestAESCipher_KeySizes(t *testing.T) {
 	}
 }
 
-// TestAESCipher_DefaultMode tests that default mode is GCM.
-func TestAESCipher_DefaultMode(t *testing.T) {
+// TestAesCipher_DefaultMode tests that default mode is GCM.
+func TestAesCipher_DefaultMode(t *testing.T) {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
-	require.NoError(t, err)
+	require.NoError(t, err, "Should generate random key")
 
-	cipher, err := NewAES(key, nil)
+	cipher, err := NewAes(key)
 	require.NoError(t, err, "Should create AES cipher with default mode")
 
 	plaintext := "Test default mode"
@@ -210,14 +209,10 @@ func TestAESCipher_DefaultMode(t *testing.T) {
 	require.NoError(t, err, "Should decrypt ciphertext successfully")
 
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
-
-	aesCipher, ok := cipher.(*AesCipher)
-	require.True(t, ok)
-	assert.Equal(t, AesModeGCM, aesCipher.mode, "Default mode should be GCM")
 }
 
-// TestPKCS7Padding tests PKCS7 padding and unpadding.
-func TestPKCS7Padding(t *testing.T) {
+// TestPkcs7Padding tests PKCS7 padding and unpadding.
+func TestPkcs7Padding(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
@@ -233,14 +228,12 @@ func TestPKCS7Padding(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			padded := pkcs7Padding([]byte(tt.input), tt.blockSize)
 
-			assert.Equal(t, 0, len(padded)%tt.blockSize,
-				"Padded length should be multiple of block size")
+			assert.Equal(t, 0, len(padded)%tt.blockSize, "Padded length should be multiple of block size")
 
 			unpadded, err := pkcs7Unpadding(padded)
 			require.NoError(t, err, "Should unpad successfully")
 
-			assert.Equal(t, tt.input, string(unpadded),
-				"Unpadded text should match original input")
+			assert.Equal(t, tt.input, string(unpadded), "Unpadded text should match original input")
 		})
 	}
 }

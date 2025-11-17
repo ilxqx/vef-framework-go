@@ -27,6 +27,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
+	"github.com/ilxqx/vef-framework-go/password"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -206,12 +207,13 @@ func (suite *ApiAuthTestSuite) SetupSuite() {
 		Exec(suite.ctx)
 	require.NoError(suite.T(), err, "Should create test_auth_user table successfully")
 
+	passwordEncoder := password.NewBcryptEncoder()
 	// Hash passwords for test users
-	adminPassword, err := security.HashPassword("admin123")
+	adminPassword, err := passwordEncoder.Encode("admin123")
 	require.NoError(suite.T(), err, "Should hash admin password successfully")
-	editorPassword, err := security.HashPassword("editor123")
+	editorPassword, err := passwordEncoder.Encode("editor123")
 	require.NoError(suite.T(), err, "Should hash editor password successfully")
-	viewerPassword, err := security.HashPassword("viewer123")
+	viewerPassword, err := passwordEncoder.Encode("viewer123")
 	require.NoError(suite.T(), err, "Should hash viewer password successfully")
 
 	// Create test users

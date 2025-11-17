@@ -25,6 +25,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
+	"github.com/ilxqx/vef-framework-go/password"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -144,7 +145,7 @@ func (suite *AuthResourceTestSuite) SetupTest() {
 
 func (suite *AuthResourceTestSuite) setupTestApp() {
 	// Hash the password for test user
-	hashedPassword, err := security.HashPassword("password123")
+	hashedPassword, err := password.NewBcryptEncoder().Encode("password123")
 	suite.Require().NoError(err)
 
 	suite.app, suite.stop = apptest.NewTestApp(

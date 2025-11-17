@@ -5,6 +5,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
+	"github.com/ilxqx/vef-framework-go/password"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -16,14 +17,17 @@ const (
 // PasswordAuthenticator verifies username/password credentials with optional decryption support
 // for scenarios where clients encrypt passwords before transmission.
 type PasswordAuthenticator struct {
-	loader    security.UserLoader
-	decryptor security.PasswordDecryptor
+	loader  security.UserLoader
+	encoder password.Encoder
 }
 
-func NewPasswordAuthenticator(loader security.UserLoader, decryptor security.PasswordDecryptor) security.Authenticator {
+func NewPasswordAuthenticator(
+	loader security.UserLoader,
+	encoder password.Encoder,
+) security.Authenticator {
 	return &PasswordAuthenticator{
-		loader:    loader,
-		decryptor: decryptor,
+		loader:  loader,
+		encoder: encoder,
 	}
 }
 
@@ -48,17 +52,6 @@ func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication
 		return nil, result.Err(i18n.T("password_required"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
-	if p.decryptor != nil {
-		plaintextPassword, err := p.decryptor.Decrypt(password)
-		if err != nil {
-			logger.Errorf("Failed to decrypt password for principal %q: %v", username, err)
-
-			return nil, result.Err(i18n.T("invalid_credentials"), result.WithCode(result.ErrCodeCredentialsInvalid))
-		}
-
-		password = plaintextPassword
-	}
-
 	principal, passwordHash, err := p.loader.LoadByUsername(ctx, username)
 	if err != nil {
 		if result.IsRecordNotFound(err) {
@@ -74,7 +67,7 @@ func (p *PasswordAuthenticator) Authenticate(ctx context.Context, authentication
 		return nil, result.Err(i18n.T("invalid_credentials"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 
-	if !security.VerifyPassword(password, passwordHash) {
+	if !p.encoder.Matches(password, passwordHash) {
 		return nil, result.Err(i18n.T("invalid_credentials"), result.WithCode(result.ErrCodeCredentialsInvalid))
 	}
 

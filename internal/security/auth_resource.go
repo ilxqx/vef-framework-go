@@ -26,13 +26,12 @@ func NewAuthResource(authManager security.AuthManager, tokenGenerator security.T
 				api.Spec{
 					Action: "login",
 					Public: true,
+					Limit:  loginRateLimit,
 				},
 				api.Spec{
 					Action: "refresh",
 					Public: true,
-					Limit: api.RateLimit{
-						Max: 1,
-					},
+					Limit:  refreshRateLimit,
 				},
 				api.Spec{
 					Action: "logout",

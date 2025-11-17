@@ -7,6 +7,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/password"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
@@ -22,6 +23,18 @@ var Module = fx.Module(
 				}
 
 				return security.NewCachedRolePermissionsLoader(loader, bus)
+			},
+			fx.ParamTags(`optional:"true"`),
+		),
+	),
+	fx.Decorate(
+		fx.Annotate(
+			func(encoder password.Encoder) password.Encoder {
+				if encoder == nil {
+					return password.NewBcryptEncoder()
+				}
+
+				return encoder
 			},
 			fx.ParamTags(`optional:"true"`),
 		),

@@ -11,118 +11,91 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-// AesMode defines the AES encryption mode.
 type AesMode string
 
 const (
-	// AesModeCBC uses AES-CBC mode with PKCS7 padding.
-	AesModeCBC AesMode = "CBC"
-	// AesModeGCM uses AES-GCM mode (authenticated encryption).
-	AesModeGCM AesMode = "GCM"
+	AesModeCbc AesMode = "CBC"
+	AesModeGcm AesMode = "GCM"
 )
 
-// AesCipher implements Cipher interface using AES encryption.
-type AesCipher struct {
+type aesCipher struct {
 	key  []byte
-	iv   []byte // IV for CBC mode, not used in GCM mode
+	iv   []byte
 	mode AesMode
 }
 
-// NewAES creates a new AES cipher with the given key, IV, and optional mode.
-// For CBC mode: key must be 16, 24, or 32 bytes (AES-128, AES-192, AES-256), IV must be 16 bytes.
-// For GCM mode: key must be 16, 24, or 32 bytes, IV is not used (GCM generates random nonce).
-// If mode is not specified, defaults to AesModeGCM.
-func NewAES(key, iv []byte, mode ...AesMode) (Cipher, error) {
+type AesOption func(*aesCipher)
+
+func WithAesIv(iv []byte) AesOption {
+	return func(c *aesCipher) {
+		c.iv = iv
+	}
+}
+
+func WithAesMode(mode AesMode) AesOption {
+	return func(c *aesCipher) {
+		c.mode = mode
+	}
+}
+
+func NewAes(key []byte, opts ...AesOption) (Cipher, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil, fmt.Errorf("%w: %d bytes (must be 16, 24, or 32)", ErrInvalidAESKeySize, len(key))
+		return nil, fmt.Errorf("%w: %d bytes (must be 16, 24, or 32)", ErrInvalidAesKeySize, len(key))
 	}
 
-	selectedMode := AesModeGCM
-	if len(mode) > 0 {
-		selectedMode = mode[0]
+	cipher := &aesCipher{
+		key:  key,
+		mode: AesModeGcm,
 	}
 
-	if selectedMode == AesModeCBC {
-		if len(iv) != aes.BlockSize {
-			return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidIVSizeCBC, len(iv), aes.BlockSize)
+	for _, opt := range opts {
+		opt(cipher)
+	}
+
+	if cipher.mode == AesModeCbc {
+		if len(cipher.iv) != aes.BlockSize {
+			return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidIvSizeCbc, len(cipher.iv), aes.BlockSize)
 		}
 	}
 
-	return &AesCipher{
-		key:  key,
-		iv:   iv,
-		mode: selectedMode,
-	}, nil
+	return cipher, nil
 }
 
-// NewAESFromHex creates a new AES cipher from hex-encoded key and IV strings.
-// If mode is not specified, defaults to AesModeGCM.
-func NewAESFromHex(keyHex, ivHex string, mode ...AesMode) (Cipher, error) {
+func NewAesFromHex(keyHex string, opts ...AesOption) (Cipher, error) {
 	key, err := encoding.FromHex(keyHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from hex: %w", err)
 	}
 
-	selectedMode := AesModeGCM
-	if len(mode) > 0 {
-		selectedMode = mode[0]
-	}
-
-	var iv []byte
-	if selectedMode == AesModeCBC {
-		iv, err = encoding.FromHex(ivHex)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode IV from hex: %w", err)
-		}
-	}
-
-	return NewAES(key, iv, selectedMode)
+	return NewAes(key, opts...)
 }
 
-// NewAESFromBase64 creates a new AES cipher from base64-encoded key and IV strings.
-// If mode is not specified, defaults to AesModeGCM.
-func NewAESFromBase64(keyBase64, ivBase64 string, mode ...AesMode) (Cipher, error) {
+func NewAesFromBase64(keyBase64 string, opts ...AesOption) (Cipher, error) {
 	key, err := encoding.FromBase64(keyBase64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from base64: %w", err)
 	}
 
-	selectedMode := AesModeGCM
-	if len(mode) > 0 {
-		selectedMode = mode[0]
-	}
-
-	var iv []byte
-	if selectedMode == AesModeCBC {
-		iv, err = encoding.FromBase64(ivBase64)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode IV from base64: %w", err)
-		}
-	}
-
-	return NewAES(key, iv, selectedMode)
+	return NewAes(key, opts...)
 }
 
-// Encrypt encrypts the plaintext using AES and returns base64-encoded ciphertext.
-func (a *AesCipher) Encrypt(plaintext string) (string, error) {
-	if a.mode == AesModeGCM {
-		return a.encryptGCM(plaintext)
+func (a *aesCipher) Encrypt(plaintext string) (string, error) {
+	if a.mode == AesModeGcm {
+		return a.encryptGcm(plaintext)
 	}
 
-	return a.encryptCBC(plaintext)
+	return a.encryptCbc(plaintext)
 }
 
-// Decrypt decrypts the base64-encoded ciphertext using AES and returns plaintext.
-func (a *AesCipher) Decrypt(ciphertext string) (string, error) {
-	if a.mode == AesModeGCM {
-		return a.decryptGCM(ciphertext)
+func (a *aesCipher) Decrypt(ciphertext string) (string, error) {
+	if a.mode == AesModeGcm {
+		return a.decryptGcm(ciphertext)
 	}
 
-	return a.decryptCBC(ciphertext)
+	return a.decryptCbc(ciphertext)
 }
 
-// encryptCBC encrypts plaintext using AES-CBC mode with PKCS7 padding.
-func (a *AesCipher) encryptCBC(plaintext string) (string, error) {
+func (a *aesCipher) encryptCbc(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -137,8 +110,7 @@ func (a *AesCipher) encryptCBC(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// decryptCBC decrypts ciphertext using AES-CBC mode and removes PKCS7 padding.
-func (a *AesCipher) decryptCBC(ciphertext string) (string, error) {
+func (a *aesCipher) decryptCbc(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -165,8 +137,7 @@ func (a *AesCipher) decryptCBC(ciphertext string) (string, error) {
 	return string(unpaddedData), nil
 }
 
-// encryptGCM encrypts plaintext using AES-GCM mode (authenticated encryption).
-func (a *AesCipher) encryptGCM(plaintext string) (string, error) {
+func (a *aesCipher) encryptGcm(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -187,8 +158,7 @@ func (a *AesCipher) encryptGCM(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-// decryptGCM decrypts ciphertext using AES-GCM mode.
-func (a *AesCipher) decryptGCM(ciphertext string) (string, error) {
+func (a *aesCipher) decryptGcm(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -219,7 +189,6 @@ func (a *AesCipher) decryptGCM(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// pkcs7Padding adds PKCS7 padding to the data.
 func pkcs7Padding(data []byte, blockSize int) []byte {
 	padding := blockSize - len(data)%blockSize
 
@@ -231,7 +200,6 @@ func pkcs7Padding(data []byte, blockSize int) []byte {
 	return append(data, padtext...)
 }
 
-// pkcs7Unpadding removes PKCS7 padding from the data.
 func pkcs7Unpadding(data []byte) ([]byte, error) {
 	length := len(data)
 	if length == 0 {

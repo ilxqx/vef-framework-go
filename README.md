@@ -12,6 +12,10 @@
 
 A modern Go web development framework built on Uber FX dependency injection and Fiber, designed for rapid enterprise application development with opinionated conventions and comprehensive built-in features.
 
+## ⚠️ Development Status & Stability Notice
+
+> **Important**: VEF Framework Go is under active development and has not yet reached a stable 1.0 release. While the framework is currently in a functionally stable state, breaking changes may occur as we refine best practices and improve conventions. We strive to minimize disruption, but architectural improvements sometimes require non-backward-compatible updates. Please exercise caution when using this framework in production environments and be prepared to handle migration efforts for major version updates.
+
 ## Features
 
 - **Single-Endpoint Api Architecture** - All Api requests through `POST /api` with unified request/response format
