@@ -58,15 +58,16 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 			XFrameOptions:             "sameorigin",
 			ReferrerPolicy:            "no-referrer",
 			XSSProtection:             "1; mode=block",
-			CrossOriginEmbedderPolicy: "require-corp",
-			CrossOriginOpenerPolicy:   "same-origin-allow-popups",
-			CrossOriginResourcePolicy: "same-origin",
+			CrossOriginEmbedderPolicy: "unsafe-none",
+			CrossOriginOpenerPolicy:   "unsafe-none",
+			CrossOriginResourcePolicy: "cross-origin",
+			OriginAgentCluster:        "?0",
 			ContentSecurityPolicy:     "default-src 'self'; img-src * data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
 		}),
 	)
 
 	group.Get("/", static.New("index.html", static.Config{
-		FS:            config.FS,
+		FS:            config.Fs,
 		Browse:        false,
 		Download:      false,
 		CacheDuration: 30 * time.Second,
@@ -75,7 +76,7 @@ func applySpa(router fiber.Router, config *middleware.SpaConfig) {
 	}))
 
 	group.Get("/static/*", static.New(constants.Empty, static.Config{
-		FS:            config.FS,
+		FS:            config.Fs,
 		Browse:        false,
 		Download:      false,
 		CacheDuration: 10 * time.Minute,
