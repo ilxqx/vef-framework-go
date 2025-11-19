@@ -28,6 +28,12 @@ type HostSummary struct {
 	Os string `json:"os"`
 	// Platform name (e.g., "ubuntu", "centos", "darwin")
 	Platform string `json:"platform"`
+	// Platform version string
+	PlatformVersion string `json:"platformVersion"`
+	// Kernel version string
+	KernelVersion string `json:"kernelVersion"`
+	// Kernel architecture (e.g., "x86_64", "arm64")
+	KernelArch string `json:"kernelArch"`
 	// System uptime in seconds
 	UpTime uint64 `json:"upTime"`
 }

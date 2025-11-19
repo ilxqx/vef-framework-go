@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -51,10 +52,13 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 	// Host info
 	if hostInfo, err := s.Host(ctx); err == nil {
 		overview.Host = &monitor.HostSummary{
-			Hostname: hostInfo.Hostname,
-			Os:       hostInfo.Os,
-			Platform: hostInfo.Platform,
-			UpTime:   hostInfo.UpTime,
+			Hostname:        hostInfo.Hostname,
+			Os:              hostInfo.Os,
+			Platform:        hostInfo.Platform,
+			PlatformVersion: hostInfo.PlatformVersion,
+			KernelVersion:   hostInfo.KernelVersion,
+			KernelArch:      hostInfo.KernelArch,
+			UpTime:          hostInfo.UpTime,
 		}
 	}
 
@@ -81,9 +85,25 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 		var (
 			total, used uint64
 			usedPercent float64
+			seenDevices = make(map[string]bool)
 		)
 
 		for _, part := range diskInfo.Partitions {
+			// Skip special system mount points (APFS snapshots, recovery volumes, etc.)
+			if shouldSkipMountPoint(part.MountPoint) {
+				continue
+			}
+
+			// Deduplicate by container to avoid counting APFS volumes multiple times
+			// On macOS, multiple APFS volumes (disk3s1, disk3s5, etc.) share the same container (disk3)
+			if part.Device != constants.Empty {
+				container := getDeviceContainer(part.Device)
+				if seenDevices[container] {
+					continue
+				}
+				seenDevices[container] = true
+			}
+
 			total += part.Total
 			used += part.Used
 		}
@@ -138,6 +158,69 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 	overview.Build = s.BuildInfo()
 
 	return &overview, nil
+}
+
+// shouldSkipMountPoint checks if a mount point should be excluded from disk stats.
+// This filters out special system volumes, snapshots, and temporary mounts.
+func shouldSkipMountPoint(mountPoint string) bool {
+	// Skip empty mount points
+	if mountPoint == constants.Empty {
+		return true
+	}
+
+	// macOS: Skip APFS snapshots and special system volumes
+	// These are typically under /System/Volumes or have .timemachine in the path
+	if strings.HasPrefix(mountPoint, "/System/Volumes/") ||
+		strings.Contains(mountPoint, ".timemachine") ||
+		strings.HasPrefix(mountPoint, "/Volumes/Recovery") ||
+		strings.HasPrefix(mountPoint, "/private/var/vm") {
+		return true
+	}
+
+	// Linux: Skip special mount points
+	if strings.HasPrefix(mountPoint, "/snap/") || // Snap packages
+		strings.HasPrefix(mountPoint, "/run/") || // Runtime data
+		strings.HasPrefix(mountPoint, "/dev/") || // Device files
+		strings.HasPrefix(mountPoint, "/sys/") || // System files
+		strings.HasPrefix(mountPoint, "/proc/") { // Process files
+		return true
+	}
+
+	// Skip virtual/network mount points (common across platforms)
+	if strings.Contains(mountPoint, "OrbStack") || // OrbStack virtual filesystem
+		strings.HasPrefix(mountPoint, "/Library/Developer/CoreSimulator") { // iOS Simulator
+		return true
+	}
+
+	return false
+}
+
+// getDeviceContainer extracts the base container device name from an APFS volume device.
+// For example: "disk3s1s1" -> "disk3", "disk3s5" -> "disk3", "disk5s1" -> "disk5"
+// This helps deduplicate APFS volumes that share the same physical container.
+func getDeviceContainer(device string) string {
+	if device == constants.Empty {
+		return constants.Empty
+	}
+
+	// Extract the base disk name (e.g., "disk3" from "disk3s1s1" or "disk3s5")
+	// APFS containers typically follow the pattern: disk<N> or disk<N>s<M>
+	// We want to extract just "disk<N>" to identify the container
+	var containerName string
+	for i, ch := range device {
+		if ch == 's' && i > 0 {
+			// Found 's', take everything before it
+			containerName = device[:i]
+			break
+		}
+	}
+
+	// If no 's' found, the entire device name is the container
+	if containerName == constants.Empty {
+		containerName = device
+	}
+
+	return containerName
 }
 
 // Cpu returns detailed cpu information including usage percentages.
