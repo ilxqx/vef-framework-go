@@ -101,6 +101,7 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 				if seenDevices[container] {
 					continue
 				}
+
 				seenDevices[container] = true
 			}
 
@@ -174,6 +175,7 @@ func shouldSkipMountPoint(mountPoint string) bool {
 		strings.Contains(mountPoint, ".timemachine") ||
 		strings.HasPrefix(mountPoint, "/Volumes/Recovery") ||
 		strings.HasPrefix(mountPoint, "/private/var/vm") {
+
 		return true
 	}
 
@@ -183,12 +185,14 @@ func shouldSkipMountPoint(mountPoint string) bool {
 		strings.HasPrefix(mountPoint, "/dev/") || // Device files
 		strings.HasPrefix(mountPoint, "/sys/") || // System files
 		strings.HasPrefix(mountPoint, "/proc/") { // Process files
+
 		return true
 	}
 
 	// Skip virtual/network mount points (common across platforms)
 	if strings.Contains(mountPoint, "OrbStack") || // OrbStack virtual filesystem
 		strings.HasPrefix(mountPoint, "/Library/Developer/CoreSimulator") { // iOS Simulator
+
 		return true
 	}
 
@@ -211,6 +215,7 @@ func getDeviceContainer(device string) string {
 		if ch == 's' && i > 0 {
 			// Found 's', take everything before it
 			containerName = device[:i]
+
 			break
 		}
 	}
