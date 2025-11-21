@@ -84,7 +84,7 @@ func (b *mergeWhenBuilder) buildWhenExpr() string {
 
 		whenExpr, err := b.parent.eb.
 			Expr("? AND ?", bun.Safe(b.when), condition).
-			AppendQuery(b.parent.query.DB().Formatter(), nil)
+			AppendQuery(b.parent.query.DB().QueryGen(), nil)
 		if err != nil {
 			panic(fmt.Errorf("merge: failed to build WHEN condition expression: %w", err))
 		}

@@ -1,37 +1,23 @@
 package orm
 
-import "github.com/ilxqx/vef-framework-go/constants"
+import (
+	"strings"
 
-// JoinType specifies the type of JOIN operation to perform in a RelationSpec.
+	"github.com/ilxqx/vef-framework-go/constants"
+)
+
+// JoinType specifies the type of JOIN operation.
 type JoinType int
 
 const (
-	// JoinDefault uses the default JOIN type (LEFT JOIN).
-	// When JoinType is not explicitly set or set to JoinDefault, a LEFT JOIN will be used.
 	JoinDefault JoinType = iota
-	// JoinInner performs an INNER JOIN.
-	// Only returns rows when there is a match in both tables.
 	JoinInner
-	// JoinLeft performs a LEFT JOIN (LEFT OUTER JOIN).
-	// Returns all rows from the left table, and matched rows from the right table.
-	// NULL values are returned for unmatched rows from the right table.
 	JoinLeft
-	// JoinRight performs a RIGHT JOIN (RIGHT OUTER JOIN).
-	// Returns all rows from the right table, and matched rows from the left table.
-	// NULL values are returned for unmatched rows from the left table.
 	JoinRight
-	// JoinFull performs a FULL OUTER JOIN.
-	// Returns all rows from both tables, with NULL values for unmatched rows.
-	// This is equivalent to the union of LEFT JOIN and RIGHT JOIN results.
-	// Note: Not supported by SQLite.
-	JoinFull
-	// JoinCross performs a CROSS JOIN (Cartesian product).
-	// Returns all possible combinations of rows from both tables.
-	// No ON condition is required for CROSS JOIN.
+	JoinFull // Note: Not supported by SQLite
 	JoinCross
 )
 
-// String returns the SQL snippet for the given JoinType.
 func (j JoinType) String() string {
 	switch j {
 	case JoinLeft, JoinDefault:
@@ -50,31 +36,48 @@ func (j JoinType) String() string {
 }
 
 // FuzzyKind represents the wildcard placement for LIKE patterns.
-// 0: startsWith (value%), 1: endsWith (%value), 2: contains (%value%)
 type FuzzyKind uint8
 
 const (
-	// FuzzyStarts builds a pattern for starts-with (value%).
-	FuzzyStarts FuzzyKind = 0
-	// FuzzyEnds builds a pattern for ends-with (%value).
-	FuzzyEnds FuzzyKind = 1
-	// FuzzyContains builds a pattern for contains (%value%).
-	FuzzyContains FuzzyKind = 2
+	FuzzyStarts   FuzzyKind = 0 // value%
+	FuzzyEnds     FuzzyKind = 1 // %value
+	FuzzyContains FuzzyKind = 2 // %value%
 )
+
+// BuildPattern constructs a LIKE pattern string based on the FuzzyKind.
+// It efficiently builds the pattern using strings.Builder with pre-allocated capacity.
+func (k FuzzyKind) BuildPattern(value string) string {
+	var sb strings.Builder
+	if k == FuzzyStarts {
+		sb.Grow(len(value) + 1)
+	} else {
+		sb.Grow(len(value) + int(k))
+	}
+
+	switch k {
+	case FuzzyEnds, FuzzyContains:
+		_ = sb.WriteByte(constants.BytePercent)
+	}
+
+	_, _ = sb.WriteString(value)
+
+	switch k {
+	case FuzzyStarts, FuzzyContains:
+		_ = sb.WriteByte(constants.BytePercent)
+	}
+
+	return sb.String()
+}
 
 // NullsMode controls how NULLs are treated in window functions.
 type NullsMode int
 
 const (
-	// NullsDefault leaves NULL handling to the database default behavior.
 	NullsDefault NullsMode = iota
-	// NullsRespect uses RESPECT NULLS.
 	NullsRespect
-	// NullsIgnore uses IGNORE NULLS.
 	NullsIgnore
 )
 
-// String returns the SQL snippet for the given NullsMode.
 func (n NullsMode) String() string {
 	switch n {
 	case NullsRespect:
@@ -90,15 +93,11 @@ func (n NullsMode) String() string {
 type FromDirection int
 
 const (
-	// FromDefault leaves direction unspecified.
 	FromDefault FromDirection = iota
-	// FromFirst emits FROM FIRST.
 	FromFirst
-	// FromLast emits FROM LAST.
 	FromLast
 )
 
-// String returns the SQL snippet for the given FromDirection.
 func (f FromDirection) String() string {
 	switch f {
 	case FromFirst:
@@ -110,21 +109,16 @@ func (f FromDirection) String() string {
 	}
 }
 
-// FrameType specifies the window frame unit (ROWS, RANGE, GROUPS).
+// FrameType specifies the window frame unit.
 type FrameType int
 
 const (
-	// FrameDefault uses database default frame type.
 	FrameDefault FrameType = iota
-	// FrameRows emits ROWS.
 	FrameRows
-	// FrameRange emits RANGE.
 	FrameRange
-	// FrameGroups emits GROUPS.
 	FrameGroups
 )
 
-// String returns the SQL snippet for the given FrameType.
 func (f FrameType) String() string {
 	switch f {
 	case FrameRows:
@@ -142,21 +136,14 @@ func (f FrameType) String() string {
 type FrameBoundKind int
 
 const (
-	// FrameBoundNone indicates no bound.
 	FrameBoundNone FrameBoundKind = iota
-	// FrameBoundUnboundedPreceding emits UNBOUNDED PRECEDING.
 	FrameBoundUnboundedPreceding
-	// FrameBoundUnboundedFollowing emits UNBOUNDED FOLLOWING.
 	FrameBoundUnboundedFollowing
-	// FrameBoundCurrentRow emits CURRENT ROW.
 	FrameBoundCurrentRow
-	// FrameBoundPreceding emits PRECEDING.
 	FrameBoundPreceding
-	// FrameBoundFollowing emits FOLLOWING.
 	FrameBoundFollowing
 )
 
-// String returns the SQL snippet for the given FrameBoundKind.
 func (f FrameBoundKind) String() string {
 	switch f {
 	case FrameBoundUnboundedPreceding:
@@ -174,19 +161,15 @@ func (f FrameBoundKind) String() string {
 	}
 }
 
-// StatisticalMode selects the statistical variant for aggregates (POP vs SAMP).
+// StatisticalMode selects the statistical variant for aggregates.
 type StatisticalMode int
 
 const (
-	// StatisticalDefault leaves mode unspecified.
-	StatisticalDefault StatisticalMode = iota
-	// StatisticalPopulation emits POP (population).
-	StatisticalPopulation
-	// StatisticalSample emits SAMP (sample).
-	StatisticalSample
+	StatisticalDefault    StatisticalMode = iota
+	StatisticalPopulation                 // POP
+	StatisticalSample                     // SAMP
 )
 
-// String returns the SQL snippet for the given StatisticalMode.
 func (s StatisticalMode) String() string {
 	switch s {
 	case StatisticalPopulation:
@@ -202,13 +185,10 @@ func (s StatisticalMode) String() string {
 type ConflictAction int
 
 const (
-	// ConflictDoNothing emits DO NOTHING.
 	ConflictDoNothing ConflictAction = iota
-	// ConflictDoUpdate emits DO UPDATE.
 	ConflictDoUpdate
 )
 
-// String returns the SQL snippet for the given ConflictAction.
 func (c ConflictAction) String() string {
 	switch c {
 	case ConflictDoNothing:
@@ -217,5 +197,86 @@ func (c ConflictAction) String() string {
 		return "DO UPDATE"
 	default:
 		return constants.Empty
+	}
+}
+
+// DateTimeUnit represents date and time interval units for date arithmetic operations.
+type DateTimeUnit int
+
+const (
+	UnitYear DateTimeUnit = iota
+	UnitMonth
+	UnitDay
+	UnitHour
+	UnitMinute
+	UnitSecond
+)
+
+func (u DateTimeUnit) String() string {
+	switch u {
+	case UnitYear:
+		return "YEAR"
+	case UnitMonth:
+		return "MONTH"
+	case UnitDay:
+		return "DAY"
+	case UnitHour:
+		return "HOUR"
+	case UnitMinute:
+		return "MINUTE"
+	case UnitSecond:
+		return "SECOND"
+	default:
+		return "DAY"
+	}
+}
+
+// ForPostgres returns the PostgreSQL interval unit string (YEAR, MONTH, DAY, etc.).
+func (u DateTimeUnit) ForPostgres() string {
+	return u.String()
+}
+
+// ForMySQL returns the MySQL interval unit string (YEAR, MONTH, DAY, etc.).
+func (u DateTimeUnit) ForMySQL() string {
+	return u.String()
+}
+
+// ForSQLite returns the SQLite datetime modifier string (years, months, days, etc.).
+func (u DateTimeUnit) ForSQLite() string {
+	switch u {
+	case UnitYear:
+		return "years"
+	case UnitMonth:
+		return "months"
+	case UnitDay:
+		return "days"
+	case UnitHour:
+		return "hours"
+	case UnitMinute:
+		return "minutes"
+	case UnitSecond:
+		return "seconds"
+	default:
+		return "days"
+	}
+}
+
+// ForDateTrunc returns the lowercase string for DateTrunc precision parameter.
+func (u DateTimeUnit) ForDateTrunc() string {
+	switch u {
+	case UnitYear:
+		return "year"
+	case UnitMonth:
+		return "month"
+	case UnitDay:
+		return "day"
+	case UnitHour:
+		return "hour"
+	case UnitMinute:
+		return "minute"
+	case UnitSecond:
+		return "second"
+	default:
+		return "day"
 	}
 }

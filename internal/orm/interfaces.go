@@ -354,6 +354,18 @@ type ExprBuilder interface {
 	LessThan(left, right any) schema.QueryAppender
 	// LessThanOrEqual creates a less-than-or-equal comparison expression (left <= right).
 	LessThanOrEqual(left, right any) schema.QueryAppender
+	// Between creates a between comparison expression (expr BETWEEN lower AND upper).
+	Between(expr, lower, upper any) schema.QueryAppender
+	// NotBetween creates a not between comparison expression (expr NOT BETWEEN lower AND upper).
+	NotBetween(expr, lower, upper any) schema.QueryAppender
+	// In creates an IN comparison expression (expr IN (values...)).
+	In(expr any, values ...any) schema.QueryAppender
+	// NotIn creates a NOT IN comparison expression (expr NOT IN (values...)).
+	NotIn(expr any, values ...any) schema.QueryAppender
+	// IsTrue checks if a boolean expression is TRUE.
+	IsTrue(expr any) schema.QueryAppender
+	// IsFalse checks if a boolean expression is FALSE.
+	IsFalse(expr any) schema.QueryAppender
 
 	// ========== Expression Building ==========
 
@@ -362,7 +374,7 @@ type ExprBuilder interface {
 	// Exprs creates an expression builder for complex SQL logic.
 	Exprs(exprs ...any) schema.QueryAppender
 	// ExprsWithSep creates an expression builder for complex SQL logic with a separator.
-	ExprsWithSep(separator string, exprs ...any) schema.QueryAppender
+	ExprsWithSep(separator any, exprs ...any) schema.QueryAppender
 	// ExprByDialect creates a cross-database compatible expression.
 	// It selects the appropriate expression builder based on the current database dialect.
 	ExprByDialect(exprs DialectExprs) schema.QueryAppender
@@ -430,8 +442,8 @@ type ExprBuilder interface {
 	PercentRank(func(PercentRankBuilder)) schema.QueryAppender
 	// CumeDist builds a CUME_DIST window function expression.
 	CumeDist(func(CumeDistBuilder)) schema.QueryAppender
-	// Ntile builds an NTILE window function expression.
-	Ntile(func(NtileBuilder)) schema.QueryAppender
+	// NTile builds an NTILE window function expression.
+	NTile(func(NTileBuilder)) schema.QueryAppender
 	// Lag builds a LAG window function expression.
 	Lag(func(LagBuilder)) schema.QueryAppender
 	// Lead builds a LEAD window function expression.
@@ -478,10 +490,10 @@ type ExprBuilder interface {
 	// Concat concatenates strings.
 	Concat(args ...any) schema.QueryAppender
 	// ConcatWithSep concatenates strings with a separator.
-	ConcatWithSep(separator string, args ...any) schema.QueryAppender
+	ConcatWithSep(separator any, args ...any) schema.QueryAppender
 	// SubString extracts a substring from a string.
 	// start: starting position (1-based), length: optional length
-	SubString(expr any, start int, length ...int) schema.QueryAppender
+	SubString(expr, start any, length ...any) schema.QueryAppender
 	// Upper converts string to uppercase.
 	Upper(expr any) schema.QueryAppender
 	// Lower converts string to lowercase.
@@ -499,13 +511,25 @@ type ExprBuilder interface {
 	// Position finds the position of substring in string (1-based, 0 if not found).
 	Position(substring, str any) schema.QueryAppender
 	// Left returns the leftmost n characters.
-	Left(expr any, length int) schema.QueryAppender
+	Left(expr, length any) schema.QueryAppender
 	// Right returns the rightmost n characters.
-	Right(expr any, length int) schema.QueryAppender
+	Right(expr, length any) schema.QueryAppender
 	// Repeat repeats a string n times.
-	Repeat(expr any, count int) schema.QueryAppender
+	Repeat(expr, count any) schema.QueryAppender
 	// Replace replaces all occurrences of substring with replacement.
 	Replace(expr, search, replacement any) schema.QueryAppender
+	// Contains checks if a string contains a substring (case-sensitive).
+	Contains(expr, substr any) schema.QueryAppender
+	// StartsWith checks if a string starts with a prefix (case-sensitive).
+	StartsWith(expr, prefix any) schema.QueryAppender
+	// EndsWith checks if a string ends with a suffix (case-sensitive).
+	EndsWith(expr, suffix any) schema.QueryAppender
+	// ContainsIgnoreCase checks if a string contains a substring (case-insensitive).
+	ContainsIgnoreCase(expr, substr any) schema.QueryAppender
+	// StartsWithIgnoreCase checks if a string starts with a prefix (case-insensitive).
+	StartsWithIgnoreCase(expr, prefix any) schema.QueryAppender
+	// EndsWithIgnoreCase checks if a string ends with a suffix (case-insensitive).
+	EndsWithIgnoreCase(expr, suffix any) schema.QueryAppender
 	// Reverse reverses a string.
 	Reverse(expr any) schema.QueryAppender
 
@@ -532,17 +556,13 @@ type ExprBuilder interface {
 	// ExtractSecond extracts the second from a timestamp.
 	ExtractSecond(expr any) schema.QueryAppender
 	// DateTrunc truncates date/timestamp to specified precision.
-	// precision: 'year', 'month', 'day', 'hour', 'minute', 'second'
-	DateTrunc(precision string, expr any) schema.QueryAppender
+	DateTrunc(unit DateTimeUnit, expr any) schema.QueryAppender
 	// DateAdd adds interval to date/timestamp.
-	// unit: 'year', 'month', 'day', 'hour', 'minute', 'second'
-	DateAdd(expr any, interval int, unit string) schema.QueryAppender
+	DateAdd(expr, interval any, unit DateTimeUnit) schema.QueryAppender
 	// DateSubtract subtracts interval from date/timestamp.
-	// unit: 'year', 'month', 'day', 'hour', 'minute', 'second'
-	DateSubtract(expr any, interval int, unit string) schema.QueryAppender
+	DateSubtract(expr, interval any, unit DateTimeUnit) schema.QueryAppender
 	// DateDiff returns the difference between two dates in specified unit.
-	// unit: 'year', 'month', 'day', 'hour', 'minute', 'second'
-	DateDiff(start, end any, unit string) schema.QueryAppender
+	DateDiff(start, end any, unit DateTimeUnit) schema.QueryAppender
 	// Age returns the age (interval) between two timestamps.
 	Age(start, end any) schema.QueryAppender
 
@@ -555,9 +575,9 @@ type ExprBuilder interface {
 	// Floor returns the largest integer less than or equal to the value.
 	Floor(expr any) schema.QueryAppender
 	// Round rounds to the nearest integer or specified decimal places.
-	Round(expr any, precision ...int) schema.QueryAppender
+	Round(expr any, precision ...any) schema.QueryAppender
 	// Trunc truncates to integer or specified decimal places.
-	Trunc(expr any, precision ...int) schema.QueryAppender
+	Trunc(expr any, precision ...any) schema.QueryAppender
 	// Power returns base raised to the power of exponent.
 	Power(base, exponent any) schema.QueryAppender
 	// Sqrt returns the square root.
@@ -609,24 +629,24 @@ type ExprBuilder interface {
 	// ToInteger converts expression to integer.
 	ToInteger(expr any) schema.QueryAppender
 	// ToDecimal converts expression to decimal with optional precision and scale.
-	ToDecimal(expr any, precision ...int) schema.QueryAppender
+	ToDecimal(expr any, precision ...any) schema.QueryAppender
 	// ToFloat converts expression to float.
 	ToFloat(expr any) schema.QueryAppender
 	// ToBool converts expression to boolean.
 	ToBool(expr any) schema.QueryAppender
 	// ToDate converts expression to date.
-	ToDate(expr any, format ...string) schema.QueryAppender
+	ToDate(expr any, format ...any) schema.QueryAppender
 	// ToTime converts expression to time.
-	ToTime(expr any, format ...string) schema.QueryAppender
+	ToTime(expr any, format ...any) schema.QueryAppender
 	// ToTimestamp converts expression to timestamp.
-	ToTimestamp(expr any, format ...string) schema.QueryAppender
+	ToTimestamp(expr any, format ...any) schema.QueryAppender
 	// ToJson converts expression to JSON.
 	ToJson(expr any) schema.QueryAppender
 
 	// ========== JSON Functions ==========
 
 	// JsonExtract extracts value from JSON at specified path.
-	JsonExtract(json any, path string) schema.QueryAppender
+	JsonExtract(json, path any) schema.QueryAppender
 	// JsonUnquote removes quotes from JSON string.
 	JsonUnquote(expr any) schema.QueryAppender
 	// JsonArray creates a JSON array from arguments.
@@ -636,23 +656,23 @@ type ExprBuilder interface {
 	// JsonContains checks if JSON contains a value.
 	JsonContains(json, value any) schema.QueryAppender
 	// JsonContainsPath checks if JSON contains a path.
-	JsonContainsPath(json any, path string) schema.QueryAppender
+	JsonContainsPath(json, path any) schema.QueryAppender
 	// JsonKeys returns the keys of a JSON object.
-	JsonKeys(json any, path ...string) schema.QueryAppender
+	JsonKeys(json any, path ...any) schema.QueryAppender
 	// JsonLength returns the length of a JSON array or object.
-	JsonLength(json any, path ...string) schema.QueryAppender
+	JsonLength(json any, path ...any) schema.QueryAppender
 	// JsonType returns the type of JSON value.
-	JsonType(json any, path ...string) schema.QueryAppender
+	JsonType(json any, path ...any) schema.QueryAppender
 	// JsonValid checks if a string is valid JSON.
 	JsonValid(expr any) schema.QueryAppender
 	// JsonSet sets value at path in JSON (insert or update).
-	JsonSet(json any, path string, value any) schema.QueryAppender
+	JsonSet(json, path, value any) schema.QueryAppender
 	// JsonInsert inserts value at path only if path doesn't exist.
-	JsonInsert(json any, path string, value any) schema.QueryAppender
+	JsonInsert(json, path, value any) schema.QueryAppender
 	// JsonReplace replaces value at path only if path exists.
-	JsonReplace(json any, path string, value any) schema.QueryAppender
+	JsonReplace(json, path, value any) schema.QueryAppender
 	// JsonArrayAppend appends value to JSON array at specified path.
-	JsonArrayAppend(json any, path string, value any) schema.QueryAppender
+	JsonArrayAppend(json, path, value any) schema.QueryAppender
 
 	// ========== Utility Functions ==========
 

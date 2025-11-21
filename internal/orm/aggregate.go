@@ -150,25 +150,15 @@ type BoolAndBuilder interface {
 
 // baseAggregateExpr implements common functionality for all aggregate expressions.
 type baseAggregateExpr struct {
-	// qb holds the current query builder
-	qb QueryBuilder
-	// eb provides access to expression building utilities (columns, expressions, etc.)
-	eb ExprBuilder
-	// funcName stores the SQL function name (e.g., "SUM", "COUNT", "JSON_AGG")
-	funcName string
-	// argsExpr holds the expression(s) passed as arguments to the aggregate function
-	argsExpr schema.QueryAppender
-	// distinct indicates whether to use DISTINCT clause in the aggregate (e.g., COUNT(DISTINCT id))
-	distinct bool
-	// filter stores the FILTER clause condition for conditional aggregation
-	filter schema.QueryAppender
-	// orderExprs contains ORDER BY clauses for ordered aggregates like STRING_AGG
-	orderExprs []orderExpr
-	// nullsMode controls how NULL values are handled in window functions (IGNORE/RESPECT NULLS)
-	nullsMode NullsMode
-	// separator stores the delimiter for string aggregation functions like STRING_AGG
-	separator string
-	// statisticalMode indicates population vs sample mode for statistical functions (STDDEV, VARIANCE)
+	qb              QueryBuilder
+	eb              ExprBuilder
+	funcName        string
+	argsExpr        schema.QueryAppender
+	distinct        bool
+	filter          schema.QueryAppender
+	orderExprs      []orderExpr
+	nullsMode       NullsMode
+	separator       string
 	statisticalMode StatisticalMode
 }
 
@@ -207,26 +197,26 @@ func (a *baseAggregateExpr) appendOrderByExpr(expr any) {
 	})
 }
 
-func (a *baseAggregateExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (a *baseAggregateExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if a.argsExpr == nil {
 		return nil, ErrAggregateMissingArgs
 	}
 
-	// Handle FILTER clause for databases without native FILTER support
+	// Handle FILTER clause for databases without native support (MySQL, Oracle, SQL Server)
 	if a.filter != nil {
 		var handled bool
 
 		a.eb.ExecByDialect(DialectExecs{
 			MySQL: func() {
-				b, err = a.appendCompatibleFilterQuery(fmter, b)
+				b, err = a.appendCompatibleFilterQuery(gen, b)
 				handled = true
 			},
 			Oracle: func() {
-				b, err = a.appendCompatibleFilterQuery(fmter, b)
+				b, err = a.appendCompatibleFilterQuery(gen, b)
 				handled = true
 			},
 			SQLServer: func() {
-				b, err = a.appendCompatibleFilterQuery(fmter, b)
+				b, err = a.appendCompatibleFilterQuery(gen, b)
 				handled = true
 			},
 		})
@@ -236,39 +226,34 @@ func (a *baseAggregateExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []b
 		}
 	}
 
-	// Function name
 	b = append(b, a.funcName...)
 	b = append(b, constants.ByteLeftParenthesis)
 
-	// DISTINCT keyword
 	if a.distinct {
 		b = append(b, "DISTINCT "...)
 	}
 
-	// Args expression
-	if b, err = a.argsExpr.AppendQuery(fmter, b); err != nil {
+	if b, err = a.argsExpr.AppendQuery(gen, b); err != nil {
 		return
 	}
 
-	// Order by expression
 	if len(a.orderExprs) > 0 {
 		b = append(b, constants.ByteSpace)
-		if b, err = newOrderByClause(a.orderExprs...).AppendQuery(fmter, b); err != nil {
+		if b, err = newOrderByClause(a.orderExprs...).AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
 
 	b = append(b, constants.ByteRightParenthesis)
 
-	// NULLS mode (Oracle and SQL Server only)
 	if a.nullsMode != NullsDefault {
 		b = append(b, constants.ByteSpace)
 		b = append(b, a.nullsMode.String()...)
 	}
 
-	// FILTER clause (PostgreSQL, SQLite have native support; MySQL, Oracle, SQL Server use CASE conversion)
+	// FILTER clause: PostgreSQL/SQLite native, MySQL/Oracle/SQL Server use CASE
 	if a.filter != nil {
-		if b, err = newFilterClause(a.filter).AppendQuery(fmter, b); err != nil {
+		if b, err = newFilterClause(a.filter).AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
@@ -276,32 +261,23 @@ func (a *baseAggregateExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []b
 	return b, nil
 }
 
-// appendCompatibleFilterQuery handles FILTER clause for MySQL, Oracle, SQL Server by converting to CASE WHEN syntax.
-func (a *baseAggregateExpr) appendCompatibleFilterQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
-	// Store original function name for comparison
+// appendCompatibleFilterQuery converts FILTER clause to CASE WHEN syntax for MySQL/Oracle/SQL Server.
+func (a *baseAggregateExpr) appendCompatibleFilterQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	funcName := a.funcName
 
-	// Convert function name for database compatibility (MySQL, Oracle, SQL Server)
 	switch funcName {
 	case "COUNT":
-		// COUNT(*) FILTER (WHERE condition) → SUM(CASE WHEN condition THEN 1 ELSE 0 END)
 		b = append(b, "SUM"...)
-	case "AVG", "MIN", "MAX":
-		// Keep the same function name but wrap column/expression in CASE WHEN
-		b = append(b, funcName...)
 	default:
-		// For SUM, STRING_AGG, etc., keep the same function name
 		b = append(b, funcName...)
 	}
 
 	b = append(b, constants.ByteLeftParenthesis)
 
-	// DISTINCT keyword
 	if a.distinct {
 		b = append(b, "DISTINCT "...)
 	}
 
-	// Generate CASE WHEN expression
 	if b, err = a.eb.Case(func(cb CaseBuilder) {
 		when := cb.WhenExpr(a.filter)
 		switch funcName {
@@ -317,7 +293,7 @@ func (a *baseAggregateExpr) appendCompatibleFilterQuery(fmter schema.Formatter, 
 		default:
 			cb.Else(a.eb.Null())
 		}
-	}).AppendQuery(fmter, b); err != nil {
+	}).AppendQuery(gen, b); err != nil {
 		return
 	}
 
@@ -470,7 +446,7 @@ func (s *stringAggExpr[T]) Separator(separator string) T {
 	return s.self
 }
 
-func (s *stringAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (s *stringAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	var (
 		originalFuncName   = s.funcName
 		originalArgsExpr   = s.argsExpr
@@ -489,12 +465,10 @@ func (s *stringAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []by
 
 	if err = s.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			// PostgreSQL: STRING_AGG([DISTINCT] expression, delimiter [ORDER BY ...])
 			s.funcName = "STRING_AGG"
 
 			argsExpr := s.argsExpr
 			if s.nullsMode == NullsIgnore {
-				// Column or expression with IGNORE NULLS emulation
 				argsExpr = s.eb.Case(func(cb CaseBuilder) {
 					cb.WhenExpr(s.eb.IsNotNull(s.argsExpr)).Then(s.argsExpr)
 				})
@@ -509,20 +483,15 @@ func (s *stringAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []by
 			return nil
 		},
 		MySQL: func() error {
-			// MySQL: GROUP_CONCAT([DISTINCT] expression [ORDER BY ...] [SEPARATOR delimiter])
 			s.funcName = "GROUP_CONCAT"
 			argsExpr := s.argsExpr
 			if s.nullsMode == NullsIgnore {
-				// Column or expression with IGNORE NULLS emulation
 				argsExpr = s.eb.Case(func(cb CaseBuilder) {
 					cb.WhenExpr(s.eb.IsNotNull(s.argsExpr)).Then(s.argsExpr)
 				})
 			}
 
-			// For MySQL, we need to handle ORDER BY differently
-			// GROUP_CONCAT(expression ORDER BY column SEPARATOR separator)
 			if len(s.orderExprs) > 0 {
-				// Build ORDER BY clause for MySQL GROUP_CONCAT
 				s.argsExpr = s.eb.Expr(
 					"? ? SEPARATOR ?",
 					argsExpr,
@@ -538,29 +507,24 @@ func (s *stringAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []by
 			}
 
 			s.nullsMode = NullsDefault
-			s.orderExprs = nil // Clear order expressions as they're now handled in argsExpr
+			s.orderExprs = nil
 
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite: GROUP_CONCAT([DISTINCT] expression, delimiter)
-			// SQLite supports DISTINCT and basic ORDER BY in GROUP_CONCAT since version 3.44.0 (2023)
 			s.funcName = "GROUP_CONCAT"
 
 			argsExpr := s.argsExpr
 			if s.nullsMode == NullsIgnore {
-				// Column or expression with IGNORE NULLS emulation
 				argsExpr = s.eb.Case(func(cb CaseBuilder) {
 					cb.WhenExpr(s.eb.IsNotNull(s.argsExpr)).Then(s.argsExpr)
 				})
 			}
 
-			// SQLite limitation: DISTINCT aggregates must have exactly one argument
+			// SQLite DISTINCT limitation: only one argument allowed
 			if s.distinct {
-				// When using DISTINCT, we can only use the default separator (comma)
 				s.argsExpr = argsExpr
 			} else {
-				// When not using DISTINCT, we can specify a custom separator
 				s.argsExpr = s.eb.Expr(
 					"?, ?",
 					argsExpr,
@@ -569,7 +533,6 @@ func (s *stringAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []by
 			}
 
 			s.nullsMode = NullsDefault
-			// Keep DISTINCT and ORDER BY support for modern SQLite
 			return nil
 		},
 		Default: func() error {
@@ -579,7 +542,7 @@ func (s *stringAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []by
 		return nil, err
 	}
 
-	return s.baseAggregateExpr.AppendQuery(fmter, b)
+	return s.baseAggregateExpr.AppendQuery(gen, b)
 }
 
 // arrayAggExpr implements ArrayAggBuilder.
@@ -591,7 +554,7 @@ type arrayAggExpr[T any] struct {
 	*baseNullHandlingBuilder[T]
 }
 
-func (a *arrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (a *arrayAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	var (
 		originalFuncName   = a.funcName
 		originalArgsExpr   = a.argsExpr
@@ -610,18 +573,14 @@ func (a *arrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byt
 
 	if err = a.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			// PostgreSQL: ARRAY_AGG([DISTINCT] expression [ORDER BY ...])
 			a.funcName = "ARRAY_AGG"
 
 			return nil
 		},
 		MySQL: func() error {
-			// MySQL: JSON_ARRAYAGG(expression) - MySQL 5.7.22+
-			// Note: MySQL JSON_ARRAYAGG doesn't support DISTINCT or ORDER BY directly
 			a.funcName = "JSON_ARRAYAGG"
 			argsExpr := a.argsExpr
 			if a.nullsMode == NullsIgnore {
-				// Column or expression with IGNORE NULLS emulation
 				argsExpr = a.eb.Case(func(cb CaseBuilder) {
 					cb.WhenExpr(a.eb.IsNotNull(a.argsExpr)).Then(a.argsExpr)
 				})
@@ -629,19 +588,15 @@ func (a *arrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byt
 
 			a.argsExpr = argsExpr
 			a.nullsMode = NullsDefault
-			// JSON_ARRAYAGG doesn't support DISTINCT or ORDER BY - this is correct to disable
 			a.distinct = false
 			a.orderExprs = nil
 
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite: JSON_GROUP_ARRAY(expression)
-			// SQLite JSON_GROUP_ARRAY supports basic features but not DISTINCT or ORDER BY
 			a.funcName = "JSON_GROUP_ARRAY"
 			argsExpr := a.argsExpr
 			if a.nullsMode == NullsIgnore {
-				// Column or expression with IGNORE NULLS emulation
 				argsExpr = a.eb.Case(func(cb CaseBuilder) {
 					cb.WhenExpr(a.eb.IsNotNull(a.argsExpr)).Then(a.argsExpr)
 				})
@@ -649,7 +604,6 @@ func (a *arrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byt
 
 			a.argsExpr = argsExpr
 			a.nullsMode = NullsDefault
-			// JSON_GROUP_ARRAY doesn't support DISTINCT or ORDER BY - this is correct to disable
 			a.distinct = false
 			a.orderExprs = nil
 
@@ -662,7 +616,7 @@ func (a *arrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byt
 		return nil, err
 	}
 
-	return a.baseAggregateExpr.AppendQuery(fmter, b)
+	return a.baseAggregateExpr.AppendQuery(gen, b)
 }
 
 // statisticalAggExpr implements statistical aggregate functions (STDDEV, VARIANCE).
@@ -670,7 +624,7 @@ type statisticalAggExpr struct {
 	*baseAggregateExpr
 }
 
-func (s *statisticalAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (s *statisticalAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	originalFuncName := s.funcName
 
 	defer func() {
@@ -679,9 +633,6 @@ func (s *statisticalAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []
 
 	if err = s.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			// PostgreSQL uses different function name prefixes for STDDEV and VARIANCE
-			// STDDEV -> STDDEV_POP/STDDEV_SAMP
-			// VARIANCE -> VAR_POP/VAR_SAMP
 			funcName := s.funcName
 			if s.funcName == "VARIANCE" {
 				funcName = "VAR"
@@ -691,9 +642,6 @@ func (s *statisticalAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []
 			return nil
 		},
 		MySQL: func() error {
-			// MySQL uses different function name prefixes for STDDEV and VARIANCE
-			// STDDEV -> STDDEV_POP/STDDEV_SAMP
-			// VARIANCE -> VAR_POP/VAR_SAMP
 			funcName := s.funcName
 			if s.funcName == "VARIANCE" {
 				funcName = "VAR"
@@ -716,11 +664,11 @@ func (s *statisticalAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []
 		return nil, err
 	}
 
-	return s.baseAggregateExpr.AppendQuery(fmter, b)
+	return s.baseAggregateExpr.AppendQuery(gen, b)
 }
 
-// stddevExpr implements StdDevBuilder.
-type stddevExpr[T any] struct {
+// stdDevExpr implements StdDevBuilder.
+type stdDevExpr[T any] struct {
 	*statisticalAggExpr
 	*statisticalAggregateBuilder[T]
 }
@@ -753,7 +701,7 @@ func (j *jsonObjectAggExpr[T]) KeyExpr(expr any) T {
 	return j.self
 }
 
-func (j *jsonObjectAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (j *jsonObjectAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if j.keyExpr == nil {
 		return nil, ErrAggregateMissingArgs
 	}
@@ -771,21 +719,18 @@ func (j *jsonObjectAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ 
 
 	if err = j.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			// PostgreSQL uses json_object_agg(key, value)
 			j.funcName = "JSON_OBJECT_AGG"
 			j.argsExpr = j.eb.Exprs(j.keyExpr, originalArgsExpr)
 
 			return nil
 		},
 		MySQL: func() error {
-			// MySQL uses JSON_OBJECTAGG(key, value)
 			j.funcName = "JSON_OBJECTAGG"
 			j.argsExpr = j.eb.Exprs(j.keyExpr, originalArgsExpr)
 
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite uses json_group_object(key, value)
 			j.funcName = "JSON_GROUP_OBJECT"
 			j.argsExpr = j.eb.Exprs(j.keyExpr, originalArgsExpr)
 
@@ -798,7 +743,7 @@ func (j *jsonObjectAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ 
 		return
 	}
 
-	return j.baseAggregateExpr.AppendQuery(fmter, b)
+	return j.baseAggregateExpr.AppendQuery(gen, b)
 }
 
 // jsonArrayAggExpr implements JsonArrayAggBuilder.
@@ -809,7 +754,7 @@ type jsonArrayAggExpr[T any] struct {
 	*orderableAggregateBuilder[T]
 }
 
-func (j *jsonArrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (j *jsonArrayAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	originalFuncName := j.funcName
 
 	defer func() {
@@ -818,19 +763,16 @@ func (j *jsonArrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ [
 
 	if err = j.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			// PostgreSQL uses json_agg(expression)
 			j.funcName = "JSON_AGG"
 
 			return nil
 		},
 		MySQL: func() error {
-			// MySQL uses JSON_ARRAYAGG(expression)
 			j.funcName = "JSON_ARRAYAGG"
 
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite uses json_group_array(expression)
 			j.funcName = "JSON_GROUP_ARRAY"
 
 			return nil
@@ -842,7 +784,7 @@ func (j *jsonArrayAggExpr[T]) AppendQuery(fmter schema.Formatter, b []byte) (_ [
 		return
 	}
 
-	return j.baseAggregateExpr.AppendQuery(fmter, b)
+	return j.baseAggregateExpr.AppendQuery(gen, b)
 }
 
 // bitOrExpr implements BitOrBuilder.
@@ -851,7 +793,7 @@ type bitOrExpr[T any] struct {
 	*baseAggregateBuilder[T]
 }
 
-func (b *bitOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte, err error) {
+func (b *bitOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
 	var (
 		originalFuncName = b.funcName
 		originalArgsExpr = b.argsExpr
@@ -864,22 +806,18 @@ func (b *bitOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte
 
 	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		MySQL: func() error {
-			// MySQL supports BIT_OR
 			b.funcName = "BIT_OR"
 
 			return nil
 		},
 		Postgres: func() error {
-			// PostgreSQL supports BIT_OR natively since version 8.0
 			b.funcName = "BIT_OR"
 
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite doesn't have BIT_OR, simulate using MAX with CASE
-			// This works for simple cases where we're doing boolean-like bit operations
+			// SQLite: simulate with MAX(CASE WHEN x != 0 THEN 1 ELSE 0 END)
 			b.funcName = "MAX"
-			// Convert to 1/0 and use MAX to simulate OR behavior
 			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
 				cb.WhenExpr(b.eb.Expr("? != 0", originalArgsExpr)).Then(1).Else(0)
 			})
@@ -893,7 +831,7 @@ func (b *bitOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte
 		return
 	}
 
-	return b.baseAggregateExpr.AppendQuery(fmter, buf)
+	return b.baseAggregateExpr.AppendQuery(gen, buf)
 }
 
 // bitAndExpr implements BitAndBuilder.
@@ -902,7 +840,7 @@ type bitAndExpr[T any] struct {
 	*baseAggregateBuilder[T]
 }
 
-func (b *bitAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte, err error) {
+func (b *bitAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
 	var (
 		originalFuncName = b.funcName
 		originalArgsExpr = b.argsExpr
@@ -915,22 +853,18 @@ func (b *bitAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 
 	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		MySQL: func() error {
-			// MySQL supports BIT_AND
 			b.funcName = "BIT_AND"
 
 			return nil
 		},
 		Postgres: func() error {
-			// PostgreSQL supports BIT_AND natively since version 8.0
 			b.funcName = "BIT_AND"
 
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite doesn't have BIT_AND, simulate using MIN with CASE
-			// This works for simple cases where we're doing boolean-like bit operations
+			// SQLite: simulate with MIN(CASE WHEN x != 0 THEN 1 ELSE 0 END)
 			b.funcName = "MIN"
-			// Convert to 1/0 and use MIN to simulate AND behavior
 			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
 				cb.WhenExpr(b.eb.Expr("? != 0", originalArgsExpr)).Then(1).Else(0)
 			})
@@ -944,7 +878,7 @@ func (b *bitAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 		return
 	}
 
-	return b.baseAggregateExpr.AppendQuery(fmter, buf)
+	return b.baseAggregateExpr.AppendQuery(gen, buf)
 }
 
 // boolOrExpr implements BoolOrBuilder.
@@ -953,7 +887,7 @@ type boolOrExpr[T any] struct {
 	*baseAggregateBuilder[T]
 }
 
-func (b *boolOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte, err error) {
+func (b *boolOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
 	var (
 		originalFuncName = b.funcName
 		originalArgsExpr = b.argsExpr
@@ -966,15 +900,13 @@ func (b *boolOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 
 	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			// PostgreSQL supports BOOL_OR
 			b.funcName = "BOOL_OR"
 
 			return nil
 		},
 		MySQL: func() error {
-			// MySQL doesn't have BOOL_OR, simulate with MAX and CASE
+			// MySQL: simulate with MAX(CASE WHEN x THEN 1 ELSE 0 END)
 			b.funcName = "MAX"
-			// Convert to 0/1 integers and use MAX to simulate OR behavior
 			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
 				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
 			})
@@ -982,9 +914,8 @@ func (b *boolOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite doesn't have BOOL_OR, simulate with MAX and CASE
+			// SQLite: simulate with MAX(CASE WHEN x THEN 1 ELSE 0 END)
 			b.funcName = "MAX"
-			// Convert boolean values to 0/1 and use MAX to simulate OR behavior
 			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
 				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
 			})
@@ -998,7 +929,7 @@ func (b *boolOrExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byt
 		return
 	}
 
-	return b.baseAggregateExpr.AppendQuery(fmter, buf)
+	return b.baseAggregateExpr.AppendQuery(gen, buf)
 }
 
 // boolAndExpr implements BoolAndBuilder.
@@ -1007,7 +938,7 @@ type boolAndExpr[T any] struct {
 	*baseAggregateBuilder[T]
 }
 
-func (b *boolAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []byte, err error) {
+func (b *boolAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
 	var (
 		originalFuncName = b.funcName
 		originalArgsExpr = b.argsExpr
@@ -1020,15 +951,13 @@ func (b *boolAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []by
 
 	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
 		Postgres: func() error {
-			// PostgreSQL supports BOOL_AND
 			b.funcName = "BOOL_AND"
 
 			return nil
 		},
 		MySQL: func() error {
-			// MySQL doesn't have BOOL_AND, simulate with MIN and CASE
+			// MySQL: simulate with MIN(CASE WHEN x THEN 1 ELSE 0 END)
 			b.funcName = "MIN"
-			// Convert to 0/1 integers and use MIN to simulate AND behavior
 			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
 				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
 			})
@@ -1036,9 +965,8 @@ func (b *boolAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []by
 			return nil
 		},
 		SQLite: func() error {
-			// SQLite doesn't have BOOL_AND, simulate with MIN and CASE
+			// SQLite: simulate with MIN(CASE WHEN x THEN 1 ELSE 0 END)
 			b.funcName = "MIN"
-			// Convert boolean values to 0/1 and use MIN to simulate AND behavior
 			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
 				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
 			})
@@ -1052,7 +980,7 @@ func (b *boolAndExpr[T]) AppendQuery(fmter schema.Formatter, buf []byte) (_ []by
 		return
 	}
 
-	return b.baseAggregateExpr.AppendQuery(fmter, buf)
+	return b.baseAggregateExpr.AppendQuery(gen, buf)
 }
 
 // ========== Factory Functions ==========
@@ -1388,7 +1316,7 @@ func newArrayAggExpr(qb QueryBuilder) *arrayAggExpr[ArrayAggBuilder] {
 }
 
 // newGenericStdDevExpr creates a new STDDEV expression.
-func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stddevExpr[T] {
+func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stdDevExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
@@ -1397,7 +1325,7 @@ func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stddevExpr[T] {
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
 	}
-	expr := &stddevExpr[T]{
+	expr := &stdDevExpr[T]{
 		statisticalAggExpr: &statisticalAggExpr{
 			baseAggregateExpr: baseExpr,
 		},
@@ -1412,7 +1340,7 @@ func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stddevExpr[T] {
 }
 
 // newStdDevExpr creates a new STDDEV expression.
-func newStdDevExpr(qb QueryBuilder) *stddevExpr[StdDevBuilder] {
+func newStdDevExpr(qb QueryBuilder) *stdDevExpr[StdDevBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
@@ -1421,7 +1349,7 @@ func newStdDevExpr(qb QueryBuilder) *stddevExpr[StdDevBuilder] {
 	baseBuilder := &baseAggregateBuilder[StdDevBuilder]{
 		baseAggregateExpr: baseExpr,
 	}
-	expr := &stddevExpr[StdDevBuilder]{
+	expr := &stdDevExpr[StdDevBuilder]{
 		statisticalAggExpr: &statisticalAggExpr{
 			baseAggregateExpr: baseExpr,
 		},

@@ -62,8 +62,8 @@ func (e *DefaultEngine) dispatch(ctx fiber.Ctx) error {
 
 // buildMiddlewares constructs the middleware chain.
 // Ordering matters: request parsing → auth → context → authorization → data permission → rate limiting → audit.
-func (e *DefaultEngine) buildMiddlewares() []fiber.Handler {
-	return []fiber.Handler{
+func (e *DefaultEngine) buildMiddlewares() []any {
+	return []any{
 		requestMiddleware(e.manager),
 		e.policy.BuildAuthenticationMiddleware(e.manager),
 		buildContextMiddleware(e.db),

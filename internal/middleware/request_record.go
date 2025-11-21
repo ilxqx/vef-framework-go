@@ -181,7 +181,7 @@ func NewRequestRecordMiddleware(spaConfigs []*middleware.SpaConfig) app.Middlewa
 		Next: func(ctx fiber.Ctx) bool {
 			return isSpaStaticRequest(ctx, spaConfigs)
 		},
-		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, _ loggerMiddleware.Config) error {
+		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, _ *loggerMiddleware.Config) error {
 			details := formatRequestDetails(ctx, data)
 			logger := contextx.Logger(ctx)
 

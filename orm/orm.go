@@ -16,6 +16,14 @@ type (
 	ApplyFunc[T any]           = orm.ApplyFunc[T]
 	RelationSpec               = orm.RelationSpec
 	JoinType                   = orm.JoinType
+	FuzzyKind                  = orm.FuzzyKind
+	NullsMode                  = orm.NullsMode
+	FromDirection              = orm.FromDirection
+	FrameType                  = orm.FrameType
+	FrameBoundKind             = orm.FrameBoundKind
+	StatisticalMode            = orm.StatisticalMode
+	ConflictAction             = orm.ConflictAction
+	DateTimeUnit               = orm.DateTimeUnit
 	ColumnInfo                 = orm.ColumnInfo
 	Model                      = orm.Model
 	PkField                    = orm.PkField
@@ -63,7 +71,7 @@ type (
 	DenseRankBuilder           = orm.DenseRankBuilder
 	PercentRankBuilder         = orm.PercentRankBuilder
 	CumeDistBuilder            = orm.CumeDistBuilder
-	NtileBuilder               = orm.NtileBuilder
+	NTileBuilder               = orm.NTileBuilder
 	LagBuilder                 = orm.LagBuilder
 	LeadBuilder                = orm.LeadBuilder
 	FirstValueBuilder          = orm.FirstValueBuilder
@@ -72,12 +80,59 @@ type (
 )
 
 const (
-	// InnerJoin performs an INNER JOIN.
-	InnerJoin = orm.JoinInner
-	// LeftJoin performs a LEFT JOIN (default).
-	LeftJoin = orm.JoinLeft
-	// RightJoin performs a RIGHT JOIN.
-	RightJoin = orm.JoinRight
+	// JoinType constants.
+	JoinDefault = orm.JoinDefault
+	JoinInner   = orm.JoinInner
+	JoinLeft    = orm.JoinLeft
+	JoinRight   = orm.JoinRight
+	JoinFull    = orm.JoinFull
+	JoinCross   = orm.JoinCross
+
+	// FuzzyKind constants.
+	FuzzyStarts   = orm.FuzzyStarts
+	FuzzyEnds     = orm.FuzzyEnds
+	FuzzyContains = orm.FuzzyContains
+
+	// NullsMode constants.
+	NullsDefault = orm.NullsDefault
+	NullsRespect = orm.NullsRespect
+	NullsIgnore  = orm.NullsIgnore
+
+	// FromDirection constants.
+	FromDefault = orm.FromDefault
+	FromFirst   = orm.FromFirst
+	FromLast    = orm.FromLast
+
+	// FrameType constants.
+	FrameDefault = orm.FrameDefault
+	FrameRows    = orm.FrameRows
+	FrameRange   = orm.FrameRange
+	FrameGroups  = orm.FrameGroups
+
+	// FrameBoundKind constants.
+	FrameBoundNone               = orm.FrameBoundNone
+	FrameBoundUnboundedPreceding = orm.FrameBoundUnboundedPreceding
+	FrameBoundUnboundedFollowing = orm.FrameBoundUnboundedFollowing
+	FrameBoundCurrentRow         = orm.FrameBoundCurrentRow
+	FrameBoundPreceding          = orm.FrameBoundPreceding
+	FrameBoundFollowing          = orm.FrameBoundFollowing
+
+	// StatisticalMode constants.
+	StatisticalDefault    = orm.StatisticalDefault
+	StatisticalPopulation = orm.StatisticalPopulation
+	StatisticalSample     = orm.StatisticalSample
+
+	// ConflictAction constants.
+	ConflictDoNothing = orm.ConflictDoNothing
+	ConflictDoUpdate  = orm.ConflictDoUpdate
+
+	// DateTimeUnit constants.
+	UnitYear   = orm.UnitYear
+	UnitMonth  = orm.UnitMonth
+	UnitDay    = orm.UnitDay
+	UnitHour   = orm.UnitHour
+	UnitMinute = orm.UnitMinute
+	UnitSecond = orm.UnitSecond
 )
 
 var ApplySort = orm.ApplySort

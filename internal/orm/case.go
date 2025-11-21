@@ -131,13 +131,13 @@ func (cw *caseWhenExpr) ThenSubQuery(builder func(query SelectQuery)) CaseBuilde
 }
 
 // AppendQuery implements schema.QueryAppender interface.
-func (c *caseExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (c *caseExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	b = append(b, "CASE"...)
 
 	// Add the CASE expression if it exists (for simple CASE)
 	if c.caseExpr != nil {
 		b = append(b, constants.ByteSpace)
-		if b, err = c.caseExpr.AppendQuery(fmter, b); err != nil {
+		if b, err = c.caseExpr.AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
@@ -145,12 +145,12 @@ func (c *caseExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err 
 	// Add WHEN...THEN clauses
 	for _, clause := range c.clauses {
 		b = append(b, " WHEN "...)
-		if b, err = clause.whenExpr.AppendQuery(fmter, b); err != nil {
+		if b, err = clause.whenExpr.AppendQuery(gen, b); err != nil {
 			return
 		}
 
 		b = append(b, " THEN "...)
-		if b, err = clause.thenExpr.AppendQuery(fmter, b); err != nil {
+		if b, err = clause.thenExpr.AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
@@ -158,7 +158,7 @@ func (c *caseExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err 
 	// Add ELSE clause if exists
 	if c.hasElse {
 		b = append(b, " ELSE "...)
-		if b, err = c.elseExpr.AppendQuery(fmter, b); err != nil {
+		if b, err = c.elseExpr.AppendQuery(gen, b); err != nil {
 			return
 		}
 	}

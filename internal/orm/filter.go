@@ -10,9 +10,9 @@ type filterClause struct {
 	condition schema.QueryAppender
 }
 
-func (f *filterClause) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (f *filterClause) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	b = append(b, " FILTER (WHERE "...)
-	if b, err = f.condition.AppendQuery(fmter, b); err != nil {
+	if b, err = f.condition.AppendQuery(gen, b); err != nil {
 		return
 	}
 

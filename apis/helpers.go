@@ -109,7 +109,7 @@ func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.Relat
 		{
 			Model:         userModel,
 			Alias:         "creator",
-			JoinType:      orm.LeftJoin,
+			JoinType:      orm.JoinLeft,
 			ForeignColumn: "created_by",
 			SelectedColumns: []orm.ColumnInfo{
 				{
@@ -121,7 +121,7 @@ func GetAuditUserNameRelations(userModel any, nameColumn ...string) []*orm.Relat
 		{
 			Model:         userModel,
 			Alias:         "updater",
-			JoinType:      orm.LeftJoin,
+			JoinType:      orm.JoinLeft,
 			ForeignColumn: "updated_by",
 			SelectedColumns: []orm.ColumnInfo{
 				{

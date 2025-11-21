@@ -66,15 +66,15 @@ func (o *orderExpr) NullsLast() OrderBuilder {
 	return o
 }
 
-func (o *orderExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (o *orderExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if o.column == constants.Empty && o.expr == nil {
 		return nil, ErrMissingColumnOrExpression
 	}
 
 	if o.column != constants.Empty {
-		b, err = o.builders.Column(o.column).AppendQuery(fmter, b)
+		b, err = o.builders.Column(o.column).AppendQuery(gen, b)
 	} else {
-		b, err = o.builders.Expr("?", o.expr).AppendQuery(fmter, b)
+		b, err = o.builders.Expr("?", o.expr).AppendQuery(gen, b)
 	}
 
 	if err != nil {
@@ -97,7 +97,7 @@ type orderByClause struct {
 }
 
 // newOrderExpr creates a new OrderBuilder with default ascending order.
-func (o *orderByClause) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (o *orderByClause) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	b = append(b, "ORDER BY "...)
 
 	for i, expr := range o.exprs {
@@ -105,7 +105,7 @@ func (o *orderByClause) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte,
 			b = append(b, constants.CommaSpace...)
 		}
 
-		if b, err = expr.AppendQuery(fmter, b); err != nil {
+		if b, err = expr.AppendQuery(gen, b); err != nil {
 			return
 		}
 	}

@@ -174,7 +174,7 @@ type pkColumns struct {
 	columns []bun.Safe
 }
 
-func (p *pkColumns) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (p *pkColumns) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	cLen := len(p.columns)
 	if cLen == 0 {
 		return dialect.AppendNull(b), nil
@@ -189,13 +189,13 @@ func (p *pkColumns) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err
 			b = append(b, constants.CommaSpace...)
 		}
 
-		if b, err = p.alias.AppendQuery(fmter, b); err != nil {
+		if b, err = p.alias.AppendQuery(gen, b); err != nil {
 			return
 		}
 
 		b = append(b, constants.ByteDot)
 
-		if b, err = column.AppendQuery(fmter, b); err != nil {
+		if b, err = column.AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
@@ -211,17 +211,17 @@ type pkValues struct {
 	values []any
 }
 
-func (p *pkValues) AppendQuery(formatter schema.Formatter, b []byte) ([]byte, error) {
+func (p *pkValues) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
 	vLen := len(p.values)
 	if vLen == 0 {
 		return dialect.AppendNull(b), nil
 	}
 
 	if vLen == 1 {
-		b = formatter.AppendValue(b, reflect.ValueOf(p.values[0]))
+		b = gen.AppendValue(b, reflect.ValueOf(p.values[0]))
 
 		return b, nil
 	}
 
-	return bun.In(p.values).AppendQuery(formatter, b)
+	return bun.In(p.values).AppendQuery(gen, b)
 }

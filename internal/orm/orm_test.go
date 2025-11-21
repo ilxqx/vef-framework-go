@@ -280,9 +280,21 @@ func runAllExprBuilderTests(t *testing.T, ctx context.Context, dbType constants.
 		},
 	}
 
+	comparisonExpressionsSuite := &ComparisonExpressionsTestSuite{
+		OrmTestSuite: &OrmTestSuite{
+			ctx:    ctx,
+			dbType: dbType,
+			db:     db,
+		},
+	}
+
 	// Run all test suites
 	t.Run("TestBasicExpressions", func(t *testing.T) {
 		suite.Run(t, basicExpressionsSuite)
+	})
+
+	t.Run("TestComparisonExpressions", func(t *testing.T) {
+		suite.Run(t, comparisonExpressionsSuite)
 	})
 
 	t.Run("TestAggregationFunctions", func(t *testing.T) {

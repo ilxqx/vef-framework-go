@@ -16,10 +16,10 @@ var (
 
 type Expressions struct {
 	exprs []any
-	sep   string
+	sep   any
 }
 
-func (e *Expressions) AppendQuery(fmter schema.Formatter, b []byte) ([]byte, error) {
+func (e *Expressions) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
 	var appendExprs func(b []byte, slice reflect.Value) ([]byte, error)
 
 	appendExprs = func(b []byte, slice reflect.Value) (_ []byte, err error) {
@@ -30,13 +30,23 @@ func (e *Expressions) AppendQuery(fmter schema.Formatter, b []byte) ([]byte, err
 
 		for i := range sliceLen {
 			if i > 0 {
-				b = append(b, e.sep...)
+				// Handle separator
+				switch sep := e.sep.(type) {
+				case string:
+					b = append(b, sep...)
+				case schema.QueryAppender:
+					if b, err = sep.AppendQuery(gen, b); err != nil {
+						return
+					}
+				default:
+					b = gen.AppendValue(b, reflect.ValueOf(sep))
+				}
 			}
 
 			expr := slice.Index(i)
 			if expr.Type().Implements(queryAppenderType) {
 				appender := expr.Interface().(schema.QueryAppender)
-				if b, err = appender.AppendQuery(fmter, b); err != nil {
+				if b, err = appender.AppendQuery(gen, b); err != nil {
 					return
 				}
 			}
@@ -49,7 +59,7 @@ func (e *Expressions) AppendQuery(fmter schema.Formatter, b []byte) ([]byte, err
 
 				b = append(b, constants.ByteRightParenthesis)
 			} else {
-				b = fmter.AppendValue(b, expr)
+				b = gen.AppendValue(b, expr)
 			}
 		}
 
@@ -59,7 +69,7 @@ func (e *Expressions) AppendQuery(fmter schema.Formatter, b []byte) ([]byte, err
 	return appendExprs(b, reflect.ValueOf(e.exprs))
 }
 
-func newExpressions(sep string, exprs ...any) *Expressions {
+func newExpressions(sep any, exprs ...any) *Expressions {
 	return &Expressions{
 		exprs: exprs,
 		sep:   sep,

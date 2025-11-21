@@ -7,7 +7,7 @@ import (
 )
 
 // WindowFunctionsTestSuite tests window function methods of ExprBuilder including
-// ranking functions (RowNumber, Rank, DenseRank, PercentRank, CumeDist, Ntile),
+// ranking functions (RowNumber, Rank, DenseRank, PercentRank, CumeDist, NTile),
 // offset functions (Lag, Lead), value functions (FirstValue, LastValue, NthValue),
 // and aggregate window functions (WinCount, WinSum, WinAvg, WinMin, WinMax, WinStringAgg,
 // WinArrayAgg, WinStdDev, WinVariance, WinJsonObjectAgg, WinJsonArrayAgg, WinBitOr,
@@ -238,7 +238,7 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 
 // TestNtile tests the NTILE window function.
 func (suite *WindowFunctionsTestSuite) TestNtile() {
-	suite.T().Logf("Testing Ntile function for %s", suite.dbType)
+	suite.T().Logf("Testing NTile function for %s", suite.dbType)
 
 	suite.Run("QuartilesUsingNtile", func() {
 		type UserWithQuartile struct {
@@ -253,7 +253,7 @@ func (suite *WindowFunctionsTestSuite) TestNtile() {
 			Model((*User)(nil)).
 			Select("name", "age").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.Ntile(func(nb NtileBuilder) {
+				return eb.NTile(func(nb NTileBuilder) {
 					nb.Buckets(4).Over().OrderBy("age")
 				})
 			}, "quartile").

@@ -106,11 +106,11 @@ type CumeDistBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// NtileBuilder defines the NTILE(n) window function builder.
-type NtileBuilder interface {
+// NTileBuilder defines the NTILE(n) window function builder.
+type NTileBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
-	Buckets(n int) NtileBuilder
+	Buckets(n int) NTileBuilder
 }
 
 // ========== Value Window Functions ==========
@@ -288,11 +288,11 @@ type partitionExpr struct {
 	expr     any
 }
 
-func (p *partitionExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (p *partitionExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if p.column != constants.Empty {
-		return p.builders.Column(p.column).AppendQuery(fmter, b)
+		return p.builders.Column(p.column).AppendQuery(gen, b)
 	} else if p.expr != nil {
-		return p.builders.Expr("?", p.expr).AppendQuery(fmter, b)
+		return p.builders.Expr("?", p.expr).AppendQuery(gen, b)
 	}
 
 	return b, nil
@@ -300,32 +300,19 @@ func (p *partitionExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte,
 
 // baseWindowExpr implements common functionality for all window function expressions.
 type baseWindowExpr struct {
-	// eb provides access to expression building utilities (columns, expressions, etc.)
-	eb ExprBuilder
-	// funcExpr holds a pre-built aggregate function expression (used for window aggregate functions)
-	funcExpr schema.QueryAppender
-	// funcName stores the window function name (e.g., "ROW_NUMBER", "LAG", "SUM")
-	funcName string
-	// args contains the arguments passed to the window function
-	args []any
-	// nullsMode controls NULL handling behavior for value window functions (IGNORE/RESPECT NULLS)
-	nullsMode NullsMode
-	// fromDir indicates the direction for NTH_VALUE function (FROM FIRST/FROM LAST)
-	fromDir FromDirection
-	// partitionExprs contains PARTITION BY expressions for the OVER clause
+	eb             ExprBuilder
+	funcExpr       schema.QueryAppender
+	funcName       string
+	args           []any
+	nullsMode      NullsMode
+	fromDir        FromDirection
 	partitionExprs []partitionExpr
-	// orderExprs contains ORDER BY expressions for the OVER clause
-	orderExprs []orderExpr
-	// frameType specifies the window frame type (ROWS/RANGE/GROUPS)
-	frameType FrameType
-	// frameStartKind defines the start boundary type of the window frame
-	frameStartKind FrameBoundKind // Frame start boundary
-	// frameStartN stores the numeric value for PRECEDING/FOLLOWING start boundaries
-	frameStartN int
-	// frameEndKind defines the end boundary type of the window frame (for BETWEEN ... AND ...)
-	frameEndKind FrameBoundKind // Frame end boundary (for BETWEEN ... AND ...)
-	// frameEndN stores the numeric value for PRECEDING/FOLLOWING end boundaries
-	frameEndN int
+	orderExprs     []orderExpr
+	frameType      FrameType
+	frameStartKind FrameBoundKind
+	frameStartN    int
+	frameEndKind   FrameBoundKind
+	frameEndN      int
 }
 
 func (w *baseWindowExpr) setArgs(args ...any) {
@@ -379,7 +366,7 @@ func (w *baseWindowExpr) appendOrderByExpr(expr any) {
 	})
 }
 
-func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if w.funcExpr == nil {
 		// Function name and arguments
 		b = append(b, w.funcName...)
@@ -387,21 +374,16 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 
 		// Function arguments
 		if len(w.args) > 0 {
-			if b, err = w.eb.Exprs(w.args...).AppendQuery(fmter, b); err != nil {
+			if b, err = w.eb.Exprs(w.args...).AppendQuery(gen, b); err != nil {
 				return
 			}
 		}
 
 		b = append(b, constants.ByteRightParenthesis)
 
-		// FROM DIRECTION and NULLS MODE support varies by database:
-		// - Oracle: supports both FROM FIRST/LAST and IGNORE/RESPECT NULLS
-		// - SQL Server: supports IGNORE/RESPECT NULLS but not FROM FIRST/LAST
-		// - PostgreSQL, MySQL, SQLite: support neither
-		// Use dialect-specific logic to generate appropriate SQL for each database
+		// FROM DIRECTION/NULLS MODE: Oracle supports both, SQL Server only NULLS, others neither
 		if w.fromDir != FromDefault || w.nullsMode != NullsDefault {
 			dialectBytes, err := w.eb.FragmentByDialect(DialectFragments{
-				// Oracle supports both FROM FIRST/LAST and IGNORE/RESPECT NULLS
 				Oracle: func() ([]byte, error) {
 					var dialectB []byte
 					if w.fromDir != FromDefault {
@@ -418,7 +400,6 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 				},
 				SQLServer: func() ([]byte, error) {
 					var dialectB []byte
-					// SQL Server doesn't support FROM FIRST/LAST clauses
 					if w.nullsMode != NullsDefault {
 						dialectB = append(dialectB, constants.ByteSpace)
 						dialectB = append(dialectB, w.nullsMode.String()...)
@@ -427,8 +408,6 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 					return dialectB, nil
 				},
 				Default: func() ([]byte, error) {
-					// For PostgreSQL, MySQL, SQLite: do nothing
-					// These databases don't support FROM FIRST/LAST or IGNORE/RESPECT NULLS
 					return nil, nil
 				},
 			})
@@ -439,7 +418,7 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 			b = append(b, dialectBytes...)
 		}
 	} else {
-		if b, err = w.funcExpr.AppendQuery(fmter, b); err != nil {
+		if b, err = w.funcExpr.AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
@@ -457,7 +436,7 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 				b = append(b, constants.CommaSpace...)
 			}
 
-			if b, err = expr.AppendQuery(fmter, b); err != nil {
+			if b, err = expr.AppendQuery(gen, b); err != nil {
 				return
 			}
 		}
@@ -466,7 +445,7 @@ func (w *baseWindowExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte
 	// ORDER BY clause
 	if len(w.orderExprs) > 0 {
 		b = append(b, constants.ByteSpace)
-		if b, err = newOrderByClause(w.orderExprs...).AppendQuery(fmter, b); err != nil {
+		if b, err = newOrderByClause(w.orderExprs...).AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
@@ -759,12 +738,12 @@ func (rn *cumeDistExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-// ntileExpr implements NtileBuilder.
-type ntileExpr struct {
+// nTileExpr implements NTileBuilder.
+type nTileExpr struct {
 	*baseWindowExpr
 }
 
-func (ne *ntileExpr) Over() WindowFrameablePartitionBuilder {
+func (ne *nTileExpr) Over() WindowFrameablePartitionBuilder {
 	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
 		baseWindowExpr: ne.baseWindowExpr,
 	}
@@ -777,7 +756,7 @@ func (ne *ntileExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (ne *ntileExpr) Buckets(n int) NtileBuilder {
+func (ne *nTileExpr) Buckets(n int) NTileBuilder {
 	ne.setArgs(n)
 
 	return ne
@@ -831,11 +810,9 @@ func (l *lagExpr) DefaultValue(value any) LagBuilder {
 	return l
 }
 
-func (l *lagExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
-	// LAG function has special syntax: LAG(column, offset, default) OVER (...)
+func (l *lagExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	var args []any
 
-	// Column or expression
 	if l.column != constants.Empty {
 		args = append(args, l.eb.Column(l.column))
 	} else if l.expr != nil {
@@ -852,7 +829,7 @@ func (l *lagExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err e
 
 	l.args = args
 
-	return l.baseWindowExpr.AppendQuery(fmter, b)
+	return l.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // leadExpr implements LeadBuilder.
@@ -901,11 +878,9 @@ func (l *leadExpr) DefaultValue(value any) LeadBuilder {
 	return l
 }
 
-func (l *leadExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
-	// LEAD function has special syntax: LEAD(column, offset, default) OVER (...)
+func (l *leadExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	var args []any
 
-	// Column or expression
 	if l.column != constants.Empty {
 		args = append(args, l.eb.Column(l.column))
 	} else if l.expr != nil {
@@ -922,7 +897,7 @@ func (l *leadExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err 
 
 	l.setArgs(args...)
 
-	return l.baseWindowExpr.AppendQuery(fmter, b)
+	return l.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // firstValueExpr implements FirstValueBuilder.
@@ -1042,8 +1017,7 @@ func (nv *nthValueExpr) FromLast() NthValueBuilder {
 	return nv
 }
 
-func (nv *nthValueExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
-	// NTH_VALUE function has special syntax: NTH_VALUE(column, n) [FROM FIRST|FROM LAST] [IGNORE|RESPECT NULLS] OVER (...)
+func (nv *nthValueExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	var args []any
 	if nv.column != constants.Empty {
 		args = append(args, nv.eb.Column(nv.column))
@@ -1054,7 +1028,7 @@ func (nv *nthValueExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte,
 	args = append(args, nv.n)
 	nv.setArgs(args...)
 
-	return nv.baseWindowExpr.AppendQuery(fmter, b)
+	return nv.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // ========== Window Aggregate Functions ==========
@@ -1078,10 +1052,10 @@ func (wc *windowCountExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wc *windowCountExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wc *windowCountExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wc.funcExpr = wc.countExpr
 
-	return wc.baseWindowExpr.AppendQuery(fmter, b)
+	return wc.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowSumExpr implements WindowSumBuilder.
@@ -1103,10 +1077,10 @@ func (ws *windowSumExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (ws *windowSumExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (ws *windowSumExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	ws.funcExpr = ws.sumExpr
 
-	return ws.baseWindowExpr.AppendQuery(fmter, b)
+	return ws.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowAvgExpr implements WindowAvgBuilder.
@@ -1128,10 +1102,10 @@ func (wa *windowAvgExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wa *windowAvgExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wa *windowAvgExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wa.funcExpr = wa.avgExpr
 
-	return wa.baseWindowExpr.AppendQuery(fmter, b)
+	return wa.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowMinExpr implements WindowMinBuilder.
@@ -1153,10 +1127,10 @@ func (wm *windowMinExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wm *windowMinExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wm *windowMinExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wm.funcExpr = wm.minExpr
 
-	return wm.baseWindowExpr.AppendQuery(fmter, b)
+	return wm.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowMaxExpr implements WindowMaxBuilder.
@@ -1178,10 +1152,10 @@ func (wm *windowMaxExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wm *windowMaxExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wm *windowMaxExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wm.funcExpr = wm.maxExpr
 
-	return wm.baseWindowExpr.AppendQuery(fmter, b)
+	return wm.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowStringAggExpr implements WindowStringAggBuilder.
@@ -1203,10 +1177,10 @@ func (ws *windowStringAggExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (ws *windowStringAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (ws *windowStringAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	ws.funcExpr = ws.stringAggExpr
 
-	return ws.baseWindowExpr.AppendQuery(fmter, b)
+	return ws.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowArrayAggExpr implements WindowArrayAggBuilder.
@@ -1228,15 +1202,15 @@ func (wa *windowArrayAggExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wa *windowArrayAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wa *windowArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wa.funcExpr = wa.arrayAggExpr
 
-	return wa.baseWindowExpr.AppendQuery(fmter, b)
+	return wa.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowStdDevExpr implements WindowStdDevBuilder.
 type windowStdDevExpr struct {
-	*stddevExpr[WindowStdDevBuilder]
+	*stdDevExpr[WindowStdDevBuilder]
 	*baseWindowExpr
 }
 
@@ -1253,10 +1227,10 @@ func (ws *windowStdDevExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (ws *windowStdDevExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
-	ws.funcExpr = ws.stddevExpr
+func (ws *windowStdDevExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
+	ws.funcExpr = ws.stdDevExpr
 
-	return ws.baseWindowExpr.AppendQuery(fmter, b)
+	return ws.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowVarianceExpr implements WindowVarianceBuilder.
@@ -1278,10 +1252,10 @@ func (wv *windowVarianceExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wv *windowVarianceExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wv *windowVarianceExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wv.funcExpr = wv.varianceExpr
 
-	return wv.baseWindowExpr.AppendQuery(fmter, b)
+	return wv.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowJsonObjectAggExpr implements WindowJsonObjectAggBuilder.
@@ -1302,10 +1276,10 @@ func (wj *windowJsonObjectAggExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wj *windowJsonObjectAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wj *windowJsonObjectAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wj.funcExpr = wj.jsonObjectAggExpr
 
-	return wj.baseWindowExpr.AppendQuery(fmter, b)
+	return wj.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowJsonArrayAggExpr implements WindowJsonArrayAggBuilder.
@@ -1326,10 +1300,10 @@ func (wj *windowJsonArrayAggExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wj *windowJsonArrayAggExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wj *windowJsonArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wj.funcExpr = wj.jsonArrayAggExpr
 
-	return wj.baseWindowExpr.AppendQuery(fmter, b)
+	return wj.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowBitOrExpr implements WindowBitOrBuilder.
@@ -1350,10 +1324,10 @@ func (wb *windowBitOrExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wb *windowBitOrExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wb *windowBitOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.bitOrExpr
 
-	return wb.baseWindowExpr.AppendQuery(fmter, b)
+	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowBitAndExpr implements WindowBitAndBuilder.
@@ -1374,10 +1348,10 @@ func (wb *windowBitAndExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wb *windowBitAndExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wb *windowBitAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.bitAndExpr
 
-	return wb.baseWindowExpr.AppendQuery(fmter, b)
+	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowBoolOrExpr implements WindowBoolOrBuilder.
@@ -1398,10 +1372,10 @@ func (wb *windowBoolOrExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wb *windowBoolOrExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wb *windowBoolOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.boolOrExpr
 
-	return wb.baseWindowExpr.AppendQuery(fmter, b)
+	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // windowBoolAndExpr implements WindowBoolAndBuilder.
@@ -1422,10 +1396,10 @@ func (wb *windowBoolAndExpr) Over() WindowFrameablePartitionBuilder {
 	return builder
 }
 
-func (wb *windowBoolAndExpr) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (wb *windowBoolAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wb.funcExpr = wb.boolAndExpr
 
-	return wb.baseWindowExpr.AppendQuery(fmter, b)
+	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
 // ========== Factory Functions ==========
@@ -1475,8 +1449,8 @@ func newCumeDistExpr(eb ExprBuilder) *cumeDistExpr {
 	}
 }
 
-func newNtileExpr(eb ExprBuilder) *ntileExpr {
-	return &ntileExpr{
+func newNtileExpr(eb ExprBuilder) *nTileExpr {
+	return &nTileExpr{
 		baseWindowExpr: &baseWindowExpr{
 			eb:       eb,
 			funcName: "NTILE",
@@ -1648,7 +1622,7 @@ func newWindowStdDevExpr(qb QueryBuilder) *windowStdDevExpr {
 		},
 	}
 
-	expr.stddevExpr = newGenericStdDevExpr[WindowStdDevBuilder](expr, qb)
+	expr.stdDevExpr = newGenericStdDevExpr[WindowStdDevBuilder](expr, qb)
 
 	return expr
 }

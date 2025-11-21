@@ -15,12 +15,10 @@ func Names(ns ...string) schema.QueryAppender {
 }
 
 type names struct {
-	ns []string // ns contains the list of names to append to the query
+	ns []string
 }
 
-var _ schema.QueryAppender = (*names)(nil)
-
-func (n *names) AppendQuery(formatter schema.Formatter, b []byte) ([]byte, error) {
+func (n *names) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
 	nsLen := len(n.ns)
 
 	if nsLen == 0 {
@@ -32,7 +30,7 @@ func (n *names) AppendQuery(formatter schema.Formatter, b []byte) ([]byte, error
 			b = append(b, constants.CommaSpace...)
 		}
 
-		b = formatter.AppendName(b, n.ns[i])
+		b = gen.AppendName(b, n.ns[i])
 	}
 
 	return b, nil

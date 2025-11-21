@@ -631,3 +631,324 @@ func (suite *StringFunctionsTestSuite) TestCombinedStringFunctions() {
 		}
 	})
 }
+
+// TestContains tests the Contains function (case-sensitive substring check).
+func (suite *StringFunctionsTestSuite) TestContains() {
+	suite.T().Logf("Testing Contains function for %s", suite.dbType)
+
+	suite.Run("ContainsSubstring", func() {
+		type ContainsResult struct {
+			Id            string `bun:"id"`
+			Title         string `bun:"title"`
+			ContainsPost  bool   `bun:"contains_post"`
+			ContainsGuide bool   `bun:"contains_guide"`
+		}
+
+		var containsResults []ContainsResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Contains(eb.Column("title"), "'Post'")
+			}, "contains_post").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Contains(eb.Column("title"), "'Guide'")
+			}, "contains_guide").
+			OrderBy("id").
+			Limit(5).
+			Scan(suite.ctx, &containsResults)
+
+		suite.NoError(err, "Contains function should work correctly")
+		suite.True(len(containsResults) > 0, "Should have contains results")
+
+		for _, result := range containsResults {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+
+			// Verify case-sensitive matching
+			if strings.Contains(result.Title, "Post") {
+				suite.True(result.ContainsPost, "Should contain 'Post' when present")
+			} else {
+				suite.False(result.ContainsPost, "Should not contain 'Post' when absent")
+			}
+
+			if strings.Contains(result.Title, "Guide") {
+				suite.True(result.ContainsGuide, "Should contain 'Guide' when present")
+			} else {
+				suite.False(result.ContainsGuide, "Should not contain 'Guide' when absent")
+			}
+
+			suite.T().Logf("ID: %s, Title: %s, ContainsPost: %v, ContainsGuide: %v",
+				result.Id, result.Title, result.ContainsPost, result.ContainsGuide)
+		}
+	})
+}
+
+// TestStartsWith tests the StartsWith function (case-sensitive prefix check).
+func (suite *StringFunctionsTestSuite) TestStartsWith() {
+	suite.T().Logf("Testing StartsWith function for %s", suite.dbType)
+
+	suite.Run("StartsWithPrefix", func() {
+		type StartsWithResult struct {
+			Id          string `bun:"id"`
+			Title       string `bun:"title"`
+			StartsWithG bool   `bun:"starts_with_g"`
+			StartsWithP bool   `bun:"starts_with_p"`
+		}
+
+		var startsWithResults []StartsWithResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.StartsWith(eb.Column("title"), "'G'")
+			}, "starts_with_g").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.StartsWith(eb.Column("title"), "'P'")
+			}, "starts_with_p").
+			OrderBy("id").
+			Limit(5).
+			Scan(suite.ctx, &startsWithResults)
+
+		suite.NoError(err, "StartsWith function should work correctly")
+		suite.True(len(startsWithResults) > 0, "Should have startsWith results")
+
+		for _, result := range startsWithResults {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+
+			// Verify case-sensitive prefix matching
+			if strings.HasPrefix(result.Title, "G") {
+				suite.True(result.StartsWithG, "Should start with 'G' when present")
+			} else {
+				suite.False(result.StartsWithG, "Should not start with 'G' when absent")
+			}
+
+			if strings.HasPrefix(result.Title, "P") {
+				suite.True(result.StartsWithP, "Should start with 'P' when present")
+			} else {
+				suite.False(result.StartsWithP, "Should not start with 'P' when absent")
+			}
+
+			suite.T().Logf("ID: %s, Title: %s, StartsWithG: %v, StartsWithP: %v",
+				result.Id, result.Title, result.StartsWithG, result.StartsWithP)
+		}
+	})
+}
+
+// TestEndsWith tests the EndsWith function (case-sensitive suffix check).
+func (suite *StringFunctionsTestSuite) TestEndsWith() {
+	suite.T().Logf("Testing EndsWith function for %s", suite.dbType)
+
+	suite.Run("EndsWithSuffix", func() {
+		type EndsWithResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			EndsWithE bool   `bun:"ends_with_e"`
+			EndsWithT bool   `bun:"ends_with_t"`
+		}
+
+		var endsWithResults []EndsWithResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.EndsWith(eb.Column("title"), "'e'")
+			}, "ends_with_e").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.EndsWith(eb.Column("title"), "'t'")
+			}, "ends_with_t").
+			OrderBy("id").
+			Limit(5).
+			Scan(suite.ctx, &endsWithResults)
+
+		suite.NoError(err, "EndsWith function should work correctly")
+		suite.True(len(endsWithResults) > 0, "Should have endsWith results")
+
+		for _, result := range endsWithResults {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+
+			// Verify case-sensitive suffix matching
+			if strings.HasSuffix(result.Title, "e") {
+				suite.True(result.EndsWithE, "Should end with 'e' when present")
+			} else {
+				suite.False(result.EndsWithE, "Should not end with 'e' when absent")
+			}
+
+			if strings.HasSuffix(result.Title, "t") {
+				suite.True(result.EndsWithT, "Should end with 't' when present")
+			} else {
+				suite.False(result.EndsWithT, "Should not end with 't' when absent")
+			}
+
+			suite.T().Logf("ID: %s, Title: %s, EndsWithE: %v, EndsWithT: %v",
+				result.Id, result.Title, result.EndsWithE, result.EndsWithT)
+		}
+	})
+}
+
+// TestContainsIgnoreCase tests the ContainsIgnoreCase function (case-insensitive substring check).
+func (suite *StringFunctionsTestSuite) TestContainsIgnoreCase() {
+	suite.T().Logf("Testing ContainsIgnoreCase function for %s", suite.dbType)
+
+	suite.Run("ContainsSubstringIgnoreCase", func() {
+		type ContainsIgnoreCaseResult struct {
+			Id            string `bun:"id"`
+			Title         string `bun:"title"`
+			ContainsPost  bool   `bun:"contains_post"`
+			ContainsGuide bool   `bun:"contains_guide"`
+		}
+
+		var containsResults []ContainsIgnoreCaseResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.ContainsIgnoreCase(eb.Column("title"), "'post'")
+			}, "contains_post").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.ContainsIgnoreCase(eb.Column("title"), "'GUIDE'")
+			}, "contains_guide").
+			OrderBy("id").
+			Limit(5).
+			Scan(suite.ctx, &containsResults)
+
+		suite.NoError(err, "ContainsIgnoreCase function should work correctly")
+		suite.True(len(containsResults) > 0, "Should have contains ignore case results")
+
+		for _, result := range containsResults {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+
+			// Verify case-insensitive matching
+			lowerTitle := strings.ToLower(result.Title)
+			if strings.Contains(lowerTitle, "post") {
+				suite.True(result.ContainsPost, "Should contain 'post' (case-insensitive) when present")
+			} else {
+				suite.False(result.ContainsPost, "Should not contain 'post' (case-insensitive) when absent")
+			}
+
+			if strings.Contains(lowerTitle, "guide") {
+				suite.True(result.ContainsGuide, "Should contain 'guide' (case-insensitive) when present")
+			} else {
+				suite.False(result.ContainsGuide, "Should not contain 'guide' (case-insensitive) when absent")
+			}
+
+			suite.T().Logf("ID: %s, Title: %s, ContainsPost: %v, ContainsGuide: %v",
+				result.Id, result.Title, result.ContainsPost, result.ContainsGuide)
+		}
+	})
+}
+
+// TestStartsWithIgnoreCase tests the StartsWithIgnoreCase function (case-insensitive prefix check).
+func (suite *StringFunctionsTestSuite) TestStartsWithIgnoreCase() {
+	suite.T().Logf("Testing StartsWithIgnoreCase function for %s", suite.dbType)
+
+	suite.Run("StartsWithPrefixIgnoreCase", func() {
+		type StartsWithIgnoreCaseResult struct {
+			Id          string `bun:"id"`
+			Title       string `bun:"title"`
+			StartsWithG bool   `bun:"starts_with_g"`
+			StartsWithP bool   `bun:"starts_with_p"`
+		}
+
+		var startsWithResults []StartsWithIgnoreCaseResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.StartsWithIgnoreCase(eb.Column("title"), "'g'")
+			}, "starts_with_g").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.StartsWithIgnoreCase(eb.Column("title"), "'p'")
+			}, "starts_with_p").
+			OrderBy("id").
+			Limit(5).
+			Scan(suite.ctx, &startsWithResults)
+
+		suite.NoError(err, "StartsWithIgnoreCase function should work correctly")
+		suite.True(len(startsWithResults) > 0, "Should have startsWithIgnoreCase results")
+
+		for _, result := range startsWithResults {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+
+			// Verify case-insensitive prefix matching
+			lowerTitle := strings.ToLower(result.Title)
+			if strings.HasPrefix(lowerTitle, "g") {
+				suite.True(result.StartsWithG, "Should start with 'g' (case-insensitive) when present")
+			} else {
+				suite.False(result.StartsWithG, "Should not start with 'g' (case-insensitive) when absent")
+			}
+
+			if strings.HasPrefix(lowerTitle, "p") {
+				suite.True(result.StartsWithP, "Should start with 'p' (case-insensitive) when present")
+			} else {
+				suite.False(result.StartsWithP, "Should not start with 'p' (case-insensitive) when absent")
+			}
+
+			suite.T().Logf("ID: %s, Title: %s, StartsWithG: %v, StartsWithP: %v",
+				result.Id, result.Title, result.StartsWithG, result.StartsWithP)
+		}
+	})
+}
+
+// TestEndsWithIgnoreCase tests the EndsWithIgnoreCase function (case-insensitive suffix check).
+func (suite *StringFunctionsTestSuite) TestEndsWithIgnoreCase() {
+	suite.T().Logf("Testing EndsWithIgnoreCase function for %s", suite.dbType)
+
+	suite.Run("EndsWithSuffixIgnoreCase", func() {
+		type EndsWithIgnoreCaseResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			EndsWithE bool   `bun:"ends_with_e"`
+			EndsWithT bool   `bun:"ends_with_t"`
+		}
+
+		var endsWithResults []EndsWithIgnoreCaseResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("id", "title").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.EndsWithIgnoreCase(eb.Column("title"), "'E'")
+			}, "ends_with_e").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.EndsWithIgnoreCase(eb.Column("title"), "'T'")
+			}, "ends_with_t").
+			OrderBy("id").
+			Limit(5).
+			Scan(suite.ctx, &endsWithResults)
+
+		suite.NoError(err, "EndsWithIgnoreCase function should work correctly")
+		suite.True(len(endsWithResults) > 0, "Should have endsWithIgnoreCase results")
+
+		for _, result := range endsWithResults {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+
+			// Verify case-insensitive suffix matching
+			lowerTitle := strings.ToLower(result.Title)
+			if strings.HasSuffix(lowerTitle, "e") {
+				suite.True(result.EndsWithE, "Should end with 'e' (case-insensitive) when present")
+			} else {
+				suite.False(result.EndsWithE, "Should not end with 'e' (case-insensitive) when absent")
+			}
+
+			if strings.HasSuffix(lowerTitle, "t") {
+				suite.True(result.EndsWithT, "Should end with 't' (case-insensitive) when present")
+			} else {
+				suite.False(result.EndsWithT, "Should not end with 't' (case-insensitive) when absent")
+			}
+
+			suite.T().Logf("ID: %s, Title: %s, EndsWithE: %v, EndsWithT: %v",
+				result.Id, result.Title, result.EndsWithE, result.EndsWithT)
+		}
+	})
+}

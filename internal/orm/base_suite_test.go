@@ -120,6 +120,8 @@ func (suite *OrmTestSuite) SetupSuite() {
 		(*SimpleModel)(nil),
 	)
 
+	// Counter for alternating between past and future offsets
+	counter := 0
 	fixture := dbfixture.New(
 		db,
 		dbfixture.WithRecreateTables(),
@@ -128,7 +130,14 @@ func (suite *OrmTestSuite) SetupSuite() {
 				return id.Generate()
 			},
 			"now": func() string {
-				return datetime.Now().String()
+				counter++
+				// Use small hour-based offsets (between -12 and 11 hours) to ensure all test timestamps
+				// are recent enough for time window tests (UpdatedAtGreaterThan, CreatedAtBetween)
+				// while providing meaningful intervals for Age function testing
+				// PostgreSQL AGE() with hours returns "X days Y hours" format
+				offsetHours := (counter % 24) - 12 // Will produce offsets from -12 to 11 hours
+
+				return datetime.Now().AddHours(offsetHours).String()
 			},
 		}),
 	)

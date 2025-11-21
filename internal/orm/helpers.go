@@ -13,7 +13,6 @@ import (
 )
 
 // getTableSchema extracts the table schema from a struct pointer model.
-// It validates that the model is a pointer to a struct and returns the corresponding schema.
 func getTableSchema(model any, db *bun.DB) *schema.Table {
 	modelType := reflect.TypeOf(model)
 	if modelType.Kind() == reflect.Pointer {
@@ -29,7 +28,6 @@ func getTableSchema(model any, db *bun.DB) *schema.Table {
 }
 
 // getTableSchemaFromQuery extracts the table schema from a bun.Query instance.
-// It returns the schema if the query has a model that implements bun.TableModel, otherwise nil.
 func getTableSchemaFromQuery(query bun.Query) *schema.Table {
 	if model := query.GetModel(); model != nil {
 		if tm, ok := model.(bun.TableModel); ok {
@@ -41,7 +39,6 @@ func getTableSchemaFromQuery(query bun.Query) *schema.Table {
 }
 
 // buildColumnExpr builds a column expression with optional table alias.
-// If no alias is provided, it uses the default ?TableAlias placeholder.
 func buildColumnExpr(column string, alias ...string) schema.QueryWithArgs {
 	if len(alias) == 0 {
 		return bun.SafeQuery("?TableAlias.?", bun.Name(column))
@@ -51,7 +48,6 @@ func buildColumnExpr(column string, alias ...string) schema.QueryWithArgs {
 }
 
 // applyRelationSpec applies a RelationSpec to a SelectQuery by creating the appropriate JOIN.
-// It automatically determines foreign and referenced columns based on table schema and conventions.
 func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 	var (
 		table            = query.Db().TableOf(spec.Model)
@@ -85,7 +81,6 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 		referencedColumn = pk
 	}
 
-	// Select specified columns from the joined table
 	if len(spec.SelectedColumns) > 0 {
 		for _, ci := range spec.SelectedColumns {
 			column := dbhelpers.ColumnWithAlias(ci.Name, alias)
@@ -103,17 +98,14 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 		}
 	}
 
-	// Build the JOIN condition
 	joinCondition := func(cb ConditionBuilder) {
 		cb.EqualsColumn(dbhelpers.ColumnWithAlias(referencedColumn, alias), foreignColumn)
 
-		// Apply additional custom ON conditions if provided
 		if spec.On != nil {
 			spec.On(cb)
 		}
 	}
 
-	// Apply the appropriate JOIN type
 	switch joinType {
 	case JoinInner:
 		query.Join(spec.Model, joinCondition, alias)
@@ -121,6 +113,12 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 		query.LeftJoin(spec.Model, joinCondition, alias)
 	case JoinRight:
 		query.RightJoin(spec.Model, joinCondition, alias)
+	case JoinFull:
+		query.FullJoin(spec.Model, joinCondition, alias)
+	case JoinCross:
+		logger.Panicf("applyRelationSpec: CROSS JOIN is not supported in RelationSpec, use query.CrossJoin() directly")
+	default:
+		logger.Panicf("applyRelationSpec: unsupported join type %v", joinType)
 	}
 }
 

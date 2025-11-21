@@ -101,17 +101,17 @@ func replaceHtmlUrls(content string, replacements map[string]string) string {
 			quote := groups[2].String()
 			oldUrl := groups[3].String()
 
-			result.WriteString(content[lastIndex:groups[0].Index])
+			_, _ = result.WriteString(content[lastIndex:groups[0].Index])
 
 			if newURL, ok := replacements[oldUrl]; ok {
 				// Preserve original quote type to maintain HTML consistency
-				result.WriteString(attrName)
-				result.WriteString("=")
-				result.WriteString(quote)
-				result.WriteString(newURL)
-				result.WriteString(quote)
+				_, _ = result.WriteString(attrName)
+				_ = result.WriteByte(constants.ByteEquals)
+				_, _ = result.WriteString(quote)
+				_, _ = result.WriteString(newURL)
+				_, _ = result.WriteString(quote)
 			} else {
-				result.WriteString(groups[0].String())
+				_, _ = result.WriteString(groups[0].String())
 			}
 
 			lastIndex = groups[0].Index + groups[0].Length
@@ -120,7 +120,7 @@ func replaceHtmlUrls(content string, replacements map[string]string) string {
 		match, err = htmlAttrReplacePattern.FindNextMatch(match)
 	}
 
-	result.WriteString(content[lastIndex:])
+	_, _ = result.WriteString(content[lastIndex:])
 
 	return result.String()
 }
@@ -174,12 +174,24 @@ func replaceMarkdownUrls(content string, replacements map[string]string) string 
 				url = strings.TrimSpace(url[:idx])
 			}
 
-			if newURL, ok := replacements[url]; ok {
+			if newUrl, ok := replacements[url]; ok {
+				var sb strings.Builder
+
+				_ = sb.WriteByte(constants.ByteExclamationMark)
+				_ = sb.WriteByte(constants.ByteLeftBracket)
+				_, _ = sb.WriteString(alt)
+				_ = sb.WriteByte(constants.ByteRightBracket)
+				_ = sb.WriteByte(constants.ByteLeftParenthesis)
+				_, _ = sb.WriteString(newUrl)
+
 				if title != constants.Empty {
-					return `![` + alt + `](` + newURL + ` ` + title + `)`
+					_ = sb.WriteByte(constants.ByteSpace)
+					_, _ = sb.WriteString(title)
 				}
 
-				return `![` + alt + `](` + newURL + `)`
+				_ = sb.WriteByte(constants.ByteRightParenthesis)
+
+				return sb.String()
 			}
 		}
 
@@ -198,12 +210,23 @@ func replaceMarkdownUrls(content string, replacements map[string]string) string 
 				url = strings.TrimSpace(url[:idx])
 			}
 
-			if newURL, ok := replacements[url]; ok {
+			if newUrl, ok := replacements[url]; ok {
+				var sb strings.Builder
+
+				_ = sb.WriteByte(constants.ByteLeftBracket)
+				_, _ = sb.WriteString(text)
+				_ = sb.WriteByte(constants.ByteRightBracket)
+				_ = sb.WriteByte(constants.ByteLeftParenthesis)
+				_, _ = sb.WriteString(newUrl)
+
 				if title != constants.Empty {
-					return `[` + text + `](` + newURL + ` ` + title + `)`
+					_ = sb.WriteByte(constants.ByteSpace)
+					_, _ = sb.WriteString(title)
 				}
 
-				return `[` + text + `](` + newURL + `)`
+				_ = sb.WriteByte(constants.ByteRightParenthesis)
+
+				return sb.String()
 			}
 		}
 

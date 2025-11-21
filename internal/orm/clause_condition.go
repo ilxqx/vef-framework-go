@@ -69,7 +69,7 @@ func (cb *ClauseConditionBuilder) AppendGroup(sep string, conditions []schema.Qu
 	cb.AppendConditions(schema.SafeQueryWithSep(constants.Empty, nil, constants.RightParenthesis))
 }
 
-func (cb *ClauseConditionBuilder) AppendQuery(fmter schema.Formatter, b []byte) (_ []byte, err error) {
+func (cb *ClauseConditionBuilder) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	if len(cb.conditions) == 0 {
 		return b, nil
 	}
@@ -79,7 +79,7 @@ func (cb *ClauseConditionBuilder) AppendQuery(fmter schema.Formatter, b []byte) 
 			b = append(b, condition.Sep...)
 		}
 
-		b, err = condition.AppendQuery(fmter, b)
+		b, err = condition.AppendQuery(gen, b)
 		if err != nil {
 			return nil, err
 		}

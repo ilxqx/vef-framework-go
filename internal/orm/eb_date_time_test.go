@@ -469,16 +469,16 @@ func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc("year", eb.Column("created_at"))
+				return eb.DateTrunc(UnitYear, eb.Column("created_at"))
 			}, "trunc_year").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc("month", eb.Column("created_at"))
+				return eb.DateTrunc(UnitMonth, eb.Column("created_at"))
 			}, "trunc_month").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc("day", eb.Column("created_at"))
+				return eb.DateTrunc(UnitDay, eb.Column("created_at"))
 			}, "trunc_day").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc("hour", eb.Column("created_at"))
+				return eb.DateTrunc(UnitHour, eb.Column("created_at"))
 			}, "trunc_hour").
 			OrderBy("created_at").
 			Limit(5).
@@ -501,12 +501,11 @@ func (suite *DateTimeFunctionsTestSuite) TestDateTrunc() {
 }
 
 // TestDateAdd tests the DateAdd function.
-// DateAdd adds interval to date/timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 	suite.T().Logf("Testing DateAdd function for %s", suite.dbType)
 
-	// Test 1: Add different intervals (7 days, 3 months, 1 year)
-	suite.Run("AddDifferentIntervals", func() {
+	// Test 1: Add different date intervals (7 days, 3 months, 1 year)
+	suite.Run("AddDateIntervals", func() {
 		type DateAddResult struct {
 			CreatedAt   time.Time `bun:"created_at"`
 			AddedDays   time.Time `bun:"added_days"`
@@ -520,13 +519,13 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 7, "DAY")
+				return eb.DateAdd(eb.Column("created_at"), 7, UnitDay)
 			}, "added_days").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 3, "MONTH")
+				return eb.DateAdd(eb.Column("created_at"), 3, UnitMonth)
 			}, "added_months").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateAdd(eb.Column("created_at"), 1, "YEAR")
+				return eb.DateAdd(eb.Column("created_at"), 1, UnitYear)
 			}, "added_years").
 			OrderBy("created_at").
 			Limit(5).
@@ -536,7 +535,6 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 		suite.True(len(results) > 0, "DateAdd should return at least one result")
 
 		for _, result := range results {
-			// Verify added dates are after original
 			suite.True(result.AddedDays.After(result.CreatedAt), "Date with added days should be after original timestamp")
 			suite.True(result.AddedMonths.After(result.CreatedAt), "Date with added months should be after original timestamp")
 			suite.True(result.AddedYears.After(result.CreatedAt), "Date with added years should be after original timestamp")
@@ -545,19 +543,59 @@ func (suite *DateTimeFunctionsTestSuite) TestDateAdd() {
 				result.CreatedAt, result.AddedDays, result.AddedMonths, result.AddedYears)
 		}
 	})
+
+	// Test 2: Add different time intervals (30 seconds, 45 minutes, 2 hours)
+	suite.Run("AddTimeIntervals", func() {
+		type TimeAddResult struct {
+			CreatedAt    time.Time `bun:"created_at"`
+			AddedSeconds time.Time `bun:"added_seconds"`
+			AddedMinutes time.Time `bun:"added_minutes"`
+			AddedHours   time.Time `bun:"added_hours"`
+		}
+
+		var results []TimeAddResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("created_at").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 30, UnitSecond)
+			}, "added_seconds").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 45, UnitMinute)
+			}, "added_minutes").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateAdd(eb.Column("created_at"), 2, UnitHour)
+			}, "added_hours").
+			OrderBy("created_at").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "DateAdd with time units should execute successfully")
+		suite.True(len(results) > 0, "DateAdd should return at least one result")
+
+		for _, result := range results {
+			suite.True(result.AddedSeconds.After(result.CreatedAt), "Date with added seconds should be after original timestamp")
+			suite.True(result.AddedMinutes.After(result.CreatedAt), "Date with added minutes should be after original timestamp")
+			suite.True(result.AddedHours.After(result.CreatedAt), "Date with added hours should be after original timestamp")
+
+			suite.T().Logf("Original: %v | +30s: %v | +45m: %v | +2h: %v",
+				result.CreatedAt, result.AddedSeconds, result.AddedMinutes, result.AddedHours)
+		}
+	})
 }
 
 // TestDateSubtract tests the DateSubtract function.
-// DateSubtract subtracts interval from date/timestamp.
 func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 	suite.T().Logf("Testing DateSubtract function for %s", suite.dbType)
 
-	// Test 1: Subtract different intervals (5 days, 2 months)
-	suite.Run("SubtractDifferentIntervals", func() {
+	// Test 1: Subtract different date intervals (5 days, 2 months, 1 year)
+	suite.Run("SubtractDateIntervals", func() {
 		type DateSubtractResult struct {
 			CreatedAt        time.Time `bun:"created_at"`
 			SubtractedDays   time.Time `bun:"subtracted_days"`
 			SubtractedMonths time.Time `bun:"subtracted_months"`
+			SubtractedYears  time.Time `bun:"subtracted_years"`
 		}
 
 		var results []DateSubtractResult
@@ -566,11 +604,14 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 			Model((*Post)(nil)).
 			Select("created_at").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 5, "DAY")
+				return eb.DateSubtract(eb.Column("created_at"), 5, UnitDay)
 			}, "subtracted_days").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateSubtract(eb.Column("created_at"), 2, "MONTH")
+				return eb.DateSubtract(eb.Column("created_at"), 2, UnitMonth)
 			}, "subtracted_months").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 1, UnitYear)
+			}, "subtracted_years").
 			OrderBy("created_at").
 			Limit(5).
 			Scan(suite.ctx, &results)
@@ -579,45 +620,85 @@ func (suite *DateTimeFunctionsTestSuite) TestDateSubtract() {
 		suite.True(len(results) > 0, "DateSubtract should return at least one result")
 
 		for _, result := range results {
-			// Verify subtracted dates are before original
 			suite.True(result.SubtractedDays.Before(result.CreatedAt), "Date with subtracted days should be before original timestamp")
 			suite.True(result.SubtractedMonths.Before(result.CreatedAt), "Date with subtracted months should be before original timestamp")
+			suite.True(result.SubtractedYears.Before(result.CreatedAt), "Date with subtracted years should be before original timestamp")
 
-			suite.T().Logf("Original: %v | -5 days: %v | -2 months: %v",
-				result.CreatedAt, result.SubtractedDays, result.SubtractedMonths)
+			suite.T().Logf("Original: %v | -5 days: %v | -2 months: %v | -1 year: %v",
+				result.CreatedAt, result.SubtractedDays, result.SubtractedMonths, result.SubtractedYears)
+		}
+	})
+
+	// Test 2: Subtract different time intervals (45 seconds, 30 minutes, 3 hours)
+	suite.Run("SubtractTimeIntervals", func() {
+		type TimeSubtractResult struct {
+			CreatedAt         time.Time `bun:"created_at"`
+			SubtractedSeconds time.Time `bun:"subtracted_seconds"`
+			SubtractedMinutes time.Time `bun:"subtracted_minutes"`
+			SubtractedHours   time.Time `bun:"subtracted_hours"`
+		}
+
+		var results []TimeSubtractResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("created_at").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 45, UnitSecond)
+			}, "subtracted_seconds").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 30, UnitMinute)
+			}, "subtracted_minutes").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateSubtract(eb.Column("created_at"), 3, UnitHour)
+			}, "subtracted_hours").
+			OrderBy("created_at").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "DateSubtract with time units should execute successfully")
+		suite.True(len(results) > 0, "DateSubtract should return at least one result")
+
+		for _, result := range results {
+			suite.True(result.SubtractedSeconds.Before(result.CreatedAt), "Date with subtracted seconds should be before original timestamp")
+			suite.True(result.SubtractedMinutes.Before(result.CreatedAt), "Date with subtracted minutes should be before original timestamp")
+			suite.True(result.SubtractedHours.Before(result.CreatedAt), "Date with subtracted hours should be before original timestamp")
+
+			suite.T().Logf("Original: %v | -45s: %v | -30m: %v | -3h: %v",
+				result.CreatedAt, result.SubtractedSeconds, result.SubtractedMinutes, result.SubtractedHours)
 		}
 	})
 }
 
 // TestDateDiff tests the DateDiff function.
-// DateDiff returns the difference between two dates in specified unit.
+// Returns the difference between two dates in the specified unit.
 func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 	suite.T().Logf("Testing DateDiff function for %s", suite.dbType)
 
-	// Test 1: Calculate date differences in different units (days, hours, minutes)
-	suite.Run("CalculateDateDifferences", func() {
-		type DateDiffResult struct {
+	// Test 1: Calculate time differences in time units (seconds, minutes, hours)
+	suite.Run("CalculateTimeDifferences", func() {
+		type TimeDiffResult struct {
 			CreatedAt   time.Time `bun:"created_at"`
 			UpdatedAt   time.Time `bun:"updated_at"`
-			DaysDiff    float64   `bun:"days_diff"`
-			HoursDiff   float64   `bun:"hours_diff"`
+			SecondsDiff float64   `bun:"seconds_diff"`
 			MinutesDiff float64   `bun:"minutes_diff"`
+			HoursDiff   float64   `bun:"hours_diff"`
 		}
 
-		var results []DateDiffResult
+		var results []TimeDiffResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("created_at", "updated_at").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), "DAY")
-			}, "days_diff").
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitSecond)
+			}, "seconds_diff").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), "HOUR")
-			}, "hours_diff").
-			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), "MINUTE")
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitMinute)
 			}, "minutes_diff").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitHour)
+			}, "hours_diff").
 			OrderBy("created_at").
 			Limit(5).
 			Scan(suite.ctx, &results)
@@ -626,24 +707,81 @@ func (suite *DateTimeFunctionsTestSuite) TestDateDiff() {
 		suite.True(len(results) > 0, "DateDiff should return at least one result")
 
 		for _, result := range results {
-			suite.True(result.DaysDiff >= 0, "DateDiff in days should be non-negative (updated_at should not be before created_at)")
-			suite.T().Logf("Created: %v | Updated: %v | Days: %.2f | Hours: %.2f | Minutes: %.2f",
-				result.CreatedAt, result.UpdatedAt, result.DaysDiff, result.HoursDiff, result.MinutesDiff)
+			// Verify that seconds, minutes, and hours maintain consistent relationships
+			// The sign should be consistent (all positive or all negative based on date order)
+			if result.CreatedAt.Before(result.UpdatedAt) {
+				suite.True(result.SecondsDiff >= 0, "DateDiff in seconds should be non-negative when created_at is before updated_at")
+				suite.True(result.MinutesDiff >= 0, "DateDiff in minutes should be non-negative when created_at is before updated_at")
+				suite.True(result.HoursDiff >= 0, "DateDiff in hours should be non-negative when created_at is before updated_at")
+			} else if result.CreatedAt.After(result.UpdatedAt) {
+				suite.True(result.SecondsDiff <= 0, "DateDiff in seconds should be non-positive when created_at is after updated_at")
+				suite.True(result.MinutesDiff <= 0, "DateDiff in minutes should be non-positive when created_at is after updated_at")
+				suite.True(result.HoursDiff <= 0, "DateDiff in hours should be non-positive when created_at is after updated_at")
+			}
+
+			suite.T().Logf("Created: %v | Updated: %v | Seconds: %.2f | Minutes: %.2f | Hours: %.2f",
+				result.CreatedAt, result.UpdatedAt, result.SecondsDiff, result.MinutesDiff, result.HoursDiff)
+		}
+	})
+
+	// Test 2: Calculate date differences in date units (days, months, years)
+	suite.Run("CalculateDateDifferences", func() {
+		type DateDiffResult struct {
+			CreatedAt  time.Time `bun:"created_at"`
+			UpdatedAt  time.Time `bun:"updated_at"`
+			DaysDiff   float64   `bun:"days_diff"`
+			MonthsDiff float64   `bun:"months_diff"`
+			YearsDiff  float64   `bun:"years_diff"`
+		}
+
+		var results []DateDiffResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			Select("created_at", "updated_at").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitDay)
+			}, "days_diff").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitMonth)
+			}, "months_diff").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.DateDiff(eb.Column("created_at"), eb.Column("updated_at"), UnitYear)
+			}, "years_diff").
+			OrderBy("created_at").
+			Limit(5).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "DateDiff query should execute successfully")
+		suite.True(len(results) > 0, "DateDiff should return at least one result")
+
+		for _, result := range results {
+			// Verify that days, months, and years maintain consistent relationships
+			// The sign should be consistent (all positive or all negative based on date order)
+			if result.CreatedAt.Before(result.UpdatedAt) {
+				suite.True(result.DaysDiff >= 0, "DateDiff in days should be non-negative when created_at is before updated_at")
+				suite.True(result.MonthsDiff >= 0, "DateDiff in months should be non-negative when created_at is before updated_at")
+				suite.True(result.YearsDiff >= 0, "DateDiff in years should be non-negative when created_at is before updated_at")
+			} else if result.CreatedAt.After(result.UpdatedAt) {
+				suite.True(result.DaysDiff <= 0, "DateDiff in days should be non-positive when created_at is after updated_at")
+				suite.True(result.MonthsDiff <= 0, "DateDiff in months should be non-positive when created_at is after updated_at")
+				suite.True(result.YearsDiff <= 0, "DateDiff in years should be non-positive when created_at is after updated_at")
+			}
+
+			suite.T().Logf("Created: %v | Updated: %v | Days: %.2f | Months: %.2f | Years: %.2f",
+				result.CreatedAt, result.UpdatedAt, result.DaysDiff, result.MonthsDiff, result.YearsDiff)
 		}
 	})
 }
 
 // TestAge tests the Age function.
-// Age returns the age (interval) between two timestamps (PostgreSQL only).
+// Age returns the age (interval) between two timestamps in PostgreSQL-compatible format.
+// Returns a string in format: "X years Y mons Z days".
 func (suite *DateTimeFunctionsTestSuite) TestAge() {
 	suite.T().Logf("Testing Age function for %s", suite.dbType)
 
-	// Test 1: Calculate age interval between updated_at and created_at (PostgreSQL only)
+	// Test 1: Calculate age interval between updated_at and created_at
 	suite.Run("CalculateAgeInterval", func() {
-		if suite.dbType != constants.DbPostgres {
-			suite.T().Skipf("Age skipped for %s (PostgreSQL only)", suite.dbType)
-		}
-
 		type AgeResult struct {
 			Id        string `bun:"id"`
 			CreatedAt string `bun:"created_at"`
@@ -657,19 +795,61 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 			Model((*User)(nil)).
 			Select("id", "created_at", "updated_at").
 			SelectExpr(func(eb ExprBuilder) any {
-				// Calculate age between updated_at and created_at
-				return eb.Age(eb.Column("updated_at"), eb.Column("created_at"))
+				// Calculate age between created_at and updated_at
+				return eb.Age(eb.Column("created_at"), eb.Column("updated_at"))
 			}, "age").
 			Limit(5).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "Age query should execute successfully on PostgreSQL")
-		suite.True(len(results) > 0, "Age should return at least one result on PostgreSQL")
+		suite.NoError(err, "Age query should execute successfully")
+		suite.True(len(results) > 0, "Age should return at least one result")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Age, "Age interval should not be empty (should return PostgreSQL interval format)")
+			suite.NotEmpty(result.Age, "Age interval should not be empty")
+
+			// Verify the format contains "years", "mons", and "days"
+			suite.Contains(result.Age, "years", "Age interval should contain 'years'")
+			suite.Contains(result.Age, "mons", "Age interval should contain 'mons'")
+			suite.Contains(result.Age, "days", "Age interval should contain 'days'")
+
 			suite.T().Logf("ID: %s, CreatedAt: %s, UpdatedAt: %s, Age: %s",
 				result.Id, result.CreatedAt, result.UpdatedAt, result.Age)
+		}
+	})
+
+	// Test 2: Calculate age with known date values to verify accuracy
+	suite.Run("CalculateAgeWithKnownDates", func() {
+		type AgeTestResult struct {
+			Age string `bun:"age"`
+		}
+
+		var result AgeTestResult
+
+		// Test with known dates: from 1957-06-13 to 2001-04-10
+		// Expected PostgreSQL result: "43 years 9 mons 27 days"
+		err := suite.db.NewSelect().
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Age(
+					eb.Literal("1957-06-13"),
+					eb.Literal("2001-04-10"),
+				)
+			}, "age").
+			Scan(suite.ctx, &result)
+
+		suite.NoError(err, "Age query with known dates should execute successfully")
+		suite.NotEmpty(result.Age, "Age interval should not be empty")
+
+		// The result should contain years, mons, and days
+		suite.Contains(result.Age, "years", "Age interval should contain 'years'")
+		suite.Contains(result.Age, "mons", "Age interval should contain 'mons'")
+		suite.Contains(result.Age, "days", "Age interval should contain 'days'")
+
+		suite.T().Logf("Age from 1957-06-13 to 2001-04-10: %s", result.Age)
+
+		// For PostgreSQL, we can verify the exact result
+		if suite.dbType == constants.DbPostgres {
+			suite.Contains(result.Age, "43 years", "Should contain approximately 43 years")
+			suite.Contains(result.Age, "9 mons", "Should contain approximately 9 months")
 		}
 	})
 }
@@ -698,13 +878,13 @@ func (suite *DateTimeFunctionsTestSuite) TestCombinedDateTimeFunctions() {
 			}, "year").
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.DateDiff(
-					eb.DateTrunc("month", eb.Column("created_at")),
-					eb.DateTrunc("month", eb.Now()),
-					"MONTH",
+					eb.DateTrunc(UnitMonth, eb.Column("created_at")),
+					eb.DateTrunc(UnitMonth, eb.Now()),
+					UnitMonth,
 				)
 			}, "months_from_now").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.DateTrunc("day", eb.Column("created_at"))
+				return eb.DateTrunc(UnitDay, eb.Column("created_at"))
 			}, "formatted_date").
 			OrderBy("created_at").
 			Limit(5).

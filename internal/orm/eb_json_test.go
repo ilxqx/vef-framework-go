@@ -91,7 +91,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonExtract() {
 				return eb.JsonObject("post_id", eb.Column("id"), "title", eb.Column("title"), "views", eb.Column("view_count"), "status", eb.Column("status"))
 			}, "meta_json").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonExtract(eb.JsonObject("id", eb.Column("id")), "$.id")
+				return eb.JsonExtract(eb.JsonObject("id", eb.Column("id")), "id")
 			}, "extracted_id").
 			OrderBy("title").
 			Limit(3).
@@ -165,7 +165,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonInsert() {
 				return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"))
 			}, "original").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonInsert(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.status", eb.Column("status"))
+				return eb.JsonInsert(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "status", eb.Column("status"))
 			}, "with_insert").
 			OrderBy("title").
 			Limit(2).
@@ -204,7 +204,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonReplace() {
 				return eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count"))
 			}, "original").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonReplace(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "$.views", 9999)
+				return eb.JsonReplace(eb.JsonObject("title", eb.Column("title"), "views", eb.Column("view_count")), "views", 9999)
 			}, "with_replace").
 			OrderBy("title").
 			Limit(2).
@@ -461,7 +461,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonContainsPath() {
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonContainsPath(eb.Column("meta"), "$.role")
+				return eb.JsonContainsPath(eb.Column("meta"), "role")
 			}, "path_exists").
 			Limit(5).
 			Scan(suite.ctx, &results)
@@ -492,7 +492,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonUnquote() {
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonUnquote(eb.JsonExtract(eb.Column("meta"), "$.role"))
+				return eb.JsonUnquote(eb.JsonExtract(eb.Column("meta"), "role"))
 			}, "unquoted").
 			Limit(5).
 			Scan(suite.ctx, &results)
@@ -522,7 +522,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonSet() {
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonSet(eb.Column("meta"), "$.updated", "true")
+				return eb.JsonSet(eb.Column("meta"), "updated", "true")
 			}, "updated_meta").
 			Limit(3).
 			Scan(suite.ctx, &results)
@@ -553,7 +553,7 @@ func (suite *JsonFunctionsTestSuite) TestJsonArrayAppend() {
 			Model((*User)(nil)).
 			Select("id", "meta").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonArrayAppend(eb.Column("meta"), "$.interests", `"testing"`)
+				return eb.JsonArrayAppend(eb.Column("meta"), "interests", `"testing"`)
 			}, "updated_meta").
 			Limit(3).
 			Scan(suite.ctx, &results)
