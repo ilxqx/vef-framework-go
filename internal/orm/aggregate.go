@@ -533,6 +533,7 @@ func (s *stringAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte,
 			}
 
 			s.nullsMode = NullsDefault
+
 			return nil
 		},
 		Default: func() error {
