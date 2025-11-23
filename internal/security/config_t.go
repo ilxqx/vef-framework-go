@@ -18,9 +18,9 @@ const refreshTokenNotBefore = time.Duration(0)
 // High limits prevent test failures from rate limiting.
 var (
 	loginRateLimit = api.RateLimit{
-		Max: 100,
+		Max: 1000,
 	}
 	refreshRateLimit = api.RateLimit{
-		Max: 100,
+		Max: 1000,
 	}
 )
