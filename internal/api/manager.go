@@ -14,10 +14,13 @@ type apiManager struct {
 
 func (m *apiManager) Register(apiDef *api.Definition) error {
 	if existing, loaded := m.apis.LoadOrStore(apiDef.Identifier, wrapHandler(apiDef)); loaded {
+		identifier := apiDef.Identifier
+
 		return &DuplicateError{
-			Identifier: apiDef.Identifier,
-			Existing:   existing,
-			New:        apiDef,
+			BaseError: BaseError{
+				Identifier: &identifier,
+			},
+			Existing: existing,
 		}
 	}
 

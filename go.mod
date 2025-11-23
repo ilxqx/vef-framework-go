@@ -19,6 +19,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/guregu/null/v6 v6.0.0
+	github.com/hbollon/go-edlib v1.7.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/minio/minio-go/v7 v7.0.97

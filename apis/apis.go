@@ -7,7 +7,6 @@ import (
 )
 
 // NewApiBuilder creates a new base Api builder instance.
-// This is the foundation for all CRUD Api builders providing common configuration options.
 func NewApiBuilder[T any](self T, version ...string) ApiBuilder[T] {
 	return &baseApiBuilder[T]{
 		self: self,
@@ -19,6 +18,7 @@ func NewApiBuilder[T any](self T, version ...string) ApiBuilder[T] {
 	}
 }
 
+// NewCreateApi creates a new CreateApi instance for single record creation.
 func NewCreateApi[TModel, TParams any](version ...string) CreateApi[TModel, TParams] {
 	api := new(createApi[TModel, TParams])
 	api.ApiBuilder = NewApiBuilder[CreateApi[TModel, TParams]](api, version...)
@@ -26,6 +26,7 @@ func NewCreateApi[TModel, TParams any](version ...string) CreateApi[TModel, TPar
 	return api.Action(ActionCreate)
 }
 
+// NewUpdateApi creates a new UpdateApi instance for single record update.
 func NewUpdateApi[TModel, TParams any](version ...string) UpdateApi[TModel, TParams] {
 	api := new(updateApi[TModel, TParams])
 	api.ApiBuilder = NewApiBuilder[UpdateApi[TModel, TParams]](api, version...)
@@ -33,6 +34,7 @@ func NewUpdateApi[TModel, TParams any](version ...string) UpdateApi[TModel, TPar
 	return api.Action(ActionUpdate)
 }
 
+// NewDeleteApi creates a new DeleteApi instance for single record deletion.
 func NewDeleteApi[TModel any](version ...string) DeleteApi[TModel] {
 	api := new(deleteApi[TModel])
 	api.ApiBuilder = NewApiBuilder[DeleteApi[TModel]](api, version...)
@@ -64,6 +66,7 @@ func NewDeleteManyApi[TModel any](version ...string) DeleteManyApi[TModel] {
 	return api.Action(ActionDeleteMany)
 }
 
+// NewFindApi creates the base FindApi instance used by all find-type endpoints.
 func NewFindApi[TModel, TSearch, TProcessor, TApi any](self TApi, version ...string) FindApi[TModel, TSearch, TProcessor, TApi] {
 	return &baseFindApi[TModel, TSearch, TProcessor, TApi]{
 		ApiBuilder: NewApiBuilder(self),
@@ -72,7 +75,7 @@ func NewFindApi[TModel, TSearch, TProcessor, TApi any](self TApi, version ...str
 	}
 }
 
-// NewFindOneApi creates a new FindOneApi instance with optional configurations.
+// NewFindOneApi creates a new FindOneApi instance.
 func NewFindOneApi[TModel, TSearch any](version ...string) FindOneApi[TModel, TSearch] {
 	api := new(findOneApi[TModel, TSearch])
 	api.FindApi = NewFindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]](
@@ -83,7 +86,7 @@ func NewFindOneApi[TModel, TSearch any](version ...string) FindOneApi[TModel, TS
 	return api.Action(ActionFindOne)
 }
 
-// NewFindAllApi creates a new FindAllApi instance with optional configurations.
+// NewFindAllApi creates a new FindAllApi instance.
 func NewFindAllApi[TModel, TSearch any](version ...string) FindAllApi[TModel, TSearch] {
 	api := new(findAllApi[TModel, TSearch])
 	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]](
@@ -94,7 +97,7 @@ func NewFindAllApi[TModel, TSearch any](version ...string) FindAllApi[TModel, TS
 	return api.Action(ActionFindAll)
 }
 
-// NewFindPageApi creates a new FindPageApi instance with optional configurations.
+// NewFindPageApi creates a new FindPageApi instance.
 func NewFindPageApi[TModel, TSearch any](version ...string) FindPageApi[TModel, TSearch] {
 	api := new(findPageApi[TModel, TSearch])
 	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]](
@@ -105,7 +108,7 @@ func NewFindPageApi[TModel, TSearch any](version ...string) FindPageApi[TModel, 
 	return api.Action(ActionFindPage)
 }
 
-// NewFindOptionsApi creates a new FindOptionsApi with optional configurations.
+// NewFindOptionsApi creates a new FindOptionsApi.
 func NewFindOptionsApi[TModel, TSearch any](version ...string) FindOptionsApi[TModel, TSearch] {
 	api := new(findOptionsApi[TModel, TSearch])
 	api.FindApi = NewFindApi[TModel, TSearch, []DataOption, FindOptionsApi[TModel, TSearch]](
@@ -116,7 +119,7 @@ func NewFindOptionsApi[TModel, TSearch any](version ...string) FindOptionsApi[TM
 	return api.Action(ActionFindOptions)
 }
 
-// NewFindTreeApi creates a new FindTreeApi for hierarchical data retrieval with optional configurations.
+// NewFindTreeApi creates a new FindTreeApi for hierarchical data retrieval.
 // The treeBuilder function converts flat database records into nested tree structures.
 // Requires models to have id and parent_id columns for parent-child relationships.
 func NewFindTreeApi[TModel, TSearch any](
@@ -136,7 +139,7 @@ func NewFindTreeApi[TModel, TSearch any](
 	return api.Action(ActionFindTree)
 }
 
-// NewFindTreeOptionsApi creates a new FindTreeOptionsApi with optional configurations.
+// NewFindTreeOptionsApi creates a new FindTreeOptionsApi.
 func NewFindTreeOptionsApi[TModel, TSearch any](version ...string) FindTreeOptionsApi[TModel, TSearch] {
 	api := &findTreeOptionsApi[TModel, TSearch]{
 		idColumn:       IdColumn,
@@ -150,7 +153,7 @@ func NewFindTreeOptionsApi[TModel, TSearch any](version ...string) FindTreeOptio
 	return api.Action(ActionFindTreeOptions)
 }
 
-// NewExportApi creates a new ExportApi instance with optional configurations.
+// NewExportApi creates a new ExportApi instance.
 func NewExportApi[TModel, TSearch any](version ...string) ExportApi[TModel, TSearch] {
 	api := new(exportApi[TModel, TSearch])
 	api.FindApi = NewFindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]](
@@ -161,6 +164,7 @@ func NewExportApi[TModel, TSearch any](version ...string) ExportApi[TModel, TSea
 	return api.Action(ActionExport)
 }
 
+// NewImportApi creates a new ImportApi instance.
 func NewImportApi[TModel any](version ...string) ImportApi[TModel] {
 	api := new(importApi[TModel])
 	api.ApiBuilder = NewApiBuilder[ImportApi[TModel]](api, version...)

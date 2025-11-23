@@ -122,7 +122,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 		}
 
 		query.WithRecursive(
-			"tmp_tree", func(cteQuery orm.SelectQuery) {
+			"_tree", func(cteQuery orm.SelectQuery) {
 				applyColumnSelections(cteQuery.Model((*TModel)(nil)))
 
 				if err := a.ConfigureQuery(cteQuery, search, ctx, QueryBase); err != nil {
@@ -143,17 +143,16 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 
 					// Join with CTE to traverse the tree
 					recursiveQuery.JoinTable(
-						"tmp_tree",
+						"_tree",
 						func(cb orm.ConditionBuilder) {
-							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "tt"))
+							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "_tree"))
 						},
-						"tt",
 					)
 				})
 			}).
-			With("tmp_ids", func(query orm.SelectQuery) {
-				query.Table("tmp_tree", "tt").
-					Select(dbhelpers.ColumnWithAlias(IdColumn, "tt")).
+			With("_ids", func(query orm.SelectQuery) {
+				query.Table("_tree").
+					Select(IdColumn).
 					Distinct()
 			})
 
@@ -194,7 +193,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.Db) (func(c
 
 		query.Where(func(cb orm.ConditionBuilder) {
 			cb.InSubQuery(a.idColumn, func(query orm.SelectQuery) {
-				query.Table("tmp_ids")
+				query.Table("_ids")
 			})
 		})
 

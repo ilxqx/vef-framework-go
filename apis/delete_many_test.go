@@ -49,7 +49,7 @@ func NewTestUserDeleteManyWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_delete_many_prehook"),
 		DeleteManyApi: apis.NewDeleteManyApi[TestUser]().
 			Public().
-			WithPreDeleteMany(func(models []TestUser, ctx fiber.Ctx, db orm.Db) error {
+			WithPreDeleteMany(func(models []TestUser, query orm.DeleteQuery, ctx fiber.Ctx, tx orm.Db) error {
 				// Check if any active users in batch
 				activeCount := 0
 

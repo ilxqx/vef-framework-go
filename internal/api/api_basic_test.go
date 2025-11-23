@@ -1349,6 +1349,40 @@ func (suite *BasicApiTestSuite) TestMissingMeta() {
 	suite.Contains(body, `"userAgent":""`, "Should return empty user agent")
 }
 
+// TestApiNotFoundWithSuggestion tests that NotFoundError provides helpful suggestions.
+func (suite *BasicApiTestSuite) TestApiNotFoundWithSuggestion() {
+	suite.T().Log("Testing API not found with similarity suggestion")
+
+	suite.Run("SimilarApiExists", func() {
+		resp := suite.makeApiRequest(`{
+			"resource": "test/user",
+			"action": "gt",
+			"version": "v1",
+			"params": {"id": "123"}
+		}`)
+
+		suite.Equal(404, resp.StatusCode, "Should return 404 Not Found")
+		body := suite.readBody(resp)
+		suite.Contains(body, `"code":1200`, "Should return not found error code")
+		suite.Contains(body, `"message":"Resource not found"`, "Should return not found message")
+		suite.T().Logf("Response body: %s", body)
+	})
+
+	suite.Run("CompletelyWrongApi", func() {
+		resp := suite.makeApiRequest(`{
+			"resource": "nonexistent/api",
+			"action": "invalid",
+			"version": "v99"
+		}`)
+
+		suite.Equal(404, resp.StatusCode, "Should return 404 Not Found")
+		body := suite.readBody(resp)
+		suite.Contains(body, `"code":1200`, "Should return not found error code")
+		suite.Contains(body, `"message":"Resource not found"`, "Should return not found message")
+		suite.T().Logf("Response body: %s", body)
+	})
+}
+
 // TestApiBasicSuite runs the basic api test suite.
 func TestApiBasicSuite(t *testing.T) {
 	suite.Run(t, new(BasicApiTestSuite))

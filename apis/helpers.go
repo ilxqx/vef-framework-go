@@ -20,7 +20,6 @@ import (
 )
 
 // validateColumnsExist validates that the specified columns exist in the model schema.
-// This is a helper function to ensure column mappings are valid before query execution.
 func validateColumnsExist(schema *schema.Table, columns ...struct {
 	name   string
 	column string
@@ -42,7 +41,6 @@ func validateColumnsExist(schema *schema.Table, columns ...struct {
 }
 
 // validateOptionColumns validates columns for DataOptionColumnMapping.
-// Ensures that all specified column names exist in the database model schema.
 func validateOptionColumns(schema *schema.Table, mapping *DataOptionColumnMapping) error {
 	columns := []struct {
 		name   string
@@ -86,8 +84,7 @@ func mergeOptionColumnMapping(mapping, defaultMapping *DataOptionColumnMapping) 
 	}
 }
 
-// ApplyDataPermission is a helper function that applies data permission filtering to a SelectQuery.
-// Returns an error if data permission application fails.
+// ApplyDataPermission applies data permission filtering to a SelectQuery.
 func ApplyDataPermission(query orm.SelectQuery, ctx fiber.Ctx) error {
 	if applier := contextx.DataPermApplier(ctx); applier != nil {
 		if err := applier.Apply(query); err != nil {
@@ -159,7 +156,6 @@ func parseMetaColumn(spec string) (column, alias string) {
 
 // parseMetaColumns parses meta column specifications into structured info.
 // This function should be called once to avoid redundant parsing.
-// Returns nil if specs is empty.
 func parseMetaColumns(specs []string) []orm.ColumnInfo {
 	if len(specs) == 0 {
 		return nil
@@ -204,7 +200,6 @@ func buildMetaJsonExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.
 }
 
 // batchCleanup cleans up files in batch, collecting all errors.
-// Used in create/delete operations to cleanup files.
 func batchCleanup[TModel any](
 	ctx context.Context,
 	promoter storage.Promoter[TModel],

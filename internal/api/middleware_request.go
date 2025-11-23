@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/hbollon/go-edlib"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -33,9 +35,12 @@ func requestMiddleware(manager api.Manager) fiber.Handler {
 
 		definition := manager.Lookup(request.Identifier)
 		if definition == nil {
-			return &Error{
-				Identifier: request.Identifier,
-				Err:        fiber.ErrNotFound,
+			return &NotFoundError{
+				BaseError: BaseError{
+					Identifier: &request.Identifier,
+					Err:        fiber.ErrNotFound,
+				},
+				Suggestion: findClosestApi(manager, request.Identifier),
 			}
 		}
 
@@ -81,6 +86,47 @@ func parseFormRequest(ctx fiber.Ctx, request *api.Request) error {
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+// identifierToString converts an api.Identifier to a comparable string for similarity matching.
+func identifierToString(id api.Identifier) string {
+	return fmt.Sprintf("%s/%s@%s", id.Resource, id.Action, id.Version)
+}
+
+// findClosestApi finds the most similar registered API to the requested identifier.
+// Returns nil if no similar API is found or if the similarity is too low.
+func findClosestApi(manager api.Manager, requested api.Identifier) *api.Identifier {
+	allDefinitions := manager.List()
+	if len(allDefinitions) == 0 {
+		return nil
+	}
+
+	requestedStr := identifierToString(requested)
+
+	var (
+		closestIdentifier *api.Identifier
+		minDistance       = -1
+	)
+
+	for _, def := range allDefinitions {
+		defStr := identifierToString(def.Identifier)
+
+		// Use Levenshtein distance for similarity matching
+		distance := edlib.LevenshteinDistance(requestedStr, defStr)
+
+		if minDistance == -1 || distance < minDistance {
+			minDistance = distance
+			identifier := def.Identifier
+			closestIdentifier = &identifier
+		}
+	}
+
+	// Only return suggestion if similarity is reasonable (distance < 50% of requested string length)
+	if closestIdentifier != nil && minDistance < len(requestedStr)/2 {
+		return closestIdentifier
 	}
 
 	return nil

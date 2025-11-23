@@ -45,8 +45,8 @@ type (
 	ArrayAggBuilder            = orm.ArrayAggBuilder
 	StdDevBuilder              = orm.StdDevBuilder
 	VarianceBuilder            = orm.VarianceBuilder
-	JSONObjectAggBuilder       = orm.JsonObjectAggBuilder
-	JSONArrayAggBuilder        = orm.JsonArrayAggBuilder
+	JsonObjectAggBuilder       = orm.JsonObjectAggBuilder
+	JsonArrayAggBuilder        = orm.JsonArrayAggBuilder
 	BitOrBuilder               = orm.BitOrBuilder
 	BitAndBuilder              = orm.BitAndBuilder
 	BoolOrBuilder              = orm.BoolOrBuilder
@@ -60,8 +60,8 @@ type (
 	WindowArrayAggBuilder      = orm.WindowArrayAggBuilder
 	WindowStdDevBuilder        = orm.WindowStdDevBuilder
 	WindowVarianceBuilder      = orm.WindowVarianceBuilder
-	WindowJSONObjectAggBuilder = orm.WindowJsonObjectAggBuilder
-	WindowJSONArrayAggBuilder  = orm.WindowJsonArrayAggBuilder
+	WindowJsonObjectAggBuilder = orm.WindowJsonObjectAggBuilder
+	WindowJsonArrayAggBuilder  = orm.WindowJsonArrayAggBuilder
 	WindowBitOrBuilder         = orm.WindowBitOrBuilder
 	WindowBitAndBuilder        = orm.WindowBitAndBuilder
 	WindowBoolOrBuilder        = orm.WindowBoolOrBuilder

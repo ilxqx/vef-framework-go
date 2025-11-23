@@ -8,21 +8,23 @@ import (
 	"github.com/ilxqx/vef-framework-go/sort"
 )
 
-// FindApiConfig contains all configuration for FindApi Setup phase.
+// FindApiConfig contains all configuration for FindApi setup phase.
 type FindApiConfig struct {
-	// QueryParts configures which query parts options should apply to
+	// QueryParts defines which query operations (condition, sort, audit relations) apply to different query contexts
 	QueryParts *QueryPartsConfig
 }
 
-// QueryPartsConfig defines which query parts each type of query operation should apply to.
+// QueryPartsConfig controls which query parts are enabled for specific query contexts (e.g., FindAll, FindPage).
 type QueryPartsConfig struct {
-	Condition         []QueryPart
-	Sort              []QueryPart
+	// Condition specifies which queries apply WHERE clause filtering
+	Condition []QueryPart
+	// Sort specifies which queries apply ORDER BY sorting
+	Sort []QueryPart
+	// AuditUserRelation specifies which queries auto-join audit user relations (created_by, updated_by)
 	AuditUserRelation []QueryPart
 }
 
 // CreateManyParams is a wrapper type for batch create parameters.
-// It contains a List field holding the slice of individual item parameters.
 type CreateManyParams[TParams any] struct {
 	api.P
 
@@ -30,7 +32,6 @@ type CreateManyParams[TParams any] struct {
 }
 
 // UpdateManyParams is a wrapper type for batch update parameters.
-// It contains a List field holding the slice of individual item parameters.
 type UpdateManyParams[TParams any] struct {
 	api.P
 
@@ -38,7 +39,6 @@ type UpdateManyParams[TParams any] struct {
 }
 
 // DeleteManyParams is a wrapper type for batch delete parameters.
-// It contains a Pks field holding the slice of primary key values.
 // For single primary key models: Pks can be []any with direct values (e.g., ["id1", "id2"])
 // For composite primary key models: Pks should be []map[string]any with each map containing all Pk fields.
 type DeleteManyParams struct {
@@ -47,6 +47,7 @@ type DeleteManyParams struct {
 	Pks []any `json:"pks" validate:"required,min=1" label_i18n:"batch_delete_pks"`
 }
 
+// Sortable provides sorting capability for API search parameters.
 type Sortable struct {
 	api.M
 
@@ -58,48 +59,48 @@ type Sortable struct {
 type Processor[TIn, TSearch any] func(input TIn, search TSearch, ctx fiber.Ctx) any
 
 // PreCreateProcessor handles business logic before model creation.
-// Common uses: validation, default values, related data setup.
-type PreCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, ctx fiber.Ctx, db orm.Db) error
+// Runs within the same transaction. Uses: validation, default values, related data setup.
+type PreCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error
 
 // PostCreateProcessor handles side effects after successful model creation.
 // Runs within the same transaction. Uses: audit logging, notifications, cache updates.
 type PostCreateProcessor[TModel, TParams any] func(model *TModel, params *TParams, ctx fiber.Ctx, tx orm.Db) error
 
 // PreUpdateProcessor handles business logic before model update.
-// Provides both old and new model states for comparison and validation.
-type PreUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, ctx fiber.Ctx, db orm.Db) error
+// Runs within the same transaction. Provides both old and new model states for comparison and validation.
+type PreUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.Db) error
 
 // PostUpdateProcessor handles side effects after successful model update.
 // Runs within the same transaction. Uses: audit trails, change notifications.
 type PostUpdateProcessor[TModel, TParams any] func(oldModel, model *TModel, params *TParams, ctx fiber.Ctx, tx orm.Db) error
 
 // PreDeleteProcessor handles validation and checks before model deletion.
-// Common uses: referential integrity checks, soft delete logic.
-type PreDeleteProcessor[TModel any] func(model *TModel, ctx fiber.Ctx, db orm.Db) error
+// Runs within the same transaction. Common uses: referential integrity checks, soft delete logic.
+type PreDeleteProcessor[TModel any] func(model *TModel, query orm.DeleteQuery, ctx fiber.Ctx, tx orm.Db) error
 
 // PostDeleteProcessor handles cleanup tasks after successful deletion.
 // Runs within the same transaction. Uses: cascade operations, audit logging.
 type PostDeleteProcessor[TModel any] func(model *TModel, ctx fiber.Ctx, tx orm.Db) error
 
 // PreCreateManyProcessor handles business logic before batch model creation.
-// Common uses: batch validation, default values, related data setup.
-type PreCreateManyProcessor[TModel, TParams any] func(models []TModel, paramsList []TParams, ctx fiber.Ctx, db orm.Db) error
+// Runs within the same transaction. Common uses: batch validation, default values, related data setup.
+type PreCreateManyProcessor[TModel, TParams any] func(models []TModel, paramsList []TParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error
 
 // PostCreateManyProcessor handles side effects after successful batch model creation.
 // Runs within the same transaction. Uses: audit logging, notifications, cache updates.
 type PostCreateManyProcessor[TModel, TParams any] func(models []TModel, paramsList []TParams, ctx fiber.Ctx, tx orm.Db) error
 
 // PreUpdateManyProcessor handles business logic before batch model update.
-// Provides both old and new model states for comparison and validation.
-type PreUpdateManyProcessor[TModel, TParams any] func(oldModels, models []TModel, paramsList []TParams, ctx fiber.Ctx, db orm.Db) error
+// Runs within the same transaction. Provides both old and new model states for comparison and validation.
+type PreUpdateManyProcessor[TModel, TParams any] func(oldModels, models []TModel, paramsList []TParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.Db) error
 
 // PostUpdateManyProcessor handles side effects after successful batch model update.
 // Runs within the same transaction. Uses: audit trails, change notifications.
 type PostUpdateManyProcessor[TModel, TParams any] func(oldModels, models []TModel, paramsList []TParams, ctx fiber.Ctx, tx orm.Db) error
 
 // PreDeleteManyProcessor handles validation and checks before batch model deletion.
-// Common uses: referential integrity checks, soft delete logic.
-type PreDeleteManyProcessor[TModel any] func(models []TModel, ctx fiber.Ctx, db orm.Db) error
+// Runs within the same transaction. Common uses: referential integrity checks, soft delete logic.
+type PreDeleteManyProcessor[TModel any] func(models []TModel, query orm.DeleteQuery, ctx fiber.Ctx, tx orm.Db) error
 
 // PostDeleteManyProcessor handles cleanup tasks after successful batch deletion.
 // Runs within the same transaction. Uses: cascade operations, audit logging.
@@ -114,8 +115,8 @@ type PreExportProcessor[TModel, TSearch any] func(models []TModel, search TSearc
 type FilenameBuilder[TSearch any] func(search TSearch, ctx fiber.Ctx) string
 
 // PreImportProcessor handles validation and transformation before saving imported data.
-// Common uses: data validation, default values, duplicate checking.
-type PreImportProcessor[TModel any] func(models []TModel, ctx fiber.Ctx, db orm.Db) error
+// Runs within the same transaction. Common uses: data validation, default values, duplicate checking.
+type PreImportProcessor[TModel any] func(models []TModel, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error
 
 // PostImportProcessor handles side effects after successful import.
 // Runs within the same transaction. Uses: audit logging, notifications, cache updates.

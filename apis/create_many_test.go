@@ -36,7 +36,7 @@ func NewTestUserCreateManyWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_create_many_prehook"),
 		CreateManyApi: apis.NewCreateManyApi[TestUser, TestUserCreateParams]().
 			Public().
-			WithPreCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPreCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error {
 				// Add prefix to all names
 				for i := range models {
 					models[i].Name = "Mr. " + models[i].Name

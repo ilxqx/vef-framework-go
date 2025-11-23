@@ -34,8 +34,10 @@ func buildAuthenticationMiddleware(manager api.Manager, auth security.AuthManage
 			return definition.IsPublic()
 		},
 		ErrorHandler: func(ctx fiber.Ctx, err error) error {
-			return &Error{
-				Identifier: contextx.ApiRequest(ctx).Identifier,
+			identifier := contextx.ApiRequest(ctx).Identifier
+
+			return &BaseError{
+				Identifier: &identifier,
 				Err:        lo.Ternary[error](errors.Is(err, keyauth.ErrMissingOrMalformedAPIKey), fiber.ErrUnauthorized, err),
 			}
 		},
@@ -83,8 +85,8 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth security.Aut
 			Credentials: credentials,
 		})
 		if err != nil {
-			return &Error{
-				Identifier: request.Identifier,
+			return &BaseError{
+				Identifier: &request.Identifier,
 				Err:        err,
 			}
 		}
@@ -93,16 +95,16 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth security.Aut
 			switch cfg := principal.Details.(type) {
 			case security.ExternalAppConfig:
 				if !cfg.Enabled {
-					return &Error{
-						Identifier: request.Identifier,
+					return &BaseError{
+						Identifier: &request.Identifier,
 						Err:        result.ErrExternalAppDisabled,
 					}
 				}
 
 				if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
 					if !ipAllowed(webhelpers.GetIp(ctx), cfg.IpWhitelist) {
-						return &Error{
-							Identifier: request.Identifier,
+						return &BaseError{
+							Identifier: &request.Identifier,
 							Err:        result.ErrIpNotAllowed,
 						}
 					}
@@ -111,16 +113,16 @@ func buildOpenApiAuthenticationMiddleware(manager api.Manager, auth security.Aut
 			case *security.ExternalAppConfig:
 				if cfg != nil {
 					if !cfg.Enabled {
-						return &Error{
-							Identifier: request.Identifier,
+						return &BaseError{
+							Identifier: &request.Identifier,
 							Err:        result.ErrExternalAppDisabled,
 						}
 					}
 
 					if strings.TrimSpace(cfg.IpWhitelist) != constants.Empty {
 						if !ipAllowed(webhelpers.GetIp(ctx), cfg.IpWhitelist) {
-							return &Error{
-								Identifier: request.Identifier,
+							return &BaseError{
+								Identifier: &request.Identifier,
 								Err:        result.ErrIpNotAllowed,
 							}
 						}
