@@ -55,8 +55,9 @@ func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publishe
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			query := tx.NewInsert().Model(&models)
 			if c.preCreateMany != nil {
-				if err := c.preCreateMany(models, params.List, ctx, db); err != nil {
+				if err := c.preCreateMany(models, params.List, query, ctx, tx); err != nil {
 					return err
 				}
 			}
@@ -71,7 +72,7 @@ func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publishe
 				}
 			}
 
-			if _, err := tx.NewInsert().Model(&models).Exec(txCtx); err != nil {
+			if _, err := query.Exec(txCtx); err != nil {
 				if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
 					return fmt.Errorf("batch create failed: %w; cleanup files also failed: %w", err, cleanupErr)
 				}

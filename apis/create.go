@@ -49,8 +49,9 @@ func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			query := tx.NewInsert().Model(&model)
 			if c.preCreate != nil {
-				if err := c.preCreate(&model, &params, ctx, db); err != nil {
+				if err := c.preCreate(&model, &params, query, ctx, tx); err != nil {
 					return err
 				}
 			}
@@ -59,7 +60,7 @@ func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.
 				return fmt.Errorf("promote files failed: %w", err)
 			}
 
-			if _, err := tx.NewInsert().Model(&model).Exec(txCtx); err != nil {
+			if _, err := query.Exec(txCtx); err != nil {
 				if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
 					return fmt.Errorf("insert failed: %w; cleanup files also failed: %w", err, cleanupErr)
 				}

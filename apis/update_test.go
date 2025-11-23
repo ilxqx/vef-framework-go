@@ -32,7 +32,7 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_update_prehook"),
 		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.Db) error {
 				if params.Description != "" {
 					model.Description = params.Description + " [Updated]"
 				}

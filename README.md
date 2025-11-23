@@ -1911,9 +1911,6 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
     // Get request-scoped logger (includes request ID)
     logger := contextx.Logger(ctx)
 
-    // Get mold transformer for data sanitization
-    transformer := contextx.Transformer(ctx)
-
     // Use the resources
     logger.Infof("User %s performing custom operation", principal.Id)
 
@@ -1931,7 +1928,7 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
 - **`contextx.Db(ctx)`** - Returns request-scoped `orm.Db` with audit fields (like `operator`) pre-configured
 - **`contextx.Principal(ctx)`** - Returns current `*security.Principal` (authenticated user or anonymous)
 - **`contextx.Logger(ctx)`** - Returns request-scoped `log.Logger` with request ID for correlation
-- **`contextx.Transformer(ctx)`** - Returns `mold.Transformer` for data transformation and sanitization
+- **`contextx.DataPermApplier(ctx)`** - Returns request-scoped `security.DataPermissionApplier` used by the data permission middleware
 
 **When to Use:**
 
@@ -2530,7 +2527,7 @@ return result.Ok(data).Response(ctx)
 
 // Error
 return result.Err("Operation failed")
-return result.ErrWithCode(result.ErrCodeBadRequest, "Invalid parameters")
+return result.Err("Invalid parameters", result.WithCode(result.ErrCodeBadRequest))
 return result.Errf("User %s not found", username)
 ```
 

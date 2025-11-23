@@ -102,19 +102,15 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db, sc storage.Service, publis
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			query := tx.NewDelete().Model(&models)
 			if d.preDeleteMany != nil {
-				if err := d.preDeleteMany(models, ctx, db); err != nil {
+				if err := d.preDeleteMany(models, query, ctx, tx); err != nil {
 					return err
 				}
 			}
 
-			for i := range models {
-				if _, err := tx.NewDelete().
-					Model(&models[i]).
-					WherePk().
-					Exec(txCtx); err != nil {
-					return err
-				}
+			if _, err := query.WherePk().Exec(txCtx); err != nil {
+				return err
 			}
 
 			if d.postDeleteMany != nil {

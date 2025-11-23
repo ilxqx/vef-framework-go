@@ -87,13 +87,14 @@ func (d *deleteApi[TModel]) delete(db orm.Db, sc storage.Service, publisher even
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			query := tx.NewDelete().Model(&model)
 			if d.preDelete != nil {
-				if err := d.preDelete(&model, ctx, db); err != nil {
+				if err := d.preDelete(&model, query, ctx, tx); err != nil {
 					return err
 				}
 			}
 
-			if _, err := tx.NewDelete().Model(&model).WherePk().Exec(txCtx); err != nil {
+			if _, err := query.WherePk().Exec(txCtx); err != nil {
 				return err
 			}
 

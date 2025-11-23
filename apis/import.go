@@ -90,9 +90,10 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 			return result.Err(i18n.T("import_requires_file"))
 		}
 
-		format := lo.CoalesceOrEmpty(config.Format, i.defaultFormat, FormatExcel)
-
-		var importer tabular.Importer
+		var (
+			format   = lo.CoalesceOrEmpty(config.Format, i.defaultFormat, FormatExcel)
+			importer tabular.Importer
+		)
 
 		switch format {
 		case FormatExcel:
@@ -131,15 +132,16 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 			}.Response(ctx)
 		}
 
-		if i.preImport != nil {
-			if err := i.preImport(models, ctx, db); err != nil {
-				return err
-			}
-		}
-
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			query := tx.NewInsert().Model(&models)
+			if i.preImport != nil {
+				if err := i.preImport(models, query, ctx, tx); err != nil {
+					return err
+				}
+			}
+
 			if len(models) > 0 {
-				if _, err := tx.NewInsert().Model(&models).Exec(txCtx); err != nil {
+				if _, err := query.Exec(txCtx); err != nil {
 					return err
 				}
 			}

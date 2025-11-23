@@ -12,17 +12,14 @@ import (
 	"github.com/ilxqx/vef-framework-go/sort"
 )
 
-// ApiBuilder defines the interface for building Api endpoint.
-// It provides a fluent Api for configuring all aspects of an Api endpoint.
+// ApiBuilder defines the interface for building Api endpoints.
 type ApiBuilder[T any] interface {
 	Action(action string) T
-	// EnableAudit enables audit logging for this endpoint.
 	EnableAudit() T
 	Timeout(timeout time.Duration) T
 	Public() T
 	PermToken(token string) T
 	RateLimit(max int, expiration time.Duration) T
-	// Build builds the Api endpoint specification.
 	Build(handler any) api.Spec
 }
 
@@ -48,8 +45,6 @@ type UpdateApi[TModel, TParams any] interface {
 	WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
 	// This processor is called after the model is successfully updated within the same transaction.
 	WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
-	// DisableDataPerm disables data permission filtering for this endpoint.
-	// By default, data permission filtering is enabled when loading the existing model for update.
 	DisableDataPerm() UpdateApi[TModel, TParams]
 }
 
@@ -63,8 +58,6 @@ type DeleteApi[TModel any] interface {
 	WithPreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel]
 	// This processor is called after the model is successfully deleted within the same transaction.
 	WithPostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel]
-	// DisableDataPerm disables data permission filtering for this endpoint.
-	// By default, data permission filtering is enabled when loading the existing model for deletion.
 	DisableDataPerm() DeleteApi[TModel]
 }
 
@@ -90,8 +83,6 @@ type UpdateManyApi[TModel, TParams any] interface {
 	WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
 	// This processor is called after the models are successfully updated within the same transaction.
 	WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
-	// DisableDataPerm disables data permission filtering for this endpoint.
-	// By default, data permission filtering is enabled when loading existing models for batch update.
 	DisableDataPerm() UpdateManyApi[TModel, TParams]
 }
 
@@ -105,8 +96,6 @@ type DeleteManyApi[TModel any] interface {
 	WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
 	// This processor is called after the models are successfully deleted within the same transaction.
 	WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
-	// DisableDataPerm disables data permission filtering for this endpoint.
-	// By default, data permission filtering is enabled when loading existing models for batch deletion.
 	DisableDataPerm() DeleteManyApi[TModel]
 }
 

@@ -106,7 +106,7 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 		)
 
 		query.WithRecursive(
-			"tmp_tree", func(cteQuery orm.SelectQuery) {
+			"_tree", func(cteQuery orm.SelectQuery) {
 				// Base query - the starting point of the tree traversal
 				baseQuery := cteQuery.Model((*TModel)(nil)).SelectModelColumns()
 
@@ -129,16 +129,15 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 
 					// Join with CTE to traverse the tree
 					recursiveQuery.JoinTable(
-						"tmp_tree",
+						"_tree",
 						func(cb orm.ConditionBuilder) {
-							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "tt"))
+							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "_tree"))
 						},
-						"tt",
 					)
 				})
 			}).
 			Distinct().
-			Table("tmp_tree")
+			Table("_tree")
 
 		if queryErr := QueryError(ctx); queryErr != nil {
 			return queryErr

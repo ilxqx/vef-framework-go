@@ -1901,9 +1901,6 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
     // 获取请求范围的日志记录器（包含请求 ID）
     logger := contextx.Logger(ctx)
 
-    // 获取 mold 转换器用于数据清理
-    transformer := contextx.Transformer(ctx)
-
     // 使用这些资源
     logger.Infof("用户 %s 正在执行自定义操作", principal.Id)
 
@@ -1921,7 +1918,7 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
 - **`contextx.Db(ctx)`** - 返回请求范围的 `orm.Db`，已预配置审计字段（如 `operator`）
 - **`contextx.Principal(ctx)`** - 返回当前 `*security.Principal`（认证用户或匿名用户）
 - **`contextx.Logger(ctx)`** - 返回请求范围的 `log.Logger`，包含请求 ID 用于关联
-- **`contextx.Transformer(ctx)`** - 返回 `mold.Transformer` 用于数据转换和清理
+- **`contextx.DataPermApplier(ctx)`** - 返回请求范围的 `security.DataPermissionApplier`，供数据权限中间件使用
 
 **何时使用：**
 
@@ -2520,7 +2517,7 @@ return result.Ok(data).Response(ctx)
 
 // 错误
 return result.Err("操作失败")
-return result.ErrWithCode(result.ErrCodeBadRequest, "参数无效")
+return result.Err("参数无效", result.WithCode(result.ErrCodeBadRequest))
 return result.Errf("用户 %s 不存在", username)
 ```
 

@@ -15,8 +15,9 @@ type QueryExprBuilder struct {
 	qb QueryBuilder
 }
 
-// Column builds a column expression with proper table alias handling.
-func (b *QueryExprBuilder) Column(column string) schema.QueryAppender {
+func (b *QueryExprBuilder) Column(column string, withTableAlias ...bool) schema.QueryAppender {
+	needTableAlias := len(withTableAlias) == 0 || withTableAlias[0]
+
 	dotIndex := strings.IndexByte(column, constants.ByteDot)
 	if dotIndex > -1 {
 		alias, name := column[:dotIndex], column[dotIndex+1:]
@@ -32,11 +33,33 @@ func (b *QueryExprBuilder) Column(column string) schema.QueryAppender {
 		return b.Expr("?.?", bun.Name(alias), bun.Name(name))
 	}
 
-	if b.qb.GetTable() != nil {
+	if needTableAlias && b.qb.GetTable() != nil {
 		return b.Expr("?TableAlias.?", bun.Name(column))
 	}
 
 	return b.Expr("?", bun.Name(column))
+}
+
+func (b *QueryExprBuilder) TableColumns(withTableAlias ...bool) schema.QueryAppender {
+	needTableAlias := len(withTableAlias) == 0 || withTableAlias[0]
+
+	if needTableAlias {
+		return b.Expr(constants.ExprTableColumns)
+	}
+
+	return b.Expr(constants.ExprColumns)
+}
+
+func (b *QueryExprBuilder) AllColumns(tableAlias ...string) schema.QueryAppender {
+	if len(tableAlias) > 0 && tableAlias[0] != constants.Empty {
+		return b.Expr("?.*", bun.Name(tableAlias[0]))
+	}
+
+	if b.qb.GetTable() != nil {
+		return b.Expr("?TableAlias.*")
+	}
+
+	return bun.Safe("*")
 }
 
 func (*QueryExprBuilder) Null() schema.QueryAppender {
@@ -173,7 +196,6 @@ func (b *QueryExprBuilder) NotIn(expr any, values ...any) schema.QueryAppender {
 func (b *QueryExprBuilder) IsTrue(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite uses integers for booleans, check if equals 1
 			return b.Equals(expr, 1)
 		},
 		Default: func() schema.QueryAppender {
@@ -185,7 +207,6 @@ func (b *QueryExprBuilder) IsTrue(expr any) schema.QueryAppender {
 func (b *QueryExprBuilder) IsFalse(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite uses integers for booleans, check if equals 0
 			return b.Equals(expr, 0)
 		},
 		Default: func() schema.QueryAppender {
@@ -718,7 +739,6 @@ func (b *QueryExprBuilder) Concat(args ...any) schema.QueryAppender {
 func (b *QueryExprBuilder) ConcatWithSep(separator any, args ...any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have CONCAT_WS
 			if len(args) == 0 {
 				return b.Expr("?", constants.Empty)
 			}
@@ -727,7 +747,6 @@ func (b *QueryExprBuilder) ConcatWithSep(separator any, args ...any) schema.Quer
 				return b.Expr("?", args[0])
 			}
 
-			// Use group_concat or manual concatenation
 			var parts []any
 
 			for i, arg := range args {
@@ -792,7 +811,6 @@ func (b *QueryExprBuilder) Length(expr any) schema.QueryAppender {
 func (b *QueryExprBuilder) CharLength(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have CHAR_LENGTH
 			return b.Expr("LENGTH(?)", expr)
 		},
 		Default: func() schema.QueryAppender {
@@ -804,7 +822,6 @@ func (b *QueryExprBuilder) CharLength(expr any) schema.QueryAppender {
 func (b *QueryExprBuilder) Position(substring, str any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have POSITION IN
 			return b.Expr("INSTR(?, ?)", str, substring)
 		},
 		Default: func() schema.QueryAppender {
@@ -816,7 +833,6 @@ func (b *QueryExprBuilder) Position(substring, str any) schema.QueryAppender {
 func (b *QueryExprBuilder) Left(expr, length any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have LEFT
 			return b.SubString(expr, 1, length)
 		},
 		Default: func() schema.QueryAppender {
@@ -828,7 +844,6 @@ func (b *QueryExprBuilder) Left(expr, length any) schema.QueryAppender {
 func (b *QueryExprBuilder) Right(expr, length any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have RIGHT
 			return b.Expr("SUBSTR(?, -?)", expr, length)
 		},
 		Default: func() schema.QueryAppender {
@@ -840,8 +855,6 @@ func (b *QueryExprBuilder) Right(expr, length any) schema.QueryAppender {
 func (b *QueryExprBuilder) Repeat(expr, count any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have REPEAT, need to implement with REPLACE and a helper
-			// Use REPLACE(SUBSTR(QUOTE(ZEROBLOB((count+1)/2)), 3, count), '0', expr)
 			return b.Expr("REPLACE(SUBSTR(QUOTE(ZEROBLOB(?)), 3, ?), ?, ?)", b.Divide(b.Paren(b.Add(count, 1)), 2), count, "0", expr)
 		},
 		Default: func() schema.QueryAppender {
@@ -929,8 +942,6 @@ func (b *QueryExprBuilder) EndsWithIgnoreCase(expr, suffix any) schema.QueryAppe
 func (b *QueryExprBuilder) Reverse(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have REVERSE function, need complex implementation
-			// For now, return unsupported
 			return b.Expr("?", expr)
 		},
 		Default: func() schema.QueryAppender {
@@ -1071,15 +1082,12 @@ func (b *QueryExprBuilder) ExtractSecond(expr any) schema.QueryAppender {
 			return b.Expr("EXTRACT(SECOND FROM ?)", expr)
 		},
 		MySQL: func() schema.QueryAppender {
-			// MySQL EXTRACT returns integer, cast to DECIMAL for consistency with PostgreSQL
 			return b.ToDecimal(
 				b.Expr("EXTRACT(SECOND FROM ?)", expr),
 				10, 6,
 			)
 		},
 		SQLite: func() schema.QueryAppender {
-			// Note: STRFTIME('%S') returns seconds without fractional part
-			// Use STRFTIME('%f') for seconds with fractional part, but we'll keep it simple
 			return b.ToDecimal(
 				b.Expr("STRFTIME(?, ?)", "%S", expr),
 				10, 6,
@@ -1275,16 +1283,12 @@ func (b *QueryExprBuilder) Age(start, end any) schema.QueryAppender {
 		},
 		MySQL: func() schema.QueryAppender {
 			years := b.ToInteger(b.DateDiff(start, end, UnitYear))
-
 			// Dynamic value, can't use DateAdd
 			startPlusYears := b.DateAdd(start, years, UnitYear)
-
 			// Calculate remaining months
 			months := b.ToInteger(b.DateDiff(startPlusYears, end, UnitMonth))
-
 			// Dynamic value, can't use DateAdd
 			startPlusYearsMonths := b.DateAdd(startPlusYears, months, UnitMonth)
-
 			// Calculate remaining days
 			days := b.ToInteger(b.DateDiff(startPlusYearsMonths, end, UnitDay))
 
@@ -1370,7 +1374,6 @@ func (b *QueryExprBuilder) Trunc(expr any, precision ...any) schema.QueryAppende
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
 			if len(precision) > 0 {
-				// For positive precision, ROUND works similarly to TRUNC for most cases
 				return b.Round(expr, precision[0])
 			}
 
@@ -1448,8 +1451,6 @@ func (b *QueryExprBuilder) Pi() schema.QueryAppender {
 func (b *QueryExprBuilder) Random() schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		SQLite: func() schema.QueryAppender {
-			// SQLite's RANDOM() returns integer in range [-9223372036854775808, 9223372036854775807]
-			// Normalize to [0, 1) by taking absolute value and dividing by 2^63
 			return b.Abs(
 				b.Divide(
 					b.Multiply(b.Expr("RANDOM()"), 1.0),
@@ -1478,7 +1479,6 @@ func (b *QueryExprBuilder) Sign(expr any) schema.QueryAppender {
 			)
 		},
 		MySQL: func() schema.QueryAppender {
-			// MySQL SIGN returns integer, cast to DECIMAL for consistency with PostgreSQL
 			return b.ToDecimal(b.Expr("SIGN(?)", expr), 2, 1)
 		},
 		Default: func() schema.QueryAppender {
@@ -1533,7 +1533,6 @@ func (b *QueryExprBuilder) NullIf(expr1, expr2 any) schema.QueryAppender {
 func (b *QueryExprBuilder) IfNull(expr, defaultValue any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			// PostgreSQL doesn't have IFNULL, use COALESCE instead
 			return b.Coalesce(expr, defaultValue)
 		},
 		Default: func() schema.QueryAppender {
@@ -1553,7 +1552,6 @@ func (b *QueryExprBuilder) ToString(expr any) schema.QueryAppender {
 			return b.Expr("CAST(? AS CHAR)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have strict types, but TEXT is preferred
 			return b.Expr("CAST(? AS TEXT)", expr)
 		},
 		Default: func() schema.QueryAppender {
@@ -1666,7 +1664,6 @@ func (b *QueryExprBuilder) ToDate(expr any, format ...any) schema.QueryAppender 
 		},
 		SQLite: func() schema.QueryAppender {
 			if len(format) > 0 {
-				// Use STRFTIME to ensure standard date format output
 				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d", expr)
 			}
 
@@ -1700,7 +1697,6 @@ func (b *QueryExprBuilder) ToTime(expr any, format ...any) schema.QueryAppender 
 		},
 		SQLite: func() schema.QueryAppender {
 			if len(format) > 0 {
-				// Use STRFTIME to ensure standard time format output
 				return b.Expr("STRFTIME(?, ?)", "%H:%M:%S", expr)
 			}
 
@@ -1734,7 +1730,6 @@ func (b *QueryExprBuilder) ToTimestamp(expr any, format ...any) schema.QueryAppe
 		},
 		SQLite: func() schema.QueryAppender {
 			if len(format) > 0 {
-				// Use STRFTIME to ensure standard datetime format output
 				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:%M:%S", expr)
 			}
 
@@ -1759,7 +1754,6 @@ func (b *QueryExprBuilder) ToJson(expr any) schema.QueryAppender {
 			return b.Expr("CAST(? AS JSON)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have explicit JSON type, but supports JSON functions
 			return b.Expr("?", expr)
 		},
 		Default: func() schema.QueryAppender {
@@ -1823,17 +1817,12 @@ func (b *QueryExprBuilder) JsonExtract(json, path any) schema.QueryAppender {
 func (b *QueryExprBuilder) JsonUnquote(expr any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			// PostgreSQL doesn't have JSON_UNQUOTE
-			// JsonExtract already uses ->> which returns text (unquoted)
-			// So we just return the expression as-is
 			return b.Expr("?", expr)
 		},
 		MySQL: func() schema.QueryAppender {
 			return b.Expr("JSON_UNQUOTE(?)", expr)
 		},
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have json_unquote function
-			// JSON_EXTRACT already returns unquoted values, so just return the expr
 			return b.Expr("?", expr)
 		},
 		Default: func() schema.QueryAppender {
@@ -2225,19 +2214,15 @@ func (b *QueryExprBuilder) Decode(args ...any) schema.QueryAppender {
 
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			// PostgreSQL doesn't have DECODE
 			return b.convertDecodeToCase(args...)
 		},
 		MySQL: func() schema.QueryAppender {
-			// MySQL doesn't have DECODE
 			return b.convertDecodeToCase(args...)
 		},
 		SQLite: func() schema.QueryAppender {
-			// SQLite doesn't have DECODE
 			return b.convertDecodeToCase(args...)
 		},
 		Default: func() schema.QueryAppender {
-			// For Oracle or other databases that might support DECODE
 			return b.Expr("DECODE(?)", newExpressions(constants.CommaSpace, args...))
 		},
 	})
@@ -2250,10 +2235,8 @@ func (b *QueryExprBuilder) convertDecodeToCase(args ...any) schema.QueryAppender
 	}
 
 	return b.Case(func(cb CaseBuilder) {
-		// Set the CASE expression (simple CASE syntax)
 		cb.Case(args[0])
 
-		// Process pairs of (search, result)
 		i := 1
 		for i+1 < len(args) {
 			search := args[i]
@@ -2263,7 +2246,6 @@ func (b *QueryExprBuilder) convertDecodeToCase(args ...any) schema.QueryAppender
 			i += 2
 		}
 
-		// Handle default value (if odd number of arguments after expr)
 		if i < len(args) {
 			cb.Else(args[i])
 		}

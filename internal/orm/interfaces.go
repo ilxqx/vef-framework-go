@@ -301,7 +301,12 @@ type QueryBuilder interface {
 // It offers a fluent Api for constructing complex SQL expressions including aggregates, functions, and conditional logic.
 type ExprBuilder interface {
 	// Column builds a column expression with proper alias handling.
-	Column(column string) schema.QueryAppender
+	// If withTableAlias is false, skips automatic table alias addition even when table exists.
+	Column(column string, withTableAlias ...bool) schema.QueryAppender
+	// TableColumns returns a table columns expression (?TableColumns or ?Columns).
+	TableColumns(withTableAlias ...bool) schema.QueryAppender
+	// AllColumns returns a wildcard column expression for all columns.
+	AllColumns(tableAlias ...string) schema.QueryAppender
 	// Null returns the NULL SQL literal.
 	Null() schema.QueryAppender
 	// IsNull checks if an expression is NULL.

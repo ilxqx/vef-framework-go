@@ -73,7 +73,7 @@ func NewTestUserImportWithPreProcessorResource() api.Resource {
 		Resource: api.NewResource("test/user_import_preproc"),
 		ImportApi: apis.NewImportApi[ImportUser]().
 			Public().
-			WithPreImport(func(models []ImportUser, ctx fiber.Ctx, db orm.Db) error {
+			WithPreImport(func(models []ImportUser, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error {
 				// Pre-process all models - change inactive to pending
 				for i := range models {
 					if models[i].Status == "inactive" {

@@ -36,7 +36,7 @@ func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_update_many_prehook"),
 		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPreUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPreUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.Db) error {
 				// Add suffix to all descriptions
 				for i := range models {
 					if paramsList[i].Description != "" {

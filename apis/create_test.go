@@ -34,7 +34,7 @@ func NewTestUserCreateWithPreHookResource() api.Resource {
 		Resource: api.NewResource("test/user_create_prehook"),
 		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().
 			Public().
-			WithPreCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPreCreate(func(model *TestUser, params *TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error {
 				// Add prefix to name
 				model.Name = "Mr. " + model.Name
 

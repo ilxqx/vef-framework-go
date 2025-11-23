@@ -6,7 +6,6 @@ import "github.com/ilxqx/vef-framework-go/constants"
 type TabularFormat string
 
 const (
-	// Standard CRUD action names.
 	ActionCreate          = "create"
 	ActionUpdate          = "update"
 	ActionDelete          = "delete"
@@ -26,19 +25,11 @@ const (
 	FormatExcel TabularFormat = "excel"
 	FormatCsv   TabularFormat = "csv"
 
-	// Internal configuration constants.
-
-	// MaxQueryLimit is the maximum number of records that can be returned in a single query
-	// to prevent excessive memory usage and performance issues.
-	maxQueryLimit = 10000
-	// MaxOptionsLimit is the maximum number of options that can be returned in a single query.
-	maxOptionsLimit = 10000
-	// DefaultAuditUserNameColumn is the default column name for audit user names.
+	maxQueryLimit              = 10000
+	maxOptionsLimit            = 10000
 	defaultAuditUserNameColumn = "name"
-	// DefaultLabelColumn is the default column name for option labels.
-	defaultLabelColumn = "name"
-	// DefaultValueColumn is the default column name for option values.
-	defaultValueColumn = constants.ColumnId
+	defaultLabelColumn         = "name"
+	defaultValueColumn         = constants.ColumnId
 
 	IdColumn          = constants.ColumnId
 	ParentIdColumn    = "parent_id"

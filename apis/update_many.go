@@ -95,8 +95,10 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			query := tx.NewUpdate().Model(&oldModels)
+
 			if u.preUpdateMany != nil {
-				if err := u.preUpdateMany(oldModels, models, params.List, ctx, db); err != nil {
+				if err := u.preUpdateMany(oldModels, models, params.List, query, ctx, tx); err != nil {
 					return err
 				}
 			}
@@ -117,14 +119,12 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 				}
 			}
 
-			for i := range oldModels {
-				if _, err := tx.NewUpdate().Model(&oldModels[i]).WherePk().Exec(txCtx); err != nil {
-					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
-						return fmt.Errorf("batch update failed: %w; rollback files also failed: %w", err, rollbackErr)
-					}
-
-					return err
+			if _, err := query.Bulk().Exec(txCtx); err != nil {
+				if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, len(oldModels)); rollbackErr != nil {
+					return fmt.Errorf("batch update failed: %w; rollback files also failed: %w", err, rollbackErr)
 				}
+
+				return err
 			}
 
 			if u.postUpdateMany != nil {

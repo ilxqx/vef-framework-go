@@ -91,8 +91,9 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+			query := tx.NewUpdate().Model(&oldModel)
 			if u.preUpdate != nil {
-				if err := u.preUpdate(&oldModel, &model, &params, ctx, db); err != nil {
+				if err := u.preUpdate(&oldModel, &model, &params, query, ctx, tx); err != nil {
 					return err
 				}
 			}
@@ -105,7 +106,7 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 				return fmt.Errorf("promote files failed: %w", err)
 			}
 
-			if _, err := tx.NewUpdate().Model(&oldModel).WherePk().Exec(txCtx); err != nil {
+			if _, err := query.WherePk().Exec(txCtx); err != nil {
 				if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
 					return fmt.Errorf("update failed: %w; rollback files also failed: %w", err, cleanupErr)
 				}

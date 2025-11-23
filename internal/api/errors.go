@@ -32,39 +32,78 @@ var (
 	ErrHandlerFactoryInvalidReturn = errors.New("handler factory method should return 1 or 2 values")
 )
 
-// Error represents an error that occurred during API request processing.
-type Error struct {
-	Identifier api.Identifier
+// BaseError represents an error that occurred during API request processing.
+type BaseError struct {
+	Identifier *api.Identifier
 	Err        error
 }
 
-func (e *Error) Error() string {
-	return fmt.Sprintf(
-		"resource=%q action=%q version=%q - %v",
-		e.Identifier.Resource,
-		e.Identifier.Action,
-		e.Identifier.Version,
-		e.Err,
-	)
+func (e *BaseError) Error() string {
+	if e.Identifier != nil {
+		return fmt.Sprintf(
+			"resource=%q action=%q version=%q - %v",
+			e.Identifier.Resource,
+			e.Identifier.Action,
+			e.Identifier.Version,
+			e.Err,
+		)
+	}
+
+	return e.Err.Error()
 }
 
 // Unwrap returns the underlying error, allowing errors.As and errors.Is to work correctly.
-func (e *Error) Unwrap() error {
+func (e *BaseError) Unwrap() error {
 	return e.Err
 }
 
 // DuplicateError represents an error when attempting to register a duplicate Api definition.
 type DuplicateError struct {
-	Identifier api.Identifier
-	Existing   *api.Definition
-	New        *api.Definition
+	BaseError
+
+	Existing *api.Definition
 }
 
 func (e *DuplicateError) Error() string {
-	return fmt.Sprintf(
-		"duplicate api definition: resource=%q, action=%q, version=%q (attempting to override existing api)",
+	if e.Identifier != nil {
+		return fmt.Sprintf(
+			"duplicate api definition: resource=%q, action=%q, version=%q (attempting to override existing api)",
+			e.Identifier.Resource,
+			e.Identifier.Action,
+			e.Identifier.Version,
+		)
+	}
+
+	return "duplicate api definition"
+}
+
+// NotFoundError represents an error when an API endpoint is not found, with optional suggestion.
+type NotFoundError struct {
+	BaseError
+
+	Suggestion *api.Identifier
+}
+
+func (e *NotFoundError) Error() string {
+	if e.Identifier == nil {
+		return "api not found"
+	}
+
+	msg := fmt.Sprintf(
+		"api not found: resource=%q, action=%q, version=%q",
 		e.Identifier.Resource,
 		e.Identifier.Action,
 		e.Identifier.Version,
 	)
+
+	if e.Suggestion != nil {
+		msg += fmt.Sprintf(
+			" - did you mean: resource=%q, action=%q, version=%q ?",
+			e.Suggestion.Resource,
+			e.Suggestion.Action,
+			e.Suggestion.Version,
+		)
+	}
+
+	return msg
 }

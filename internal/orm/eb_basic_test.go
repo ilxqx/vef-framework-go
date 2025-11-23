@@ -9,7 +9,7 @@ import (
 )
 
 // BasicExpressionsTestSuite tests basic expression methods of ExprBuilder
-// including Column, Null, IsNull, IsNotNull, Literal, Order, Case, Expr, Exprs, ExprsWithSep.
+// including Column, TableColumns, AllColumns, Null, IsNull, IsNotNull, Literal, Order, Case, Expr, Exprs, ExprsWithSep.
 type BasicExpressionsTestSuite struct {
 	*OrmTestSuite
 }
@@ -79,6 +79,314 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 			suite.NotEmpty(result.UserName, "User name should not be empty")
 			suite.T().Logf("Post: %s - %s, User: %s",
 				result.PostId, result.PostTitle, result.UserName)
+		}
+	})
+
+	// Test 3: Column with table alias parameter set to true (default behavior)
+	suite.Run("ColumnWithTableAliasTrue", func() {
+		type AliasTestResult struct {
+			Id    string `bun:"id"`
+			Title string `bun:"title"`
+		}
+
+		var results []AliasTestResult
+
+		// Explicitly pass true - should add table alias when table exists
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Column("id", true)
+			}, "id").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Column("title", true)
+			}, "title").
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "Column with withTableAlias=true should work")
+		suite.True(len(results) > 0, "Should have results with table alias")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.T().Logf("ID: %s, Title: %s (with table alias)", result.Id, result.Title)
+		}
+	})
+
+	// Test 4: Column with table alias parameter set to false (skip table alias)
+	suite.Run("ColumnWithTableAliasFalse", func() {
+		type NoAliasResult struct {
+			Id    string `bun:"id"`
+			Title string `bun:"title"`
+		}
+
+		var results []NoAliasResult
+
+		// Pass false - should NOT add table alias even when table exists
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Column("id", false)
+			}, "id").
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Column("title", false)
+			}, "title").
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "Column with withTableAlias=false should work")
+		suite.True(len(results) > 0, "Should have results without table alias")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.T().Logf("ID: %s, Title: %s (without table alias)", result.Id, result.Title)
+		}
+	})
+}
+
+func (suite *BasicExpressionsTestSuite) TestTableColumns() {
+	suite.T().Logf("Testing TableColumns expression for %s", suite.dbType)
+
+	// Test 1: TableColumns with default behavior (withTableAlias = true)
+	suite.Run("TableColumnsWithDefaultAlias", func() {
+		type TableColumnsResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			Status    string `bun:"status"`
+			ViewCount int64  `bun:"view_count"`
+			UserId    string `bun:"user_id"`
+		}
+
+		var results []TableColumnsResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.TableColumns() // Should select all columns with table alias
+			}).
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "TableColumns with default alias should work")
+		suite.True(len(results) > 0, "Should have TableColumns results")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.Status, "Status should not be empty")
+			suite.NotEmpty(result.UserId, "User ID should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d, UserId: %s",
+				result.Id, result.Title, result.Status, result.ViewCount, result.UserId)
+		}
+	})
+
+	// Test 2: TableColumns with withTableAlias = true (explicit)
+	suite.Run("TableColumnsWithAliasTrue", func() {
+		type QualifiedColumnsResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			Status    string `bun:"status"`
+			ViewCount int64  `bun:"view_count"`
+		}
+
+		var results []QualifiedColumnsResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.TableColumns(true) // Explicitly with table alias
+			}).
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "TableColumns with withTableAlias=true should work")
+		suite.True(len(results) > 0, "Should have qualified columns results")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.Status, "Status should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
+				result.Id, result.Title, result.Status, result.ViewCount)
+		}
+	})
+
+	// Test 3: TableColumns with withTableAlias = false
+	suite.Run("TableColumnsWithoutAlias", func() {
+		type UnqualifiedColumnsResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			Status    string `bun:"status"`
+			ViewCount int64  `bun:"view_count"`
+		}
+
+		var results []UnqualifiedColumnsResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.TableColumns(false) // Without table alias
+			}).
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "TableColumns with withTableAlias=false should work")
+		suite.True(len(results) > 0, "Should have unqualified columns results")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.Status, "Status should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
+				result.Id, result.Title, result.Status, result.ViewCount)
+		}
+	})
+}
+
+func (suite *BasicExpressionsTestSuite) TestAllColumns() {
+	suite.T().Logf("Testing AllColumns expression for %s", suite.dbType)
+
+	// Test 1: AllColumns without alias (uses table alias when available)
+	suite.Run("AllColumnsWithDefaultBehavior", func() {
+		type AllColumnsResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			Status    string `bun:"status"`
+			ViewCount int64  `bun:"view_count"`
+			UserId    string `bun:"user_id"`
+		}
+
+		var results []AllColumnsResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.AllColumns() // Should select all columns as ?TableAlias.*
+			}).
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "AllColumns with default behavior should work")
+		suite.True(len(results) > 0, "Should have AllColumns results")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.Status, "Status should not be empty")
+			suite.NotEmpty(result.UserId, "User ID should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d, UserId: %s",
+				result.Id, result.Title, result.Status, result.ViewCount, result.UserId)
+		}
+	})
+
+	// Test 2: AllColumns with explicit table alias
+	suite.Run("AllColumnsWithExplicitAlias", func() {
+		type ExplicitAliasResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			Status    string `bun:"status"`
+			ViewCount int64  `bun:"view_count"`
+		}
+
+		var results []ExplicitAliasResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.AllColumns("p") // Should select all columns as p.*
+			}).
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "AllColumns with explicit alias should work")
+		suite.True(len(results) > 0, "Should have explicit alias results")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.Status, "Status should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
+				result.Id, result.Title, result.Status, result.ViewCount)
+		}
+	})
+
+	// Test 3: AllColumns with empty alias (should use *)
+	suite.Run("AllColumnsWithEmptyAlias", func() {
+		type EmptyAliasResult struct {
+			Id        string `bun:"id"`
+			Title     string `bun:"title"`
+			Status    string `bun:"status"`
+			ViewCount int64  `bun:"view_count"`
+		}
+
+		var results []EmptyAliasResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.AllColumns("") // Empty alias should use ?TableAlias.*
+			}).
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "AllColumns with empty alias should work")
+		suite.True(len(results) > 0, "Should have results with empty alias")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.Status, "Status should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
+				result.Id, result.Title, result.Status, result.ViewCount)
+		}
+	})
+
+	// Test 4: AllColumns combined with additional expressions
+	suite.Run("AllColumnsCombinedWithExpressions", func() {
+		type CombinedResult struct {
+			Id          string `bun:"id"`
+			Title       string `bun:"title"`
+			Status      string `bun:"status"`
+			ViewCount   int64  `bun:"view_count"`
+			UserId      string `bun:"user_id"`
+			DoubleViews int64  `bun:"double_views"`
+		}
+
+		var results []CombinedResult
+
+		err := suite.db.NewSelect().
+			Model((*Post)(nil)).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.AllColumns() // Select all Post columns
+			}).
+			SelectExpr(func(eb ExprBuilder) any {
+				return eb.Multiply(eb.Column("view_count"), 2)
+			}, "double_views").
+			OrderBy("id").
+			Limit(3).
+			Scan(suite.ctx, &results)
+
+		suite.NoError(err, "AllColumns combined with expressions should work")
+		suite.True(len(results) > 0, "Should have combined results")
+
+		for _, result := range results {
+			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.Title, "Title should not be empty")
+			suite.NotEmpty(result.Status, "Status should not be empty")
+			suite.NotEmpty(result.UserId, "User ID should not be empty")
+			suite.Equal(result.ViewCount*2, result.DoubleViews,
+				"Double views should be ViewCount * 2")
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d, DoubleViews: %d",
+				result.Id, result.Title, result.ViewCount, result.DoubleViews)
 		}
 	})
 }
