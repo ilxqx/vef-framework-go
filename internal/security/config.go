@@ -14,7 +14,7 @@ const refreshTokenNotBefore = accessTokenExpires / 2
 // Strict limits protect against brute-force attacks and token abuse.
 var (
 	loginRateLimit = api.RateLimit{
-		Max: 5,
+		Max: 6,
 	}
 	refreshRateLimit = api.RateLimit{
 		Max: 1,

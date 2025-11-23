@@ -3,6 +3,7 @@ package api_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
+	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/internal/apptest"
 	"github.com/ilxqx/vef-framework-go/log"
@@ -1363,8 +1365,8 @@ func (suite *BasicApiTestSuite) TestApiNotFoundWithSuggestion() {
 
 		suite.Equal(404, resp.StatusCode, "Should return 404 Not Found")
 		body := suite.readBody(resp)
-		suite.Contains(body, `"code":1200`, "Should return not found error code")
-		suite.Contains(body, `"message":"Resource not found"`, "Should return not found message")
+		suite.Contains(body, fmt.Sprintf(`"code":%d`, result.ErrCodeNotFound), "Should return not found error code")
+		suite.Contains(body, fmt.Sprintf(`"message":"%s"`, i18n.T(result.ErrMessageNotFound)), "Should return not found message")
 		suite.T().Logf("Response body: %s", body)
 	})
 
@@ -1377,8 +1379,8 @@ func (suite *BasicApiTestSuite) TestApiNotFoundWithSuggestion() {
 
 		suite.Equal(404, resp.StatusCode, "Should return 404 Not Found")
 		body := suite.readBody(resp)
-		suite.Contains(body, `"code":1200`, "Should return not found error code")
-		suite.Contains(body, `"message":"Resource not found"`, "Should return not found message")
+		suite.Contains(body, fmt.Sprintf(`"code":%d`, result.ErrCodeNotFound), "Should return not found error code")
+		suite.Contains(body, fmt.Sprintf(`"message":"%s"`, i18n.T(result.ErrMessageNotFound)), "Should return not found message")
 		suite.T().Logf("Response body: %s", body)
 	})
 }
