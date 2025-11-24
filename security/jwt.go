@@ -21,7 +21,7 @@ const (
 var jwtParseOptions = []jwt.ParserOption{
 	jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
 	jwt.WithIssuer(jwtIssuer),
-	jwt.WithLeeway(1 * time.Minute),
+	jwt.WithLeeway(10 * time.Second),
 	jwt.WithIssuedAt(),
 	jwt.WithExpirationRequired(),
 }
@@ -29,8 +29,8 @@ var jwtParseOptions = []jwt.ParserOption{
 // Jwt provides low-level Jwt token operations.
 // It handles token generation, parsing, and validation without business logic.
 type Jwt struct {
-	config *JwtConfig // config is the configuration for the Jwt token.
-	secret []byte     // secret is the secret key for the Jwt token.
+	config *JwtConfig
+	secret []byte
 }
 
 // NewJwt creates a new Jwt instance with the given configuration.
