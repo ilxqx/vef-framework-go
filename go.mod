@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dlclark/regexp2 v1.11.5
-	github.com/dop251/goja v0.0.0-20251120180908-00ab4e88c633
+	github.com/dop251/goja v0.0.0-20251121114222-56b1242a5f86
 	github.com/dustin/go-humanize v1.0.1
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/go-co-op/gocron/v2 v2.18.0
@@ -163,7 +163,7 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	mellium.im/sasl v0.3.2 // indirect
-	modernc.org/libc v1.67.0 // indirect
+	modernc.org/libc v1.67.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.40.1 // indirect

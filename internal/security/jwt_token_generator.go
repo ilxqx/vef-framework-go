@@ -13,7 +13,7 @@ import (
 const (
 	tokenTypeAccess    = "access"
 	tokenTypeRefresh   = "refresh"
-	accessTokenExpires = time.Hour
+	accessTokenExpires = time.Minute * 30
 )
 
 type JwtTokenGenerator struct {
