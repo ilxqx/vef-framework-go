@@ -146,12 +146,231 @@ type BoolAndBuilder interface {
 	BaseAggregate[BoolAndBuilder]
 }
 
-// ========== Aggregate Function Implementations ==========
+type dialectAggConfig struct {
+	funcName        string
+	argsTransformer func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender
+	clearDistinct   bool
+	clearOrderBy    bool
+	clearNullsMode  bool
+}
 
-// baseAggregateExpr implements common functionality for all aggregate expressions.
-type baseAggregateExpr struct {
-	qb              QueryBuilder
-	eb              ExprBuilder
+type dialectStrategy struct {
+	postgres *dialectAggConfig
+	mysql    *dialectAggConfig
+	sqlite   *dialectAggConfig
+	oracle   *dialectAggConfig
+	sqlsrv   *dialectAggConfig
+}
+
+var bitOrStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{funcName: "BIT_OR"},
+	mysql:    &dialectAggConfig{funcName: "BIT_OR"},
+	sqlite: &dialectAggConfig{
+		funcName: "MAX",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			return eb.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(eb.Expr("? != 0", state.argsExpr)).Then(1).Else(0)
+			})
+		},
+	},
+}
+
+var bitAndStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{funcName: "BIT_AND"},
+	mysql:    &dialectAggConfig{funcName: "BIT_AND"},
+	sqlite: &dialectAggConfig{
+		funcName: "MIN",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			return eb.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(eb.Expr("? != 0", state.argsExpr)).Then(1).Else(0)
+			})
+		},
+	},
+}
+
+var boolOrStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{funcName: "BOOL_OR"},
+	mysql: &dialectAggConfig{
+		funcName: "MAX",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			return eb.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
+			})
+		},
+	},
+	sqlite: &dialectAggConfig{
+		funcName: "MAX",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			return eb.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
+			})
+		},
+	},
+}
+
+var boolAndStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{funcName: "BOOL_AND"},
+	mysql: &dialectAggConfig{
+		funcName: "MIN",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			return eb.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
+			})
+		},
+	},
+	sqlite: &dialectAggConfig{
+		funcName: "MIN",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			return eb.Case(func(cb CaseBuilder) {
+				cb.WhenExpr(state.argsExpr).Then(1).Else(0)
+			})
+		},
+	},
+}
+
+var jsonArrayAggStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{funcName: "JSON_AGG"},
+	mysql:    &dialectAggConfig{funcName: "JSON_ARRAYAGG"},
+	sqlite:   &dialectAggConfig{funcName: "JSON_GROUP_ARRAY"},
+}
+
+var jsonObjectAggStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{funcName: "JSON_OBJECT_AGG"},
+	mysql:    &dialectAggConfig{funcName: "JSON_OBJECTAGG"},
+	sqlite:   &dialectAggConfig{funcName: "JSON_GROUP_OBJECT"},
+}
+
+var arrayAggStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{funcName: "ARRAY_AGG"},
+	mysql: &dialectAggConfig{
+		funcName: "JSON_ARRAYAGG",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			if state.nullsMode == NullsIgnore {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
+				})
+			}
+
+			return state.argsExpr
+		},
+		clearDistinct:  true,
+		clearOrderBy:   true,
+		clearNullsMode: true,
+	},
+	sqlite: &dialectAggConfig{
+		funcName: "JSON_GROUP_ARRAY",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			if state.nullsMode == NullsIgnore {
+				return eb.Case(func(cb CaseBuilder) {
+					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
+				})
+			}
+
+			return state.argsExpr
+		},
+		clearDistinct:  true,
+		clearOrderBy:   true,
+		clearNullsMode: true,
+	},
+}
+
+var stringAggStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{
+		funcName: "STRING_AGG",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			argsExpr := state.argsExpr
+			if state.nullsMode == NullsIgnore {
+				argsExpr = eb.Case(func(cb CaseBuilder) {
+					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
+				})
+			}
+
+			return eb.Expr("?, ?", argsExpr, state.separator)
+		},
+	},
+	mysql: &dialectAggConfig{
+		funcName: "GROUP_CONCAT",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			argsExpr := state.argsExpr
+			if state.nullsMode == NullsIgnore {
+				argsExpr = eb.Case(func(cb CaseBuilder) {
+					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
+				})
+			}
+			if len(state.orderExprs) > 0 {
+				return eb.Expr("? ? SEPARATOR ?", argsExpr, newOrderByClause(state.orderExprs...), state.separator)
+			}
+
+			return eb.Expr("? SEPARATOR ?", argsExpr, state.separator)
+		},
+		clearOrderBy:   true,
+		clearNullsMode: true,
+	},
+	sqlite: &dialectAggConfig{
+		funcName: "GROUP_CONCAT",
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			argsExpr := state.argsExpr
+			if state.nullsMode == NullsIgnore {
+				argsExpr = eb.Case(func(cb CaseBuilder) {
+					cb.WhenExpr(eb.IsNotNull(state.argsExpr)).Then(state.argsExpr)
+				})
+			}
+			// SQLite DISTINCT limitation: only one argument allowed
+			if state.distinct {
+				return argsExpr
+			}
+
+			return eb.Expr("?, ?", argsExpr, state.separator)
+		},
+		clearNullsMode: true,
+	},
+}
+
+var stdDevStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
+			state.funcName = "STDDEV" + constants.Underscore + mode
+
+			return state.argsExpr
+		},
+	},
+	mysql: &dialectAggConfig{
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
+				state.funcName = "STDDEV" + constants.Underscore + state.statisticalMode.String()
+			} else {
+				state.funcName = "STDDEV"
+			}
+
+			return state.argsExpr
+		},
+	},
+}
+
+var varianceStrategy = &dialectStrategy{
+	postgres: &dialectAggConfig{
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
+			state.funcName = "VAR" + constants.Underscore + mode
+
+			return state.argsExpr
+		},
+	},
+	mysql: &dialectAggConfig{
+		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
+				state.funcName = "VAR" + constants.Underscore + state.statisticalMode.String()
+			} else {
+				state.funcName = "VARIANCE"
+			}
+
+			return state.argsExpr
+		},
+	},
+}
+
+type aggregateQueryState struct {
 	funcName        string
 	argsExpr        schema.QueryAppender
 	distinct        bool
@@ -160,6 +379,85 @@ type baseAggregateExpr struct {
 	nullsMode       NullsMode
 	separator       string
 	statisticalMode StatisticalMode
+}
+
+type baseAggregateExpr struct {
+	qb         QueryBuilder
+	eb         ExprBuilder
+	funcName   string
+	argsExpr   schema.QueryAppender
+	distinct   bool
+	filter     schema.QueryAppender
+	orderExprs []orderExpr
+	nullsMode  NullsMode
+	strategy   *dialectStrategy
+}
+
+func (a *baseAggregateExpr) getDialectConfig() *dialectAggConfig {
+	if a.strategy == nil {
+		return nil
+	}
+
+	var cfg *dialectAggConfig
+	a.eb.ExecByDialect(DialectExecs{
+		Postgres:  func() { cfg = a.strategy.postgres },
+		MySQL:     func() { cfg = a.strategy.mysql },
+		SQLite:    func() { cfg = a.strategy.sqlite },
+		Oracle:    func() { cfg = a.strategy.oracle },
+		SQLServer: func() { cfg = a.strategy.sqlsrv },
+	})
+
+	return cfg
+}
+
+func (a *baseAggregateExpr) buildQueryState() aggregateQueryState {
+	return aggregateQueryState{
+		funcName:   a.funcName,
+		argsExpr:   a.argsExpr,
+		distinct:   a.distinct,
+		filter:     a.filter,
+		orderExprs: a.orderExprs,
+		nullsMode:  a.nullsMode,
+	}
+}
+
+func (a *baseAggregateExpr) applyDialectConfig(state *aggregateQueryState, cfg *dialectAggConfig) {
+	if cfg == nil {
+		return
+	}
+
+	if cfg.funcName != constants.Empty {
+		state.funcName = cfg.funcName
+	}
+
+	if cfg.argsTransformer != nil {
+		state.argsExpr = cfg.argsTransformer(a.eb, state)
+	}
+
+	if cfg.clearDistinct {
+		state.distinct = false
+	}
+
+	if cfg.clearOrderBy {
+		state.orderExprs = nil
+	}
+
+	if cfg.clearNullsMode {
+		state.nullsMode = NullsDefault
+	}
+}
+
+func (a *baseAggregateExpr) dialectAwareAppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
+	state := a.buildQueryState()
+
+	cfg := a.getDialectConfig()
+	if cfg == nil {
+		return nil, ErrDialectUnsupportedOperation
+	}
+
+	a.applyDialectConfig(&state, cfg)
+
+	return a.appendQueryWithState(gen, b, state)
 }
 
 func (a *baseAggregateExpr) setFilter(builder func(ConditionBuilder)) {
@@ -197,26 +495,29 @@ func (a *baseAggregateExpr) appendOrderByExpr(expr any) {
 	})
 }
 
-func (a *baseAggregateExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	if a.argsExpr == nil {
+func (a *baseAggregateExpr) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
+	return a.appendQueryWithState(gen, b, a.buildQueryState())
+}
+
+func (a *baseAggregateExpr) appendQueryWithState(gen schema.QueryGen, b []byte, state aggregateQueryState) (_ []byte, err error) {
+	if state.argsExpr == nil {
 		return nil, ErrAggregateMissingArgs
 	}
 
-	// Handle FILTER clause for databases without native support (MySQL, Oracle, SQL Server)
-	if a.filter != nil {
+	if state.filter != nil {
 		var handled bool
 
 		a.eb.ExecByDialect(DialectExecs{
 			MySQL: func() {
-				b, err = a.appendCompatibleFilterQuery(gen, b)
+				b, err = a.appendCompatibleFilterQueryWithState(gen, b, state)
 				handled = true
 			},
 			Oracle: func() {
-				b, err = a.appendCompatibleFilterQuery(gen, b)
+				b, err = a.appendCompatibleFilterQueryWithState(gen, b, state)
 				handled = true
 			},
 			SQLServer: func() {
-				b, err = a.appendCompatibleFilterQuery(gen, b)
+				b, err = a.appendCompatibleFilterQueryWithState(gen, b, state)
 				handled = true
 			},
 		})
@@ -226,34 +527,33 @@ func (a *baseAggregateExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte
 		}
 	}
 
-	b = append(b, a.funcName...)
+	b = append(b, state.funcName...)
 	b = append(b, constants.ByteLeftParenthesis)
 
-	if a.distinct {
+	if state.distinct {
 		b = append(b, "DISTINCT "...)
 	}
 
-	if b, err = a.argsExpr.AppendQuery(gen, b); err != nil {
+	if b, err = state.argsExpr.AppendQuery(gen, b); err != nil {
 		return
 	}
 
-	if len(a.orderExprs) > 0 {
+	if len(state.orderExprs) > 0 {
 		b = append(b, constants.ByteSpace)
-		if b, err = newOrderByClause(a.orderExprs...).AppendQuery(gen, b); err != nil {
+		if b, err = newOrderByClause(state.orderExprs...).AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
 
 	b = append(b, constants.ByteRightParenthesis)
 
-	if a.nullsMode != NullsDefault {
+	if state.nullsMode != NullsDefault {
 		b = append(b, constants.ByteSpace)
-		b = append(b, a.nullsMode.String()...)
+		b = append(b, state.nullsMode.String()...)
 	}
 
-	// FILTER clause: PostgreSQL/SQLite native, MySQL/Oracle/SQL Server use CASE
-	if a.filter != nil {
-		if b, err = newFilterClause(a.filter).AppendQuery(gen, b); err != nil {
+	if state.filter != nil {
+		if b, err = newFilterClause(state.filter).AppendQuery(gen, b); err != nil {
 			return
 		}
 	}
@@ -261,9 +561,8 @@ func (a *baseAggregateExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte
 	return b, nil
 }
 
-// appendCompatibleFilterQuery converts FILTER clause to CASE WHEN syntax for MySQL/Oracle/SQL Server.
-func (a *baseAggregateExpr) appendCompatibleFilterQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	funcName := a.funcName
+func (a *baseAggregateExpr) appendCompatibleFilterQueryWithState(gen schema.QueryGen, b []byte, state aggregateQueryState) (_ []byte, err error) {
+	funcName := state.funcName
 
 	switch funcName {
 	case "COUNT":
@@ -274,17 +573,17 @@ func (a *baseAggregateExpr) appendCompatibleFilterQuery(gen schema.QueryGen, b [
 
 	b = append(b, constants.ByteLeftParenthesis)
 
-	if a.distinct {
+	if state.distinct {
 		b = append(b, "DISTINCT "...)
 	}
 
 	if b, err = a.eb.Case(func(cb CaseBuilder) {
-		when := cb.WhenExpr(a.filter)
+		when := cb.WhenExpr(state.filter)
 		switch funcName {
 		case "COUNT":
 			when.Then(1)
 		default:
-			when.Then(a.argsExpr)
+			when.Then(state.argsExpr)
 		}
 
 		switch funcName {
@@ -302,7 +601,6 @@ func (a *baseAggregateExpr) appendCompatibleFilterQuery(gen schema.QueryGen, b [
 	return b, nil
 }
 
-// baseAggregateBuilder is a base struct for all aggregate function builders.
 type baseAggregateBuilder[T any] struct {
 	*baseAggregateExpr
 
@@ -327,7 +625,6 @@ func (b *baseAggregateBuilder[T]) Filter(builder func(ConditionBuilder)) T {
 	return b.self
 }
 
-// distinctableAggregateBuilder provides DISTINCT functionality.
 type distinctableAggregateBuilder[T any] struct {
 	*baseAggregateBuilder[T]
 }
@@ -338,7 +635,6 @@ func (b *distinctableAggregateBuilder[T]) Distinct() T {
 	return b.self
 }
 
-// orderableAggregateBuilder provides ORDER BY functionality.
 type orderableAggregateBuilder[T any] struct {
 	*baseAggregateBuilder[T]
 }
@@ -361,7 +657,6 @@ func (b *orderableAggregateBuilder[T]) OrderByExpr(expr any) T {
 	return b.self
 }
 
-// baseNullHandlingBuilder provides NULL handling functionality.
 type baseNullHandlingBuilder[T any] struct {
 	*baseAggregateBuilder[T]
 }
@@ -378,24 +673,24 @@ func (b *baseNullHandlingBuilder[T]) RespectNulls() T {
 	return b.self
 }
 
-// statisticalAggregateBuilder provides statistical mode functionality.
 type statisticalAggregateBuilder[T any] struct {
 	*baseAggregateBuilder[T]
+
+	statExpr *statisticalAggExpr
 }
 
 func (b *statisticalAggregateBuilder[T]) Population() T {
-	b.statisticalMode = StatisticalPopulation
+	b.statExpr.statisticalMode = StatisticalPopulation
 
 	return b.self
 }
 
 func (b *statisticalAggregateBuilder[T]) Sample() T {
-	b.statisticalMode = StatisticalSample
+	b.statExpr.statisticalMode = StatisticalSample
 
 	return b.self
 }
 
-// countExpr implements CountBuilder.
 type countExpr[T any] struct {
 	*baseAggregateExpr
 	*distinctableAggregateBuilder[T]
@@ -407,37 +702,34 @@ func (c *countExpr[T]) All() T {
 	return c.self
 }
 
-// sumExpr implements SumBuilder.
 type sumExpr[T any] struct {
 	*baseAggregateExpr
 	*distinctableAggregateBuilder[T]
 }
 
-// avgExpr implements AvgBuilder.
 type avgExpr[T any] struct {
 	*baseAggregateExpr
 	*distinctableAggregateBuilder[T]
 }
 
-// minExpr implements MinBuilder.
 type minExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
 
-// maxExpr implements MaxBuilder.
 type maxExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
 
-// stringAggExpr implements StringAggBuilder.
 type stringAggExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 	*distinctableAggregateBuilder[T]
 	*orderableAggregateBuilder[T]
 	*baseNullHandlingBuilder[T]
+
+	separator string
 }
 
 func (s *stringAggExpr[T]) Separator(separator string) T {
@@ -446,107 +738,20 @@ func (s *stringAggExpr[T]) Separator(separator string) T {
 	return s.self
 }
 
-func (s *stringAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	var (
-		originalFuncName   = s.funcName
-		originalArgsExpr   = s.argsExpr
-		originalDistinct   = s.distinct
-		originalNullsMode  = s.nullsMode
-		originalOrderExprs = s.orderExprs
-	)
+func (s *stringAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
+	state := s.buildQueryState()
+	state.separator = s.separator
 
-	defer func() {
-		s.funcName = originalFuncName
-		s.argsExpr = originalArgsExpr
-		s.distinct = originalDistinct
-		s.nullsMode = originalNullsMode
-		s.orderExprs = originalOrderExprs
-	}()
-
-	if err = s.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		Postgres: func() error {
-			s.funcName = "STRING_AGG"
-
-			argsExpr := s.argsExpr
-			if s.nullsMode == NullsIgnore {
-				argsExpr = s.eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(s.eb.IsNotNull(s.argsExpr)).Then(s.argsExpr)
-				})
-			}
-
-			s.argsExpr = s.eb.Expr(
-				"?, ?",
-				argsExpr,
-				s.separator,
-			)
-
-			return nil
-		},
-		MySQL: func() error {
-			s.funcName = "GROUP_CONCAT"
-			argsExpr := s.argsExpr
-			if s.nullsMode == NullsIgnore {
-				argsExpr = s.eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(s.eb.IsNotNull(s.argsExpr)).Then(s.argsExpr)
-				})
-			}
-
-			if len(s.orderExprs) > 0 {
-				s.argsExpr = s.eb.Expr(
-					"? ? SEPARATOR ?",
-					argsExpr,
-					newOrderByClause(s.orderExprs...),
-					s.separator,
-				)
-			} else {
-				s.argsExpr = s.eb.Expr(
-					"? SEPARATOR ?",
-					argsExpr,
-					s.separator,
-				)
-			}
-
-			s.nullsMode = NullsDefault
-			s.orderExprs = nil
-
-			return nil
-		},
-		SQLite: func() error {
-			s.funcName = "GROUP_CONCAT"
-
-			argsExpr := s.argsExpr
-			if s.nullsMode == NullsIgnore {
-				argsExpr = s.eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(s.eb.IsNotNull(s.argsExpr)).Then(s.argsExpr)
-				})
-			}
-
-			// SQLite DISTINCT limitation: only one argument allowed
-			if s.distinct {
-				s.argsExpr = argsExpr
-			} else {
-				s.argsExpr = s.eb.Expr(
-					"?, ?",
-					argsExpr,
-					s.separator,
-				)
-			}
-
-			s.nullsMode = NullsDefault
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return nil, err
+	cfg := s.getDialectConfig()
+	if cfg == nil {
+		return nil, ErrDialectUnsupportedOperation
 	}
 
-	return s.baseAggregateExpr.AppendQuery(gen, b)
+	s.applyDialectConfig(&state, cfg)
+
+	return s.appendQueryWithState(gen, b, state)
 }
 
-// arrayAggExpr implements ArrayAggBuilder.
 type arrayAggExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
@@ -555,132 +760,40 @@ type arrayAggExpr[T any] struct {
 	*baseNullHandlingBuilder[T]
 }
 
-func (a *arrayAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	var (
-		originalFuncName   = a.funcName
-		originalArgsExpr   = a.argsExpr
-		originalDistinct   = a.distinct
-		originalNullsMode  = a.nullsMode
-		originalOrderExprs = a.orderExprs
-	)
-
-	defer func() {
-		a.funcName = originalFuncName
-		a.argsExpr = originalArgsExpr
-		a.distinct = originalDistinct
-		a.nullsMode = originalNullsMode
-		a.orderExprs = originalOrderExprs
-	}()
-
-	if err = a.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		Postgres: func() error {
-			a.funcName = "ARRAY_AGG"
-
-			return nil
-		},
-		MySQL: func() error {
-			a.funcName = "JSON_ARRAYAGG"
-			argsExpr := a.argsExpr
-			if a.nullsMode == NullsIgnore {
-				argsExpr = a.eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(a.eb.IsNotNull(a.argsExpr)).Then(a.argsExpr)
-				})
-			}
-
-			a.argsExpr = argsExpr
-			a.nullsMode = NullsDefault
-			a.distinct = false
-			a.orderExprs = nil
-
-			return nil
-		},
-		SQLite: func() error {
-			a.funcName = "JSON_GROUP_ARRAY"
-			argsExpr := a.argsExpr
-			if a.nullsMode == NullsIgnore {
-				argsExpr = a.eb.Case(func(cb CaseBuilder) {
-					cb.WhenExpr(a.eb.IsNotNull(a.argsExpr)).Then(a.argsExpr)
-				})
-			}
-
-			a.argsExpr = argsExpr
-			a.nullsMode = NullsDefault
-			a.distinct = false
-			a.orderExprs = nil
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return nil, err
-	}
-
-	return a.baseAggregateExpr.AppendQuery(gen, b)
+func (a *arrayAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
+	return a.dialectAwareAppendQuery(gen, b)
 }
 
-// statisticalAggExpr implements statistical aggregate functions (STDDEV, VARIANCE).
 type statisticalAggExpr struct {
 	*baseAggregateExpr
+
+	statisticalMode StatisticalMode
 }
 
-func (s *statisticalAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	originalFuncName := s.funcName
+func (s *statisticalAggExpr) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
+	state := s.buildQueryState()
+	state.statisticalMode = s.statisticalMode
 
-	defer func() {
-		s.funcName = originalFuncName
-	}()
-
-	if err = s.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		Postgres: func() error {
-			funcName := s.funcName
-			if s.funcName == "VARIANCE" {
-				funcName = "VAR"
-			}
-			s.funcName = funcName + constants.Underscore + lo.CoalesceOrEmpty(s.statisticalMode.String(), StatisticalPopulation.String())
-
-			return nil
-		},
-		MySQL: func() error {
-			funcName := s.funcName
-			if s.funcName == "VARIANCE" {
-				funcName = "VAR"
-			}
-
-			switch s.statisticalMode {
-			case StatisticalPopulation, StatisticalSample:
-				s.funcName = funcName + constants.Underscore + s.statisticalMode.String()
-			}
-
-			return nil
-		},
-		SQLite: func() error {
-			return ErrAggregateUnsupportedFunction
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return nil, err
+	cfg := s.getDialectConfig()
+	if cfg == nil {
+		return nil, ErrDialectUnsupportedOperation
 	}
 
-	return s.baseAggregateExpr.AppendQuery(gen, b)
+	s.applyDialectConfig(&state, cfg)
+
+	return s.appendQueryWithState(gen, b, state)
 }
 
-// stdDevExpr implements StdDevBuilder.
 type stdDevExpr[T any] struct {
 	*statisticalAggExpr
 	*statisticalAggregateBuilder[T]
 }
 
-// varianceExpr implements VarianceBuilder.
 type varianceExpr[T any] struct {
 	*statisticalAggExpr
 	*statisticalAggregateBuilder[T]
 }
 
-// jsonObjectAggExpr implements JsonObjectAggBuilder.
 type jsonObjectAggExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
@@ -702,52 +815,24 @@ func (j *jsonObjectAggExpr[T]) KeyExpr(expr any) T {
 	return j.self
 }
 
-func (j *jsonObjectAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
+func (j *jsonObjectAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
 	if j.keyExpr == nil {
 		return nil, ErrAggregateMissingArgs
 	}
 
-	// Create combined key-value expression for the aggregate
-	var (
-		originalFuncName = j.funcName
-		originalArgsExpr = j.argsExpr
-	)
+	state := j.buildQueryState()
 
-	defer func() {
-		j.funcName = originalFuncName
-		j.argsExpr = originalArgsExpr
-	}()
-
-	if err = j.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		Postgres: func() error {
-			j.funcName = "JSON_OBJECT_AGG"
-			j.argsExpr = j.eb.Exprs(j.keyExpr, originalArgsExpr)
-
-			return nil
-		},
-		MySQL: func() error {
-			j.funcName = "JSON_OBJECTAGG"
-			j.argsExpr = j.eb.Exprs(j.keyExpr, originalArgsExpr)
-
-			return nil
-		},
-		SQLite: func() error {
-			j.funcName = "JSON_GROUP_OBJECT"
-			j.argsExpr = j.eb.Exprs(j.keyExpr, originalArgsExpr)
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return
+	cfg := j.getDialectConfig()
+	if cfg == nil {
+		return nil, ErrDialectUnsupportedOperation
 	}
 
-	return j.baseAggregateExpr.AppendQuery(gen, b)
+	j.applyDialectConfig(&state, cfg)
+	state.argsExpr = j.eb.Exprs(j.keyExpr, j.argsExpr)
+
+	return j.appendQueryWithState(gen, b, state)
 }
 
-// jsonArrayAggExpr implements JsonArrayAggBuilder.
 type jsonArrayAggExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
@@ -755,238 +840,46 @@ type jsonArrayAggExpr[T any] struct {
 	*orderableAggregateBuilder[T]
 }
 
-func (j *jsonArrayAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	originalFuncName := j.funcName
-
-	defer func() {
-		j.funcName = originalFuncName
-	}()
-
-	if err = j.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		Postgres: func() error {
-			j.funcName = "JSON_AGG"
-
-			return nil
-		},
-		MySQL: func() error {
-			j.funcName = "JSON_ARRAYAGG"
-
-			return nil
-		},
-		SQLite: func() error {
-			j.funcName = "JSON_GROUP_ARRAY"
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return
-	}
-
-	return j.baseAggregateExpr.AppendQuery(gen, b)
+func (j *jsonArrayAggExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) ([]byte, error) {
+	return j.dialectAwareAppendQuery(gen, b)
 }
 
-// bitOrExpr implements BitOrBuilder.
 type bitOrExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
 
-func (b *bitOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
-	var (
-		originalFuncName = b.funcName
-		originalArgsExpr = b.argsExpr
-	)
-
-	defer func() {
-		b.funcName = originalFuncName
-		b.argsExpr = originalArgsExpr
-	}()
-
-	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		MySQL: func() error {
-			b.funcName = "BIT_OR"
-
-			return nil
-		},
-		Postgres: func() error {
-			b.funcName = "BIT_OR"
-
-			return nil
-		},
-		SQLite: func() error {
-			// SQLite: simulate with MAX(CASE WHEN x != 0 THEN 1 ELSE 0 END)
-			b.funcName = "MAX"
-			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(b.eb.Expr("? != 0", originalArgsExpr)).Then(1).Else(0)
-			})
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return
-	}
-
-	return b.baseAggregateExpr.AppendQuery(gen, buf)
+func (b *bitOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
+	return b.dialectAwareAppendQuery(gen, buf)
 }
 
-// bitAndExpr implements BitAndBuilder.
 type bitAndExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
 
-func (b *bitAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
-	var (
-		originalFuncName = b.funcName
-		originalArgsExpr = b.argsExpr
-	)
-
-	defer func() {
-		b.funcName = originalFuncName
-		b.argsExpr = originalArgsExpr
-	}()
-
-	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		MySQL: func() error {
-			b.funcName = "BIT_AND"
-
-			return nil
-		},
-		Postgres: func() error {
-			b.funcName = "BIT_AND"
-
-			return nil
-		},
-		SQLite: func() error {
-			// SQLite: simulate with MIN(CASE WHEN x != 0 THEN 1 ELSE 0 END)
-			b.funcName = "MIN"
-			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(b.eb.Expr("? != 0", originalArgsExpr)).Then(1).Else(0)
-			})
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return
-	}
-
-	return b.baseAggregateExpr.AppendQuery(gen, buf)
+func (b *bitAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
+	return b.dialectAwareAppendQuery(gen, buf)
 }
 
-// boolOrExpr implements BoolOrBuilder.
 type boolOrExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
 
-func (b *boolOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
-	var (
-		originalFuncName = b.funcName
-		originalArgsExpr = b.argsExpr
-	)
-
-	defer func() {
-		b.funcName = originalFuncName
-		b.argsExpr = originalArgsExpr
-	}()
-
-	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		Postgres: func() error {
-			b.funcName = "BOOL_OR"
-
-			return nil
-		},
-		MySQL: func() error {
-			// MySQL: simulate with MAX(CASE WHEN x THEN 1 ELSE 0 END)
-			b.funcName = "MAX"
-			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
-			})
-
-			return nil
-		},
-		SQLite: func() error {
-			// SQLite: simulate with MAX(CASE WHEN x THEN 1 ELSE 0 END)
-			b.funcName = "MAX"
-			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
-			})
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return
-	}
-
-	return b.baseAggregateExpr.AppendQuery(gen, buf)
+func (b *boolOrExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
+	return b.dialectAwareAppendQuery(gen, buf)
 }
 
-// boolAndExpr implements BoolAndBuilder.
 type boolAndExpr[T any] struct {
 	*baseAggregateExpr
 	*baseAggregateBuilder[T]
 }
 
-func (b *boolAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) (_ []byte, err error) {
-	var (
-		originalFuncName = b.funcName
-		originalArgsExpr = b.argsExpr
-	)
-
-	defer func() {
-		b.funcName = originalFuncName
-		b.argsExpr = originalArgsExpr
-	}()
-
-	if err = b.eb.ExecByDialectWithErr(DialectExecsWithErr{
-		Postgres: func() error {
-			b.funcName = "BOOL_AND"
-
-			return nil
-		},
-		MySQL: func() error {
-			// MySQL: simulate with MIN(CASE WHEN x THEN 1 ELSE 0 END)
-			b.funcName = "MIN"
-			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
-			})
-
-			return nil
-		},
-		SQLite: func() error {
-			// SQLite: simulate with MIN(CASE WHEN x THEN 1 ELSE 0 END)
-			b.funcName = "MIN"
-			b.argsExpr = b.eb.Case(func(cb CaseBuilder) {
-				cb.WhenExpr(b.argsExpr).Then(1).Else(0)
-			})
-
-			return nil
-		},
-		Default: func() error {
-			return ErrDialectUnsupportedOperation
-		},
-	}); err != nil {
-		return
-	}
-
-	return b.baseAggregateExpr.AppendQuery(gen, buf)
+func (b *boolAndExpr[T]) AppendQuery(gen schema.QueryGen, buf []byte) ([]byte, error) {
+	return b.dialectAwareAppendQuery(gen, buf)
 }
 
-// ========== Factory Functions ==========
-
-// newGenericCountExpr creates a new COUNT expression.
 func newGenericCountExpr[T any](self T, qb QueryBuilder) *countExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1008,7 +901,6 @@ func newGenericCountExpr[T any](self T, qb QueryBuilder) *countExpr[T] {
 	return expr
 }
 
-// newCountExpr creates a new COUNT expression.
 func newCountExpr(qb QueryBuilder) *countExpr[CountBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1030,7 +922,6 @@ func newCountExpr(qb QueryBuilder) *countExpr[CountBuilder] {
 	return expr
 }
 
-// newGenericSumExpr creates a new SUM expression.
 func newGenericSumExpr[T any](self T, qb QueryBuilder) *sumExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1052,7 +943,6 @@ func newGenericSumExpr[T any](self T, qb QueryBuilder) *sumExpr[T] {
 	return expr
 }
 
-// newSumExpr creates a new SUM expression.
 func newSumExpr(qb QueryBuilder) *sumExpr[SumBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1074,7 +964,6 @@ func newSumExpr(qb QueryBuilder) *sumExpr[SumBuilder] {
 	return expr
 }
 
-// newGenericAvgExpr creates a new AVG expression.
 func newGenericAvgExpr[T any](self T, qb QueryBuilder) *avgExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1096,7 +985,6 @@ func newGenericAvgExpr[T any](self T, qb QueryBuilder) *avgExpr[T] {
 	return expr
 }
 
-// newAvgExpr creates a new AVG expression.
 func newAvgExpr(qb QueryBuilder) *avgExpr[AvgBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1118,7 +1006,6 @@ func newAvgExpr(qb QueryBuilder) *avgExpr[AvgBuilder] {
 	return expr
 }
 
-// newGenericMinExpr creates a new MIN expression.
 func newGenericMinExpr[T any](self T, qb QueryBuilder) *minExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1138,7 +1025,6 @@ func newGenericMinExpr[T any](self T, qb QueryBuilder) *minExpr[T] {
 	return expr
 }
 
-// newMinExpr creates a new MIN expression.
 func newMinExpr(qb QueryBuilder) *minExpr[MinBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1158,7 +1044,6 @@ func newMinExpr(qb QueryBuilder) *minExpr[MinBuilder] {
 	return expr
 }
 
-// newGenericMaxExpr creates a new MAX expression.
 func newGenericMaxExpr[T any](self T, qb QueryBuilder) *maxExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1178,7 +1063,6 @@ func newGenericMaxExpr[T any](self T, qb QueryBuilder) *maxExpr[T] {
 	return expr
 }
 
-// newMaxExpr creates a new MAX expression.
 func newMaxExpr(qb QueryBuilder) *maxExpr[MaxBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
@@ -1198,13 +1082,11 @@ func newMaxExpr(qb QueryBuilder) *maxExpr[MaxBuilder] {
 	return expr
 }
 
-// newGenericStringAggExpr creates a new STRING_AGG expression.
 func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
 	baseExpr := &baseAggregateExpr{
-		qb:        qb,
-		eb:        qb.ExprBuilder(),
-		funcName:  constants.Empty,
-		separator: constants.Comma,
+		qb:       qb,
+		eb:       qb.ExprBuilder(),
+		strategy: stringAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1221,6 +1103,7 @@ func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
 		baseNullHandlingBuilder: &baseNullHandlingBuilder[T]{
 			baseAggregateBuilder: baseBuilder,
 		},
+		separator: constants.Comma,
 	}
 
 	baseBuilder.self = self
@@ -1228,13 +1111,11 @@ func newGenericStringAggExpr[T any](self T, qb QueryBuilder) *stringAggExpr[T] {
 	return expr
 }
 
-// newStringAggExpr creates a new STRING_AGG expression.
 func newStringAggExpr(qb QueryBuilder) *stringAggExpr[StringAggBuilder] {
 	baseExpr := &baseAggregateExpr{
-		qb:        qb,
-		eb:        qb.ExprBuilder(),
-		funcName:  constants.Empty,
-		separator: constants.Comma,
+		qb:       qb,
+		eb:       qb.ExprBuilder(),
+		strategy: stringAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[StringAggBuilder]{
 		baseAggregateExpr: baseExpr,
@@ -1251,6 +1132,7 @@ func newStringAggExpr(qb QueryBuilder) *stringAggExpr[StringAggBuilder] {
 		baseNullHandlingBuilder: &baseNullHandlingBuilder[StringAggBuilder]{
 			baseAggregateBuilder: baseBuilder,
 		},
+		separator: constants.Comma,
 	}
 
 	baseBuilder.self = expr
@@ -1258,12 +1140,11 @@ func newStringAggExpr(qb QueryBuilder) *stringAggExpr[StringAggBuilder] {
 	return expr
 }
 
-// newGenericArrayAggExpr creates a new ARRAY_AGG expression.
 func newGenericArrayAggExpr[T any](self T, qb QueryBuilder) *arrayAggExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty,
+		strategy: arrayAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1287,12 +1168,11 @@ func newGenericArrayAggExpr[T any](self T, qb QueryBuilder) *arrayAggExpr[T] {
 	return expr
 }
 
-// newArrayAggExpr creates a new ARRAY_AGG expression.
 func newArrayAggExpr(qb QueryBuilder) *arrayAggExpr[ArrayAggBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty,
+		strategy: arrayAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[ArrayAggBuilder]{
 		baseAggregateExpr: baseExpr,
@@ -1316,22 +1196,23 @@ func newArrayAggExpr(qb QueryBuilder) *arrayAggExpr[ArrayAggBuilder] {
 	return expr
 }
 
-// newGenericStdDevExpr creates a new STDDEV expression.
 func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stdDevExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "STDDEV",
+		strategy: stdDevStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
 	}
+	statExpr := &statisticalAggExpr{
+		baseAggregateExpr: baseExpr,
+	}
 	expr := &stdDevExpr[T]{
-		statisticalAggExpr: &statisticalAggExpr{
-			baseAggregateExpr: baseExpr,
-		},
+		statisticalAggExpr: statExpr,
 		statisticalAggregateBuilder: &statisticalAggregateBuilder[T]{
 			baseAggregateBuilder: baseBuilder,
+			statExpr:             statExpr,
 		},
 	}
 
@@ -1340,22 +1221,23 @@ func newGenericStdDevExpr[T any](self T, qb QueryBuilder) *stdDevExpr[T] {
 	return expr
 }
 
-// newStdDevExpr creates a new STDDEV expression.
 func newStdDevExpr(qb QueryBuilder) *stdDevExpr[StdDevBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "STDDEV",
+		strategy: stdDevStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[StdDevBuilder]{
 		baseAggregateExpr: baseExpr,
 	}
+	statExpr := &statisticalAggExpr{
+		baseAggregateExpr: baseExpr,
+	}
 	expr := &stdDevExpr[StdDevBuilder]{
-		statisticalAggExpr: &statisticalAggExpr{
-			baseAggregateExpr: baseExpr,
-		},
+		statisticalAggExpr: statExpr,
 		statisticalAggregateBuilder: &statisticalAggregateBuilder[StdDevBuilder]{
 			baseAggregateBuilder: baseBuilder,
+			statExpr:             statExpr,
 		},
 	}
 
@@ -1364,22 +1246,23 @@ func newStdDevExpr(qb QueryBuilder) *stdDevExpr[StdDevBuilder] {
 	return expr
 }
 
-// newGenericVarianceExpr creates a new VARIANCE expression.
 func newGenericVarianceExpr[T any](self T, qb QueryBuilder) *varianceExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "VARIANCE",
+		strategy: varianceStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
 	}
+	statExpr := &statisticalAggExpr{
+		baseAggregateExpr: baseExpr,
+	}
 	expr := &varianceExpr[T]{
-		statisticalAggExpr: &statisticalAggExpr{
-			baseAggregateExpr: baseExpr,
-		},
+		statisticalAggExpr: statExpr,
 		statisticalAggregateBuilder: &statisticalAggregateBuilder[T]{
 			baseAggregateBuilder: baseBuilder,
+			statExpr:             statExpr,
 		},
 	}
 
@@ -1388,22 +1271,23 @@ func newGenericVarianceExpr[T any](self T, qb QueryBuilder) *varianceExpr[T] {
 	return expr
 }
 
-// newVarianceExpr creates a new VARIANCE expression.
 func newVarianceExpr(qb QueryBuilder) *varianceExpr[VarianceBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "VARIANCE",
+		strategy: varianceStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[VarianceBuilder]{
 		baseAggregateExpr: baseExpr,
 	}
+	statExpr := &statisticalAggExpr{
+		baseAggregateExpr: baseExpr,
+	}
 	expr := &varianceExpr[VarianceBuilder]{
-		statisticalAggExpr: &statisticalAggExpr{
-			baseAggregateExpr: baseExpr,
-		},
+		statisticalAggExpr: statExpr,
 		statisticalAggregateBuilder: &statisticalAggregateBuilder[VarianceBuilder]{
 			baseAggregateBuilder: baseBuilder,
+			statExpr:             statExpr,
 		},
 	}
 
@@ -1412,12 +1296,11 @@ func newVarianceExpr(qb QueryBuilder) *varianceExpr[VarianceBuilder] {
 	return expr
 }
 
-// newGenericJsonObjectAggExpr creates a generic JSON_OBJECT_AGG expression for any builder type.
 func newGenericJsonObjectAggExpr[T any](self T, qb QueryBuilder) *jsonObjectAggExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: jsonObjectAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1438,12 +1321,11 @@ func newGenericJsonObjectAggExpr[T any](self T, qb QueryBuilder) *jsonObjectAggE
 	return expr
 }
 
-// newJsonObjectAggExpr creates a new JSON_OBJECT_AGG expression.
 func newJsonObjectAggExpr(qb QueryBuilder) *jsonObjectAggExpr[JsonObjectAggBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: jsonObjectAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[JsonObjectAggBuilder]{
 		baseAggregateExpr: baseExpr,
@@ -1464,12 +1346,11 @@ func newJsonObjectAggExpr(qb QueryBuilder) *jsonObjectAggExpr[JsonObjectAggBuild
 	return expr
 }
 
-// newGenericJsonArrayAggExpr creates a generic JSON_ARRAY_AGG expression for any builder type.
 func newGenericJsonArrayAggExpr[T any](self T, qb QueryBuilder) *jsonArrayAggExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: jsonArrayAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1490,12 +1371,11 @@ func newGenericJsonArrayAggExpr[T any](self T, qb QueryBuilder) *jsonArrayAggExp
 	return expr
 }
 
-// newJsonArrayAggExpr creates a new JSON_ARRAY_AGG expression.
 func newJsonArrayAggExpr(qb QueryBuilder) *jsonArrayAggExpr[JsonArrayAggBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: jsonArrayAggStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[JsonArrayAggBuilder]{
 		baseAggregateExpr: baseExpr,
@@ -1516,12 +1396,11 @@ func newJsonArrayAggExpr(qb QueryBuilder) *jsonArrayAggExpr[JsonArrayAggBuilder]
 	return expr
 }
 
-// newGenericBitOrExpr creates a generic BIT_OR expression for any builder type.
 func newGenericBitOrExpr[T any](self T, qb QueryBuilder) *bitOrExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: bitOrStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1536,12 +1415,11 @@ func newGenericBitOrExpr[T any](self T, qb QueryBuilder) *bitOrExpr[T] {
 	return expr
 }
 
-// newBitOrExpr creates a new BIT_OR expression.
 func newBitOrExpr(qb QueryBuilder) *bitOrExpr[BitOrBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "BIT_OR", // Default, will be adjusted in AppendQuery
+		strategy: bitOrStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[BitOrBuilder]{
 		baseAggregateExpr: baseExpr,
@@ -1556,12 +1434,11 @@ func newBitOrExpr(qb QueryBuilder) *bitOrExpr[BitOrBuilder] {
 	return expr
 }
 
-// newGenericBitAndExpr creates a generic BIT_AND expression for any builder type.
 func newGenericBitAndExpr[T any](self T, qb QueryBuilder) *bitAndExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: bitAndStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1576,12 +1453,11 @@ func newGenericBitAndExpr[T any](self T, qb QueryBuilder) *bitAndExpr[T] {
 	return expr
 }
 
-// newBitAndExpr creates a new BIT_AND expression.
 func newBitAndExpr(qb QueryBuilder) *bitAndExpr[BitAndBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "BIT_AND", // Default, will be adjusted in AppendQuery
+		strategy: bitAndStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[BitAndBuilder]{
 		baseAggregateExpr: baseExpr,
@@ -1596,12 +1472,11 @@ func newBitAndExpr(qb QueryBuilder) *bitAndExpr[BitAndBuilder] {
 	return expr
 }
 
-// newGenericBoolOrExpr creates a generic BOOL_OR expression for any builder type.
 func newGenericBoolOrExpr[T any](self T, qb QueryBuilder) *boolOrExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: boolOrStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1616,12 +1491,11 @@ func newGenericBoolOrExpr[T any](self T, qb QueryBuilder) *boolOrExpr[T] {
 	return expr
 }
 
-// newBoolOrExpr creates a new BOOL_OR expression.
 func newBoolOrExpr(qb QueryBuilder) *boolOrExpr[BoolOrBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "BOOL_OR", // Default, will be adjusted in AppendQuery
+		strategy: boolOrStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[BoolOrBuilder]{
 		baseAggregateExpr: baseExpr,
@@ -1636,12 +1510,11 @@ func newBoolOrExpr(qb QueryBuilder) *boolOrExpr[BoolOrBuilder] {
 	return expr
 }
 
-// newGenericBoolAndExpr creates a generic BOOL_AND expression for any builder type.
 func newGenericBoolAndExpr[T any](self T, qb QueryBuilder) *boolAndExpr[T] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: constants.Empty, // Will be set in AppendQuery based on dialect
+		strategy: boolAndStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[T]{
 		baseAggregateExpr: baseExpr,
@@ -1656,12 +1529,11 @@ func newGenericBoolAndExpr[T any](self T, qb QueryBuilder) *boolAndExpr[T] {
 	return expr
 }
 
-// newBoolAndExpr creates a new BOOL_AND expression.
 func newBoolAndExpr(qb QueryBuilder) *boolAndExpr[BoolAndBuilder] {
 	baseExpr := &baseAggregateExpr{
 		qb:       qb,
 		eb:       qb.ExprBuilder(),
-		funcName: "BOOL_AND", // Default, will be adjusted in AppendQuery
+		strategy: boolAndStrategy,
 	}
 	baseBuilder := &baseAggregateBuilder[BoolAndBuilder]{
 		baseAggregateExpr: baseExpr,
