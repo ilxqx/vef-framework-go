@@ -79,8 +79,6 @@ type WindowFrameEndBuilder interface {
 	WindowEndBoundable[WindowFrameEndBuilder]
 }
 
-// ========== Ranking Window Functions ==========
-
 // RowNumberBuilder defines the ROW_NUMBER() window function builder.
 type RowNumberBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
@@ -112,8 +110,6 @@ type NTileBuilder interface {
 
 	Buckets(n int) NTileBuilder
 }
-
-// ========== Value Window Functions ==========
 
 // LagBuilder defines the LAG() window function builder.
 type LagBuilder interface {
@@ -164,8 +160,6 @@ type NthValueBuilder interface {
 	FromFirst() NthValueBuilder
 	FromLast() NthValueBuilder
 }
-
-// ========== Aggregate Window Functions ==========
 
 // WindowCountBuilder defines COUNT() as window function builder.
 type WindowCountBuilder interface {
@@ -279,9 +273,6 @@ type WindowBoolAndBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// ========== Window Function Implementations ==========
-
-// partitionExpr implements the partition expression.
 type partitionExpr struct {
 	builders ExprBuilder
 	column   string
@@ -298,7 +289,6 @@ func (p *partitionExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, er
 	return b, nil
 }
 
-// baseWindowExpr implements common functionality for all window function expressions.
 type baseWindowExpr struct {
 	eb             ExprBuilder
 	funcExpr       schema.QueryAppender
@@ -490,7 +480,27 @@ func (w *baseWindowExpr) appendFrameBound(b []byte, kind FrameBoundKind, n int) 
 	}
 }
 
-// baseWindowPartitionBuilder is a base struct for all window function builders.
+func (w *baseWindowExpr) over() WindowFrameablePartitionBuilder {
+	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
+		baseWindowExpr: w,
+	}
+	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
+		baseWindowPartitionBuilder: baseBuilder,
+	}
+	baseBuilder.self = builder
+
+	return builder
+}
+
+func (w *baseWindowExpr) overSimple() WindowPartitionBuilder {
+	builder := &baseWindowPartitionBuilder[WindowPartitionBuilder]{
+		baseWindowExpr: w,
+	}
+	builder.self = builder
+
+	return builder
+}
+
 type baseWindowPartitionBuilder[T any] struct {
 	*baseWindowExpr
 
@@ -527,7 +537,6 @@ func (b *baseWindowPartitionBuilder[T]) OrderByExpr(expr any) T {
 	return b.self
 }
 
-// baseWindowFrameablePartitionBuilder is a base struct for all window function builders.
 type baseWindowFrameablePartitionBuilder[T any] struct {
 	*baseWindowPartitionBuilder[T]
 }
@@ -550,7 +559,6 @@ func (b *baseWindowFrameablePartitionBuilder[T]) Groups() WindowFrameBuilder {
 	return &windowFrameBuilder{baseWindowExpr: b.baseWindowExpr}
 }
 
-// windowFrameBuilder implements WindowFrameBuilder.
 type windowFrameBuilder struct {
 	*baseWindowExpr
 }
@@ -587,7 +595,6 @@ func (b *windowFrameBuilder) And() WindowFrameEndBuilder {
 	return &windowFrameEndBuilder{baseWindowExpr: b.baseWindowExpr}
 }
 
-// windowFrameEndBuilder implements WindowFrameEndBuilder.
 type windowFrameEndBuilder struct {
 	*baseWindowExpr
 }
@@ -627,7 +634,6 @@ func (b *windowFrameEndBuilder) UnboundedFollowing() WindowFrameEndBuilder {
 	return b
 }
 
-// baseWindowNullHandlingBuilder provides NULL handling functionality.
 type baseWindowNullHandlingBuilder[T any] struct {
 	*baseWindowExpr
 
@@ -646,114 +652,52 @@ func (b *baseWindowNullHandlingBuilder[T]) RespectNulls() T {
 	return b.self
 }
 
-// ========== Ranking Window Functions ==========
-
-// rowNumberExpr implements RowNumberBuilder.
 type rowNumberExpr struct {
 	*baseWindowExpr
 }
 
 func (rn *rowNumberExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: rn.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return rn.over()
 }
 
-// rankExpr implements RankBuilder.
 type rankExpr struct {
 	*baseWindowExpr
 }
 
 func (rn *rankExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: rn.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return rn.over()
 }
 
-// denseRankExpr implements DenseRankBuilder.
 type denseRankExpr struct {
 	*baseWindowExpr
 }
 
 func (rn *denseRankExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: rn.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return rn.over()
 }
 
-// percentRankExpr implements PercentRankBuilder.
 type percentRankExpr struct {
 	*baseWindowExpr
 }
 
 func (rn *percentRankExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: rn.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return rn.over()
 }
 
-// cumeDistExpr implements CumeDistBuilder.
 type cumeDistExpr struct {
 	*baseWindowExpr
 }
 
 func (rn *cumeDistExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: rn.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return rn.over()
 }
 
-// nTileExpr implements NTileBuilder.
 type nTileExpr struct {
 	*baseWindowExpr
 }
 
 func (ne *nTileExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: ne.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return ne.over()
 }
 
 func (ne *nTileExpr) Buckets(n int) NTileBuilder {
@@ -762,161 +706,83 @@ func (ne *nTileExpr) Buckets(n int) NTileBuilder {
 	return ne
 }
 
-// ========== Value Window Functions ==========
+type offsetWindowExpr[T any] struct {
+	*baseWindowExpr
 
-// lagExpr implements LagBuilder.
+	self         T
+	column       string
+	expr         any
+	offset       int
+	defaultValue any
+}
+
+func (o *offsetWindowExpr[T]) Over() WindowPartitionBuilder {
+	return o.overSimple()
+}
+
+func (o *offsetWindowExpr[T]) Column(column string) T {
+	o.column = column
+	o.expr = nil
+
+	return o.self
+}
+
+func (o *offsetWindowExpr[T]) Expr(expr any) T {
+	o.expr = expr
+	o.column = constants.Empty
+
+	return o.self
+}
+
+func (o *offsetWindowExpr[T]) Offset(offset int) T {
+	o.offset = offset
+
+	return o.self
+}
+
+func (o *offsetWindowExpr[T]) DefaultValue(value any) T {
+	o.defaultValue = value
+
+	return o.self
+}
+
+func (o *offsetWindowExpr[T]) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
+	var args []any
+
+	if o.column != constants.Empty {
+		args = append(args, o.eb.Column(o.column))
+	} else if o.expr != nil {
+		args = append(args, o.expr)
+	}
+
+	if o.offset > 0 {
+		args = append(args, o.offset)
+	}
+
+	if o.defaultValue != nil {
+		args = append(args, o.defaultValue)
+	}
+
+	o.setArgs(args...)
+
+	return o.baseWindowExpr.AppendQuery(gen, b)
+}
+
 type lagExpr struct {
-	*baseWindowExpr
-
-	column       string
-	expr         any
-	offset       int
-	defaultValue any
+	*offsetWindowExpr[LagBuilder]
 }
 
-func (l *lagExpr) Over() WindowPartitionBuilder {
-	builder := &baseWindowPartitionBuilder[WindowPartitionBuilder]{
-		baseWindowExpr: l.baseWindowExpr,
-	}
-
-	builder.self = builder
-
-	return builder
-}
-
-func (l *lagExpr) Column(column string) LagBuilder {
-	l.column = column
-	l.expr = nil
-
-	return l
-}
-
-func (l *lagExpr) Expr(expr any) LagBuilder {
-	l.expr = expr
-	l.column = constants.Empty
-
-	return l
-}
-
-func (l *lagExpr) Offset(offset int) LagBuilder {
-	l.offset = offset
-
-	return l
-}
-
-func (l *lagExpr) DefaultValue(value any) LagBuilder {
-	l.defaultValue = value
-
-	return l
-}
-
-func (l *lagExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	var args []any
-
-	if l.column != constants.Empty {
-		args = append(args, l.eb.Column(l.column))
-	} else if l.expr != nil {
-		args = append(args, l.expr)
-	}
-
-	if l.offset > 0 {
-		args = append(args, l.offset)
-	}
-
-	if l.defaultValue != nil {
-		args = append(args, l.defaultValue)
-	}
-
-	l.args = args
-
-	return l.baseWindowExpr.AppendQuery(gen, b)
-}
-
-// leadExpr implements LeadBuilder.
 type leadExpr struct {
-	*baseWindowExpr
-
-	column       string
-	expr         any
-	offset       int
-	defaultValue any
+	*offsetWindowExpr[LeadBuilder]
 }
 
-func (l *leadExpr) Over() WindowPartitionBuilder {
-	builder := &baseWindowPartitionBuilder[WindowPartitionBuilder]{
-		baseWindowExpr: l.baseWindowExpr,
-	}
-
-	builder.self = builder
-
-	return builder
-}
-
-func (l *leadExpr) Column(column string) LeadBuilder {
-	l.column = column
-	l.expr = nil
-
-	return l
-}
-
-func (l *leadExpr) Expr(expr any) LeadBuilder {
-	l.expr = expr
-	l.column = constants.Empty
-
-	return l
-}
-
-func (l *leadExpr) Offset(offset int) LeadBuilder {
-	l.offset = offset
-
-	return l
-}
-
-func (l *leadExpr) DefaultValue(value any) LeadBuilder {
-	l.defaultValue = value
-
-	return l
-}
-
-func (l *leadExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
-	var args []any
-
-	if l.column != constants.Empty {
-		args = append(args, l.eb.Column(l.column))
-	} else if l.expr != nil {
-		args = append(args, l.expr)
-	}
-
-	if l.offset > 0 {
-		args = append(args, l.offset)
-	}
-
-	if l.defaultValue != nil {
-		args = append(args, l.defaultValue)
-	}
-
-	l.setArgs(args...)
-
-	return l.baseWindowExpr.AppendQuery(gen, b)
-}
-
-// firstValueExpr implements FirstValueBuilder.
 type firstValueExpr struct {
 	*baseWindowExpr
 	*baseWindowNullHandlingBuilder[FirstValueBuilder]
 }
 
 func (fv *firstValueExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: fv.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return fv.over()
 }
 
 func (fv *firstValueExpr) Column(column string) FirstValueBuilder {
@@ -931,23 +797,13 @@ func (fv *firstValueExpr) Expr(expr any) FirstValueBuilder {
 	return fv
 }
 
-// lastValueExpr implements LastValueBuilder.
 type lastValueExpr struct {
 	*baseWindowExpr
 	*baseWindowNullHandlingBuilder[LastValueBuilder]
 }
 
 func (lv *lastValueExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: lv.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return lv.over()
 }
 
 func (lv *lastValueExpr) Column(column string) LastValueBuilder {
@@ -962,7 +818,6 @@ func (lv *lastValueExpr) Expr(expr any) LastValueBuilder {
 	return lv
 }
 
-// nthValueExpr implements NthValueBuilder.
 type nthValueExpr struct {
 	*baseWindowExpr
 	*baseWindowNullHandlingBuilder[NthValueBuilder]
@@ -973,16 +828,7 @@ type nthValueExpr struct {
 }
 
 func (nv *nthValueExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: nv.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return nv.over()
 }
 
 func (nv *nthValueExpr) Column(column string) NthValueBuilder {
@@ -1031,25 +877,13 @@ func (nv *nthValueExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, er
 	return nv.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// ========== Window Aggregate Functions ==========
-
-// windowCountExpr implements WindowCountBuilder.
 type windowCountExpr struct {
 	*countExpr[WindowCountBuilder]
 	*baseWindowExpr
 }
 
 func (wc *windowCountExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wc.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return wc.over()
 }
 
 func (wc *windowCountExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1058,23 +892,13 @@ func (wc *windowCountExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte,
 	return wc.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowSumExpr implements WindowSumBuilder.
 type windowSumExpr struct {
 	*sumExpr[WindowSumBuilder]
 	*baseWindowExpr
 }
 
 func (ws *windowSumExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: ws.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return ws.over()
 }
 
 func (ws *windowSumExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1083,23 +907,13 @@ func (ws *windowSumExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 	return ws.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowAvgExpr implements WindowAvgBuilder.
 type windowAvgExpr struct {
 	*avgExpr[WindowAvgBuilder]
 	*baseWindowExpr
 }
 
 func (wa *windowAvgExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wa.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return wa.over()
 }
 
 func (wa *windowAvgExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1108,23 +922,13 @@ func (wa *windowAvgExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 	return wa.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowMinExpr implements WindowMinBuilder.
 type windowMinExpr struct {
 	*minExpr[WindowMinBuilder]
 	*baseWindowExpr
 }
 
 func (wm *windowMinExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wm.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return wm.over()
 }
 
 func (wm *windowMinExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1133,23 +937,13 @@ func (wm *windowMinExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 	return wm.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowMaxExpr implements WindowMaxBuilder.
 type windowMaxExpr struct {
 	*maxExpr[WindowMaxBuilder]
 	*baseWindowExpr
 }
 
 func (wm *windowMaxExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wm.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return wm.over()
 }
 
 func (wm *windowMaxExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1158,23 +952,13 @@ func (wm *windowMaxExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 	return wm.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowStringAggExpr implements WindowStringAggBuilder.
 type windowStringAggExpr struct {
 	*stringAggExpr[WindowStringAggBuilder]
 	*baseWindowExpr
 }
 
 func (ws *windowStringAggExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: ws.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return ws.over()
 }
 
 func (ws *windowStringAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1183,23 +967,13 @@ func (ws *windowStringAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []b
 	return ws.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowArrayAggExpr implements WindowArrayAggBuilder.
 type windowArrayAggExpr struct {
 	*arrayAggExpr[WindowArrayAggBuilder]
 	*baseWindowExpr
 }
 
 func (wa *windowArrayAggExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wa.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return wa.over()
 }
 
 func (wa *windowArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1208,23 +982,13 @@ func (wa *windowArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []by
 	return wa.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowStdDevExpr implements WindowStdDevBuilder.
 type windowStdDevExpr struct {
 	*stdDevExpr[WindowStdDevBuilder]
 	*baseWindowExpr
 }
 
 func (ws *windowStdDevExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: ws.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return ws.over()
 }
 
 func (ws *windowStdDevExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1233,23 +997,13 @@ func (ws *windowStdDevExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte
 	return ws.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowVarianceExpr implements WindowVarianceBuilder.
 type windowVarianceExpr struct {
 	*varianceExpr[WindowVarianceBuilder]
 	*baseWindowExpr
 }
 
 func (wv *windowVarianceExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wv.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-
-	baseBuilder.self = builder
-
-	return builder
+	return wv.over()
 }
 
 func (wv *windowVarianceExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1258,22 +1012,13 @@ func (wv *windowVarianceExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []by
 	return wv.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowJsonObjectAggExpr implements WindowJsonObjectAggBuilder.
 type windowJsonObjectAggExpr struct {
 	*jsonObjectAggExpr[WindowJsonObjectAggBuilder]
 	*baseWindowExpr
 }
 
 func (wj *windowJsonObjectAggExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wj.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-	baseBuilder.self = builder
-
-	return builder
+	return wj.over()
 }
 
 func (wj *windowJsonObjectAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1282,22 +1027,13 @@ func (wj *windowJsonObjectAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_
 	return wj.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowJsonArrayAggExpr implements WindowJsonArrayAggBuilder.
 type windowJsonArrayAggExpr struct {
 	*jsonArrayAggExpr[WindowJsonArrayAggBuilder]
 	*baseWindowExpr
 }
 
 func (wj *windowJsonArrayAggExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wj.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-	baseBuilder.self = builder
-
-	return builder
+	return wj.over()
 }
 
 func (wj *windowJsonArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1306,22 +1042,13 @@ func (wj *windowJsonArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ 
 	return wj.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowBitOrExpr implements WindowBitOrBuilder.
 type windowBitOrExpr struct {
 	*bitOrExpr[WindowBitOrBuilder]
 	*baseWindowExpr
 }
 
 func (wb *windowBitOrExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wb.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-	baseBuilder.self = builder
-
-	return builder
+	return wb.over()
 }
 
 func (wb *windowBitOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1330,22 +1057,13 @@ func (wb *windowBitOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte,
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowBitAndExpr implements WindowBitAndBuilder.
 type windowBitAndExpr struct {
 	*bitAndExpr[WindowBitAndBuilder]
 	*baseWindowExpr
 }
 
 func (wb *windowBitAndExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wb.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-	baseBuilder.self = builder
-
-	return builder
+	return wb.over()
 }
 
 func (wb *windowBitAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1354,22 +1072,13 @@ func (wb *windowBitAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowBoolOrExpr implements WindowBoolOrBuilder.
 type windowBoolOrExpr struct {
 	*boolOrExpr[WindowBoolOrBuilder]
 	*baseWindowExpr
 }
 
 func (wb *windowBoolOrExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wb.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-	baseBuilder.self = builder
-
-	return builder
+	return wb.over()
 }
 
 func (wb *windowBoolOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1378,22 +1087,13 @@ func (wb *windowBoolOrExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
 
-// windowBoolAndExpr implements WindowBoolAndBuilder.
 type windowBoolAndExpr struct {
 	*boolAndExpr[WindowBoolAndBuilder]
 	*baseWindowExpr
 }
 
 func (wb *windowBoolAndExpr) Over() WindowFrameablePartitionBuilder {
-	baseBuilder := &baseWindowPartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowExpr: wb.baseWindowExpr,
-	}
-	builder := &baseWindowFrameablePartitionBuilder[WindowFrameablePartitionBuilder]{
-		baseWindowPartitionBuilder: baseBuilder,
-	}
-	baseBuilder.self = builder
-
-	return builder
+	return wb.over()
 }
 
 func (wb *windowBoolAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
@@ -1401,8 +1101,6 @@ func (wb *windowBoolAndExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byt
 
 	return wb.baseWindowExpr.AppendQuery(gen, b)
 }
-
-// ========== Factory Functions ==========
 
 func newRowNumberExpr(eb ExprBuilder) *rowNumberExpr {
 	return &rowNumberExpr{
@@ -1459,22 +1157,33 @@ func newNtileExpr(eb ExprBuilder) *nTileExpr {
 }
 
 func newLagExpr(eb ExprBuilder) *lagExpr {
-	return &lagExpr{
-		baseWindowExpr: &baseWindowExpr{
-			eb:       eb,
-			funcName: "LAG",
+	expr := &lagExpr{
+		offsetWindowExpr: &offsetWindowExpr[LagBuilder]{
+			baseWindowExpr: &baseWindowExpr{
+				eb:       eb,
+				funcName: "LAG",
+			},
+			offset: 1,
 		},
 	}
+	expr.self = expr
+
+	return expr
 }
 
 func newLeadExpr(eb ExprBuilder) *leadExpr {
-	return &leadExpr{
-		baseWindowExpr: &baseWindowExpr{
-			eb:       eb,
-			funcName: "LEAD",
+	expr := &leadExpr{
+		offsetWindowExpr: &offsetWindowExpr[LeadBuilder]{
+			baseWindowExpr: &baseWindowExpr{
+				eb:       eb,
+				funcName: "LEAD",
+			},
+			offset: 1,
 		},
-		offset: 1,
 	}
+	expr.self = expr
+
+	return expr
 }
 
 func newFirstValueExpr(eb ExprBuilder) *firstValueExpr {
