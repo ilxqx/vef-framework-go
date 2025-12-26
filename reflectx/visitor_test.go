@@ -1228,7 +1228,7 @@ func TestVisitType_FieldIndexPath_Consistency(t *testing.T) {
 			return Continue
 		},
 	}
-	VisitType(reflect.TypeOf(testValue), typeVisitor)
+	VisitType(reflect.TypeFor[VisitorTestNested](), typeVisitor)
 
 	// Collect indices from Value traversal
 	valueVisitor := Visitor{

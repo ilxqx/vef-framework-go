@@ -94,11 +94,12 @@ type TestCompositePkItem struct {
 type BaseSuite struct {
 	suite.Suite
 
-	ctx    context.Context
-	app    *app.App
-	stop   func()
-	db     orm.Db
-	dbType constants.DbType
+	ctx      context.Context
+	app      *app.App
+	stop     func()
+	db       orm.Db
+	dbType   constants.DbType
+	dsConfig *config.DatasourceConfig
 }
 
 func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
@@ -111,10 +112,8 @@ func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 		opts[i] = vef.ProvideApiResource(ctor)
 	}
 
-	// Replace the database config to match the external DB type
-	opts[len(opts)-2] = fx.Replace(&config.DatasourceConfig{
-		Type: suite.dbType,
-	})
+	// Replace the database config to match the external DB
+	opts[len(opts)-2] = fx.Replace(suite.dsConfig)
 
 	// Use fx.Decorate to replace the database connection
 	opts[len(opts)-1] = fx.Decorate(func() bun.IDB {

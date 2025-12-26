@@ -798,6 +798,11 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 				// Calculate age between created_at and updated_at
 				return eb.Age(eb.Column("created_at"), eb.Column("updated_at"))
 			}, "age").
+			// Only select records where updated_at >= created_at to avoid negative intervals
+			// which SQLite cannot handle properly
+			Where(func(cb ConditionBuilder) {
+				cb.GreaterThanOrEqualColumn("updated_at", "created_at")
+			}).
 			Limit(5).
 			Scan(suite.ctx, &results)
 

@@ -38,120 +38,134 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	// Create FindAll Suite
 	findAllSuite := &FindAllTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create FindPage Suite
 	findPageSuite := &FindPageTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create FindOne Suite
 	findOneSuite := &FindOneTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create FindOptions Suite
 	findOptionsSuite := &FindOptionsTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create FindTree Suite
 	findTreeSuite := &FindTreeTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create FindTreeOptions Suite
 	findTreeOptionsSuite := &FindTreeOptionsTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create Suite
 	createSuite := &CreateTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 	createManySuite := &CreateManyTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create Update Suite
 	updateSuite := &UpdateTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 	updateManySuite := &UpdateManyTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create Delete Suite
 	deleteSuite := &DeleteTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 	deleteManySuite := &DeleteManyTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create Export Suite
 	exportSuite := &ExportTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
 	// Create Import Suite
 	importSuite := &ImportTestSuite{
 		BaseSuite{
-			ctx:    ctx,
-			db:     ormDb,
-			dbType: dsConfig.Type,
+			ctx:      ctx,
+			db:       ormDb,
+			dbType:   dsConfig.Type,
+			dsConfig: dsConfig,
 		},
 	}
 
