@@ -37,6 +37,7 @@ const (
 	ErrMessageFailedToGetFile             = "failed_to_get_file"              // ErrMessageFailedToGetFile is the i18n key for failed to get file error
 	ErrMessageApiRequestParamsInvalidJson = "api_request_params_invalid_json" // ErrMessageApiRequestParamsInvalidJSON is the i18n key for invalid params JSON error
 	ErrMessageApiRequestMetaInvalidJson   = "api_request_meta_invalid_json"   // ErrMessageApiRequestMetaInvalidJSON is the i18n key for invalid meta JSON error
+	ErrMessageDangerousSQL                = "dangerous_sql"                   // ErrMessageDangerousSQL is the i18n key for dangerous SQL error
 	ErrCodeDefault                        = 2000                              // ErrCodeDefault is the default code for error response (2000 and above are business error codes)
 	ErrCodeRecordNotFound                 = 2001                              // ErrCodeRecordNotFound is the code for record not found error
 	ErrCodeRecordAlreadyExists            = 2002                              // ErrCodeRecordAlreadyExists is the code for record already exists error
@@ -70,6 +71,8 @@ const (
 	ErrCodeUnsupportedMediaType           = 1300                              // ErrCodeUnsupportedMediaType is the code for unsupported media type error
 	ErrCodeRequestTimeout                 = 1400                              // ErrCodeRequestTimeout is the code for request timeout error
 	ErrCodeNotImplemented                 = 1500                              // ErrCodeNotImplemented is the code for not implemented error
+	ErrCodeDangerousSQL                   = 1600                              // ErrCodeDangerousSQL is the code for dangerous SQL error
 	ErrCodeInvalidFileKey                 = 2200                              // ErrCodeInvalidFileKey is the code for invalid file key error
 	ErrCodeFileNotFound                   = 2201                              // ErrCodeFileNotFound is the code for file not found error
+	ErrCodeSchemaTableNotFound            = 2300                              // ErrCodeSchemaTableNotFound is the code for schema table not found error
 )
