@@ -32,7 +32,7 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 		return nil, nil, err
 	}
 
-	dsn := p.buildDSN(config)
+	dsn := p.buildDsn(config)
 
 	db, err := sql.Open(sqliteshim.ShimName, dsn)
 	if err != nil {
@@ -50,9 +50,9 @@ func (p *provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
-// buildDSN uses file::memory: with shared cache to ensure multiple connections
+// buildDsn uses file::memory: with shared cache to ensure multiple connections
 // share the same in-memory database when no path is specified.
-func (p *provider) buildDSN(config *config.DatasourceConfig) string {
+func (p *provider) buildDsn(config *config.DatasourceConfig) string {
 	if config.Path == constants.Empty {
 		return "file::memory:?mode=memory&cache=shared"
 	}
