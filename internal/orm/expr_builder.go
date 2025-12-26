@@ -18,9 +18,9 @@ type QueryExprBuilder struct {
 func (b *QueryExprBuilder) Column(column string, withTableAlias ...bool) schema.QueryAppender {
 	needTableAlias := len(withTableAlias) == 0 || withTableAlias[0]
 
-	dotIndex := strings.IndexByte(column, constants.ByteDot)
-	if dotIndex > -1 {
-		alias, name := column[:dotIndex], column[dotIndex+1:]
+	before, after, ok := strings.Cut(column, constants.Dot)
+	if ok {
+		alias, name := before, after
 		if strings.IndexByte(alias, constants.ByteQuestionMark) == 0 {
 			var sb strings.Builder
 			sb.Grow(len(alias) + 2)
