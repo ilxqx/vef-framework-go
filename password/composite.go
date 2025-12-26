@@ -87,10 +87,10 @@ func (c *compositeEncoder) stripPrefix(encodedPassword string) string {
 		return encodedPassword
 	}
 
-	end := strings.Index(encodedPassword, "}")
-	if end == -1 {
+	_, after, found := strings.Cut(encodedPassword, "}")
+	if !found {
 		return encodedPassword
 	}
 
-	return encodedPassword[end+1:]
+	return after
 }
