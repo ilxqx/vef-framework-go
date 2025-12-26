@@ -83,3 +83,14 @@ func newMonitorConfig(cfg config.Config) (*config.MonitorConfig, error) {
 
 	return &monitorConfig, nil
 }
+
+// newMcpConfig creates and parses MCP configuration from "vef.mcp" section.
+func newMcpConfig(cfg config.Config) (*config.McpConfig, error) {
+	var mcpConfig config.McpConfig
+	// Unmarshal extracts MCP config from "vef.mcp" section
+	if err := cfg.Unmarshal("vef.mcp", &mcpConfig); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal mcp config: %w", err)
+	}
+
+	return &mcpConfig, nil
+}
