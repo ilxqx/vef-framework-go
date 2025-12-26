@@ -52,12 +52,16 @@ func (t *QueryTool) handleQuery(ctx context.Context, req *mcp.CallToolRequest) (
 	)
 
 	if err = json.Unmarshal(req.Params.Arguments, &args); err != nil {
+		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Failed to parse arguments: " + err.Error()), nil
 	}
+
 	if args.Sql == constants.Empty {
 		return mcp.NewToolResultError("Sql parameter is required and must not be empty"), nil
 	}
+
 	if err = db.NewRaw(args.Sql, args.Params...).Scan(ctx, &results); err != nil {
+		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Query execution failed: " + err.Error()), nil
 	}
 
@@ -65,7 +69,9 @@ func (t *QueryTool) handleQuery(ctx context.Context, req *mcp.CallToolRequest) (
 	for _, result := range results {
 		convertByteSlicesToStrings(result)
 	}
+
 	if jsonResult, err = encoding.ToJson(results); err != nil {
+		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Failed to encode results: " + err.Error()), nil
 	}
 

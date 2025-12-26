@@ -44,6 +44,7 @@ func (s *sseWriter) writeDone() error {
 	if _, err := s.w.WriteString("data: [DONE]\n\n"); err != nil {
 		return err
 	}
+
 	return s.w.Flush()
 }
 

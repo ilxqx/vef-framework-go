@@ -309,6 +309,7 @@ func (suite *SqlGuardTestSuite) TestDropStatementBlocked() {
 
 	// Verify table still exists (DROP was actually blocked)
 	var count int
+
 	err = db.NewRaw("SELECT COUNT(*) FROM test_guard").Scan(suite.ctx, &count)
 	suite.NoError(err, "Table should still exist after blocked DROP")
 }
@@ -328,6 +329,7 @@ func (suite *SqlGuardTestSuite) TestTruncateStatementBlocked() {
 
 	// Verify data still exists (TRUNCATE was actually blocked)
 	var count int
+
 	err = db.NewRaw("SELECT COUNT(*) FROM test_guard").Scan(suite.ctx, &count)
 	suite.NoError(err)
 	suite.Equal(1, count, "Data should still exist after blocked TRUNCATE")
@@ -348,6 +350,7 @@ func (suite *SqlGuardTestSuite) TestDeleteWithoutWhereBlocked() {
 
 	// Verify data still exists (DELETE was actually blocked)
 	var count int
+
 	err = db.NewRaw("SELECT COUNT(*) FROM test_guard").Scan(suite.ctx, &count)
 	suite.NoError(err)
 	suite.Equal(1, count, "Data should still exist after blocked DELETE without WHERE")

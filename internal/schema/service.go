@@ -44,12 +44,15 @@ func (s *DefaultService) ListTables(ctx context.Context) ([]schema.Table, error)
 		if t.Schema != nil {
 			table.Schema = t.Schema.Name
 		}
+
 		for _, attr := range t.Attrs {
 			if comment, ok := attr.(*as.Comment); ok {
 				table.Comment = comment.Text
+
 				break
 			}
 		}
+
 		tables[i] = table
 	}
 
@@ -87,6 +90,7 @@ func (s *DefaultService) convertTable(t *as.Table) *schema.TableSchema {
 				pkCols[i] = part.C.Name
 			}
 		}
+
 		if len(pkCols) > 0 {
 			info.PrimaryKey = &schema.PrimaryKey{
 				Name:    t.PrimaryKey.Name,
@@ -219,9 +223,11 @@ func hasAutoIncrement(col *as.Column) bool {
 		raw := col.Type.Raw
 		if raw == "serial" || raw == "bigserial" || raw == "smallserial" ||
 			raw == "SERIAL" || raw == "BIGSERIAL" || raw == "SMALLSERIAL" {
+
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -251,9 +257,11 @@ func (s *DefaultService) ListViews(ctx context.Context) ([]schema.View, error) {
 		for _, attr := range v.Attrs {
 			if comment, ok := attr.(*as.Comment); ok {
 				view.Comment = comment.Text
+
 				break
 			}
 		}
+
 		result[i] = view
 	}
 
@@ -278,6 +286,7 @@ func (s *DefaultService) ListTriggers(ctx context.Context) ([]schema.Trigger, er
 		if t.Table != nil {
 			trigger.Table = t.Table.Name
 		}
+
 		if t.View != nil {
 			trigger.View = t.View.Name
 		}
@@ -286,6 +295,7 @@ func (s *DefaultService) ListTriggers(ctx context.Context) ([]schema.Trigger, er
 		for j, event := range t.Events {
 			trigger.Events[j] = event.Name
 		}
+
 		result[i] = trigger
 	}
 

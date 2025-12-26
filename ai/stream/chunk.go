@@ -121,6 +121,7 @@ func NewSourceUrlChunk(sourceId, url, title string) Chunk {
 	if title != constants.Empty {
 		c["title"] = title
 	}
+
 	return c
 }
 
@@ -133,6 +134,7 @@ func NewSourceDocumentChunk(sourceId, mediaType, title string) Chunk {
 	if title != constants.Empty {
 		c["title"] = title
 	}
+
 	return c
 }
 

@@ -77,6 +77,7 @@ func (r *DeleteWithoutWhereRule) Check(astNode *ast.AST) *Violation {
 					Description: "DELETE statements without WHERE clause are prohibited",
 				}
 			}
+
 		case *ast.Delete:
 			if s.Where == nil {
 				return &Violation{

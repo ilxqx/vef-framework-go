@@ -73,6 +73,7 @@ func TestBuilderConfiguration(t *testing.T) {
 
 	t.Run("OnFinishSetsHandler", func(t *testing.T) {
 		var captured string
+
 		handler := func(content string) { captured = content }
 		b := New().OnFinish(handler)
 
@@ -122,10 +123,13 @@ func TestBuilderStreamToWriter(t *testing.T) {
 	t.Run("StreamsTextContent", func(t *testing.T) {
 		ch := make(chan Message, 2)
 		ch <- Message{Role: RoleAssistant, Content: "Hello"}
+
 		ch <- Message{Role: RoleAssistant, Content: " World"}
+
 		close(ch)
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -145,15 +149,18 @@ func TestBuilderStreamToWriter(t *testing.T) {
 
 		// Verify text chunks exist
 		hasTextStart := false
+
 		hasTextDelta := false
 		for _, c := range chunks {
 			if c["type"] == "text-start" {
 				hasTextStart = true
 			}
+
 			if c["type"] == "text-delta" {
 				hasTextDelta = true
 			}
 		}
+
 		assert.True(t, hasTextStart)
 		assert.True(t, hasTextDelta)
 
@@ -164,9 +171,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 	t.Run("StreamsReasoningContent", func(t *testing.T) {
 		ch := make(chan Message, 1)
 		ch <- Message{Role: RoleAssistant, Reasoning: "Thinking..."}
+
 		close(ch)
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -179,16 +188,20 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		chunks := parseSseChunks(t, output)
 
 		hasReasoningStart := false
+
 		hasReasoningDelta := false
 		for _, c := range chunks {
 			if c["type"] == "reasoning-start" {
 				hasReasoningStart = true
 			}
+
 			if c["type"] == "reasoning-delta" {
 				hasReasoningDelta = true
+
 				assert.Equal(t, "Thinking...", c["delta"])
 			}
 		}
+
 		assert.True(t, hasReasoningStart)
 		assert.True(t, hasReasoningDelta)
 	})
@@ -196,9 +209,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 	t.Run("SkipsReasoningWhenDisabled", func(t *testing.T) {
 		ch := make(chan Message, 1)
 		ch <- Message{Role: RoleAssistant, Reasoning: "Thinking..."}
+
 		close(ch)
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -221,9 +236,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 				Arguments: `{"city":"Beijing"}`,
 			}},
 		}
+
 		close(ch)
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -234,17 +251,21 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		chunks := parseSseChunks(t, output)
 
 		hasToolInputStart := false
+
 		hasToolInputAvailable := false
 		for _, c := range chunks {
 			if c["type"] == "tool-input-start" {
 				hasToolInputStart = true
+
 				assert.Equal(t, "call_1", c["toolCallId"])
 				assert.Equal(t, "get_weather", c["toolName"])
 			}
+
 			if c["type"] == "tool-input-available" {
 				hasToolInputAvailable = true
 			}
 		}
+
 		assert.True(t, hasToolInputStart)
 		assert.True(t, hasToolInputAvailable)
 	})
@@ -256,9 +277,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			ToolCallId: "call_1",
 			Content:    `{"temp":25}`,
 		}
+
 		close(ch)
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -272,9 +295,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		for _, c := range chunks {
 			if c["type"] == "tool-output-available" {
 				hasToolOutput = true
+
 				assert.Equal(t, "call_1", c["toolCallId"])
 			}
 		}
+
 		assert.True(t, hasToolOutput)
 	})
 
@@ -284,9 +309,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			Role: RoleAssistant,
 			Data: map[string]any{"status": "processing"},
 		}
+
 		close(ch)
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -304,6 +331,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		})
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -317,9 +345,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		for _, c := range chunks {
 			if c["type"] == "error" {
 				hasError = true
+
 				assert.Equal(t, "source error", c["errorText"])
 			}
 		}
+
 		assert.True(t, hasError)
 	})
 
@@ -330,6 +360,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		})
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -346,11 +377,16 @@ func TestBuilderStreamToWriter(t *testing.T) {
 	t.Run("CallsOnFinishHandler", func(t *testing.T) {
 		ch := make(chan Message, 2)
 		ch <- Message{Role: RoleAssistant, Content: "Hello"}
+
 		ch <- Message{Role: RoleAssistant, Content: " World"}
+
 		close(ch)
 
-		var finishedContent string
-		var buf bytes.Buffer
+		var (
+			finishedContent string
+			buf             bytes.Buffer
+		)
+
 		w := bufio.NewWriter(&buf)
 
 		New().
@@ -366,9 +402,11 @@ func TestBuilderStreamToWriter(t *testing.T) {
 	t.Run("SkipsStartFinishWhenDisabled", func(t *testing.T) {
 		ch := make(chan Message, 1)
 		ch <- Message{Role: RoleAssistant, Content: "test"}
+
 		close(ch)
 
 		var buf bytes.Buffer
+
 		w := bufio.NewWriter(&buf)
 
 		New().WithSource(NewChannelSource(ch)).
@@ -388,9 +426,10 @@ func TestBuilderStreamToWriter(t *testing.T) {
 	})
 }
 
-// parseSseChunks extracts json chunks from SSE output
+// parseSseChunks extracts json chunks from SSE output.
 func parseSseChunks(t *testing.T, output string) []map[string]any {
 	t.Helper()
+
 	var chunks []map[string]any
 
 	for line := range strings.SplitSeq(output, "\n") {
@@ -399,11 +438,13 @@ func parseSseChunks(t *testing.T, output string) []map[string]any {
 			if data == "[DONE]" {
 				continue
 			}
+
 			var chunk map[string]any
 			if err := json.Unmarshal([]byte(data), &chunk); err == nil {
 				chunks = append(chunks, chunk)
 			}
 		}
 	}
+
 	return chunks
 }
