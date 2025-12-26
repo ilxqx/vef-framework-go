@@ -4,12 +4,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/mysqldialect"
 	"github.com/uptrace/bun/schema"
-
-	"github.com/go-sql-driver/mysql"
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -35,6 +34,7 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 	}
 
 	cfg := p.buildConfig(config)
+
 	connector, err := mysql.NewConnector(cfg)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create mysql connector: %w", err)

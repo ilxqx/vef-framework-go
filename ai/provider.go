@@ -57,6 +57,7 @@ func RegisterModelProvider(p ModelProvider) {
 	if _, exists := modelProviders[name]; exists {
 		panic(fmt.Sprintf("ai: model provider %q already registered", name))
 	}
+
 	modelProviders[name] = p
 }
 
@@ -70,30 +71,37 @@ func RegisterAgentFactory(f AgentFactory) {
 	if _, exists := agentFactories[name]; exists {
 		panic(fmt.Sprintf("ai: agent factory %q already registered", name))
 	}
+
 	agentFactories[name] = f
 }
 
 // NewChatModel creates a new chat model using the registered provider.
 func NewChatModel(ctx context.Context, cfg *ModelConfig) (ToolableChatModel, error) {
 	providerMu.RLock()
+
 	p, ok := modelProviders[cfg.Provider]
+
 	providerMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("ai: unknown model provider %q", cfg.Provider)
+		return nil, fmt.Errorf("%w: %q", ErrProviderNotFound, cfg.Provider)
 	}
+
 	return p.CreateModel(ctx, cfg)
 }
 
 // NewAgentBuilder creates a new agent builder using the registered factory.
 func NewAgentBuilder(agentType string) (AgentBuilder, error) {
 	providerMu.RLock()
+
 	f, ok := agentFactories[agentType]
+
 	providerMu.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("ai: unknown agent type %q", agentType)
+		return nil, fmt.Errorf("%w: %q", ErrAgentNotFound, agentType)
 	}
+
 	return f.CreateBuilder(), nil
 }
 
@@ -106,6 +114,7 @@ func ListModelProviders() []string {
 	for name := range modelProviders {
 		names = append(names, name)
 	}
+
 	return names
 }
 
@@ -118,5 +127,6 @@ func ListAgentFactories() []string {
 	for name := range agentFactories {
 		names = append(names, name)
 	}
+
 	return names
 }

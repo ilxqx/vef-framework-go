@@ -33,6 +33,7 @@ type ServerParams struct {
 func NewServer(params ServerParams) *smcp.Server {
 	if !params.McpConfig.Enabled {
 		logger.Info("MCP is disabled by configuration")
+
 		return nil
 	}
 
@@ -84,6 +85,7 @@ func NewServer(params ServerParams) *smcp.Server {
 	}
 
 	logger.Info("MCP server initialized")
+
 	return server
 }
 
@@ -134,6 +136,7 @@ func getServerName(params ServerParams) string {
 	if params.ServerInfo != nil && params.ServerInfo.Name != constants.Empty {
 		return params.ServerInfo.Name
 	}
+
 	if params.AppConfig != nil && params.AppConfig.Name != constants.Empty {
 		return params.AppConfig.Name
 	}

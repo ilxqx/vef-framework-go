@@ -19,7 +19,7 @@ var (
 			fx.Annotate(
 				func(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err error) {
 					if db, err = New(config); err != nil {
-						return
+						return db, err
 					}
 
 					provider, exists := registry.provider(config.Type)
@@ -49,7 +49,7 @@ var (
 						),
 					)
 
-					return
+					return db, err
 				},
 				fx.As(new(bun.IDB)),
 				fx.As(fx.Self()),

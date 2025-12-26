@@ -7,15 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type testContextKey string
+
 func TestWhitelist(t *testing.T) {
 	tests := []struct {
-		name           string
-		setupCtx       func() context.Context
+		name            string
+		setupCtx        func() context.Context
 		wantWhitelisted bool
 	}{
 		{
-			name:           "BackgroundContextNotWhitelisted",
-			setupCtx:       context.Background,
+			name:            "BackgroundContextNotWhitelisted",
+			setupCtx:        context.Background,
 			wantWhitelisted: false,
 		},
 		{
@@ -29,7 +31,8 @@ func TestWhitelist(t *testing.T) {
 			name: "NestedWhitelistedContext",
 			setupCtx: func() context.Context {
 				ctx := WithWhitelist(context.Background())
-				return context.WithValue(ctx, "other_key", "other_value")
+
+				return context.WithValue(ctx, testContextKey("other_key"), "other_value")
 			},
 			wantWhitelisted: true,
 		},

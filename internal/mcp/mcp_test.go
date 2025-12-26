@@ -148,7 +148,7 @@ func (suite *McpTestSuite) makeMcpRequest(body string) *http.Response {
 	return resp
 }
 
-func (suite *McpTestSuite) makeMcpRequestWithToken(body string, token string) *http.Response {
+func (suite *McpTestSuite) makeMcpRequestWithToken(body, token string) *http.Response {
 	req := httptest.NewRequest(fiber.MethodPost, "/mcp", strings.NewReader(body))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	req.Header.Set("Accept", "application/json, text/event-stream")
@@ -193,15 +193,18 @@ func (suite *McpTestSuite) getAccessToken() string {
 
 	body, err := io.ReadAll(resp.Body)
 	suite.Require().NoError(err)
+
 	defer resp.Body.Close()
 
 	// Extract accessToken from response
 	bodyStr := string(body)
+
 	startIdx := strings.Index(bodyStr, `"accessToken":"`) + len(`"accessToken":"`)
 	if startIdx < len(`"accessToken":"`) {
 		suite.T().Logf("Login response: %s", bodyStr)
 		suite.FailNow("Failed to get accessToken from login response")
 	}
+
 	endIdx := strings.Index(bodyStr[startIdx:], `"`) + startIdx
 
 	return bodyStr[startIdx:endIdx]

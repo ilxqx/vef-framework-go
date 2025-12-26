@@ -3,10 +3,11 @@ package mcp
 import (
 	"context"
 
+	"github.com/modelcontextprotocol/go-sdk/auth"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
-	"github.com/modelcontextprotocol/go-sdk/auth"
 )
 
 // GetPrincipalFromContext extracts the Principal from MCP request context.

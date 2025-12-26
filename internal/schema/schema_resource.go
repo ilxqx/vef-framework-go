@@ -61,6 +61,7 @@ func (r *Resource) GetTableSchema(ctx fiber.Ctx, params GetTableSchemaParams) er
 				result.WithCode(result.ErrCodeSchemaTableNotFound),
 			)
 		}
+
 		return err
 	}
 

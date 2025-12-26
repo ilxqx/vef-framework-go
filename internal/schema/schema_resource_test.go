@@ -71,8 +71,10 @@ func (suite *SchemaResourceTestSuite) TestSQLiteResource() {
 }
 
 func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DatasourceConfig, dbType string) {
-	var bunDb *bun.DB
-	var testApp *app.App
+	var (
+		bunDb   *bun.DB
+		testApp *app.App
+	)
 
 	testApp, stop := apptest.NewTestApp(
 		suite.T(),

@@ -111,6 +111,7 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DatasourceConfig
 		}
 
 		suite.T().Logf("%s service_test_categories columns: %d", dbType, len(tableSchema.Columns))
+
 		for _, col := range tableSchema.Columns {
 			suite.T().Logf("  Column: %s, Type: %s, Nullable: %v, PK: %v, AutoIncrement: %v",
 				col.Name, col.Type, col.Nullable, col.IsPrimaryKey, col.IsAutoIncrement)
@@ -141,11 +142,13 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DatasourceConfig
 		suite.NoError(err, "GetTableSchema should succeed")
 
 		suite.T().Logf("%s service_test_products indexes: %d", dbType, len(tableSchema.Indexes))
+
 		for _, idx := range tableSchema.Indexes {
 			suite.T().Logf("  Index: %s, Columns: %v", idx.Name, idx.Columns)
 		}
 
 		suite.T().Logf("%s service_test_products unique keys: %d", dbType, len(tableSchema.UniqueKeys))
+
 		for _, uk := range tableSchema.UniqueKeys {
 			suite.T().Logf("  UniqueKey: %s, Columns: %v", uk.Name, uk.Columns)
 		}
@@ -156,6 +159,7 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DatasourceConfig
 		suite.NoError(err, "GetTableSchema should succeed")
 
 		suite.T().Logf("%s service_test_products foreign keys: %d", dbType, len(tableSchema.ForeignKeys))
+
 		for _, fk := range tableSchema.ForeignKeys {
 			suite.T().Logf("  ForeignKey: %s, Columns: %v -> %s(%v), OnDelete: %s, OnUpdate: %s",
 				fk.Name, fk.Columns, fk.RefTable, fk.RefColumns, fk.OnDelete, fk.OnUpdate)
@@ -203,6 +207,7 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbTy
 		_, _ = db.ExecContext(suite.ctx, productsSql)
 		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)")
 		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)")
+
 		return
 
 	case constants.DbMySQL:
@@ -252,6 +257,7 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbTy
 		_, _ = db.ExecContext(suite.ctx, productsSql)
 		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)")
 		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)")
+
 		return
 	}
 

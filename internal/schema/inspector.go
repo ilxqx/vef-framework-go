@@ -3,16 +3,20 @@ package schema
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"ariga.io/atlas/sql/mysql"
 	"ariga.io/atlas/sql/postgres"
-	as "ariga.io/atlas/sql/schema"
 	"ariga.io/atlas/sql/sqlite"
+	"github.com/samber/lo"
+
+	as "ariga.io/atlas/sql/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/samber/lo"
 )
+
+var ErrUnsupportedDbType = errors.New("unsupported database type")
 
 type AtlasInspector struct {
 	inspector as.Inspector
@@ -33,6 +37,7 @@ func NewInspector(db *sql.DB, dbType constants.DbType, schemaName string) (Inspe
 		if err != nil {
 			return nil, fmt.Errorf("failed to open postgres inspector: %w", err)
 		}
+
 		schema = lo.CoalesceOrEmpty(schemaName, "public")
 
 	case constants.DbMySQL:
@@ -48,10 +53,11 @@ func NewInspector(db *sql.DB, dbType constants.DbType, schemaName string) (Inspe
 		if err != nil {
 			return nil, fmt.Errorf("failed to open sqlite inspector: %w", err)
 		}
+
 		schema = "main"
 
 	default:
-		return nil, fmt.Errorf("unsupported database type: %s", dbType)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedDbType, dbType)
 	}
 
 	return &AtlasInspector{

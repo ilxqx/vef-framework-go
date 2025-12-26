@@ -287,6 +287,7 @@ func hasWithLoggerMethod(t reflect.Type) bool {
 	}
 
 	paramType := method.Type.In(1)
+
 	return loggerType.AssignableTo(paramType)
 }
 

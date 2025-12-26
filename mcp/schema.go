@@ -3,8 +3,9 @@ package mcp
 import (
 	"reflect"
 
-	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/invopop/jsonschema"
+
+	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
 // reflector is a pre-configured jsonschema reflector for MCP.
@@ -78,6 +79,7 @@ func SchemaOf(v any) map[string]any {
 	if v == nil {
 		return nil
 	}
+
 	return schemaFromType(reflect.TypeOf(v))
 }
 
@@ -87,6 +89,7 @@ func MustSchemaFor[T any]() map[string]any {
 	if result == nil {
 		panic("mcp: failed to generate schema")
 	}
+
 	return result
 }
 
@@ -96,6 +99,7 @@ func MustSchemaOf(v any) map[string]any {
 	if result == nil {
 		panic("mcp: failed to generate schema")
 	}
+
 	return result
 }
 

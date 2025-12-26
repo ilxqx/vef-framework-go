@@ -3,6 +3,7 @@ package stream
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"io"
 
 	"github.com/gofiber/fiber/v3"
@@ -28,51 +29,61 @@ func New() *Builder {
 
 func (b *Builder) WithSource(source MessageSource) *Builder {
 	b.source = source
+
 	return b
 }
 
 func (b *Builder) WithMessageId(id string) *Builder {
 	b.messageId = id
+
 	return b
 }
 
 func (b *Builder) WithReasoning(enabled bool) *Builder {
 	b.opts.SendReasoning = enabled
+
 	return b
 }
 
 func (b *Builder) WithSources(enabled bool) *Builder {
 	b.opts.SendSources = enabled
+
 	return b
 }
 
 func (b *Builder) WithStart(enabled bool) *Builder {
 	b.opts.SendStart = enabled
+
 	return b
 }
 
 func (b *Builder) WithFinish(enabled bool) *Builder {
 	b.opts.SendFinish = enabled
+
 	return b
 }
 
 func (b *Builder) OnError(handler func(err error) string) *Builder {
 	b.opts.OnError = handler
+
 	return b
 }
 
 func (b *Builder) OnFinish(handler func(content string)) *Builder {
 	b.opts.OnFinish = handler
+
 	return b
 }
 
 func (b *Builder) WithIdGenerator(gen func(prefix string) string) *Builder {
 	b.opts.GenerateId = gen
+
 	return b
 }
 
 func (b *Builder) WithHeader(key, value string) *Builder {
 	b.headers[key] = value
+
 	return b
 }
 
@@ -85,6 +96,7 @@ func (b *Builder) Stream(ctx fiber.Ctx) error {
 	for k, v := range SseHeaders {
 		ctx.Set(k, v)
 	}
+
 	for k, v := range b.headers {
 		ctx.Set(k, v)
 	}
@@ -100,9 +112,10 @@ func (b *Builder) StreamToWriter(w *bufio.Writer) {
 }
 
 func (b *Builder) streamToWriter(w *bufio.Writer) {
-	defer b.source.Close()
+	defer func() { _ = b.source.Close() }()
 
 	writer := newSseWriter(w)
+
 	generateId := b.opts.GenerateId
 	if generateId == nil {
 		generateId = defaultIdGenerator
@@ -117,6 +130,7 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 	reasoningId := generateId("reasoning")
 	textStarted := false
 	reasoningStarted := false
+
 	var fullContent string
 
 	if b.opts.SendStart {
@@ -126,21 +140,26 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 
 	for {
 		msg, err := b.source.Recv()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			if textStarted {
 				_ = writer.WriteChunk(NewTextEndChunk(textId))
 			}
+
 			if reasoningStarted {
 				_ = writer.WriteChunk(NewReasoningEndChunk(reasoningId))
 			}
+
 			if b.opts.SendFinish {
 				_ = writer.WriteChunk(NewFinishStepChunk())
 				_ = writer.WriteChunk(NewFinishChunk())
 			}
+
 			_ = writer.writeDone()
+
 			if b.opts.OnFinish != nil {
 				b.opts.OnFinish(fullContent)
 			}
+
 			return
 		}
 
@@ -149,8 +168,10 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 			if b.opts.OnError != nil {
 				errorText = b.opts.OnError(err)
 			}
+
 			_ = writer.WriteChunk(NewErrorChunk(errorText))
 			_ = writer.writeDone()
+
 			return
 		}
 
@@ -160,6 +181,7 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 				_ = writer.WriteChunk(NewReasoningStartChunk(reasoningId))
 				reasoningStarted = true
 			}
+
 			_ = writer.WriteChunk(NewReasoningDeltaChunk(reasoningId, msg.Reasoning))
 		}
 
@@ -169,12 +191,14 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 			if toolCallId == constants.Empty {
 				toolCallId = generateId("call")
 			}
+
 			_ = writer.WriteChunk(NewToolInputStartChunk(toolCallId, tc.Name))
 
 			var input any
 			if err := json.Unmarshal([]byte(tc.Arguments), &input); err != nil {
 				input = tc.Arguments
 			}
+
 			_ = writer.WriteChunk(NewToolInputAvailableChunk(toolCallId, tc.Name, input))
 		}
 
@@ -184,7 +208,9 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 			if err := json.Unmarshal([]byte(msg.Content), &output); err != nil {
 				output = msg.Content
 			}
+
 			_ = writer.WriteChunk(NewToolOutputAvailableChunk(msg.ToolCallId, output))
+
 			continue
 		}
 
@@ -200,10 +226,12 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 				reasoningStarted = false
 				reasoningId = generateId("reasoning")
 			}
+
 			if !textStarted {
 				_ = writer.WriteChunk(NewTextStartChunk(textId))
 				textStarted = true
 			}
+
 			_ = writer.WriteChunk(NewTextDeltaChunk(textId, msg.Content))
 			fullContent += msg.Content
 		}

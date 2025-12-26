@@ -27,6 +27,7 @@ func (o *Options) Apply(opts ...Option) *Options {
 	for _, opt := range opts {
 		opt(o)
 	}
+
 	return o
 }
 
@@ -57,6 +58,7 @@ func WithMeta(key, value string) Option {
 		if o.Meta == nil {
 			o.Meta = make(map[string]string)
 		}
+
 		o.Meta[key] = value
 	}
 }

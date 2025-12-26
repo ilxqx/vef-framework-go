@@ -2,8 +2,9 @@ package prompts
 
 import (
 	"context"
-	_ "embed"
 	"strings"
+
+	_ "embed"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mcp"
@@ -55,6 +56,7 @@ func (p *DataDictPrompt) handleDataDictPrompt(_ context.Context, req *mcp.GetPro
 		if v, ok := req.Params.Arguments["dict_table"]; ok && v != constants.Empty {
 			dictTable = v
 		}
+
 		if v, ok := req.Params.Arguments["dict_item_table"]; ok && v != constants.Empty {
 			dictItemTable = v
 		}
