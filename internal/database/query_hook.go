@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,19 +13,50 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
+// whitespaceRegex matches consecutive whitespace characters (spaces, tabs, newlines).
+var whitespaceRegex = regexp.MustCompile(`\s+`)
+
+// guardErrorStashKey is the stash key for storing guard errors.
+const guardErrorStashKey = "__sqlguard_error"
+
 type queryHook struct {
-	logger log.Logger
-	output *termenv.Output
+	logger   log.Logger
+	output   *termenv.Output
+	sqlGuard *sqlguard.Guard
 }
 
-func (qh *queryHook) BeforeQuery(ctx context.Context, _ *bun.QueryEvent) context.Context {
+func (qh *queryHook) BeforeQuery(ctx context.Context, event *bun.QueryEvent) context.Context {
+	if qh.sqlGuard == nil || sqlguard.IsWhitelisted(ctx) {
+		return ctx
+	}
+
+	if err := qh.sqlGuard.Check(event.Query); err != nil {
+		if event.Stash == nil {
+			event.Stash = make(map[any]any)
+		}
+		event.Stash[guardErrorStashKey] = err
+
+		cancelCtx, cancel := context.WithCancelCause(ctx)
+		cancel(err)
+
+		return cancelCtx
+	}
+
 	return ctx
 }
 
 func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
+	var guardErr error
+	if event.Stash != nil {
+		if err, ok := event.Stash[guardErrorStashKey].(error); ok {
+			guardErr = err
+		}
+	}
+
 	elapsed := time.Since(event.StartTime).Milliseconds()
 	elapsedStyle := qh.output.String(fmt.Sprintf("%6d ms", elapsed))
 
@@ -43,53 +75,43 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 		elapsedStyle = elapsedStyle.Foreground(termenv.ANSIGreen)
 	}
 
-	operationStyle := qh.output.String(fmt.Sprintf(" %-8s ", event.Operation())).Bold().Foreground(termenv.ANSIBrightBlack)
+	operationStyle := qh.output.String(fmt.Sprintf(" %-8s", event.Operation())).Bold()
 
-	queryStyle := qh.output.String(event.Query)
+	// Normalize SQL: collapse multiple whitespace (including newlines) into single spaces
+	// This ensures consistent coloring across the entire query string
+	normalizedQuery := strings.TrimSpace(whitespaceRegex.ReplaceAllString(event.Query, constants.Space))
+	// Use muted gray for SQL to reduce visual noise and keep focus on operation type and timing
+	queryStyle := qh.output.String(normalizedQuery).Foreground(termenv.ANSIBrightBlack)
+
+	// Color operation type by category (foreground only, no background for cleaner look)
 	switch event.Operation() {
 	case "SELECT":
-		// Green background for SELECT operations
-		operationStyle = operationStyle.Background(termenv.ANSIBrightGreen)
-		// Green text for SELECT queries
-		queryStyle = queryStyle.Foreground(termenv.ANSIBrightGreen)
+		operationStyle = operationStyle.Foreground(termenv.ANSIGreen)
 	case "INSERT":
-		// Blue background for INSERT operations
-		operationStyle = operationStyle.Background(termenv.ANSIBrightBlue)
-		// Blue text for INSERT queries
-		queryStyle = queryStyle.Foreground(termenv.ANSIBrightBlue)
+		operationStyle = operationStyle.Foreground(termenv.ANSIBlue)
 	case "UPDATE":
-		// Yellow background for UPDATE operations
-		operationStyle = operationStyle.Background(termenv.ANSIBrightYellow)
-		// Yellow text for UPDATE queries
-		queryStyle = queryStyle.Foreground(termenv.ANSIBrightYellow)
+		operationStyle = operationStyle.Foreground(termenv.ANSIYellow)
 	case "DELETE":
-		// Magenta background for DELETE operations
-		operationStyle = operationStyle.Background(termenv.ANSIBrightMagenta)
-		// Magenta text for DELETE queries
-		queryStyle = queryStyle.Foreground(termenv.ANSIBrightMagenta)
+		operationStyle = operationStyle.Foreground(termenv.ANSIMagenta)
 	default:
-		// Cyan background for other operations
-		operationStyle = operationStyle.Background(termenv.ANSICyan)
-		// Cyan text for other queries
-		queryStyle = queryStyle.Foreground(termenv.ANSICyan)
+		operationStyle = operationStyle.Foreground(termenv.ANSICyan)
 	}
 
-	if event.Err != nil && !errors.Is(event.Err, sql.ErrNoRows) {
-		var (
-			errorMessage strings.Builder
-			message      strings.Builder
-		)
+	// Use guard error if present, otherwise use the event error
+	displayErr := event.Err
+	if guardErr != nil {
+		displayErr = guardErr
+	}
 
-		_ = errorMessage.WriteByte(constants.ByteSpace)
-		_, _ = errorMessage.WriteString(event.Err.Error())
-		_ = errorMessage.WriteByte(constants.ByteSpace)
+	if displayErr != nil && !errors.Is(displayErr, sql.ErrNoRows) {
+		var message strings.Builder
 
-		errorMessageStyle := qh.output.String(errorMessage.String()).Bold().Background(termenv.ANSIBrightRed).Foreground(termenv.ANSIBlack)
+		errorMessageStyle := qh.output.String(displayErr.Error()).Foreground(termenv.ANSIRed)
 
 		_, _ = message.WriteString(operationStyle.String())
 		_, _ = message.WriteString(elapsedStyle.String())
 		_ = message.WriteByte(constants.ByteSpace)
-		_, _ = message.WriteString(queryStyle.Foreground(termenv.ANSIRed).String())
+		_, _ = message.WriteString(queryStyle.String())
 		_ = message.WriteByte(constants.ByteSpace)
 		_, _ = message.WriteString(errorMessageStyle.String())
 
@@ -112,9 +134,15 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 	}
 }
 
-func addQueryHook(db *bun.DB, logger log.Logger) {
+func addQueryHook(db *bun.DB, logger log.Logger, guardConfig *sqlguard.Config) {
+	var guard *sqlguard.Guard
+	if guardConfig != nil && guardConfig.Enabled {
+		guard = sqlguard.NewGuard(logger)
+	}
+
 	db.AddQueryHook(&queryHook{
-		logger: logger,
-		output: termenv.DefaultOutput(),
+		logger:   logger,
+		output:   termenv.DefaultOutput(),
+		sqlGuard: guard,
 	})
 }

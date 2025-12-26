@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrUnsupportedDBType  = errors.New("unsupported database type")
+	ErrUnsupportedDbType  = errors.New("unsupported database type")
 	errPingFailed         = errors.New("database ping failed")
 	errVersionQueryFailed = errors.New("database version query failed")
 )
@@ -50,7 +50,7 @@ func wrapVersionQueryError(dbType constants.DbType, err error) error {
 }
 
 func newUnsupportedDbTypeError(dbType constants.DbType) error {
-	return newDatabaseError(dbType, "validation", ErrUnsupportedDBType, map[string]any{
+	return newDatabaseError(dbType, "validation", ErrUnsupportedDbType, map[string]any{
 		"supported_types": []constants.DbType{constants.DbSQLite, constants.DbPostgres, constants.DbMySQL},
 	})
 }
