@@ -22,11 +22,11 @@ func logDbVersion(provider DatabaseProvider, db *bun.DB, logger log.Logger) erro
 	return nil
 }
 
-func setupBunDB(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) *bun.DB {
+func setupBunDb(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) *bun.DB {
 	db := bun.NewDB(sqlDb, dialect, opts.BunOptions...)
 
 	if opts.EnableQueryHook {
-		addQueryHook(db, opts.Logger)
+		addQueryHook(db, opts.Logger, opts.SqlGuardConfig)
 	}
 
 	db = db.WithNamedArg(constants.PlaceholderKeyOperator, constants.OperatorSystem)
@@ -41,7 +41,7 @@ func configureConnectionPool(sqlDb *sql.DB, opts *databaseOptions) {
 }
 
 func initializeDatabase(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) (*bun.DB, error) {
-	db := setupBunDB(sqlDb, dialect, opts)
+	db := setupBunDb(sqlDb, dialect, opts)
 
 	configureConnectionPool(sqlDb, opts)
 
