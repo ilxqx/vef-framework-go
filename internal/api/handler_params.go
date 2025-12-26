@@ -287,13 +287,11 @@ func hasWithLoggerMethod(t reflect.Type) bool {
 	}
 
 	paramType := method.Type.In(1)
-
 	return loggerType.AssignableTo(paramType)
 }
 
 func callWithLogger(field reflect.Value, logger log.Logger) reflect.Value {
-	method := reflectx.FindMethod(field, withLoggerMethod)
-	if method.IsValid() {
+	if method := reflectx.FindMethod(field, withLoggerMethod); method.IsValid() {
 		results := method.Call([]reflect.Value{reflect.ValueOf(logger)})
 		if len(results) > 0 {
 			return results[0]
