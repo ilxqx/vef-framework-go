@@ -223,7 +223,6 @@ func hasAutoIncrement(col *as.Column) bool {
 		raw := col.Type.Raw
 		if raw == "serial" || raw == "bigserial" || raw == "smallserial" ||
 			raw == "SERIAL" || raw == "BIGSERIAL" || raw == "SMALLSERIAL" {
-
 			return true
 		}
 	}
