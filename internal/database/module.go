@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/uptrace/bun"
 	"go.uber.org/fx"
@@ -18,7 +19,7 @@ var (
 			fx.Annotate(
 				func(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err error) {
 					if db, err = New(config); err != nil {
-						return db, err
+						return
 					}
 
 					provider, exists := registry.provider(config.Type)
@@ -48,11 +49,14 @@ var (
 						),
 					)
 
-					return db, err
+					return
 				},
 				fx.As(new(bun.IDB)),
 				fx.As(fx.Self()),
 			),
+			func(db *bun.DB) *sql.DB {
+				return db.DB
+			},
 		),
 	)
 )

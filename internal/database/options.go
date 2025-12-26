@@ -4,6 +4,7 @@ import (
 	"github.com/uptrace/bun"
 
 	"github.com/ilxqx/vef-framework-go/config"
+	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
@@ -13,17 +14,24 @@ type databaseOptions struct {
 	EnableQueryHook bool
 	Logger          log.Logger
 	BunOptions      []bun.DBOption
+	SqlGuardConfig  *sqlguard.Config
 }
 
 type Option func(*databaseOptions)
 
 func newDefaultOptions(config *config.DatasourceConfig) *databaseOptions {
+	var guardConfig *sqlguard.Config
+	if config.EnableSqlGuard {
+		guardConfig = sqlguard.DefaultConfig()
+	}
+
 	return &databaseOptions{
 		Config:          config,
 		PoolConfig:      NewDefaultConnectionPoolConfig(),
 		EnableQueryHook: true,
 		Logger:          logger,
 		BunOptions:      []bun.DBOption{bun.WithDiscardUnknownColumns()},
+		SqlGuardConfig:  guardConfig,
 	}
 }
 
@@ -49,6 +57,20 @@ func WithLogger(logger log.Logger) Option {
 func WithBunOptions(bunOpts ...bun.DBOption) Option {
 	return func(opts *databaseOptions) {
 		opts.BunOptions = append(opts.BunOptions, bunOpts...)
+	}
+}
+
+// WithSqlGuardConfig sets a custom sql guard configuration.
+func WithSqlGuardConfig(config *sqlguard.Config) Option {
+	return func(opts *databaseOptions) {
+		opts.SqlGuardConfig = config
+	}
+}
+
+// DisableSqlGuard disables the sql guard.
+func DisableSqlGuard() Option {
+	return func(opts *databaseOptions) {
+		opts.SqlGuardConfig = nil
 	}
 }
 

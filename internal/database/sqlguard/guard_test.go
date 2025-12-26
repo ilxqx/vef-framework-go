@@ -1,0 +1,101 @@
+package sqlguard
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/internal/log"
+)
+
+func TestGuardCheck(t *testing.T) {
+	logger := log.Named("test")
+	guard := NewGuard(logger)
+
+	tests := []struct {
+		name      string
+		sql       string
+		wantBlock bool
+		errType   error
+	}{
+		{"SafeSelect", "SELECT * FROM users WHERE id = 1", false, nil},
+		{"SafeDeleteWithWhere", "DELETE FROM users WHERE id = 1", false, nil},
+		{"SafeInsert", "INSERT INTO users (name) VALUES ('test')", false, nil},
+		{"SafeUpdateWithWhere", "UPDATE users SET name = 'test' WHERE id = 1", false, nil},
+		{"DangerousDrop", "DROP TABLE users", true, ErrDangerousSql},
+		{"DangerousTruncate", "TRUNCATE TABLE users", true, ErrDangerousSql},
+		{"DangerousDeleteWithoutWhere", "DELETE FROM users", true, ErrDangerousSql},
+		{"InvalidSqlShouldPass", "INVALID SQL SYNTAX HERE", false, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := guard.Check(tt.sql)
+
+			if tt.wantBlock {
+				require.Error(t, err, "Should block dangerous SQL")
+
+				var guardErr *GuardError
+				require.True(t, errors.As(err, &guardErr))
+				assert.True(t, errors.Is(guardErr.Err, tt.errType))
+			} else {
+				assert.NoError(t, err, "Should allow safe SQL")
+			}
+		})
+	}
+}
+
+func TestGuardCustomRules(t *testing.T) {
+	logger := log.Named("test")
+	guard := NewGuard(logger, new(DropStatementRule))
+
+	// DROP should be blocked
+	err := guard.Check("DROP TABLE users")
+	require.Error(t, err, "Should block DROP with custom rule")
+
+	// DELETE without WHERE should pass (rule not included)
+	err = guard.Check("DELETE FROM users")
+	assert.NoError(t, err, "Should allow DELETE without WHERE when rule not included")
+
+	// TRUNCATE should pass (rule not included)
+	err = guard.Check("TRUNCATE TABLE users")
+	assert.NoError(t, err, "Should allow TRUNCATE when rule not included")
+}
+
+func TestGuardEmptyRulesUsesDefaults(t *testing.T) {
+	logger := log.Named("test")
+	guard := NewGuard(logger)
+
+	assert.Len(t, guard.rules, 3, "Should use 3 default rules when none provided")
+}
+
+func TestGuardError(t *testing.T) {
+	t.Run("WithViolation", func(t *testing.T) {
+		err := &GuardError{
+			Err: ErrDangerousSql,
+			Violation: &Violation{
+				Rule:        "no_drop",
+				Statement:   "DROP",
+				Description: "DROP statements are prohibited",
+			},
+			Sql: "DROP TABLE users",
+		}
+
+		assert.Contains(t, err.Error(), "dangerous sql detected")
+		assert.Contains(t, err.Error(), "no_drop")
+		assert.Contains(t, err.Error(), "DROP")
+		assert.True(t, errors.Is(err, ErrDangerousSql))
+	})
+
+	t.Run("WithoutViolation", func(t *testing.T) {
+		err := &GuardError{
+			Err: ErrSqlParseFailed,
+			Sql: "INVALID SQL",
+		}
+
+		assert.Equal(t, ErrSqlParseFailed.Error(), err.Error())
+		assert.True(t, errors.Is(err, ErrSqlParseFailed))
+	})
+}
