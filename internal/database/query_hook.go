@@ -38,6 +38,7 @@ func (qh *queryHook) BeforeQuery(ctx context.Context, event *bun.QueryEvent) con
 		if event.Stash == nil {
 			event.Stash = make(map[any]any)
 		}
+
 		event.Stash[guardErrorStashKey] = err
 
 		cancelCtx, cancel := context.WithCancelCause(ctx)

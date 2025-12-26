@@ -21,7 +21,7 @@ func CreateTokenVerifier(authManager security.AuthManager) auth.TokenVerifier {
 			Principal: tokenString,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("%w: %v", auth.ErrInvalidToken, err)
+			return nil, fmt.Errorf("%w: %w", auth.ErrInvalidToken, err)
 		}
 
 		return &auth.TokenInfo{

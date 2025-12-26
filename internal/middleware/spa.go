@@ -40,6 +40,7 @@ func (s *spaMiddleware) Apply(router fiber.Router) {
 				if path == config.Path || strings.HasPrefix(path, config.Path+"/static/") {
 					continue
 				}
+
 				if strings.HasPrefix(path, config.Path) {
 					ctx.Path(config.Path)
 

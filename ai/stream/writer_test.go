@@ -36,6 +36,7 @@ func TestSseWriter_WriteChunk(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
+
 			w := newSseWriter(bufio.NewWriter(&buf))
 
 			err := w.WriteChunk(tt.chunk)
@@ -48,6 +49,7 @@ func TestSseWriter_WriteChunk(t *testing.T) {
 
 func TestSseWriter_WriteDone(t *testing.T) {
 	var buf bytes.Buffer
+
 	w := newSseWriter(bufio.NewWriter(&buf))
 
 	err := w.writeDone()
@@ -58,6 +60,7 @@ func TestSseWriter_WriteDone(t *testing.T) {
 
 func TestSseWriter_Flush(t *testing.T) {
 	var buf bytes.Buffer
+
 	bw := bufio.NewWriter(&buf)
 	w := newSseWriter(bw)
 

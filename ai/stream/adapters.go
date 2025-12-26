@@ -24,11 +24,13 @@ func (e *einoSource) Recv() (Message, error) {
 	if err != nil {
 		return Message{}, err
 	}
+
 	return convertEinoMessage(msg), nil
 }
 
 func (e *einoSource) Close() error {
 	e.reader.Close()
+
 	return nil
 }
 
@@ -48,6 +50,7 @@ func convertEinoMessage(msg *schema.Message) Message {
 			}
 		}
 	}
+
 	return result
 }
 
@@ -72,16 +75,20 @@ func (c *channelSource) Recv() (Message, error) {
 	if c.closed {
 		return Message{}, io.EOF
 	}
+
 	msg, ok := <-c.ch
 	if !ok {
 		c.closed = true
+
 		return Message{}, io.EOF
 	}
+
 	return msg, nil
 }
 
 func (c *channelSource) Close() error {
 	c.closed = true
+
 	return nil
 }
 
@@ -107,8 +114,10 @@ func NewCallbackSource(execute func(writer CallbackWriter) error) MessageSource 
 	go func() {
 		defer close(s.messages)
 		defer close(s.done)
+
 		s.err = execute(callbackWriterImpl{ch: s.messages})
 	}()
+
 	return s
 }
 
@@ -118,13 +127,16 @@ func (c *callbackSource) Recv() (Message, error) {
 		if c.err != nil {
 			return Message{}, c.err
 		}
+
 		return Message{}, io.EOF
 	}
+
 	return msg, nil
 }
 
 func (c *callbackSource) Close() error {
 	<-c.done
+
 	return nil
 }
 

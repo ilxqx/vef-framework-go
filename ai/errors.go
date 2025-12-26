@@ -17,6 +17,8 @@ var (
 	ErrProviderNotFound = errors.New("ai: provider not found")
 	// ErrModelNotSupported is returned when a model is not supported by the provider.
 	ErrModelNotSupported = errors.New("ai: model not supported")
+	// ErrAgentNotFound is returned when an agent type is not registered.
+	ErrAgentNotFound = errors.New("ai: agent type not found")
 )
 
 // ToolError represents an error that occurred during tool execution.

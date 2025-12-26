@@ -12,8 +12,11 @@ func TestChannelSource(t *testing.T) {
 	t.Run("ReceivesMessagesUntilChannelClosed", func(t *testing.T) {
 		ch := make(chan Message, 3)
 		ch <- Message{Role: RoleUser, Content: "Hello"}
+
 		ch <- Message{Role: RoleAssistant, Content: "Hi"}
+
 		ch <- Message{Role: RoleAssistant, Content: "there"}
+
 		close(ch)
 
 		source := NewChannelSource(ch)
@@ -66,6 +69,7 @@ func TestCallbackSource(t *testing.T) {
 		source := NewCallbackSource(func(w CallbackWriter) error {
 			w.WriteText("Hello")
 			w.WriteText(" World")
+
 			return nil
 		})
 		defer source.Close()
@@ -86,6 +90,7 @@ func TestCallbackSource(t *testing.T) {
 	t.Run("ReceivesToolCalls", func(t *testing.T) {
 		source := NewCallbackSource(func(w CallbackWriter) error {
 			w.WriteToolCall("call_1", "get_weather", `{"city":"Beijing"}`)
+
 			return nil
 		})
 		defer source.Close()
@@ -102,6 +107,7 @@ func TestCallbackSource(t *testing.T) {
 	t.Run("ReceivesToolResults", func(t *testing.T) {
 		source := NewCallbackSource(func(w CallbackWriter) error {
 			w.WriteToolResult("call_1", `{"temp":25}`)
+
 			return nil
 		})
 		defer source.Close()
@@ -116,6 +122,7 @@ func TestCallbackSource(t *testing.T) {
 	t.Run("ReceivesReasoning", func(t *testing.T) {
 		source := NewCallbackSource(func(w CallbackWriter) error {
 			w.WriteReasoning("Let me think...")
+
 			return nil
 		})
 		defer source.Close()
@@ -129,6 +136,7 @@ func TestCallbackSource(t *testing.T) {
 	t.Run("ReceivesCustomData", func(t *testing.T) {
 		source := NewCallbackSource(func(w CallbackWriter) error {
 			w.WriteData("status", map[string]any{"progress": 50})
+
 			return nil
 		})
 		defer source.Close()
@@ -144,8 +152,10 @@ func TestCallbackSource(t *testing.T) {
 			Role:    RoleSystem,
 			Content: "System prompt",
 		}
+
 		source := NewCallbackSource(func(w CallbackWriter) error {
 			w.WriteMessage(customMsg)
+
 			return nil
 		})
 		defer source.Close()
@@ -157,8 +167,10 @@ func TestCallbackSource(t *testing.T) {
 
 	t.Run("PropagatesError", func(t *testing.T) {
 		expectedErr := io.ErrUnexpectedEOF
+
 		source := NewCallbackSource(func(w CallbackWriter) error {
 			w.WriteText("partial")
+
 			return expectedErr
 		})
 		defer source.Close()
@@ -175,6 +187,7 @@ func TestCallbackSource(t *testing.T) {
 func TestFromChannel(t *testing.T) {
 	ch := make(chan Message, 1)
 	ch <- Message{Role: RoleUser, Content: "test"}
+
 	close(ch)
 
 	builder := FromChannel(ch)
@@ -185,6 +198,7 @@ func TestFromChannel(t *testing.T) {
 func TestFromCallback(t *testing.T) {
 	builder := FromCallback(func(w CallbackWriter) error {
 		w.WriteText("test")
+
 		return nil
 	})
 	assert.NotNil(t, builder)
