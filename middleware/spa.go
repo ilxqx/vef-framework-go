@@ -10,4 +10,6 @@ type SpaConfig struct {
 	Path string
 	// Fs is the file system for the Spa.
 	Fs fs.FS
+	// ExcludePaths are paths that should not be handled by the Spa (e.g., "/api", "/ws").
+	ExcludePaths []string
 }
