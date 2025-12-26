@@ -15,9 +15,12 @@ import (
 type PrincipalType string
 
 const (
-	PrincipalTypeUser        PrincipalType = "user"                   // PrincipalTypeUser is the type of the user.
-	PrincipalTypeExternalApp PrincipalType = "external_app"           // PrincipalTypeExternalApp is the type of the external app.
-	PrincipalTypeSystem      PrincipalType = constants.OperatorSystem // PrincipalTypeSystem is the type of the system.
+	// PrincipalTypeUser is the type of the user.
+	PrincipalTypeUser PrincipalType = "user"
+	// PrincipalTypeExternalApp is the type of the external app.
+	PrincipalTypeExternalApp PrincipalType = "external_app"
+	// PrincipalTypeSystem is the type of the system.
+	PrincipalTypeSystem PrincipalType = constants.OperatorSystem
 )
 
 var (
@@ -52,11 +55,16 @@ func SetExternalAppDetailsType[T any]() {
 
 // Principal is the principal of the user.
 type Principal struct {
-	Type    PrincipalType `json:"type"`    // Type is the type of the principal.
-	Id      string        `json:"id"`      // Id is the id of the user.
-	Name    string        `json:"name"`    // Name is the name of the user.
-	Roles   []string      `json:"roles"`   // Roles is the roles of the user.
-	Details any           `json:"details"` // Details is the details of the user.
+	// Type is the type of the principal.
+	Type PrincipalType `json:"type"`
+	// Id is the id of the user.
+	Id string `json:"id"`
+	// Name is the name of the user.
+	Name string `json:"name"`
+	// Roles is the roles of the user.
+	Roles []string `json:"roles"`
+	// Details is the details of the user.
+	Details any `json:"details"`
 }
 
 // UnmarshalJSON implements custom JSON unmarshaling for Principal.

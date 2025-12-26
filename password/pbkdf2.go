@@ -140,8 +140,8 @@ func (e *pbkdf2Encoder) decodeHash(encodedPassword string) (*pbkdf2Params, []byt
 	}
 
 	var hashFunction string
-	if strings.HasPrefix(parts[1], "pbkdf2-") {
-		hashFunction = strings.TrimPrefix(parts[1], "pbkdf2-")
+	if after, found := strings.CutPrefix(parts[1], "pbkdf2-"); found {
+		hashFunction = after
 	} else {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
