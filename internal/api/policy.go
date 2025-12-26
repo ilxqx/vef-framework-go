@@ -13,28 +13,28 @@ type Policy interface {
 	BuildAuthenticationMiddleware(manager api.Manager) fiber.Handler
 }
 
-type defaultApiPolicy struct {
+type DefaultApiPolicy struct {
 	auth security.AuthManager
 }
 
-func (*defaultApiPolicy) Path() string { return "/api" }
-func (p *defaultApiPolicy) BuildAuthenticationMiddleware(manager api.Manager) fiber.Handler {
+func (*DefaultApiPolicy) Path() string { return "/api" }
+func (p *DefaultApiPolicy) BuildAuthenticationMiddleware(manager api.Manager) fiber.Handler {
 	return buildAuthenticationMiddleware(manager, p.auth)
 }
 
 func NewDefaultApiPolicy(auth security.AuthManager) Policy {
-	return &defaultApiPolicy{auth: auth}
+	return &DefaultApiPolicy{auth: auth}
 }
 
-type openApiPolicy struct {
+type OpenApiPolicy struct {
 	auth security.AuthManager
 }
 
-func (*openApiPolicy) Path() string { return "/openapi" }
-func (p *openApiPolicy) BuildAuthenticationMiddleware(manager api.Manager) fiber.Handler {
+func (*OpenApiPolicy) Path() string { return "/openapi" }
+func (p *OpenApiPolicy) BuildAuthenticationMiddleware(manager api.Manager) fiber.Handler {
 	return buildOpenApiAuthenticationMiddleware(manager, p.auth)
 }
 
 func NewOpenApiPolicy(auth security.AuthManager) Policy {
-	return &openApiPolicy{auth: auth}
+	return &OpenApiPolicy{auth: auth}
 }
