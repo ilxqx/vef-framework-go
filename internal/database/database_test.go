@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"testing"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/internal/database/sqlguard"
 	"github.com/ilxqx/vef-framework-go/internal/testhelpers"
 )
 
@@ -263,4 +265,140 @@ type TestTable struct {
 
 func TestDatabaseSuite(t *testing.T) {
 	suite.Run(t, new(DatabaseTestSuite))
+}
+
+// SqlGuardTestSuite tests SQL guard integration with raw SQL operations.
+// Note: GoSQLX parser doesn't support double-quoted identifiers (bun's default),
+// so we use NewRaw with unquoted SQL to test SQL guard functionality.
+type SqlGuardTestSuite struct {
+	suite.Suite
+
+	ctx context.Context
+}
+
+func (suite *SqlGuardTestSuite) SetupSuite() {
+	suite.ctx = context.Background()
+}
+
+func (suite *SqlGuardTestSuite) createTestDb(enableGuard bool) *bun.DB {
+	cfg := &config.DatasourceConfig{
+		Type:           constants.DbSQLite,
+		EnableSqlGuard: enableGuard,
+	}
+
+	db, err := New(cfg)
+	suite.Require().NoError(err)
+
+	// Create test table using raw SQL (unquoted)
+	_, err = db.NewRaw("CREATE TABLE IF NOT EXISTS test_guard (id INTEGER PRIMARY KEY, name TEXT)").Exec(suite.ctx)
+	suite.Require().NoError(err)
+
+	return db
+}
+
+func (suite *SqlGuardTestSuite) TestDropStatementBlocked() {
+	db := suite.createTestDb(true)
+	defer db.Close()
+
+	_, err := db.NewRaw("DROP TABLE test_guard").Exec(suite.ctx)
+
+	suite.Require().Error(err, "DROP should be blocked by SQL guard")
+
+	// Context cancellation returns context.Canceled, the cause contains GuardError
+	suite.True(errors.Is(err, context.Canceled), "Error should be context.Canceled")
+
+	// Verify table still exists (DROP was actually blocked)
+	var count int
+	err = db.NewRaw("SELECT COUNT(*) FROM test_guard").Scan(suite.ctx, &count)
+	suite.NoError(err, "Table should still exist after blocked DROP")
+}
+
+func (suite *SqlGuardTestSuite) TestTruncateStatementBlocked() {
+	db := suite.createTestDb(true)
+	defer db.Close()
+
+	// Insert test data first
+	_, err := db.NewRaw("INSERT INTO test_guard (name) VALUES ('test')").Exec(suite.ctx)
+	suite.Require().NoError(err)
+
+	_, err = db.NewRaw("TRUNCATE TABLE test_guard").Exec(suite.ctx)
+
+	suite.Require().Error(err, "TRUNCATE should be blocked by SQL guard")
+	suite.True(errors.Is(err, context.Canceled), "Error should be context.Canceled")
+
+	// Verify data still exists (TRUNCATE was actually blocked)
+	var count int
+	err = db.NewRaw("SELECT COUNT(*) FROM test_guard").Scan(suite.ctx, &count)
+	suite.NoError(err)
+	suite.Equal(1, count, "Data should still exist after blocked TRUNCATE")
+}
+
+func (suite *SqlGuardTestSuite) TestDeleteWithoutWhereBlocked() {
+	db := suite.createTestDb(true)
+	defer db.Close()
+
+	// Insert test data first
+	_, err := db.NewRaw("INSERT INTO test_guard (name) VALUES ('test')").Exec(suite.ctx)
+	suite.Require().NoError(err)
+
+	_, err = db.NewRaw("DELETE FROM test_guard").Exec(suite.ctx)
+
+	suite.Require().Error(err, "DELETE without WHERE should be blocked by SQL guard")
+	suite.True(errors.Is(err, context.Canceled), "Error should be context.Canceled")
+
+	// Verify data still exists (DELETE was actually blocked)
+	var count int
+	err = db.NewRaw("SELECT COUNT(*) FROM test_guard").Scan(suite.ctx, &count)
+	suite.NoError(err)
+	suite.Equal(1, count, "Data should still exist after blocked DELETE without WHERE")
+}
+
+func (suite *SqlGuardTestSuite) TestDeleteWithWhereAllowed() {
+	db := suite.createTestDb(true)
+	defer db.Close()
+
+	_, err := db.NewRaw("DELETE FROM test_guard WHERE name = 'nonexistent'").Exec(suite.ctx)
+
+	suite.NoError(err, "DELETE with WHERE should be allowed")
+}
+
+func (suite *SqlGuardTestSuite) TestSelectAllowed() {
+	db := suite.createTestDb(true)
+	defer db.Close()
+
+	var result []struct {
+		Id   int
+		Name string
+	}
+
+	err := db.NewRaw("SELECT id, name FROM test_guard").Scan(suite.ctx, &result)
+
+	suite.NoError(err, "SELECT should be allowed")
+}
+
+func (suite *SqlGuardTestSuite) TestWhitelistBypassesGuard() {
+	db := suite.createTestDb(true)
+	defer db.Close()
+
+	// DROP should be blocked without whitelist
+	_, err := db.NewRaw("DROP TABLE test_guard").Exec(suite.ctx)
+	suite.Error(err, "DROP should be blocked without whitelist")
+
+	// DROP should work with whitelisted context
+	ctx := sqlguard.WithWhitelist(suite.ctx)
+	_, err = db.NewRaw("DROP TABLE test_guard").Exec(ctx)
+	suite.NoError(err, "DROP should work with whitelisted context")
+}
+
+func (suite *SqlGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
+	db := suite.createTestDb(false)
+	defer db.Close()
+
+	// DROP should work when guard is disabled
+	_, err := db.NewRaw("DROP TABLE test_guard").Exec(suite.ctx)
+	suite.NoError(err, "DROP should work when SQL guard is disabled")
+}
+
+func TestSqlGuardSuite(t *testing.T) {
+	suite.Run(t, new(SqlGuardTestSuite))
 }
