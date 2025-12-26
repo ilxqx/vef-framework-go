@@ -6,6 +6,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/internal/app"
+	"github.com/ilxqx/vef-framework-go/mcp"
 	"github.com/ilxqx/vef-framework-go/middleware"
 )
 
@@ -130,4 +131,57 @@ func SupplySpaConfigs(config *middleware.SpaConfig, configs ...*middleware.SpaCo
 	}
 
 	return fx.Supply(spaConfigs...)
+}
+
+// ProvideMcpTools provides an MCP tool provider.
+func ProvideMcpTools(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.As(new(mcp.ToolProvider)),
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:mcp:tools"`),
+		),
+	)
+}
+
+// ProvideMcpResources provides an MCP resource provider.
+func ProvideMcpResources(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.As(new(mcp.ResourceProvider)),
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:mcp:resources"`),
+		),
+	)
+}
+
+// ProvideMcpResourceTemplates provides an MCP resource template provider.
+func ProvideMcpResourceTemplates(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.As(new(mcp.ResourceTemplateProvider)),
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:mcp:templates"`),
+		),
+	)
+}
+
+// ProvideMcpPrompts provides an MCP prompt provider.
+func ProvideMcpPrompts(constructor any, paramTags ...string) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			constructor,
+			fx.As(new(mcp.PromptProvider)),
+			fx.ParamTags(paramTags...),
+			fx.ResultTags(`group:"vef:mcp:prompts"`),
+		),
+	)
+}
+
+// SupplyMcpServerInfo supplies MCP server info.
+func SupplyMcpServerInfo(info *mcp.ServerInfo) fx.Option {
+	return fx.Supply(info)
 }
