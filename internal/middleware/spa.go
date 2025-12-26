@@ -36,6 +36,10 @@ func (s *spaMiddleware) Apply(router fiber.Router) {
 		if ctx.Method() == fiber.MethodGet {
 			path := ctx.Path()
 			for _, config := range s.configs {
+				// Skip if already at SPA entry or static path to prevent infinite loop
+				if path == config.Path || strings.HasPrefix(path, config.Path+"/static/") {
+					continue
+				}
 				if strings.HasPrefix(path, config.Path) {
 					ctx.Path(config.Path)
 
