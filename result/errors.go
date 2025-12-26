@@ -136,4 +136,9 @@ var (
 		i18n.T(ErrMessageForeignKeyViolation),
 		WithCode(ErrCodeForeignKeyViolation),
 	)
+	// ErrDangerousSQL is the error for dangerous SQL operations.
+	ErrDangerousSQL = Err(
+		i18n.T(ErrMessageDangerousSQL),
+		WithCode(ErrCodeDangerousSQL),
+	)
 )
