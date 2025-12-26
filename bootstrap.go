@@ -13,11 +13,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/event"
 	ilog "github.com/ilxqx/vef-framework-go/internal/log"
+	"github.com/ilxqx/vef-framework-go/internal/mcp"
 	"github.com/ilxqx/vef-framework-go/internal/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/mold"
 	"github.com/ilxqx/vef-framework-go/internal/monitor"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
+	"github.com/ilxqx/vef-framework-go/internal/schema"
 	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/storage"
 	"github.com/ilxqx/vef-framework-go/log"
@@ -35,7 +37,7 @@ func newFxLogger() fxevent.Logger {
 // Run starts the VEF framework with the provided options.
 // It initializes all core modules and runs the application.
 func Run(options ...fx.Option) {
-	// Core framework modules in dependency order
+	// Core framework modules
 	opts := []fx.Option{
 		fx.WithLogger(newFxLogger),
 		config.Module,
@@ -49,7 +51,9 @@ func Run(options ...fx.Option) {
 		redis.Module,
 		mold.Module,
 		storage.Module,
+		schema.Module,
 		monitor.Module,
+		mcp.Module,
 		app.Module,
 	}
 

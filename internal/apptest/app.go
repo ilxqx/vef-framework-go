@@ -14,11 +14,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/cron"
 	"github.com/ilxqx/vef-framework-go/internal/database"
 	"github.com/ilxqx/vef-framework-go/internal/event"
+	"github.com/ilxqx/vef-framework-go/internal/mcp"
 	"github.com/ilxqx/vef-framework-go/internal/middleware"
 	"github.com/ilxqx/vef-framework-go/internal/mold"
 	"github.com/ilxqx/vef-framework-go/internal/monitor"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/internal/redis"
+	"github.com/ilxqx/vef-framework-go/internal/schema"
 	"github.com/ilxqx/vef-framework-go/internal/security"
 	"github.com/ilxqx/vef-framework-go/internal/storage"
 )
@@ -116,6 +118,8 @@ func buildOptions(options ...fx.Option) []fx.Option {
 		mold.Module,
 		storage.Module,
 		monitor.Module,
+		schema.Module,
+		mcp.Module,
 		app.Module,
 	}
 
