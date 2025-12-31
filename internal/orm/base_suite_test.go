@@ -120,7 +120,8 @@ func (suite *OrmTestSuite) SetupSuite() {
 		(*SimpleModel)(nil),
 	)
 
-	// Counter for alternating between past and future offsets
+	// Counter for monotonically increasing time offsets
+	// This ensures updated_at is always >= created_at since they are called sequentially in fixtures
 	counter := 0
 	fixture := dbfixture.New(
 		db,
@@ -131,11 +132,12 @@ func (suite *OrmTestSuite) SetupSuite() {
 			},
 			"now": func() string {
 				counter++
-				// Use small hour-based offsets (between -12 and 11 hours) to ensure all test timestamps
-				// are recent enough for time window tests (UpdatedAtGreaterThan, CreatedAtBetween)
-				// while providing meaningful intervals for Age function testing
-				// PostgreSQL AGE() with hours returns "X days Y hours" format
-				offsetHours := (counter % 24) - 12 // Will produce offsets from -12 to 11 hours
+				// Use monotonically increasing hour offsets to ensure:
+				// 1. All timestamps are recent (within a reasonable range from now)
+				// 2. Later calls always produce later timestamps (updated_at >= created_at)
+				// 3. Meaningful intervals exist for Age function testing
+				// Start from -12 hours and increment by 1 hour for each call
+				offsetHours := counter - 12
 
 				return datetime.Now().AddHours(offsetHours).String()
 			},
