@@ -1,69 +1,37 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_run:
+    workflows: ["Test"]
+    types:
+      - completed
 
 permissions:
   contents: write
 
 jobs:
-  test:
-    name: Test Before Release
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: true
-          cache-dependency-path: go.sum
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Pull Docker images in parallel
-        run: |
-          docker pull postgres:18-alpine &
-          docker pull mysql:lts &
-          docker pull redis:8-alpine &
-          docker pull minio/minio:latest &
-          wait
-
-      - name: Download Go modules
-        run: go mod download
-
-      - name: Run Tests
-        run: go test -tags=test -v -race -timeout 30m ./...
-        env:
-          TZ: Asia/Shanghai
-          VEF_I18N_LANGUAGE: en
-          VEF_LOG_LEVEL: error
-          TESTCONTAINERS_RYUK_DISABLED: false
-          DOCKER_HOST: unix:///var/run/docker.sock
-
   release:
     name: Create GitHub Release
-    needs: test
     runs-on: ubuntu-latest
+    # Only run if: Test workflow succeeded AND triggered by a version tag
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'v') &&
+      contains(github.event.workflow_run.head_branch, '.')
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
+          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 50
 
       - name: Generate Changelog
         id: changelog
         env:
           GH_TOKEN: ${{ github.token }}
+          CURRENT_TAG: ${{ github.event.workflow_run.head_branch }}
         run: |
-          CURRENT_TAG=${{ github.ref_name }}
           # Get the most recent release tag (excluding the current one being created)
           # Since this workflow runs before the release is created, head -1 gives us the previous release
           PREVIOUS_TAG=$(gh api repos/${{ github.repository }}/releases \
@@ -138,7 +106,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          name: Release ${{ github.event.workflow_run.head_branch }}
           body: ${{ steps.changelog.outputs.changelog }}
           generate_release_notes: true
           draft: false
