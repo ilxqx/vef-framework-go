@@ -3,10 +3,10 @@ module github.com/ilxqx/vef-framework-go
 go 1.25.0
 
 require (
-	ariga.io/atlas v0.38.1-0.20251111145741-436996f7765c
+	ariga.io/atlas v1.0.0
 	github.com/ajitpratap0/GoSQLX v1.6.0
 	github.com/bwmarrin/snowflake v0.3.0
-	github.com/cloudwego/eino v0.7.11
+	github.com/cloudwego/eino v0.7.17
 	github.com/dlclark/regexp2 v1.11.5
 	github.com/dop251/goja v0.0.0-20251201205617-2bb4c724c0f9
 	github.com/dustin/go-humanize v1.0.1
@@ -14,7 +14,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.19.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.29.0
+	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/gofiber/fiber/v3 v3.0.0-rc.3
@@ -27,7 +27,7 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/minio/minio-go/v7 v7.0.97
-	github.com/modelcontextprotocol/go-sdk v1.1.0
+	github.com/modelcontextprotocol/go-sdk v1.2.0
 	github.com/muesli/termenv v0.16.0
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/puzpuzpuz/xsync/v4 v4.2.0
@@ -61,8 +61,6 @@ require (
 	golang.org/x/text v0.32.0
 	golang.org/x/tools v0.40.0
 )
-
-exclude google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
