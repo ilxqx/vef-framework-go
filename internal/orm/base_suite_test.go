@@ -132,14 +132,16 @@ func (suite *OrmTestSuite) SetupSuite() {
 			},
 			"now": func() string {
 				counter++
-				// Use monotonically increasing hour offsets to ensure:
-				// 1. All timestamps are recent (within a reasonable range from now)
+				// Use monotonically increasing minute offsets starting from 12 hours ago to ensure:
+				// 1. All timestamps are in the past (for tests checking "months from now" >= 0)
 				// 2. Later calls always produce later timestamps (updated_at >= created_at)
-				// 3. Meaningful intervals exist for Age function testing
-				// Start from -12 hours and increment by 1 hour for each call
-				offsetHours := counter - 12
+				// 3. Timestamps fall within "last 24 hours" (for audit condition tests)
+				// 4. Meaningful intervals exist for Age function testing
+				// Start from -720 minutes (-12 hours) and increment by 1 minute for each call
+				// fixture.yaml has ~80 calls, so range is approximately -720min to -640min (all in past ~10-12h)
+				offsetMinutes := counter - 720
 
-				return datetime.Now().AddHours(offsetHours).String()
+				return datetime.Now().AddMinutes(offsetMinutes).String()
 			},
 		}),
 	)
