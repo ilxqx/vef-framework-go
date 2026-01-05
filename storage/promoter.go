@@ -7,8 +7,10 @@ import (
 	"reflect"
 	"strings"
 
-	collections "github.com/ilxqx/go-collections"
 	"github.com/ilxqx/go-streams"
+
+	collections "github.com/ilxqx/go-collections"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/null"
@@ -43,6 +45,7 @@ func getStringValue(fieldValue reflect.Value) (string, bool) {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		if fieldValue.IsNil() {
 			return constants.Empty, false
 		}
@@ -72,6 +75,7 @@ func setStringValue(fieldValue reflect.Value, value string) {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		strValue := value
 		fieldValue.Set(reflect.ValueOf(&strValue))
 
@@ -88,6 +92,7 @@ func getStringSliceValue(fieldValue reflect.Value) ([]string, bool) {
 
 	if fieldType.Kind() == reflect.Slice &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		if fieldValue.IsNil() {
 			return nil, false
 		}
@@ -103,6 +108,7 @@ func setStringSliceValue(fieldValue reflect.Value, value []string) {
 
 	if fieldType.Kind() == reflect.Slice &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		fieldValue.Set(reflect.ValueOf(value))
 	}
 }
@@ -126,6 +132,7 @@ func isStringType(fieldType reflect.Type) bool {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		return true
 	}
 
@@ -298,6 +305,7 @@ func (p *defaultPromoter[T]) promoteFiles(ctx context.Context, model *T) error {
 		case MetaTypeMarkdown:
 			return p.promoteContentField(ctx, fieldValue, extractMarkdownUrls, replaceMarkdownUrls, field.typ, field.attrs)
 		}
+
 		return nil
 	}); err != nil {
 		return err
@@ -315,6 +323,7 @@ func (p *defaultPromoter[T]) promoteUploadedFileField(ctx context.Context, field
 
 		// Use streams to filter and transform keys
 		var promoteErr error
+
 		promotedKeys := streams.MapTo(
 			streams.FromSlice(keys).
 				Map(func(key string) string { return strings.TrimSpace(key) }).
@@ -323,11 +332,14 @@ func (p *defaultPromoter[T]) promoteUploadedFileField(ctx context.Context, field
 				if promoteErr != nil {
 					return constants.Empty
 				}
+
 				promotedKey, err := p.promoteSingleFile(ctx, key, metaType, attrs)
 				if err != nil {
 					promoteErr = err
+
 					return constants.Empty
 				}
+
 				return promotedKey
 			},
 		).Collect()
@@ -443,6 +455,7 @@ func (p *defaultPromoter[T]) cleanupReplacedFiles(ctx context.Context, newModel,
 		}
 
 		p.publishEvent(NewFileDeletedEvent(fileInfo.metaType, fileInfo.key, fileInfo.attrs))
+
 		return nil
 	}); err != nil {
 		return err
@@ -465,6 +478,7 @@ func (p *defaultPromoter[T]) deleteAllFiles(ctx context.Context, model *T) error
 		}
 
 		p.publishEvent(NewFileDeletedEvent(fileInfo.metaType, fileInfo.key, fileInfo.attrs))
+
 		return nil
 	}); err != nil {
 		return err
