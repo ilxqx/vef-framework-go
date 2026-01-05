@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/search"
@@ -98,7 +99,7 @@ func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
 				return err
 			}
 
-			applyOrderSpec := func(spec *sort.OrderSpec) {
+			applyOrderSpec := func(spec sort.OrderSpec) {
 				if !spec.IsValid() {
 					return
 				}
@@ -125,13 +126,15 @@ func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
 			}
 
 			if len(sortable.Sort) > 0 {
-				for i := range sortable.Sort {
-					applyOrderSpec(&sortable.Sort[i])
-				}
+				streams.FromSlice(sortable.Sort).
+					ForEach(func(spec sort.OrderSpec) {
+						applyOrderSpec(spec)
+					})
 			} else {
-				for _, spec := range specs {
-					applyOrderSpec(spec)
-				}
+				streams.FromSlice(specs).
+					ForEach(func(spec *sort.OrderSpec) {
+						applyOrderSpec(*spec)
+					})
 			}
 
 			return nil

@@ -6,9 +6,9 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
-	"github.com/ilxqx/vef-framework-go/set"
 	"github.com/ilxqx/vef-framework-go/sort"
 )
 
@@ -151,7 +151,7 @@ func ApplySort(query SelectQuery, orders []sort.OrderSpec) {
 	}
 }
 
-func buildReturningExpr(returningColumns set.Set[string], eb ExprBuilder) schema.QueryAppender {
+func buildReturningExpr(returningColumns collections.Set[string], eb ExprBuilder) schema.QueryAppender {
 	columns := make([]any, 0, returningColumns.Size())
 
 	for column := range returningColumns.Seq() {

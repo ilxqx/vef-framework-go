@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
@@ -65,10 +66,9 @@ func (s *Schema) ColumnCount() int {
 
 // ColumnNames returns all column names.
 func (s *Schema) ColumnNames() []string {
-	names := make([]string, len(s.columns))
-	for i, col := range s.columns {
-		names[i] = col.Name
-	}
-
-	return names
+	// Use streams.MapTo for declarative column name extraction
+	return streams.MapTo(
+		streams.FromSlice(s.columns),
+		func(col *Column) string { return col.Name },
+	).Collect()
 }

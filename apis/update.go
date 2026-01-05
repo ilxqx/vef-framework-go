@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -68,7 +69,7 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 			return err
 		}
 
-		for _, pk := range pks {
+		if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
 			pkValue, err := pk.Value(modelValue)
 			if err != nil {
 				return err
@@ -77,6 +78,10 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 			if reflect.ValueOf(pkValue).IsZero() {
 				return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 			}
+
+			return nil
+		}); err != nil {
+			return err
 		}
 
 		query := db.NewSelect().Model(&model).WherePk()

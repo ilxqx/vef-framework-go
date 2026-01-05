@@ -6,8 +6,8 @@ import (
 
 	"github.com/dlclark/regexp2"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/set"
 )
 
 // Uses regexp2 instead of standard library because backreferences (\1, \2) are needed
@@ -60,7 +60,7 @@ func extractHtmlUrls(content string) []string {
 		return nil
 	}
 
-	urlSet := set.NewHashSet[string]()
+	urlSet := collections.NewHashSet[string]()
 
 	for _, pattern := range htmlUrlPatterns {
 		// regexp2 requires iterative FindNextMatch instead of FindAllStringSubmatch
@@ -79,7 +79,7 @@ func extractHtmlUrls(content string) []string {
 		}
 	}
 
-	return urlSet.Values()
+	return urlSet.ToSlice()
 }
 
 // replaceHtmlUrls replaces URLs in HTML content based on the replacement map.
@@ -131,7 +131,7 @@ func extractMarkdownUrls(content string) []string {
 		return nil
 	}
 
-	urlSet := set.NewHashSet[string]()
+	urlSet := collections.NewHashSet[string]()
 
 	for _, pattern := range markdownUrlPatterns {
 		matches := pattern.FindAllStringSubmatch(content, -1)
@@ -151,7 +151,7 @@ func extractMarkdownUrls(content string) []string {
 		}
 	}
 
-	return urlSet.Values()
+	return urlSet.ToSlice()
 }
 
 // replaceMarkdownUrls replaces URLs in Markdown content based on the replacement map.

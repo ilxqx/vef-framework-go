@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/tabular"
 )
@@ -97,11 +98,12 @@ func (e *exporter) doExport(csvWriter *csv.Writer, data any) error {
 
 func (e *exporter) writeHeader(csvWriter *csv.Writer) error {
 	columns := e.schema.Columns()
-	headerRow := make([]string, len(columns))
 
-	for colIdx, col := range columns {
-		headerRow[colIdx] = col.Name
-	}
+	// Use streams.MapTo to transform columns to header names
+	headerRow := streams.MapTo(
+		streams.FromSlice(columns),
+		func(col *tabular.Column) string { return col.Name },
+	).Collect()
 
 	if err := csvWriter.Write(headerRow); err != nil {
 		return fmt.Errorf("write header row: %w", err)

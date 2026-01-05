@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
@@ -122,10 +123,10 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 		}
 
 		if len(models) > 0 {
-			for i := range models {
-				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
-					return err
-				}
+			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
+				return transformer.Struct(ctx.Context(), &models[i])
+			}); err != nil {
+				return err
 			}
 		}
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -63,20 +64,21 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db, sc storage.Service, publis
 
 		models := make([]TModel, len(params.Pks))
 
-		for i, pkValue := range params.Pks {
+		if err := streams.Range(0, len(params.Pks)).ForEachErr(func(i int) error {
+			pkValue := params.Pks[i]
 			modelValue := reflect.ValueOf(&models[i]).Elem()
 
 			// Try to interpret pkValue as a map first (works for both single and composite Pks)
 			if pkMap, ok := pkValue.(map[string]any); ok {
-				for _, pk := range pks {
+				if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
 					value, ok := pkMap[pk.Name]
 					if !ok {
 						return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 					}
 
-					if err := pk.Set(modelValue, value); err != nil {
-						return err
-					}
+					return pk.Set(modelValue, value)
+				}); err != nil {
+					return err
 				}
 			} else {
 				// Direct value format - only valid for single primary key
@@ -96,9 +98,9 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db, sc storage.Service, publis
 				}
 			}
 
-			if err := query.Scan(ctx.Context(), &models[i]); err != nil {
-				return err
-			}
+			return query.Scan(ctx.Context(), &models[i])
+		}); err != nil {
+			return err
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {

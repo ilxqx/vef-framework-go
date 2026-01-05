@@ -3,6 +3,7 @@ package apis
 import (
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -45,10 +46,10 @@ func (a *findAllApi[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db
 		}
 
 		if len(models) > 0 {
-			for i := range models {
-				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
-					return err
-				}
+			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
+				return transformer.Struct(ctx.Context(), &models[i])
+			}); err != nil {
+				return err
 			}
 
 			return result.Ok(a.Process(models, search, ctx)).Response(ctx)

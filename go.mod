@@ -10,7 +10,6 @@ require (
 	github.com/dlclark/regexp2 v1.11.5
 	github.com/dop251/goja v0.0.0-20251201205617-2bb4c724c0f9
 	github.com/dustin/go-humanize v1.0.1
-	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/go-co-op/gocron/v2 v2.19.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
@@ -23,6 +22,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/guregu/null/v6 v6.0.0
 	github.com/hbollon/go-edlib v1.7.0
+	github.com/ilxqx/go-collections v0.2.0
+	github.com/ilxqx/go-streams v0.2.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
@@ -160,6 +161,7 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/tidwall/btree v1.8.1 // indirect
 	github.com/tiendc/go-deepcopy v1.7.1 // indirect
 	github.com/tinylib/msgp v1.6.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
@@ -178,6 +180,9 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zclconf/go-cty v1.17.0 // indirect
 	github.com/zclconf/go-cty-yaml v1.2.0 // indirect
+	github.com/zhangyunhao116/fastrand v0.5.0 // indirect
+	github.com/zhangyunhao116/skipmap v0.10.1 // indirect
+	github.com/zhangyunhao116/skipset v0.13.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
 	go.opentelemetry.io/otel v1.39.0 // indirect

@@ -8,10 +8,10 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/set"
 )
 
 // NewInsertQuery creates a new InsertQuery instance with the provided database instance.
@@ -28,7 +28,7 @@ func NewInsertQuery(db *BunDb) *BunInsertQuery {
 		eb:      eb,
 		query:   iq,
 
-		returningColumns: set.NewHashSet[string](),
+		returningColumns: collections.NewHashSet[string](),
 	}
 	eb.qb = query
 
@@ -45,7 +45,7 @@ type BunInsertQuery struct {
 	eb      ExprBuilder
 	query   *bun.InsertQuery
 
-	returningColumns set.Set[string]
+	returningColumns collections.Set[string]
 }
 
 func (q *BunInsertQuery) Db() Db {
@@ -181,7 +181,7 @@ func (q *BunInsertQuery) ColumnExpr(name string, builder func(ExprBuilder) any) 
 }
 
 func (q *BunInsertQuery) Returning(columns ...string) InsertQuery {
-	q.returningColumns.Add(columns...)
+	q.returningColumns.AddAll(columns...)
 
 	return q
 }

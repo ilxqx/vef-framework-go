@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -58,10 +59,10 @@ func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 		}
 
 		if total > 0 {
-			for i := range models {
-				if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
-					return err
-				}
+			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
+				return transformer.Struct(ctx.Context(), &models[i])
+			}); err != nil {
+				return err
 			}
 
 			processedModels := a.Process(models, search, ctx)
@@ -74,10 +75,10 @@ func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 				return result.Errf("processor must return a slice, got %T", processedModels)
 			}
 
-			items := make([]any, modelsValue.Len())
-			for i := range modelsValue.Len() {
-				items[i] = modelsValue.Index(i).Interface()
-			}
+			items := streams.MapTo(
+				streams.Range(0, modelsValue.Len()),
+				func(i int) any { return modelsValue.Index(i).Interface() },
+			).Collect()
 
 			return result.Ok(page.New(pageable, total, items)).Response(ctx)
 		}

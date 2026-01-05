@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/mold"
@@ -153,10 +154,10 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 		}
 
 		if len(flatModels) > 0 {
-			for i := range flatModels {
-				if err := transformer.Struct(ctx.Context(), &flatModels[i]); err != nil {
-					return err
-				}
+			if err := streams.Range(0, len(flatModels)).ForEachErr(func(i int) error {
+				return transformer.Struct(ctx.Context(), &flatModels[i])
+			}); err != nil {
+				return err
 			}
 		} else {
 			flatModels = make([]TModel, 0)

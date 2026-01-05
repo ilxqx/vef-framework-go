@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/uptrace/bun/schema"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -161,16 +162,16 @@ func parseMetaColumns(specs []string) []orm.ColumnInfo {
 		return nil
 	}
 
-	result := make([]orm.ColumnInfo, len(specs))
-	for i, spec := range specs {
-		columnName, aliasName := parseMetaColumn(spec)
-		result[i] = orm.ColumnInfo{
-			Name:  columnName,
-			Alias: aliasName,
-		}
-	}
-
-	return result
+	return streams.MapTo(
+		streams.FromSlice(specs),
+		func(spec string) orm.ColumnInfo {
+			columnName, aliasName := parseMetaColumn(spec)
+			return orm.ColumnInfo{
+				Name:  columnName,
+				Alias: aliasName,
+			}
+		},
+	).Collect()
 }
 
 // validateMetaColumns validates that all meta columns exist in the table schema.
@@ -191,10 +192,12 @@ func validateMetaColumns(schema *schema.Table, metaColumns []orm.ColumnInfo) err
 // buildMetaJsonExpr constructs a JSON_OBJECT expression for meta columns.
 func buildMetaJsonExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.QueryAppender {
 	// Build JSON_OBJECT arguments: key1, value1, key2, value2, ...
-	jsonArgs := make([]any, 0, len(metaColumns)*2)
-	for _, col := range metaColumns {
-		jsonArgs = append(jsonArgs, col.Alias, eb.Column(col.Name))
-	}
+	jsonArgs := streams.FlatMap(
+		streams.FromSlice(metaColumns),
+		func(col orm.ColumnInfo) streams.Stream[any] {
+			return streams.Of[any](col.Alias, eb.Column(col.Name))
+		},
+	).Collect()
 
 	return eb.JsonObject(jsonArgs...)
 }
@@ -205,12 +208,18 @@ func batchCleanup[TModel any](
 	promoter storage.Promoter[TModel],
 	models []TModel,
 ) error {
-	var errs []error
-	for i := range models {
-		if err := promoter.Promote(ctx, nil, &models[i]); err != nil {
-			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
-		}
-	}
+	errs := streams.MapTo(
+		streams.Range(0, len(models)),
+		func(i int) error {
+			if err := promoter.Promote(ctx, nil, &models[i]); err != nil {
+				return fmt.Errorf("model %d: %w", i, err)
+			}
+
+			return nil
+		},
+	).Filter(func(err error) bool {
+		return err != nil
+	}).Collect()
 
 	if len(errs) > 0 {
 		return errors.Join(errs...)
@@ -228,12 +237,18 @@ func batchRollback[TModel any](
 	oldModels, newModels []TModel,
 	count int,
 ) error {
-	var errs []error
-	for i := range count {
-		if err := promoter.Promote(ctx, &newModels[i], &oldModels[i]); err != nil {
-			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
-		}
-	}
+	errs := streams.MapTo(
+		streams.Range(0, count),
+		func(i int) error {
+			if err := promoter.Promote(ctx, &newModels[i], &oldModels[i]); err != nil {
+				return fmt.Errorf("model %d: %w", i, err)
+			}
+
+			return nil
+		},
+	).Filter(func(err error) bool {
+		return err != nil
+	}).Collect()
 
 	if len(errs) > 0 {
 		return errors.Join(errs...)
