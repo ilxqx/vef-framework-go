@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun/schema"
 
-	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -166,6 +166,7 @@ func parseMetaColumns(specs []string) []orm.ColumnInfo {
 		streams.FromSlice(specs),
 		func(spec string) orm.ColumnInfo {
 			columnName, aliasName := parseMetaColumn(spec)
+
 			return orm.ColumnInfo{
 				Name:  columnName,
 				Alias: aliasName,

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/ilxqx/go-streams"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/tabular"
@@ -262,6 +263,7 @@ func (i *importer) isEmptyRow(row []string) bool {
 		if trimSpace {
 			trimmed = strings.TrimSpace(cell)
 		}
+
 		return trimmed != constants.Empty
 	})
 }

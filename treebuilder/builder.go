@@ -1,9 +1,9 @@
 package treebuilder
 
 import (
+	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
@@ -79,7 +79,9 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 		if parentId == constants.Empty {
 			return true
 		}
+
 		_, exists := nodeMap[parentId]
+
 		return !exists
 	}).Collect()
 
