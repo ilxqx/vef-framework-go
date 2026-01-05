@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -65,13 +66,13 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 		oldModels := make([]TModel, len(params.List))
 		models := make([]TModel, len(params.List))
 
-		for i := range params.List {
+		if err := streams.Range(0, len(params.List)).ForEachErr(func(i int) error {
 			if err := copier.Copy(&params.List[i], &models[i]); err != nil {
 				return err
 			}
 
 			modelValue := reflect.ValueOf(&models[i]).Elem()
-			for _, pk := range pks {
+			if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
 				pkValue, err := pk.Value(modelValue)
 				if err != nil {
 					return err
@@ -80,6 +81,10 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 				if reflect.ValueOf(pkValue).IsZero() {
 					return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 				}
+
+				return nil
+			}); err != nil {
+				return err
 			}
 
 			query := db.NewSelect().Model(&models[i]).WherePk()
@@ -92,6 +97,10 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 			if err := query.Scan(ctx.Context(), &oldModels[i]); err != nil {
 				return err
 			}
+
+			return nil
+		}); err != nil {
+			return err
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
@@ -109,7 +118,7 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 				}
 			}
 
-			for i := range oldModels {
+			if err := streams.Range(0, len(oldModels)).ForEachErr(func(i int) error {
 				if err := promoter.Promote(txCtx, &oldModels[i], &models[i]); err != nil {
 					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, i); rollbackErr != nil {
 						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %w", i, err, rollbackErr)
@@ -117,6 +126,10 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 
 					return fmt.Errorf("promote files for model %d failed: %w", i, err)
 				}
+
+				return nil
+			}); err != nil {
+				return err
 			}
 
 			if _, err := query.Bulk().Exec(txCtx); err != nil {

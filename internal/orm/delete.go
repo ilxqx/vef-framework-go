@@ -7,10 +7,10 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/set"
 )
 
 // NewDeleteQuery creates a new DeleteQuery instance with the provided database instance.
@@ -27,7 +27,7 @@ func NewDeleteQuery(db *BunDb) *BunDeleteQuery {
 		query:   dq,
 		eb:      eb,
 
-		returningColumns: set.NewHashSet[string](),
+		returningColumns: collections.NewHashSet[string](),
 	}
 	eb.qb = query
 
@@ -44,7 +44,7 @@ type BunDeleteQuery struct {
 	eb      ExprBuilder
 	query   *bun.DeleteQuery
 
-	returningColumns set.Set[string]
+	returningColumns collections.Set[string]
 }
 
 func (q *BunDeleteQuery) Db() Db {
@@ -191,7 +191,7 @@ func (q *BunDeleteQuery) Limit(limit int) DeleteQuery {
 }
 
 func (q *BunDeleteQuery) Returning(columns ...string) DeleteQuery {
-	q.returningColumns.Add(columns...)
+	q.returningColumns.AddAll(columns...)
 
 	return q
 }

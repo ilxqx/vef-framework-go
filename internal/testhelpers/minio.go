@@ -32,7 +32,7 @@ func NewMinIOContainer(ctx context.Context, suite *suite.Suite) *MinIOContainer 
 		minio.WithUsername(TestMinIOAccessKey),
 		minio.WithPassword(TestMinIOSecretKey),
 		testcontainers.WithWaitStrategy(
-			wait.ForHTTP("/minio/health/live").
+			wait.ForHTTP("/minio/health/ready").
 				WithPort("9000/tcp").
 				WithStartupTimeout(DefaultContainerTimeout),
 		),

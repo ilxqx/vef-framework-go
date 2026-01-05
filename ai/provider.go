@@ -3,8 +3,11 @@ package ai
 import (
 	"context"
 	"fmt"
+	"maps"
 	"sync"
 	"time"
+
+	"github.com/ilxqx/go-streams"
 )
 
 // ModelProvider defines the interface for model providers.
@@ -110,12 +113,8 @@ func ListModelProviders() []string {
 	providerMu.RLock()
 	defer providerMu.RUnlock()
 
-	names := make([]string, 0, len(modelProviders))
-	for name := range modelProviders {
-		names = append(names, name)
-	}
-
-	return names
+	// Use streams.From with maps.Keys for declarative key extraction
+	return streams.From(maps.Keys(modelProviders)).Collect()
 }
 
 // ListAgentFactories returns the names of all registered agent factories.
@@ -123,10 +122,6 @@ func ListAgentFactories() []string {
 	providerMu.RLock()
 	defer providerMu.RUnlock()
 
-	names := make([]string, 0, len(agentFactories))
-	for name := range agentFactories {
-		names = append(names, name)
-	}
-
-	return names
+	// Use streams.From with maps.Keys for declarative key extraction
+	return streams.From(maps.Keys(agentFactories)).Collect()
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -64,15 +65,15 @@ func (d *deleteApi[TModel]) delete(db orm.Db, sc storage.Service, publisher even
 			req        = contextx.ApiRequest(ctx)
 		)
 
-		for _, pk := range pks {
+		if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
 			value, ok := req.Params[pk.Name]
 			if !ok {
 				return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 			}
 
-			if err := pk.Set(modelValue, value); err != nil {
-				return err
-			}
+			return pk.Set(modelValue, value)
+		}); err != nil {
+			return err
 		}
 
 		query := db.NewSelect().Model(&model).WherePk()

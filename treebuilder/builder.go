@@ -3,6 +3,7 @@ package treebuilder
 import (
 	"github.com/samber/lo"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
@@ -57,10 +58,10 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 				setChildrenRecursively(childPtr)
 			}
 
-			children := make([]T, len(childrenPtrs))
-			for j, childPtr := range childrenPtrs {
-				children[j] = *childPtr
-			}
+			children := streams.MapTo(
+				streams.FromSlice(childrenPtrs),
+				func(childPtr *T) T { return *childPtr },
+			).Collect()
 
 			adapter.SetChildren(nodePtr, children)
 		}
@@ -72,20 +73,15 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 		setChildrenRecursively(&nodes[i])
 	}
 
-	var roots []T
-
-	for i := range nodes {
-		node := &nodes[i]
-
-		parentId := adapter.GetParentId(*node)
+	// Use streams.Filter to find root nodes (nodes without parent or with non-existent parent)
+	roots := streams.FromSlice(nodes).Filter(func(node T) bool {
+		parentId := adapter.GetParentId(node)
 		if parentId == constants.Empty {
-			roots = append(roots, *node)
-		} else {
-			if _, exists := nodeMap[parentId]; !exists {
-				roots = append(roots, *node)
-			}
+			return true
 		}
-	}
+		_, exists := nodeMap[parentId]
+		return !exists
+	}).Collect()
 
 	return roots
 }

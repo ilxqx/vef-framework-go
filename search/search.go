@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/internal/log"
@@ -128,10 +129,11 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 
 		alias := getColumnAlias(c.Alias, defaultAlias...)
 
-		columns := make([]string, len(c.Columns))
-		for i, column := range c.Columns {
-			columns[i] = dbhelpers.ColumnWithAlias(column, alias)
-		}
+		// Use streams.MapTo to transform column names with alias
+		columns := streams.MapTo(
+			streams.FromSlice(c.Columns),
+			func(column string) string { return dbhelpers.ColumnWithAlias(column, alias) },
+		).Collect()
 
 		applyCondition(cb, c, columns, fieldValue)
 	}

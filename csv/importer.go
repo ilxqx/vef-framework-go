@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/tabular"
@@ -141,10 +142,13 @@ func (i *importer) buildColumnMapping(headerRow []string) (map[int]int, error) {
 	columns := i.schema.Columns()
 	mapping := make(map[int]int)
 
-	nameToSchemaIdx := make(map[string]int)
-	for schemaIdx, col := range columns {
-		nameToSchemaIdx[col.Name] = schemaIdx
-	}
+	// Use streams to build name-to-index mapping
+	// Convert Stream2[int, *Column] to Stream[Pair] then to map
+	nameToSchemaIdx := streams.ToMap(
+		streams.ZipWithIndex(streams.FromSlice(columns)).ToPairs(),
+		func(p streams.Pair[int, *tabular.Column]) string { return p.Second.Name },
+		func(p streams.Pair[int, *tabular.Column]) int { return p.First },
+	)
 
 	seen := make(map[string]bool)
 	for csvIdx, headerName := range headerRow {
@@ -250,16 +254,14 @@ func (i *importer) parseValue(cellValue string, targetType reflect.Type, col *ta
 }
 
 func (i *importer) isEmptyRow(row []string) bool {
-	for _, cell := range row {
+	trimSpace := i.options.trimSpace
+
+	// Use Stream.NoneMatch for more declarative empty row check
+	return streams.FromSlice(row).NoneMatch(func(cell string) bool {
 		trimmed := cell
-		if i.options.trimSpace {
+		if trimSpace {
 			trimmed = strings.TrimSpace(cell)
 		}
-
-		if trimmed != constants.Empty {
-			return false
-		}
-	}
-
-	return true
+		return trimmed != constants.Empty
+	})
 }

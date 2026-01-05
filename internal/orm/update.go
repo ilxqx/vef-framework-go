@@ -9,10 +9,10 @@ import (
 	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/set"
 )
 
 // NewUpdateQuery creates a new UpdateQuery instance with the provided database instance.
@@ -29,8 +29,8 @@ func NewUpdateQuery(db *BunDb) *BunUpdateQuery {
 		eb:      eb,
 		query:   uq,
 
-		selectedColumns:  set.NewHashSet[string](),
-		returningColumns: set.NewHashSet[string](),
+		selectedColumns:  collections.NewHashSet[string](),
+		returningColumns: collections.NewHashSet[string](),
 	}
 	eb.qb = query
 
@@ -48,8 +48,8 @@ type BunUpdateQuery struct {
 	query            *bun.UpdateQuery
 	hasSet           bool
 	isBulk           bool
-	selectedColumns  set.Set[string]
-	returningColumns set.Set[string]
+	selectedColumns  collections.Set[string]
+	returningColumns collections.Set[string]
 }
 
 func (q *BunUpdateQuery) Db() Db {
@@ -169,14 +169,14 @@ func (q *BunUpdateQuery) SelectAll() UpdateQuery {
 
 func (q *BunUpdateQuery) Select(columns ...string) UpdateQuery {
 	q.query.Column(columns...)
-	q.selectedColumns.Add(columns...)
+	q.selectedColumns.AddAll(columns...)
 
 	return q
 }
 
 func (q *BunUpdateQuery) Exclude(columns ...string) UpdateQuery {
 	q.query.ExcludeColumn(columns...)
-	q.selectedColumns.Remove(columns...)
+	q.selectedColumns.RemoveAll(columns...)
 
 	return q
 }
@@ -257,7 +257,7 @@ func (q *BunUpdateQuery) Limit(limit int) UpdateQuery {
 }
 
 func (q *BunUpdateQuery) Returning(columns ...string) UpdateQuery {
-	q.returningColumns.Add(columns...)
+	q.returningColumns.AddAll(columns...)
 
 	return q
 }

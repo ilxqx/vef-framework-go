@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -48,10 +49,10 @@ func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publishe
 		}
 
 		models := make([]TModel, len(params.List))
-		for i := range params.List {
-			if err := copier.Copy(&params.List[i], &models[i]); err != nil {
-				return err
-			}
+		if err := streams.Range(0, len(params.List)).ForEachErr(func(i int) error {
+			return copier.Copy(&params.List[i], &models[i])
+		}); err != nil {
+			return err
 		}
 
 		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {

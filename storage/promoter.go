@@ -7,11 +7,12 @@ import (
 	"reflect"
 	"strings"
 
+	collections "github.com/ilxqx/go-collections"
+	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/ilxqx/vef-framework-go/set"
 	"github.com/ilxqx/vef-framework-go/strhelpers"
 )
 
@@ -281,28 +282,25 @@ func (p *defaultPromoter[T]) promoteFiles(ctx context.Context, model *T) error {
 		return nil
 	}
 
-	for _, field := range p.fields {
+	if err := streams.FromSlice(p.fields).ForEachErr(func(field metaField) error {
 		fieldValue := value.FieldByIndex(field.index)
 		if !fieldValue.CanSet() {
-			continue
+			return nil
 		}
 
 		switch field.typ {
 		case MetaTypeUploadedFile:
-			if err := p.promoteUploadedFileField(ctx, fieldValue, field.isArray, field.typ, field.attrs); err != nil {
-				return err
-			}
+			return p.promoteUploadedFileField(ctx, fieldValue, field.isArray, field.typ, field.attrs)
 
 		case MetaTypeRichText:
-			if err := p.promoteContentField(ctx, fieldValue, extractHtmlUrls, replaceHtmlUrls, field.typ, field.attrs); err != nil {
-				return err
-			}
+			return p.promoteContentField(ctx, fieldValue, extractHtmlUrls, replaceHtmlUrls, field.typ, field.attrs)
 
 		case MetaTypeMarkdown:
-			if err := p.promoteContentField(ctx, fieldValue, extractMarkdownUrls, replaceMarkdownUrls, field.typ, field.attrs); err != nil {
-				return err
-			}
+			return p.promoteContentField(ctx, fieldValue, extractMarkdownUrls, replaceMarkdownUrls, field.typ, field.attrs)
 		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	return nil
@@ -315,19 +313,27 @@ func (p *defaultPromoter[T]) promoteUploadedFileField(ctx context.Context, field
 			return nil
 		}
 
-		promotedKeys := make([]string, 0, len(keys))
+		// Use streams to filter and transform keys
+		var promoteErr error
+		promotedKeys := streams.MapTo(
+			streams.FromSlice(keys).
+				Map(func(key string) string { return strings.TrimSpace(key) }).
+				Filter(func(key string) bool { return key != constants.Empty }),
+			func(key string) string {
+				if promoteErr != nil {
+					return constants.Empty
+				}
+				promotedKey, err := p.promoteSingleFile(ctx, key, metaType, attrs)
+				if err != nil {
+					promoteErr = err
+					return constants.Empty
+				}
+				return promotedKey
+			},
+		).Collect()
 
-		for _, key := range keys {
-			if key = strings.TrimSpace(key); key == constants.Empty {
-				continue
-			}
-
-			promotedKey, err := p.promoteSingleFile(ctx, key, metaType, attrs)
-			if err != nil {
-				return err
-			}
-
-			promotedKeys = append(promotedKeys, promotedKey)
+		if promoteErr != nil {
+			return promoteErr
 		}
 
 		setStringSliceValue(fieldValue, promotedKeys)
@@ -368,9 +374,9 @@ func (p *defaultPromoter[T]) promoteContentField(
 
 	// Only promote temp files; permanent files remain unchanged.
 	replacements := make(map[string]string)
-	for _, url := range urls {
+	if err := streams.FromSlice(urls).ForEachErr(func(url string) error {
 		if !strings.HasPrefix(url, TempPrefix) {
-			continue
+			return nil
 		}
 
 		promotedKey, err := p.promoteSingleFile(ctx, url, metaType, attrs)
@@ -381,6 +387,10 @@ func (p *defaultPromoter[T]) promoteContentField(
 		if promotedKey != url {
 			replacements[url] = promotedKey
 		}
+
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	if len(replacements) > 0 {
@@ -421,16 +431,21 @@ func (p *defaultPromoter[T]) cleanupReplacedFiles(ctx context.Context, newModel,
 	oldFiles := p.extractAllFileKeysWithInfo(oldModel)
 	newKeys := p.extractAllFileKeys(newModel)
 
-	newSet := set.NewHashSetFromSlice(newKeys)
+	newSet := collections.NewHashSetFrom(newKeys...)
 
-	for _, fileInfo := range oldFiles {
-		if !newSet.Contains(fileInfo.key) {
-			if err := p.service.DeleteObject(ctx, DeleteObjectOptions{Key: fileInfo.key}); err != nil {
-				return fmt.Errorf("failed to delete file %q: %w", fileInfo.key, err)
-			}
-
-			p.publishEvent(NewFileDeletedEvent(fileInfo.metaType, fileInfo.key, fileInfo.attrs))
+	if err := streams.FromSlice(oldFiles).ForEachErr(func(fileInfo fileInfo) error {
+		if newSet.Contains(fileInfo.key) {
+			return nil
 		}
+
+		if err := p.service.DeleteObject(ctx, DeleteObjectOptions{Key: fileInfo.key}); err != nil {
+			return fmt.Errorf("failed to delete file %q: %w", fileInfo.key, err)
+		}
+
+		p.publishEvent(NewFileDeletedEvent(fileInfo.metaType, fileInfo.key, fileInfo.attrs))
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	return nil
@@ -439,9 +454,10 @@ func (p *defaultPromoter[T]) cleanupReplacedFiles(ctx context.Context, newModel,
 func (p *defaultPromoter[T]) deleteAllFiles(ctx context.Context, model *T) error {
 	files := p.extractAllFileKeysWithInfo(model)
 
-	for _, fileInfo := range files {
-		if fileInfo.key = strings.TrimSpace(fileInfo.key); fileInfo.key == constants.Empty {
-			continue
+	if err := streams.FromSlice(files).ForEachErr(func(fileInfo fileInfo) error {
+		fileInfo.key = strings.TrimSpace(fileInfo.key)
+		if fileInfo.key == constants.Empty {
+			return nil
 		}
 
 		if err := p.service.DeleteObject(ctx, DeleteObjectOptions{Key: fileInfo.key}); err != nil {
@@ -449,6 +465,9 @@ func (p *defaultPromoter[T]) deleteAllFiles(ctx context.Context, model *T) error
 		}
 
 		p.publishEvent(NewFileDeletedEvent(fileInfo.metaType, fileInfo.key, fileInfo.attrs))
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	return nil
