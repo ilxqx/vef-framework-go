@@ -112,10 +112,10 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 				}
 			}
 
-			for i := range models {
-				if err := copier.Copy(&models[i], &oldModels[i], copier.WithIgnoreEmpty()); err != nil {
-					return err
-				}
+			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
+				return copier.Copy(&models[i], &oldModels[i], copier.WithIgnoreEmpty())
+			}); err != nil {
+				return err
 			}
 
 			if err := streams.Range(0, len(oldModels)).ForEachErr(func(i int) error {

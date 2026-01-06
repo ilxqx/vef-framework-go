@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
 	enLocale "github.com/go-playground/locales/en"
@@ -83,10 +84,10 @@ func init() {
 }
 
 func RegisterValidationRules(rules ...ValidationRule) error {
-	for _, rule := range rules {
-		if err := rule.register(validator); err != nil {
-			return err
-		}
+	if err := streams.FromSlice(rules).ForEachErr(func(rule ValidationRule) error {
+		return rule.register(validator)
+	}); err != nil {
+		return err
 	}
 
 	return nil

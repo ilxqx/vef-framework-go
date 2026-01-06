@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/constants"
@@ -126,25 +127,37 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) ConfigureQuery(query 
 	// Track applied options to avoid duplicates when an option targets both specific part and QueryAll
 	applied := make(map[*FindApiOption]bool)
 
-	for _, opt := range a.optionsByPart[part] {
-		if !applied[opt] {
-			if err := opt.Applier(query, search, ctx); err != nil {
-				return err
-			}
-
-			applied[opt] = true
+	if err := streams.FromSlice(a.optionsByPart[part]).ForEachErr(func(opt *FindApiOption) error {
+		if applied[opt] {
+			return nil
 		}
+
+		if err := opt.Applier(query, search, ctx); err != nil {
+			return err
+		}
+
+		applied[opt] = true
+
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	// Apply options for QueryAll (applies to all parts)
-	for _, opt := range a.optionsByPart[QueryAll] {
-		if !applied[opt] {
-			if err := opt.Applier(query, search, ctx); err != nil {
-				return err
-			}
-
-			applied[opt] = true
+	if err := streams.FromSlice(a.optionsByPart[QueryAll]).ForEachErr(func(opt *FindApiOption) error {
+		if applied[opt] {
+			return nil
 		}
+
+		if err := opt.Applier(query, search, ctx); err != nil {
+			return err
+		}
+
+		applied[opt] = true
+
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	return nil

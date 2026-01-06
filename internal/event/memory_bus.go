@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ilxqx/go-streams"
+
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/id"
 )
@@ -165,14 +167,14 @@ func (b *MemoryBus) deliverEvent(evt event.Event) error {
 	eventType := evt.Type()
 
 	processedEvent := evt
-	for _, middleware := range b.middlewares {
-		if err := middleware.Process(b.ctx, processedEvent, func(ctx context.Context, e event.Event) error {
+	if err := streams.FromSlice(b.middlewares).ForEachErr(func(middleware event.Middleware) error {
+		return middleware.Process(b.ctx, processedEvent, func(ctx context.Context, e event.Event) error {
 			processedEvent = e
 
 			return nil
-		}); err != nil {
-			return err
-		}
+		})
+	}); err != nil {
+		return err
 	}
 
 	if subs, exists := b.subscribers[eventType]; exists {
