@@ -13,6 +13,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 	"golang.org/x/tools/go/packages"
 
@@ -105,11 +106,12 @@ func GenerateDirectory(inputDir, outputDir, packageName string) error {
 		return fmt.Errorf("%w: %s", ErrNoGoFilesFound, inputDir)
 	}
 
-	for _, inputFile := range files {
+	if err := streams.FromSlice(files).ForEachErr(func(inputFile string) error {
 		outputFile := filepath.Join(outputDir, filepath.Base(inputFile))
-		if err := GenerateFile(inputFile, outputFile, packageName); err != nil {
-			return err
-		}
+
+		return GenerateFile(inputFile, outputFile, packageName)
+	}); err != nil {
+		return err
 	}
 
 	return nil

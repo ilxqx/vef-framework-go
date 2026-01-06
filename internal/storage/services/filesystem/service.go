@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ilxqx/go-streams"
+
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/storage"
@@ -107,10 +109,10 @@ func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOpt
 }
 
 func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
-	for _, key := range opts.Keys {
-		if err := s.DeleteObject(ctx, storage.DeleteObjectOptions{Key: key}); err != nil {
-			return err
-		}
+	if err := streams.FromSlice(opts.Keys).ForEachErr(func(key string) error {
+		return s.DeleteObject(ctx, storage.DeleteObjectOptions{Key: key})
+	}); err != nil {
+		return err
 	}
 
 	return nil

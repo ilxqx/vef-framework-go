@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/ilxqx/go-streams"
 )
 
 // buildHandler resolves all handler parameters at startup and caches resolvers
@@ -26,10 +27,13 @@ func buildHandler(target, handler reflect.Value, paramResolver *HandlerParamReso
 
 	return func(ctx fiber.Ctx) (err error) {
 		handlerParams := make([]reflect.Value, numIn)
-		for i, resolverFn := range handlerParamResolvers {
-			if handlerParams[i], err = resolverFn(ctx); err != nil {
-				return err
-			}
+		if err := streams.FromSlice(handlerParamResolvers).ForEachIndexedErr(func(i int, resolverFn ParamResolverFunc) error {
+			var resolveErr error
+			handlerParams[i], resolveErr = resolverFn(ctx)
+
+			return resolveErr
+		}); err != nil {
+			return err
 		}
 
 		results := handler.Call(handlerParams)

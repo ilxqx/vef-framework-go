@@ -1,6 +1,10 @@
 package api
 
-import "github.com/ilxqx/vef-framework-go/api"
+import (
+	"github.com/ilxqx/go-streams"
+
+	"github.com/ilxqx/vef-framework-go/api"
+)
 
 type ResourceDefinition interface {
 	Register(manager api.Manager) error
@@ -11,10 +15,10 @@ type compositeResourceDefinition struct {
 }
 
 func (c compositeResourceDefinition) Register(manager api.Manager) error {
-	for _, definition := range c.definitions {
-		if err := definition.Register(manager); err != nil {
-			return err
-		}
+	if err := streams.FromSlice(c.definitions).ForEachErr(func(definition ResourceDefinition) error {
+		return definition.Register(manager)
+	}); err != nil {
+		return err
 	}
 
 	return nil
@@ -25,10 +29,10 @@ type simpleResourceDefinition struct {
 }
 
 func (s simpleResourceDefinition) Register(manager api.Manager) error {
-	for _, apiDef := range s.apis {
-		if err := manager.Register(apiDef); err != nil {
-			return err
-		}
+	if err := streams.FromSlice(s.apis).ForEachErr(func(apiDef *api.Definition) error {
+		return manager.Register(apiDef)
+	}); err != nil {
+		return err
 	}
 
 	return nil

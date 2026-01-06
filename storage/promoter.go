@@ -45,7 +45,6 @@ func getStringValue(fieldValue reflect.Value) (string, bool) {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
-
 		if fieldValue.IsNil() {
 			return constants.Empty, false
 		}
@@ -75,7 +74,6 @@ func setStringValue(fieldValue reflect.Value, value string) {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
-
 		strValue := value
 		fieldValue.Set(reflect.ValueOf(&strValue))
 
@@ -92,7 +90,6 @@ func getStringSliceValue(fieldValue reflect.Value) ([]string, bool) {
 
 	if fieldType.Kind() == reflect.Slice &&
 		fieldType.Elem().Kind() == reflect.String {
-
 		if fieldValue.IsNil() {
 			return nil, false
 		}
@@ -108,7 +105,6 @@ func setStringSliceValue(fieldValue reflect.Value, value []string) {
 
 	if fieldType.Kind() == reflect.Slice &&
 		fieldType.Elem().Kind() == reflect.String {
-
 		fieldValue.Set(reflect.ValueOf(value))
 	}
 }
@@ -132,7 +128,6 @@ func isStringType(fieldType reflect.Type) bool {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
-
 		return true
 	}
 
