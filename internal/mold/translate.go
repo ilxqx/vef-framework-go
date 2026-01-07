@@ -12,6 +12,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/reflectx"
+	"github.com/spf13/cast"
 )
 
 const (
@@ -31,6 +32,9 @@ var (
 	ErrUnsupportedFieldType = errors.New("unsupported field type for translation")
 
 	nullStringType = reflect.TypeFor[null.String]()
+	nullIntType    = reflect.TypeFor[null.Int]()
+	nullInt16Type  = reflect.TypeFor[null.Int16]()
+	nullInt32Type  = reflect.TypeFor[null.Int32]()
 )
 
 // TranslateTransformer is a translator-based transformer that converts values to readable names
@@ -40,7 +44,11 @@ type TranslateTransformer struct {
 	translators []mold.Translator
 }
 
-// extractStringValue extracts string value from supported field types: string, *string, null.String.
+// extractStringValue extracts string value from supported field types:
+// - string, *string, null.String
+// - int, int8, int16, int32, int64 and their pointer forms
+// - uint, uint8, uint16, uint32, uint64 and their pointer forms
+// - null.Int, null.Int16, null.Int32
 // Returns empty string and an error for unsupported types.
 func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	if !field.IsValid() {
@@ -48,32 +56,106 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	}
 
 	fieldType := field.Type()
+	fieldKind := fieldType.Kind()
 
 	// Handle string
-	if fieldType.Kind() == reflect.String {
+	if fieldKind == reflect.String {
 		return field.String(), nil
 	}
 
-	// Handle *string
-	if reflectx.Indirect(fieldType).Kind() == reflect.String {
+	// Handle signed integers
+	if isSignedInt(fieldKind) {
+		return cast.ToStringE(field.Int())
+	}
+
+	// Handle unsigned integers
+	if isUnsignedInt(fieldKind) {
+		return cast.ToStringE(field.Uint())
+	}
+
+	// Handle pointer types
+	if fieldKind == reflect.Pointer {
 		if field.IsNil() {
 			return constants.Empty, nil
 		}
 
-		return field.Elem().String(), nil
+		elemType := reflectx.Indirect(fieldType)
+		elemKind := elemType.Kind()
+		elemValue := field.Elem()
+
+		// *string
+		if elemKind == reflect.String {
+			return elemValue.String(), nil
+		}
+
+		// *int, *int8, *int16, *int32, *int64
+		if isSignedInt(elemKind) {
+			return cast.ToStringE(elemValue.Int())
+		}
+
+		// *uint, *uint8, *uint16, *uint32, *uint64
+		if isUnsignedInt(elemKind) {
+			return cast.ToStringE(elemValue.Uint())
+		}
 	}
 
 	// Handle null.String
 	if fieldType == nullStringType {
 		nullStr := field.Interface().(null.String)
-		if !nullStr.Valid {
+		return nullStr.ValueOrZero(), nil
+	}
+
+	// Handle null.Int
+	if fieldType == nullIntType {
+		nullInt := field.Interface().(null.Int)
+		if !nullInt.Valid {
 			return constants.Empty, nil
 		}
 
-		return nullStr.String, nil
+		return cast.ToStringE(nullInt.Int64)
 	}
 
-	return constants.Empty, fmt.Errorf("%w: field %q has unsupported type %v (only string, *string, null.String are supported)", ErrUnsupportedFieldType, fieldName, fieldType)
+	// Handle null.Int16
+	if fieldType == nullInt16Type {
+		nullInt16 := field.Interface().(null.Int16)
+		if !nullInt16.Valid {
+			return constants.Empty, nil
+		}
+
+		return cast.ToStringE(nullInt16.Int16)
+	}
+
+	// Handle null.Int32
+	if fieldType == nullInt32Type {
+		nullInt32 := field.Interface().(null.Int32)
+		if !nullInt32.Valid {
+			return constants.Empty, nil
+		}
+
+		return cast.ToStringE(nullInt32.Int32)
+	}
+
+	return constants.Empty, fmt.Errorf("%w: field %q has unsupported type %v (supported: string, *string, null.String, null.Int, null.Int16, null.Int32, integers and their pointer forms)", ErrUnsupportedFieldType, fieldName, fieldType)
+}
+
+// isSignedInt checks if the kind is a signed integer type.
+func isSignedInt(kind reflect.Kind) bool {
+	switch kind {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	default:
+		return false
+	}
+}
+
+// isUnsignedInt checks if the kind is an unsigned integer type.
+func isUnsignedInt(kind reflect.Kind) bool {
+	switch kind {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return true
+	default:
+		return false
+	}
 }
 
 // setTranslatedValue sets the translated string value to the target field.
