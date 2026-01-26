@@ -8,7 +8,7 @@ type Options struct {
 	SendFinish    bool
 	OnError       func(err error) string
 	OnFinish      func(content string)
-	GenerateId    func(prefix string) string
+	GenerateID    func(prefix string) string
 }
 
 // DefaultOptions returns the default stream options.

@@ -17,83 +17,69 @@ import (
 )
 
 var (
-	logger = log.Named("i18n")
-	// SupportedLanguages defines the list of supported language codes.
+	logger             = log.Named("i18n")
 	supportedLanguages = []string{"zh-CN", "en"}
-	// Translator is the global translator instance initialized with embedded locales
-	// No longer depends on container injection - uses environment variables for configuration.
-	translator Translator
+	translator         Translator
 )
 
 func init() {
 	var err error
-	if translator, err = New(I18nConfig{
-		EmbedLocales: locales.EmbedLocales,
+	if translator, err = New(Config{
+		Locales: locales.EmbedLocales,
 	}); err != nil {
 		panic(err)
 	}
 }
 
-// I18nConfig defines the configuration for the i18n system.
-// This struct contains all necessary resources for initializing the translation system.
-type I18nConfig struct {
-	// EmbedLocales contains the embedded locale files (JSON format)
-	// These files contain the message translations for all supported languages
-	EmbedLocales embed.FS
+// Config defines the configuration for the i18n system.
+type Config struct {
+	// Locales contains the embedded locale files (JSON format).
+	Locales embed.FS
 }
 
-// newLocalizer creates a new i18n localizer with all supported languages.
-func newLocalizer(config I18nConfig) (*i18n.Localizer, error) {
+// newBundle creates a new i18n bundle with all supported languages loaded.
+func newBundle(localesFS embed.FS) (*i18n.Bundle, error) {
 	bundle := i18n.NewBundle(language.SimplifiedChinese)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
 	for _, lang := range supportedLanguages {
 		filename := fmt.Sprintf("%s.json", lang)
-		if _, err := bundle.LoadMessageFileFS(config.EmbedLocales, filename); err != nil {
+		if _, err := bundle.LoadMessageFileFS(localesFS, filename); err != nil {
 			logger.Errorf("Failed to load language file %s: %v", filename, err)
-
 			return nil, fmt.Errorf("failed to load language file %s: %w", filename, err)
 		}
-
 		logger.Debugf("Successfully loaded language file: %s", filename)
 	}
 
-	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
+	return bundle, nil
+}
 
-	if envLang := os.Getenv(constants.EnvI18NLanguage); envLang != constants.Empty {
-		logger.Infof("Using language from environment: %s", envLang)
-	} else {
-		logger.Infof("Using default language: %s", constants.DefaultI18NLanguage)
+// newLocalizer creates a new i18n localizer with all supported languages.
+func newLocalizer(config Config) (*i18n.Localizer, error) {
+	bundle, err := newBundle(config.Locales)
+	if err != nil {
+		return nil, err
 	}
+
+	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
+	logger.Infof("Using language: %s", preferredLanguage)
 
 	return i18n.NewLocalizer(bundle, preferredLanguage), nil
 }
 
-// T is a convenient global function that translates a message ID using the global translator instance.
-// It provides graceful error handling - returns the messageId as fallback if translation fails.
-// This is the most commonly used function for user-facing translations.
-//
-// Example:
-//
-//	welcomeMsg := i18n.T("user_welcome", map[string]any{"name": user.Name})
-func T(messageId string, templateData ...map[string]any) string {
-	return translator.T(messageId, templateData...)
+// T translates a message ID using the global translator.
+// Returns the messageID as fallback if translation fails.
+func T(messageID string, templateData ...map[string]any) string {
+	return translator.T(messageID, templateData...)
 }
 
-// Te is a convenient global function that translates a message ID with explicit error handling.
+// Te translates a message ID with explicit error handling.
 // Use this when you need to handle translation errors programmatically.
-//
-// Example:
-//
-//	if msg, err := i18n.Te("critical_error"); err != nil {
-//	    // Handle translation failure
-//	}
-func Te(messageId string, templateData ...map[string]any) (string, error) {
-	return translator.Te(messageId, templateData...)
+func Te(messageID string, templateData ...map[string]any) (string, error) {
+	return translator.Te(messageID, templateData...)
 }
 
-// GetSupportedLanguages returns a list of all supported language codes.
-// This is useful for validation and UI language selection.
+// GetSupportedLanguages returns a copy of all supported language codes.
 func GetSupportedLanguages() []string {
 	result := make([]string, len(supportedLanguages))
 	copy(result, supportedLanguages)
@@ -102,33 +88,14 @@ func GetSupportedLanguages() []string {
 }
 
 // IsLanguageSupported checks if the given language code is supported.
-// This can be used to validate language selection before setting environment variables.
 func IsLanguageSupported(languageCode string) bool {
 	return slices.Contains(supportedLanguages, languageCode)
 }
 
+// SetLanguage changes the global translator to use the specified language.
 // This is primarily intended for testing scenarios where you need to verify translations
 // in different languages without restarting the process.
-//
-// Parameters:
-//   - languageCode: The language code to use (e.g., "en", "zh-CN").
-//     If empty, uses the environment variable or default language.
-//
-// Returns:
-//   - error: Error if the language code is unsupported or initialization fails
-//
-// Example:
-//
-//	// In test setup
-//	if err := i18n.SetLanguage("en"); err != nil {
-//	    t.Fatal(err)
-//	}
-//	// Run tests with English translations
-//	// ...
-//	// Restore to default
-//	if err := i18n.SetLanguage(""); err != nil {
-//	    t.Fatal(err)
-//	}
+// If languageCode is empty, uses the environment variable or default language.
 func SetLanguage(languageCode string) error {
 	if languageCode == constants.Empty {
 		languageCode = lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
@@ -138,18 +105,13 @@ func SetLanguage(languageCode string) error {
 		return fmt.Errorf("%w: %s (supported: %v)", ErrUnsupportedLanguage, languageCode, supportedLanguages)
 	}
 
-	bundle := i18n.NewBundle(language.SimplifiedChinese)
-	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
-
-	for _, lang := range supportedLanguages {
-		filename := fmt.Sprintf("%s.json", lang)
-		if _, err := bundle.LoadMessageFileFS(locales.EmbedLocales, filename); err != nil {
-			return fmt.Errorf("failed to load language file %s: %w", filename, err)
-		}
+	bundle, err := newBundle(locales.EmbedLocales)
+	if err != nil {
+		return err
 	}
 
 	localizer := i18n.NewLocalizer(bundle, languageCode)
-	translator = &i18nTranslator{localizer: localizer}
+	translator = &translatorImpl{localizer: localizer}
 
 	logger.Infof("Language set to: %s", languageCode)
 

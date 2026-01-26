@@ -1,11 +1,13 @@
 package constants
 
-type DbType string
+// DBType represents supported database types.
+type DBType string
 
+// Supported database types.
 const (
-	DbOracle    = "oracle"
-	DbSQLServer = "sqlserver"
-	DbPostgres  = "postgres"
-	DbMySQL     = "mysql"
-	DbSQLite    = "sqlite"
+	Oracle    DBType = "oracle"
+	SQLServer DBType = "sqlserver"
+	Postgres  DBType = "postgres"
+	MySQL     DBType = "mysql"
+	SQLite    DBType = "sqlite"
 )

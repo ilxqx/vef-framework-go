@@ -25,87 +25,64 @@ import (
 	"github.com/ilxqx/vef-framework-go/internal/storage"
 )
 
-const testTimeout = fx.DefaultTimeout
-
 // MockConfig implements config.Config for testing without file dependencies.
 type MockConfig struct{}
 
-func (m *MockConfig) Unmarshal(key string, target any) error {
+func (m *MockConfig) Unmarshal(_ string, _ any) error {
 	return nil
 }
 
-// NewTestApp creates a new test application with Fx dependency injection.
-// It returns the Fx app instance and the VEF application.
+// NewTestApp creates a test application with Fx dependency injection.
+// Returns the app instance and a cleanup function.
 func NewTestApp(t testing.TB, options ...fx.Option) (*app.App, func()) {
 	var testApp *app.App
 
-	opts := buildOptions(options...)
-	// Populate app
-	opts = append(opts, fx.Populate(&testApp))
-
+	opts := append(buildOptions(options...), fx.Populate(&testApp))
 	fxApp := fxtest.New(t, opts...)
 	fxApp.RequireStart()
 
-	return testApp, func() {
-		fxApp.RequireStop()
-	}
+	return testApp, fxApp.RequireStop
 }
 
-// NewTestAppWithErr creates a new test application and returns any startup errors.
-// Unlike NewTestApp, this function does not require the app to start successfully.
-// It's useful for testing error conditions during app initialization.
+// NewTestAppWithErr creates a test application and returns any startup errors.
+// Useful for testing error conditions during app initialization.
 func NewTestAppWithErr(t testing.TB, options ...fx.Option) (*app.App, func(), error) {
 	var testApp *app.App
 
-	opts := buildOptions(options...)
-	// Populate app
-	opts = append(opts, fx.Populate(&testApp))
-
-	// Use fx.New instead of fxtest.New to allow capturing errors
+	opts := append(buildOptions(options...), fx.Populate(&testApp))
 	fxApp := fx.New(opts...)
 
-	// Try to start and capture any error
-	startCtx, cancel := context.WithTimeout(context.Background(), testTimeout)
+	startCtx, cancel := context.WithTimeout(context.Background(), fx.DefaultTimeout)
 	defer cancel()
 
-	if err := fxApp.Start(startCtx); err != nil {
-		return testApp, func() {
-			stopCtx, stopCancel := context.WithTimeout(context.Background(), testTimeout)
-			defer stopCancel()
+	err := fxApp.Start(startCtx)
+	cleanup := createCleanupFunc(t, fxApp)
 
-			if err := fxApp.Stop(stopCtx); err != nil {
-				t.Logf("Failed to stop app: %v", err)
-			}
-		}, err
-	}
+	return testApp, cleanup, err
+}
 
-	return testApp, func() {
-		stopCtx, stopCancel := context.WithTimeout(context.Background(), testTimeout)
-		defer stopCancel()
+func createCleanupFunc(t testing.TB, fxApp *fx.App) func() {
+	return func() {
+		stopCtx, cancel := context.WithTimeout(context.Background(), fx.DefaultTimeout)
+		defer cancel()
 
 		if err := fxApp.Stop(stopCtx); err != nil {
 			t.Logf("Failed to stop app: %v", err)
 		}
-	}, nil
+	}
 }
 
 func buildOptions(options ...fx.Option) []fx.Option {
-	// Build fx options
 	opts := []fx.Option{
 		fx.NopLogger,
-		// Replace configs - must replace config.Config to avoid file reading
 		fx.Replace(
-			fx.Annotate(
-				&MockConfig{},
-				fx.As(new(config.Config)),
-			),
+			fx.Annotate(&MockConfig{}, fx.As(new(config.Config))),
 			&config.AppConfig{
 				Name:      "test-app",
-				Port:      0, // Random port
+				Port:      0,
 				BodyLimit: "100mib",
 			},
 		),
-		// Core framework modules
 		iconfig.Module,
 		database.Module,
 		orm.Module,
@@ -123,10 +100,5 @@ func buildOptions(options ...fx.Option) []fx.Option {
 		app.Module,
 	}
 
-	// Add additional modules
-	if len(options) > 0 {
-		opts = append(opts, options...)
-	}
-
-	return opts
+	return append(opts, options...)
 }

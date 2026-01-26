@@ -6,174 +6,242 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-// TestStruct for encoding/decoding tests.
-type TestStruct struct {
-	Name    string    `json:"name"`
-	Age     int       `json:"age"`
-	Email   string    `json:"email,omitempty"`
-	Active  bool      `json:"active"`
-	Score   float64   `json:"score"`
-	Created time.Time `json:"created"`
+type JSONTestSuite struct {
+	suite.Suite
 }
 
-func TestToJson(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    any
-		expected []string
-	}{
-		{
-			name: "ValidStruct",
-			input: TestStruct{
-				Name:   "John Doe",
-				Age:    30,
-				Active: true,
-			},
-			expected: []string{`"name":"John Doe"`, `"age":30`, `"active":true`},
-		},
-		{
-			name:     "NilInput",
-			input:    nil,
-			expected: []string{"null"},
-		},
-		{
-			name:     "EmptyStruct",
-			input:    TestStruct{},
-			expected: []string{`"name":""`, `"age":0`, `"active":false`},
-		},
-		{
-			name: "StructWithAllFields",
-			input: TestStruct{
-				Name:    "Jane Doe",
-				Age:     25,
-				Email:   "jane@example.com",
-				Active:  true,
-				Score:   95.5,
-				Created: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			},
-			expected: []string{`"name":"Jane Doe"`, `"email":"jane@example.com"`, `"score":95.5`},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := ToJson(tt.input)
-			require.NoError(t, err)
-
-			for _, exp := range tt.expected {
-				assert.Contains(t, result, exp)
-			}
-		})
-	}
+func TestJSONTestSuite(t *testing.T) {
+	suite.Run(t, new(JSONTestSuite))
 }
 
-func TestFromJson(t *testing.T) {
-	t.Run("ValidJSON", func(t *testing.T) {
-		input := `{"name":"John Doe","age":30,"email":"john@example.com","active":true,"score":95.5}`
-		result, err := FromJson[TestStruct](input)
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "John Doe", result.Name)
-		assert.Equal(t, 30, result.Age)
-		assert.Equal(t, "john@example.com", result.Email)
-		assert.True(t, result.Active)
-		assert.Equal(t, 95.5, result.Score)
+func (suite *JSONTestSuite) TestToJSON() {
+	suite.Run("ValidStruct", func() {
+		input := generateSimpleStruct()
+		result, err := ToJSON(input)
+
+		require.NoError(suite.T(), err, "ToJSON should encode valid struct without error")
+		assert.Contains(suite.T(), result, `"name"`, "JSON should contain name field")
+		assert.Contains(suite.T(), result, `"age"`, "JSON should contain age field")
+		assert.Contains(suite.T(), result, `"active"`, "JSON should contain active field")
 	})
 
-	t.Run("PartialJSON", func(t *testing.T) {
-		input := `{"name":"Jane Doe"}`
-		result, err := FromJson[TestStruct](input)
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "Jane Doe", result.Name)
-		assert.Equal(t, 0, result.Age)
-		assert.False(t, result.Active)
+	suite.Run("NilInput", func() {
+		result, err := ToJSON(nil)
+
+		require.NoError(suite.T(), err, "ToJSON should handle nil input without error")
+		assert.Equal(suite.T(), "null", result, "ToJSON should encode nil as 'null'")
 	})
 
-	t.Run("InvalidJSON", func(t *testing.T) {
-		input := `{"name":"John Doe","age":}`
-		_, err := FromJson[TestStruct](input)
-		assert.Error(t, err)
+	suite.Run("EmptyStruct", func() {
+		input := SimpleStruct{}
+		result, err := ToJSON(input)
+
+		require.NoError(suite.T(), err, "ToJSON should encode empty struct without error")
+		assert.Contains(suite.T(), result, `"name":""`, "JSON should contain empty name field")
+		assert.Contains(suite.T(), result, `"age":0`, "JSON should contain zero age field")
+		assert.Contains(suite.T(), result, `"active":false`, "JSON should contain false active field")
 	})
 
-	t.Run("EmptyJSON", func(t *testing.T) {
+	suite.Run("StructWithAllFields", func() {
+		input := generateMediumStruct(3)
+		result, err := ToJSON(input)
+
+		require.NoError(suite.T(), err, "ToJSON should encode complex struct without error")
+		assert.Contains(suite.T(), result, `"id"`, "JSON should contain id field")
+		assert.Contains(suite.T(), result, `"items"`, "JSON should contain items field")
+		assert.Contains(suite.T(), result, `"tags"`, "JSON should contain tags field")
+	})
+
+	suite.Run("StructWithOmitEmpty", func() {
+		input := SimpleStruct{
+			Name:   "Charlie",
+			Age:    25,
+			Active: true,
+		}
+		result, err := ToJSON(input)
+
+		require.NoError(suite.T(), err, "ToJSON should encode struct with omitempty without error")
+		assertNotEmptyWithContext(suite.T(), result, "JSON output should not be empty")
+	})
+}
+
+func (suite *JSONTestSuite) TestFromJSON() {
+	suite.Run("ValidJSON", func() {
+		input := `{"id":"test123","items":[],"tags":["tag1","tag2"],"metadata":{"key":"value"}}`
+		result, err := FromJSON[MediumStruct](input)
+
+		require.NoError(suite.T(), err, "FromJSON should decode valid JSON without error")
+		require.NotNil(suite.T(), result, "FromJSON should return non-nil result")
+		assert.Equal(suite.T(), "test123", result.ID, "ID field should match input")
+		assert.NotNil(suite.T(), result.Items, "Items field should not be nil")
+		assert.Len(suite.T(), result.Tags, 2, "Tags should have 2 elements")
+		assert.NotNil(suite.T(), result.Metadata, "Metadata field should not be nil")
+	})
+
+	suite.Run("PartialJSON", func() {
+		input := `{"id":"partial"}`
+		result, err := FromJSON[MediumStruct](input)
+
+		require.NoError(suite.T(), err, "FromJSON should decode partial JSON without error")
+		require.NotNil(suite.T(), result, "FromJSON should return non-nil result")
+		assert.Equal(suite.T(), "partial", result.ID, "ID field should match input")
+		assert.Nil(suite.T(), result.Items, "Items field should be nil")
+		assert.Nil(suite.T(), result.Tags, "Tags field should be nil")
+	})
+
+	suite.Run("InvalidJSON", func() {
+		input := `{"id":"test","items":}`
+		_, err := FromJSON[MediumStruct](input)
+
+		assertErrorWithContext(suite.T(), err, "FromJSON should return error for malformed JSON")
+	})
+
+	suite.Run("EmptyJSON", func() {
 		input := `{}`
-		result, err := FromJson[TestStruct](input)
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "", result.Name)
-		assert.Equal(t, 0, result.Age)
-		assert.False(t, result.Active)
+		result, err := FromJSON[MediumStruct](input)
+
+		require.NoError(suite.T(), err, "FromJSON should decode empty JSON object without error")
+		require.NotNil(suite.T(), result, "FromJSON should return non-nil result")
+		assert.Equal(suite.T(), "", result.ID, "ID field should be empty string")
+		assert.Nil(suite.T(), result.Items, "Items field should be nil")
+		assert.Nil(suite.T(), result.Tags, "Tags field should be nil")
 	})
 
-	t.Run("JSONWithExtraFields", func(t *testing.T) {
-		input := `{"name":"John Doe","age":30,"extra":"field"}`
-		result, err := FromJson[TestStruct](input)
-		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, "John Doe", result.Name)
-		assert.Equal(t, 30, result.Age)
+	suite.Run("JSONWithExtraFields", func() {
+		input := `{"id":"test","items":[],"extra":"field","unknown":123}`
+		result, err := FromJSON[MediumStruct](input)
+
+		require.NoError(suite.T(), err, "FromJSON should ignore extra fields without error")
+		require.NotNil(suite.T(), result, "FromJSON should return non-nil result")
+		assert.Equal(suite.T(), "test", result.ID, "ID field should match input")
+	})
+
+	suite.Run("JSONWithUnicodeCharacters", func() {
+		input := `{"id":"测试ID","tags":["标签1","标签2"]}`
+		result, err := FromJSON[MediumStruct](input)
+
+		require.NoError(suite.T(), err, "FromJSON should decode Unicode characters without error")
+		require.NotNil(suite.T(), result, "FromJSON should return non-nil result")
+		assert.Equal(suite.T(), "测试ID", result.ID, "ID field should preserve Unicode characters")
+		assert.Len(suite.T(), result.Tags, 2, "Tags should have 2 elements")
 	})
 }
 
-func TestDecodeJson(t *testing.T) {
-	t.Run("DecodeIntoStructPointer", func(t *testing.T) {
-		input := `{"name":"John Doe","age":30,"active":true}`
+func (suite *JSONTestSuite) TestDecodeJSON() {
+	suite.Run("DecodeIntoStructPointer", func() {
+		input := `{"id":"test123","items":[],"tags":["tag1"]}`
+		var result MediumStruct
 
-		var result TestStruct
+		err := DecodeJSON(input, &result)
 
-		err := DecodeJson(input, &result)
-		require.NoError(t, err)
-		assert.Equal(t, "John Doe", result.Name)
-		assert.Equal(t, 30, result.Age)
-		assert.True(t, result.Active)
+		require.NoError(suite.T(), err, "DecodeJSON should decode into struct pointer without error")
+		assert.Equal(suite.T(), "test123", result.ID, "ID field should match input")
+		assert.NotNil(suite.T(), result.Items, "Items field should not be nil")
+		assert.Len(suite.T(), result.Tags, 1, "Tags should have 1 element")
 	})
 
-	t.Run("InvalidJSON", func(t *testing.T) {
-		input := `{"name":"John Doe","age":}`
+	suite.Run("InvalidJSON", func() {
+		input := `{"id":"test","items":}`
+		var result MediumStruct
 
-		var result TestStruct
+		err := DecodeJSON(input, &result)
 
-		err := DecodeJson(input, &result)
-		assert.Error(t, err)
+		assertErrorWithContext(suite.T(), err, "DecodeJSON should return error for malformed JSON")
 	})
 
-	t.Run("EmptyJSON", func(t *testing.T) {
+	suite.Run("EmptyJSON", func() {
 		input := `{}`
+		var result MediumStruct
 
-		var result TestStruct
+		err := DecodeJSON(input, &result)
 
-		err := DecodeJson(input, &result)
-		require.NoError(t, err)
-		assert.Equal(t, "", result.Name)
-		assert.Equal(t, 0, result.Age)
+		require.NoError(suite.T(), err, "DecodeJSON should decode empty JSON object without error")
+		assert.Equal(suite.T(), "", result.ID, "ID field should be empty string")
+	})
+
+	suite.Run("DecodeIntoNonPointer", func() {
+		input := `{"id":"test"}`
+		var result MediumStruct
+
+		err := DecodeJSON(input, result)
+
+		assertErrorWithContext(suite.T(), err, "DecodeJSON should return error when target is not a pointer")
 	})
 }
 
-func TestJsonRoundTrip(t *testing.T) {
-	created := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
-	input := TestStruct{
-		Name:    "Jane Doe",
-		Age:     25,
-		Email:   "jane@example.com",
-		Active:  true,
-		Score:   88.5,
-		Created: created,
-	}
+func (suite *JSONTestSuite) TestJSONRoundTrip() {
+	suite.Run("SimpleStruct", func() {
+		input := generateSimpleStruct()
 
-	encoded, err := ToJson(input)
-	require.NoError(t, err)
-	assert.NotEmpty(t, encoded)
+		encoded, err := ToJSON(input)
+		require.NoError(suite.T(), err, "ToJSON should encode struct without error")
+		assertNotEmptyWithContext(suite.T(), encoded, "Encoded JSON should not be empty")
 
-	decoded, err := FromJson[TestStruct](encoded)
-	require.NoError(t, err)
-	assert.NotNil(t, decoded)
-	assert.Equal(t, input.Name, decoded.Name)
-	assert.Equal(t, input.Age, decoded.Age)
-	assert.Equal(t, input.Email, decoded.Email)
-	assert.Equal(t, input.Active, decoded.Active)
-	assert.Equal(t, input.Score, decoded.Score)
-	assert.Equal(t, input.Created.Unix(), decoded.Created.Unix())
+		decoded, err := FromJSON[SimpleStruct](encoded)
+		require.NoError(suite.T(), err, "FromJSON should decode JSON without error")
+		require.NotNil(suite.T(), decoded, "Decoded result should not be nil")
+
+		assertStructEqual(suite.T(), input, *decoded, "Round-trip should preserve all fields")
+	})
+
+	suite.Run("MediumStruct", func() {
+		input := generateMediumStruct(3)
+
+		encoded, err := ToJSON(input)
+		require.NoError(suite.T(), err, "ToJSON should encode struct without error")
+		assertNotEmptyWithContext(suite.T(), encoded, "Encoded JSON should not be empty")
+
+		decoded, err := FromJSON[MediumStruct](encoded)
+		require.NoError(suite.T(), err, "FromJSON should decode JSON without error")
+		require.NotNil(suite.T(), decoded, "Decoded result should not be nil")
+
+		assert.Equal(suite.T(), input.ID, decoded.ID, "ID field should be preserved")
+		assert.Equal(suite.T(), len(input.Items), len(decoded.Items), "Items length should be preserved")
+		assert.Equal(suite.T(), input.Tags, decoded.Tags, "Tags slice should be preserved")
+		assert.Equal(suite.T(), input.Metadata, decoded.Metadata, "Metadata map should be preserved")
+	})
+
+	suite.Run("ComplexStruct", func() {
+		input := generateComplexStruct(1)
+
+		encoded, err := ToJSON(input)
+		require.NoError(suite.T(), err, "ToJSON should encode complex struct without error")
+		assertNotEmptyWithContext(suite.T(), encoded, "Encoded JSON should not be empty")
+
+		decoded, err := FromJSON[ComplexStruct](encoded)
+		require.NoError(suite.T(), err, "FromJSON should decode JSON without error")
+		require.NotNil(suite.T(), decoded, "Decoded result should not be nil")
+
+		assert.Equal(suite.T(), input.ID, decoded.ID, "ID field should be preserved")
+		assert.Equal(suite.T(), input.Score, decoded.Score, "Score field should be preserved")
+		assert.Equal(suite.T(), input.Count, decoded.Count, "Count field should be preserved")
+		assert.Equal(suite.T(), input.Enabled, decoded.Enabled, "Enabled field should be preserved")
+		assert.Equal(suite.T(), input.Created.Unix(), decoded.Created.Unix(), "Created timestamp should be preserved")
+	})
+
+	suite.Run("StructWithTimeField", func() {
+		created := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+		input := ComplexStruct{
+			ID:      "time-test",
+			Data:    map[string]any{"test": true},
+			Items:   []MediumStruct{},
+			Created: created,
+			Score:   99.5,
+			Count:   100,
+			Enabled: true,
+		}
+
+		encoded, err := ToJSON(input)
+		require.NoError(suite.T(), err, "ToJSON should encode struct with time field without error")
+
+		decoded, err := FromJSON[ComplexStruct](encoded)
+		require.NoError(suite.T(), err, "FromJSON should decode struct with time field without error")
+		require.NotNil(suite.T(), decoded, "Decoded result should not be nil")
+
+		assert.Equal(suite.T(), input.Created.Unix(), decoded.Created.Unix(), "Time field should be preserved (comparing Unix timestamps)")
+	})
 }
+

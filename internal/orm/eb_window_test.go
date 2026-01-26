@@ -25,7 +25,7 @@ func (suite *WindowFunctionsTestSuite) TestRowNumber() {
 
 	suite.Run("SequentialRowNumbers", func() {
 		type UserWithRowNumber struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Name   string `bun:"name"`
 			Age    int16  `bun:"age"`
 			RowNum int64  `bun:"row_num"`
@@ -62,7 +62,7 @@ func (suite *WindowFunctionsTestSuite) TestRank() {
 
 	suite.Run("RankPartitionedByStatus", func() {
 		type PostWithRank struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
@@ -108,7 +108,7 @@ func (suite *WindowFunctionsTestSuite) TestDenseRank() {
 
 	suite.Run("DenseRankPartitionedByStatus", func() {
 		type PostWithDenseRank struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
@@ -206,7 +206,7 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 
 	suite.Run("CumeDistByViewCount", func() {
 		type CumeDistResult struct {
-			Id        string  `bun:"id"`
+			ID        string  `bun:"id"`
 			ViewCount int64   `bun:"view_count"`
 			CumeDist  float64 `bun:"cume_dist"`
 		}
@@ -231,7 +231,7 @@ func (suite *WindowFunctionsTestSuite) TestCumeDist() {
 		for _, result := range cumeDistResults {
 			suite.True(result.CumeDist > 0 && result.CumeDist <= 1, "CumeDist should be in (0, 1]")
 			suite.T().Logf("ID: %s, ViewCount: %d, CumeDist: %.4f",
-				result.Id, result.ViewCount, result.CumeDist)
+				result.ID, result.ViewCount, result.CumeDist)
 		}
 	})
 }
@@ -715,7 +715,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMin() {
 
 	suite.Run("MinInStatusPartition", func() {
 		type WindowMinResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			ViewCount   int64  `bun:"view_count"`
 			Status      string `bun:"status"`
 			MinInStatus int64  `bun:"min_in_status"`
@@ -741,7 +741,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMin() {
 		for _, result := range windowMinResults {
 			suite.True(result.MinInStatus <= result.ViewCount, "Min should be <= current view count")
 			suite.T().Logf("ID: %s, Status: %s, ViewCount: %d, MinInStatus: %d",
-				result.Id, result.Status, result.ViewCount, result.MinInStatus)
+				result.ID, result.Status, result.ViewCount, result.MinInStatus)
 		}
 	})
 }
@@ -752,7 +752,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMax() {
 
 	suite.Run("MaxInStatusPartition", func() {
 		type WindowMaxResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			ViewCount   int64  `bun:"view_count"`
 			Status      string `bun:"status"`
 			MaxInStatus int64  `bun:"max_in_status"`
@@ -778,7 +778,7 @@ func (suite *WindowFunctionsTestSuite) TestWinMax() {
 		for _, result := range windowMaxResults {
 			suite.True(result.MaxInStatus >= result.ViewCount, "Max should be >= current view count")
 			suite.T().Logf("ID: %s, Status: %s, ViewCount: %d, MaxInStatus: %d",
-				result.Id, result.Status, result.ViewCount, result.MaxInStatus)
+				result.ID, result.Status, result.ViewCount, result.MaxInStatus)
 		}
 	})
 }
@@ -789,14 +789,14 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 	suite.T().Logf("Testing WinStringAgg function for %s", suite.dbType)
 
 	suite.Run("StringAggPartitionedByStatus", func() {
-		if suite.dbType == constants.DbMySQL {
+		if suite.dbType == constants.MySQL {
 			suite.T().Skipf("WinStringAgg skipped for %s (MySQL does not support GROUP_CONCAT as window function)", suite.dbType)
 
 			return
 		}
 
 		type WindowStringAggResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Status   string `bun:"status"`
 			TitleAgg string `bun:"title_agg"`
 		}
@@ -821,7 +821,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStringAgg() {
 		for _, result := range windowStringAggResults {
 			suite.True(len(result.TitleAgg) > 0, "Aggregated titles should not be empty")
 			suite.T().Logf("ID: %s, Status: %s, TitleAgg: %s",
-				result.Id, result.Status, result.TitleAgg)
+				result.ID, result.Status, result.TitleAgg)
 		}
 	})
 }
@@ -831,12 +831,12 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 	suite.T().Logf("Testing WinArrayAgg function for %s", suite.dbType)
 
 	suite.Run("ArrayAggPartitionedByStatus", func() {
-		if suite.dbType != constants.DbPostgres {
+		if suite.dbType != constants.Postgres {
 			suite.T().Skipf("WinArrayAgg skipped for %s (PostgreSQL only)", suite.dbType)
 		}
 
 		type WindowArrayAggResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			Status     string  `bun:"status"`
 			ViewCounts []int64 `bun:"view_counts,array"`
 		}
@@ -861,7 +861,7 @@ func (suite *WindowFunctionsTestSuite) TestWinArrayAgg() {
 		for _, result := range windowArrayAggResults {
 			suite.True(len(result.ViewCounts) > 0, "Array should not be empty")
 			suite.T().Logf("ID: %s, Status: %s, ViewCounts: %v",
-				result.Id, result.Status, result.ViewCounts)
+				result.ID, result.Status, result.ViewCounts)
 		}
 	})
 }
@@ -872,14 +872,14 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 	suite.T().Logf("Testing WinStdDev function for %s", suite.dbType)
 
 	suite.Run("StdDevInStatusPartition", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skipf("WinStdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 
 			return
 		}
 
 		type WindowStdDevResult struct {
-			Id             string  `bun:"id"`
+			ID             string  `bun:"id"`
 			ViewCount      int64   `bun:"view_count"`
 			Status         string  `bun:"status"`
 			StdDevInStatus float64 `bun:"stddev_in_status"`
@@ -905,7 +905,7 @@ func (suite *WindowFunctionsTestSuite) TestWinStdDev() {
 		for _, result := range windowStdDevResults {
 			suite.True(result.StdDevInStatus >= 0, "StdDev should be non-negative")
 			suite.T().Logf("ID: %s, Status: %s, ViewCount: %d, StdDevInStatus: %.2f",
-				result.Id, result.Status, result.ViewCount, result.StdDevInStatus)
+				result.ID, result.Status, result.ViewCount, result.StdDevInStatus)
 		}
 	})
 }
@@ -916,14 +916,14 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 	suite.T().Logf("Testing WinVariance function for %s", suite.dbType)
 
 	suite.Run("VarianceInStatusPartition", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skipf("WinVariance skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 
 			return
 		}
 
 		type WindowVarianceResult struct {
-			Id               string  `bun:"id"`
+			ID               string  `bun:"id"`
 			ViewCount        int64   `bun:"view_count"`
 			Status           string  `bun:"status"`
 			VarianceInStatus float64 `bun:"variance_in_status"`
@@ -949,7 +949,7 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 		for _, result := range windowVarianceResults {
 			suite.True(result.VarianceInStatus >= 0, "Variance should be non-negative")
 			suite.T().Logf("ID: %s, Status: %s, ViewCount: %d, VarianceInStatus: %.2f",
-				result.Id, result.Status, result.ViewCount, result.VarianceInStatus)
+				result.ID, result.Status, result.ViewCount, result.VarianceInStatus)
 		}
 	})
 }
@@ -960,7 +960,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
 
 	suite.Run("JsonObjectAggPartitionedByStatus", func() {
 		type WindowJsonObjectResult struct {
-			Id            string `bun:"id"`
+			ID            string `bun:"id"`
 			Status        string `bun:"status"`
 			JsonObjectAgg string `bun:"json_object_agg"`
 		}
@@ -971,7 +971,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinJsonObjectAgg(func(wjoab WindowJsonObjectAggBuilder) {
+				return eb.WinJsonObjectAgg(func(wjoab WindowJSONObjectAggBuilder) {
 					wjoab.KeyColumn("id").Column("title").Over().PartitionBy("status")
 				})
 			}, "json_object_agg").
@@ -986,7 +986,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
 			suite.True(len(result.JsonObjectAgg) > 0, "JSON object should not be empty")
 			suite.True(strings.HasPrefix(result.JsonObjectAgg, "{"), "Should be a JSON object")
 			suite.T().Logf("ID: %s, Status: %s, JsonObjectAgg: %s",
-				result.Id, result.Status, result.JsonObjectAgg)
+				result.ID, result.Status, result.JsonObjectAgg)
 		}
 	})
 }
@@ -997,7 +997,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
 
 	suite.Run("JsonArrayAggPartitionedByStatus", func() {
 		type WindowJsonResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			Status       string `bun:"status"`
 			JsonArrayAgg string `bun:"json_array_agg"`
 		}
@@ -1008,7 +1008,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinJsonArrayAgg(func(wjaab WindowJsonArrayAggBuilder) {
+				return eb.WinJsonArrayAgg(func(wjaab WindowJSONArrayAggBuilder) {
 					wjaab.Column("title").Over().PartitionBy("status")
 				})
 			}, "json_array_agg").
@@ -1023,7 +1023,7 @@ func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
 			suite.True(len(result.JsonArrayAgg) > 0, "JSON array should not be empty")
 			suite.True(strings.HasPrefix(result.JsonArrayAgg, "["), "Should be a JSON array")
 			suite.T().Logf("ID: %s, Status: %s, JsonArrayAgg: %s",
-				result.Id, result.Status, result.JsonArrayAgg)
+				result.ID, result.Status, result.JsonArrayAgg)
 		}
 	})
 }
@@ -1037,7 +1037,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
 
 	suite.Run("BitOrInStatusPartition", func() {
 		type WindowBitResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			ViewCount   int64  `bun:"view_count"`
 			Status      string `bun:"status"`
 			BitOrResult int64  `bun:"bit_or_result"`
@@ -1063,7 +1063,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitOr() {
 		for _, result := range windowBitResults {
 			suite.True(result.BitOrResult >= 0, "BitOr should be non-negative")
 			suite.T().Logf("ID: %s, Status: %s, ViewCount: %d, BitOr: %d",
-				result.Id, result.Status, result.ViewCount, result.BitOrResult)
+				result.ID, result.Status, result.ViewCount, result.BitOrResult)
 		}
 	})
 }
@@ -1077,7 +1077,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
 
 	suite.Run("BitAndInStatusPartition", func() {
 		type WindowBitResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			ViewCount    int64  `bun:"view_count"`
 			Status       string `bun:"status"`
 			BitAndResult int64  `bun:"bit_and_result"`
@@ -1103,7 +1103,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBitAnd() {
 		for _, result := range windowBitResults {
 			suite.True(result.BitAndResult >= 0, "BitAnd should be non-negative")
 			suite.T().Logf("ID: %s, Status: %s, ViewCount: %d, BitAnd: %d",
-				result.Id, result.Status, result.ViewCount, result.BitAndResult)
+				result.ID, result.Status, result.ViewCount, result.BitAndResult)
 		}
 	})
 }
@@ -1116,7 +1116,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
 
 	suite.Run("BoolOrInStatusPartition", func() {
 		type WindowBoolResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			Status       string `bun:"status"`
 			BoolOrResult bool   `bun:"bool_or_result"`
 		}
@@ -1140,7 +1140,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolOr() {
 
 		for _, result := range windowBoolResults {
 			suite.T().Logf("ID: %s, Status: %s, BoolOr: %v",
-				result.Id, result.Status, result.BoolOrResult)
+				result.ID, result.Status, result.BoolOrResult)
 		}
 	})
 }
@@ -1153,7 +1153,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolAnd() {
 
 	suite.Run("BoolAndInStatusPartition", func() {
 		type WindowBoolResult struct {
-			Id            string `bun:"id"`
+			ID            string `bun:"id"`
 			Status        string `bun:"status"`
 			BoolAndResult bool   `bun:"bool_and_result"`
 		}
@@ -1177,7 +1177,7 @@ func (suite *WindowFunctionsTestSuite) TestWinBoolAnd() {
 
 		for _, result := range windowBoolResults {
 			suite.T().Logf("ID: %s, Status: %s, BoolAnd: %v",
-				result.Id, result.Status, result.BoolAndResult)
+				result.ID, result.Status, result.BoolAndResult)
 		}
 	})
 }

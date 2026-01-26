@@ -2,6 +2,7 @@ package log
 
 import (
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/ilxqx/vef-framework-go/log"
 )
@@ -23,20 +24,25 @@ func (l *zapLogger) WithCallerSkip(skip int) log.Logger {
 }
 
 func (l *zapLogger) Enabled(level log.Level) bool {
+	zapLevel := toZapLevel(level)
+	return l.logger.Level().Enabled(zapLevel)
+}
+
+func toZapLevel(level log.Level) zapcore.Level {
 	switch level {
 	case log.LevelDebug:
-		return l.logger.Level().Enabled(zap.DebugLevel)
+		return zap.DebugLevel
 	case log.LevelInfo:
-		return l.logger.Level().Enabled(zap.InfoLevel)
+		return zap.InfoLevel
 	case log.LevelWarn:
-		return l.logger.Level().Enabled(zap.WarnLevel)
+		return zap.WarnLevel
 	case log.LevelError:
-		return l.logger.Level().Enabled(zap.ErrorLevel)
+		return zap.ErrorLevel
 	case log.LevelPanic:
-		return l.logger.Level().Enabled(zap.PanicLevel)
+		return zap.PanicLevel
+	default:
+		return zap.InfoLevel
 	}
-
-	return false
 }
 
 func (l *zapLogger) Sync() {

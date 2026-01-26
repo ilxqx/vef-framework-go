@@ -6,14 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestXidIdGenerator(t *testing.T) {
+func TestXIDGenerator(t *testing.T) {
 	t.Run("CreateGenerator", func(t *testing.T) {
-		generator := NewXidIdGenerator()
+		generator := NewXIDGenerator()
 		assert.NotNil(t, generator, "Generator should not be nil")
 	})
 
-	t.Run("GenerateValidXidFormat", func(t *testing.T) {
-		generator := NewXidIdGenerator()
+	t.Run("GenerateValidXIDFormat", func(t *testing.T) {
+		generator := NewXIDGenerator()
 		id := generator.Generate()
 
 		assert.NotEmpty(t, id, "XID should not be empty")
@@ -26,8 +26,8 @@ func TestXidIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("GenerateUniqueIds", func(t *testing.T) {
-		generator := NewXidIdGenerator()
+	t.Run("GenerateUniqueIDs", func(t *testing.T) {
+		generator := NewXIDGenerator()
 		ids := make(map[string]bool)
 		iterations := 10000
 
@@ -41,7 +41,7 @@ func TestXidIdGenerator(t *testing.T) {
 	})
 
 	t.Run("ThreadSafe", func(t *testing.T) {
-		generator := NewXidIdGenerator()
+		generator := NewXIDGenerator()
 
 		const (
 			numGoroutines   = 100
@@ -69,8 +69,8 @@ func TestXidIdGenerator(t *testing.T) {
 		assert.Len(t, ids, numGoroutines*idsPerGoroutine, "All concurrent XIDs should be unique")
 	})
 
-	t.Run("SortableIds", func(t *testing.T) {
-		generator := NewXidIdGenerator()
+	t.Run("SortableIDs", func(t *testing.T) {
+		generator := NewXIDGenerator()
 
 		var ids []string
 		for range 100 {
@@ -83,15 +83,15 @@ func TestXidIdGenerator(t *testing.T) {
 	})
 
 	t.Run("DefaultGenerator", func(t *testing.T) {
-		assert.NotNil(t, DefaultXidIdGenerator, "Default generator should be initialized")
+		assert.NotNil(t, DefaultXIDGenerator, "Default generator should be initialized")
 
-		id := DefaultXidIdGenerator.Generate()
+		id := DefaultXIDGenerator.Generate()
 		assert.NotEmpty(t, id, "Default generator should produce IDs")
 		assert.Len(t, id, 20, "Default generator should produce 20-character IDs")
 	})
 
 	t.Run("RapidGeneration", func(t *testing.T) {
-		generator := NewXidIdGenerator()
+		generator := NewXIDGenerator()
 		ids := make(map[string]bool)
 
 		for range 1000 {

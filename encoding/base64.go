@@ -14,22 +14,20 @@ func ToBase64(data []byte) string {
 // FromBase64 decodes a base64 string to binary data using standard encoding.
 func FromBase64(s string) ([]byte, error) {
 	if s == constants.Empty {
-		return []byte{}, nil
+		return nil, nil
 	}
-
 	return base64.StdEncoding.DecodeString(s)
 }
 
-// ToBase64Url encodes binary data to a base64 URL-safe string.
-func ToBase64Url(data []byte) string {
+// ToBase64URL encodes binary data to a base64 URL-safe string.
+func ToBase64URL(data []byte) string {
 	return base64.URLEncoding.EncodeToString(data)
 }
 
-// FromBase64Url decodes a base64 URL-safe string to binary data.
-func FromBase64Url(s string) ([]byte, error) {
+// FromBase64URL decodes a base64 URL-safe string to binary data.
+func FromBase64URL(s string) ([]byte, error) {
 	if s == constants.Empty {
-		return []byte{}, nil
+		return nil, nil
 	}
-
 	return base64.URLEncoding.DecodeString(s)
 }

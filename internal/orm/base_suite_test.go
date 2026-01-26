@@ -40,8 +40,8 @@ type Post struct {
 	Title       string  `json:"title"       bun:"title,notnull"`
 	Content     string  `json:"content"     bun:"content,notnull"`
 	Description *string `json:"description" bun:"description"`
-	UserId      string  `json:"userId"      bun:"user_id,notnull"`
-	CategoryId  string  `json:"categoryId"  bun:"category_id,notnull"`
+	UserID      string  `json:"userID"      bun:"user_id,notnull"`
+	CategoryID  string  `json:"categoryID"  bun:"category_id,notnull"`
 	Status      string  `json:"status"      bun:"status,notnull,default:'draft'"`
 	ViewCount   int     `json:"viewCount"   bun:"view_count,notnull,default:0"`
 
@@ -64,8 +64,8 @@ type PostTag struct {
 	bun.BaseModel `bun:"table:test_post_tag,alias:pt"`
 	Model
 
-	PostId string `json:"postId" bun:"post_id,notnull"`
-	TagId  string `json:"tagId"  bun:"tag_id,notnull"`
+	PostID string `json:"postId" bun:"post_id,notnull"`
+	TagID  string `json:"tagId"  bun:"tag_id,notnull"`
 
 	// Relations
 	Post *Post `json:"post" bun:"rel:belongs-to,join:post_id=id"`
@@ -79,7 +79,7 @@ type Category struct {
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
-	ParentId    *string `json:"parentId"    bun:"parent_id"`
+	ParentID    *string `json:"parentID"    bun:"parent_id"`
 
 	// Relations
 	Posts    []Post     `json:"posts"    bun:"rel:has-many,join:id=category_id"`
@@ -96,21 +96,21 @@ type SimpleModel struct {
 	Value int    `json:"value" bun:"value,notnull"`
 }
 
-// OrmTestSuite contains all the actual test methods and works with orm.Db interface.
+// OrmTestSuite contains all the actual test methods and works with orm.DB interface.
 // This suite will be run against multiple databases to verify cross-database compatibility.
 type OrmTestSuite struct {
 	suite.Suite
 
 	ctx    context.Context
-	db     Db
-	dbType constants.DbType
+	db     DB
+	dbType constants.DBType
 }
 
 // SetupSuite initializes the test suite (called once per database).
 func (suite *OrmTestSuite) SetupSuite() {
 	suite.T().Logf("Setting up Orm test suite for %s", suite.dbType)
 
-	db := suite.getBunDb()
+	db := suite.getBunDB()
 	db.RegisterModel(
 		(*User)(nil),
 		(*Post)(nil),
@@ -156,15 +156,15 @@ func (suite *OrmTestSuite) SetupSuite() {
 	suite.T().Logf("Test fixtures loaded for %s database", suite.dbType)
 }
 
-// getBunDb extracts the underlying bun.DB from orm.Db interface.
-func (suite *OrmTestSuite) getBunDb() *bun.DB {
-	if db, ok := suite.db.(*BunDb); ok {
+// getBunDB extracts the underlying bun.DB from orm.DB interface.
+func (suite *OrmTestSuite) getBunDB() *bun.DB {
+	if db, ok := suite.db.(*BunDB); ok {
 		if bunDB, ok := db.db.(*bun.DB); ok {
 			return bunDB
 		}
 	}
 
-	suite.Require().Fail("Could not extract bun.DB from orm.Db interface")
+	suite.Require().Fail("Could not extract bun.DB from orm.DB interface")
 
 	return nil
 }

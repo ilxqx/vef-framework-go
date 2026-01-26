@@ -65,7 +65,7 @@ func (suite *UpdateTestSuite) TestCTE() {
 
 		postIds := make([]string, len(postsToUpdate))
 		for i, p := range postsToUpdate {
-			postIds[i] = p.Id
+			postIds[i] = p.ID
 		}
 
 		type StatusMapping struct {
@@ -139,7 +139,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 
 	suite.Run("TableDirect", func() {
 		testPosts := []Post{
-			{Title: "Table Direct Post", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
+			{Title: "Table Direct Post", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -164,7 +164,7 @@ func (suite *UpdateTestSuite) TestTableSource() {
 
 	suite.Run("TableFrom", func() {
 		testPosts := []Post{
-			{Title: "TableFrom Post", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
+			{Title: "TableFrom Post", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -201,8 +201,8 @@ func (suite *UpdateTestSuite) TestTableSource() {
 		testPost := &Post{
 			Title:      "Post by Inactive User",
 			Content:    "This post should be archived",
-			UserId:     testUser.Id,
-			CategoryId: "cat1",
+			UserID:     testUser.ID,
+			CategoryID: "cat1",
 			Status:     "published",
 		}
 		_, err = suite.db.NewInsert().Model(testPost).Exec(suite.ctx)
@@ -253,12 +253,12 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 
 		originalEmail := existingUser.Email
 		originalIsActive := existingUser.IsActive
-		userId := existingUser.Id
+		userID := existingUser.ID
 
 		// Create a NEW user instance (not from database query)
 		user := User{
 			Model: Model{
-				Id: userId,
+				ID: userID,
 			},
 			Name: "Alice Updated",
 			Age:  99,
@@ -267,7 +267,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		result, err := suite.db.NewUpdate().
 			Model(&user).
 			Select("name", "age").
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "Select should control which columns are updated")
@@ -281,7 +281,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(userId)
+				cb.PKEquals(userID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
@@ -315,7 +315,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		result, err := suite.db.NewUpdate().
 			Model(&user).
 			SelectAll().
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "SelectAll should update all columns")
@@ -329,7 +329,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(user.Id)
+				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
@@ -366,7 +366,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		result, err := suite.db.NewUpdate().
 			Model(&user).
 			Exclude("email", "age").
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "Exclude should prevent specific columns from being updated")
@@ -380,7 +380,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(user.Id)
+				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
@@ -420,7 +420,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 			Select("name", "email").
 			ExcludeAll().
 			Select("age").
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "ExcludeAll should clear previous Select and allow new Select")
@@ -434,7 +434,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 		err = suite.db.NewSelect().
 			Model(&updatedUser).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(user.Id)
+				cb.PKEquals(user.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should fetch updated user")
@@ -448,7 +448,7 @@ func (suite *UpdateTestSuite) TestSelectionMethods() {
 	})
 }
 
-// TestFilterOperations tests filter methods (Where, WherePk, WhereDeleted, IncludeDeleted).
+// TestFilterOperations tests filter methods (Where, WherePK, WhereDeleted, IncludeDeleted).
 func (suite *UpdateTestSuite) TestFilterOperations() {
 	suite.T().Logf("Testing filter operations for %s", suite.dbType)
 
@@ -469,7 +469,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		suite.T().Logf("Updated %d users with Where", rowsAffected)
 	})
 
-	suite.Run("WherePk", func() {
+	suite.Run("WherePK", func() {
 		var user User
 
 		err := suite.db.NewSelect().
@@ -483,16 +483,16 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			Model((*User)(nil)).
 			Set("updated_by", "where_pk_test").
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(user.Id)
+				cb.PKEquals(user.ID)
 			}).
 			Exec(suite.ctx)
 
-		suite.NoError(err, "WherePk should work correctly")
+		suite.NoError(err, "WherePK should work correctly")
 
 		rowsAffected, _ := result.RowsAffected()
 		suite.Equal(int64(1), rowsAffected, "Should affect 1 row")
 
-		suite.T().Logf("Updated user by PK: %s", user.Id)
+		suite.T().Logf("Updated user by PK: %s", user.ID)
 	})
 
 	suite.Run("WhereDeletedAndIncludeDeleted", func() {
@@ -505,7 +505,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			DeletedAt time.Time `json:"deletedAt" bun:",soft_delete,nullzero"`
 		}
 
-		bunDB := suite.getBunDb()
+		bunDB := suite.getBunDB()
 		_, err := bunDB.NewDropTable().Model((*SoftDeleteArticle)(nil)).IfExists().Exec(suite.ctx)
 		suite.Require().NoError(err, "Should drop existing soft delete table")
 
@@ -528,7 +528,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		_, err = suite.db.NewDelete().
 			Model((*SoftDeleteArticle)(nil)).
 			Where(func(cb ConditionBuilder) {
-				cb.Equals("id", records[0].Id)
+				cb.Equals("id", records[0].ID)
 			}).
 			Exec(suite.ctx)
 		suite.Require().NoError(err, "Should soft delete first record")
@@ -537,7 +537,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			Model((*SoftDeleteArticle)(nil)).
 			Set("status", "archived").
 			Where(func(cb ConditionBuilder) {
-				cb.Equals("id", records[0].Id)
+				cb.Equals("id", records[0].ID)
 			}).
 			WhereDeleted().
 			Exec(suite.ctx)
@@ -551,7 +551,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			Set("status", "reviewed").
 			IncludeDeleted().
 			Where(func(cb ConditionBuilder) {
-				cb.In("id", []string{records[0].Id, records[1].Id})
+				cb.In("id", []string{records[0].ID, records[1].ID})
 			}).
 			Exec(suite.ctx)
 		suite.Require().NoError(err, "IncludeDeleted should allow updating soft-deleted rows")
@@ -565,7 +565,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 			Model(&fetched).
 			IncludeDeleted().
 			Where(func(cb ConditionBuilder) {
-				cb.In("id", []string{records[0].Id, records[1].Id})
+				cb.In("id", []string{records[0].ID, records[1].ID})
 			}).
 			OrderBy("title").
 			Scan(suite.ctx)
@@ -575,7 +575,7 @@ func (suite *UpdateTestSuite) TestFilterOperations() {
 		for _, record := range fetched {
 			suite.Equal("reviewed", record.Status, "Status should reflect IncludeDeleted update")
 
-			if record.Id == records[0].Id {
+			if record.ID == records[0].ID {
 				suite.False(record.DeletedAt.IsZero(), "First record should remain soft deleted")
 			} else {
 				suite.True(record.DeletedAt.IsZero(), "Second record should remain active")
@@ -621,7 +621,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		result, err := suite.db.NewUpdate().
 			Model(&post).
 			Column("view_count", 555). // Override model's 999 with 555
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "Column should override model value")
@@ -635,7 +635,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		err = suite.db.NewSelect().
 			Model(&updatedPost).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(post.Id)
+				cb.PKEquals(post.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve updated post")
@@ -672,7 +672,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 				// Increment view_count by 100
 				return eb.Add(eb.Column("view_count"), 100)
 			}).
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "ColumnExpr should override model value with expression")
@@ -686,7 +686,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 		err = suite.db.NewSelect().
 			Model(&updatedPost).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(post.Id)
+				cb.PKEquals(post.ID)
 			}).
 			Scan(suite.ctx)
 		suite.NoError(err, "Should retrieve updated post")
@@ -702,7 +702,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 			Model((*Post)(nil)).
 			Set("updated_by", "set_test").
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(post.Id)
+				cb.PKEquals(post.ID)
 			}).
 			Exec(suite.ctx)
 
@@ -721,7 +721,7 @@ func (suite *UpdateTestSuite) TestColumnUpdates() {
 				return eb.Concat(eb.Column("title"), " [Updated]")
 			}).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(post.Id)
+				cb.PKEquals(post.ID)
 			}).
 			Exec(suite.ctx)
 
@@ -751,7 +751,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 
 		// Update with a full User model but only set Name, leave Age as zero
 		partialUpdate := &User{
-			Model: Model{Id: user.Id},
+			Model: Model{ID: user.ID},
 			Name:  "Alice Updated with OmitZero",
 			// Age will be zero, OmitZero should skip it
 		}
@@ -759,7 +759,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 		result, err := suite.db.NewUpdate().
 			Model(partialUpdate).
 			OmitZero().
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "OmitZero should skip zero-value fields")
@@ -801,7 +801,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 		result, err := suite.db.NewUpdate().
 			Model(&posts).
 			Bulk().
-			WherePk().
+			WherePK().
 			Exec(suite.ctx)
 
 		suite.NoError(err, "Bulk update should work")
@@ -816,7 +816,7 @@ func (suite *UpdateTestSuite) TestUpdateFlags() {
 			err = suite.db.NewSelect().
 				Model(&updatedPost).
 				Where(func(cb ConditionBuilder) {
-					cb.PkEquals(post.Id)
+					cb.PKEquals(post.ID)
 				}).
 				Scan(suite.ctx)
 			suite.NoError(err, "Should retrieve updated post")
@@ -836,7 +836,7 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 	suite.T().Logf("Testing ordering and limits for %s", suite.dbType)
 
 	// Only MySQL supports ORDER BY and LIMIT in UPDATE statements
-	if suite.dbType != constants.DbMySQL {
+	if suite.dbType != constants.MySQL {
 		suite.T().Skipf("Database %s doesn't support ORDER BY and LIMIT in UPDATE statements", suite.dbType)
 	}
 
@@ -912,13 +912,13 @@ func (suite *UpdateTestSuite) TestOrderingAndLimits() {
 func (suite *UpdateTestSuite) TestReturningClause() {
 	suite.T().Logf("Testing RETURNING clause methods for %s", suite.dbType)
 
-	if suite.dbType == constants.DbMySQL {
+	if suite.dbType == constants.MySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 	}
 
 	suite.Run("ReturningSpecificColumns", func() {
 		type UpdateResult struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 			Age  int16  `bun:"age"`
 		}
@@ -935,15 +935,15 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "Returning should work with specific columns")
-		suite.NotEmpty(result.Id, "ID should be returned")
+		suite.NotEmpty(result.ID, "ID should be returned")
 		suite.Equal(int16(28), result.Age, "Age should be updated value")
 
-		suite.T().Logf("Returned: id=%s, name=%s, age=%d", result.Id, result.Name, result.Age)
+		suite.T().Logf("Returned: id=%s, name=%s, age=%d", result.ID, result.Name, result.Age)
 	})
 
 	suite.Run("ReturningAllColumns", func() {
 		type UpdateResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 			Age   int16  `bun:"age"`
@@ -961,10 +961,10 @@ func (suite *UpdateTestSuite) TestReturningClause() {
 			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "ReturningAll should return all columns")
-		suite.NotEmpty(result.Id, "ID should be returned")
+		suite.NotEmpty(result.ID, "ID should be returned")
 		suite.NotEmpty(result.Email, "Email should be returned")
 
-		suite.T().Logf("ReturningAll: id=%s, email=%s", result.Id, result.Email)
+		suite.T().Logf("ReturningAll: id=%s, email=%s", result.ID, result.Email)
 	})
 
 	suite.Run("ReturningNone", func() {
@@ -1087,12 +1087,12 @@ func (suite *UpdateTestSuite) TestExecution() {
 	})
 
 	suite.Run("ScanWithReturning", func() {
-		if suite.dbType == constants.DbMySQL {
+		if suite.dbType == constants.MySQL {
 			suite.T().Skip("MySQL doesn't support RETURNING clause")
 		}
 
 		type UpdateResult struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -1108,10 +1108,10 @@ func (suite *UpdateTestSuite) TestExecution() {
 			Scan(suite.ctx, &result)
 
 		suite.NoError(err, "Scan should work with RETURNING")
-		suite.NotEmpty(result.Id, "ID should be scanned")
+		suite.NotEmpty(result.ID, "ID should be scanned")
 		suite.NotEmpty(result.Name, "Name should be scanned")
 
-		suite.T().Logf("Scanned result: id=%s, name=%s", result.Id, result.Name)
+		suite.T().Logf("Scanned result: id=%s, name=%s", result.ID, result.Name)
 	})
 
 	suite.Run("ExecNoMatchingRows", func() {

@@ -16,50 +16,35 @@ var (
 		"vef:event",
 		fx.Provide(
 			fx.Annotate(
-				func(lc fx.Lifecycle, middlewares []event.Middleware) event.Bus {
-					bus := NewMemoryBus(middlewares)
-
-					lc.Append(
-						fx.StartStopHook(
-							func() error {
-								if err := bus.Start(); err != nil {
-									return fmt.Errorf("failed to start event bus: %w", err)
-								}
-
-								logger.Infof(
-									"Memory event bus started (middlewares=%d)",
-									len(middlewares),
-								)
-
-								return nil
-							},
-							func(ctx context.Context) error {
-								if err := bus.Shutdown(ctx); err != nil {
-									return fmt.Errorf("failed to stop event bus: %w", err)
-								}
-
-								logger.Infof("Memory event bus stopped")
-
-								return nil
-							},
-						),
-					)
-
-					return bus
-				},
+				createMemoryBus,
 				fx.ParamTags(``, `group:"vef:event:middlewares"`),
 				fx.As(fx.Self()),
 				fx.As(new(event.Subscriber)),
 				fx.As(new(event.Publisher)),
 			),
-			fx.Annotate(
-				NewPublisherHandlerParamResolver,
-				fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
-			),
-			fx.Annotate(
-				NewPublisherFactoryParamResolver,
-				fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
-			),
 		),
 	)
 )
+
+func createMemoryBus(lc fx.Lifecycle, middlewares []event.Middleware) event.Bus {
+	bus := NewMemoryBus(middlewares)
+
+	lc.Append(fx.StartStopHook(
+		func() error {
+			if err := bus.Start(); err != nil {
+				return fmt.Errorf("failed to start event bus: %w", err)
+			}
+			logger.Infof("Memory event bus started (middlewares=%d)", len(middlewares))
+			return nil
+		},
+		func(ctx context.Context) error {
+			if err := bus.Shutdown(ctx); err != nil {
+				return fmt.Errorf("failed to stop event bus: %w", err)
+			}
+			logger.Infof("Memory event bus stopped")
+			return nil
+		},
+	))
+
+	return bus
+}

@@ -90,7 +90,7 @@ func (suite *StorageResourceTestSuite) TearDownSuite() {
 
 func (suite *StorageResourceTestSuite) setupTestApp() {
 	// Create MinIO config with bucket
-	minioConfig := *suite.minioContainer.Config
+	minioConfig := *suite.minioContainer.MinIOConfig
 
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
@@ -111,7 +111,7 @@ func (suite *StorageResourceTestSuite) setupTestApp() {
 // Helper methods for making API requests and reading responses
 
 func (suite *StorageResourceTestSuite) makeApiRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJson(body)
+	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
@@ -155,7 +155,7 @@ func (suite *StorageResourceTestSuite) readBody(resp *http.Response) result.Resu
 	defer resp.Body.Close()
 
 	suite.Require().NoError(err, "Should read response body")
-	res, err := encoding.FromJson[result.Result](string(body))
+	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err, "Should decode response JSON")
 
 	return *res
@@ -256,8 +256,8 @@ func (suite *StorageResourceTestSuite) TestUpload() {
 	})
 }
 
-// TestGetPresignedUrl tests presigned URL generation for various scenarios.
-func (suite *StorageResourceTestSuite) TestGetPresignedUrl() {
+// TestGetPresignedURL tests presigned URL generation for various scenarios.
+func (suite *StorageResourceTestSuite) TestGetPresignedURL() {
 	suite.T().Log("Testing presigned URL generation")
 
 	suite.Run("ForDownload", func() {

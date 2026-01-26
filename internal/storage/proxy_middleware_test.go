@@ -47,7 +47,7 @@ func (m *MockStorageService) ListObjects(_ context.Context, _ storage.ListObject
 	return nil, nil
 }
 
-func (m *MockStorageService) GetPresignedUrl(_ context.Context, _ storage.PresignedURLOptions) (string, error) {
+func (m *MockStorageService) GetPresignedURL(_ context.Context, _ storage.PresignedURLOptions) (string, error) {
 	return "", nil
 }
 

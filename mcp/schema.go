@@ -107,12 +107,12 @@ func MustSchemaOf(v any) map[string]any {
 func schemaFromType(t reflect.Type) map[string]any {
 	schema := reflector.ReflectFromType(t)
 
-	json, err := encoding.ToJson(schema)
+	jsonBytes, err := encoding.ToJSON(schema)
 	if err != nil {
 		return nil
 	}
 
-	result, err := encoding.FromJson[map[string]any](json)
+	result, err := encoding.FromJSON[map[string]any](jsonBytes)
 	if err != nil {
 		return nil
 	}

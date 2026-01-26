@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/minio/minio-go/v7"
@@ -170,29 +171,17 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 	return objects, nil
 }
 
-func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
+func (s *Service) GetPresignedURL(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
 	var (
-		urlStr string
-		err    error
+		u   *url.URL
+		err error
 	)
 
 	switch opts.Method {
 	case http.MethodGet, constants.Empty:
-		u, e := s.client.PresignedGetObject(ctx, s.bucket, opts.Key, opts.Expires, nil)
-		if e == nil {
-			urlStr = u.String()
-		}
-
-		err = e
-
+		u, err = s.client.PresignedGetObject(ctx, s.bucket, opts.Key, opts.Expires, nil)
 	case http.MethodPut:
-		u, e := s.client.PresignedPutObject(ctx, s.bucket, opts.Key, opts.Expires)
-		if e == nil {
-			urlStr = u.String()
-		}
-
-		err = e
-
+		u, err = s.client.PresignedPutObject(ctx, s.bucket, opts.Key, opts.Expires)
 	default:
 		return constants.Empty, fmt.Errorf("%w: %s", ErrUnsupportedHTTPMethod, opts.Method)
 	}
@@ -201,7 +190,7 @@ func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURL
 		return constants.Empty, s.translateError(err)
 	}
 
-	return urlStr, nil
+	return u.String(), nil
 }
 
 func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {

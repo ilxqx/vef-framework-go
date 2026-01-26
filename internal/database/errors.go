@@ -8,13 +8,13 @@ import (
 )
 
 var (
-	ErrUnsupportedDbType  = errors.New("unsupported database type")
+	ErrUnsupportedDBType  = errors.New("unsupported database type")
 	errPingFailed         = errors.New("database ping failed")
 	errVersionQueryFailed = errors.New("database version query failed")
 )
 
 type DatabaseError struct {
-	Type    constants.DbType
+	Type    constants.DBType
 	Op      string
 	Err     error
 	Context map[string]any
@@ -32,7 +32,7 @@ func (e *DatabaseError) Unwrap() error {
 	return e.Err
 }
 
-func newDatabaseError(dbType constants.DbType, operation string, err error, context map[string]any) *DatabaseError {
+func newDatabaseError(dbType constants.DBType, operation string, err error, context map[string]any) *DatabaseError {
 	return &DatabaseError{
 		Type:    dbType,
 		Op:      operation,
@@ -41,16 +41,16 @@ func newDatabaseError(dbType constants.DbType, operation string, err error, cont
 	}
 }
 
-func wrapPingError(dbType constants.DbType, err error) error {
+func wrapPingError(dbType constants.DBType, err error) error {
 	return newDatabaseError(dbType, "ping", fmt.Errorf("%w: %w", errPingFailed, err), nil)
 }
 
-func wrapVersionQueryError(dbType constants.DbType, err error) error {
+func wrapVersionQueryError(dbType constants.DBType, err error) error {
 	return newDatabaseError(dbType, "version_query", fmt.Errorf("%w: %w", errVersionQueryFailed, err), nil)
 }
 
-func newUnsupportedDbTypeError(dbType constants.DbType) error {
-	return newDatabaseError(dbType, "validation", ErrUnsupportedDbType, map[string]any{
-		"supported_types": []constants.DbType{constants.DbSQLite, constants.DbPostgres, constants.DbMySQL},
+func newUnsupportedDBTypeError(dbType constants.DBType) error {
+	return newDatabaseError(dbType, "validation", ErrUnsupportedDBType, map[string]any{
+		"supported_types": []constants.DBType{constants.SQLite, constants.Postgres, constants.MySQL},
 	})
 }

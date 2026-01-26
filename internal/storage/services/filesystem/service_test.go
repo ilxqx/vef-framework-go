@@ -272,7 +272,7 @@ func TestFilesystemService(t *testing.T) {
 	})
 
 	t.Run("GetPresignedUrl", func(t *testing.T) {
-		url, err := service.GetPresignedUrl(ctx, storage.PresignedURLOptions{
+		url, err := service.GetPresignedURL(ctx, storage.PresignedURLOptions{
 			Key: "test-moved.txt",
 		})
 

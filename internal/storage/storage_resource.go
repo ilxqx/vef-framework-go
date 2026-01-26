@@ -27,14 +27,14 @@ const (
 func NewResource(service storage.Service) api.Resource {
 	return &Resource{
 		service: service,
-		Resource: api.NewResource(
+		Resource: api.NewRPCResource(
 			"sys/storage",
-			api.WithApis(
-				api.Spec{Action: "upload", Public: isStorageApiPublic},
-				api.Spec{Action: "get_presigned_url", Public: isStorageApiPublic},
-				api.Spec{Action: "delete_temp", Public: isStorageApiPublic},
-				api.Spec{Action: "stat", Public: isStorageApiPublic},
-				api.Spec{Action: "list", Public: isStorageApiPublic},
+			api.WithOperations(
+				api.OperationSpec{Action: "upload", Public: isStorageApiPublic},
+				api.OperationSpec{Action: "get_presigned_url", Public: isStorageApiPublic},
+				api.OperationSpec{Action: "delete_temp", Public: isStorageApiPublic},
+				api.OperationSpec{Action: "stat", Public: isStorageApiPublic},
+				api.OperationSpec{Action: "list", Public: isStorageApiPublic},
 			),
 		),
 	}
@@ -57,7 +57,7 @@ type UploadParams struct {
 
 // Upload generates date-partitioned keys (temp/YYYY/MM/DD/{uuid}{ext}) to organize uploads and avoid conflicts.
 func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
-	if webhelpers.IsJson(ctx) {
+	if webhelpers.IsJSON(ctx) {
 		return result.Err(i18n.T("upload_requires_multipart"))
 	}
 
@@ -105,30 +105,18 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 }
 
 func (r *Resource) generateObjectKey(filename string) string {
-	now := time.Now()
-	datePath := now.Format(templateDatePath)
-
-	id := id.GenerateUuid()
+	datePath := time.Now().Format(templateDatePath)
+	uuid := id.GenerateUUID()
 
 	ext := filepath.Ext(filename)
 	if ext == constants.Empty {
 		ext = defaultExtension
 	}
 
-	var keyBuilder strings.Builder
-
-	_, _ = keyBuilder.WriteString(storage.TempPrefix)
-
-	_, _ = keyBuilder.WriteString(datePath)
-	_ = keyBuilder.WriteByte(constants.ByteSlash)
-
-	_, _ = keyBuilder.WriteString(id)
-	_, _ = keyBuilder.WriteString(ext)
-
-	return keyBuilder.String()
+	return storage.TempPrefix + datePath + constants.Slash + uuid + ext
 }
 
-type GetPresignedUrlParams struct {
+type GetPresignedURLParams struct {
 	api.P
 
 	Key     string `json:"key" validate:"required"`
@@ -136,7 +124,7 @@ type GetPresignedUrlParams struct {
 	Method  string `json:"method"`
 }
 
-func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) error {
+func (r *Resource) GetPresignedURL(ctx fiber.Ctx, params GetPresignedURLParams) error {
 	expires := params.Expires
 	if expires <= 0 {
 		expires = 3600 // 1 hour default
@@ -147,7 +135,7 @@ func (r *Resource) GetPresignedUrl(ctx fiber.Ctx, params GetPresignedUrlParams) 
 		method = http.MethodGet
 	}
 
-	url, err := r.service.GetPresignedUrl(ctx.Context(), storage.PresignedURLOptions{
+	url, err := r.service.GetPresignedURL(ctx.Context(), storage.PresignedURLOptions{
 		Key:     params.Key,
 		Expires: time.Duration(expires) * time.Second,
 		Method:  method,

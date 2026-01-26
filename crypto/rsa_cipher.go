@@ -13,42 +13,42 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-type RsaMode string
+type RSAMode string
 
 const (
-	RsaModeOaep     RsaMode = "OAEP"
-	RsaModePkcs1v15 RsaMode = "PKCS1v15"
+	RsaModeOAEP     RSAMode = "OAEP"
+	RsaModePKCS1v15 RSAMode = "PKCS1v15"
 )
 
-type RsaSignMode string
+type RSASignMode string
 
 const (
-	RsaSignModePss      RsaSignMode = "PSS"
-	RsaSignModePkcs1v15 RsaSignMode = "PKCS1v15"
+	RsaSignModePSS      RSASignMode = "PSS"
+	RsaSignModePKCS1v15 RSASignMode = "PKCS1v15"
 )
 
 type rsaCipher struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
-	mode       RsaMode
-	signMode   RsaSignMode
+	mode       RSAMode
+	signMode   RSASignMode
 }
 
-type RsaOption func(*rsaCipher)
+type RSAOption func(*rsaCipher)
 
-func WithRsaMode(mode RsaMode) RsaOption {
+func WithRSAMode(mode RSAMode) RSAOption {
 	return func(c *rsaCipher) {
 		c.mode = mode
 	}
 }
 
-func WithRsaSignMode(signMode RsaSignMode) RsaOption {
+func WithRSASignMode(signMode RSASignMode) RSAOption {
 	return func(c *rsaCipher) {
 		c.signMode = signMode
 	}
 }
 
-func NewRsa(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, opts ...RsaOption) (CipherSigner, error) {
+func NewRSA(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, opts ...RSAOption) (CipherSigner, error) {
 	if privateKey == nil && publicKey == nil {
 		return nil, ErrAtLeastOneKeyRequired
 	}
@@ -56,8 +56,8 @@ func NewRsa(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, opts ...RsaOpt
 	cipher := &rsaCipher{
 		privateKey: privateKey,
 		publicKey:  publicKey,
-		mode:       RsaModeOaep,
-		signMode:   RsaSignModePss,
+		mode:       RsaModeOAEP,
+		signMode:   RsaSignModePSS,
 	}
 
 	for _, opt := range opts {
@@ -71,7 +71,7 @@ func NewRsa(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, opts ...RsaOpt
 	return cipher, nil
 }
 
-func parseRsaKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.PrivateKey, *rsa.PublicKey, error) {
+func parseRSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	var (
 		privateKey *rsa.PrivateKey
 		publicKey  *rsa.PublicKey
@@ -79,26 +79,34 @@ func parseRsaKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 	)
 
 	if len(privateKeyBytes) > 0 {
-		if privateKey, err = x509.ParsePKCS1PrivateKey(privateKeyBytes); err != nil {
-			if key, err := x509.ParsePKCS8PrivateKey(privateKeyBytes); err != nil {
+		privateKey, err = x509.ParsePKCS1PrivateKey(privateKeyBytes)
+		if err != nil {
+			key, pkcs8Err := x509.ParsePKCS8PrivateKey(privateKeyBytes)
+			if pkcs8Err != nil {
 				return nil, nil, fmt.Errorf("failed to parse private key (tried PKCS1 and PKCS8): %w", err)
-			} else {
-				var ok bool
-				if privateKey, ok = key.(*rsa.PrivateKey); !ok {
-					return nil, nil, ErrNotRsaPrivateKey
-				}
+			}
+
+			var ok bool
+
+			privateKey, ok = key.(*rsa.PrivateKey)
+			if !ok {
+				return nil, nil, ErrNotRsaPrivateKey
 			}
 		}
 	}
 
 	if len(publicKeyBytes) > 0 {
-		if key, err := x509.ParsePKIXPublicKey(publicKeyBytes); err != nil {
-			if publicKey, err = x509.ParsePKCS1PublicKey(publicKeyBytes); err != nil {
+		key, err := x509.ParsePKIXPublicKey(publicKeyBytes)
+		if err != nil {
+			publicKey, err = x509.ParsePKCS1PublicKey(publicKeyBytes)
+			if err != nil {
 				return nil, nil, fmt.Errorf("failed to parse public key (tried PKIX and PKCS1): %w", err)
 			}
 		} else {
 			var ok bool
-			if publicKey, ok = key.(*rsa.PublicKey); !ok {
+
+			publicKey, ok = key.(*rsa.PublicKey)
+			if !ok {
 				return nil, nil, ErrNotRsaPublicKey
 			}
 		}
@@ -107,7 +115,7 @@ func parseRsaKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*rsa.Private
 	return privateKey, publicKey, nil
 }
 
-func NewRsaFromPem(privatePem, publicPem []byte, opts ...RsaOption) (CipherSigner, error) {
+func NewRSAFromPem(privatePem, publicPem []byte, opts ...RSAOption) (CipherSigner, error) {
 	var (
 		privateKey *rsa.PrivateKey
 		publicKey  *rsa.PublicKey
@@ -115,21 +123,21 @@ func NewRsaFromPem(privatePem, publicPem []byte, opts ...RsaOption) (CipherSigne
 	)
 
 	if privatePem != nil {
-		if privateKey, err = parseRsaPrivateKeyFromPem(privatePem); err != nil {
+		if privateKey, err = parseRSAPrivateKeyFromPem(privatePem); err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
 		}
 	}
 
 	if publicPem != nil {
-		if publicKey, err = parseRsaPublicKeyFromPem(publicPem); err != nil {
+		if publicKey, err = parseRSAPublicKeyFromPem(publicPem); err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
 		}
 	}
 
-	return NewRsa(privateKey, publicKey, opts...)
+	return NewRSA(privateKey, publicKey, opts...)
 }
 
-func NewRsaFromHex(privateKeyHex, publicKeyHex string, opts ...RsaOption) (CipherSigner, error) {
+func NewRSAFromHex(privateKeyHex, publicKeyHex string, opts ...RSAOption) (CipherSigner, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -148,15 +156,15 @@ func NewRsaFromHex(privateKeyHex, publicKeyHex string, opts ...RsaOption) (Ciphe
 		}
 	}
 
-	privateKey, publicKey, err := parseRsaKeysFromBytes(privateBytes, publicBytes)
+	privateKey, publicKey, err := parseRSAKeysFromBytes(privateBytes, publicBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRsa(privateKey, publicKey, opts...)
+	return NewRSA(privateKey, publicKey, opts...)
 }
 
-func NewRsaFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...RsaOption) (CipherSigner, error) {
+func NewRSAFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...RSAOption) (CipherSigner, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -175,12 +183,12 @@ func NewRsaFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...RsaOptio
 		}
 	}
 
-	privateKey, publicKey, err := parseRsaKeysFromBytes(privateBytes, publicBytes)
+	privateKey, publicKey, err := parseRSAKeysFromBytes(privateBytes, publicBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRsa(privateKey, publicKey, opts...)
+	return NewRSA(privateKey, publicKey, opts...)
 }
 
 func (r *rsaCipher) Encrypt(plaintext string) (string, error) {
@@ -193,7 +201,7 @@ func (r *rsaCipher) Encrypt(plaintext string) (string, error) {
 		err        error
 	)
 
-	if r.mode == RsaModeOaep {
+	if r.mode == RsaModeOAEP {
 		hash := sha256.New()
 		ciphertext, err = rsa.EncryptOAEP(hash, rand.Reader, r.publicKey, []byte(plaintext), nil)
 	} else {
@@ -218,7 +226,7 @@ func (r *rsaCipher) Decrypt(ciphertext string) (string, error) {
 	}
 
 	var plaintext []byte
-	if r.mode == RsaModeOaep {
+	if r.mode == RsaModeOAEP {
 		hash := sha256.New()
 		plaintext, err = rsa.DecryptOAEP(hash, rand.Reader, r.privateKey, encryptedData, nil)
 	} else {
@@ -232,7 +240,7 @@ func (r *rsaCipher) Decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-func parseRsaPrivateKeyFromPem(pemData []byte) (*rsa.PrivateKey, error) {
+func parseRSAPrivateKeyFromPem(pemData []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
 		return nil, ErrFailedDecodePemBlock
@@ -259,7 +267,7 @@ func parseRsaPrivateKeyFromPem(pemData []byte) (*rsa.PrivateKey, error) {
 	return nil, fmt.Errorf("%w: %s", ErrUnsupportedPemType, block.Type)
 }
 
-func parseRsaPublicKeyFromPem(pemData []byte) (*rsa.PublicKey, error) {
+func parseRSAPublicKeyFromPem(pemData []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
 		return nil, ErrFailedDecodePemBlock
@@ -300,7 +308,7 @@ func (r *rsaCipher) Sign(data string) (string, error) {
 		err       error
 	)
 
-	if r.signMode == RsaSignModePss {
+	if r.signMode == RsaSignModePSS {
 		signature, err = rsa.SignPSS(rand.Reader, r.privateKey, crypto.SHA256, hashed, nil)
 	} else {
 		signature, err = rsa.SignPKCS1v15(rand.Reader, r.privateKey, crypto.SHA256, hashed)
@@ -327,7 +335,7 @@ func (r *rsaCipher) Verify(data, signature string) (bool, error) {
 	_, _ = hash.Write([]byte(data))
 	hashed := hash.Sum(nil)
 
-	if r.signMode == RsaSignModePss {
+	if r.signMode == RsaSignModePSS {
 		err = rsa.VerifyPSS(r.publicKey, crypto.SHA256, hashed, signatureBytes, nil)
 	} else {
 		err = rsa.VerifyPKCS1v15(r.publicKey, crypto.SHA256, hashed, signatureBytes)

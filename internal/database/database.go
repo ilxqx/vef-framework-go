@@ -11,7 +11,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/log"
 )
 
-func logDbVersion(provider DatabaseProvider, db *bun.DB, logger log.Logger) error {
+func logDBVersion(provider DatabaseProvider, db *bun.DB, logger log.Logger) error {
 	version, err := provider.QueryVersion(db)
 	if err != nil {
 		return wrapVersionQueryError(provider.Type(), err)
@@ -22,8 +22,8 @@ func logDbVersion(provider DatabaseProvider, db *bun.DB, logger log.Logger) erro
 	return nil
 }
 
-func setupBunDb(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) *bun.DB {
-	db := bun.NewDB(sqlDb, dialect, opts.BunOptions...)
+func setupBunDB(sqlDB *sql.DB, dialect schema.Dialect, opts *databaseOptions) *bun.DB {
+	db := bun.NewDB(sqlDB, dialect, opts.BunOptions...)
 
 	if opts.EnableQueryHook {
 		addQueryHook(db, opts.Logger, opts.SqlGuardConfig)
@@ -34,33 +34,23 @@ func setupBunDb(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) *b
 	return db
 }
 
-func configureConnectionPool(sqlDb *sql.DB, opts *databaseOptions) {
-	if opts.PoolConfig != nil {
-		opts.PoolConfig.ApplyToDB(sqlDb)
-	}
-}
-
-func initializeDatabase(sqlDb *sql.DB, dialect schema.Dialect, opts *databaseOptions) (*bun.DB, error) {
-	db := setupBunDb(sqlDb, dialect, opts)
-
-	configureConnectionPool(sqlDb, opts)
-
-	return db, nil
-}
-
-func New(config *config.DatasourceConfig, options ...Option) (*bun.DB, error) {
-	provider, exists := registry.provider(config.Type)
+func New(cfg *config.DatasourceConfig, options ...Option) (*bun.DB, error) {
+	provider, exists := registry.provider(cfg.Type)
 	if !exists {
-		return nil, newUnsupportedDbTypeError(config.Type)
+		return nil, newUnsupportedDBTypeError(cfg.Type)
 	}
 
-	sqlDb, dialect, err := provider.Connect(config)
-	if err != nil || sqlDb == nil {
+	sqlDB, dialect, err := provider.Connect(cfg)
+	if err != nil || sqlDB == nil {
 		return nil, err
 	}
 
-	opts := newDefaultOptions(config)
+	opts := newDefaultOptions(cfg)
 	opts.apply(options...)
 
-	return initializeDatabase(sqlDb, dialect, opts)
+	if opts.PoolConfig != nil {
+		opts.PoolConfig.ApplyToDB(sqlDB)
+	}
+
+	return setupBunDB(sqlDB, dialect, opts), nil
 }

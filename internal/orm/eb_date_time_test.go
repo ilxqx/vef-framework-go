@@ -359,7 +359,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 	// Test 1: Extract second from created_at column
 	suite.Run("ExtractSecondFromCreatedAt", func() {
 		type SecondResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			CreatedAt time.Time `bun:"created_at"`
 			Second    float64   `bun:"second"`
 		}
@@ -382,7 +382,7 @@ func (suite *DateTimeFunctionsTestSuite) TestExtractSecond() {
 		for _, result := range results {
 			suite.True(result.Second >= 0 && result.Second < 60, "Extracted second should be in valid range (0-59)")
 			suite.T().Logf("ID: %s, CreatedAt: %s, Second: %.0f",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.Second)
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.Second)
 		}
 	})
 
@@ -783,7 +783,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 	// Test 1: Calculate age interval between updated_at and created_at
 	suite.Run("CalculateAgeInterval", func() {
 		type AgeResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			CreatedAt string `bun:"created_at"`
 			UpdatedAt string `bun:"updated_at"`
 			Age       string `bun:"age"`
@@ -818,7 +818,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 			suite.Contains(result.Age, "days", "Age interval should contain 'days'")
 
 			suite.T().Logf("ID: %s, CreatedAt: %s, UpdatedAt: %s, Age: %s",
-				result.Id, result.CreatedAt, result.UpdatedAt, result.Age)
+				result.ID, result.CreatedAt, result.UpdatedAt, result.Age)
 		}
 	})
 
@@ -852,7 +852,7 @@ func (suite *DateTimeFunctionsTestSuite) TestAge() {
 		suite.T().Logf("Age from 1957-06-13 to 2001-04-10: %s", result.Age)
 
 		// For PostgreSQL, we can verify the exact result
-		if suite.dbType == constants.DbPostgres {
+		if suite.dbType == constants.Postgres {
 			suite.Contains(result.Age, "43 years", "Should contain approximately 43 years")
 			suite.Contains(result.Age, "9 mons", "Should contain approximately 9 months")
 		}

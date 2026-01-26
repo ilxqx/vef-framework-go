@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestEcies_EncryptDecrypt tests ECIES encryption and decryption.
-func TestEcies_EncryptDecrypt(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+// TestECIES_EncryptDecrypt tests ECIES encryption and decryption.
+func TestECIES_EncryptDecrypt(t *testing.T) {
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
-	cipher, err := NewEcies(privateKey, privateKey.PublicKey())
+	cipher, err := NewECIES(privateKey, privateKey.PublicKey())
 	require.NoError(t, err, "Should create ECIES cipher")
 
 	tests := []struct {
@@ -44,7 +44,7 @@ func TestEcies_EncryptDecrypt(t *testing.T) {
 func TestEcies_Curves(t *testing.T) {
 	curves := []struct {
 		name  string
-		curve EciesCurve
+		curve ECIESCurve
 	}{
 		{"P256", EciesCurveP256},
 		{"P384", EciesCurveP384},
@@ -54,10 +54,10 @@ func TestEcies_Curves(t *testing.T) {
 
 	for _, tc := range curves {
 		t.Run(tc.name, func(t *testing.T) {
-			privateKey, err := GenerateEciesKey(tc.curve)
+			privateKey, err := GenerateECIESKey(tc.curve)
 			require.NoError(t, err, "Should generate ECIES key pair")
 
-			cipher, err := NewEcies(privateKey, privateKey.PublicKey())
+			cipher, err := NewECIES(privateKey, privateKey.PublicKey())
 			require.NoError(t, err, "Should create ECIES cipher")
 
 			plaintext := "Test message for " + tc.name
@@ -74,13 +74,13 @@ func TestEcies_Curves(t *testing.T) {
 
 // TestEcies_FromBytes tests creating ECIES cipher from byte-encoded keys.
 func TestEcies_FromBytes(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
 	privateKeyBytes := privateKey.Bytes()
 	publicKeyBytes := privateKey.PublicKey().Bytes()
 
-	cipher, err := NewEciesFromBytes(privateKeyBytes, publicKeyBytes, EciesCurveP256)
+	cipher, err := NewECIESFromBytes(privateKeyBytes, publicKeyBytes, EciesCurveP256)
 	require.NoError(t, err, "Should create ECIES cipher from bytes")
 
 	plaintext := "Test message"
@@ -95,13 +95,13 @@ func TestEcies_FromBytes(t *testing.T) {
 
 // TestEcies_FromHex tests creating ECIES cipher from hex-encoded keys.
 func TestEcies_FromHex(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
 	privateKeyHex := hex.EncodeToString(privateKey.Bytes())
 	publicKeyHex := hex.EncodeToString(privateKey.PublicKey().Bytes())
 
-	cipher, err := NewEciesFromHex(privateKeyHex, publicKeyHex, EciesCurveP256)
+	cipher, err := NewECIESFromHex(privateKeyHex, publicKeyHex, EciesCurveP256)
 	require.NoError(t, err, "Should create ECIES cipher from hex")
 
 	plaintext := "Test message"
@@ -116,10 +116,10 @@ func TestEcies_FromHex(t *testing.T) {
 
 // TestEcies_PublicKeyOnly tests ECIES cipher with only public key.
 func TestEcies_PublicKeyOnly(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
-	cipher, err := NewEcies(nil, privateKey.PublicKey())
+	cipher, err := NewECIES(nil, privateKey.PublicKey())
 	require.NoError(t, err, "Should create ECIES cipher with public key only")
 
 	plaintext := "Test message"
@@ -133,10 +133,10 @@ func TestEcies_PublicKeyOnly(t *testing.T) {
 
 // TestEcies_PrivateKeyOnly tests ECIES cipher with only private key.
 func TestEcies_PrivateKeyOnly(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
-	cipher, err := NewEcies(privateKey, nil)
+	cipher, err := NewECIES(privateKey, nil)
 	require.NoError(t, err, "Should create ECIES cipher with private key only")
 
 	plaintext := "Test message"
@@ -151,17 +151,17 @@ func TestEcies_PrivateKeyOnly(t *testing.T) {
 
 // TestEcies_NoKeys tests that creating cipher without keys fails.
 func TestEcies_NoKeys(t *testing.T) {
-	_, err := NewEcies(nil, nil)
+	_, err := NewECIES(nil, nil)
 	assert.Error(t, err, "Should reject creating cipher without any keys")
 	assert.ErrorIs(t, err, ErrAtLeastOneKeyRequired, "Should return correct error")
 }
 
 // TestEcies_DifferentCiphertexts tests that ECIES produces different ciphertexts.
 func TestEcies_DifferentCiphertexts(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
-	cipher, err := NewEcies(privateKey, privateKey.PublicKey())
+	cipher, err := NewECIES(privateKey, privateKey.PublicKey())
 	require.NoError(t, err, "Should create ECIES cipher")
 
 	plaintext := "Test message"
@@ -186,16 +186,16 @@ func TestEcies_DifferentCiphertexts(t *testing.T) {
 
 // TestEcies_CrossKeyDecryption tests encryption with one key and decryption with another.
 func TestEcies_CrossKeyDecryption(t *testing.T) {
-	senderKey, err := GenerateEciesKey(EciesCurveP256)
+	senderKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate sender key pair")
 
-	receiverKey, err := GenerateEciesKey(EciesCurveP256)
+	receiverKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate receiver key pair")
 
-	encryptCipher, err := NewEcies(nil, receiverKey.PublicKey())
+	encryptCipher, err := NewECIES(nil, receiverKey.PublicKey())
 	require.NoError(t, err, "Should create ECIES cipher for encryption")
 
-	decryptCipher, err := NewEcies(receiverKey, nil)
+	decryptCipher, err := NewECIES(receiverKey, nil)
 	require.NoError(t, err, "Should create ECIES cipher for decryption")
 
 	plaintext := "Message from sender to receiver"
@@ -207,7 +207,7 @@ func TestEcies_CrossKeyDecryption(t *testing.T) {
 
 	assert.Equal(t, plaintext, decrypted, "Decrypted text should match original plaintext")
 
-	wrongDecryptCipher, err := NewEcies(senderKey, nil)
+	wrongDecryptCipher, err := NewECIES(senderKey, nil)
 	require.NoError(t, err, "Should create ECIES cipher with wrong key")
 
 	_, err = wrongDecryptCipher.Decrypt(ciphertext)
@@ -216,10 +216,10 @@ func TestEcies_CrossKeyDecryption(t *testing.T) {
 
 // TestEcies_InvalidCiphertext tests decryption with invalid ciphertext.
 func TestEcies_InvalidCiphertext(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
-	cipher, err := NewEcies(privateKey, privateKey.PublicKey())
+	cipher, err := NewECIES(privateKey, privateKey.PublicKey())
 	require.NoError(t, err, "Should create ECIES cipher")
 
 	_, err = cipher.Decrypt("invalid-base64")
@@ -231,10 +231,10 @@ func TestEcies_InvalidCiphertext(t *testing.T) {
 
 // TestEcies_EmptyString tests ECIES with empty string input.
 func TestEcies_EmptyString(t *testing.T) {
-	privateKey, err := GenerateEciesKey(EciesCurveP256)
+	privateKey, err := GenerateECIESKey(EciesCurveP256)
 	require.NoError(t, err, "Should generate ECIES key pair")
 
-	cipher, err := NewEcies(privateKey, privateKey.PublicKey())
+	cipher, err := NewECIES(privateKey, privateKey.PublicKey())
 	require.NoError(t, err, "Should create ECIES cipher")
 
 	plaintext := ""

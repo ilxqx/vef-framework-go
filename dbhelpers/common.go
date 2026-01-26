@@ -1,22 +1,13 @@
 package dbhelpers
 
-import (
-	"strings"
+import "github.com/ilxqx/vef-framework-go/constants"
 
-	"github.com/ilxqx/vef-framework-go/constants"
-)
-
-// ColumnWithAlias returns the column with alias if provided.
+// ColumnWithAlias returns the column prefixed with the table alias if provided.
+// For example: ColumnWithAlias("name", "u") returns "u.name".
 func ColumnWithAlias(column string, alias ...string) string {
 	if len(alias) == 0 || alias[0] == constants.Empty {
 		return column
 	}
 
-	var sb strings.Builder
-	sb.Grow(len(alias[0]) + 1 + len(column))
-	_, _ = sb.WriteString(alias[0])
-	_ = sb.WriteByte(constants.ByteDot)
-	_, _ = sb.WriteString(column)
-
-	return sb.String()
+	return alias[0] + constants.Dot + column
 }

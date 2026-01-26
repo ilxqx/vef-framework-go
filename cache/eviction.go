@@ -97,15 +97,14 @@ func (h *LruHandler) SelectEvictionCandidate() string {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	if h.accessList.Len() == 0 {
-		return constants.Empty
-	}
 	// Return least recently used (back of list)
 	elem := h.accessList.Back()
-	if elem != nil {
-		if key, ok := elem.Value.(string); ok {
-			return key
-		}
+	if elem == nil {
+		return constants.Empty
+	}
+
+	if key, ok := elem.Value.(string); ok {
+		return key
 	}
 
 	return constants.Empty
@@ -163,15 +162,14 @@ func (h *FifoHandler) SelectEvictionCandidate() string {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	if h.insertList.Len() == 0 {
-		return constants.Empty
-	}
 	// Return oldest (front of list)
 	elem := h.insertList.Front()
-	if elem != nil {
-		if key, ok := elem.Value.(string); ok {
-			return key
-		}
+	if elem == nil {
+		return constants.Empty
+	}
+
+	if key, ok := elem.Value.(string); ok {
+		return key
 	}
 
 	return constants.Empty
@@ -318,10 +316,12 @@ func (h *LfuHandler) SelectEvictionCandidate() string {
 
 	// Return the first entry (oldest by insertion order due to FIFO within bucket)
 	elem := bucket.entries.Front()
-	if elem != nil {
-		if node, ok := elem.Value.(*lfuNode); ok {
-			return node.key
-		}
+	if elem == nil {
+		return constants.Empty
+	}
+
+	if node, ok := elem.Value.(*lfuNode); ok {
+		return node.key
 	}
 
 	return constants.Empty

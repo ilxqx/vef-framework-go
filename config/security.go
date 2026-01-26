@@ -2,7 +2,7 @@ package config
 
 import "time"
 
-// SecurityConfig contains security-related configuration.
+// SecurityConfig defines security settings.
 type SecurityConfig struct {
-	TokenExpires time.Duration `config:"token_expires"` // Token expiration time
+	TokenExpires time.Duration `config:"token_expires"`
 }

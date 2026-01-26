@@ -19,14 +19,14 @@ type databaseOptions struct {
 
 type Option func(*databaseOptions)
 
-func newDefaultOptions(config *config.DatasourceConfig) *databaseOptions {
+func newDefaultOptions(cfg *config.DatasourceConfig) *databaseOptions {
 	var guardConfig *sqlguard.Config
-	if config.EnableSqlGuard {
+	if cfg.EnableSqlGuard {
 		guardConfig = sqlguard.DefaultConfig()
 	}
 
 	return &databaseOptions{
-		Config:          config,
+		Config:          cfg,
 		PoolConfig:      NewDefaultConnectionPoolConfig(),
 		EnableQueryHook: true,
 		Logger:          logger,
@@ -61,9 +61,9 @@ func WithBunOptions(bunOpts ...bun.DBOption) Option {
 }
 
 // WithSqlGuardConfig sets a custom sql guard configuration.
-func WithSqlGuardConfig(config *sqlguard.Config) Option {
+func WithSqlGuardConfig(cfg *sqlguard.Config) Option {
 	return func(opts *databaseOptions) {
-		opts.SqlGuardConfig = config
+		opts.SqlGuardConfig = cfg
 	}
 }
 

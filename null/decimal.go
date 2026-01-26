@@ -1,23 +1,18 @@
 package null
 
 import (
-	"github.com/samber/lo"
-
 	dec "github.com/shopspring/decimal"
 
 	"github.com/ilxqx/vef-framework-go/decimal"
 )
 
-// Decimal represents a decimal.Decimal that may be null.
-// It wraps shopspring/decimal.NullDecimal and provides additional convenience methods
-// for common operations. The underlying NullDecimal handles SQL database integration
-// through the driver.Valuer and sql.Scanner interfaces.
+// Decimal is a nullable decimal.Decimal. It supports SQL and JSON serialization.
+// It will marshal to null if null.
 type Decimal struct {
 	dec.NullDecimal
 }
 
-// NewDecimal creates a new Decimal with the given value and validity.
-// If valid is false, the decimal is considered null regardless of the decimal value.
+// NewDecimal creates a new Decimal.
 func NewDecimal(d decimal.Decimal, valid bool) Decimal {
 	return Decimal{
 		dec.NullDecimal{
@@ -27,26 +22,21 @@ func NewDecimal(d decimal.Decimal, valid bool) Decimal {
 	}
 }
 
-// DecimalFrom creates a valid (non-null) Decimal from a decimal.Decimal value.
-// This is equivalent to NewDecimal(d, true).
+// DecimalFrom creates a new Decimal that will always be valid.
 func DecimalFrom(d decimal.Decimal) Decimal {
 	return NewDecimal(d, true)
 }
 
-// DecimalFromPtr creates a Decimal from a pointer to decimal.Decimal.
-// If the pointer is nil, returns an invalid (null) Decimal.
-// If the pointer is not nil, returns a valid Decimal with the dereferenced value.
+// DecimalFromPtr creates a new Decimal that will be null if d is nil.
 func DecimalFromPtr(d *decimal.Decimal) Decimal {
 	if d == nil {
-		return NewDecimal(lo.Empty[decimal.Decimal](), false)
+		return NewDecimal(decimal.Zero, false)
 	}
 
 	return NewDecimal(*d, true)
 }
 
-// ValueOrZero returns the decimal value if valid, or decimal.Zero if null.
-// This method provides a safe way to get a usable decimal value without
-// having to check validity manually.
+// ValueOrZero returns the inner value if valid, otherwise zero.
 func (d Decimal) ValueOrZero() decimal.Decimal {
 	if !d.Valid {
 		return decimal.Zero
@@ -55,8 +45,7 @@ func (d Decimal) ValueOrZero() decimal.Decimal {
 	return d.Decimal
 }
 
-// ValueOr returns the decimal value if valid, or the provided fallback value if null.
-// This allows for custom default values when the decimal is null.
+// ValueOr returns the inner value if valid, otherwise v.
 func (d Decimal) ValueOr(v decimal.Decimal) decimal.Decimal {
 	if !d.Valid {
 		return v
@@ -65,15 +54,13 @@ func (d Decimal) ValueOr(v decimal.Decimal) decimal.Decimal {
 	return d.Decimal
 }
 
-// This method modifies the receiver, so it must be called on a pointer.
+// SetValid changes this Decimal's value and sets it to be non-null.
 func (d *Decimal) SetValid(v decimal.Decimal) {
 	d.Decimal = v
 	d.Valid = true
 }
 
-// Ptr returns a pointer to the decimal value if valid, or nil if null.
-// This is useful when you need to pass the value to Apis that expect *decimal.Decimal,
-// with nil representing the absence of a value.
+// Ptr returns a pointer to this Decimal's value, or a nil pointer if this Decimal is null.
 func (d Decimal) Ptr() *decimal.Decimal {
 	if !d.Valid {
 		return nil
@@ -82,25 +69,19 @@ func (d Decimal) Ptr() *decimal.Decimal {
 	return &d.Decimal
 }
 
-// IsZero returns true if the decimal is null (invalid).
-// Note: This checks for null status, not whether the decimal value itself is zero.
-// A valid decimal with value 0 will return false.
+// IsZero returns true for invalid Decimals, for future omitempty support.
+// A non-null Decimal with a zero value will not be considered zero.
 func (d Decimal) IsZero() bool {
 	return !d.Valid
 }
 
-// Equal performs semantic equality comparison between two Decimal values.
-// Two decimals are equal if they have the same validity status and,
-// if both are valid, their decimal values are mathematically equal
-// (using decimal.Equal which handles precision differences correctly).
+// Equal returns true if both decimals have the same value or are both null.
 func (d Decimal) Equal(other Decimal) bool {
 	return d.Valid == other.Valid && (!d.Valid || d.Decimal.Equal(other.Decimal))
 }
 
-// ExactEqual performs exact equality comparison between two Decimal values.
-// Unlike Equal, this method requires both the validity status and the
-// underlying decimal representation (including precision and scale) to be identical.
-// This is stricter than Equal and should be used when exact representation matters.
+// ExactEqual returns true if both Decimal objects are exactly equal or both null.
+// Unlike Equal, this requires the underlying representation to be identical.
 func (d Decimal) ExactEqual(other Decimal) bool {
 	return d.Valid == other.Valid && (!d.Valid || d.Decimal == other.Decimal)
 }

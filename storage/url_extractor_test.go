@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestExtractHtmlUrls tests HTML Url extraction from various HTML content.
-func TestExtractHtmlUrls(t *testing.T) {
+// TestExtractHTMLURLs tests HTML URL extraction from various HTML content.
+func TestExtractHTMLURLs(t *testing.T) {
 	tests := []struct {
 		name     string
 		html     string
@@ -77,7 +77,7 @@ func TestExtractHtmlUrls(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			urls := extractHtmlUrls(tt.html)
+			urls := extractHTMLURLs(tt.html)
 			if len(tt.expected) == 0 {
 				assert.Empty(t, urls)
 			} else {
@@ -87,8 +87,8 @@ func TestExtractHtmlUrls(t *testing.T) {
 	}
 }
 
-// TestReplaceHtmlUrls tests HTML URL replacement in various HTML content.
-func TestReplaceHtmlUrls(t *testing.T) {
+// TestReplaceHTMLURLs tests HTML URL replacement in various HTML content.
+func TestReplaceHTMLURLs(t *testing.T) {
 	tests := []struct {
 		name         string
 		html         string
@@ -168,14 +168,14 @@ func TestReplaceHtmlUrls(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := replaceHtmlUrls(tt.html, tt.replacements)
+			result := replaceHTMLURLs(tt.html, tt.replacements)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-// TestExtractMarkdownUrls tests Markdown URL extraction from various Markdown content.
-func TestExtractMarkdownUrls(t *testing.T) {
+// TestExtractMarkdownURLs tests Markdown URL extraction from various Markdown content.
+func TestExtractMarkdownURLs(t *testing.T) {
 	tests := []struct {
 		name     string
 		markdown string
@@ -245,7 +245,7 @@ func TestExtractMarkdownUrls(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			urls := extractMarkdownUrls(tt.markdown)
+			urls := extractMarkdownURLs(tt.markdown)
 			if len(tt.expected) == 0 {
 				assert.Empty(t, urls)
 			} else {
@@ -255,8 +255,8 @@ func TestExtractMarkdownUrls(t *testing.T) {
 	}
 }
 
-// TestReplaceMarkdownUrls tests Markdown URL replacement in various Markdown content.
-func TestReplaceMarkdownUrls(t *testing.T) {
+// TestReplaceMarkdownURLs tests Markdown URL replacement in various Markdown content.
+func TestReplaceMarkdownURLs(t *testing.T) {
 	tests := []struct {
 		name         string
 		markdown     string
@@ -327,14 +327,14 @@ func TestReplaceMarkdownUrls(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := replaceMarkdownUrls(tt.markdown, tt.replacements)
+			result := replaceMarkdownURLs(tt.markdown, tt.replacements)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-// TestIsRelativeUrl tests relative URL detection.
-func TestIsRelativeUrl(t *testing.T) {
+// TestIsRelativeURL tests relative URL detection.
+func TestIsRelativeURL(t *testing.T) {
 	tests := []struct {
 		name     string
 		url      string
@@ -361,12 +361,12 @@ func TestIsRelativeUrl(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "HttpUrl",
+			name:     "HttpURL",
 			url:      "http://example.com/pic.jpg",
 			expected: false,
 		},
 		{
-			name:     "HttpsUrl",
+			name:     "HttpsURL",
 			url:      "https://example.com/pic.jpg",
 			expected: false,
 		},
@@ -389,7 +389,7 @@ func TestIsRelativeUrl(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isRelativeUrl(tt.url)
+			result := isRelativeURL(tt.url)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

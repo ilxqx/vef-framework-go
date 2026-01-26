@@ -7,107 +7,98 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
-	"fmt"
-	"hash"
 
 	"github.com/tjfoc/gmsm/sm3"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-func Md5(data string) string {
-	return Md5Bytes([]byte(data))
+// MD5 computes the MD5 hash of the input string and returns the hex-encoded result.
+func MD5(data string) string {
+	return MD5Bytes([]byte(data))
 }
 
-func Md5Bytes(data []byte) string {
-	hash := md5.Sum(data)
-
-	return hex.EncodeToString(hash[:])
+// MD5Bytes computes the MD5 hash of the input bytes and returns the hex-encoded result.
+func MD5Bytes(data []byte) string {
+	sum := md5.Sum(data)
+	return hex.EncodeToString(sum[:])
 }
 
-func Sha1(data string) string {
-	return Sha1Bytes([]byte(data))
+// SHA1 computes the SHA-1 hash of the input string and returns the hex-encoded result.
+func SHA1(data string) string {
+	return SHA1Bytes([]byte(data))
 }
 
-func Sha1Bytes(data []byte) string {
-	hash := sha1.Sum(data)
-
-	return hex.EncodeToString(hash[:])
+// SHA1Bytes computes the SHA-1 hash of the input bytes and returns the hex-encoded result.
+func SHA1Bytes(data []byte) string {
+	sum := sha1.Sum(data)
+	return hex.EncodeToString(sum[:])
 }
 
-func Sha256(data string) string {
-	return Sha256Bytes([]byte(data))
+// SHA256 computes the SHA-256 hash of the input string and returns the hex-encoded result.
+func SHA256(data string) string {
+	return SHA256Bytes([]byte(data))
 }
 
-func Sha256Bytes(data []byte) string {
-	hash := sha256.Sum256(data)
-
-	return hex.EncodeToString(hash[:])
+// SHA256Bytes computes the SHA-256 hash of the input bytes and returns the hex-encoded result.
+func SHA256Bytes(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
-func Sha512(data string) string {
-	return Sha512Bytes([]byte(data))
+// SHA512 computes the SHA-512 hash of the input string and returns the hex-encoded result.
+func SHA512(data string) string {
+	return SHA512Bytes([]byte(data))
 }
 
-func Sha512Bytes(data []byte) string {
-	hash := sha512.Sum512(data)
-
-	return hex.EncodeToString(hash[:])
+// SHA512Bytes computes the SHA-512 hash of the input bytes and returns the hex-encoded result.
+func SHA512Bytes(data []byte) string {
+	sum := sha512.Sum512(data)
+	return hex.EncodeToString(sum[:])
 }
 
-// Sm3 uses Chinese National Standard cryptographic hash (国密算法).
-func Sm3(data string) string {
-	return Sm3Bytes([]byte(data))
+// SM3 computes the SM3 hash (Chinese National Standard) of the input string
+// and returns the hex-encoded result.
+func SM3(data string) string {
+	return SM3Bytes([]byte(data))
 }
 
-func Sm3Bytes(data []byte) string {
-	hash := sm3.Sm3Sum(data)
-
-	return hex.EncodeToString(hash)
+// SM3Bytes computes the SM3 hash (Chinese National Standard) of the input bytes
+// and returns the hex-encoded result.
+func SM3Bytes(data []byte) string {
+	sum := sm3.Sm3Sum(data)
+	return hex.EncodeToString(sum)
 }
 
-func Md5Hmac(key, data []byte) (string, error) {
+// HmacMD5 computes the HMAC-MD5 of the data using the provided key.
+func HmacMD5(key, data []byte) string {
 	mac := hmac.New(md5.New, key)
-	if _, err := mac.Write(data); err != nil {
-		return constants.Empty, fmt.Errorf("hash: failed to write data to HMAC-MD5: %w", err)
-	}
-
-	return hex.EncodeToString(mac.Sum(nil)), nil
+	mac.Write(data)
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func Sha1Hmac(key, data []byte) (string, error) {
+// HmacSHA1 computes the HMAC-SHA1 of the data using the provided key.
+func HmacSHA1(key, data []byte) string {
 	mac := hmac.New(sha1.New, key)
-	if _, err := mac.Write(data); err != nil {
-		return constants.Empty, fmt.Errorf("hash: failed to write data to HMAC-SHA1: %w", err)
-	}
-
-	return hex.EncodeToString(mac.Sum(nil)), nil
+	mac.Write(data)
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func Sha256Hmac(key, data []byte) (string, error) {
+// HmacSHA256 computes the HMAC-SHA256 of the data using the provided key.
+func HmacSHA256(key, data []byte) string {
 	mac := hmac.New(sha256.New, key)
-	if _, err := mac.Write(data); err != nil {
-		return constants.Empty, fmt.Errorf("hash: failed to write data to HMAC-SHA256: %w", err)
-	}
-
-	return hex.EncodeToString(mac.Sum(nil)), nil
+	mac.Write(data)
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
-func Sha512Hmac(key, data []byte) (string, error) {
+// HmacSHA512 computes the HMAC-SHA512 of the data using the provided key.
+func HmacSHA512(key, data []byte) string {
 	mac := hmac.New(sha512.New, key)
-	if _, err := mac.Write(data); err != nil {
-		return constants.Empty, fmt.Errorf("hash: failed to write data to HMAC-SHA512: %w", err)
-	}
-
-	return hex.EncodeToString(mac.Sum(nil)), nil
+	mac.Write(data)
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// Sm3Hmac uses Chinese National Standard cryptographic hash (国密算法).
-func Sm3Hmac(key, data []byte) (string, error) {
-	mac := hmac.New(func() hash.Hash { return sm3.New() }, key)
-	if _, err := mac.Write(data); err != nil {
-		return constants.Empty, fmt.Errorf("hash: failed to write data to HMAC-SM3: %w", err)
-	}
-
-	return hex.EncodeToString(mac.Sum(nil)), nil
+// HmacSM3 computes the HMAC-SM3 (Chinese National Standard) of the data using the provided key.
+func HmacSM3(key, data []byte) string {
+	mac := hmac.New(sm3.New, key)
+	mac.Write(data)
+	return hex.EncodeToString(mac.Sum(nil))
 }

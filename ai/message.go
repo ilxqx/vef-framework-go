@@ -16,8 +16,8 @@ const (
 
 // ToolCall represents a tool invocation request from the model.
 type ToolCall struct {
-	// Id is the unique identifier for this tool call.
-	Id string
+	// ID is the unique identifier for this tool call.
+	ID string
 	// Name is the name of the tool to invoke.
 	Name string
 	// Arguments contains the JSON-encoded arguments for the tool.
@@ -26,8 +26,8 @@ type ToolCall struct {
 
 // ToolResult represents the result of a tool execution.
 type ToolResult struct {
-	// CallId is the identifier of the corresponding ToolCall.
-	CallId string
+	// CallID is the identifier of the corresponding ToolCall.
+	CallID string
 	// Content is the result content from the tool execution.
 	Content string
 }
@@ -90,11 +90,11 @@ func NewAssistantMessageWithToolCalls(content string, toolCalls []ToolCall) *Mes
 }
 
 // NewToolMessage creates a new tool result message.
-func NewToolMessage(callId, content string) *Message {
+func NewToolMessage(callID, content string) *Message {
 	return &Message{
 		Role: RoleTool,
 		ToolResult: &ToolResult{
-			CallId:  callId,
+			CallID:  callID,
 			Content: content,
 		},
 	}

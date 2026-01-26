@@ -15,7 +15,7 @@ import (
 
 // NewSelectQuery creates a new SelectQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewSelectQuery(db *BunDb) *BunSelectQuery {
+func NewSelectQuery(db *BunDB) *BunSelectQuery {
 	eb := &QueryExprBuilder{}
 	sq := db.db.NewSelect()
 	dialect := db.db.Dialect()
@@ -37,7 +37,7 @@ func NewSelectQuery(db *BunDb) *BunSelectQuery {
 type BunSelectQuery struct {
 	QueryBuilder
 
-	db         *BunDb
+	db         *BunDB
 	dialect    schema.Dialect
 	eb         ExprBuilder
 	query      *bun.SelectQuery
@@ -46,14 +46,14 @@ type BunSelectQuery struct {
 	// State tracking for deferred select operations
 	hasSelectAll          bool
 	hasSelectModelColumns bool
-	hasSelectModelPks     bool
+	hasSelectModelPKs     bool
 	hasExplicitSelect     bool
 	explicitSelects       []func()
 	exprSelects           []func()
 	selectStateApplied    bool
 }
 
-func (q *BunSelectQuery) Db() Db {
+func (q *BunSelectQuery) DB() DB {
 	return q.db
 }
 
@@ -142,8 +142,8 @@ func (q *BunSelectQuery) SelectModelColumns() SelectQuery {
 		q.hasSelectAll = false
 	}
 
-	if q.hasSelectModelPks {
-		q.hasSelectModelPks = false
+	if q.hasSelectModelPKs {
+		q.hasSelectModelPKs = false
 	}
 
 	q.hasSelectModelColumns = true
@@ -151,7 +151,7 @@ func (q *BunSelectQuery) SelectModelColumns() SelectQuery {
 	return q
 }
 
-func (q *BunSelectQuery) SelectModelPks() SelectQuery {
+func (q *BunSelectQuery) SelectModelPKs() SelectQuery {
 	if q.hasSelectAll {
 		q.hasSelectAll = false
 	}
@@ -160,7 +160,7 @@ func (q *BunSelectQuery) SelectModelPks() SelectQuery {
 		q.hasSelectModelColumns = false
 	}
 
-	q.hasSelectModelPks = true
+	q.hasSelectModelPKs = true
 
 	return q
 }
@@ -557,7 +557,7 @@ func (q *BunSelectQuery) Where(builder func(ConditionBuilder)) SelectQuery {
 	return q
 }
 
-func (q *BunSelectQuery) WherePk(columns ...string) SelectQuery {
+func (q *BunSelectQuery) WherePK(columns ...string) SelectQuery {
 	q.query.WherePK(columns...)
 
 	return q
@@ -756,7 +756,7 @@ func (q *BunSelectQuery) ApplyIf(condition bool, fns ...ApplyFunc[SelectQuery]) 
 func (q *BunSelectQuery) clearSelectState() {
 	q.hasSelectAll = false
 	q.hasSelectModelColumns = false
-	q.hasSelectModelPks = false
+	q.hasSelectModelPKs = false
 	q.hasExplicitSelect = false
 	q.explicitSelects = nil
 }
@@ -772,8 +772,8 @@ func (q *BunSelectQuery) applySelectState() {
 	} else {
 		if q.hasSelectModelColumns {
 			q.query.ColumnExpr(constants.ExprTableColumns)
-		} else if q.hasSelectModelPks {
-			q.query.ColumnExpr(constants.ExprTablePks)
+		} else if q.hasSelectModelPKs {
+			q.query.ColumnExpr(constants.ExprTablePKs)
 		}
 
 		if q.hasExplicitSelect {

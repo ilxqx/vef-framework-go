@@ -7,54 +7,38 @@ import (
 
 // TestNewRange tests the NewRange constructor with different types.
 func TestNewRange(t *testing.T) {
-	tests := []struct {
-		name     string
-		testFunc func(t *testing.T)
-	}{
-		{
-			name: "IntRange",
-			testFunc: func(t *testing.T) {
-				intRange := NewRange(1, 10)
-				if intRange.Start != 1 {
-					t.Errorf("Expected Start to be 1, got %d", intRange.Start)
-				}
+	t.Run("IntRange", func(t *testing.T) {
+		r := NewRange(1, 10)
+		if r.Start != 1 {
+			t.Errorf("Expected Start to be 1, got %d", r.Start)
+		}
 
-				if intRange.End != 10 {
-					t.Errorf("Expected End to be 10, got %d", intRange.End)
-				}
-			},
-		},
-		{
-			name: "StringRange",
-			testFunc: func(t *testing.T) {
-				strRange := NewRange("a", "z")
-				if strRange.Start != "a" {
-					t.Errorf("Expected Start to be 'a', got %s", strRange.Start)
-				}
+		if r.End != 10 {
+			t.Errorf("Expected End to be 10, got %d", r.End)
+		}
+	})
 
-				if strRange.End != "z" {
-					t.Errorf("Expected End to be 'z', got %s", strRange.End)
-				}
-			},
-		},
-		{
-			name: "FloatRange",
-			testFunc: func(t *testing.T) {
-				floatRange := NewRange(1.5, 9.5)
-				if floatRange.Start != 1.5 {
-					t.Errorf("Expected Start to be 1.5, got %f", floatRange.Start)
-				}
+	t.Run("StringRange", func(t *testing.T) {
+		r := NewRange("a", "z")
+		if r.Start != "a" {
+			t.Errorf("Expected Start to be 'a', got %s", r.Start)
+		}
 
-				if floatRange.End != 9.5 {
-					t.Errorf("Expected End to be 9.5, got %f", floatRange.End)
-				}
-			},
-		},
-	}
+		if r.End != "z" {
+			t.Errorf("Expected End to be 'z', got %s", r.End)
+		}
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, tt.testFunc)
-	}
+	t.Run("FloatRange", func(t *testing.T) {
+		r := NewRange(1.5, 9.5)
+		if r.Start != 1.5 {
+			t.Errorf("Expected Start to be 1.5, got %f", r.Start)
+		}
+
+		if r.End != 9.5 {
+			t.Errorf("Expected End to be 9.5, got %f", r.End)
+		}
+	})
 }
 
 // TestRangeContains tests the Contains method for boundary conditions.
@@ -354,105 +338,75 @@ func TestRangeJSONMarshaling(t *testing.T) {
 
 // TestRangeWithDifferentTypes tests range operations with various numeric types.
 func TestRangeWithDifferentTypes(t *testing.T) {
-	tests := []struct {
-		name     string
-		testFunc func(t *testing.T)
-	}{
-		{
-			name: "Int8Range",
-			testFunc: func(t *testing.T) {
-				int8Range := NewRange[int8](1, 10)
-				if !int8Range.Contains(5) {
-					t.Error("int8 range should contain 5")
-				}
-			},
-		},
-		{
-			name: "Int16Range",
-			testFunc: func(t *testing.T) {
-				int16Range := NewRange[int16](100, 200)
-				if !int16Range.Contains(150) {
-					t.Error("int16 range should contain 150")
-				}
-			},
-		},
-		{
-			name: "Int32Range",
-			testFunc: func(t *testing.T) {
-				int32Range := NewRange[int32](1000, 2000)
-				if !int32Range.Contains(1500) {
-					t.Error("int32 range should contain 1500")
-				}
-			},
-		},
-		{
-			name: "Int64Range",
-			testFunc: func(t *testing.T) {
-				int64Range := NewRange[int64](10000, 20000)
-				if !int64Range.Contains(15000) {
-					t.Error("int64 range should contain 15000")
-				}
-			},
-		},
-		{
-			name: "Uint8Range",
-			testFunc: func(t *testing.T) {
-				uint8Range := NewRange[uint8](10, 250)
-				if !uint8Range.Contains(100) {
-					t.Error("uint8 range should contain 100")
-				}
-			},
-		},
-		{
-			name: "Uint16Range",
-			testFunc: func(t *testing.T) {
-				uint16Range := NewRange[uint16](1000, 50000)
-				if !uint16Range.Contains(25000) {
-					t.Error("uint16 range should contain 25000")
-				}
-			},
-		},
-		{
-			name: "Uint32Range",
-			testFunc: func(t *testing.T) {
-				uint32Range := NewRange[uint32](100000, 500000)
-				if !uint32Range.Contains(300000) {
-					t.Error("uint32 range should contain 300000")
-				}
-			},
-		},
-		{
-			name: "Uint64Range",
-			testFunc: func(t *testing.T) {
-				uint64Range := NewRange[uint64](1000000, 5000000)
-				if !uint64Range.Contains(3000000) {
-					t.Error("uint64 range should contain 3000000")
-				}
-			},
-		},
-		{
-			name: "Float32Range",
-			testFunc: func(t *testing.T) {
-				float32Range := NewRange[float32](1.1, 9.9)
-				if !float32Range.Contains(5.5) {
-					t.Error("float32 range should contain 5.5")
-				}
-			},
-		},
-		{
-			name: "Float64Range",
-			testFunc: func(t *testing.T) {
-				float64Range := NewRange[float64](1.1, 9.9)
-				if !float64Range.Contains(5.5) {
-					t.Error("float64 range should contain 5.5")
-				}
-			},
-		},
-	}
+	t.Run("Int8Range", func(t *testing.T) {
+		r := NewRange[int8](1, 10)
+		if !r.Contains(5) {
+			t.Error("int8 range should contain 5")
+		}
+	})
 
-	for _, tt := range tests {
-		t.Run(tt.name, tt.testFunc)
-	}
+	t.Run("Int16Range", func(t *testing.T) {
+		r := NewRange[int16](100, 200)
+		if !r.Contains(150) {
+			t.Error("int16 range should contain 150")
+		}
+	})
+
+	t.Run("Int32Range", func(t *testing.T) {
+		r := NewRange[int32](1000, 2000)
+		if !r.Contains(1500) {
+			t.Error("int32 range should contain 1500")
+		}
+	})
+
+	t.Run("Int64Range", func(t *testing.T) {
+		r := NewRange[int64](10000, 20000)
+		if !r.Contains(15000) {
+			t.Error("int64 range should contain 15000")
+		}
+	})
+
+	t.Run("Uint8Range", func(t *testing.T) {
+		r := NewRange[uint8](10, 250)
+		if !r.Contains(100) {
+			t.Error("uint8 range should contain 100")
+		}
+	})
+
+	t.Run("Uint16Range", func(t *testing.T) {
+		r := NewRange[uint16](1000, 50000)
+		if !r.Contains(25000) {
+			t.Error("uint16 range should contain 25000")
+		}
+	})
+
+	t.Run("Uint32Range", func(t *testing.T) {
+		r := NewRange[uint32](100000, 500000)
+		if !r.Contains(300000) {
+			t.Error("uint32 range should contain 300000")
+		}
+	})
+
+	t.Run("Uint64Range", func(t *testing.T) {
+		r := NewRange[uint64](1000000, 5000000)
+		if !r.Contains(3000000) {
+			t.Error("uint64 range should contain 3000000")
+		}
+	})
+
+	t.Run("Float32Range", func(t *testing.T) {
+		r := NewRange[float32](1.1, 9.9)
+		if !r.Contains(5.5) {
+			t.Error("float32 range should contain 5.5")
+		}
+	})
+
+	t.Run("Float64Range", func(t *testing.T) {
+		r := NewRange[float64](1.1, 9.9)
+		if !r.Contains(5.5) {
+			t.Error("float64 range should contain 5.5")
+		}
+	})
 }
 
 // TestRangeEdgeCases tests edge cases including maximum values and negative ranges.

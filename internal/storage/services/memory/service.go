@@ -131,7 +131,7 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 	return objects, nil
 }
 
-func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
+func (s *Service) GetPresignedURL(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
 	return fmt.Sprintf("memory://%s?method=%s&expires=%d", opts.Key, opts.Method, opts.Expires), nil
 }
 

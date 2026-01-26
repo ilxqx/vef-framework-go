@@ -6,6 +6,13 @@ import (
 	"github.com/go-co-op/gocron/v2"
 )
 
+// applyOptions applies the given options to the job descriptor.
+func applyOptions(d *jobDescriptor, options []JobDescriptorOption) {
+	for _, option := range options {
+		option(d)
+	}
+}
+
 // OneTimeJobDefinition defines a job that runs once at specified times.
 // It supports running immediately, at a single time, or at multiple specific times.
 type OneTimeJobDefinition struct {
@@ -99,27 +106,16 @@ func (d *CronJobDefinition) build() (gocron.JobDefinition, gocron.Task, []gocron
 // If times is empty, the job will run immediately. If it contains one time, the job runs once at that time.
 // If it contains multiple times, the job will run at each specified time.
 func NewOneTimeJob(times []time.Time, options ...JobDescriptorOption) *OneTimeJobDefinition {
-	definition := &OneTimeJobDefinition{
-		times: times,
-	}
-
-	for _, option := range options {
-		option(&definition.jobDescriptor)
-	}
+	definition := &OneTimeJobDefinition{times: times}
+	applyOptions(&definition.jobDescriptor, options)
 
 	return definition
 }
 
 // NewDurationJob creates a new duration-based job definition that runs at fixed intervals.
-// The job will execute repeatedly with the specified interval between runs.
 func NewDurationJob(interval time.Duration, options ...JobDescriptorOption) *DurationJobDefinition {
-	definition := &DurationJobDefinition{
-		interval: interval,
-	}
-
-	for _, option := range options {
-		option(&definition.jobDescriptor)
-	}
+	definition := &DurationJobDefinition{interval: interval}
+	applyOptions(&definition.jobDescriptor, options)
 
 	return definition
 }
@@ -131,10 +127,7 @@ func NewDurationRandomJob(minInterval, maxInterval time.Duration, options ...Job
 		minInterval: minInterval,
 		maxInterval: maxInterval,
 	}
-
-	for _, option := range options {
-		option(&definition.jobDescriptor)
-	}
+	applyOptions(&definition.jobDescriptor, options)
 
 	return definition
 }
@@ -146,10 +139,7 @@ func NewCronJob(expression string, withSeconds bool, options ...JobDescriptorOpt
 		expression:  expression,
 		withSeconds: withSeconds,
 	}
-
-	for _, option := range options {
-		option(&definition.jobDescriptor)
-	}
+	applyOptions(&definition.jobDescriptor, options)
 
 	return definition
 }

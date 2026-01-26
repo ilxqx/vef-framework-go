@@ -67,11 +67,11 @@ func TestOk(t *testing.T) {
 
 	t.Run("WithStructData", func(t *testing.T) {
 		type User struct {
-			Id   string
+			ID   string
 			Name string
 		}
 
-		user := User{Id: "u123", Name: "John"}
+		user := User{ID: "u123", Name: "John"}
 
 		result := Ok(user)
 
@@ -221,7 +221,7 @@ func TestResultResponse(t *testing.T) {
 
 	t.Run("WithComplexData", func(t *testing.T) {
 		type UserData struct {
-			Id    string `json:"id"`
+			ID    string `json:"id"`
 			Name  string `json:"name"`
 			Email string `json:"email"`
 		}
@@ -229,7 +229,7 @@ func TestResultResponse(t *testing.T) {
 		app := fiber.New()
 		app.Post("/test", func(ctx fiber.Ctx) error {
 			userData := UserData{
-				Id:    "u123",
+				ID:    "u123",
 				Name:  "John Doe",
 				Email: "john@example.com",
 			}
@@ -255,7 +255,7 @@ func TestResultResponse(t *testing.T) {
 		err = json.Unmarshal(body, &result)
 		require.NoError(t, err, "Should unmarshal JSON response")
 
-		assert.Equal(t, "u123", result.Data.Id, "Should have correct user ID")
+		assert.Equal(t, "u123", result.Data.ID, "Should have correct user ID")
 		assert.Equal(t, "John Doe", result.Data.Name, "Should have correct user name")
 		assert.Equal(t, "john@example.com", result.Data.Email, "Should have correct user email")
 	})
@@ -395,9 +395,9 @@ func TestOkWithVariousDataTypes(t *testing.T) {
 		{"SliceData", []int{1, 2, 3, 4, 5}},
 		{"MapData", map[string]any{"key1": "value1", "key2": 123}},
 		{"StructData", struct {
-			Id   string
+			ID   string
 			Name string
-		}{Id: "123", Name: "Test"}},
+		}{ID: "123", Name: "Test"}},
 		{"PointerData", &struct{ Value int }{Value: 100}},
 	}
 

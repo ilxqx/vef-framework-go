@@ -5,20 +5,17 @@ import (
 	"database/sql"
 	"reflect"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/feature"
 	"github.com/uptrace/bun/schema"
 
-	collections "github.com/ilxqx/go-collections"
-
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
-	"github.com/ilxqx/vef-framework-go/result"
 )
 
 // NewUpdateQuery creates a new UpdateQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewUpdateQuery(db *BunDb) *BunUpdateQuery {
+func NewUpdateQuery(db *BunDB) *BunUpdateQuery {
 	eb := &QueryExprBuilder{}
 	uq := db.db.NewUpdate()
 	dialect := db.db.Dialect()
@@ -43,7 +40,7 @@ func NewUpdateQuery(db *BunDb) *BunUpdateQuery {
 type BunUpdateQuery struct {
 	QueryBuilder
 
-	db               *BunDb
+	db               *BunDB
 	dialect          schema.Dialect
 	eb               ExprBuilder
 	query            *bun.UpdateQuery
@@ -53,7 +50,7 @@ type BunUpdateQuery struct {
 	returningColumns collections.Set[string]
 }
 
-func (q *BunUpdateQuery) Db() Db {
+func (q *BunUpdateQuery) DB() DB {
 	return q.db
 }
 
@@ -146,7 +143,7 @@ func (q *BunUpdateQuery) Where(builder func(ConditionBuilder)) UpdateQuery {
 	return q
 }
 
-func (q *BunUpdateQuery) WherePk(columns ...string) UpdateQuery {
+func (q *BunUpdateQuery) WherePK(columns ...string) UpdateQuery {
 	q.query.WherePK(columns...)
 
 	return q
@@ -331,44 +328,25 @@ func (q *BunUpdateQuery) skipCreateAuditColumns(table *schema.Table) {
 	}
 }
 
-func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
+func (q *BunUpdateQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
 	q.beforeUpdate()
 
-	if res, err = q.query.Exec(ctx, dest...); err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
-
-			return nil, result.ErrRecordAlreadyExists
-		}
-
-		if dbhelpers.IsForeignKeyError(err) {
-			logger.Warnf("Foreign key violation: %v", err)
-
-			return nil, result.ErrForeignKeyViolation
-		}
+	res, err := q.query.Exec(ctx, dest...)
+	if err != nil {
+		return nil, translateWriteError(err)
 	}
 
-	return res, err
+	return res, nil
 }
 
-func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) (err error) {
+func (q *BunUpdateQuery) Scan(ctx context.Context, dest ...any) error {
 	q.beforeUpdate()
 
-	if err = q.query.Scan(ctx, dest...); err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
-
-			return result.ErrRecordAlreadyExists
-		}
-
-		if dbhelpers.IsForeignKeyError(err) {
-			logger.Warnf("Foreign key violation: %v", err)
-
-			return result.ErrForeignKeyViolation
-		}
+	if err := q.query.Scan(ctx, dest...); err != nil {
+		return translateWriteError(err)
 	}
 
-	return err
+	return nil
 }
 
 func (q *BunUpdateQuery) Unwrap() *bun.UpdateQuery {

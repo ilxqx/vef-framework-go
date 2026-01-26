@@ -10,48 +10,48 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-type Sm4Mode string
+type SM4Mode string
 
 const (
-	Sm4ModeCbc Sm4Mode = "CBC"
-	Sm4ModeEcb Sm4Mode = "ECB"
+	SM4ModeCBC SM4Mode = "CBC"
+	SM4ModeECB SM4Mode = "ECB"
 )
 
 type sm4Cipher struct {
 	key  []byte
 	iv   []byte
-	mode Sm4Mode
+	mode SM4Mode
 }
 
-type Sm4Option func(*sm4Cipher)
+type SM4Option func(*sm4Cipher)
 
-func WithSm4Iv(iv []byte) Sm4Option {
+func WithSM4Iv(iv []byte) SM4Option {
 	return func(c *sm4Cipher) {
 		c.iv = iv
 	}
 }
 
-func WithSm4Mode(mode Sm4Mode) Sm4Option {
+func WithSM4Mode(mode SM4Mode) SM4Option {
 	return func(c *sm4Cipher) {
 		c.mode = mode
 	}
 }
 
-func NewSm4(key []byte, opts ...Sm4Option) (Cipher, error) {
+func NewSM4(key []byte, opts ...SM4Option) (Cipher, error) {
 	if len(key) != sm4.BlockSize {
 		return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidSm4KeySize, len(key), sm4.BlockSize)
 	}
 
 	cipher := &sm4Cipher{
 		key:  key,
-		mode: Sm4ModeCbc,
+		mode: SM4ModeCBC,
 	}
 
 	for _, opt := range opts {
 		opt(cipher)
 	}
 
-	if cipher.mode == Sm4ModeCbc {
+	if cipher.mode == SM4ModeCBC {
 		if len(cipher.iv) != sm4.BlockSize {
 			return nil, fmt.Errorf("%w: %d bytes (must be %d)", ErrInvalidIvSizeCbc, len(cipher.iv), sm4.BlockSize)
 		}
@@ -60,41 +60,41 @@ func NewSm4(key []byte, opts ...Sm4Option) (Cipher, error) {
 	return cipher, nil
 }
 
-func NewSm4FromHex(keyHex string, opts ...Sm4Option) (Cipher, error) {
+func NewSM4FromHex(keyHex string, opts ...SM4Option) (Cipher, error) {
 	key, err := encoding.FromHex(keyHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from hex: %w", err)
 	}
 
-	return NewSm4(key, opts...)
+	return NewSM4(key, opts...)
 }
 
-func NewSm4FromBase64(keyBase64 string, opts ...Sm4Option) (Cipher, error) {
+func NewSM4FromBase64(keyBase64 string, opts ...SM4Option) (Cipher, error) {
 	key, err := encoding.FromBase64(keyBase64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from base64: %w", err)
 	}
 
-	return NewSm4(key, opts...)
+	return NewSM4(key, opts...)
 }
 
 func (s *sm4Cipher) Encrypt(plaintext string) (string, error) {
-	if s.mode == Sm4ModeEcb {
-		return s.encryptEcb(plaintext)
+	if s.mode == SM4ModeECB {
+		return s.encryptECB(plaintext)
 	}
 
-	return s.encryptCbc(plaintext)
+	return s.encryptCBC(plaintext)
 }
 
 func (s *sm4Cipher) Decrypt(ciphertext string) (string, error) {
-	if s.mode == Sm4ModeEcb {
-		return s.decryptEcb(ciphertext)
+	if s.mode == SM4ModeECB {
+		return s.decryptECB(ciphertext)
 	}
 
-	return s.decryptCbc(ciphertext)
+	return s.decryptCBC(ciphertext)
 }
 
-func (s *sm4Cipher) encryptEcb(plaintext string) (string, error) {
+func (s *sm4Cipher) encryptECB(plaintext string) (string, error) {
 	paddedData := pkcs7Padding([]byte(plaintext), sm4.BlockSize)
 
 	ciphertext, err := sm4.Sm4Ecb(s.key, paddedData, true)
@@ -105,7 +105,7 @@ func (s *sm4Cipher) encryptEcb(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-func (s *sm4Cipher) decryptEcb(ciphertext string) (string, error) {
+func (s *sm4Cipher) decryptECB(ciphertext string) (string, error) {
 	encryptedData, err := encoding.FromBase64(ciphertext)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to decode base64: %w", err)
@@ -124,7 +124,7 @@ func (s *sm4Cipher) decryptEcb(ciphertext string) (string, error) {
 	return string(unpaddedData), nil
 }
 
-func (s *sm4Cipher) encryptCbc(plaintext string) (string, error) {
+func (s *sm4Cipher) encryptCBC(plaintext string) (string, error) {
 	block, err := sm4.NewCipher(s.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create SM4 cipher: %w", err)
@@ -139,7 +139,7 @@ func (s *sm4Cipher) encryptCbc(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-func (s *sm4Cipher) decryptCbc(ciphertext string) (string, error) {
+func (s *sm4Cipher) decryptCBC(ciphertext string) (string, error) {
 	block, err := sm4.NewCipher(s.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create SM4 cipher: %w", err)
@@ -165,3 +165,5 @@ func (s *sm4Cipher) decryptCbc(ciphertext string) (string, error) {
 
 	return string(unpaddedData), nil
 }
+
+var _ Cipher = (*sm4Cipher)(nil)

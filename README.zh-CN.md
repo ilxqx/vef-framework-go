@@ -416,7 +416,7 @@ type UserSearch struct {
 ```go
 type UserParams struct {
     api.P
-    Id       string      `json:"id"` // 更新操作时必需
+    ID       string      `json:"id"` // 更新操作时必需
 
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"用户名"`
     Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"邮箱"`
@@ -432,7 +432,7 @@ type UserParams struct {
 // 共享字段
 type UserParams struct {
     api.P
-    Id       string
+    ID       string
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"用户名"`
     Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"邮箱"`
     IsActive bool        `json:"isActive"`
@@ -613,13 +613,13 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
         
         grouped := make(map[string]*DepartmentUsers)
         for _, user := range users {
-            if _, exists := grouped[user.DepartmentId]; !exists {
-                grouped[user.DepartmentId] = &DepartmentUsers{
+            if _, exists := grouped[user.DepartmentID]; !exists {
+                grouped[user.DepartmentID] = &DepartmentUsers{
                     DepartmentName: user.DepartmentName,
                     Users:          []User{},
                 }
             }
-            grouped[user.DepartmentId].Users = append(grouped[user.DepartmentId].Users, user)
+            grouped[user.DepartmentID].Users = append(grouped[user.DepartmentID].Users, user)
         }
         
         result := make([]DepartmentUsers, 0, len(grouped))
@@ -921,8 +921,8 @@ func buildOrganizationTree(flatModels []models.Organization) []models.Organizati
     return treebuilder.Build(
         flatModels,
         treebuilder.Adapter[models.Organization]{
-            GetId:       func(m models.Organization) string { return m.Id },
-            GetParentId: func(m models.Organization) string { return m.ParentId.ValueOrZero() },
+            GetID:       func(m models.Organization) string { return m.ID },
+            GetParentID: func(m models.Organization) string { return m.ParentID.ValueOrZero() },
             SetChildren: func(m *models.Organization, children []models.Organization) {
                 m.Children = children
             },
@@ -941,7 +941,7 @@ func buildOrganizationTree(flatModels []models.Organization) []models.Organizati
 type Organization struct {
     orm.Model
     Name     string          `json:"name"`
-    ParentId null.String     `json:"parentId" bun:"type:varchar(20)"` // 根节点为 NULL
+    ParentID null.String     `json:"parentID" bun:"type:varchar(20)"` // 根节点为 NULL
     Children []Organization  `json:"children" bun:"-"`                // 计算字段，不在数据库中
 }
 ```
@@ -958,8 +958,8 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.Org
         LabelColumn: "name",
         ValueColumn: "id",
     }).
-    WithIdColumn("id").
-    WithParentIdColumn("parent_id").
+    WithIDColumn("id").
+    WithParentIDColumn("parent_id").
     WithDefaultSort(&sort.OrderSpec{
         Column:    "sort_order",
         Direction: sort.OrderAsc,
@@ -979,7 +979,7 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
     WithCsvOptions(&csv.ExportOptions{            // CSV 特定选项
         Delimiter: ',',
     }).
-    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx, db orm.Db) error {
+    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx, db orm.DB) error {
         // 导出前修改数据（例如数据脱敏）
         for i := range users {
             users[i].Password = "***"
@@ -998,7 +998,7 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
 
 ```go
 CreateApi: apis.NewCreateApi[User, UserParams]().
-    WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.DB) error {
         // 创建用户前对密码进行哈希
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
         if err != nil {
@@ -1007,7 +1007,7 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
         model.Password = string(hashed)
         return nil
     }).
-    WithPostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.Db) error {
+    WithPostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.DB) error {
         // 用户创建后发送欢迎邮件（在事务内执行）
         return sendWelcomeEmail(model.Email)
     }),
@@ -1034,7 +1034,7 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
 ```go
 // 系统用户保护 - 防止删除关键系统用户
 DeleteApi: apis.NewDeleteApi[User]().
-    WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.Db) error {
+    WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.DB) error {
         // 保护系统内部用户不被删除
         switch model.Username {
         case "system", "anonymous", "cron":
@@ -1045,7 +1045,7 @@ DeleteApi: apis.NewDeleteApi[User]().
 
 // 条件密码哈希 - 仅在密码被修改时进行哈希
 UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
-    WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.DB) error {
         // 仅在密码被更新时进行哈希
         if params.Password.Valid && params.Password.String != "" {
             hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password.String), bcrypt.DefaultCost)
@@ -1062,7 +1062,7 @@ UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
 
 // 业务验证 - 在操作前验证业务规则
 CreateApi: apis.NewCreateApi[Order, OrderParams]().
-    WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.DB) error {
         // 验证订单总额是否匹配项目总额
         if model.TotalAmount <= 0 {
             return result.Err("订单总额必须大于零")
@@ -1123,7 +1123,7 @@ func NewRoleResource() api.Resource {
 // find_role_permissions 操作的自定义处理器方法
 func (r *RoleResource) FindRolePermissions(
     ctx fiber.Ctx,
-    db orm.Db,
+    db orm.DB,
     params payloads.RolePermissionQuery,
 ) error {
     // 自定义业务逻辑
@@ -1134,11 +1134,11 @@ func (r *RoleResource) FindRolePermissions(
 // save_role_permissions 操作的自定义处理器方法
 func (r *RoleResource) SaveRolePermissions(
     ctx fiber.Ctx,
-    db orm.Db,
+    db orm.DB,
     params payloads.RolePermissionParams,
 ) error {
     // 基于事务的自定义逻辑
-    return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+    return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
         // 在事务中保存权限
         // ...
         return nil
@@ -1160,7 +1160,7 @@ func (r *RoleResource) SaveRolePermissions(
 ```go
 func (r *UserResource) ResetPassword(
     ctx fiber.Ctx,
-    db orm.Db,
+    db orm.DB,
     logger log.Logger,
     principal *security.Principal,
     params ResetPasswordParams,
@@ -1188,7 +1188,7 @@ func (r *UserResource) ResetPassword(
 **可注入参数类型：**
 
 - `fiber.Ctx` - HTTP 上下文
-- `orm.Db` - 数据库连接
+- `orm.DB` - 数据库连接
 - `log.Logger` - 日志记录器
 - `mold.Transformer` - 数据转换器
 - `*security.Principal` - 当前认证用户
@@ -1350,7 +1350,7 @@ type UserSearch struct {
 在事务中执行多个操作：
 
 ```go
-err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
     // 插入用户
     _, err := tx.NewInsert().Model(&user).Exec(txCtx)
     if err != nil {
@@ -1358,7 +1358,7 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
     }
 
     // 更新关联记录
-    _, err = tx.NewUpdate().Model(&profile).WherePk().Exec(txCtx)
+    _, err = tx.NewUpdate().Model(&profile).WherePK().Exec(txCtx)
     return err // 返回 nil 自动提交，返回错误自动回滚
 })
 ```
@@ -1387,7 +1387,7 @@ import (
 )
 
 type MyUserLoader struct {
-    db orm.Db
+    db orm.DB
 }
 
 func (l *MyUserLoader) LoadByUsername(ctx context.Context, username string) (*security.Principal, string, error) {
@@ -1415,7 +1415,7 @@ func (l *MyUserLoader) LoadById(ctx context.Context, id string) (*security.Princ
     // 类似的实现
 }
 
-func NewMyUserLoader(db orm.Db) *MyUserLoader {
+func NewMyUserLoader(db orm.DB) *MyUserLoader {
     return &MyUserLoader{db: db}
 }
 
@@ -1450,7 +1450,7 @@ import (
 )
 
 type MyRolePermissionsLoader struct {
-    db orm.Db
+    db orm.DB
 }
 
 // LoadPermissions 加载指定角色的所有权限
@@ -1488,7 +1488,7 @@ func (l *MyRolePermissionsLoader) LoadPermissions(ctx context.Context, role stri
     return result, nil
 }
 
-func NewMyRolePermissionsLoader(db orm.Db) security.RolePermissionsLoader {
+func NewMyRolePermissionsLoader(db orm.DB) security.RolePermissionsLoader {
     return &MyRolePermissionsLoader{db: db}
 }
 
@@ -1618,7 +1618,7 @@ func (s *DepartmentDataScope) Supports(principal *security.Principal, table *orm
 func (s *DepartmentDataScope) Apply(principal *security.Principal, query orm.SelectQuery) error {
     // 从 principal.Details 中获取用户的部门 ID
     type UserDetails struct {
-        DepartmentId string `json:"departmentId"`
+        DepartmentID string `json:"departmentId"`
     }
     
     details, ok := principal.Details.(UserDetails)
@@ -1628,7 +1628,7 @@ func (s *DepartmentDataScope) Apply(principal *security.Principal, query orm.Sel
     
     // 应用过滤条件
     query.Where(func(cb orm.ConditionBuilder) {
-        cb.Equals("department_id", details.DepartmentId)
+        cb.Equals("department_id", details.DepartmentID)
     })
     
     return nil
@@ -1787,7 +1787,7 @@ func (r *UserResource) CreateUser(ctx fiber.Ctx, bus event.Bus, ...) error {
     bus.Publish(event.NewBaseEvent(
         "user.created",
         event.WithSource("user-service"),
-        event.WithMeta("userId", user.Id),
+        event.WithMeta("userID", user.Id),
     ))
     
     return result.Ok().Response(ctx)
@@ -1799,7 +1799,7 @@ func main() {
         vef.Invoke(func(bus event.Bus, logger log.Logger) {
             unsubscribe := bus.Subscribe("user.created", func(ctx context.Context, e event.Event) {
                 // 处理事件
-                logger.Infof("用户已创建: %s", e.Meta()["userId"])
+                logger.Infof("用户已创建: %s", e.Meta()["userID"])
             })
             
             // 可选：稍后取消订阅
@@ -1827,7 +1827,7 @@ import (
 var Module = vef.Module(
     "app:vef",
     vef.Invoke(
-        func(lc vef.Lifecycle, db orm.Db, subscriber event.Subscriber) {
+        func(lc vef.Lifecycle, db orm.DB, subscriber event.Subscriber) {
             // 创建并注册审计事件订阅者
             auditSub := NewAuditEventSubscriber(db, subscriber)
 
@@ -1858,11 +1858,11 @@ var Module = vef.Module(
 
 ```go
 type AuditEventSubscriber struct {
-    db           orm.Db
+    db           orm.DB
     unsubscribe  event.UnsubscribeFunc
 }
 
-func NewAuditEventSubscriber(db orm.Db, subscriber event.Subscriber) *AuditEventSubscriber {
+func NewAuditEventSubscriber(db orm.DB, subscriber event.Subscriber) *AuditEventSubscriber {
     sub := &AuditEventSubscriber{db: db}
 
     // 订阅并存储取消订阅函数
@@ -1893,7 +1893,7 @@ import "github.com/ilxqx/vef-framework-go/contextx"
 
 func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
     // 获取请求范围的数据库（已预配置 operator）
-    db := contextx.Db(ctx)
+    db := contextx.DB(ctx)
 
     // 获取当前认证用户
     principal := contextx.Principal(ctx)
@@ -1915,7 +1915,7 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
 
 **可用助手：**
 
-- **`contextx.Db(ctx)`** - 返回请求范围的 `orm.Db`，已预配置审计字段（如 `operator`）
+- **`contextx.DB(ctx)`** - 返回请求范围的 `orm.DB`，已预配置审计字段（如 `operator`）
 - **`contextx.Principal(ctx)`** - 返回当前 `*security.Principal`（认证用户或匿名用户）
 - **`contextx.Logger(ctx)`** - 返回请求范围的 `log.Logger`，包含请求 ID 用于关联
 - **`contextx.DataPermApplier(ctx)`** - 返回请求范围的 `security.DataPermissionApplier`，供数据权限中间件使用
@@ -1931,7 +1931,7 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
 // 优先使用：处理器中的参数注入
 func (r *UserResource) UpdateProfile(
     ctx fiber.Ctx,
-    db orm.Db,           // 由框架注入
+    db orm.DB,           // 由框架注入
     logger log.Logger,   // 由框架注入
     params ProfileParams,
 ) error {
@@ -1941,7 +1941,7 @@ func (r *UserResource) UpdateProfile(
 
 // 在注入不可用时使用 contextx
 func helperFunction(ctx fiber.Ctx) error {
-    db := contextx.Db(ctx)       // 从上下文提取
+    db := contextx.DB(ctx)       // 从上下文提取
     logger := contextx.Logger(ctx)
     logger.Infof("助手函数")
     // ...
@@ -2285,7 +2285,7 @@ func (r *UserResource) UploadAvatar(
         Size:        params.File.Size,
         ContentType: params.File.Header.Get("Content-Type"),
         Metadata: map[string]string{
-            "userId": "12345",
+            "userID": "12345",
         },
     })
     if err != nil {
@@ -2435,13 +2435,13 @@ go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schem
 package schemas
 
 var User = struct {
-    Id        func(withTablePrefix ...bool) string
+    ID        func(withTablePrefix ...bool) string
     Username  func(withTablePrefix ...bool) string
     Email     func(withTablePrefix ...bool) string
     CreatedAt func(withTablePrefix ...bool) string
     // ... 其他字段
 }{
-    Id:        field("id", "su"),
+    ID:        field("id", "su"),
     Username:  field("username", "su"),
     Email:     field("email", "su"),
     CreatedAt: field("created_at", "su"),

@@ -1,11 +1,11 @@
 package config
 
-// RedisConfig represents configuration for Redis-based cache and storage.
+// RedisConfig defines Redis connection settings.
 type RedisConfig struct {
-	Host     string `config:"host"`     // Host is the Redis server host
-	Port     uint16 `config:"port"`     // Port is the Redis server port
-	User     string `config:"user"`     // User for Redis authentication (optional)
-	Password string `config:"password"` // Password for Redis authentication (optional)
-	Database uint8  `config:"database"` // Database is the Redis database number (0-15)
-	Network  string `config:"network"`  // Network type: "tcp", "unix" (default: "tcp")
+	Host     string `config:"host"`
+	Port     uint16 `config:"port"`
+	User     string `config:"user"`
+	Password string `config:"password"`
+	Database uint8  `config:"database"` // Database number (0-15)
+	Network  string `config:"network"`  // "tcp" or "unix" (default: "tcp")
 }

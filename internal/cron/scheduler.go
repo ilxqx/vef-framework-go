@@ -28,23 +28,19 @@ func newScheduler(lc fx.Lifecycle) (gocron.Scheduler, error) {
 		return nil, fmt.Errorf("failed to create cron scheduler: %w", err)
 	}
 
-	lc.Append(
-		fx.StartStopHook(
-			func() {
-				scheduler.Start()
-				logger.Info("Cron scheduler started")
-			},
-			func() error {
-				if err := scheduler.Shutdown(); err != nil {
-					return fmt.Errorf("failed to stop scheduler: %w", err)
-				}
-
-				logger.Info("Cron scheduler stopped")
-
-				return nil
-			},
-		),
-	)
+	lc.Append(fx.StartStopHook(
+		func() {
+			scheduler.Start()
+			logger.Info("Cron scheduler started")
+		},
+		func() error {
+			if err := scheduler.Shutdown(); err != nil {
+				return fmt.Errorf("failed to stop scheduler: %w", err)
+			}
+			logger.Info("Cron scheduler stopped")
+			return nil
+		},
+	))
 
 	return scheduler, nil
 }

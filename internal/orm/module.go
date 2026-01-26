@@ -8,9 +8,5 @@ var Module = fx.Module(
 	"vef:orm",
 	fx.Provide(
 		New,
-		fx.Annotate(
-			NewDbFactoryParamResolver,
-			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
-		),
 	),
 )

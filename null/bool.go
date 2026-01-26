@@ -45,6 +45,8 @@ func BoolFromPtr(b *bool) Bool {
 	return NewBool(*b, true)
 }
 
+// Value implements driver.Valuer.
+// It returns nil if this Bool is null, otherwise 1 or 0.
 func (b Bool) Value() (driver.Value, error) {
 	if !b.Valid {
 		return nil, nil

@@ -26,18 +26,20 @@ type jobInfo struct {
 }
 
 func (i *jobInfo) buildJobOptions() ([]gocron.JobOption, error) {
-	var options []gocron.JobOption
-
 	if i.name == constants.Empty {
 		return nil, ErrJobNameRequired
 	}
 
-	uuid, err := uuid.NewRandom()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate uuid: %w", err)
 	}
 
-	options = append(options, gocron.WithIdentifier(uuid), gocron.WithName(i.name))
+	options := []gocron.JobOption{
+		gocron.WithIdentifier(id),
+		gocron.WithName(i.name),
+	}
+
 	if len(i.tags) > 0 {
 		options = append(options, gocron.WithTags(i.tags...))
 	}

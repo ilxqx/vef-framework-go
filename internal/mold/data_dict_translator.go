@@ -28,18 +28,15 @@ func (t *DataDictTranslator) Supports(kind string) bool {
 }
 
 func (t *DataDictTranslator) Translate(ctx context.Context, kind, value string) (string, error) {
-	// Skip if resolver is nil
 	if t.resolver == nil {
 		return constants.Empty, ErrDataDictResolverNotConfigured
 	}
 
-	// Extract the dictionary key from the value (remove "dict:" prefix)
 	dictKey := kind[len(dictKeyPrefix):]
 
 	result, err := t.resolver.Resolve(ctx, dictKey, value)
 	if err != nil {
 		t.logger.Errorf("Failed to resolve dictionary %q for code %q: %v", dictKey, value, err)
-
 		return constants.Empty, err
 	}
 

@@ -39,7 +39,7 @@ func (m *MockUserLoader) LoadByUsername(ctx context.Context, username string) (*
 	return args.Get(0).(*security.Principal), args.String(1), args.Error(2)
 }
 
-func (m *MockUserLoader) LoadById(ctx context.Context, id string) (*security.Principal, error) {
+func (m *MockUserLoader) LoadByID(ctx context.Context, id string) (*security.Principal, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -118,7 +118,7 @@ func (suite *McpTestSuite) setupTestApp() {
 			&config.SecurityConfig{
 				TokenExpires: 24 * time.Hour,
 			},
-			&security.JwtConfig{
+			&security.JWTConfig{
 				Secret:   suite.jwtSecret,
 				Audience: "test-app",
 			},
@@ -128,7 +128,7 @@ func (suite *McpTestSuite) setupTestApp() {
 				Return(suite.testUser, hashedPassword, nil).
 				Maybe()
 
-			suite.userLoader.On("LoadById", mock.Anything, "user001").
+			suite.userLoader.On("LoadByID", mock.Anything, "user001").
 				Return(suite.testUser, nil).
 				Maybe()
 		}),
@@ -175,13 +175,13 @@ func (suite *McpTestSuite) getAccessToken() string {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
 	}
 
-	jsonBody, err := encoding.ToJson(loginRequest)
+	jsonBody, err := encoding.ToJSON(loginRequest)
 	suite.Require().NoError(err, "Should encode login request to JSON")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))

@@ -8,11 +8,11 @@ import (
 )
 
 type bunRawQuery struct {
-	db    *BunDb
+	db    *BunDB
 	query *bun.RawQuery
 }
 
-func newRawQuery(db *BunDb, query string, args ...any) *bunRawQuery {
+func newRawQuery(db *BunDB, query string, args ...any) *bunRawQuery {
 	return &bunRawQuery{
 		db:    db,
 		query: db.db.NewRaw(query, args...),

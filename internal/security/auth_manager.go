@@ -3,7 +3,10 @@ package security
 import (
 	"context"
 
+	"github.com/gofiber/fiber/v3"
+
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -19,14 +22,14 @@ func NewAuthManager(authenticators []security.Authenticator) security.AuthManage
 }
 
 func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
-	authenticator := am.findAuthenticator(authentication.Type)
+	authenticator := am.findAuthenticator(authentication.Kind)
 	if authenticator == nil {
-		logger.Warnf("No authenticator found for authentication type: %s", authentication.Type)
+		logger.Warnf("No authenticator found for authentication type: %s", authentication.Kind)
 
-		return nil, result.Errf(
-			"Authentication type %q is not supported",
-			authentication.Type,
+		return nil, result.Err(
+			i18n.T(result.ErrMessageUnsupportedAuthenticationType, map[string]any{"kind": authentication.Kind}),
 			result.WithCode(result.ErrCodeUnsupportedAuthenticationType),
+			result.WithStatus(fiber.StatusBadRequest),
 		)
 	}
 
@@ -35,7 +38,7 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 		if _, ok := result.AsErr(err); !ok {
 			maskedPrincipal := maskPrincipal(authentication.Principal)
 			logger.Warnf("Authentication failed: type=%s, principal=%s, authenticator=%T, error=%v",
-				authentication.Type, maskedPrincipal, authenticator, err)
+				authentication.Kind, maskedPrincipal, authenticator, err)
 		}
 
 		return nil, err

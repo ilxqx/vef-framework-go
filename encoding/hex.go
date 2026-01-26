@@ -14,8 +14,7 @@ func ToHex(data []byte) string {
 // FromHex decodes a hexadecimal string to binary data.
 func FromHex(s string) ([]byte, error) {
 	if s == constants.Empty {
-		return []byte{}, nil
+		return nil, nil
 	}
-
 	return hex.DecodeString(s)
 }

@@ -2,123 +2,131 @@ package copier
 
 import "github.com/jinzhu/copier"
 
-// converters is the default converters for copier.
-var converters = []TypeConverter{
+// defaultConverters contains all built-in type converters for null types.
+var defaultConverters = []TypeConverter{
 	// null.String converters
-	stringToNullStringConverter,
-	stringPtrToNullStringConverter,
 	nullStringToStringConverter,
 	nullStringToStringPtrConverter,
+	stringToNullStringConverter,
+	stringPtrToNullStringConverter,
 
 	// null.Int converters
-	intToNullIntConverter,
-	intPtrToNullIntConverter,
 	nullIntToIntConverter,
 	nullIntToIntPtrConverter,
+	intToNullIntConverter,
+	intPtrToNullIntConverter,
 
 	// null.Int16 converters
-	int16ToNullInt16Converter,
-	int16PtrToNullInt16Converter,
 	nullInt16ToInt16Converter,
 	nullInt16ToInt16PtrConverter,
+	int16ToNullInt16Converter,
+	int16PtrToNullInt16Converter,
 
 	// null.Int32 converters
-	int32ToNullInt32Converter,
-	int32PtrToNullInt32Converter,
 	nullInt32ToInt32Converter,
 	nullInt32ToInt32PtrConverter,
+	int32ToNullInt32Converter,
+	int32PtrToNullInt32Converter,
 
 	// null.Float converters
-	floatToNullFloatConverter,
-	floatPtrToNullFloatConverter,
 	nullFloatToFloatConverter,
 	nullFloatToFloatPtrConverter,
+	floatToNullFloatConverter,
+	floatPtrToNullFloatConverter,
 
 	// null.Byte converters
-	byteToNullByteConverter,
-	bytePtrToNullByteConverter,
 	nullByteToByteConverter,
 	nullByteToBytePtrConverter,
+	byteToNullByteConverter,
+	bytePtrToNullByteConverter,
 
 	// null.Bool converters
-	boolToNullBoolConverter,
-	boolPtrToNullBoolConverter,
 	nullBoolToBoolConverter,
 	nullBoolToBoolPtrConverter,
+	boolToNullBoolConverter,
+	boolPtrToNullBoolConverter,
 
 	// null.DateTime converters
-	dateTimeToNullDateTimeConverter,
-	dateTimePtrToNullDateTimeConverter,
 	nullDateTimeToDateTimeConverter,
 	nullDateTimeToDateTimePtrConverter,
+	dateTimeToNullDateTimeConverter,
+	dateTimePtrToNullDateTimeConverter,
 
 	// null.Date converters
-	dateToNullDateConverter,
-	datePtrToNullDateConverter,
 	nullDateToDateConverter,
 	nullDateToDatePtrConverter,
+	dateToNullDateConverter,
+	datePtrToNullDateConverter,
 
 	// null.Time converters
-	timeToNullTimeConverter,
-	timePtrToNullTimeConverter,
 	nullTimeToTimeConverter,
 	nullTimeToTimePtrConverter,
+	timeToNullTimeConverter,
+	timePtrToNullTimeConverter,
 
 	// null.Decimal converters
-	decimalToNullDecimalConverter,
-	decimalPtrToNullDecimalConverter,
 	nullDecimalToDecimalConverter,
 	nullDecimalToDecimalPtrConverter,
+	decimalToNullDecimalConverter,
+	decimalPtrToNullDecimalConverter,
 }
 
 type (
-	copyOption    func(option *copier.Option)
+	// CopyOption configures the copy behavior.
+	CopyOption func(option *copier.Option)
+
+	// TypeConverter is an alias for copier.TypeConverter.
 	TypeConverter = copier.TypeConverter
+
+	// FieldNameMapping is an alias for copier.FieldNameMapping.
+	FieldNameMapping = copier.FieldNameMapping
 )
 
-// WithIgnoreEmpty ignore empty fields.
-func WithIgnoreEmpty() copyOption {
+// WithIgnoreEmpty skips copying fields with zero values.
+func WithIgnoreEmpty() CopyOption {
 	return func(option *copier.Option) {
 		option.IgnoreEmpty = true
 	}
 }
 
-// WithDeepCopy deep copy fields.
-func WithDeepCopy() copyOption {
+// WithDeepCopy enables deep copying of nested structures.
+func WithDeepCopy() CopyOption {
 	return func(option *copier.Option) {
 		option.DeepCopy = true
 	}
 }
 
-// WithCaseInsensitive case-insensitive.
-func WithCaseInsensitive() copyOption {
+// WithCaseInsensitive enables case-insensitive field name matching.
+func WithCaseInsensitive() CopyOption {
 	return func(option *copier.Option) {
 		option.CaseSensitive = false
 	}
 }
 
-// WithFieldNameMapping field name mapping.
-func WithFieldNameMapping(fieldMapping ...copier.FieldNameMapping) copyOption {
+// WithFieldNameMapping adds custom field name mappings.
+func WithFieldNameMapping(mappings ...FieldNameMapping) CopyOption {
 	return func(option *copier.Option) {
-		option.FieldNameMapping = append(option.FieldNameMapping, fieldMapping...)
+		option.FieldNameMapping = append(option.FieldNameMapping, mappings...)
 	}
 }
 
-func WithTypeConverters(converters ...TypeConverter) copyOption {
+// WithTypeConverters adds custom type converters.
+func WithTypeConverters(converters ...TypeConverter) CopyOption {
 	return func(option *copier.Option) {
 		option.Converters = append(option.Converters, converters...)
 	}
 }
 
-// Copy src to dst.
-func Copy(src, dst any, options ...copyOption) error {
-	option := copier.Option{
+// Copy copies fields from src to dst with optional configuration.
+// The dst parameter must be a pointer to a struct.
+func Copy(src, dst any, options ...CopyOption) error {
+	opt := copier.Option{
 		CaseSensitive: true,
-		Converters:    converters,
+		Converters:    defaultConverters,
 	}
-	for _, opt := range options {
-		opt(&option)
+	for _, apply := range options {
+		apply(&opt)
 	}
 
-	return copier.CopyWithOption(dst, src, option)
+	return copier.CopyWithOption(dst, src, opt)
 }

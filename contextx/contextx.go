@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -15,111 +14,63 @@ type contextKey int
 
 const (
 	KeyRequest contextKey = iota
-	KeyRequestId
+	KeyRequestID
 	KeyPrincipal
 	KeyLogger
-	KeyDb
+	KeyDB
 	KeyDataPermApplier
 )
 
-func ApiRequest(ctx context.Context) *api.Request {
-	req, _ := ctx.Value(KeyRequest).(*api.Request)
-
-	return req
-}
-
-func SetApiRequest(ctx context.Context, request *api.Request) context.Context {
-	switch c := ctx.(type) {
-	case fiber.Ctx:
-		c.Locals(KeyRequest, request)
-
+// setValue stores a value in the context, handling both fiber.Ctx and standard context.Context.
+func setValue[T any](ctx context.Context, key contextKey, value T) context.Context {
+	if c, ok := ctx.(fiber.Ctx); ok {
+		c.Locals(key, value)
 		return c
-	default:
-		return context.WithValue(ctx, KeyRequest, request)
 	}
+	return context.WithValue(ctx, key, value)
 }
 
-func RequestId(ctx context.Context) string {
-	id, _ := ctx.Value(KeyRequestId).(string)
-
+func RequestID(ctx context.Context) string {
+	id, _ := ctx.Value(KeyRequestID).(string)
 	return id
 }
 
-func SetRequestId(ctx context.Context, requestId string) context.Context {
-	switch c := ctx.(type) {
-	case fiber.Ctx:
-		c.Locals(KeyRequestId, requestId)
-
-		return c
-	default:
-		return context.WithValue(ctx, KeyRequestId, requestId)
-	}
+func SetRequestID(ctx context.Context, requestID string) context.Context {
+	return setValue(ctx, KeyRequestID, requestID)
 }
 
 func Principal(ctx context.Context) *security.Principal {
 	principal, _ := ctx.Value(KeyPrincipal).(*security.Principal)
-
 	return principal
 }
 
 func SetPrincipal(ctx context.Context, principal *security.Principal) context.Context {
-	switch c := ctx.(type) {
-	case fiber.Ctx:
-		c.Locals(KeyPrincipal, principal)
-
-		return c
-	default:
-		return context.WithValue(ctx, KeyPrincipal, principal)
-	}
+	return setValue(ctx, KeyPrincipal, principal)
 }
 
 func Logger(ctx context.Context) log.Logger {
 	logger, _ := ctx.Value(KeyLogger).(log.Logger)
-
 	return logger
 }
 
 func SetLogger(ctx context.Context, logger log.Logger) context.Context {
-	switch c := ctx.(type) {
-	case fiber.Ctx:
-		c.Locals(KeyLogger, logger)
-
-		return c
-	default:
-		return context.WithValue(ctx, KeyLogger, logger)
-	}
+	return setValue(ctx, KeyLogger, logger)
 }
 
-func Db(ctx context.Context) orm.Db {
-	db, _ := ctx.Value(KeyDb).(orm.Db)
-
+func DB(ctx context.Context) orm.DB {
+	db, _ := ctx.Value(KeyDB).(orm.DB)
 	return db
 }
 
-func SetDb(ctx context.Context, db orm.Db) context.Context {
-	switch c := ctx.(type) {
-	case fiber.Ctx:
-		c.Locals(KeyDb, db)
-
-		return c
-	default:
-		return context.WithValue(ctx, KeyDb, db)
-	}
+func SetDB(ctx context.Context, db orm.DB) context.Context {
+	return setValue(ctx, KeyDB, db)
 }
 
 func DataPermApplier(ctx context.Context) security.DataPermissionApplier {
 	applier, _ := ctx.Value(KeyDataPermApplier).(security.DataPermissionApplier)
-
 	return applier
 }
 
 func SetDataPermApplier(ctx context.Context, applier security.DataPermissionApplier) context.Context {
-	switch c := ctx.(type) {
-	case fiber.Ctx:
-		c.Locals(KeyDataPermApplier, applier)
-
-		return c
-	default:
-		return context.WithValue(ctx, KeyDataPermApplier, applier)
-	}
+	return setValue(ctx, KeyDataPermApplier, applier)
 }

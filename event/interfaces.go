@@ -8,8 +8,8 @@ import (
 // Event represents the base interface for all events in the system.
 // All custom events should embed this interface to be compatible with the event bus.
 type Event interface {
-	// Id returns a unique identifier for this specific event instance.
-	Id() string
+	// ID returns a unique identifier for this specific event instance.
+	ID() string
 	// Type returns a unique string identifier for the event type.
 	// This is used for routing and filtering events.
 	Type() string

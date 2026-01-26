@@ -7,7 +7,7 @@ import (
 )
 
 type Authenticator interface {
-	Supports(authType string) bool
+	Supports(kind string) bool
 	Authenticate(ctx context.Context, authentication Authentication) (*Principal, error)
 }
 
@@ -21,11 +21,11 @@ type AuthManager interface {
 
 type UserLoader interface {
 	LoadByUsername(ctx context.Context, username string) (*Principal, string, error)
-	LoadById(ctx context.Context, id string) (*Principal, error)
+	LoadByID(ctx context.Context, id string) (*Principal, error)
 }
 
 type ExternalAppLoader interface {
-	LoadById(ctx context.Context, id string) (*Principal, string, error)
+	LoadByID(ctx context.Context, id string) (*Principal, string, error)
 }
 
 type PasswordDecryptor interface {

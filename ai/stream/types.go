@@ -15,23 +15,23 @@ type Message struct {
 	Role       Role
 	Content    string
 	ToolCalls  []ToolCall
-	ToolCallId string
+	ToolCallID string
 	Reasoning  string
 	Data       map[string]any
 }
 
 // ToolCall represents a tool invocation by the AI.
 type ToolCall struct {
-	Id        string
+	ID        string
 	Name      string
 	Arguments string
 }
 
-// Source represents a reference source (url or document).
+// Source represents a reference source (URL or document).
 type Source struct {
 	Type      string
-	Id        string
-	Url       string
+	ID        string
+	URL       string
 	Title     string
 	MediaType string
 }

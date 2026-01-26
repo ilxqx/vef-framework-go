@@ -111,19 +111,16 @@ type pbkdf2Params struct {
 	hashFunction string
 }
 
-func (p *pbkdf2Params) getHashFunc() func() hash.Hash {
-	switch p.hashFunction {
-	case "sha256":
-		return sha256.New
-	case "sha512":
-		return sha512.New
-	default:
-		return nil
-	}
+func (e *pbkdf2Encoder) getHashFunc() func() hash.Hash {
+	return getHashFuncByName(e.hashFunction)
 }
 
-func (e *pbkdf2Encoder) getHashFunc() func() hash.Hash {
-	switch e.hashFunction {
+func (p *pbkdf2Params) getHashFunc() func() hash.Hash {
+	return getHashFuncByName(p.hashFunction)
+}
+
+func getHashFuncByName(name string) func() hash.Hash {
+	switch name {
 	case "sha256":
 		return sha256.New
 	case "sha512":

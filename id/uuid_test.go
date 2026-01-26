@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUuidIdGenerator(t *testing.T) {
+func TestUUIDGenerator(t *testing.T) {
 	t.Run("CreateGenerator", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+		generator := NewUUIDGenerator()
 		assert.NotNil(t, generator, "Generator should not be nil")
 	})
 
-	t.Run("GenerateValidUuidV7Format", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+	t.Run("GenerateValidUUIDV7Format", func(t *testing.T) {
+		generator := NewUUIDGenerator()
 		id := generator.Generate()
 
 		assert.NotEmpty(t, id, "UUID should not be empty")
@@ -34,8 +34,8 @@ func TestUuidIdGenerator(t *testing.T) {
 			"UUID variant should be 8, 9, a, or b, got: %s", variantChar)
 	})
 
-	t.Run("GenerateUniqueUuids", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+	t.Run("GenerateUniqueUUIDs", func(t *testing.T) {
+		generator := NewUUIDGenerator()
 		uuids := make(map[string]bool)
 		iterations := 10000
 
@@ -49,7 +49,7 @@ func TestUuidIdGenerator(t *testing.T) {
 	})
 
 	t.Run("ThreadSafe", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+		generator := NewUUIDGenerator()
 
 		const (
 			numGoroutines     = 100
@@ -77,8 +77,8 @@ func TestUuidIdGenerator(t *testing.T) {
 		assert.Len(t, uuids, numGoroutines*uuidsPerGoroutine, "All concurrent UUIDs should be unique")
 	})
 
-	t.Run("TimeOrderedUuids", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+	t.Run("TimeOrderedUUIDs", func(t *testing.T) {
+		generator := NewUUIDGenerator()
 
 		var uuids []string
 		for range 100 {
@@ -93,9 +93,9 @@ func TestUuidIdGenerator(t *testing.T) {
 	})
 
 	t.Run("DefaultGenerator", func(t *testing.T) {
-		assert.NotNil(t, DefaultUuidIdGenerator, "Default generator should be initialized")
+		assert.NotNil(t, DefaultUUIDGenerator, "Default generator should be initialized")
 
-		uuid := DefaultUuidIdGenerator.Generate()
+		uuid := DefaultUUIDGenerator.Generate()
 		assert.NotEmpty(t, uuid, "Default generator should produce UUIDs")
 		assert.Len(t, uuid, 36, "Default generator should produce 36-character UUIDs")
 
@@ -104,7 +104,7 @@ func TestUuidIdGenerator(t *testing.T) {
 	})
 
 	t.Run("RapidGeneration", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+		generator := NewUUIDGenerator()
 		uuids := make(map[string]bool)
 
 		for range 1000 {
@@ -117,7 +117,7 @@ func TestUuidIdGenerator(t *testing.T) {
 	})
 
 	t.Run("ValidHexCharactersOnly", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+		generator := NewUUIDGenerator()
 		uuid := generator.Generate()
 
 		hexPart := uuid[0:8] + uuid[9:13] + uuid[14:18] + uuid[19:23] + uuid[24:36]

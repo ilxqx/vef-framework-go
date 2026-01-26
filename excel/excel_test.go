@@ -17,7 +17,7 @@ import (
 
 // TestUser is a test struct for Excel operations.
 type TestUser struct {
-	Id        string      `tabular:"width=15"                                      validate:"required"`
+	ID        string      `tabular:"width=15"                                      validate:"required"`
 	Name      string      `tabular:"姓名,width=20"                                   validate:"required"`
 	Email     string      `tabular:"邮箱,width=25"                                   validate:"email"`
 	Age       int         `tabular:"name=年龄,width=10"                              validate:"gte=0,lte=150"`
@@ -32,7 +32,7 @@ func TestExporterExportToFile(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -43,7 +43,7 @@ func TestExporterExportToFile(t *testing.T) {
 			Password:  "secret123",
 		},
 		{
-			Id:        "2",
+			ID:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -76,7 +76,7 @@ func TestImporterImportFromFile(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -86,7 +86,7 @@ func TestImporterImportFromFile(t *testing.T) {
 			Remark:    null.StringFrom("测试用户1"),
 		},
 		{
-			Id:        "2",
+			ID:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -117,7 +117,7 @@ func TestImporterImportFromFile(t *testing.T) {
 	assert.Empty(t, importErrors)
 	assert.Len(t, imported, 2)
 
-	assert.Equal(t, "1", imported[0].Id)
+	assert.Equal(t, "1", imported[0].ID)
 	assert.Equal(t, "张三", imported[0].Name)
 	assert.Equal(t, "zhang@example.com", imported[0].Email)
 	assert.Equal(t, 30, imported[0].Age)
@@ -126,7 +126,7 @@ func TestImporterImportFromFile(t *testing.T) {
 	assert.True(t, imported[0].Remark.Valid)
 	assert.Equal(t, "测试用户1", imported[0].Remark.ValueOrZero())
 
-	assert.Equal(t, "2", imported[1].Id)
+	assert.Equal(t, "2", imported[1].ID)
 	assert.Equal(t, "李四", imported[1].Name)
 	assert.False(t, imported[1].Remark.Valid)
 }
@@ -142,7 +142,7 @@ func TestSchemaParseTags(t *testing.T) {
 	for i := range columns {
 		col := columns[i]
 		switch col.Name {
-		case "Id":
+		case "ID":
 			idCol = col
 		case "姓名":
 			nameCol = col
@@ -152,7 +152,7 @@ func TestSchemaParseTags(t *testing.T) {
 	}
 
 	require.NotNil(t, idCol)
-	assert.Equal(t, "Id", idCol.Name)
+	assert.Equal(t, "ID", idCol.Name)
 	assert.Equal(t, 15.0, idCol.Width)
 
 	require.NotNil(t, nameCol)
@@ -165,7 +165,7 @@ func TestSchemaParseTags(t *testing.T) {
 func TestImporterValidationErrors(t *testing.T) {
 	invalidUsers := []TestUser{
 		{
-			Id:     "1",
+			ID:     "1",
 			Name:   "张三",
 			Email:  "invalid-email",
 			Age:    200,
@@ -195,7 +195,7 @@ func TestImporterValidationErrors(t *testing.T) {
 }
 
 type TestNoTagStruct struct {
-	Id   string
+	ID   string
 	Name string
 	Age  int
 }
@@ -206,15 +206,15 @@ func TestSchemaNoTags(t *testing.T) {
 	columns := schema.Columns()
 	assert.Len(t, columns, 3)
 
-	assert.Equal(t, "Id", columns[0].Name)
+	assert.Equal(t, "ID", columns[0].Name)
 	assert.Equal(t, "Name", columns[1].Name)
 	assert.Equal(t, "Age", columns[2].Name)
 }
 
 func TestExportImportNoTags(t *testing.T) {
 	data := []TestNoTagStruct{
-		{Id: "1", Name: "Alice", Age: 30},
-		{Id: "2", Name: "Bob", Age: 25},
+		{ID: "1", Name: "Alice", Age: 30},
+		{ID: "2", Name: "Bob", Age: 25},
 	}
 
 	exporter := NewExporterFor[TestNoTagStruct]()
@@ -237,7 +237,7 @@ func TestExportImportNoTags(t *testing.T) {
 	assert.Empty(t, importErrors)
 	assert.Len(t, imported, 2)
 
-	assert.Equal(t, "1", imported[0].Id)
+	assert.Equal(t, "1", imported[0].ID)
 	assert.Equal(t, "Alice", imported[0].Name)
 	assert.Equal(t, 30, imported[0].Age)
 }
@@ -257,7 +257,7 @@ func (f *prefixFormatter) Format(value any) (string, error) {
 func TestExportCustomFormatter(t *testing.T) {
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -275,7 +275,7 @@ func TestExportCustomFormatter(t *testing.T) {
 	require.NoError(t, err)
 
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	defer os.Remove(filename)
 
@@ -289,7 +289,7 @@ func TestExportCustomFormatter(t *testing.T) {
 func TestExportToBuffer(t *testing.T) {
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -316,7 +316,7 @@ func TestExportEmptyData(t *testing.T) {
 	require.NoError(t, err)
 
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	defer os.Remove(filename)
 
@@ -330,7 +330,7 @@ func TestExportEmptyData(t *testing.T) {
 func TestExportWithOptions(t *testing.T) {
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -345,7 +345,7 @@ func TestExportWithOptions(t *testing.T) {
 	require.NoError(t, err)
 
 	filename := tmpFile.Name()
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	defer os.Remove(filename)
 
@@ -374,7 +374,7 @@ func TestImportCustomParser(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -412,7 +412,7 @@ func TestImportFromReader(t *testing.T) {
 	now := time.Now()
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -433,14 +433,14 @@ func TestImportFromReader(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
 	assert.Len(t, imported, 1)
-	assert.Equal(t, "1", imported[0].Id)
+	assert.Equal(t, "1", imported[0].ID)
 	assert.Equal(t, "张三", imported[0].Name)
 }
 
 func TestImportWithOptions(t *testing.T) {
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -483,7 +483,7 @@ func TestImportEmptyRows(t *testing.T) {
 	f := excelize.NewFile()
 	sheetName := "Sheet1"
 
-	_ = f.SetCellValue(sheetName, "A1", "Id")
+	_ = f.SetCellValue(sheetName, "A1", "ID")
 	_ = f.SetCellValue(sheetName, "B1", "姓名")
 	_ = f.SetCellValue(sheetName, "C1", "邮箱")
 
@@ -519,7 +519,7 @@ func TestImportMissingColumns(t *testing.T) {
 	f := excelize.NewFile()
 	sheetName := "Sheet1"
 
-	_ = f.SetCellValue(sheetName, "A1", "Id")
+	_ = f.SetCellValue(sheetName, "A1", "ID")
 	_ = f.SetCellValue(sheetName, "B1", "姓名")
 	_ = f.SetCellValue(sheetName, "C1", "邮箱")
 	_ = f.SetCellValue(sheetName, "D1", "年龄")
@@ -539,7 +539,7 @@ func TestImportMissingColumns(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
 	assert.Len(t, imported, 1)
-	assert.Equal(t, "1", imported[0].Id)
+	assert.Equal(t, "1", imported[0].ID)
 	assert.Equal(t, "张三", imported[0].Name)
 	assert.Equal(t, "zhang@example.com", imported[0].Email)
 	assert.Equal(t, 30, imported[0].Age)
@@ -560,7 +560,7 @@ func TestImportInvalidData(t *testing.T) {
 	f := excelize.NewFile()
 	sheetName := "Sheet1"
 
-	_ = f.SetCellValue(sheetName, "A1", "Id")
+	_ = f.SetCellValue(sheetName, "A1", "ID")
 	_ = f.SetCellValue(sheetName, "B1", "姓名")
 	_ = f.SetCellValue(sheetName, "C1", "邮箱")
 	_ = f.SetCellValue(sheetName, "D1", "年龄")
@@ -589,7 +589,7 @@ func TestImportLargeFile(t *testing.T) {
 
 	for i := range count {
 		users[i] = TestUser{
-			Id:        fmt.Sprintf("%d", i+1),
+			ID:        fmt.Sprintf("%d", i+1),
 			Name:      fmt.Sprintf("用户%d", i+1),
 			Email:     fmt.Sprintf("user%d@example.com", i+1),
 			Age:       20 + (i % 50),
@@ -619,15 +619,15 @@ func TestImportLargeFile(t *testing.T) {
 	assert.Empty(t, importErrors)
 	assert.Len(t, imported, count)
 
-	assert.Equal(t, "1", imported[0].Id)
+	assert.Equal(t, "1", imported[0].ID)
 	assert.Equal(t, "用户1", imported[0].Name)
-	assert.Equal(t, fmt.Sprintf("%d", count), imported[count-1].Id)
+	assert.Equal(t, fmt.Sprintf("%d", count), imported[count-1].ID)
 }
 
 func TestExportNullValues(t *testing.T) {
 	users := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -637,7 +637,7 @@ func TestExportNullValues(t *testing.T) {
 			Remark:    null.String{},
 		},
 		{
-			Id:        "2",
+			ID:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -677,7 +677,7 @@ func TestRoundTrip(t *testing.T) {
 	now := time.Date(2024, 1, 1, 12, 0, 0, 0, time.Local)
 	original := []TestUser{
 		{
-			Id:        "1",
+			ID:        "1",
 			Name:      "张三",
 			Email:     "zhang@example.com",
 			Age:       30,
@@ -687,7 +687,7 @@ func TestRoundTrip(t *testing.T) {
 			Remark:    null.StringFrom("测试用户1"),
 		},
 		{
-			Id:        "2",
+			ID:        "2",
 			Name:      "李四",
 			Email:     "li@example.com",
 			Age:       25,
@@ -719,7 +719,7 @@ func TestRoundTrip(t *testing.T) {
 	assert.Len(t, imported, len(original))
 
 	for i := range original {
-		assert.Equal(t, original[i].Id, imported[i].Id)
+		assert.Equal(t, original[i].ID, imported[i].ID)
 		assert.Equal(t, original[i].Name, imported[i].Name)
 		assert.Equal(t, original[i].Email, imported[i].Email)
 		assert.Equal(t, original[i].Age, imported[i].Age)

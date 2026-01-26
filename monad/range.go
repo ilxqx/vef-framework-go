@@ -49,19 +49,11 @@ func (r Range[T]) Overlaps(other Range[T]) bool {
 // Returns an empty range if there is no intersection.
 func (r Range[T]) Intersection(other Range[T]) Range[T] {
 	if !r.Overlaps(other) {
-		// Empty range
 		return Range[T]{Start: r.End, End: r.Start}
 	}
 
-	start := r.Start
-	if other.Start > start {
-		start = other.Start
+	return Range[T]{
+		Start: max(r.Start, other.Start),
+		End:   min(r.End, other.End),
 	}
-
-	end := r.End
-	if other.End < end {
-		end = other.End
-	}
-
-	return Range[T]{Start: start, End: end}
 }

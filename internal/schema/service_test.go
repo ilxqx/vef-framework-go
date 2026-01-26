@@ -55,7 +55,7 @@ func (suite *ServiceTestSuite) TestSQLiteService() {
 	suite.T().Log("Testing Service for SQLite")
 
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	suite.runServiceTests(dsConfig, "SQLite")
@@ -179,11 +179,12 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DatasourceConfig
 	})
 }
 
-func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbType) {
+func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
 	var categoriesSql, productsSql string
+	var additionalSql []string
 
 	switch dbType {
-	case constants.DbPostgres:
+	case constants.Postgres:
 		categoriesSql = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id SERIAL PRIMARY KEY,
@@ -203,14 +204,12 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbTy
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				CONSTRAINT uq_product_sku UNIQUE (sku)
 			)`
-		_, _ = db.ExecContext(suite.ctx, categoriesSql)
-		_, _ = db.ExecContext(suite.ctx, productsSql)
-		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)")
-		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)")
+		additionalSql = []string{
+			"CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)",
+			"CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)",
+		}
 
-		return
-
-	case constants.DbMySQL:
+	case constants.MySQL:
 		categoriesSql = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id INT AUTO_INCREMENT PRIMARY KEY,
@@ -234,7 +233,7 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbTy
 				INDEX idx_products_price (price)
 			)`
 
-	case constants.DbSQLite:
+	case constants.SQLite:
 		categoriesSql = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -253,12 +252,10 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbTy
 				is_active INTEGER DEFAULT 1,
 				created_at TEXT DEFAULT CURRENT_TIMESTAMP
 			)`
-		_, _ = db.ExecContext(suite.ctx, categoriesSql)
-		_, _ = db.ExecContext(suite.ctx, productsSql)
-		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)")
-		_, _ = db.ExecContext(suite.ctx, "CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)")
-
-		return
+		additionalSql = []string{
+			"CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)",
+			"CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)",
+		}
 	}
 
 	_, err := db.ExecContext(suite.ctx, categoriesSql)
@@ -266,6 +263,10 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbTy
 
 	_, err = db.ExecContext(suite.ctx, productsSql)
 	suite.Require().NoError(err, "Creating service_test_products table should succeed")
+
+	for _, sql := range additionalSql {
+		_, _ = db.ExecContext(suite.ctx, sql)
+	}
 }
 
 func (suite *ServiceTestSuite) cleanupTestTables(db *sql.DB) {

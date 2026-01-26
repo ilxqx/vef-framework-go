@@ -8,24 +8,24 @@ import (
 )
 
 type compositeEncoder struct {
-	defaultEncoderId EncoderId
-	encoders         map[EncoderId]Encoder
+	defaultEncoderID EncoderID
+	encoders         map[EncoderID]Encoder
 }
 
 // NewCompositeEncoder creates a composite encoder that supports multiple password formats.
-// The defaultEncoderId specifies which encoder to use for new passwords.
+// The defaultEncoderID specifies which encoder to use for new passwords.
 // Encoders map contains encoder ID to Encoder implementations.
-func NewCompositeEncoder(defaultEncoderId EncoderId, encoders map[EncoderId]Encoder) Encoder {
+func NewCompositeEncoder(defaultEncoderID EncoderID, encoders map[EncoderID]Encoder) Encoder {
 	return &compositeEncoder{
-		defaultEncoderId: defaultEncoderId,
+		defaultEncoderID: defaultEncoderID,
 		encoders:         encoders,
 	}
 }
 
 func (c *compositeEncoder) Encode(password string) (string, error) {
-	encoder, ok := c.encoders[c.defaultEncoderId]
+	encoder, ok := c.encoders[c.defaultEncoderID]
 	if !ok {
-		return constants.Empty, fmt.Errorf("%w: %s", ErrDefaultEncoderNotFound, c.defaultEncoderId)
+		return constants.Empty, fmt.Errorf("%w: %s", ErrDefaultEncoderNotFound, c.defaultEncoderID)
 	}
 
 	encoded, err := encoder.Encode(password)
@@ -33,16 +33,16 @@ func (c *compositeEncoder) Encode(password string) (string, error) {
 		return constants.Empty, err
 	}
 
-	return fmt.Sprintf("{%s}%s", c.defaultEncoderId, encoded), nil
+	return fmt.Sprintf("{%s}%s", c.defaultEncoderID, encoded), nil
 }
 
 func (c *compositeEncoder) Matches(password, encodedPassword string) bool {
-	encoderId := c.extractEncoderId(encodedPassword)
-	if encoderId == EncoderId(constants.Empty) {
-		encoderId = c.defaultEncoderId
+	encoderID := c.extractEncoderID(encodedPassword)
+	if encoderID == EncoderID(constants.Empty) {
+		encoderID = c.defaultEncoderID
 	}
 
-	encoder, ok := c.encoders[encoderId]
+	encoder, ok := c.encoders[encoderID]
 	if !ok {
 		return false
 	}
@@ -53,13 +53,13 @@ func (c *compositeEncoder) Matches(password, encodedPassword string) bool {
 }
 
 func (c *compositeEncoder) UpgradeEncoding(encodedPassword string) bool {
-	encoderId := c.extractEncoderId(encodedPassword)
+	encoderID := c.extractEncoderID(encodedPassword)
 
-	if encoderId != EncoderId(constants.Empty) && encoderId != c.defaultEncoderId {
+	if encoderID != EncoderID(constants.Empty) && encoderID != c.defaultEncoderID {
 		return true
 	}
 
-	encoder, ok := c.encoders[c.defaultEncoderId]
+	encoder, ok := c.encoders[c.defaultEncoderID]
 	if !ok {
 		return false
 	}
@@ -69,28 +69,29 @@ func (c *compositeEncoder) UpgradeEncoding(encodedPassword string) bool {
 	return encoder.UpgradeEncoding(rawEncoded)
 }
 
-func (c *compositeEncoder) extractEncoderId(encodedPassword string) EncoderId {
+func (c *compositeEncoder) extractEncoderID(encodedPassword string) EncoderID {
+	id, _ := c.parseEncoderPrefix(encodedPassword)
+
+	return id
+}
+
+func (c *compositeEncoder) stripPrefix(encodedPassword string) string {
+	_, content := c.parseEncoderPrefix(encodedPassword)
+
+	return content
+}
+
+// parseEncoderPrefix extracts the encoder ID and remaining content from an encoded password.
+// Returns empty EncoderID and original password if no valid prefix found.
+func (c *compositeEncoder) parseEncoderPrefix(encodedPassword string) (EncoderID, string) {
 	if !strings.HasPrefix(encodedPassword, "{") {
-		return EncoderId(constants.Empty)
+		return EncoderID(constants.Empty), encodedPassword
 	}
 
 	end := strings.Index(encodedPassword, "}")
 	if end == -1 {
-		return EncoderId(constants.Empty)
+		return EncoderID(constants.Empty), encodedPassword
 	}
 
-	return EncoderId(encodedPassword[1:end])
-}
-
-func (c *compositeEncoder) stripPrefix(encodedPassword string) string {
-	if !strings.HasPrefix(encodedPassword, "{") {
-		return encodedPassword
-	}
-
-	_, after, found := strings.Cut(encodedPassword, "}")
-	if !found {
-		return encodedPassword
-	}
-
-	return after
+	return EncoderID(encodedPassword[1:end]), encodedPassword[end+1:]
 }

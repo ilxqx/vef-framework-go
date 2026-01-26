@@ -15,7 +15,7 @@ import (
 type Builder struct {
 	opts      Options
 	source    MessageSource
-	messageId string
+	messageID string
 	headers   map[string]string
 }
 
@@ -33,8 +33,8 @@ func (b *Builder) WithSource(source MessageSource) *Builder {
 	return b
 }
 
-func (b *Builder) WithMessageId(id string) *Builder {
-	b.messageId = id
+func (b *Builder) WithMessageID(id string) *Builder {
+	b.messageID = id
 
 	return b
 }
@@ -75,8 +75,8 @@ func (b *Builder) OnFinish(handler func(content string)) *Builder {
 	return b
 }
 
-func (b *Builder) WithIdGenerator(gen func(prefix string) string) *Builder {
-	b.opts.GenerateId = gen
+func (b *Builder) WithIDGenerator(gen func(prefix string) string) *Builder {
+	b.opts.GenerateID = gen
 
 	return b
 }
@@ -116,25 +116,25 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 
 	writer := newSseWriter(w)
 
-	generateId := b.opts.GenerateId
-	if generateId == nil {
-		generateId = defaultIdGenerator
+	generateID := b.opts.GenerateID
+	if generateID == nil {
+		generateID = defaultIDGenerator
 	}
 
-	messageId := b.messageId
-	if messageId == constants.Empty {
-		messageId = generateId("message")
+	messageID := b.messageID
+	if messageID == constants.Empty {
+		messageID = generateID("message")
 	}
 
-	textId := generateId("text")
-	reasoningId := generateId("reasoning")
+	textID := generateID("text")
+	reasoningID := generateID("reasoning")
 	textStarted := false
 	reasoningStarted := false
 
 	var fullContent string
 
 	if b.opts.SendStart {
-		_ = writer.WriteChunk(NewStartChunk(messageId))
+		_ = writer.WriteChunk(NewStartChunk(messageID))
 		_ = writer.WriteChunk(NewStartStepChunk())
 	}
 
@@ -142,11 +142,11 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 		msg, err := b.source.Recv()
 		if errors.Is(err, io.EOF) {
 			if textStarted {
-				_ = writer.WriteChunk(NewTextEndChunk(textId))
+				_ = writer.WriteChunk(NewTextEndChunk(textID))
 			}
 
 			if reasoningStarted {
-				_ = writer.WriteChunk(NewReasoningEndChunk(reasoningId))
+				_ = writer.WriteChunk(NewReasoningEndChunk(reasoningID))
 			}
 
 			if b.opts.SendFinish {
@@ -178,38 +178,38 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 		// Handle reasoning
 		if b.opts.SendReasoning && msg.Reasoning != constants.Empty {
 			if !reasoningStarted {
-				_ = writer.WriteChunk(NewReasoningStartChunk(reasoningId))
+				_ = writer.WriteChunk(NewReasoningStartChunk(reasoningID))
 				reasoningStarted = true
 			}
 
-			_ = writer.WriteChunk(NewReasoningDeltaChunk(reasoningId, msg.Reasoning))
+			_ = writer.WriteChunk(NewReasoningDeltaChunk(reasoningID, msg.Reasoning))
 		}
 
 		// Handle tool calls
 		for _, tc := range msg.ToolCalls {
-			toolCallId := tc.Id
-			if toolCallId == constants.Empty {
-				toolCallId = generateId("call")
+			toolCallID := tc.ID
+			if toolCallID == constants.Empty {
+				toolCallID = generateID("call")
 			}
 
-			_ = writer.WriteChunk(NewToolInputStartChunk(toolCallId, tc.Name))
+			_ = writer.WriteChunk(NewToolInputStartChunk(toolCallID, tc.Name))
 
 			var input any
 			if err := json.Unmarshal([]byte(tc.Arguments), &input); err != nil {
 				input = tc.Arguments
 			}
 
-			_ = writer.WriteChunk(NewToolInputAvailableChunk(toolCallId, tc.Name, input))
+			_ = writer.WriteChunk(NewToolInputAvailableChunk(toolCallID, tc.Name, input))
 		}
 
 		// Handle tool results
-		if msg.Role == RoleTool && msg.ToolCallId != constants.Empty {
+		if msg.Role == RoleTool && msg.ToolCallID != constants.Empty {
 			var output any
 			if err := json.Unmarshal([]byte(msg.Content), &output); err != nil {
 				output = msg.Content
 			}
 
-			_ = writer.WriteChunk(NewToolOutputAvailableChunk(msg.ToolCallId, output))
+			_ = writer.WriteChunk(NewToolOutputAvailableChunk(msg.ToolCallID, output))
 
 			continue
 		}
@@ -222,17 +222,17 @@ func (b *Builder) streamToWriter(w *bufio.Writer) {
 		// Handle text content
 		if msg.Content != constants.Empty {
 			if reasoningStarted {
-				_ = writer.WriteChunk(NewReasoningEndChunk(reasoningId))
+				_ = writer.WriteChunk(NewReasoningEndChunk(reasoningID))
 				reasoningStarted = false
-				reasoningId = generateId("reasoning")
+				reasoningID = generateID("reasoning")
 			}
 
 			if !textStarted {
-				_ = writer.WriteChunk(NewTextStartChunk(textId))
+				_ = writer.WriteChunk(NewTextStartChunk(textID))
 				textStarted = true
 			}
 
-			_ = writer.WriteChunk(NewTextDeltaChunk(textId, msg.Content))
+			_ = writer.WriteChunk(NewTextDeltaChunk(textID, msg.Content))
 			fullContent += msg.Content
 		}
 	}

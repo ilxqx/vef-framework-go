@@ -106,15 +106,11 @@ func GenerateDirectory(inputDir, outputDir, packageName string) error {
 		return fmt.Errorf("%w: %s", ErrNoGoFilesFound, inputDir)
 	}
 
-	if err := streams.FromSlice(files).ForEachErr(func(inputFile string) error {
+	return streams.FromSlice(files).ForEachErr(func(inputFile string) error {
 		outputFile := filepath.Join(outputDir, filepath.Base(inputFile))
 
 		return GenerateFile(inputFile, outputFile, packageName)
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func parseModelFile(filename string) ([]*ModelSchemaInfo, error) {

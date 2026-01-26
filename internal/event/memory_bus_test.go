@@ -45,9 +45,9 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 			require.NotNil(t, receivedEvent, "Received event should not be nil")
 			assert.Equal(t, "user.created", receivedEvent.Type(), "Event type should match")
 			assert.Equal(t, "test-service", receivedEvent.Source(), "Event source should match")
-			assert.Equal(t, testEvent.Id(), receivedEvent.Id(), "Event ID should match")
+			assert.Equal(t, testEvent.ID(), receivedEvent.ID(), "Event ID should match")
 			t.Logf("✓ Event delivered - Type: %s, Source: %s, ID: %s",
-				receivedEvent.Type(), receivedEvent.Source(), receivedEvent.Id())
+				receivedEvent.Type(), receivedEvent.Source(), receivedEvent.ID())
 
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("Timeout waiting for event delivery")
@@ -107,7 +107,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 			for i, evt := range receivedEvents {
 				assert.Equal(t, "order.placed", evt.Type(), "Event type should match for subscriber %d", i)
 				assert.Equal(t, "order-service", evt.Source(), "Event source should match for subscriber %d", i)
-				assert.Equal(t, testEvent.Id(), evt.Id(), "Event ID should match for subscriber %d", i)
+				assert.Equal(t, testEvent.ID(), evt.ID(), "Event ID should match for subscriber %d", i)
 			}
 
 			mu.Unlock()
@@ -342,7 +342,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		bus := &MemoryBus{
 			middlewares: []event.Middleware{},
 			subscribers: make(map[string]map[string]*subscription),
-			eventCh:     make(chan *eventMessage, 1000),
+			eventCh:     make(chan event.Event, 1000),
 			ctx:         ctx,
 			cancel:      cancel,
 		}
@@ -376,7 +376,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		bus := &MemoryBus{
 			middlewares: []event.Middleware{},
 			subscribers: make(map[string]map[string]*subscription),
-			eventCh:     make(chan *eventMessage, 1000),
+			eventCh:     make(chan event.Event, 1000),
 			ctx:         ctx,
 			cancel:      cancel,
 		}
@@ -415,8 +415,8 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 
 		select {
 		case <-done:
-			assert.Equal(t, testEvent.Id(), receivedEvent.Id(), "Event ID should match")
-			t.Logf("✓ Event processed after start - ID: %s", receivedEvent.Id())
+			assert.Equal(t, testEvent.ID(), receivedEvent.ID(), "Event ID should match")
+			t.Logf("✓ Event processed after start - ID: %s", receivedEvent.ID())
 
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("Timeout waiting for event after start")
@@ -473,13 +473,13 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 			mu.Lock()
 
 			processedCount := len(processedEvents)
-			processedID := processedEvents[0].Id()
+			processedID := processedEvents[0].ID()
 
 			mu.Unlock()
 
 			assert.Equal(t, 1, processedCount, "Middleware should process exactly one event")
-			assert.Equal(t, testEvent.Id(), processedID, "Processed event ID should match")
-			assert.Equal(t, testEvent.Id(), receivedEvent.Id(), "Received event ID should match")
+			assert.Equal(t, testEvent.ID(), processedID, "Processed event ID should match")
+			assert.Equal(t, testEvent.ID(), receivedEvent.ID(), "Received event ID should match")
 			t.Logf("✓ Middleware processed event - ID: %s", processedID)
 
 		case <-time.After(100 * time.Millisecond):

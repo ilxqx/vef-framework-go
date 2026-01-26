@@ -29,7 +29,7 @@ type Worker[TIn, TOut any] struct {
 
 	state      workerState
 	stateMu    sync.RWMutex
-	lastActive atomic.Value // time.Time
+	lastActive atomic.Value
 
 	stopCh   chan struct{}
 	initDone chan error
@@ -55,34 +55,45 @@ func newWorker[TIn, TOut any](id int, pool *WorkerPool[TIn, TOut]) *Worker[TIn, 
 // run is the main worker loop, locks to OS thread for delegate compatibility.
 func (w *Worker[TIn, TOut]) run() {
 	runtime.LockOSThread()
-
 	defer runtime.UnlockOSThread()
 
+	if err := w.initDelegate(); err != nil {
+		return
+	}
+
+	w.logger.Debug("worker started")
+	defer w.cleanup()
+
+	w.processLoop()
+}
+
+func (w *Worker[TIn, TOut]) initDelegate() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := w.delegate.Init(ctx, w.pool.config.DelegateConfig); err != nil {
 		w.logger.Errorf("delegate init failed: %v", err)
 		w.setState(workerStateStopped)
-
 		w.initDone <- err
 
-		return
+		return err
 	}
 
 	w.initDone <- nil
 
-	w.logger.Debug("worker started")
+	return nil
+}
 
-	defer func() {
-		if err := w.delegate.Destroy(); err != nil {
-			w.logger.Errorf("delegate destroy failed: %v", err)
-		}
+func (w *Worker[TIn, TOut]) cleanup() {
+	if err := w.delegate.Destroy(); err != nil {
+		w.logger.Errorf("delegate destroy failed: %v", err)
+	}
 
-		w.setState(workerStateStopped)
-		w.logger.Debug("worker stopped")
-	}()
+	w.setState(workerStateStopped)
+	w.logger.Debug("worker stopped")
+}
 
+func (w *Worker[TIn, TOut]) processLoop() {
 	idleCheckTicker := time.NewTicker(1 * time.Second)
 	defer idleCheckTicker.Stop()
 
@@ -95,32 +106,32 @@ func (w *Worker[TIn, TOut]) run() {
 				return
 			}
 		default:
-			task := w.fetchTask()
-			if task == nil {
+			if task := w.fetchTask(); task != nil {
+				w.executeTask(task)
+			} else {
 				time.Sleep(10 * time.Millisecond)
-
-				continue
 			}
-
-			w.executeTask(task)
 		}
 	}
 }
 
 // fetchTask retrieves next task by priority: High -> Medium -> Low.
 func (w *Worker[TIn, TOut]) fetchTask() *Task[TIn, TOut] {
+	// Try high priority first
 	select {
 	case task := <-w.pool.highQueue:
 		return task
 	default:
 	}
 
+	// Then medium priority
 	select {
 	case task := <-w.pool.mediumQueue:
 		return task
 	default:
 	}
 
+	// Finally low priority with timeout
 	select {
 	case task := <-w.pool.lowQueue:
 		return task
@@ -164,33 +175,36 @@ func (w *Worker[TIn, TOut]) executeTask(task *Task[TIn, TOut]) {
 	}
 
 	w.logger.Debugf("task completed: id=%s, duration=%v, error=%v",
-		task.Id, result.Duration, result.Error)
+		task.ID, result.Duration, result.Error)
 }
 
 func (w *Worker[TIn, TOut]) execute(task *Task[TIn, TOut]) Result[TOut] {
-	result := Result[TOut]{TaskId: task.Id}
-
-	ctx := task.Context
-	if deadline, ok := ctx.Deadline(); !ok {
-		var cancel context.CancelFunc
-
-		ctx, cancel = context.WithTimeout(ctx, w.pool.config.TaskTimeout)
+	ctx, cancel := w.createTaskContext(task.Context)
+	if cancel != nil {
 		defer cancel()
-	} else {
-		remaining := time.Until(deadline)
-		if remaining > w.pool.config.MaxTaskTimeout {
-			var cancel context.CancelFunc
-
-			ctx, cancel = context.WithTimeout(context.Background(), w.pool.config.TaskTimeout)
-			defer cancel()
-		}
 	}
 
 	data, err := w.delegate.Execute(ctx, task.Payload)
-	result.Data = data
-	result.Error = err
 
-	return result
+	return Result[TOut]{
+		TaskID: task.ID,
+		Data:   data,
+		Error:  err,
+	}
+}
+
+func (w *Worker[TIn, TOut]) createTaskContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	deadline, hasDeadline := ctx.Deadline()
+
+	if !hasDeadline {
+		return context.WithTimeout(ctx, w.pool.config.TaskTimeout)
+	}
+
+	if time.Until(deadline) > w.pool.config.MaxTaskTimeout {
+		return context.WithTimeout(context.Background(), w.pool.config.TaskTimeout)
+	}
+
+	return ctx, nil
 }
 
 func (w *Worker[TIn, TOut]) shouldStopDueToIdle() bool {

@@ -88,7 +88,7 @@ If a request exhibits these patterns, proceed with extra caution:
 | Principle | Definition | Example |
 |-----------|------------|---------|
 | **Clarity** | Self-explanatory names that don't require comments to understand | `userLastLoginTime` vs. `uLLT` |
-| **Conciseness** | Avoid redundant words without sacrificing readability | `userId` vs. `theUserIdValue` |
+| **Conciseness** | Avoid redundant words without sacrificing readability | `userID` vs. `theUserIdValue` |
 | **Consistency** | Unified style within the same project, following established conventions | All boolean fields start with `is_` |
 
 ## Character Constraints
@@ -97,7 +97,7 @@ If a request exhibits these patterns, proceed with extra caution:
 
 | Rule | Valid | Invalid |
 |------|-------|---------|
-| ASCII letters, numbers, underscores only | `user_name`, `userId` | `用户名`, `user-name` |
+| ASCII letters, numbers, underscores only | `user_name`, `userID` | `用户名`, `user-name` |
 | Don't start with numbers | `user1`, `_temp` | `1user`, `123abc` |
 | No special characters | `order_status` | `order$status`, `order@status` |
 | No Chinese pinyin | `user`, `order` | `yonghu`, `dingdan` |
@@ -268,7 +268,7 @@ Treat abbreviations/initialisms as regular words—capitalize only the first let
 
 | Context | Correct | Incorrect |
 |---------|---------|-----------|
-| Variable (camelCase) | `userId`, `httpUrl`, `apiKey` | `userID`, `httpURL`, `apiKEY` |
+| Variable (camelCase) | `userID`, `httpURL`, `apiKey` | `userID`, `httpURL`, `apiKEY` |
 | Type/Class (PascalCase) | `HttpClient`, `JsonParser`, `ApiService` | `HTTPClient`, `JSONParser`, `APIService` |
 | snake_case (Rust/Python) | `user_id`, `http_url`, `api_key` | (same) |
 
@@ -545,7 +545,7 @@ COMMENT ON COLUMN sys_user.status IS '状态(A:启用,I:停用)';  -- Wrong (enu
 |---------|---------|-------|
 | Resource collection | `/api/users` | Plural noun |
 | Single resource | `/api/users/{id}` | Singular with ID |
-| Nested resource | `/api/users/{userId}/orders` | Parent-child relationship |
+| Nested resource | `/api/users/{userID}/orders` | Parent-child relationship |
 | Action endpoint | `/api/users/{id}/activate` | Verb for non-CRUD actions |
 | Search/filter | `/api/users?status=active` | Query parameters for filtering |
 
@@ -561,9 +561,9 @@ COMMENT ON COLUMN sys_user.status IS '状态(A:启用,I:停用)';  -- Wrong (enu
 
 | Language/Platform | Convention | Example |
 |-------------------|------------|---------|
-| JavaScript/TypeScript | camelCase | `userId`, `createdAt` |
+| JavaScript/TypeScript | camelCase | `userID`, `createdAt` |
 | Python (Flask/Django) | snake_case | `user_id`, `created_at` |
-| Go (standard) | camelCase in JSON | `userId` (with `json:"userId"` tag) |
+| Go (standard) | camelCase in JSON | `userID` (with `json:"userID"` tag) |
 
 **Consistency rule**: Match the primary consumer's convention, or default to camelCase for broad compatibility.
 
@@ -596,7 +596,7 @@ AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
 | Format | Convention | Example |
 |--------|------------|---------|
 | TOML/YAML | snake_case or kebab-case | `database_url` or `database-url` |
-| JSON | camelCase | `databaseUrl` |
+| JSON | camelCase | `databaseURL` |
 | Properties | dot-separated lowercase | `database.url` |
 
 ## Test Naming
@@ -850,7 +850,7 @@ fn_   Function
 | Enum values `0,1,2` | `P,A,R` or `PENDING,APPROVED` | Use letters or words |
 | Table comment `'用户表'` | `'用户'` | No "表" suffix |
 | `HTTPClient` | `HttpClient` | Treat abbreviations as words |
-| `userID` | `userId` | Consistent abbreviation casing |
+| `userID` | `userID` | Consistent abbreviation casing |
 | `CREATE TABLE order` | `CREATE TABLE biz_order` | Avoid reserved words |
 | `INT AUTO_INCREMENT` for PK | `VARCHAR(32)` for XID | Use string ID format |
 | `idx_user_status` on boolean | (remove or use composite) | Low cardinality index |

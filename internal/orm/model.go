@@ -2,10 +2,41 @@ package orm
 
 import "github.com/ilxqx/vef-framework-go/datetime"
 
+// IDModel contains only the primary key field.
+type IDModel struct {
+	ID string `json:"id" bun:"id,pk"`
+}
+
+// CreatedModel contains creation tracking fields.
+type CreatedModel struct {
+	// CreatedAt is the created at time of the model
+	CreatedAt datetime.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
+	// CreatedBy is the created by of the model
+	CreatedBy string `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
+	// CreatedByName is the created by name of the model
+	CreatedByName string `json:"createdByName" bun:",scanonly"`
+}
+
+// AuditedModel contains full audit tracking fields (create + update).
+type AuditedModel struct {
+	// CreatedAt is the created at time of the model
+	CreatedAt datetime.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
+	// CreatedBy is the created by of the model
+	CreatedBy string `json:"createdBy" bun:",notnull,skipupdate" mold:"translate=user?"`
+	// CreatedByName is the created by name of the model
+	CreatedByName string `json:"createdByName" bun:",scanonly"`
+	// UpdatedAt is the updated at time of the model
+	UpdatedAt datetime.DateTime `json:"updatedAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP"`
+	// UpdatedBy is the updated by of the model
+	UpdatedBy string `json:"updatedBy" bun:",notnull" mold:"translate=user?"`
+	// UpdatedByName is the updated by name of the model
+	UpdatedByName string `json:"updatedByName" bun:",scanonly"`
+}
+
 // Model is the base model for all models.
 type Model struct {
-	// Id is the primary key of the model
-	Id string `json:"id" bun:",pk"`
+	// ID is the primary key of the model
+	ID string `json:"id" bun:"id,pk"`
 	// CreatedAt is the created at time of the model
 	CreatedAt datetime.DateTime `json:"createdAt" bun:",notnull,type:timestamp,default:CURRENT_TIMESTAMP,skipupdate"`
 	// CreatedBy is the created by of the model

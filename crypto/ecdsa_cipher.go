@@ -15,13 +15,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-type EcdsaCurve string
+type ECDSACurve string
 
 const (
-	EcdsaCurveP224 EcdsaCurve = "P224"
-	EcdsaCurveP256 EcdsaCurve = "P256"
-	EcdsaCurveP384 EcdsaCurve = "P384"
-	EcdsaCurveP521 EcdsaCurve = "P521"
+	EcdsaCurveP224 ECDSACurve = "P224"
+	EcdsaCurveP256 ECDSACurve = "P256"
+	EcdsaCurveP384 ECDSACurve = "P384"
+	EcdsaCurveP521 ECDSACurve = "P521"
 )
 
 type ecdsaCipher struct {
@@ -29,9 +29,9 @@ type ecdsaCipher struct {
 	publicKey  *ecdsa.PublicKey
 }
 
-type EcdsaOption func(*ecdsaCipher)
+type ECDSAOption func(*ecdsaCipher)
 
-func NewEcdsa(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, opts ...EcdsaOption) (Signer, error) {
+func NewECDSA(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, opts ...ECDSAOption) (Signer, error) {
 	if privateKey == nil && publicKey == nil {
 		return nil, ErrAtLeastOneKeyRequired
 	}
@@ -52,7 +52,7 @@ func NewEcdsa(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, opts ...
 	return cipher, nil
 }
 
-func NewEcdsaFromPem(privatePem, publicPem []byte, opts ...EcdsaOption) (Signer, error) {
+func NewECDSAFromPem(privatePem, publicPem []byte, opts ...ECDSAOption) (Signer, error) {
 	var (
 		privateKey *ecdsa.PrivateKey
 		publicKey  *ecdsa.PublicKey
@@ -60,21 +60,21 @@ func NewEcdsaFromPem(privatePem, publicPem []byte, opts ...EcdsaOption) (Signer,
 	)
 
 	if privatePem != nil {
-		if privateKey, err = parseEcdsaPrivateKeyFromPem(privatePem); err != nil {
+		if privateKey, err = parseECDSAPrivateKeyFromPem(privatePem); err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
 		}
 	}
 
 	if publicPem != nil {
-		if publicKey, err = parseEcdsaPublicKeyFromPem(publicPem); err != nil {
+		if publicKey, err = parseECDSAPublicKeyFromPem(publicPem); err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
 		}
 	}
 
-	return NewEcdsa(privateKey, publicKey, opts...)
+	return NewECDSA(privateKey, publicKey, opts...)
 }
 
-func parseEcdsaKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
+func parseECDSAKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*ecdsa.PrivateKey, *ecdsa.PublicKey, error) {
 	var (
 		privateKey *ecdsa.PrivateKey
 		publicKey  *ecdsa.PublicKey
@@ -82,34 +82,40 @@ func parseEcdsaKeysFromBytes(privateKeyBytes, publicKeyBytes []byte) (*ecdsa.Pri
 	)
 
 	if len(privateKeyBytes) > 0 {
-		if privateKey, err = x509.ParseECPrivateKey(privateKeyBytes); err != nil {
-			key, err2 := x509.ParsePKCS8PrivateKey(privateKeyBytes)
-			if err2 != nil {
+		privateKey, err = x509.ParseECPrivateKey(privateKeyBytes)
+		if err != nil {
+			key, pkcs8Err := x509.ParsePKCS8PrivateKey(privateKeyBytes)
+			if pkcs8Err != nil {
 				return nil, nil, fmt.Errorf("failed to parse private key (tried EC and PKCS8): %w", err)
 			}
 
 			var ok bool
-			if privateKey, ok = key.(*ecdsa.PrivateKey); !ok {
+
+			privateKey, ok = key.(*ecdsa.PrivateKey)
+			if !ok {
 				return nil, nil, ErrNotEcdsaPrivateKey
 			}
 		}
 	}
 
 	if len(publicKeyBytes) > 0 {
-		if key, err := x509.ParsePKIXPublicKey(publicKeyBytes); err != nil {
+		key, err := x509.ParsePKIXPublicKey(publicKeyBytes)
+		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse public key: %w", err)
-		} else {
-			var ok bool
-			if publicKey, ok = key.(*ecdsa.PublicKey); !ok {
-				return nil, nil, ErrNotEcdsaPublicKey
-			}
+		}
+
+		var ok bool
+
+		publicKey, ok = key.(*ecdsa.PublicKey)
+		if !ok {
+			return nil, nil, ErrNotEcdsaPublicKey
 		}
 	}
 
 	return privateKey, publicKey, nil
 }
 
-func NewEcdsaFromHex(privateKeyHex, publicKeyHex string, opts ...EcdsaOption) (Signer, error) {
+func NewECDSAFromHex(privateKeyHex, publicKeyHex string, opts ...ECDSAOption) (Signer, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -128,15 +134,15 @@ func NewEcdsaFromHex(privateKeyHex, publicKeyHex string, opts ...EcdsaOption) (S
 		}
 	}
 
-	privateKey, publicKey, err := parseEcdsaKeysFromBytes(privateBytes, publicBytes)
+	privateKey, publicKey, err := parseECDSAKeysFromBytes(privateBytes, publicBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewEcdsa(privateKey, publicKey, opts...)
+	return NewECDSA(privateKey, publicKey, opts...)
 }
 
-func NewEcdsaFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...EcdsaOption) (Signer, error) {
+func NewECDSAFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...ECDSAOption) (Signer, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -155,27 +161,24 @@ func NewEcdsaFromBase64(privateKeyBase64, publicKeyBase64 string, opts ...EcdsaO
 		}
 	}
 
-	privateKey, publicKey, err := parseEcdsaKeysFromBytes(privateBytes, publicBytes)
+	privateKey, publicKey, err := parseECDSAKeysFromBytes(privateBytes, publicBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewEcdsa(privateKey, publicKey, opts...)
+	return NewECDSA(privateKey, publicKey, opts...)
 }
 
-func GenerateEcdsaKey(curve EcdsaCurve) (*ecdsa.PrivateKey, error) {
-	var ellipticCurve elliptic.Curve
+func GenerateECDSAKey(curve ECDSACurve) (*ecdsa.PrivateKey, error) {
+	curves := map[ECDSACurve]elliptic.Curve{
+		EcdsaCurveP224: elliptic.P224(),
+		EcdsaCurveP256: elliptic.P256(),
+		EcdsaCurveP384: elliptic.P384(),
+		EcdsaCurveP521: elliptic.P521(),
+	}
 
-	switch curve {
-	case EcdsaCurveP224:
-		ellipticCurve = elliptic.P224()
-	case EcdsaCurveP256:
-		ellipticCurve = elliptic.P256()
-	case EcdsaCurveP384:
-		ellipticCurve = elliptic.P384()
-	case EcdsaCurveP521:
-		ellipticCurve = elliptic.P521()
-	default:
+	ellipticCurve, ok := curves[curve]
+	if !ok {
 		ellipticCurve = elliptic.P256()
 	}
 
@@ -232,7 +235,7 @@ func (e *ecdsaCipher) Verify(data, signature string) (bool, error) {
 	return valid, nil
 }
 
-func parseEcdsaPrivateKeyFromPem(pemData []byte) (*ecdsa.PrivateKey, error) {
+func parseECDSAPrivateKeyFromPem(pemData []byte) (*ecdsa.PrivateKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
 		return nil, ErrFailedDecodePemBlock
@@ -259,7 +262,7 @@ func parseEcdsaPrivateKeyFromPem(pemData []byte) (*ecdsa.PrivateKey, error) {
 	return nil, fmt.Errorf("%w: %s", ErrUnsupportedPemType, block.Type)
 }
 
-func parseEcdsaPublicKeyFromPem(pemData []byte) (*ecdsa.PublicKey, error) {
+func parseECDSAPublicKeyFromPem(pemData []byte) (*ecdsa.PublicKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
 		return nil, ErrFailedDecodePemBlock

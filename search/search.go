@@ -47,89 +47,12 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 			continue
 		}
 
-		fieldValue := field.Interface()
-		switch nv := fieldValue.(type) {
-		case null.String:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Int:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Int16:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Int32:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Float:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Bool:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Byte:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.DateTime:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Date:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Time:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
-
-		case null.Decimal:
-			if !nv.Valid {
-				continue
-			}
-
-			fieldValue = nv.ValueOrZero()
+		fieldValue, valid := extractFieldValue(field.Interface())
+		if !valid {
+			continue
 		}
 
 		alias := getColumnAlias(c.Alias, defaultAlias...)
-
-		// Use streams.MapTo to transform column names with alias
 		columns := streams.MapTo(
 			streams.FromSlice(c.Columns),
 			func(column string) string { return dbhelpers.ColumnWithAlias(column, alias) },
@@ -139,16 +62,45 @@ func (f Search) Apply(cb orm.ConditionBuilder, target any, defaultAlias ...strin
 	}
 }
 
-func getColumnAlias(alias string, defaultAlias ...string) string {
-	if alias == constants.Empty {
-		if len(defaultAlias) > 0 {
-			return defaultAlias[0]
-		}
+func extractFieldValue(fieldValue any) (any, bool) {
+	switch nv := fieldValue.(type) {
+	case null.String:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Int:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Int16:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Int32:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Float:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Bool:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Byte:
+		return nv.ValueOrZero(), nv.Valid
+	case null.DateTime:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Date:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Time:
+		return nv.ValueOrZero(), nv.Valid
+	case null.Decimal:
+		return nv.ValueOrZero(), nv.Valid
+	default:
+		return fieldValue, true
+	}
+}
 
-		return constants.Empty
+func getColumnAlias(alias string, defaultAlias ...string) string {
+	if alias != constants.Empty {
+		return alias
 	}
 
-	return alias
+	if len(defaultAlias) > 0 {
+		return defaultAlias[0]
+	}
+
+	return constants.Empty
 }
 
 func applyCondition(cb orm.ConditionBuilder, c Condition, columns []string, value any) {
@@ -284,111 +236,55 @@ func applyLikeCondition(cb orm.ConditionBuilder, columns []string, fieldValue an
 	}
 
 	if len(columns) > 1 {
-		applyMultiColumnLikeCondition(cb, columns, content, operator)
+		cb.Group(func(cb orm.ConditionBuilder) {
+			for _, col := range columns {
+				applyLikeOperation(cb, col, content, operator, true)
+			}
+		})
 
 		return
 	}
 
-	applySingleColumnLikeCondition(cb, columns[0], content, operator)
-}
-
-// applyMultiColumnLikeCondition uses OR logic across multiple columns.
-func applyMultiColumnLikeCondition(cb orm.ConditionBuilder, columns []string, content string, operator Operator) {
-	cb.Group(func(cb orm.ConditionBuilder) {
-		for _, col := range columns {
-			applyLikeOperation(cb, col, content, operator, true)
-		}
-	})
-}
-
-func applySingleColumnLikeCondition(cb orm.ConditionBuilder, column, content string, operator Operator) {
-	applyLikeOperation(cb, column, content, operator, false)
+	applyLikeOperation(cb, columns[0], content, operator, false)
 }
 
 func applyLikeOperation(cb orm.ConditionBuilder, column, content string, operator Operator, useOr bool) {
 	switch operator {
 	case Contains:
-		if useOr {
-			cb.OrContains(column, content)
-		} else {
-			cb.Contains(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrContains, cb.Contains, column, content)
 	case ContainsIgnoreCase:
-		if useOr {
-			cb.OrContainsIgnoreCase(column, content)
-		} else {
-			cb.ContainsIgnoreCase(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrContainsIgnoreCase, cb.ContainsIgnoreCase, column, content)
 	case NotContains:
-		if useOr {
-			cb.OrNotContains(column, content)
-		} else {
-			cb.NotContains(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrNotContains, cb.NotContains, column, content)
 	case NotContainsIgnoreCase:
-		if useOr {
-			cb.OrNotContainsIgnoreCase(column, content)
-		} else {
-			cb.NotContainsIgnoreCase(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrNotContainsIgnoreCase, cb.NotContainsIgnoreCase, column, content)
 	case StartsWith:
-		if useOr {
-			cb.OrStartsWith(column, content)
-		} else {
-			cb.StartsWith(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrStartsWith, cb.StartsWith, column, content)
 	case StartsWithIgnoreCase:
-		if useOr {
-			cb.OrStartsWithIgnoreCase(column, content)
-		} else {
-			cb.StartsWithIgnoreCase(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrStartsWithIgnoreCase, cb.StartsWithIgnoreCase, column, content)
 	case NotStartsWith:
-		if useOr {
-			cb.OrNotStartsWith(column, content)
-		} else {
-			cb.NotStartsWith(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrNotStartsWith, cb.NotStartsWith, column, content)
 	case NotStartsWithIgnoreCase:
-		if useOr {
-			cb.OrNotStartsWithIgnoreCase(column, content)
-		} else {
-			cb.NotStartsWithIgnoreCase(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrNotStartsWithIgnoreCase, cb.NotStartsWithIgnoreCase, column, content)
 	case EndsWith:
-		if useOr {
-			cb.OrEndsWith(column, content)
-		} else {
-			cb.EndsWith(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrEndsWith, cb.EndsWith, column, content)
 	case EndsWithIgnoreCase:
-		if useOr {
-			cb.OrEndsWithIgnoreCase(column, content)
-		} else {
-			cb.EndsWithIgnoreCase(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrEndsWithIgnoreCase, cb.EndsWithIgnoreCase, column, content)
 	case NotEndsWith:
-		if useOr {
-			cb.OrNotEndsWith(column, content)
-		} else {
-			cb.NotEndsWith(column, content)
-		}
-
+		applyLikeMethod(useOr, cb.OrNotEndsWith, cb.NotEndsWith, column, content)
 	case NotEndsWithIgnoreCase:
-		if useOr {
-			cb.OrNotEndsWithIgnoreCase(column, content)
-		} else {
-			cb.NotEndsWithIgnoreCase(column, content)
-		}
+		applyLikeMethod(useOr, cb.OrNotEndsWithIgnoreCase, cb.NotEndsWithIgnoreCase, column, content)
+	}
+}
+
+func applyLikeMethod(
+	useOr bool,
+	orMethod, andMethod func(string, string) orm.ConditionBuilder,
+	column, content string,
+) {
+	if useOr {
+		orMethod(column, content)
+	} else {
+		andMethod(column, content)
 	}
 }

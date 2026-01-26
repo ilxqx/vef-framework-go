@@ -19,14 +19,12 @@ func Indirect(t reflect.Type) reflect.Type {
 	return t
 }
 
-// IsSimilarType checks if two types are similar.
-// Two types are considered similar if:
-//  1. They are identical (always returns true for identical types)
-//  2. They are generic types with the same base type but different type parameters
-//     (e.g., List[int] and List[string] are similar because they share the same base type List)
-//
-// This is useful for comparing generic types where the type parameters may differ,
-// but the underlying structure is the same.
+// IsPointerToStruct checks if the given type is a pointer to a struct.
+func IsPointerToStruct(t reflect.Type) bool {
+	return t != nil && t.Kind() == reflect.Pointer && t.Elem().Kind() == reflect.Struct
+}
+
+// IsSimilarType checks if two types are similar (identical or same generic base type).
 func IsSimilarType(t1, t2 reflect.Type) bool {
 	if t1 == t2 {
 		return true
@@ -37,23 +35,13 @@ func IsSimilarType(t1, t2 reflect.Type) bool {
 	}
 
 	name1, name2 := t1.Name(), t2.Name()
+	index1 := strings.IndexByte(name1, constants.ByteLeftBracket)
+	index2 := strings.IndexByte(name2, constants.ByteLeftBracket)
 
-	index1, index2 := strings.IndexByte(name1, constants.ByteLeftBracket), strings.IndexByte(name2, constants.ByteLeftBracket)
-	if index1 > -1 && index2 > -1 {
-		if index1 != index2 {
-			return false
-		}
-
-		return name1[:index1] == name2[:index2]
-	}
-
-	return false
+	return index1 > -1 && index2 > -1 && index1 == index2 && name1[:index1] == name2[:index2]
 }
 
-// ApplyIfString applies a function to a string value.
-// If the value is not a string, it will be converted to a string.
-// If the value is a pointer, it will be delivered and the value will be converted to a string.
-// If the value is not a string or pointer, it will return the default value or empty value of the type.
+// ApplyIfString applies a function to a string value, returning defaultValue for non-strings.
 func ApplyIfString[T any](value any, fn func(string) T, defaultValue ...T) T {
 	var rv reflect.Value
 	if v, ok := value.(reflect.Value); ok {
@@ -62,8 +50,7 @@ func ApplyIfString[T any](value any, fn func(string) T, defaultValue ...T) T {
 		rv = reflect.Indirect(reflect.ValueOf(value))
 	}
 
-	kind := rv.Kind()
-	if kind == reflect.String {
+	if rv.Kind() == reflect.String {
 		return fn(rv.String())
 	}
 
@@ -74,28 +61,22 @@ func ApplyIfString[T any](value any, fn func(string) T, defaultValue ...T) T {
 	return lo.Empty[T]()
 }
 
-// FindMethod finds a method on a target value.
-// It supports method on the target value, pointer receiver, and promoted methods from embedded fields.
-// Go's MethodByName automatically handles promoted methods from embedded structs.
+// FindMethod finds a method on a target value (includes pointer receiver and promoted methods).
 func FindMethod(target reflect.Value, name string) reflect.Value {
-	// Direct method lookup (includes promoted methods from embedded fields)
-	method := target.MethodByName(name)
-	if method.IsValid() {
+	if method := target.MethodByName(name); method.IsValid() {
 		return method
 	}
 
-	// Pointer receiver lookup
 	if target.Kind() != reflect.Pointer {
-		var pointerValue reflect.Value
+		var ptrValue reflect.Value
 		if target.CanAddr() {
-			pointerValue = target.Addr()
+			ptrValue = target.Addr()
 		} else {
-			pointerValue = reflect.New(target.Type())
-			pointerValue.Elem().Set(target)
+			ptrValue = reflect.New(target.Type())
+			ptrValue.Elem().Set(target)
 		}
 
-		method = pointerValue.MethodByName(name)
-		if method.IsValid() {
+		if method := ptrValue.MethodByName(name); method.IsValid() {
 			return method
 		}
 	}
@@ -103,35 +84,57 @@ func FindMethod(target reflect.Value, name string) reflect.Value {
 	return reflect.Value{}
 }
 
+// CollectMethods collects all methods from a target value as a name-to-value map.
+func CollectMethods(target reflect.Value) map[string]reflect.Value {
+	methods := make(map[string]reflect.Value)
+
+	for target.Kind() == reflect.Pointer {
+		if target.IsNil() {
+			return methods
+		}
+		target = target.Elem()
+	}
+
+	if target.Kind() != reflect.Struct {
+		return methods
+	}
+
+	targetType := target.Type()
+	var ptrTarget reflect.Value
+	if target.CanAddr() {
+		ptrTarget = target.Addr()
+	} else {
+		ptrTarget = reflect.New(targetType)
+		ptrTarget.Elem().Set(target)
+	}
+
+	ptrType := ptrTarget.Type()
+	for i := range ptrType.NumMethod() {
+		method := ptrType.Method(i)
+		methods[method.Name] = ptrTarget.Method(i)
+	}
+
+	return methods
+}
+
 // IsTypeCompatible checks if sourceType is compatible with targetType.
-// It considers exact matches, assignability, interface implementation, and pointer compatibility.
 func IsTypeCompatible(sourceType, targetType reflect.Type) bool {
-	// Exact type match
-	if sourceType == targetType {
+	if sourceType == targetType || sourceType.AssignableTo(targetType) {
 		return true
 	}
 
-	// Assignability check
-	if sourceType.AssignableTo(targetType) {
-		return true
-	}
-
-	// Interface implementation check
 	if targetType.Kind() == reflect.Interface {
 		return sourceType.Implements(targetType)
 	}
 
-	// Pointer compatibility: *T is compatible with *U if T is assignable to U
 	if targetType.Kind() == reflect.Pointer && sourceType.Kind() == reflect.Pointer {
 		return IsTypeCompatible(sourceType.Elem(), targetType.Elem())
 	}
 
-	// Value to pointer compatibility: T is compatible with *T if T is assignable to the pointed type
 	if targetType.Kind() == reflect.Pointer && sourceType.Kind() != reflect.Pointer {
 		return sourceType.AssignableTo(targetType.Elem())
 	}
 
-	// Pointer to value compatibility: *T is compatible with T if T is assignable from T
 	if sourceType.Kind() == reflect.Pointer && targetType.Kind() != reflect.Pointer {
 		return sourceType.Elem().AssignableTo(targetType)
 	}
@@ -139,55 +142,45 @@ func IsTypeCompatible(sourceType, targetType reflect.Type) bool {
 	return false
 }
 
-// ConvertValue converts a source value to the target type,
-// handling pointer dereferencing and referencing as needed.
+// ConvertValue converts a source value to the target type.
 func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.Value, error) {
 	sourceType := sourceValue.Type()
 
-	// If types are exactly the same, no conversion needed
 	if sourceType == targetType {
 		return sourceValue, nil
 	}
 
-	// Handle pointer to value conversion: *T -> T
+	// *T -> T
 	if sourceType.Kind() == reflect.Pointer && targetType.Kind() != reflect.Pointer {
 		if sourceValue.IsNil() {
 			return reflect.Zero(targetType), nil
 		}
-
-		elemValue := sourceValue.Elem()
-		if elemValue.Type().AssignableTo(targetType) {
+		if elemValue := sourceValue.Elem(); elemValue.Type().AssignableTo(targetType) {
 			return elemValue, nil
 		}
 	}
 
-	// Handle value to pointer conversion: T -> *T
+	// T -> *T
 	if sourceType.Kind() != reflect.Pointer && targetType.Kind() == reflect.Pointer {
 		if sourceType.AssignableTo(targetType.Elem()) {
-			// Create a new pointer to the source value
 			ptrValue := reflect.New(targetType.Elem())
 			ptrValue.Elem().Set(sourceValue)
-
 			return ptrValue, nil
 		}
 	}
 
-	// Handle pointer to pointer conversion: *T -> *U
+	// *T -> *U
 	if sourceType.Kind() == reflect.Pointer && targetType.Kind() == reflect.Pointer {
 		if sourceValue.IsNil() {
 			return reflect.Zero(targetType), nil
 		}
-
-		elemValue := sourceValue.Elem()
-		if elemValue.Type().AssignableTo(targetType.Elem()) {
+		if elemValue := sourceValue.Elem(); elemValue.Type().AssignableTo(targetType.Elem()) {
 			ptrValue := reflect.New(targetType.Elem())
 			ptrValue.Elem().Set(elemValue)
-
 			return ptrValue, nil
 		}
 	}
 
-	// Handle direct assignability (including interface implementation)
 	if sourceType.AssignableTo(targetType) {
 		return sourceValue, nil
 	}

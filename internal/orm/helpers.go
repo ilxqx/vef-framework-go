@@ -51,7 +51,7 @@ func buildColumnExpr(column string, alias ...string) schema.QueryWithArgs {
 // applyRelationSpec applies a RelationSpec to a SelectQuery by creating the appropriate JOIN.
 func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 	var (
-		table            = query.Db().TableOf(spec.Model)
+		table            = query.DB().TableOf(spec.Model)
 		pk               string
 		alias            = spec.Alias
 		joinType         = spec.JoinType

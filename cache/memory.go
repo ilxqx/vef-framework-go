@@ -211,11 +211,7 @@ func (m *memoryCache[T]) Contains(_ context.Context, key string) bool {
 		return false
 	}
 
-	if m.checkExpired(key, entry) {
-		return false
-	}
-
-	return true
+	return !m.checkExpired(key, entry)
 }
 
 // Delete removes a key from the cache.

@@ -22,7 +22,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
-// MonitorResourceTestSuite tests the monitor API resource functionality.
 type MonitorResourceTestSuite struct {
 	suite.Suite
 
@@ -71,15 +70,15 @@ func (suite *MonitorResourceTestSuite) TearDownSuite() {
 	}
 }
 
-func (suite *MonitorResourceTestSuite) makeApiRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJson(body)
+func (suite *MonitorResourceTestSuite) makeAPIRequest(body api.Request) *http.Response {
+	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
 	req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 
 	resp, err := suite.app.Test(req)
-	suite.Require().NoError(err, "Api request should not fail")
+	suite.Require().NoError(err, "API request should not fail")
 
 	return resp
 }
@@ -89,7 +88,7 @@ func (suite *MonitorResourceTestSuite) readBody(resp *http.Response) result.Resu
 	defer resp.Body.Close()
 
 	suite.Require().NoError(err, "Should read response body")
-	res, err := encoding.FromJson[result.Result](string(body))
+	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err, "Should decode response JSON")
 
 	return *res
@@ -102,12 +101,11 @@ func (suite *MonitorResourceTestSuite) readDataAsMap(data any) map[string]any {
 	return m
 }
 
-// TestGetOverview tests the comprehensive system overview endpoint.
 func (suite *MonitorResourceTestSuite) TestGetOverview() {
 	suite.T().Log("Testing get_overview endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_overview",
@@ -139,12 +137,11 @@ func (suite *MonitorResourceTestSuite) TestGetOverview() {
 	})
 }
 
-// TestGetCpu tests the CPU information endpoint.
-func (suite *MonitorResourceTestSuite) TestGetCpu() {
+func (suite *MonitorResourceTestSuite) TestGetCPU() {
 	suite.T().Log("Testing get_cpu endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_cpu",
@@ -175,12 +172,11 @@ func (suite *MonitorResourceTestSuite) TestGetCpu() {
 	})
 }
 
-// TestGetMemory tests the memory information endpoint.
 func (suite *MonitorResourceTestSuite) TestGetMemory() {
 	suite.T().Log("Testing get_memory endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_memory",
@@ -208,12 +204,11 @@ func (suite *MonitorResourceTestSuite) TestGetMemory() {
 	})
 }
 
-// TestGetDisk tests the disk information endpoint.
 func (suite *MonitorResourceTestSuite) TestGetDisk() {
 	suite.T().Log("Testing get_disk endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_disk",
@@ -240,12 +235,11 @@ func (suite *MonitorResourceTestSuite) TestGetDisk() {
 	})
 }
 
-// TestGetNetwork tests the network information endpoint.
 func (suite *MonitorResourceTestSuite) TestGetNetwork() {
 	suite.T().Log("Testing get_network endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_network",
@@ -272,12 +266,11 @@ func (suite *MonitorResourceTestSuite) TestGetNetwork() {
 	})
 }
 
-// TestGetHost tests the host information endpoint.
 func (suite *MonitorResourceTestSuite) TestGetHost() {
 	suite.T().Log("Testing get_host endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_host",
@@ -301,7 +294,7 @@ func (suite *MonitorResourceTestSuite) TestGetHost() {
 	})
 
 	suite.Run("ConsistentResults", func() {
-		resp1 := suite.makeApiRequest(api.Request{
+		resp1 := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_host",
@@ -312,7 +305,7 @@ func (suite *MonitorResourceTestSuite) TestGetHost() {
 		body1 := suite.readBody(resp1)
 		data1 := suite.readDataAsMap(body1.Data)
 
-		resp2 := suite.makeApiRequest(api.Request{
+		resp2 := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_host",
@@ -328,12 +321,11 @@ func (suite *MonitorResourceTestSuite) TestGetHost() {
 	})
 }
 
-// TestGetProcess tests the process information endpoint.
 func (suite *MonitorResourceTestSuite) TestGetProcess() {
 	suite.T().Log("Testing get_process endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_process",
@@ -362,12 +354,11 @@ func (suite *MonitorResourceTestSuite) TestGetProcess() {
 	})
 }
 
-// TestGetLoad tests the system load averages endpoint.
 func (suite *MonitorResourceTestSuite) TestGetLoad() {
 	suite.T().Log("Testing get_load endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_load",
@@ -392,12 +383,11 @@ func (suite *MonitorResourceTestSuite) TestGetLoad() {
 	})
 }
 
-// TestGetBuildInfo tests the build information endpoint.
 func (suite *MonitorResourceTestSuite) TestGetBuildInfo() {
 	suite.T().Log("Testing get_build_info endpoint")
 
 	suite.Run("Success", func() {
-		resp := suite.makeApiRequest(api.Request{
+		resp := suite.makeAPIRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "sys/monitor",
 				Action:   "get_build_info",

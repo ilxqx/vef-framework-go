@@ -11,8 +11,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/id"
 )
 
-func defaultIdGenerator(prefix string) string {
-	return prefix + constants.Underscore + id.GenerateUuid()
+func defaultIDGenerator(prefix string) string {
+	return prefix + constants.Underscore + id.GenerateUUID()
 }
 
 type sseWriter struct {

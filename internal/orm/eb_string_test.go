@@ -63,7 +63,7 @@ func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
 
 	suite.Run("ConcatWithDashSeparator", func() {
 		type ConcatWithSepResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Joined string `bun:"joined"`
 		}
 
@@ -84,7 +84,7 @@ func (suite *StringFunctionsTestSuite) TestConcatWithSep() {
 
 		for _, result := range concatResults {
 			suite.Contains(result.Joined, " - ", "Should contain separator")
-			suite.T().Logf("ID: %s, Joined: %s", result.Id, result.Joined)
+			suite.T().Logf("ID: %s, Joined: %s", result.ID, result.Joined)
 		}
 	})
 }
@@ -248,7 +248,7 @@ func (suite *StringFunctionsTestSuite) TestTrimLeft() {
 
 	suite.Run("TrimLeadingWhitespace", func() {
 		type TrimResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Original    string `bun:"original"`
 			LeftTrimmed string `bun:"left_trimmed"`
 		}
@@ -274,7 +274,7 @@ func (suite *StringFunctionsTestSuite) TestTrimLeft() {
 			suite.Contains(result.Original, "   ", "Original should contain spaces")
 			suite.NotEqual(result.Original, result.LeftTrimmed, "Left trimmed should differ from original")
 			suite.T().Logf("ID: %s, Original: '%s', LeftTrim: '%s'",
-				result.Id, result.Original, result.LeftTrimmed)
+				result.ID, result.Original, result.LeftTrimmed)
 		}
 	})
 }
@@ -285,7 +285,7 @@ func (suite *StringFunctionsTestSuite) TestTrimRight() {
 
 	suite.Run("TrimTrailingWhitespace", func() {
 		type TrimResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			Original     string `bun:"original"`
 			RightTrimmed string `bun:"right_trimmed"`
 		}
@@ -311,7 +311,7 @@ func (suite *StringFunctionsTestSuite) TestTrimRight() {
 			suite.Contains(result.Original, "   ", "Original should contain spaces")
 			suite.NotEqual(result.Original, result.RightTrimmed, "Right trimmed should differ from original")
 			suite.T().Logf("ID: %s, Original: '%s', RightTrim: '%s'",
-				result.Id, result.Original, result.RightTrimmed)
+				result.ID, result.Original, result.RightTrimmed)
 		}
 	})
 }
@@ -490,7 +490,7 @@ func (suite *StringFunctionsTestSuite) TestRepeat() {
 
 	suite.Run("RepeatString", func() {
 		type RepeatResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Repeated string `bun:"repeated"`
 		}
 
@@ -510,7 +510,7 @@ func (suite *StringFunctionsTestSuite) TestRepeat() {
 
 		for _, result := range repeatResults {
 			suite.Equal("*****", result.Repeated, "Should repeat '*' 5 times")
-			suite.T().Logf("ID: %s, Repeated: %s", result.Id, result.Repeated)
+			suite.T().Logf("ID: %s, Repeated: %s", result.ID, result.Repeated)
 		}
 	})
 }
@@ -554,7 +554,7 @@ func (suite *StringFunctionsTestSuite) TestReverse() {
 	suite.T().Logf("Testing Reverse function for %s", suite.dbType)
 
 	suite.Run("ReverseString", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skipf("Reverse not supported on %s (framework limitation: no simulation provided)", suite.dbType)
 		}
 
@@ -638,7 +638,7 @@ func (suite *StringFunctionsTestSuite) TestContains() {
 
 	suite.Run("ContainsSubstring", func() {
 		type ContainsResult struct {
-			Id            string `bun:"id"`
+			ID            string `bun:"id"`
 			Title         string `bun:"title"`
 			ContainsPost  bool   `bun:"contains_post"`
 			ContainsGuide bool   `bun:"contains_guide"`
@@ -663,7 +663,7 @@ func (suite *StringFunctionsTestSuite) TestContains() {
 		suite.True(len(containsResults) > 0, "Should have contains results")
 
 		for _, result := range containsResults {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 
 			// Verify case-sensitive matching
@@ -680,7 +680,7 @@ func (suite *StringFunctionsTestSuite) TestContains() {
 			}
 
 			suite.T().Logf("ID: %s, Title: %s, ContainsPost: %v, ContainsGuide: %v",
-				result.Id, result.Title, result.ContainsPost, result.ContainsGuide)
+				result.ID, result.Title, result.ContainsPost, result.ContainsGuide)
 		}
 	})
 }
@@ -691,7 +691,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWith() {
 
 	suite.Run("StartsWithPrefix", func() {
 		type StartsWithResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			StartsWithG bool   `bun:"starts_with_g"`
 			StartsWithP bool   `bun:"starts_with_p"`
@@ -716,7 +716,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWith() {
 		suite.True(len(startsWithResults) > 0, "Should have startsWith results")
 
 		for _, result := range startsWithResults {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 
 			// Verify case-sensitive prefix matching
@@ -733,7 +733,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWith() {
 			}
 
 			suite.T().Logf("ID: %s, Title: %s, StartsWithG: %v, StartsWithP: %v",
-				result.Id, result.Title, result.StartsWithG, result.StartsWithP)
+				result.ID, result.Title, result.StartsWithG, result.StartsWithP)
 		}
 	})
 }
@@ -744,7 +744,7 @@ func (suite *StringFunctionsTestSuite) TestEndsWith() {
 
 	suite.Run("EndsWithSuffix", func() {
 		type EndsWithResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			EndsWithE bool   `bun:"ends_with_e"`
 			EndsWithT bool   `bun:"ends_with_t"`
@@ -769,7 +769,7 @@ func (suite *StringFunctionsTestSuite) TestEndsWith() {
 		suite.True(len(endsWithResults) > 0, "Should have endsWith results")
 
 		for _, result := range endsWithResults {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 
 			// Verify case-sensitive suffix matching
@@ -786,7 +786,7 @@ func (suite *StringFunctionsTestSuite) TestEndsWith() {
 			}
 
 			suite.T().Logf("ID: %s, Title: %s, EndsWithE: %v, EndsWithT: %v",
-				result.Id, result.Title, result.EndsWithE, result.EndsWithT)
+				result.ID, result.Title, result.EndsWithE, result.EndsWithT)
 		}
 	})
 }
@@ -797,7 +797,7 @@ func (suite *StringFunctionsTestSuite) TestContainsIgnoreCase() {
 
 	suite.Run("ContainsSubstringIgnoreCase", func() {
 		type ContainsIgnoreCaseResult struct {
-			Id            string `bun:"id"`
+			ID            string `bun:"id"`
 			Title         string `bun:"title"`
 			ContainsPost  bool   `bun:"contains_post"`
 			ContainsGuide bool   `bun:"contains_guide"`
@@ -822,7 +822,7 @@ func (suite *StringFunctionsTestSuite) TestContainsIgnoreCase() {
 		suite.True(len(containsResults) > 0, "Should have contains ignore case results")
 
 		for _, result := range containsResults {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 
 			// Verify case-insensitive matching
@@ -840,7 +840,7 @@ func (suite *StringFunctionsTestSuite) TestContainsIgnoreCase() {
 			}
 
 			suite.T().Logf("ID: %s, Title: %s, ContainsPost: %v, ContainsGuide: %v",
-				result.Id, result.Title, result.ContainsPost, result.ContainsGuide)
+				result.ID, result.Title, result.ContainsPost, result.ContainsGuide)
 		}
 	})
 }
@@ -851,7 +851,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 
 	suite.Run("StartsWithPrefixIgnoreCase", func() {
 		type StartsWithIgnoreCaseResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			StartsWithG bool   `bun:"starts_with_g"`
 			StartsWithP bool   `bun:"starts_with_p"`
@@ -876,7 +876,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 		suite.True(len(startsWithResults) > 0, "Should have startsWithIgnoreCase results")
 
 		for _, result := range startsWithResults {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 
 			// Verify case-insensitive prefix matching
@@ -894,7 +894,7 @@ func (suite *StringFunctionsTestSuite) TestStartsWithIgnoreCase() {
 			}
 
 			suite.T().Logf("ID: %s, Title: %s, StartsWithG: %v, StartsWithP: %v",
-				result.Id, result.Title, result.StartsWithG, result.StartsWithP)
+				result.ID, result.Title, result.StartsWithG, result.StartsWithP)
 		}
 	})
 }
@@ -905,7 +905,7 @@ func (suite *StringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 
 	suite.Run("EndsWithSuffixIgnoreCase", func() {
 		type EndsWithIgnoreCaseResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			EndsWithE bool   `bun:"ends_with_e"`
 			EndsWithT bool   `bun:"ends_with_t"`
@@ -930,7 +930,7 @@ func (suite *StringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 		suite.True(len(endsWithResults) > 0, "Should have endsWithIgnoreCase results")
 
 		for _, result := range endsWithResults {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 
 			// Verify case-insensitive suffix matching
@@ -948,7 +948,7 @@ func (suite *StringFunctionsTestSuite) TestEndsWithIgnoreCase() {
 			}
 
 			suite.T().Logf("ID: %s, Title: %s, EndsWithE: %v, EndsWithT: %v",
-				result.Id, result.Title, result.EndsWithE, result.EndsWithT)
+				result.ID, result.Title, result.EndsWithE, result.EndsWithT)
 		}
 	})
 }

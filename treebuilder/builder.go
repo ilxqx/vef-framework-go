@@ -1,22 +1,23 @@
 package treebuilder
 
 import (
-	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
+// Adapter provides functions to access tree node properties.
 type Adapter[T any] struct {
-	GetId       func(T) string
-	GetParentId func(T) string
+	GetID       func(T) string
+	GetParentID func(T) string
 	GetChildren func(T) []T
 	SetChildren func(*T, []T)
 }
 
+// Build constructs a tree structure from a flat slice of nodes using the provided adapter.
 func Build[T any](nodes []T, adapter Adapter[T]) []T {
 	if len(nodes) == 0 {
-		return make([]T, 0)
+		return []T{}
 	}
 
 	nodeMap := make(map[string]*T, len(nodes))
@@ -24,85 +25,77 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 
 	for i := range nodes {
 		node := &nodes[i]
-		if id := adapter.GetId(*node); id != constants.Empty {
+		if id := adapter.GetID(*node); id != constants.Empty {
 			nodeMap[id] = node
 		}
 	}
 
 	for i := range nodes {
 		node := &nodes[i]
-		if parentId := adapter.GetParentId(*node); parentId != constants.Empty {
-			childrenMap[parentId] = append(childrenMap[parentId], node)
+		if parentID := adapter.GetParentID(*node); parentID != constants.Empty {
+			childrenMap[parentID] = append(childrenMap[parentID], node)
 		}
 	}
 
 	visited := make(map[string]bool)
 
 	var setChildrenRecursively func(*T)
-
 	setChildrenRecursively = func(nodePtr *T) {
-		id := adapter.GetId(*nodePtr)
-		if id == constants.Empty {
-			return
-		}
-
-		// Prevent infinite recursion with cycle detection
-		if visited[id] {
+		id := adapter.GetID(*nodePtr)
+		if id == constants.Empty || visited[id] {
 			return
 		}
 
 		visited[id] = true
 
-		if childrenPtrs, exists := childrenMap[id]; exists {
-			for _, childPtr := range childrenPtrs {
-				setChildrenRecursively(childPtr)
-			}
-
-			children := streams.MapTo(
-				streams.FromSlice(childrenPtrs),
-				func(childPtr *T) T { return *childPtr },
-			).Collect()
-
-			adapter.SetChildren(nodePtr, children)
+		childPtrs, exists := childrenMap[id]
+		if !exists {
+			return
 		}
 
-		visited[id] = false
+		for _, childPtr := range childPtrs {
+			setChildrenRecursively(childPtr)
+		}
+
+		children := make([]T, len(childPtrs))
+		for i, ptr := range childPtrs {
+			children[i] = *ptr
+		}
+		adapter.SetChildren(nodePtr, children)
 	}
 
 	for i := range nodes {
 		setChildrenRecursively(&nodes[i])
 	}
 
-	// Use streams.Filter to find root nodes (nodes without parent or with non-existent parent)
-	roots := streams.FromSlice(nodes).Filter(func(node T) bool {
-		parentId := adapter.GetParentId(node)
-		if parentId == constants.Empty {
-			return true
+	roots := make([]T, 0)
+	for _, node := range nodes {
+		parentID := adapter.GetParentID(node)
+		if parentID == constants.Empty || nodeMap[parentID] == nil {
+			roots = append(roots, node)
 		}
-
-		_, exists := nodeMap[parentId]
-
-		return !exists
-	}).Collect()
+	}
 
 	return roots
 }
 
-func FindNode[T any](roots []T, targetId string, adapter Adapter[T]) (T, bool) {
-	if targetId == constants.Empty {
+// FindNode searches for a node with the given ID in the tree and returns it if found.
+func FindNode[T any](roots []T, targetID string, adapter Adapter[T]) (T, bool) {
+	if targetID == constants.Empty {
 		return lo.Empty[T](), false
 	}
 
-	return findNodeRecursive(roots, targetId, adapter)
+	return findNodeRecursive(roots, targetID, adapter)
 }
 
-func FindNodePath[T any](roots []T, targetId string, adapter Adapter[T]) ([]T, bool) {
-	if targetId == constants.Empty {
+// FindNodePath returns the path from root to the target node if found.
+func FindNodePath[T any](roots []T, targetID string, adapter Adapter[T]) ([]T, bool) {
+	if targetID == constants.Empty {
 		return nil, false
 	}
 
 	for _, root := range roots {
-		if path, ok := findNodePathRecursive(root, targetId, nil, adapter); ok {
+		if path, found := findNodePathRecursive(root, targetID, nil, adapter); found {
 			return path, true
 		}
 	}
@@ -110,13 +103,13 @@ func FindNodePath[T any](roots []T, targetId string, adapter Adapter[T]) ([]T, b
 	return nil, false
 }
 
-func findNodeRecursive[T any](nodes []T, targetKey string, adapter Adapter[T]) (T, bool) {
+func findNodeRecursive[T any](nodes []T, targetID string, adapter Adapter[T]) (T, bool) {
 	for _, node := range nodes {
-		if id := adapter.GetId(node); id == targetKey {
+		if adapter.GetID(node) == targetID {
 			return node, true
 		}
 
-		if found, ok := findNodeRecursive(adapter.GetChildren(node), targetKey, adapter); ok {
+		if found, ok := findNodeRecursive(adapter.GetChildren(node), targetID, adapter); ok {
 			return found, true
 		}
 	}
@@ -124,15 +117,15 @@ func findNodeRecursive[T any](nodes []T, targetKey string, adapter Adapter[T]) (
 	return lo.Empty[T](), false
 }
 
-func findNodePathRecursive[T any](node T, targetKey string, currentPath []T, adapter Adapter[T]) ([]T, bool) {
+func findNodePathRecursive[T any](node T, targetID string, currentPath []T, adapter Adapter[T]) ([]T, bool) {
 	path := append(currentPath, node)
 
-	if id := adapter.GetId(node); id == targetKey {
+	if adapter.GetID(node) == targetID {
 		return path, true
 	}
 
 	for _, child := range adapter.GetChildren(node) {
-		if result, ok := findNodePathRecursive(child, targetKey, path, adapter); ok {
+		if result, found := findNodePathRecursive(child, targetID, path, adapter); found {
 			return result, true
 		}
 	}

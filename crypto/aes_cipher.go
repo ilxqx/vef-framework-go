@@ -11,34 +11,34 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-type AesMode string
+type AESMode string
 
 const (
-	AesModeCbc AesMode = "CBC"
-	AesModeGcm AesMode = "GCM"
+	AesModeCbc AESMode = "CBC"
+	AesModeGcm AESMode = "GCM"
 )
 
 type aesCipher struct {
 	key  []byte
 	iv   []byte
-	mode AesMode
+	mode AESMode
 }
 
-type AesOption func(*aesCipher)
+type AESOption func(*aesCipher)
 
-func WithAesIv(iv []byte) AesOption {
+func WithAESIv(iv []byte) AESOption {
 	return func(c *aesCipher) {
 		c.iv = iv
 	}
 }
 
-func WithAesMode(mode AesMode) AesOption {
+func WithAESMode(mode AESMode) AESOption {
 	return func(c *aesCipher) {
 		c.mode = mode
 	}
 }
 
-func NewAes(key []byte, opts ...AesOption) (Cipher, error) {
+func NewAES(key []byte, opts ...AESOption) (Cipher, error) {
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		return nil, fmt.Errorf("%w: %d bytes (must be 16, 24, or 32)", ErrInvalidAesKeySize, len(key))
 	}
@@ -61,41 +61,41 @@ func NewAes(key []byte, opts ...AesOption) (Cipher, error) {
 	return cipher, nil
 }
 
-func NewAesFromHex(keyHex string, opts ...AesOption) (Cipher, error) {
+func NewAESFromHex(keyHex string, opts ...AESOption) (Cipher, error) {
 	key, err := encoding.FromHex(keyHex)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from hex: %w", err)
 	}
 
-	return NewAes(key, opts...)
+	return NewAES(key, opts...)
 }
 
-func NewAesFromBase64(keyBase64 string, opts ...AesOption) (Cipher, error) {
+func NewAESFromBase64(keyBase64 string, opts ...AESOption) (Cipher, error) {
 	key, err := encoding.FromBase64(keyBase64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode key from base64: %w", err)
 	}
 
-	return NewAes(key, opts...)
+	return NewAES(key, opts...)
 }
 
 func (a *aesCipher) Encrypt(plaintext string) (string, error) {
 	if a.mode == AesModeGcm {
-		return a.encryptGcm(plaintext)
+		return a.encryptGCM(plaintext)
 	}
 
-	return a.encryptCbc(plaintext)
+	return a.encryptCBC(plaintext)
 }
 
 func (a *aesCipher) Decrypt(ciphertext string) (string, error) {
 	if a.mode == AesModeGcm {
-		return a.decryptGcm(ciphertext)
+		return a.decryptGCM(ciphertext)
 	}
 
-	return a.decryptCbc(ciphertext)
+	return a.decryptCBC(ciphertext)
 }
 
-func (a *aesCipher) encryptCbc(plaintext string) (string, error) {
+func (a *aesCipher) encryptCBC(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -110,7 +110,7 @@ func (a *aesCipher) encryptCbc(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-func (a *aesCipher) decryptCbc(ciphertext string) (string, error) {
+func (a *aesCipher) decryptCBC(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -137,7 +137,7 @@ func (a *aesCipher) decryptCbc(ciphertext string) (string, error) {
 	return string(unpaddedData), nil
 }
 
-func (a *aesCipher) encryptGcm(plaintext string) (string, error) {
+func (a *aesCipher) encryptGCM(plaintext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -158,7 +158,7 @@ func (a *aesCipher) encryptGcm(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-func (a *aesCipher) decryptGcm(ciphertext string) (string, error) {
+func (a *aesCipher) decryptGCM(ciphertext string) (string, error) {
 	block, err := aes.NewCipher(a.key)
 	if err != nil {
 		return constants.Empty, fmt.Errorf("failed to create AES cipher: %w", err)
@@ -191,13 +191,16 @@ func (a *aesCipher) decryptGcm(ciphertext string) (string, error) {
 
 func pkcs7Padding(data []byte, blockSize int) []byte {
 	padding := blockSize - len(data)%blockSize
+	padByte := byte(padding)
 
-	padtext := make([]byte, padding)
-	for i := range padtext {
-		padtext[i] = byte(padding)
+	result := make([]byte, len(data)+padding)
+	copy(result, data)
+
+	for i := len(data); i < len(result); i++ {
+		result[i] = padByte
 	}
 
-	return append(data, padtext...)
+	return result
 }
 
 func pkcs7Unpadding(data []byte) ([]byte, error) {

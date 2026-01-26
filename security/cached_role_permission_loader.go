@@ -58,8 +58,6 @@ func NewCachedRolePermissionsLoader(
 	return cached
 }
 
-// handlePermissionsChanged handles role permissions change events.
-// It clears the cache for affected roles or the entire cache if no specific roles are provided.
 func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Context, evt event.Event) {
 	changeEvent, ok := evt.(*RolePermissionsChangedEvent)
 	if !ok {
@@ -68,7 +66,6 @@ func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Conte
 		return
 	}
 
-	// If no specific roles provided, clear all permissions cache
 	if len(changeEvent.Roles) == 0 {
 		if err := c.permCache.Clear(ctx); err != nil {
 			c.logger.Errorf("Failed to clear all role permissions cache: %v", err)
@@ -79,7 +76,6 @@ func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Conte
 		return
 	}
 
-	// Clear cache for specific roles
 	for _, role := range changeEvent.Roles {
 		if err := c.permCache.Delete(ctx, role); err != nil {
 			c.logger.Errorf("Failed to delete cache for role %s: %v", role, err)
@@ -89,10 +85,8 @@ func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Conte
 	}
 }
 
-// LoadPermissions loads permissions for a single role, using cache when available.
 func (c *CachedRolePermissionsLoader) LoadPermissions(ctx context.Context, role string) (map[string]DataScope, error) {
 	return c.permCache.GetOrLoad(ctx, role, func(ctx context.Context) (map[string]DataScope, error) {
-		// Load from underlying loader and return directly (no conversion needed)
 		return c.loader.LoadPermissions(ctx, role)
 	})
 }

@@ -51,88 +51,79 @@ func (qh *queryHook) BeforeQuery(ctx context.Context, event *bun.QueryEvent) con
 }
 
 func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
-	var guardErr error
-	if event.Stash != nil {
-		if err, ok := event.Stash[guardErrorStashKey].(error); ok {
-			guardErr = err
-		}
-	}
-
+	guardErr := qh.extractGuardError(event)
 	elapsed := time.Since(event.StartTime).Milliseconds()
-	elapsedStyle := qh.output.String(fmt.Sprintf("%6d ms", elapsed))
 
-	switch {
-	case elapsed >= 1000:
-		// Red for slow queries (>=1s)
-		elapsedStyle = elapsedStyle.Bold().Foreground(termenv.ANSIRed)
-	case elapsed >= 500:
-		// Yellow for medium queries (>=500ms)
-		elapsedStyle = elapsedStyle.Bold().Foreground(termenv.ANSIYellow)
-	case elapsed >= 200:
-		// Blue for moderate queries (>=200ms)
-		elapsedStyle = elapsedStyle.Foreground(termenv.ANSIBlue)
-	default:
-		// Green for fast queries (<200ms)
-		elapsedStyle = elapsedStyle.Foreground(termenv.ANSIGreen)
-	}
+	elapsedStyle := qh.formatElapsedTime(elapsed)
+	operationStyle := qh.formatOperation(event.Operation())
+	queryStyle := qh.formatQuery(event.Query)
 
-	operationStyle := qh.output.String(fmt.Sprintf(" %-8s", event.Operation())).Bold()
-
-	// Normalize SQL: collapse multiple whitespace (including newlines) into single spaces
-	// This ensures consistent coloring across the entire query string
-	normalizedQuery := strings.TrimSpace(whitespaceRegex.ReplaceAllString(event.Query, constants.Space))
-	// Use muted gray for SQL to reduce visual noise and keep focus on operation type and timing
-	queryStyle := qh.output.String(normalizedQuery).Foreground(termenv.ANSIBrightBlack)
-
-	// Color operation type by category (foreground only, no background for cleaner look)
-	switch event.Operation() {
-	case "SELECT":
-		operationStyle = operationStyle.Foreground(termenv.ANSIGreen)
-	case "INSERT":
-		operationStyle = operationStyle.Foreground(termenv.ANSIBlue)
-	case "UPDATE":
-		operationStyle = operationStyle.Foreground(termenv.ANSIYellow)
-	case "DELETE":
-		operationStyle = operationStyle.Foreground(termenv.ANSIMagenta)
-	default:
-		operationStyle = operationStyle.Foreground(termenv.ANSICyan)
-	}
-
-	// Use guard error if present, otherwise use the event error
-	displayErr := event.Err
-	if guardErr != nil {
-		displayErr = guardErr
+	displayErr := guardErr
+	if displayErr == nil {
+		displayErr = event.Err
 	}
 
 	if displayErr != nil && !errors.Is(displayErr, sql.ErrNoRows) {
-		var message strings.Builder
-
-		errorMessageStyle := qh.output.String(displayErr.Error()).Foreground(termenv.ANSIRed)
-
-		_, _ = message.WriteString(operationStyle.String())
-		_, _ = message.WriteString(elapsedStyle.String())
-		_ = message.WriteByte(constants.ByteSpace)
-		_, _ = message.WriteString(queryStyle.String())
-		_ = message.WriteByte(constants.ByteSpace)
-		_, _ = message.WriteString(errorMessageStyle.String())
-
-		qh.logger.Error(message.String())
+		errorStyle := qh.output.String(displayErr.Error()).Foreground(termenv.ANSIRed)
+		qh.logger.Error(operationStyle.String() + elapsedStyle.String() + constants.Space + queryStyle.String() + constants.Space + errorStyle.String())
 
 		return
 	}
 
-	var message strings.Builder
-
-	_, _ = message.WriteString(operationStyle.String())
-	_, _ = message.WriteString(elapsedStyle.String())
-	_ = message.WriteByte(constants.ByteSpace)
-	_, _ = message.WriteString(queryStyle.String())
-
+	message := operationStyle.String() + elapsedStyle.String() + constants.Space + queryStyle.String()
 	if elapsed >= 500 {
-		qh.logger.Warn(message.String())
+		qh.logger.Warn(message)
 	} else {
-		qh.logger.Info(message.String())
+		qh.logger.Info(message)
 	}
+}
+
+func (qh *queryHook) extractGuardError(event *bun.QueryEvent) error {
+	if event.Stash == nil {
+		return nil
+	}
+
+	err, _ := event.Stash[guardErrorStashKey].(error)
+
+	return err
+}
+
+func (qh *queryHook) formatElapsedTime(elapsed int64) termenv.Style {
+	style := qh.output.String(fmt.Sprintf("%6d ms", elapsed))
+
+	switch {
+	case elapsed >= 1000:
+		return style.Bold().Foreground(termenv.ANSIRed)
+	case elapsed >= 500:
+		return style.Bold().Foreground(termenv.ANSIYellow)
+	case elapsed >= 200:
+		return style.Foreground(termenv.ANSIBlue)
+	default:
+		return style.Foreground(termenv.ANSIGreen)
+	}
+}
+
+func (qh *queryHook) formatOperation(operation string) termenv.Style {
+	style := qh.output.String(fmt.Sprintf(" %-8s", operation)).Bold()
+
+	switch operation {
+	case "SELECT":
+		return style.Foreground(termenv.ANSIGreen)
+	case "INSERT":
+		return style.Foreground(termenv.ANSIBlue)
+	case "UPDATE":
+		return style.Foreground(termenv.ANSIYellow)
+	case "DELETE":
+		return style.Foreground(termenv.ANSIMagenta)
+	default:
+		return style.Foreground(termenv.ANSICyan)
+	}
+}
+
+func (qh *queryHook) formatQuery(query string) termenv.Style {
+	normalized := strings.TrimSpace(whitespaceRegex.ReplaceAllString(query, constants.Space))
+
+	return qh.output.String(normalized).Foreground(termenv.ANSIBrightBlack)
 }
 
 func addQueryHook(db *bun.DB, logger log.Logger, guardConfig *sqlguard.Config) {

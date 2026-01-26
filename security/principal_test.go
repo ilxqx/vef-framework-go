@@ -17,7 +17,7 @@ type TestUserDetails struct {
 }
 
 type TestExternalAppDetails struct {
-	AppId     string   `json:"appId"`
+	AppID     string   `json:"appID"`
 	AppSecret string   `json:"appSecret"`
 	Scopes    []string `json:"scopes"`
 }
@@ -26,7 +26,7 @@ func TestNewUser(t *testing.T) {
 	t.Run("Create user without roles", func(t *testing.T) {
 		user := NewUser("user123", "John Doe")
 		assert.Equal(t, PrincipalTypeUser, user.Type)
-		assert.Equal(t, "user123", user.Id)
+		assert.Equal(t, "user123", user.ID)
 		assert.Equal(t, "John Doe", user.Name)
 		assert.Empty(t, user.Roles)
 		assert.Nil(t, user.Details)
@@ -35,7 +35,7 @@ func TestNewUser(t *testing.T) {
 	t.Run("Create user with roles", func(t *testing.T) {
 		user := NewUser("user456", "Jane Smith", "admin", "editor")
 		assert.Equal(t, PrincipalTypeUser, user.Type)
-		assert.Equal(t, "user456", user.Id)
+		assert.Equal(t, "user456", user.ID)
 		assert.Equal(t, "Jane Smith", user.Name)
 		assert.Equal(t, []string{"admin", "editor"}, user.Roles)
 	})
@@ -45,7 +45,7 @@ func TestNewExternalApp(t *testing.T) {
 	t.Run("Create external app without roles", func(t *testing.T) {
 		app := NewExternalApp("app123", "Payment Service")
 		assert.Equal(t, PrincipalTypeExternalApp, app.Type)
-		assert.Equal(t, "app123", app.Id)
+		assert.Equal(t, "app123", app.ID)
 		assert.Equal(t, "Payment Service", app.Name)
 		assert.Empty(t, app.Roles)
 		assert.Nil(t, app.Details)
@@ -54,7 +54,7 @@ func TestNewExternalApp(t *testing.T) {
 	t.Run("Create external app with roles", func(t *testing.T) {
 		app := NewExternalApp("app456", "Auth Service", "service", "trusted")
 		assert.Equal(t, PrincipalTypeExternalApp, app.Type)
-		assert.Equal(t, "app456", app.Id)
+		assert.Equal(t, "app456", app.ID)
 		assert.Equal(t, "Auth Service", app.Name)
 		assert.Equal(t, []string{"service", "trusted"}, app.Roles)
 	})
@@ -77,7 +77,7 @@ func TestPrincipalWithRoles(t *testing.T) {
 func TestPrincipalSystem(t *testing.T) {
 	t.Run("System principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeSystem, PrincipalSystem.Type)
-		assert.Equal(t, constants.OperatorSystem, PrincipalSystem.Id)
+		assert.Equal(t, constants.OperatorSystem, PrincipalSystem.ID)
 		assert.Equal(t, "系统", PrincipalSystem.Name)
 	})
 }
@@ -85,7 +85,7 @@ func TestPrincipalSystem(t *testing.T) {
 func TestPrincipalAnonymous(t *testing.T) {
 	t.Run("Anonymous principal has correct values", func(t *testing.T) {
 		assert.Equal(t, PrincipalTypeUser, PrincipalAnonymous.Type)
-		assert.Equal(t, constants.OperatorAnonymous, PrincipalAnonymous.Id)
+		assert.Equal(t, constants.OperatorAnonymous, PrincipalAnonymous.ID)
 		assert.Equal(t, "匿名", PrincipalAnonymous.Name)
 	})
 }
@@ -147,7 +147,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		require.NoError(t, err, "Should unmarshal user with map details")
 
 		assert.Equal(t, PrincipalTypeUser, principal.Type)
-		assert.Equal(t, "user123", principal.Id)
+		assert.Equal(t, "user123", principal.ID)
 		assert.Equal(t, "Test User", principal.Name)
 		assert.Equal(t, []string{"admin", "editor"}, principal.Roles)
 
@@ -201,7 +201,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 			"name": "Auth Service",
 			"roles": ["service"],
 			"details": {
-				"appId": "app_123456",
+				"appID": "app_123456",
 				"appSecret": "secret_abc",
 				"scopes": ["read", "write"]
 			}
@@ -214,7 +214,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 
 		details, ok := principal.Details.(*TestExternalAppDetails)
 		require.True(t, ok, "Details should be TestExternalAppDetails")
-		assert.Equal(t, "app_123456", details.AppId)
+		assert.Equal(t, "app_123456", details.AppID)
 		assert.Equal(t, "secret_abc", details.AppSecret)
 		assert.Equal(t, []string{"read", "write"}, details.Scopes)
 	})
@@ -233,7 +233,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, PrincipalTypeSystem, principal.Type)
-		assert.Equal(t, constants.OperatorSystem, principal.Id)
+		assert.Equal(t, constants.OperatorSystem, principal.ID)
 		assert.Nil(t, principal.Details)
 	})
 
@@ -278,7 +278,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 		app := NewExternalApp("app123", "Test App")
 		detailsMap := map[string]any{
-			"appId":     "app_123",
+			"appID":     "app_123",
 			"appSecret": "secret",
 			"scopes":    []any{"read", "write"},
 		}
@@ -287,7 +287,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 		details, ok := app.Details.(*TestExternalAppDetails)
 		require.True(t, ok, "Details should be TestExternalAppDetails")
-		assert.Equal(t, "app_123", details.AppId)
+		assert.Equal(t, "app_123", details.AppID)
 		assert.Equal(t, "secret", details.AppSecret)
 	})
 
@@ -312,7 +312,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 	t.Run("System principal keeps details as is", func(t *testing.T) {
 		principal := &Principal{
 			Type: PrincipalTypeSystem,
-			Id:   "system",
+			ID:   "system",
 			Name: "System",
 		}
 
@@ -392,7 +392,7 @@ func TestPrincipalRoundTrip(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, original.Type, restored.Type)
-		assert.Equal(t, original.Id, restored.Id)
+		assert.Equal(t, original.ID, restored.ID)
 		assert.Equal(t, original.Name, restored.Name)
 		assert.Equal(t, original.Roles, restored.Roles)
 	})
@@ -400,7 +400,7 @@ func TestPrincipalRoundTrip(t *testing.T) {
 	t.Run("Marshal and unmarshal external app", func(t *testing.T) {
 		original := NewExternalApp("app123", "Auth Service", "service")
 		original.Details = map[string]any{
-			"appId":  "123",
+			"appID":  "123",
 			"scopes": []string{"read", "write"},
 		}
 
@@ -415,7 +415,7 @@ func TestPrincipalRoundTrip(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, original.Type, restored.Type)
-		assert.Equal(t, original.Id, restored.Id)
+		assert.Equal(t, original.ID, restored.ID)
 		assert.Equal(t, original.Name, restored.Name)
 		assert.Equal(t, original.Roles, restored.Roles)
 	})

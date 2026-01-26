@@ -109,13 +109,9 @@ func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOpt
 }
 
 func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
-	if err := streams.FromSlice(opts.Keys).ForEachErr(func(key string) error {
+	return streams.FromSlice(opts.Keys).ForEachErr(func(key string) error {
 		return s.DeleteObject(ctx, storage.DeleteObjectOptions{Key: key})
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
@@ -185,7 +181,7 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 	return objects, nil
 }
 
-func (s *Service) GetPresignedUrl(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
+func (s *Service) GetPresignedURL(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
 	path := s.resolvePath(opts.Key)
 
 	absPath, err := filepath.Abs(path)

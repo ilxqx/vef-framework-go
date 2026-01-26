@@ -15,14 +15,14 @@ import (
 func NewLoggerMiddleware() app.Middleware {
 	return &SimpleMiddleware{
 		handler: func(ctx fiber.Ctx) error {
-			requestId := requestid.FromContext(ctx)
-			logger := log.Named(fmt.Sprintf("request_id:%s", requestId))
+			requestID := requestid.FromContext(ctx)
+			logger := log.Named(fmt.Sprintf("request_id:%s", requestID))
 			contextx.SetLogger(ctx, logger)
-			contextx.SetRequestId(ctx, requestId)
+			contextx.SetRequestID(ctx, requestID)
 
 			ctx.SetContext(
 				contextx.SetLogger(
-					contextx.SetRequestId(ctx.Context(), requestId),
+					contextx.SetRequestID(ctx.Context(), requestID),
 					logger,
 				),
 			)

@@ -6,12 +6,12 @@ type AuthTokens struct {
 }
 
 type Authentication struct {
-	Type        string `json:"type"`
+	Kind        string `json:"kind"`
 	Principal   string `json:"principal"`
 	Credentials any    `json:"credentials"`
 }
 
 type ExternalAppConfig struct {
 	Enabled     bool   `json:"enabled"`
-	IpWhitelist string `json:"ipWhitelist"`
+	IPWhitelist string `json:"ipWhitelist"`
 }

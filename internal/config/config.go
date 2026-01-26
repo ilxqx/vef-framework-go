@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	// DecodeUsingJsonTagOption configures mapstructure decoder with custom options.
-	decodeUsingJsonTagOption viper.DecoderConfigOption = func(c *mapstructure.DecoderConfig) {
+	decodeUsingConfigTagOption viper.DecoderConfigOption = func(c *mapstructure.DecoderConfig) {
 		c.TagName = "config"
 		c.IgnoreUntaggedFields = true
 		c.DecodeHook = mapx.DecoderHook
@@ -30,7 +29,7 @@ type ViperConfig struct {
 }
 
 func (v *ViperConfig) Unmarshal(key string, target any) error {
-	return v.v.UnmarshalKey(key, target, decodeUsingJsonTagOption)
+	return v.v.UnmarshalKey(key, target, decodeUsingConfigTagOption)
 }
 
 func newConfig() (config.Config, error) {

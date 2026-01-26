@@ -11,10 +11,10 @@ import (
 	"github.com/ilxqx/vef-framework-go/page"
 )
 
-// DbAccessor provides access to the underlying Db instance.
-type DbAccessor interface {
-	// Db returns the underlying Db instance.
-	Db() Db
+// DBAccessor provides access to the underlying DB instance.
+type DBAccessor interface {
+	// DB returns the underlying DB instance.
+	DB() DB
 }
 
 // QueryExecutor is an interface that defines the methods for executing database queries.
@@ -26,9 +26,9 @@ type QueryExecutor interface {
 	Scan(ctx context.Context, dest ...any) error
 }
 
-// Cte is an interface that defines the methods for creating Common Table Expressions (CTEs).
+// CTE is an interface that defines the methods for creating Common Table Expressions (CTEs).
 // CTEs allow you to define temporary result sets that exist only for the duration of a single query.
-type Cte[T QueryExecutor] interface {
+type CTE[T QueryExecutor] interface {
 	// With creates a common table expression.
 	With(name string, builder func(query SelectQuery)) T
 	// WithValues creates a common table expression with values.
@@ -123,8 +123,8 @@ type JoinOperations[T any] interface {
 type Filterable[T QueryExecutor] interface {
 	// Where adds a where clause to the query.
 	Where(func(ConditionBuilder)) T
-	// WherePk adds a where clause to the query using the primary key.
-	WherePk(columns ...string) T
+	// WherePK adds a where clause to the query using the primary key.
+	WherePK(columns ...string) T
 	// WhereDeleted adds a where clause to the query using the deleted column.
 	WhereDeleted() T
 	// IncludeDeleted includes soft-deleted records in the query results.
@@ -418,10 +418,10 @@ type ExprBuilder interface {
 	StringAgg(func(StringAggBuilder)) schema.QueryAppender
 	// ArrayAgg builds an ARRAY_AGG aggregate expression using a builder callback.
 	ArrayAgg(func(ArrayAggBuilder)) schema.QueryAppender
-	// JsonObjectAgg builds a JSON_OBJECT_AGG aggregate expression using a builder callback.
-	JsonObjectAgg(func(JsonObjectAggBuilder)) schema.QueryAppender
-	// JsonArrayAgg builds a JSON_ARRAY_AGG aggregate expression using a builder callback.
-	JsonArrayAgg(func(JsonArrayAggBuilder)) schema.QueryAppender
+	// JSONObjectAgg builds a JSON_OBJECT_AGG aggregate expression using a builder callback.
+	JSONObjectAgg(func(JSONObjectAggBuilder)) schema.QueryAppender
+	// JSONArrayAgg builds a JSON_ARRAY_AGG aggregate expression using a builder callback.
+	JSONArrayAgg(func(JSONArrayAggBuilder)) schema.QueryAppender
 	// BitOr builds a BIT_OR aggregate expression using a builder callback.
 	BitOr(func(BitOrBuilder)) schema.QueryAppender
 	// BitAnd builds a BIT_AND aggregate expression using a builder callback.
@@ -478,9 +478,9 @@ type ExprBuilder interface {
 	// WinVariance builds a VARIANCE window function expression.
 	WinVariance(func(WindowVarianceBuilder)) schema.QueryAppender
 	// WinJsonObjectAgg builds a JSON_OBJECT_AGG window function expression.
-	WinJsonObjectAgg(func(WindowJsonObjectAggBuilder)) schema.QueryAppender
+	WinJsonObjectAgg(func(WindowJSONObjectAggBuilder)) schema.QueryAppender
 	// WinJsonArrayAgg builds a JSON_ARRAY_AGG window function expression.
-	WinJsonArrayAgg(func(WindowJsonArrayAggBuilder)) schema.QueryAppender
+	WinJsonArrayAgg(func(WindowJSONArrayAggBuilder)) schema.QueryAppender
 	// WinBitOr builds a BIT_OR window function expression.
 	WinBitOr(func(WindowBitOrBuilder)) schema.QueryAppender
 	// WinBitAnd builds a BIT_AND window function expression.
@@ -645,39 +645,39 @@ type ExprBuilder interface {
 	ToTime(expr any, format ...any) schema.QueryAppender
 	// ToTimestamp converts expression to timestamp.
 	ToTimestamp(expr any, format ...any) schema.QueryAppender
-	// ToJson converts expression to JSON.
-	ToJson(expr any) schema.QueryAppender
+	// ToJSON converts expression to JSON.
+	ToJSON(expr any) schema.QueryAppender
 
 	// ========== JSON Functions ==========
 
-	// JsonExtract extracts value from JSON at specified path.
-	JsonExtract(json, path any) schema.QueryAppender
-	// JsonUnquote removes quotes from JSON string.
-	JsonUnquote(expr any) schema.QueryAppender
-	// JsonArray creates a JSON array from arguments.
-	JsonArray(args ...any) schema.QueryAppender
-	// JsonObject creates a JSON object from key-value pairs.
-	JsonObject(keyValues ...any) schema.QueryAppender
-	// JsonContains checks if JSON contains a value.
-	JsonContains(json, value any) schema.QueryAppender
-	// JsonContainsPath checks if JSON contains a path.
-	JsonContainsPath(json, path any) schema.QueryAppender
-	// JsonKeys returns the keys of a JSON object.
-	JsonKeys(json any, path ...any) schema.QueryAppender
-	// JsonLength returns the length of a JSON array or object.
-	JsonLength(json any, path ...any) schema.QueryAppender
-	// JsonType returns the type of JSON value.
-	JsonType(json any, path ...any) schema.QueryAppender
-	// JsonValid checks if a string is valid JSON.
-	JsonValid(expr any) schema.QueryAppender
-	// JsonSet sets value at path in JSON (insert or update).
-	JsonSet(json, path, value any) schema.QueryAppender
-	// JsonInsert inserts value at path only if path doesn't exist.
-	JsonInsert(json, path, value any) schema.QueryAppender
-	// JsonReplace replaces value at path only if path exists.
-	JsonReplace(json, path, value any) schema.QueryAppender
-	// JsonArrayAppend appends value to JSON array at specified path.
-	JsonArrayAppend(json, path, value any) schema.QueryAppender
+	// JSONExtract extracts value from JSON at specified path.
+	JSONExtract(json, path any) schema.QueryAppender
+	// JSONUnquote removes quotes from JSON string.
+	JSONUnquote(expr any) schema.QueryAppender
+	// JSONArray creates a JSON array from arguments.
+	JSONArray(args ...any) schema.QueryAppender
+	// JSONObject creates a JSON object from key-value pairs.
+	JSONObject(keyValues ...any) schema.QueryAppender
+	// JSONContains checks if JSON contains a value.
+	JSONContains(json, value any) schema.QueryAppender
+	// JSONContainsPath checks if JSON contains a path.
+	JSONContainsPath(json, path any) schema.QueryAppender
+	// JSONKeys returns the keys of a JSON object.
+	JSONKeys(json any, path ...any) schema.QueryAppender
+	// JSONLength returns the length of a JSON array or object.
+	JSONLength(json any, path ...any) schema.QueryAppender
+	// JSONType returns the type of JSON value.
+	JSONType(json any, path ...any) schema.QueryAppender
+	// JSONValid checks if a string is valid JSON.
+	JSONValid(expr any) schema.QueryAppender
+	// JSONSet sets value at path in JSON (insert or update).
+	JSONSet(json, path, value any) schema.QueryAppender
+	// JSONInsert inserts value at path only if path doesn't exist.
+	JSONInsert(json, path, value any) schema.QueryAppender
+	// JSONReplace replaces value at path only if path exists.
+	JSONReplace(json, path, value any) schema.QueryAppender
+	// JSONArrayAppend appends value to JSON array at specified path.
+	JSONArrayAppend(json, path, value any) schema.QueryAppender
 
 	// ========== Utility Functions ==========
 
@@ -705,8 +705,8 @@ type SelectQueryExecutor interface {
 type SelectQuery interface {
 	QueryBuilder
 	SelectQueryExecutor
-	DbAccessor
-	Cte[SelectQuery]
+	DBAccessor
+	CTE[SelectQuery]
 	Selectable[SelectQuery]
 	TableSource[SelectQuery]
 	JoinOperations[SelectQuery]
@@ -720,8 +720,8 @@ type SelectQuery interface {
 	// SelectModelColumns selects the columns of a model.
 	// By default, all columns of the model are selected if no select-related methods are called.
 	SelectModelColumns() SelectQuery
-	// SelectModelPks selects the primary keys of a model.
-	SelectModelPks() SelectQuery
+	// SelectModelPKs selects the primary keys of a model.
+	SelectModelPKs() SelectQuery
 	// SelectExpr selects a column with an expression.
 	SelectExpr(builder func(ExprBuilder) any, alias ...string) SelectQuery
 	// Distinct returns a distinct query.
@@ -782,8 +782,8 @@ type RawQuery interface {
 type InsertQuery interface {
 	QueryBuilder
 	QueryExecutor
-	DbAccessor
-	Cte[InsertQuery]
+	DBAccessor
+	CTE[InsertQuery]
 	TableSource[InsertQuery]
 	Selectable[InsertQuery]
 	ColumnUpdatable[InsertQuery]
@@ -800,8 +800,8 @@ type InsertQuery interface {
 type UpdateQuery interface {
 	QueryBuilder
 	QueryExecutor
-	DbAccessor
-	Cte[UpdateQuery]
+	DBAccessor
+	CTE[UpdateQuery]
 	TableSource[UpdateQuery]
 	Selectable[UpdateQuery]
 	Filterable[UpdateQuery]
@@ -826,8 +826,8 @@ type UpdateQuery interface {
 type DeleteQuery interface {
 	QueryBuilder
 	QueryExecutor
-	DbAccessor
-	Cte[DeleteQuery]
+	DBAccessor
+	CTE[DeleteQuery]
 	TableSource[DeleteQuery]
 	Filterable[DeleteQuery]
 	Orderable[DeleteQuery]
@@ -844,8 +844,8 @@ type DeleteQuery interface {
 type MergeQuery interface {
 	QueryBuilder
 	QueryExecutor
-	DbAccessor
-	Cte[MergeQuery]
+	DBAccessor
+	CTE[MergeQuery]
 	TableSource[MergeQuery]
 	Returnable[MergeQuery]
 	Applier[MergeQuery]
@@ -872,9 +872,9 @@ type MergeQuery interface {
 	WhenNotMatchedBySource(builder ...func(ConditionBuilder)) MergeWhenBuilder
 }
 
-// Db is an interface that defines the methods for database operations.
+// DB is an interface that defines the methods for database operations.
 // It provides factory methods for creating different types of queries and supports transactions.
-type Db interface {
+type DB interface {
 	// NewSelect creates a new select query.
 	NewSelect() SelectQuery
 	// NewInsert creates a new insert.
@@ -887,16 +887,16 @@ type Db interface {
 	NewMerge() MergeQuery
 	// NewRaw creates a new raw query.
 	NewRaw(query string, args ...any) RawQuery
-	// RunInTx runs a transaction.
-	RunInTx(ctx context.Context, fn func(ctx context.Context, tx Db) error) error
-	// RunInReadOnlyTx runs a read-only transaction.
-	RunInReadOnlyTx(ctx context.Context, fn func(ctx context.Context, tx Db) error) error
-	// WithNamedArg returns a new Db with the named arg.
-	WithNamedArg(name string, value any) Db
-	// ModelPks returns the primary keys of a model.
-	ModelPks(model any) (map[string]any, error)
-	// ModelPkFields returns the primary key fields of a model.
-	ModelPkFields(model any) []*PkField
+	// RunInTX runs a transaction.
+	RunInTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
+	// RunInReadOnlyTX runs a read-only transaction.
+	RunInReadOnlyTX(ctx context.Context, fn func(ctx context.Context, tx DB) error) error
+	// WithNamedArg returns a new DB with the named arg.
+	WithNamedArg(name string, value any) DB
+	// ModelPKs returns the primary keys of a model.
+	ModelPKs(model any) (map[string]any, error)
+	// ModelPKFields returns the primary key fields of a model.
+	ModelPKFields(model any) []*PKField
 	// TableOf returns the table information for a model.
 	TableOf(model any) *schema.Table
 }

@@ -16,15 +16,14 @@ type RedisContainer struct {
 	RdsConfig *config.RedisConfig
 }
 
-func (c *RedisContainer) Terminate(ctx context.Context, suite *suite.Suite) {
+func (c *RedisContainer) Terminate(ctx context.Context, s *suite.Suite) {
 	if err := c.container.Terminate(ctx); err != nil {
-		suite.T().Logf("Failed to terminate redis container: %v", err)
+		s.T().Logf("Failed to terminate redis container: %v", err)
 	}
 }
 
-func NewRedisContainer(ctx context.Context, suite *suite.Suite) *RedisContainer {
-	// Start Redis container
-	redisContainer, err := redis.Run(
+func NewRedisContainer(ctx context.Context, s *suite.Suite) *RedisContainer {
+	container, err := redis.Run(
 		ctx,
 		RedisImage,
 		testcontainers.WithWaitStrategy(
@@ -32,23 +31,21 @@ func NewRedisContainer(ctx context.Context, suite *suite.Suite) *RedisContainer 
 				WithStartupTimeout(DefaultContainerTimeout),
 		),
 	)
-	suite.Require().NoError(err)
-	suite.T().Log("Redis container started successfully")
+	s.Require().NoError(err)
+	s.T().Log("Redis container started successfully")
 
-	host, err := redisContainer.Host(ctx)
-	suite.Require().NoError(err)
+	host, err := container.Host(ctx)
+	s.Require().NoError(err)
 
-	port, err := redisContainer.MappedPort(ctx, "6379")
-	suite.Require().NoError(err)
-
-	rdsConfig := &config.RedisConfig{
-		Host:     host,
-		Port:     uint16(port.Int()),
-		Database: 0,
-	}
+	port, err := container.MappedPort(ctx, "6379")
+	s.Require().NoError(err)
 
 	return &RedisContainer{
-		container: redisContainer,
-		RdsConfig: rdsConfig,
+		container: container,
+		RdsConfig: &config.RedisConfig{
+			Host:     host,
+			Port:     uint16(port.Int()),
+			Database: 0,
+		},
 	}
 }

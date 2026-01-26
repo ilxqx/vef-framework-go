@@ -47,7 +47,7 @@ func TestToHex(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ToHex(tt.input)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Hex encoding should produce lowercase hexadecimal string")
 		})
 	}
 }
@@ -62,7 +62,7 @@ func TestFromHex(t *testing.T) {
 		{
 			name:      "EmptyString",
 			input:     "",
-			expected:  []byte{},
+			expected:  nil,
 			expectErr: false,
 		},
 		{
@@ -113,10 +113,10 @@ func TestFromHex(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := FromHex(tt.input)
 			if tt.expectErr {
-				assert.Error(t, err)
+				assert.Error(t, err, "FromHex should return error for invalid hex string")
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				require.NoError(t, err, "FromHex should decode valid hex string without error")
+				assert.Equal(t, tt.expected, result, "Decoded bytes should match expected value")
 			}
 		})
 	}
@@ -125,15 +125,15 @@ func TestFromHex(t *testing.T) {
 func TestHexRoundTrip(t *testing.T) {
 	data := make([]byte, 256)
 	_, err := rand.Read(data)
-	require.NoError(t, err)
+	require.NoError(t, err, "Random data generation should succeed")
 
 	encoded := ToHex(data)
-	assert.NotEmpty(t, encoded)
-	assert.Equal(t, 512, len(encoded))
+	assert.NotEmpty(t, encoded, "Encoded hex string should not be empty")
+	assert.Equal(t, 512, len(encoded), "Hex string length should be twice the byte length")
 
 	decoded, err := FromHex(encoded)
-	require.NoError(t, err)
-	assert.Equal(t, data, decoded)
+	require.NoError(t, err, "Decoding hex string should succeed")
+	assert.Equal(t, data, decoded, "Round-trip encoding/decoding should preserve original data")
 }
 
 func TestHexCaseInsensitive(t *testing.T) {
@@ -141,24 +141,24 @@ func TestHexCaseInsensitive(t *testing.T) {
 
 	t.Run("EncodingIsLowercase", func(t *testing.T) {
 		encoded := ToHex(data)
-		assert.Equal(t, "abcdef", encoded)
+		assert.Equal(t, "abcdef", encoded, "ToHex should produce lowercase hex string")
 	})
 
 	t.Run("DecodeUppercase", func(t *testing.T) {
 		decoded, err := FromHex("ABCDEF")
-		require.NoError(t, err)
-		assert.Equal(t, data, decoded)
+		require.NoError(t, err, "FromHex should accept uppercase hex string")
+		assert.Equal(t, data, decoded, "Decoded bytes should match original data")
 	})
 
 	t.Run("DecodeLowercase", func(t *testing.T) {
 		decoded, err := FromHex("abcdef")
-		require.NoError(t, err)
-		assert.Equal(t, data, decoded)
+		require.NoError(t, err, "FromHex should accept lowercase hex string")
+		assert.Equal(t, data, decoded, "Decoded bytes should match original data")
 	})
 
 	t.Run("DecodeMixedCase", func(t *testing.T) {
 		decoded, err := FromHex("AbCdEf")
-		require.NoError(t, err)
-		assert.Equal(t, data, decoded)
+		require.NoError(t, err, "FromHex should accept mixed-case hex string")
+		assert.Equal(t, data, decoded, "Decoded bytes should match original data")
 	})
 }

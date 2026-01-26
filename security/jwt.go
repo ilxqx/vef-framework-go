@@ -14,8 +14,8 @@ import (
 
 const (
 	jwtIssuer          = "vef"                                                              // Issuer
-	defaultJwtAudience = "vef-app"                                                          // Audience
-	defaultJwtSecret   = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2" // Secret
+	defaultJWTAudience = "vef-app"                                                          // Audience
+	defaultJWTSecret   = "af6675678bd81ad7c93c4a51d122ef61e9750fe5d42ceac1c33b293f36bc14c2" // Secret
 )
 
 var jwtParseOptions = []jwt.ParserOption{
@@ -26,36 +26,33 @@ var jwtParseOptions = []jwt.ParserOption{
 	jwt.WithExpirationRequired(),
 }
 
-// Jwt provides low-level Jwt token operations.
+// JWT provides low-level JWT token operations.
 // It handles token generation, parsing, and validation without business logic.
-type Jwt struct {
-	config *JwtConfig
+type JWT struct {
+	config *JWTConfig
 	secret []byte
 }
 
-// NewJwt creates a new Jwt instance with the given configuration.
-// Secret expects a hex-encoded string; invalid hex will cause a panic during initialization.
+// NewJWT creates a new JWT instance with the given configuration.
+// Secret expects a hex-encoded string; invalid hex will cause an error.
 // Audience will be defaulted when empty.
-func NewJwt(config *JwtConfig) (*Jwt, error) {
-	var (
-		secret []byte
-		err    error
-	)
-	if secret, err = hex.DecodeString(lo.CoalesceOrEmpty(config.Secret, defaultJwtSecret)); err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrDecodeJwtSecretFailed, err)
+func NewJWT(config *JWTConfig) (*JWT, error) {
+	secret, err := hex.DecodeString(lo.CoalesceOrEmpty(config.Secret, defaultJWTSecret))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrDecodeJWTSecretFailed, err)
 	}
 
-	config.Audience = lo.CoalesceOrEmpty(config.Audience, defaultJwtAudience)
+	config.Audience = lo.CoalesceOrEmpty(config.Audience, defaultJWTAudience)
 
-	return &Jwt{
+	return &JWT{
 		config: config,
 		secret: secret,
 	}, nil
 }
 
-// Generate creates a Jwt token with the given claims and expires.
+// Generate creates a JWT token with the given claims and expires.
 // The expiration is computed as now + expires; iat and nbf are set to now.
-func (j *Jwt) Generate(claimsBuilder *JwtClaimsBuilder, expires, notBefore time.Duration) (string, error) {
+func (j *JWT) Generate(claimsBuilder *JWTClaimsBuilder, expires, notBefore time.Duration) (string, error) {
 	claims := claimsBuilder.build()
 	// Set standard claims
 	now := time.Now()
@@ -70,9 +67,9 @@ func (j *Jwt) Generate(claimsBuilder *JwtClaimsBuilder, expires, notBefore time.
 	return token.SignedString(j.secret)
 }
 
-// Parse parses and validates a Jwt token.
+// Parse parses and validates a JWT token.
 // It returns a read-only claims accessor which performs safe conversions and never panics.
-func (j *Jwt) Parse(tokenString string) (*JwtClaimsAccessor, error) {
+func (j *JWT) Parse(tokenString string) (*JWTClaimsAccessor, error) {
 	options := make([]jwt.ParserOption, 0, len(jwtParseOptions)+1)
 	options = append(options, jwtParseOptions...)
 	options = append(options, jwt.WithAudience(j.config.Audience))
@@ -85,7 +82,7 @@ func (j *Jwt) Parse(tokenString string) (*JwtClaimsAccessor, error) {
 			},
 		)
 	if err != nil {
-		return nil, mapJwtError(err)
+		return nil, mapJWTError(err)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -93,11 +90,11 @@ func (j *Jwt) Parse(tokenString string) (*JwtClaimsAccessor, error) {
 		return nil, result.ErrTokenInvalid
 	}
 
-	return NewJwtClaimsAccessor(claims), nil
+	return NewJWTClaimsAccessor(claims), nil
 }
 
-// mapJwtError maps Jwt library errors to framework errors.
-func mapJwtError(err error) error {
+// mapJWTError maps JWT library errors to framework errors.
+func mapJWTError(err error) error {
 	switch {
 	case errors.Is(err, jwt.ErrTokenExpired):
 		return result.ErrTokenExpired

@@ -66,7 +66,7 @@ func (suite *TranslateTransformerTestSuite) SetupSuite() {
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(&config.DatasourceConfig{
-			Type: constants.DbSQLite,
+			Type: constants.SQLite,
 		}),
 		fx.Provide(func() mold.DataDictLoader {
 			return &MockDataDictLoader{shouldError: false}
@@ -322,11 +322,11 @@ func (suite *TranslateTransformerTestSuite) TestTranslateMissingTargetField() {
 	})
 }
 
-// TestTranslateUnsupportedFieldType tests error handling for unsupported field types.
-func (suite *TranslateTransformerTestSuite) TestTranslateUnsupportedFieldType() {
-	suite.T().Log("Testing translate transformer with unsupported field types")
+// TestTranslateIntFieldType tests translation with int field type (now supported).
+func (suite *TranslateTransformerTestSuite) TestTranslateIntFieldType() {
+	suite.T().Log("Testing translate transformer with int field type")
 
-	suite.Run("IntFieldType", func() {
+	suite.Run("IntFieldTypeSupported", func() {
 		type TestStruct struct {
 			Status     int `mold:"translate=dict:status"`
 			StatusName string
@@ -336,8 +336,31 @@ func (suite *TranslateTransformerTestSuite) TestTranslateUnsupportedFieldType() 
 			Status: 1,
 		}
 
+		// Int field type is now supported - translation should succeed
+		// but since "1" is not in the mock dictionary, StatusName will remain empty
 		err := suite.transformer.Struct(suite.ctx, test)
-		suite.Error(err, "Translation should fail for unsupported field type")
+		suite.NoError(err, "Translation should succeed for int field type")
+
+		suite.T().Logf("Result: Status=%d, StatusName=%q", test.Status, test.StatusName)
+	})
+}
+
+// TestTranslateUnsupportedFieldType tests error handling for unsupported field types.
+func (suite *TranslateTransformerTestSuite) TestTranslateUnsupportedFieldType() {
+	suite.T().Log("Testing translate transformer with unsupported field types")
+
+	suite.Run("UnsupportedSourceFieldType", func() {
+		type TestStruct struct {
+			Status     float64 `mold:"translate=dict:status"`
+			StatusName string
+		}
+
+		test := &TestStruct{
+			Status: 1.5,
+		}
+
+		err := suite.transformer.Struct(suite.ctx, test)
+		suite.Error(err, "Translation should fail for unsupported source field type")
 		suite.Contains(err.Error(), "unsupported field type", "Error should indicate unsupported type")
 
 		suite.T().Logf("Error (expected): %v", err)
@@ -373,7 +396,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithResolverError() {
 		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
-				Type: constants.DbSQLite,
+				Type: constants.SQLite,
 			}),
 			fx.Provide(func() mold.DataDictLoader {
 				return &MockDataDictLoader{shouldError: true}
@@ -413,7 +436,7 @@ func (suite *TranslateTransformerTestSuite) TestTranslateWithMissingResolver() {
 		_, stop := apptest.NewTestApp(
 			suite.T(),
 			fx.Replace(&config.DatasourceConfig{
-				Type: constants.DbSQLite,
+				Type: constants.SQLite,
 			}),
 			fx.Populate(&transformer),
 		)

@@ -22,7 +22,7 @@ var (
 	htmlEmbedSrc   = regexp2.MustCompile(`(?i)<embed[^>]+src\s*=\s*(["'])([^"']+)\1`, regexp2.None)
 	htmlObjectData = regexp2.MustCompile(`(?i)<object[^>]+data\s*=\s*(["'])([^"']+)\1`, regexp2.None)
 
-	htmlUrlPatterns = []*regexp2.Regexp{
+	htmlURLPatterns = []*regexp2.Regexp{
 		htmlImgSrc,
 		htmlAHref,
 		htmlVideoSrc,
@@ -40,14 +40,14 @@ var (
 	markdownImagePattern = regexp.MustCompile(`!\[([^]]*)]\(([^)]+)\)`) // ![alt](url)
 	markdownLinkPattern  = regexp.MustCompile(`\[([^]]*)]\(([^)]+)\)`)  // [text](url), allows empty text
 
-	markdownUrlPatterns = []*regexp.Regexp{
+	markdownURLPatterns = []*regexp.Regexp{
 		markdownImagePattern,
 		markdownLinkPattern,
 	}
 )
 
-// isRelativeUrl checks if a URL is a relative path (not http:// or https://)
-func isRelativeUrl(url string) bool {
+// isRelativeURL checks if a URL is a relative path (not http:// or https://)
+func isRelativeURL(url string) bool {
 	url = strings.TrimSpace(url)
 
 	return url != constants.Empty &&
@@ -55,15 +55,15 @@ func isRelativeUrl(url string) bool {
 		!strings.HasPrefix(url, "https://")
 }
 
-// extractHtmlUrls extracts all relative URLs from HTML content.
-func extractHtmlUrls(content string) []string {
+// extractHTMLURLs extracts all relative URLs from HTML content.
+func extractHTMLURLs(content string) []string {
 	if content == constants.Empty {
 		return nil
 	}
 
 	urlSet := collections.NewHashSet[string]()
 
-	for _, pattern := range htmlUrlPatterns {
+	for _, pattern := range htmlURLPatterns {
 		// regexp2 requires iterative FindNextMatch instead of FindAllStringSubmatch
 		match, err := pattern.FindStringMatch(content)
 		for match != nil && err == nil {
@@ -71,7 +71,7 @@ func extractHtmlUrls(content string) []string {
 			groups := match.Groups()
 			if len(groups) > 2 {
 				url := strings.TrimSpace(groups[2].String())
-				if isRelativeUrl(url) {
+				if isRelativeURL(url) {
 					urlSet.Add(url)
 				}
 			}
@@ -83,8 +83,8 @@ func extractHtmlUrls(content string) []string {
 	return urlSet.ToSlice()
 }
 
-// replaceHtmlUrls replaces URLs in HTML content based on the replacement map.
-func replaceHtmlUrls(content string, replacements map[string]string) string {
+// replaceHTMLURLs replaces URLs in HTML content based on the replacement map.
+func replaceHTMLURLs(content string, replacements map[string]string) string {
 	if content == constants.Empty || len(replacements) == 0 {
 		return content
 	}
@@ -100,11 +100,11 @@ func replaceHtmlUrls(content string, replacements map[string]string) string {
 			// Group 0: entire match, Group 1: attribute name, Group 2: quote, Group 3: URL
 			attrName := groups[1].String()
 			quote := groups[2].String()
-			oldUrl := groups[3].String()
+			oldURL := groups[3].String()
 
 			_, _ = result.WriteString(content[lastIndex:groups[0].Index])
 
-			if newURL, ok := replacements[oldUrl]; ok {
+			if newURL, ok := replacements[oldURL]; ok {
 				// Preserve original quote type to maintain HTML consistency
 				_, _ = result.WriteString(attrName)
 				_ = result.WriteByte(constants.ByteEquals)
@@ -126,15 +126,15 @@ func replaceHtmlUrls(content string, replacements map[string]string) string {
 	return result.String()
 }
 
-// extractMarkdownUrls extracts all relative URLs from Markdown content.
-func extractMarkdownUrls(content string) []string {
+// extractMarkdownURLs extracts all relative URLs from Markdown content.
+func extractMarkdownURLs(content string) []string {
 	if content == constants.Empty {
 		return nil
 	}
 
 	urlSet := collections.NewHashSet[string]()
 
-	for _, pattern := range markdownUrlPatterns {
+	for _, pattern := range markdownURLPatterns {
 		matches := pattern.FindAllStringSubmatch(content, -1)
 		for _, match := range matches {
 			if len(match) > 2 {
@@ -145,7 +145,7 @@ func extractMarkdownUrls(content string) []string {
 					url = strings.TrimSpace(url[:idx])
 				}
 
-				if isRelativeUrl(url) {
+				if isRelativeURL(url) {
 					urlSet.Add(url)
 				}
 			}
@@ -155,52 +155,40 @@ func extractMarkdownUrls(content string) []string {
 	return urlSet.ToSlice()
 }
 
-// replaceMarkdownUrls replaces URLs in Markdown content based on the replacement map.
-func replaceMarkdownUrls(content string, replacements map[string]string) string {
+// buildMarkdownReplacement builds a replacement string for markdown image or link.
+func buildMarkdownReplacement(prefix, text, newURL, title string) string {
+	var sb strings.Builder
+
+	_, _ = sb.WriteString(prefix)
+	_ = sb.WriteByte(constants.ByteLeftBracket)
+	_, _ = sb.WriteString(text)
+	_ = sb.WriteByte(constants.ByteRightBracket)
+	_ = sb.WriteByte(constants.ByteLeftParenthesis)
+	_, _ = sb.WriteString(newURL)
+
+	if title != constants.Empty {
+		_ = sb.WriteByte(constants.ByteSpace)
+		_, _ = sb.WriteString(title)
+	}
+
+	_ = sb.WriteByte(constants.ByteRightParenthesis)
+
+	return sb.String()
+}
+
+// replaceMarkdownURLs replaces URLs in Markdown content based on the replacement map.
+func replaceMarkdownURLs(content string, replacements map[string]string) string {
 	if content == constants.Empty || len(replacements) == 0 {
 		return content
 	}
 
-	result := content
-
-	result = markdownImagePattern.ReplaceAllStringFunc(result, func(match string) string {
-		if subMatches := markdownImagePattern.FindStringSubmatch(match); len(subMatches) > 2 {
-			alt := subMatches[1]
-			url := strings.TrimSpace(subMatches[2])
-
-			// Preserve optional title if present
-			title := constants.Empty
-			if idx := strings.IndexAny(url, `"'`); idx > 0 {
-				title = url[idx:]
-				url = strings.TrimSpace(url[:idx])
+	replaceFunc := func(pattern *regexp.Regexp, prefix string) func(string) string {
+		return func(match string) string {
+			subMatches := pattern.FindStringSubmatch(match)
+			if len(subMatches) <= 2 {
+				return match
 			}
 
-			if newUrl, ok := replacements[url]; ok {
-				var sb strings.Builder
-
-				_ = sb.WriteByte(constants.ByteExclamationMark)
-				_ = sb.WriteByte(constants.ByteLeftBracket)
-				_, _ = sb.WriteString(alt)
-				_ = sb.WriteByte(constants.ByteRightBracket)
-				_ = sb.WriteByte(constants.ByteLeftParenthesis)
-				_, _ = sb.WriteString(newUrl)
-
-				if title != constants.Empty {
-					_ = sb.WriteByte(constants.ByteSpace)
-					_, _ = sb.WriteString(title)
-				}
-
-				_ = sb.WriteByte(constants.ByteRightParenthesis)
-
-				return sb.String()
-			}
-		}
-
-		return match
-	})
-
-	result = markdownLinkPattern.ReplaceAllStringFunc(result, func(match string) string {
-		if subMatches := markdownLinkPattern.FindStringSubmatch(match); len(subMatches) > 2 {
 			text := subMatches[1]
 			url := strings.TrimSpace(subMatches[2])
 
@@ -211,28 +199,16 @@ func replaceMarkdownUrls(content string, replacements map[string]string) string 
 				url = strings.TrimSpace(url[:idx])
 			}
 
-			if newUrl, ok := replacements[url]; ok {
-				var sb strings.Builder
-
-				_ = sb.WriteByte(constants.ByteLeftBracket)
-				_, _ = sb.WriteString(text)
-				_ = sb.WriteByte(constants.ByteRightBracket)
-				_ = sb.WriteByte(constants.ByteLeftParenthesis)
-				_, _ = sb.WriteString(newUrl)
-
-				if title != constants.Empty {
-					_ = sb.WriteByte(constants.ByteSpace)
-					_, _ = sb.WriteString(title)
-				}
-
-				_ = sb.WriteByte(constants.ByteRightParenthesis)
-
-				return sb.String()
+			if newURL, ok := replacements[url]; ok {
+				return buildMarkdownReplacement(prefix, text, newURL, title)
 			}
-		}
 
-		return match
-	})
+			return match
+		}
+	}
+
+	result := markdownImagePattern.ReplaceAllStringFunc(content, replaceFunc(markdownImagePattern, "!"))
+	result = markdownLinkPattern.ReplaceAllStringFunc(result, replaceFunc(markdownLinkPattern, ""))
 
 	return result
 }

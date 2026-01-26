@@ -8,334 +8,120 @@ import (
 	"github.com/ilxqx/vef-framework-go/null"
 )
 
+// Nullable defines the interface for null wrapper types.
+type Nullable[T any] interface {
+	ValueOrZero() T
+	Ptr() *T
+}
+
+// makeNullToValueConverter creates a converter from null type to value type.
+func makeNullToValueConverter[N Nullable[T], T any]() TypeConverter {
+	return TypeConverter{
+		SrcType: lo.Empty[N](),
+		DstType: lo.Empty[T](),
+		Fn: func(src any) (any, error) {
+			return src.(N).ValueOrZero(), nil
+		},
+	}
+}
+
+// makeNullToPtrConverter creates a converter from null type to pointer type.
+func makeNullToPtrConverter[N Nullable[T], T any]() TypeConverter {
+	return TypeConverter{
+		SrcType: lo.Empty[N](),
+		DstType: lo.Empty[*T](),
+		Fn: func(src any) (any, error) {
+			return src.(N).Ptr(), nil
+		},
+	}
+}
+
+// makeValueToNullConverter creates a converter from value type to null type.
+func makeValueToNullConverter[T, N any](fromFn func(T) N) TypeConverter {
+	return TypeConverter{
+		SrcType: lo.Empty[T](),
+		DstType: lo.Empty[N](),
+		Fn: func(src any) (any, error) {
+			return fromFn(src.(T)), nil
+		},
+	}
+}
+
+// makePtrToNullConverter creates a converter from pointer type to null type.
+func makePtrToNullConverter[T, N any](fromPtrFn func(*T) N) TypeConverter {
+	return TypeConverter{
+		SrcType: lo.Empty[*T](),
+		DstType: lo.Empty[N](),
+		Fn: func(src any) (any, error) {
+			return fromPtrFn(src.(*T)), nil
+		},
+	}
+}
+
 var (
-	// Null.String.
-	nullStringToStringConverter = TypeConverter{
-		SrcType: lo.Empty[null.String](),
-		DstType: lo.Empty[string](),
-		Fn: func(src any) (any, error) {
-			return src.(null.String).ValueOrZero(), nil
-		},
-	}
-	nullStringToStringPtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.String](),
-		DstType: lo.Empty[*string](),
-		Fn: func(src any) (any, error) {
-			return src.(null.String).Ptr(), nil
-		},
-	}
-	stringToNullStringConverter = TypeConverter{
-		SrcType: lo.Empty[string](),
-		DstType: lo.Empty[null.String](),
-		Fn: func(src any) (any, error) {
-			return null.StringFrom(src.(string)), nil
-		},
-	}
-	stringPtrToNullStringConverter = TypeConverter{
-		SrcType: lo.Empty[*string](),
-		DstType: lo.Empty[null.String](),
-		Fn: func(src any) (any, error) {
-			return null.StringFromPtr(src.(*string)), nil
-		},
-	}
+	// null.String converters
+	nullStringToStringConverter    = makeNullToValueConverter[null.String, string]()
+	nullStringToStringPtrConverter = makeNullToPtrConverter[null.String, string]()
+	stringToNullStringConverter    = makeValueToNullConverter(null.StringFrom)
+	stringPtrToNullStringConverter = makePtrToNullConverter(null.StringFromPtr)
 
-	// Null.Int.
-	nullIntToIntConverter = TypeConverter{
-		SrcType: lo.Empty[null.Int](),
-		DstType: lo.Empty[int64](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Int).ValueOrZero(), nil
-		},
-	}
-	nullIntToIntPtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Int](),
-		DstType: lo.Empty[*int64](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Int).Ptr(), nil
-		},
-	}
-	intToNullIntConverter = TypeConverter{
-		SrcType: lo.Empty[int64](),
-		DstType: lo.Empty[null.Int](),
-		Fn: func(src any) (any, error) {
-			return null.IntFrom(src.(int64)), nil
-		},
-	}
-	intPtrToNullIntConverter = TypeConverter{
-		SrcType: lo.Empty[*int64](),
-		DstType: lo.Empty[null.Int](),
-		Fn: func(src any) (any, error) {
-			return null.IntFromPtr(src.(*int64)), nil
-		},
-	}
+	// null.Int converters
+	nullIntToIntConverter    = makeNullToValueConverter[null.Int, int64]()
+	nullIntToIntPtrConverter = makeNullToPtrConverter[null.Int, int64]()
+	intToNullIntConverter    = makeValueToNullConverter(null.IntFrom)
+	intPtrToNullIntConverter = makePtrToNullConverter(null.IntFromPtr)
 
-	// Null.Int16.
-	nullInt16ToInt16Converter = TypeConverter{
-		SrcType: lo.Empty[null.Int16](),
-		DstType: lo.Empty[int16](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Int16).ValueOrZero(), nil
-		},
-	}
-	nullInt16ToInt16PtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Int16](),
-		DstType: lo.Empty[*int16](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Int16).Ptr(), nil
-		},
-	}
-	int16ToNullInt16Converter = TypeConverter{
-		SrcType: lo.Empty[int16](),
-		DstType: lo.Empty[null.Int16](),
-		Fn: func(src any) (any, error) {
-			return null.Int16From(src.(int16)), nil
-		},
-	}
-	int16PtrToNullInt16Converter = TypeConverter{
-		SrcType: lo.Empty[*int16](),
-		DstType: lo.Empty[null.Int16](),
-		Fn: func(src any) (any, error) {
-			return null.Int16FromPtr(src.(*int16)), nil
-		},
-	}
+	// null.Int16 converters
+	nullInt16ToInt16Converter    = makeNullToValueConverter[null.Int16, int16]()
+	nullInt16ToInt16PtrConverter = makeNullToPtrConverter[null.Int16, int16]()
+	int16ToNullInt16Converter    = makeValueToNullConverter(null.Int16From)
+	int16PtrToNullInt16Converter = makePtrToNullConverter(null.Int16FromPtr)
 
-	// Null.Int32.
-	nullInt32ToInt32Converter = TypeConverter{
-		SrcType: lo.Empty[null.Int32](),
-		DstType: lo.Empty[int32](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Int32).ValueOrZero(), nil
-		},
-	}
-	nullInt32ToInt32PtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Int32](),
-		DstType: lo.Empty[*int32](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Int32).Ptr(), nil
-		},
-	}
-	int32ToNullInt32Converter = TypeConverter{
-		SrcType: lo.Empty[int32](),
-		DstType: lo.Empty[null.Int32](),
-		Fn: func(src any) (any, error) {
-			return null.Int32From(src.(int32)), nil
-		},
-	}
-	int32PtrToNullInt32Converter = TypeConverter{
-		SrcType: lo.Empty[*int32](),
-		DstType: lo.Empty[null.Int32](),
-		Fn: func(src any) (any, error) {
-			return null.Int32FromPtr(src.(*int32)), nil
-		},
-	}
+	// null.Int32 converters
+	nullInt32ToInt32Converter    = makeNullToValueConverter[null.Int32, int32]()
+	nullInt32ToInt32PtrConverter = makeNullToPtrConverter[null.Int32, int32]()
+	int32ToNullInt32Converter    = makeValueToNullConverter(null.Int32From)
+	int32PtrToNullInt32Converter = makePtrToNullConverter(null.Int32FromPtr)
 
-	// Null.Float.
-	nullFloatToFloatConverter = TypeConverter{
-		SrcType: lo.Empty[null.Float](),
-		DstType: lo.Empty[float64](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Float).ValueOrZero(), nil
-		},
-	}
-	nullFloatToFloatPtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Float](),
-		DstType: lo.Empty[*float64](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Float).Ptr(), nil
-		},
-	}
-	floatToNullFloatConverter = TypeConverter{
-		SrcType: lo.Empty[float64](),
-		DstType: lo.Empty[null.Float](),
-		Fn: func(src any) (any, error) {
-			return null.FloatFrom(src.(float64)), nil
-		},
-	}
-	floatPtrToNullFloatConverter = TypeConverter{
-		SrcType: lo.Empty[*float64](),
-		DstType: lo.Empty[null.Float](),
-		Fn: func(src any) (any, error) {
-			return null.FloatFromPtr(src.(*float64)), nil
-		},
-	}
+	// null.Float converters
+	nullFloatToFloatConverter    = makeNullToValueConverter[null.Float, float64]()
+	nullFloatToFloatPtrConverter = makeNullToPtrConverter[null.Float, float64]()
+	floatToNullFloatConverter    = makeValueToNullConverter(null.FloatFrom)
+	floatPtrToNullFloatConverter = makePtrToNullConverter(null.FloatFromPtr)
 
-	// Null.Byte.
-	nullByteToByteConverter = TypeConverter{
-		SrcType: lo.Empty[null.Byte](),
-		DstType: lo.Empty[byte](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Byte).ValueOrZero(), nil
-		},
-	}
-	nullByteToBytePtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Byte](),
-		DstType: lo.Empty[*byte](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Byte).Ptr(), nil
-		},
-	}
-	byteToNullByteConverter = TypeConverter{
-		SrcType: lo.Empty[byte](),
-		DstType: lo.Empty[null.Byte](),
-		Fn: func(src any) (any, error) {
-			return null.ByteFrom(src.(byte)), nil
-		},
-	}
-	bytePtrToNullByteConverter = TypeConverter{
-		SrcType: lo.Empty[*byte](),
-		DstType: lo.Empty[null.Byte](),
-		Fn: func(src any) (any, error) {
-			return null.ByteFromPtr(src.(*byte)), nil
-		},
-	}
+	// null.Byte converters
+	nullByteToByteConverter    = makeNullToValueConverter[null.Byte, byte]()
+	nullByteToBytePtrConverter = makeNullToPtrConverter[null.Byte, byte]()
+	byteToNullByteConverter    = makeValueToNullConverter(null.ByteFrom)
+	bytePtrToNullByteConverter = makePtrToNullConverter(null.ByteFromPtr)
 
-	// Null.Bool.
-	nullBoolToBoolConverter = TypeConverter{
-		SrcType: lo.Empty[null.Bool](),
-		DstType: lo.Empty[bool](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Bool).ValueOrZero(), nil
-		},
-	}
-	nullBoolToBoolPtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Bool](),
-		DstType: lo.Empty[*bool](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Bool).Ptr(), nil
-		},
-	}
-	boolToNullBoolConverter = TypeConverter{
-		SrcType: lo.Empty[bool](),
-		DstType: lo.Empty[null.Bool](),
-		Fn: func(src any) (any, error) {
-			return null.BoolFrom(src.(bool)), nil
-		},
-	}
-	boolPtrToNullBoolConverter = TypeConverter{
-		SrcType: lo.Empty[*bool](),
-		DstType: lo.Empty[null.Bool](),
-		Fn: func(src any) (any, error) {
-			return null.BoolFromPtr(src.(*bool)), nil
-		},
-	}
+	// null.Bool converters
+	nullBoolToBoolConverter    = makeNullToValueConverter[null.Bool, bool]()
+	nullBoolToBoolPtrConverter = makeNullToPtrConverter[null.Bool, bool]()
+	boolToNullBoolConverter    = makeValueToNullConverter(null.BoolFrom)
+	boolPtrToNullBoolConverter = makePtrToNullConverter(null.BoolFromPtr)
 
-	// Null.DateTime.
-	nullDateTimeToDateTimeConverter = TypeConverter{
-		SrcType: lo.Empty[null.DateTime](),
-		DstType: lo.Empty[datetime.DateTime](),
-		Fn: func(src any) (any, error) {
-			return src.(null.DateTime).ValueOrZero(), nil
-		},
-	}
-	nullDateTimeToDateTimePtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.DateTime](),
-		DstType: lo.Empty[*datetime.DateTime](),
-		Fn: func(src any) (any, error) {
-			return src.(null.DateTime).Ptr(), nil
-		},
-	}
-	dateTimeToNullDateTimeConverter = TypeConverter{
-		SrcType: lo.Empty[datetime.DateTime](),
-		DstType: lo.Empty[null.DateTime](),
-		Fn: func(src any) (any, error) {
-			return null.DateTimeFrom(src.(datetime.DateTime)), nil
-		},
-	}
-	dateTimePtrToNullDateTimeConverter = TypeConverter{
-		SrcType: lo.Empty[*datetime.DateTime](),
-		DstType: lo.Empty[null.DateTime](),
-		Fn: func(src any) (any, error) {
-			return null.DateTimeFromPtr(src.(*datetime.DateTime)), nil
-		},
-	}
+	// null.DateTime converters
+	nullDateTimeToDateTimeConverter    = makeNullToValueConverter[null.DateTime, datetime.DateTime]()
+	nullDateTimeToDateTimePtrConverter = makeNullToPtrConverter[null.DateTime, datetime.DateTime]()
+	dateTimeToNullDateTimeConverter    = makeValueToNullConverter(null.DateTimeFrom)
+	dateTimePtrToNullDateTimeConverter = makePtrToNullConverter(null.DateTimeFromPtr)
 
-	// Null.Date.
-	nullDateToDateConverter = TypeConverter{
-		SrcType: lo.Empty[null.Date](),
-		DstType: lo.Empty[datetime.Date](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Date).ValueOrZero(), nil
-		},
-	}
-	nullDateToDatePtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Date](),
-		DstType: lo.Empty[*datetime.Date](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Date).Ptr(), nil
-		},
-	}
-	dateToNullDateConverter = TypeConverter{
-		SrcType: lo.Empty[datetime.Date](),
-		DstType: lo.Empty[null.Date](),
-		Fn: func(src any) (any, error) {
-			return null.DateFrom(src.(datetime.Date)), nil
-		},
-	}
-	datePtrToNullDateConverter = TypeConverter{
-		SrcType: lo.Empty[*datetime.Date](),
-		DstType: lo.Empty[null.Date](),
-		Fn: func(src any) (any, error) {
-			return null.DateFromPtr(src.(*datetime.Date)), nil
-		},
-	}
+	// null.Date converters
+	nullDateToDateConverter    = makeNullToValueConverter[null.Date, datetime.Date]()
+	nullDateToDatePtrConverter = makeNullToPtrConverter[null.Date, datetime.Date]()
+	dateToNullDateConverter    = makeValueToNullConverter(null.DateFrom)
+	datePtrToNullDateConverter = makePtrToNullConverter(null.DateFromPtr)
 
-	// Null.Time.
-	nullTimeToTimeConverter = TypeConverter{
-		SrcType: lo.Empty[null.Time](),
-		DstType: lo.Empty[datetime.Time](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Time).ValueOrZero(), nil
-		},
-	}
-	nullTimeToTimePtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Time](),
-		DstType: lo.Empty[*datetime.Time](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Time).Ptr(), nil
-		},
-	}
-	timeToNullTimeConverter = TypeConverter{
-		SrcType: lo.Empty[datetime.Time](),
-		DstType: lo.Empty[null.Time](),
-		Fn: func(src any) (any, error) {
-			return null.TimeFrom(src.(datetime.Time)), nil
-		},
-	}
-	timePtrToNullTimeConverter = TypeConverter{
-		SrcType: lo.Empty[*datetime.Time](),
-		DstType: lo.Empty[null.Time](),
-		Fn: func(src any) (any, error) {
-			return null.TimeFromPtr(src.(*datetime.Time)), nil
-		},
-	}
+	// null.Time converters
+	nullTimeToTimeConverter    = makeNullToValueConverter[null.Time, datetime.Time]()
+	nullTimeToTimePtrConverter = makeNullToPtrConverter[null.Time, datetime.Time]()
+	timeToNullTimeConverter    = makeValueToNullConverter(null.TimeFrom)
+	timePtrToNullTimeConverter = makePtrToNullConverter(null.TimeFromPtr)
 
-	// Null.Decimal.
-	nullDecimalToDecimalConverter = TypeConverter{
-		SrcType: lo.Empty[null.Decimal](),
-		DstType: lo.Empty[decimal.Decimal](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Decimal).ValueOrZero(), nil
-		},
-	}
-	nullDecimalToDecimalPtrConverter = TypeConverter{
-		SrcType: lo.Empty[null.Decimal](),
-		DstType: lo.Empty[*decimal.Decimal](),
-		Fn: func(src any) (any, error) {
-			return src.(null.Decimal).Ptr(), nil
-		},
-	}
-	decimalToNullDecimalConverter = TypeConverter{
-		SrcType: lo.Empty[decimal.Decimal](),
-		DstType: lo.Empty[null.Decimal](),
-		Fn: func(src any) (any, error) {
-			return null.DecimalFrom(src.(decimal.Decimal)), nil
-		},
-	}
-	decimalPtrToNullDecimalConverter = TypeConverter{
-		SrcType: lo.Empty[*decimal.Decimal](),
-		DstType: lo.Empty[null.Decimal](),
-		Fn: func(src any) (any, error) {
-			return null.DecimalFromPtr(src.(*decimal.Decimal)), nil
-		},
-	}
+	// null.Decimal converters
+	nullDecimalToDecimalConverter    = makeNullToValueConverter[null.Decimal, decimal.Decimal]()
+	nullDecimalToDecimalPtrConverter = makeNullToPtrConverter[null.Decimal, decimal.Decimal]()
+	decimalToNullDecimalConverter    = makeValueToNullConverter(null.DecimalFrom)
+	decimalPtrToNullDecimalConverter = makePtrToNullConverter(null.DecimalFromPtr)
 )

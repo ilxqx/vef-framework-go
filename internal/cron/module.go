@@ -11,14 +11,4 @@ var Module = fx.Module(
 	"vef:cron",
 	fx.Provide(newScheduler, fx.Private),
 	fx.Provide(cron.NewScheduler),
-	fx.Provide(
-		fx.Annotate(
-			NewSchedulerHandlerParamResolver,
-			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
-		),
-		fx.Annotate(
-			NewSchedulerFactoryParamResolver,
-			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
-		),
-	),
 )

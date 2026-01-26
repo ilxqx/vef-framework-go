@@ -79,7 +79,7 @@
       updated_by: system
       name: GoLang
       description: Go-related posts
-      parent_id: "{{ $.Category.tech.Id }}"
+      parent_id: "{{ $.Category.tech.ID }}"
 
 - model: Tag
   rows:
@@ -129,105 +129,105 @@
     - _id: intro_go
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.alice.Id }}"
+      created_by: "{{ $.User.alice.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.alice.Id }}"
+      updated_by: "{{ $.User.alice.ID }}"
       title: Introduction to Go
       content: Go is a programming language designed at Google.
       description: Getting started with Go
-      user_id: "{{ $.User.alice.Id }}"
-      category_id: "{{ $.Category.golang.Id }}"
+      user_id: "{{ $.User.alice.ID }}"
+      category_id: "{{ $.Category.golang.ID }}"
       status: published
       view_count: 123
     - _id: db_design
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.bob.Id }}"
+      created_by: "{{ $.User.bob.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.bob.Id }}"
+      updated_by: "{{ $.User.bob.ID }}"
       title: Database Design Basics
       content: Good database design principles.
       description: Normalization and relationships
-      user_id: "{{ $.User.bob.Id }}"
-      category_id: "{{ $.Category.tech.Id }}"
+      user_id: "{{ $.User.bob.ID }}"
+      category_id: "{{ $.Category.tech.ID }}"
       status: published
       view_count: 87
     - _id: ml_basics
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.alice.Id }}"
+      created_by: "{{ $.User.alice.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.alice.Id }}"
+      updated_by: "{{ $.User.alice.ID }}"
       title: Machine Learning Basics
       content: An introduction to ML concepts and workflows.
       description: Supervised vs unsupervised learning
-      user_id: "{{ $.User.alice.Id }}"
-      category_id: "{{ $.Category.science.Id }}"
+      user_id: "{{ $.User.alice.ID }}"
+      category_id: "{{ $.Category.science.ID }}"
       status: draft
       view_count: 45
     - _id: business_strategy
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.charlie.Id }}"
+      created_by: "{{ $.User.charlie.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.charlie.Id }}"
+      updated_by: "{{ $.User.charlie.ID }}"
       title: Business Strategy Fundamentals
       content: Effective business strategies and frameworks.
       description: Strategic planning overview
-      user_id: "{{ $.User.charlie.Id }}"
-      category_id: "{{ $.Category.business.Id }}"
+      user_id: "{{ $.User.charlie.ID }}"
+      category_id: "{{ $.Category.business.ID }}"
       status: published
       view_count: 64
     - _id: advanced_go
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.alice.Id }}"
+      created_by: "{{ $.User.alice.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.alice.Id }}"
+      updated_by: "{{ $.User.alice.ID }}"
       title: Advanced Go Patterns
       content: Exploring advanced patterns and best practices in Go.
       description: Idiomatic Go techniques
-      user_id: "{{ $.User.alice.Id }}"
-      category_id: "{{ $.Category.golang.Id }}"
+      user_id: "{{ $.User.alice.ID }}"
+      category_id: "{{ $.Category.golang.ID }}"
       status: review
       view_count: 98
     - _id: science_trends
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.bob.Id }}"
+      created_by: "{{ $.User.bob.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.bob.Id }}"
+      updated_by: "{{ $.User.bob.ID }}"
       title: Latest Trends in Science
       content: A survey of recent scientific advancements.
       description: Interdisciplinary highlights
-      user_id: "{{ $.User.bob.Id }}"
-      category_id: "{{ $.Category.science.Id }}"
+      user_id: "{{ $.User.bob.ID }}"
+      category_id: "{{ $.Category.science.ID }}"
       status: published
       view_count: 77
     - _id: tech_tutorials
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.charlie.Id }}"
+      created_by: "{{ $.User.charlie.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.charlie.Id }}"
+      updated_by: "{{ $.User.charlie.ID }}"
       title: Practical Tech Tutorials
       content: Hands-on guides for modern technology stacks.
       description: Step-by-step tutorials
-      user_id: "{{ $.User.charlie.Id }}"
-      category_id: "{{ $.Category.tech.Id }}"
+      user_id: "{{ $.User.charlie.ID }}"
+      category_id: "{{ $.Category.tech.ID }}"
       status: published
       view_count: 52
     - _id: startup_finance
       id: "{{ id }}"
       created_at: "{{ now }}"
-      created_by: "{{ $.User.alice.Id }}"
+      created_by: "{{ $.User.alice.ID }}"
       updated_at: "{{ now }}"
-      updated_by: "{{ $.User.alice.Id }}"
+      updated_by: "{{ $.User.alice.ID }}"
       title: Startup Finance 101
       content: Financial basics for early-stage startups.
       description: Cash flow, runway, and budgeting
-      user_id: "{{ $.User.alice.Id }}"
-      category_id: "{{ $.Category.business.Id }}"
+      user_id: "{{ $.User.alice.ID }}"
+      category_id: "{{ $.Category.business.ID }}"
       status: published
       view_count: 69
 
@@ -238,124 +238,124 @@
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.intro_go.Id }}"
-      tag_id: "{{ $.Tag.programming.Id }}"
+      post_id: "{{ $.Post.intro_go.ID }}"
+      tag_id: "{{ $.Tag.programming.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.intro_go.Id }}"
-      tag_id: "{{ $.Tag.go.Id }}"
+      post_id: "{{ $.Post.intro_go.ID }}"
+      tag_id: "{{ $.Tag.go.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.intro_go.Id }}"
-      tag_id: "{{ $.Tag.tutorial.Id }}"
+      post_id: "{{ $.Post.intro_go.ID }}"
+      tag_id: "{{ $.Tag.tutorial.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.db_design.Id }}"
-      tag_id: "{{ $.Tag.database.Id }}"
+      post_id: "{{ $.Post.db_design.ID }}"
+      tag_id: "{{ $.Tag.database.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.db_design.Id }}"
-      tag_id: "{{ $.Tag.tutorial.Id }}"
+      post_id: "{{ $.Post.db_design.ID }}"
+      tag_id: "{{ $.Tag.tutorial.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.ml_basics.Id }}"
-      tag_id: "{{ $.Tag.tutorial.Id }}"
+      post_id: "{{ $.Post.ml_basics.ID }}"
+      tag_id: "{{ $.Tag.tutorial.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.ml_basics.Id }}"
-      tag_id: "{{ $.Tag.advanced.Id }}"
+      post_id: "{{ $.Post.ml_basics.ID }}"
+      tag_id: "{{ $.Tag.advanced.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.business_strategy.Id }}"
-      tag_id: "{{ $.Tag.advanced.Id }}"
+      post_id: "{{ $.Post.business_strategy.ID }}"
+      tag_id: "{{ $.Tag.advanced.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.business_strategy.Id }}"
-      tag_id: "{{ $.Tag.tutorial.Id }}"
+      post_id: "{{ $.Post.business_strategy.ID }}"
+      tag_id: "{{ $.Tag.tutorial.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.advanced_go.Id }}"
-      tag_id: "{{ $.Tag.go.Id }}"
+      post_id: "{{ $.Post.advanced_go.ID }}"
+      tag_id: "{{ $.Tag.go.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.advanced_go.Id }}"
-      tag_id: "{{ $.Tag.programming.Id }}"
+      post_id: "{{ $.Post.advanced_go.ID }}"
+      tag_id: "{{ $.Tag.programming.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.advanced_go.Id }}"
-      tag_id: "{{ $.Tag.advanced.Id }}"
+      post_id: "{{ $.Post.advanced_go.ID }}"
+      tag_id: "{{ $.Tag.advanced.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.science_trends.Id }}"
-      tag_id: "{{ $.Tag.tutorial.Id }}"
-    - id: "{{ id }}"
-      created_at: "{{ now }}"
-      created_by: system
-      updated_at: "2025-08-08 00:02:40"
-      updated_by: system
-      post_id: "{{ $.Post.science_trends.Id }}"
-      tag_id: "{{ $.Tag.advanced.Id }}"
+      post_id: "{{ $.Post.science_trends.ID }}"
+      tag_id: "{{ $.Tag.tutorial.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.tech_tutorials.Id }}"
-      tag_id: "{{ $.Tag.tutorial.Id }}"
+      post_id: "{{ $.Post.science_trends.ID }}"
+      tag_id: "{{ $.Tag.advanced.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.tech_tutorials.Id }}"
-      tag_id: "{{ $.Tag.programming.Id }}"
+      post_id: "{{ $.Post.tech_tutorials.ID }}"
+      tag_id: "{{ $.Tag.tutorial.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.startup_finance.Id }}"
-      tag_id: "{{ $.Tag.advanced.Id }}"
+      post_id: "{{ $.Post.tech_tutorials.ID }}"
+      tag_id: "{{ $.Tag.programming.ID }}"
     - id: "{{ id }}"
       created_at: "{{ now }}"
       created_by: system
       updated_at: "{{ now }}"
       updated_by: system
-      post_id: "{{ $.Post.startup_finance.Id }}"
-      tag_id: "{{ $.Tag.tutorial.Id }}"
+      post_id: "{{ $.Post.startup_finance.ID }}"
+      tag_id: "{{ $.Tag.advanced.ID }}"
+    - id: "{{ id }}"
+      created_at: "{{ now }}"
+      created_by: system
+      updated_at: "{{ now }}"
+      updated_by: system
+      post_id: "{{ $.Post.startup_finance.ID }}"
+      tag_id: "{{ $.Tag.tutorial.ID }}"

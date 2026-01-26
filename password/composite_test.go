@@ -9,7 +9,7 @@ import (
 
 // TestCompositeEncoder_Encode tests the Encode method of CompositeEncoder.
 func TestCompositeEncoder_Encode(t *testing.T) {
-	encoders := map[EncoderId]Encoder{
+	encoders := map[EncoderID]Encoder{
 		EncoderBcrypt:    NewBcryptEncoder(),
 		EncoderArgon2:    NewArgon2Encoder(),
 		EncoderMd5:       NewMd5Encoder(),
@@ -27,7 +27,7 @@ func TestCompositeEncoder_Encode(t *testing.T) {
 	})
 
 	t.Run("ErrorWhenDefaultEncoderNotRegistered", func(t *testing.T) {
-		invalidComposite := NewCompositeEncoder(EncoderId("nonexistent"), encoders)
+		invalidComposite := NewCompositeEncoder(EncoderID("nonexistent"), encoders)
 
 		encoded, err := invalidComposite.Encode("password")
 
@@ -39,7 +39,7 @@ func TestCompositeEncoder_Encode(t *testing.T) {
 
 // TestCompositeEncoder_Matches tests the Matches method of CompositeEncoder.
 func TestCompositeEncoder_Matches(t *testing.T) {
-	encoders := map[EncoderId]Encoder{
+	encoders := map[EncoderID]Encoder{
 		EncoderBcrypt:    NewBcryptEncoder(),
 		EncoderArgon2:    NewArgon2Encoder(),
 		EncoderMd5:       NewMd5Encoder(),
@@ -110,7 +110,7 @@ func TestCompositeEncoder_Matches(t *testing.T) {
 
 // TestCompositeEncoder_UpgradeEncoding tests the UpgradeEncoding method of CompositeEncoder.
 func TestCompositeEncoder_UpgradeEncoding(t *testing.T) {
-	encoders := map[EncoderId]Encoder{
+	encoders := map[EncoderID]Encoder{
 		EncoderBcrypt:    NewBcryptEncoder(),
 		EncoderArgon2:    NewArgon2Encoder(),
 		EncoderMd5:       NewMd5Encoder(),

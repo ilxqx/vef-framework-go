@@ -33,15 +33,12 @@ func NewRequestScopedDataPermApplier(
 
 // Apply implements security.DataPermissionApplier.Apply.
 func (a *RequestScopedDataPermApplier) Apply(query orm.SelectQuery) error {
-	// No data scope means no restrictions
 	if a.dataScope == nil {
 		a.logger.Debugf("No data scope configured, skipping data permission")
 
 		return nil
 	}
 
-	// Get the main table from the query
-	// The query MUST have called Model() before this point
 	queryBuilder, ok := query.(orm.QueryBuilder)
 	if !ok {
 		return ErrQueryNotQueryBuilder
@@ -52,7 +49,6 @@ func (a *RequestScopedDataPermApplier) Apply(query orm.SelectQuery) error {
 		return ErrQueryModelNotSet
 	}
 
-	// Check if the data scope supports this table
 	if !a.dataScope.Supports(a.principal, table) {
 		a.logger.Debugf(
 			"Data scope %q is not applicable to table %q, skipping data permission",
@@ -61,7 +57,6 @@ func (a *RequestScopedDataPermApplier) Apply(query orm.SelectQuery) error {
 		return nil
 	}
 
-	// Apply the data scope
 	if err := a.dataScope.Apply(a.principal, query); err != nil {
 		return fmt.Errorf("failed to apply data scope %q: %w", a.dataScope.Key(), err)
 	}

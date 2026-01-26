@@ -212,7 +212,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 	suite.Run("CoalesceSingleArgument", func() {
 		type SingleArgResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			SingleValue string `bun:"single_value"`
 		}
@@ -234,13 +234,13 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		for _, result := range results {
 			suite.Equal(result.Title, result.SingleValue, "Should return the title value")
-			suite.T().Logf("Id: %s, Title: %s, SingleValue: %s", result.Id, result.Title, result.SingleValue)
+			suite.T().Logf("ID: %s, Title: %s, SingleValue: %s", result.ID, result.Title, result.SingleValue)
 		}
 	})
 
 	suite.Run("CoalesceAllNull", func() {
 		type AllNullResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			Title      string  `bun:"title"`
 			AllNullVal *string `bun:"all_null_val"`
 		}
@@ -262,13 +262,13 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		for _, result := range results {
 			suite.Nil(result.AllNullVal, "All NULL arguments should return NULL")
-			suite.T().Logf("Id: %s, Title: %s, AllNullVal: %v", result.Id, result.Title, result.AllNullVal)
+			suite.T().Logf("ID: %s, Title: %s, AllNullVal: %v", result.ID, result.Title, result.AllNullVal)
 		}
 	})
 
 	suite.Run("CoalesceManyArguments", func() {
 		type ManyArgsResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			Title      string `bun:"title"`
 			FinalValue string `bun:"final_value"`
 		}
@@ -296,7 +296,7 @@ func (suite *ConditionalFunctionsTestSuite) TestCoalesceBoundaryConditions() {
 
 		for _, result := range results {
 			suite.Equal(result.Title, result.FinalValue, "Should return first non-NULL value (title)")
-			suite.T().Logf("Id: %s, Title: %s, FinalValue: %s", result.Id, result.Title, result.FinalValue)
+			suite.T().Logf("ID: %s, Title: %s, FinalValue: %s", result.ID, result.Title, result.FinalValue)
 		}
 	})
 }
@@ -307,7 +307,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 	suite.Run("NullIfFirstArgumentNull", func() {
 		type FirstNullResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Result *string `bun:"result"`
 		}
@@ -329,13 +329,13 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		for _, result := range results {
 			suite.Nil(result.Result, "NullIf(NULL, value) should return NULL")
-			suite.T().Logf("Id: %s, Title: %s, Result: %v", result.Id, result.Title, result.Result)
+			suite.T().Logf("ID: %s, Title: %s, Result: %v", result.ID, result.Title, result.Result)
 		}
 	})
 
 	suite.Run("NullIfSecondArgumentNull", func() {
 		type SecondNullResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Result *string `bun:"result"`
 		}
@@ -357,13 +357,13 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		for _, result := range results {
 			suite.NotNil(result.Result, "NullIf(value, NULL) should return first argument (never equal)")
-			suite.T().Logf("Id: %s, Title: %s, Result: %v", result.Id, result.Title, result.Result)
+			suite.T().Logf("ID: %s, Title: %s, Result: %v", result.ID, result.Title, result.Result)
 		}
 	})
 
 	suite.Run("NullIfBothArgumentsNull", func() {
 		type BothNullResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Result *string `bun:"result"`
 		}
@@ -385,7 +385,7 @@ func (suite *ConditionalFunctionsTestSuite) TestNullIfWithNullArguments() {
 
 		for _, result := range results {
 			suite.Nil(result.Result, "NullIf(NULL, NULL) should return NULL (considered equal)")
-			suite.T().Logf("Id: %s, Title: %s, Result: %v", result.Id, result.Title, result.Result)
+			suite.T().Logf("ID: %s, Title: %s, Result: %v", result.ID, result.Title, result.Result)
 		}
 	})
 }
@@ -396,7 +396,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 	suite.Run("IfNullDefaultValueNull", func() {
 		type DefaultNullResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Result *string `bun:"result"`
 		}
@@ -418,13 +418,13 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 
 		for _, result := range results {
 			suite.Nil(result.Result, "IfNull(NULL, NULL) should return NULL")
-			suite.T().Logf("Id: %s, Title: %s, Result: %v", result.Id, result.Title, result.Result)
+			suite.T().Logf("ID: %s, Title: %s, Result: %v", result.ID, result.Title, result.Result)
 		}
 	})
 
 	suite.Run("IfNullWithValueAndNullDefault", func() {
 		type ValueNullDefaultResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Status string  `bun:"status"`
 			Result *string `bun:"result"`
@@ -451,7 +451,7 @@ func (suite *ConditionalFunctionsTestSuite) TestIfNullWithNullArguments() {
 		for _, result := range results {
 			suite.NotNil(result.Result, "IfNull(value, NULL) should return value when not NULL")
 			suite.Equal(result.Status, *result.Result, "Should return original status value")
-			suite.T().Logf("Id: %s, Title: %s, Status: %s, Result: %v", result.Id, result.Title, result.Status, result.Result)
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, Result: %v", result.ID, result.Title, result.Status, result.Result)
 		}
 	})
 }
@@ -462,7 +462,7 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 
 	suite.Run("EmptyStringVsNull", func() {
 		type EmptyStringResult struct {
-			Id                string `bun:"id"`
+			ID                string `bun:"id"`
 			Title             string `bun:"title"`
 			EmptyNotNull      string `bun:"empty_not_null"`
 			CoalesceEmpty     string `bun:"coalesce_empty"`
@@ -501,13 +501,13 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 			suite.Equal("", result.IfNullEmptyResult, "IfNull should return empty string (not NULL)")
 
 			suite.T().Logf("Id: %s, EmptyNotNull='%s', CoalesceEmpty='%s', NullIfEmpty='%s', IfNullEmptyResult='%s'",
-				result.Id, result.EmptyNotNull, result.CoalesceEmpty, result.NullIfEmpty, result.IfNullEmptyResult)
+				result.ID, result.EmptyNotNull, result.CoalesceEmpty, result.NullIfEmpty, result.IfNullEmptyResult)
 		}
 	})
 
 	suite.Run("ZeroVsNull", func() {
 		type ZeroVsNullResult struct {
-			Id               string `bun:"id"`
+			ID               string `bun:"id"`
 			Title            string `bun:"title"`
 			ZeroNotNull      int64  `bun:"zero_not_null"`
 			CoalesceZero     int64  `bun:"coalesce_zero"`
@@ -546,7 +546,7 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 			suite.Equal(int64(0), result.IfNullZeroResult, "IfNull should return 0 (not NULL)")
 
 			suite.T().Logf("Id: %s, ZeroNotNull=%d, CoalesceZero=%d, NullIfZero=%d, IfNullZeroResult=%d",
-				result.Id, result.ZeroNotNull, result.CoalesceZero, result.NullIfZero, result.IfNullZeroResult)
+				result.ID, result.ZeroNotNull, result.CoalesceZero, result.NullIfZero, result.IfNullZeroResult)
 		}
 	})
 }

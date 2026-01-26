@@ -1,5 +1,6 @@
 package constants
 
+// Type tokens for schema field type identification.
 const (
 	TypeInt      = "int"
 	TypeString   = "str"

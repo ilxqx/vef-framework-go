@@ -33,10 +33,10 @@ func TestBuilderConfiguration(t *testing.T) {
 		assert.Equal(t, source, b.source)
 	})
 
-	t.Run("WithMessageIdSetsMessageId", func(t *testing.T) {
-		b := New().WithMessageId("custom_id")
+	t.Run("WithMessageIDSetsMessageID", func(t *testing.T) {
+		b := New().WithMessageID("custom_id")
 
-		assert.Equal(t, "custom_id", b.messageId)
+		assert.Equal(t, "custom_id", b.messageID)
 	})
 
 	t.Run("WithReasoningSetsOption", func(t *testing.T) {
@@ -82,12 +82,12 @@ func TestBuilderConfiguration(t *testing.T) {
 		assert.Equal(t, "test content", captured)
 	})
 
-	t.Run("WithIdGeneratorSetsGenerator", func(t *testing.T) {
+	t.Run("WithIDGeneratorSetsGenerator", func(t *testing.T) {
 		gen := func(prefix string) string { return prefix + "_fixed" }
-		b := New().WithIdGenerator(gen)
+		b := New().WithIDGenerator(gen)
 
-		assert.NotNil(t, b.opts.GenerateId)
-		assert.Equal(t, "msg_fixed", b.opts.GenerateId("msg"))
+		assert.NotNil(t, b.opts.GenerateID)
+		assert.Equal(t, "msg_fixed", b.opts.GenerateID("msg"))
 	})
 
 	t.Run("WithHeaderAddsHeader", func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestBuilderConfiguration(t *testing.T) {
 
 		b := New().
 			WithSource(NewChannelSource(ch)).
-			WithMessageId("msg_1").
+			WithMessageID("msg_1").
 			WithReasoning(true).
 			WithSources(true).
 			WithStart(true).
@@ -113,7 +113,7 @@ func TestBuilderConfiguration(t *testing.T) {
 			WithHeader("X-Test", "value")
 
 		assert.NotNil(t, b.source)
-		assert.Equal(t, "msg_1", b.messageId)
+		assert.Equal(t, "msg_1", b.messageID)
 		assert.True(t, b.opts.SendReasoning)
 		assert.Equal(t, "value", b.headers["X-Test"])
 	})
@@ -134,8 +134,8 @@ func TestBuilderStreamToWriter(t *testing.T) {
 
 		New().
 			WithSource(NewChannelSource(ch)).
-			WithMessageId("msg_test").
-			WithIdGenerator(func(prefix string) string { return prefix + "_1" }).
+			WithMessageID("msg_test").
+			WithIDGenerator(func(prefix string) string { return prefix + "_1" }).
 			StreamToWriter(w)
 
 		output := buf.String()
@@ -145,7 +145,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 
 		// Verify start chunk
 		assert.Equal(t, "start", chunks[0]["type"])
-		assert.Equal(t, "msg_test", chunks[0]["messageId"])
+		assert.Equal(t, "msg_test", chunks[0]["messageID"])
 
 		// Verify text chunks exist
 		hasTextStart := false
@@ -181,7 +181,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		New().
 			WithSource(NewChannelSource(ch)).
 			WithReasoning(true).
-			WithIdGenerator(func(prefix string) string { return prefix + "_1" }).
+			WithIDGenerator(func(prefix string) string { return prefix + "_1" }).
 			StreamToWriter(w)
 
 		output := buf.String()
@@ -231,7 +231,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		ch <- Message{
 			Role: RoleAssistant,
 			ToolCalls: []ToolCall{{
-				Id:        "call_1",
+				ID:        "call_1",
 				Name:      "get_weather",
 				Arguments: `{"city":"Beijing"}`,
 			}},
@@ -257,7 +257,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			if c["type"] == "tool-input-start" {
 				hasToolInputStart = true
 
-				assert.Equal(t, "call_1", c["toolCallId"])
+				assert.Equal(t, "call_1", c["toolCallID"])
 				assert.Equal(t, "get_weather", c["toolName"])
 			}
 
@@ -274,7 +274,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 		ch := make(chan Message, 1)
 		ch <- Message{
 			Role:       RoleTool,
-			ToolCallId: "call_1",
+			ToolCallID: "call_1",
 			Content:    `{"temp":25}`,
 		}
 
@@ -296,7 +296,7 @@ func TestBuilderStreamToWriter(t *testing.T) {
 			if c["type"] == "tool-output-available" {
 				hasToolOutput = true
 
-				assert.Equal(t, "call_1", c["toolCallId"])
+				assert.Equal(t, "call_1", c["toolCallID"])
 			}
 		}
 

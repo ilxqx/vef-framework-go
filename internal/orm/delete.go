@@ -4,19 +4,16 @@ import (
 	"context"
 	"database/sql"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	collections "github.com/ilxqx/go-collections"
-
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
-	"github.com/ilxqx/vef-framework-go/result"
 )
 
 // NewDeleteQuery creates a new DeleteQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewDeleteQuery(db *BunDb) *BunDeleteQuery {
+func NewDeleteQuery(db *BunDB) *BunDeleteQuery {
 	eb := &QueryExprBuilder{}
 	dq := db.db.NewDelete()
 	dialect := db.db.Dialect()
@@ -40,7 +37,7 @@ func NewDeleteQuery(db *BunDb) *BunDeleteQuery {
 type BunDeleteQuery struct {
 	QueryBuilder
 
-	db      *BunDb
+	db      *BunDB
 	dialect schema.Dialect
 	eb      ExprBuilder
 	query   *bun.DeleteQuery
@@ -48,7 +45,7 @@ type BunDeleteQuery struct {
 	returningColumns collections.Set[string]
 }
 
-func (q *BunDeleteQuery) Db() Db {
+func (q *BunDeleteQuery) DB() DB {
 	return q.db
 }
 
@@ -141,7 +138,7 @@ func (q *BunDeleteQuery) Where(builder func(ConditionBuilder)) DeleteQuery {
 	return q
 }
 
-func (q *BunDeleteQuery) WherePk(columns ...string) DeleteQuery {
+func (q *BunDeleteQuery) WherePK(columns ...string) DeleteQuery {
 	q.query.WherePK(columns...)
 
 	return q
@@ -235,32 +232,25 @@ func (q *BunDeleteQuery) beforeDelete() {
 	}
 }
 
-func (q *BunDeleteQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
+func (q *BunDeleteQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
 	q.beforeDelete()
 
-	if res, err = q.query.Exec(ctx, dest...); err != nil {
-		if dbhelpers.IsForeignKeyError(err) {
-			logger.Warnf("Foreign key violation: %v", err)
-
-			return nil, result.ErrForeignKeyViolation
-		}
+	res, err := q.query.Exec(ctx, dest...)
+	if err != nil {
+		return nil, translateDeleteError(err)
 	}
 
-	return res, err
+	return res, nil
 }
 
-func (q *BunDeleteQuery) Scan(ctx context.Context, dest ...any) (err error) {
+func (q *BunDeleteQuery) Scan(ctx context.Context, dest ...any) error {
 	q.beforeDelete()
 
-	if err = q.query.Scan(ctx, dest...); err != nil {
-		if dbhelpers.IsForeignKeyError(err) {
-			logger.Warnf("Foreign key violation: %v", err)
-
-			return result.ErrForeignKeyViolation
-		}
+	if err := q.query.Scan(ctx, dest...); err != nil {
+		return translateDeleteError(err)
 	}
 
-	return err
+	return nil
 }
 
 func (q *BunDeleteQuery) Unwrap() *bun.DeleteQuery {

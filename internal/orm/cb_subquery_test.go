@@ -337,7 +337,7 @@ func (suite *SubqueryOperationsTestSuite) TestEqualsAll() {
 	suite.T().Logf("Testing EqualsAll condition for %s", suite.dbType)
 
 	// Skip on SQLite - ALL operator not supported
-	if suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.SQLite {
 		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.dbType)
 
 		return
@@ -396,7 +396,7 @@ func (suite *SubqueryOperationsTestSuite) TestNotEqualsAll() {
 	suite.T().Logf("Testing NotEqualsAll condition for %s", suite.dbType)
 
 	// Skip on SQLite - ALL operator not supported
-	if suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.SQLite {
 		suite.T().Skipf("ALL operator not supported on %s (SQL standard feature)", suite.dbType)
 
 		return

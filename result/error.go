@@ -6,49 +6,17 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
 )
 
-// Error represents a business-level error specifically designed for API responses.
-//
-// Design Philosophy:
-//
-// This type separates transport-level concerns from business logic concerns:
-//   - HTTP Status: Indicates whether the request was successfully processed at the transport layer.
-//     Typically remains 200 (fiber.StatusOK) to indicate successful communication.
-//   - Code: Represents business-level error codes that indicate the actual result of the operation.
-//   - Message: Provides a user-friendly, optionally internationalized error message.
-//
-// This design is common in many large-scale API systems (e.g., WeChat, Alipay) and offers several advantages:
-//   - Unified client handling: All responses use HTTP 200, with business results determined by the Code field
-//   - Avoids middleware interference: 4xx/5xx status codes won't trigger special handling by proxies or gateways
-//   - Simplified client logic: No need to handle both HTTP errors and business errors separately
-//
-// Note: Error is NOT intended for general-purpose error handling or wrapping internal errors.
-// It is specifically designed for constructing API response payloads and works in conjunction
-// with the result.Result type to provide a consistent API response format.
-//
-// Example usage:
-//
-//	// Simple error with default message
-//	return result.Err()
-//
-//	// Error with custom message
-//	return result.Err("user not found")
-//
-//	// Error with custom message and options
-//	return result.Err("unauthorized access", WithCode(401), WithStatus(fiber.StatusUnauthorized))
-//
-//	// Formatted error with arguments
-//	return result.Errf("user %s not found", username, WithCode(404))
+// Error represents a business-level error for API responses.
+// It separates transport-level concerns (HTTP Status) from business logic (Code, Message).
+// HTTP Status typically remains 200 to indicate successful communication,
+// while Code indicates the actual business result.
 type Error struct {
-	// Code is the business error code
-	Code int
-	// Message is the user-friendly error message
+	Code    int
 	Message string
-	// Status is the HTTP status code (defaults to 200 for business errors)
-	Status int
+	Status  int
 }
 
 // Error implements the error interface.
@@ -56,7 +24,8 @@ func (e Error) Error() string {
 	return e.Message
 }
 
-// Err creates a new Error.
+// Err creates a new Error with optional message and options.
+// Usage: Err(), Err("message"), Err("message", WithCode(...)), Err(WithCode(...))
 func Err(messageOrOptions ...any) Error {
 	var (
 		message string
@@ -64,22 +33,20 @@ func Err(messageOrOptions ...any) Error {
 	)
 
 	for i, v := range messageOrOptions {
-		switch v := v.(type) {
+		switch opt := v.(type) {
 		case string:
 			if i != 0 {
-				panic("result.Err: message string must be the first argument if provided. Correct usage: Err(\"message\", options...) or Err(options...)")
+				panic("result.Err: message string must be the first argument")
 			}
-
-			message = v
-
+			message = opt
 		case errOption:
-			options = append(options, v)
+			options = append(options, opt)
 		default:
-			panic(fmt.Sprintf("result.Err: invalid argument type %T at position %d. Only string message and errOption functions are allowed", v, i))
+			panic(fmt.Sprintf("result.Err: invalid argument type %T at position %d", v, i))
 		}
 	}
 
-	if message == constants.Empty {
+	if message == "" {
 		message = i18n.T(ErrMessage)
 	}
 
@@ -97,38 +64,35 @@ func Err(messageOrOptions ...any) Error {
 }
 
 // Errf creates a new Error with a formatted message.
-func Errf(messageFormat string, args ...any) Error {
+// Usage: Errf("user %s not found", username), Errf("error %d", code, WithCode(...))
+func Errf(format string, args ...any) Error {
+	if len(args) == 0 {
+		panic("result.Errf: at least one format argument is required")
+	}
+
 	var (
-		messageArgs      []any
+		formatArgs       []any
 		options          []errOption
 		firstOptionIndex = -1
 	)
 
-	if len(args) == 0 {
-		panic("result.Errf: at least one format argument is required. Use Err() for static messages without formatting")
-	}
-
 	for i, v := range args {
-		switch v := v.(type) {
-		case errOption:
+		if opt, ok := v.(errOption); ok {
 			if firstOptionIndex == -1 {
 				firstOptionIndex = i
 			}
-
-			options = append(options, v)
-
-		default:
-			if firstOptionIndex != -1 && i > firstOptionIndex {
-				panic("result.Errf: all message format arguments must come before option functions. Correct usage: Errf(\"format %s %d\", arg1, arg2, WithCode(...))")
+			options = append(options, opt)
+		} else {
+			if firstOptionIndex != -1 {
+				panic("result.Errf: format arguments must come before options")
 			}
-
-			messageArgs = append(messageArgs, v)
+			formatArgs = append(formatArgs, v)
 		}
 	}
 
 	err := Error{
 		Code:    ErrCodeDefault,
-		Message: fmt.Sprintf(messageFormat, messageArgs...),
+		Message: fmt.Sprintf(format, formatArgs...),
 		Status:  fiber.StatusOK,
 	}
 
@@ -139,13 +103,12 @@ func Errf(messageFormat string, args ...any) Error {
 	return err
 }
 
-// AsErr checks if the error is of Error type and returns the error if it is.
+// AsErr extracts an Error from err if present.
 func AsErr(err error) (Error, bool) {
 	var target Error
 	if errors.As(err, &target) {
 		return target, true
 	}
-
 	return Error{}, false
 }
 

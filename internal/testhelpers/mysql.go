@@ -16,15 +16,14 @@ type MySQLContainer struct {
 	DsConfig  *config.DatasourceConfig
 }
 
-func (c *MySQLContainer) Terminate(ctx context.Context, suite *suite.Suite) {
+func (c *MySQLContainer) Terminate(ctx context.Context, s *suite.Suite) {
 	if err := c.container.Terminate(ctx); err != nil {
-		suite.T().Logf("Failed to terminate mysql container: %v", err)
+		s.T().Logf("Failed to terminate mysql container: %v", err)
 	}
 }
 
-func NewMySQLContainer(ctx context.Context, suite *suite.Suite) *MySQLContainer {
-	// Start MySQL container
-	mysqlContainer, err := mysql.Run(
+func NewMySQLContainer(ctx context.Context, s *suite.Suite) *MySQLContainer {
+	container, err := mysql.Run(
 		ctx,
 		MySQLImage,
 		mysql.WithDatabase(TestDatabaseName),
@@ -35,28 +34,24 @@ func NewMySQLContainer(ctx context.Context, suite *suite.Suite) *MySQLContainer 
 				WithStartupTimeout(DefaultContainerTimeout),
 		),
 	)
-	suite.Require().NoError(err)
-	suite.T().Log("MySQL container started successfully")
+	s.Require().NoError(err)
+	s.T().Log("MySQL container started successfully")
 
-	// Get container connection details
-	host, err := mysqlContainer.Host(ctx)
-	suite.Require().NoError(err)
+	host, err := container.Host(ctx)
+	s.Require().NoError(err)
 
-	port, err := mysqlContainer.MappedPort(ctx, "3306")
-	suite.Require().NoError(err)
-
-	// Create database config
-	dsConfig := &config.DatasourceConfig{
-		Type:     "mysql",
-		Host:     host,
-		Port:     uint16(port.Int()),
-		User:     TestUsername,
-		Password: TestPassword,
-		Database: TestDatabaseName,
-	}
+	port, err := container.MappedPort(ctx, "3306")
+	s.Require().NoError(err)
 
 	return &MySQLContainer{
-		container: mysqlContainer,
-		DsConfig:  dsConfig,
+		container: container,
+		DsConfig: &config.DatasourceConfig{
+			Type:     "mysql",
+			Host:     host,
+			Port:     uint16(port.Int()),
+			User:     TestUsername,
+			Password: TestPassword,
+			Database: TestDatabaseName,
+		},
 	}
 }

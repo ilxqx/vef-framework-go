@@ -15,48 +15,45 @@ import (
 )
 
 type provider struct {
-	dbType constants.DbType
+	dbType constants.DBType
 }
 
 func NewProvider() *provider {
 	return &provider{
-		dbType: constants.DbPostgres,
+		dbType: constants.Postgres,
 	}
 }
 
-func (p *provider) Type() constants.DbType {
+func (p *provider) Type() constants.DBType {
 	return p.dbType
 }
 
-func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
-	if err := p.ValidateConfig(config); err != nil {
+func (p *provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
+	if err := p.ValidateConfig(cfg); err != nil {
 		return nil, nil, err
 	}
 
 	connector := pgdriver.NewConnector(
 		pgdriver.WithNetwork("tcp"),
-		pgdriver.WithAddr(
-			fmt.Sprintf(
-				"%s:%d",
-				lo.Ternary(config.Host != constants.Empty, config.Host, "127.0.0.1"),
-				lo.Ternary(config.Port != 0, config.Port, uint16(5432)),
-			),
-		),
+		pgdriver.WithAddr(fmt.Sprintf(
+			"%s:%d",
+			lo.Ternary(cfg.Host != constants.Empty, cfg.Host, "127.0.0.1"),
+			lo.Ternary(cfg.Port != 0, cfg.Port, uint16(5432)),
+		)),
 		pgdriver.WithInsecure(true),
-		pgdriver.WithUser(lo.Ternary(config.User != constants.Empty, config.User, "postgres")),
-		pgdriver.WithPassword(lo.Ternary(config.Password != constants.Empty, config.Password, "postgres")),
-		pgdriver.WithDatabase(lo.Ternary(config.Database != constants.Empty, config.Database, "postgres")),
+		pgdriver.WithUser(lo.Ternary(cfg.User != constants.Empty, cfg.User, "postgres")),
+		pgdriver.WithPassword(lo.Ternary(cfg.Password != constants.Empty, cfg.Password, "postgres")),
+		pgdriver.WithDatabase(lo.Ternary(cfg.Database != constants.Empty, cfg.Database, "postgres")),
 		pgdriver.WithApplicationName("vef"),
 		pgdriver.WithConnParams(map[string]any{
-			"search_path": lo.Ternary(config.Schema != constants.Empty, config.Schema, "public"),
+			"search_path": lo.Ternary(cfg.Schema != constants.Empty, cfg.Schema, "public"),
 		}),
 	)
 
 	return sql.OpenDB(connector), pgdialect.New(), nil
 }
 
-// PostgreSQL allows defaults for all connection parameters and validates during connection.
-func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
+func (p *provider) ValidateConfig(_ *config.DatasourceConfig) error {
 	return nil
 }
 

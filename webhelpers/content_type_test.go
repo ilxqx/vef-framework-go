@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIsJson(t *testing.T) {
+func TestIsJSON(t *testing.T) {
 	t.Run("applicationJson", func(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJson(c)
+			result := IsJSON(c)
 			assert.True(t, result, "Should return true for application/json")
 
 			return c.SendStatus(fiber.StatusOK)
@@ -32,7 +32,7 @@ func TestIsJson(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJson(c)
+			result := IsJSON(c)
 			assert.True(t, result, "Should return true for application/json with charset")
 
 			return c.SendStatus(fiber.StatusOK)
@@ -50,7 +50,7 @@ func TestIsJson(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJson(c)
+			result := IsJSON(c)
 			assert.False(t, result, "Should return false when Content-Type header is missing")
 
 			return c.SendStatus(fiber.StatusOK)
@@ -67,7 +67,7 @@ func TestIsJson(t *testing.T) {
 		app := fiber.New()
 
 		app.Post("/json", func(c fiber.Ctx) error {
-			result := IsJson(c)
+			result := IsJSON(c)
 			assert.False(t, result, "Should return false for non-JSON Content-Type")
 
 			return c.SendStatus(fiber.StatusOK)

@@ -6,7 +6,7 @@ var Module = fx.Module(
 	"vef:middleware",
 	fx.Provide(
 		fx.Annotate(
-			NewRequestIdMiddleware,
+			NewRequestIDMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
 		fx.Annotate(

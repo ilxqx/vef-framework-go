@@ -9,6 +9,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/mapx"
+	"github.com/ilxqx/vef-framework-go/reflectx"
 )
 
 // PrincipalType is the type of the principal.
@@ -26,7 +27,7 @@ const (
 var (
 	PrincipalSystem = &Principal{
 		Type: PrincipalTypeSystem,
-		Id:   constants.OperatorSystem,
+		ID:   constants.OperatorSystem,
 		Name: "系统",
 	}
 	PrincipalAnonymous = NewUser(constants.OperatorAnonymous, "匿名")
@@ -36,19 +37,19 @@ var (
 )
 
 func SetUserDetailsType[T any]() {
-	userDetailsType = reflect.TypeFor[T]()
+	userDetailsType = reflectx.Indirect(reflect.TypeFor[T]())
 	if userDetailsType.Kind() != reflect.Struct {
 		panic(
-			fmt.Errorf("%w, got %s", ErrUserDetailsTypeMustBeStruct, userDetailsType.Name()),
+			fmt.Errorf("%w, got %s", ErrUserDetailsNotStruct, userDetailsType.Name()),
 		)
 	}
 }
 
 func SetExternalAppDetailsType[T any]() {
-	externalAppDetailsType = reflect.TypeFor[T]()
+	externalAppDetailsType = reflectx.Indirect(reflect.TypeFor[T]())
 	if externalAppDetailsType.Kind() != reflect.Struct {
 		panic(
-			fmt.Errorf("%w, got %s", ErrExternalAppDetailsTypeMustBeStruct, externalAppDetailsType.Name()),
+			fmt.Errorf("%w, got %s", ErrExternalAppDetailsNotStruct, externalAppDetailsType.Name()),
 		)
 	}
 }
@@ -57,8 +58,8 @@ func SetExternalAppDetailsType[T any]() {
 type Principal struct {
 	// Type is the type of the principal.
 	Type PrincipalType `json:"type"`
-	// Id is the id of the user.
-	Id string `json:"id"`
+	// ID is the id of the user.
+	ID string `json:"id"`
 	// Name is the name of the user.
 	Name string `json:"name"`
 	// Roles is the roles of the user.
@@ -70,7 +71,6 @@ type Principal struct {
 // UnmarshalJSON implements custom JSON unmarshaling for Principal.
 // This allows the Details field to be properly deserialized based on the Type field.
 func (p *Principal) UnmarshalJSON(data []byte) error {
-	// Define a temporary struct to unmarshal the JSON
 	type Alias Principal
 
 	aux := &struct {
@@ -85,54 +85,41 @@ func (p *Principal) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Handle Details based on Type
-	if aux.Details != nil {
-		switch p.Type {
-		case PrincipalTypeUser:
-			// For user type, Details could be a UserDetails struct
-			userDetails := reflect.New(userDetailsType).Interface()
-			if err := json.Unmarshal(aux.Details, &userDetails); err != nil {
-				// If it fails, try to unmarshal as a generic map
-				var detailsMap map[string]any
-				if err := json.Unmarshal(aux.Details, &detailsMap); err != nil {
-					return fmt.Errorf("failed to unmarshal user details: %w", err)
-				}
+	if aux.Details == nil {
+		return nil
+	}
 
-				p.Details = detailsMap
-			} else {
-				p.Details = userDetails
-			}
-
-		case PrincipalTypeExternalApp:
-			// For external app type, Details could be an ExternalAppDetails struct
-			appDetails := reflect.New(externalAppDetailsType).Interface()
-			if err := json.Unmarshal(aux.Details, &appDetails); err != nil {
-				// If it fails, try to unmarshal as a generic map
-				var detailsMap map[string]any
-				if err := json.Unmarshal(aux.Details, &detailsMap); err != nil {
-					return fmt.Errorf("failed to unmarshal external app details: %w", err)
-				}
-
-				p.Details = detailsMap
-			} else {
-				p.Details = appDetails
-			}
-
-		case PrincipalTypeSystem:
-			// For system type, Details is usually nil or empty
-			p.Details = nil
-		default:
-			// For unknown types, unmarshal as a generic map
-			var detailsMap map[string]any
-			if err := json.Unmarshal(aux.Details, &detailsMap); err != nil {
-				return fmt.Errorf("failed to unmarshal details for unknown type %s: %w", p.Type, err)
-			}
-
-			p.Details = detailsMap
+	switch p.Type {
+	case PrincipalTypeUser:
+		p.Details = unmarshalDetails(aux.Details, userDetailsType)
+	case PrincipalTypeExternalApp:
+		p.Details = unmarshalDetails(aux.Details, externalAppDetailsType)
+	case PrincipalTypeSystem:
+		p.Details = nil
+	default:
+		var detailsMap map[string]any
+		if err := json.Unmarshal(aux.Details, &detailsMap); err != nil {
+			return fmt.Errorf("failed to unmarshal details for unknown type %s: %w", p.Type, err)
 		}
+
+		p.Details = detailsMap
 	}
 
 	return nil
+}
+
+func unmarshalDetails(data json.RawMessage, detailsType reflect.Type) any {
+	details := reflect.New(detailsType).Interface()
+	if err := json.Unmarshal(data, &details); err != nil {
+		var detailsMap map[string]any
+		if err := json.Unmarshal(data, &detailsMap); err != nil {
+			return nil
+		}
+
+		return detailsMap
+	}
+
+	return details
 }
 
 // AttemptUnmarshalDetails attempts to unmarshal the details into the principal.
@@ -144,7 +131,6 @@ func (p *Principal) AttemptUnmarshalDetails(details any) {
 	}
 
 	detailsType := lo.Ternary(p.Type == PrincipalTypeUser, userDetailsType, externalAppDetailsType)
-	// If details is not a map, return it
 	if _, ok := details.(map[string]any); !ok || detailsType.AssignableTo(reflect.TypeFor[map[string]any]()) {
 		p.Details = details
 
@@ -180,7 +166,7 @@ func (p *Principal) WithRoles(roles ...string) *Principal {
 func NewUser(id, name string, roles ...string) *Principal {
 	return &Principal{
 		Type:  PrincipalTypeUser,
-		Id:    id,
+		ID:    id,
 		Name:  name,
 		Roles: roles,
 	}
@@ -190,7 +176,7 @@ func NewUser(id, name string, roles ...string) *Principal {
 func NewExternalApp(id, name string, roles ...string) *Principal {
 	return &Principal{
 		Type:  PrincipalTypeExternalApp,
-		Id:    id,
+		ID:    id,
 		Name:  name,
 		Roles: roles,
 	}

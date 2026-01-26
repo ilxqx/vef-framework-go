@@ -41,22 +41,22 @@ var Module = fx.Module(
 	),
 	fx.Provide(
 		fx.Annotate(
-			func(config *config.AppConfig) (*security.Jwt, error) {
-				return security.NewJwt(&security.JwtConfig{
+			func(config *config.AppConfig) (*security.JWT, error) {
+				return security.NewJWT(&security.JWTConfig{
 					Audience: lo.SnakeCase(config.Name),
 				})
 			},
 		),
 		fx.Annotate(
-			NewJwtAuthenticator,
+			NewJWTAuthenticator,
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		fx.Annotate(
-			NewJwtRefreshAuthenticator,
+			NewJWTRefreshAuthenticator,
 			fx.ParamTags(``, `optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
-		NewJwtTokenGenerator,
+		NewJWTTokenGenerator,
 		fx.Annotate(
 			NewOpenApiAuthenticator,
 			fx.ParamTags(`optional:"true"`),

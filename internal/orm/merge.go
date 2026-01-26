@@ -15,7 +15,7 @@ var defaultSourceAlias = "src"
 
 // NewMergeQuery creates a new MergeQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewMergeQuery(db *BunDb) *BunMergeQuery {
+func NewMergeQuery(db *BunDB) *BunMergeQuery {
 	eb := &QueryExprBuilder{}
 	mq := db.db.NewMerge()
 	dialect := db.db.Dialect()
@@ -37,14 +37,14 @@ func NewMergeQuery(db *BunDb) *BunMergeQuery {
 type BunMergeQuery struct {
 	QueryBuilder
 
-	db       *BunDb
+	db       *BunDB
 	dialect  schema.Dialect
 	eb       ExprBuilder
 	query    *bun.MergeQuery
 	srcAlias string
 }
 
-func (q *BunMergeQuery) Db() Db {
+func (q *BunMergeQuery) DB() DB {
 	return q.db
 }
 

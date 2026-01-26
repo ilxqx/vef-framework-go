@@ -46,14 +46,14 @@ func (suite *DatabaseTestSuite) TearDownSuite() {
 // TestSQLiteConnection tests SQLite in-memory database connection and basic operations.
 func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 	config := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	db, err := New(config)
 	suite.Require().NoError(err, "SQLite connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	suite.testBasicDbOperations(db, "SQLite")
+	suite.testBasicDBOperations(db, "SQLite")
 
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
@@ -61,14 +61,14 @@ func (suite *DatabaseTestSuite) TestSQLiteConnection() {
 // TestSQLiteWithOptions tests SQLite with custom configuration options.
 func (suite *DatabaseTestSuite) TestSQLiteWithOptions() {
 	config := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	db, err := New(config, DisableQueryHook())
 	suite.Require().NoError(err, "SQLite with custom options should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	suite.testBasicDbOperations(db, "SQLite")
+	suite.testBasicDBOperations(db, "SQLite")
 
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
@@ -83,7 +83,7 @@ func (suite *DatabaseTestSuite) TestPostgreSQLConnection() {
 	suite.Require().NoError(err, "PostgreSQL connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	suite.testBasicDbOperations(db, "PostgreSQL")
+	suite.testBasicDBOperations(db, "PostgreSQL")
 
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
@@ -98,7 +98,7 @@ func (suite *DatabaseTestSuite) TestMySQLConnection() {
 	suite.Require().NoError(err, "MySQL connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	suite.testBasicDbOperations(db, "MySQL")
+	suite.testBasicDBOperations(db, "MySQL")
 
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
@@ -118,14 +118,14 @@ func (suite *DatabaseTestSuite) TestUnsupportedDatabaseType() {
 // TestSQLiteInMemoryMode tests SQLite in-memory mode explicitly.
 func (suite *DatabaseTestSuite) TestSQLiteInMemoryMode() {
 	config := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	db, err := New(config)
 	suite.Require().NoError(err, "In-memory SQLite connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	suite.testBasicDbOperations(db, "SQLite In-Memory")
+	suite.testBasicDBOperations(db, "SQLite In-Memory")
 
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
@@ -144,7 +144,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 	suite.Require().NoError(tempFile.Close(), "Temporary file should close successfully")
 
 	config := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 		Path: tempFile.Name(),
 	}
 
@@ -152,7 +152,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 	suite.Require().NoError(err, "File-based SQLite connection should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	suite.testBasicDbOperations(db, "SQLite File")
+	suite.testBasicDBOperations(db, "SQLite File")
 
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
@@ -160,7 +160,7 @@ func (suite *DatabaseTestSuite) TestSQLiteFileMode() {
 // TestMySQLValidation tests MySQL configuration validation for missing required fields.
 func (suite *DatabaseTestSuite) TestMySQLValidation() {
 	config := &config.DatasourceConfig{
-		Type: constants.DbMySQL,
+		Type: constants.MySQL,
 		Host: "localhost",
 		Port: 3306,
 		User: "root",
@@ -175,7 +175,7 @@ func (suite *DatabaseTestSuite) TestMySQLValidation() {
 // TestConnectionPoolConfiguration tests custom connection pool configuration.
 func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	config := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	customPoolConfig := &ConnectionPoolConfig{
@@ -189,8 +189,8 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	suite.Require().NoError(err, "Connection with custom pool config should succeed")
 	suite.Require().NotNil(db, "Database instance should not be nil")
 
-	sqlDb := db.DB
-	suite.NotNil(sqlDb, "Underlying SQL DB should not be nil")
+	sqlDB := db.DB
+	suite.NotNil(sqlDB, "Underlying SQL DB should not be nil")
 
 	var result int
 
@@ -201,7 +201,7 @@ func (suite *DatabaseTestSuite) TestConnectionPoolConfiguration() {
 	suite.Require().NoError(db.Close(), "Database should close without error")
 }
 
-func (suite *DatabaseTestSuite) testBasicDbOperations(db *bun.DB, dbType string) {
+func (suite *DatabaseTestSuite) testBasicDBOperations(db *bun.DB, dbType string) {
 	suite.T().Logf("Testing basic operations for %s", dbType)
 
 	var result int
@@ -280,9 +280,9 @@ func (suite *SqlGuardTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 }
 
-func (suite *SqlGuardTestSuite) createTestDb(enableGuard bool) *bun.DB {
+func (suite *SqlGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
 	cfg := &config.DatasourceConfig{
-		Type:           constants.DbSQLite,
+		Type:           constants.SQLite,
 		EnableSqlGuard: enableGuard,
 	}
 
@@ -297,7 +297,7 @@ func (suite *SqlGuardTestSuite) createTestDb(enableGuard bool) *bun.DB {
 }
 
 func (suite *SqlGuardTestSuite) TestDropStatementBlocked() {
-	db := suite.createTestDb(true)
+	db := suite.createTestDB(true)
 	defer db.Close()
 
 	_, err := db.NewRaw("DROP TABLE test_guard").Exec(suite.ctx)
@@ -315,7 +315,7 @@ func (suite *SqlGuardTestSuite) TestDropStatementBlocked() {
 }
 
 func (suite *SqlGuardTestSuite) TestTruncateStatementBlocked() {
-	db := suite.createTestDb(true)
+	db := suite.createTestDB(true)
 	defer db.Close()
 
 	// Insert test data first
@@ -336,7 +336,7 @@ func (suite *SqlGuardTestSuite) TestTruncateStatementBlocked() {
 }
 
 func (suite *SqlGuardTestSuite) TestDeleteWithoutWhereBlocked() {
-	db := suite.createTestDb(true)
+	db := suite.createTestDB(true)
 	defer db.Close()
 
 	// Insert test data first
@@ -357,7 +357,7 @@ func (suite *SqlGuardTestSuite) TestDeleteWithoutWhereBlocked() {
 }
 
 func (suite *SqlGuardTestSuite) TestDeleteWithWhereAllowed() {
-	db := suite.createTestDb(true)
+	db := suite.createTestDB(true)
 	defer db.Close()
 
 	_, err := db.NewRaw("DELETE FROM test_guard WHERE name = 'nonexistent'").Exec(suite.ctx)
@@ -366,11 +366,11 @@ func (suite *SqlGuardTestSuite) TestDeleteWithWhereAllowed() {
 }
 
 func (suite *SqlGuardTestSuite) TestSelectAllowed() {
-	db := suite.createTestDb(true)
+	db := suite.createTestDB(true)
 	defer db.Close()
 
 	var result []struct {
-		Id   int
+		ID   int
 		Name string
 	}
 
@@ -380,7 +380,7 @@ func (suite *SqlGuardTestSuite) TestSelectAllowed() {
 }
 
 func (suite *SqlGuardTestSuite) TestWhitelistBypassesGuard() {
-	db := suite.createTestDb(true)
+	db := suite.createTestDB(true)
 	defer db.Close()
 
 	// DROP should be blocked without whitelist
@@ -394,7 +394,7 @@ func (suite *SqlGuardTestSuite) TestWhitelistBypassesGuard() {
 }
 
 func (suite *SqlGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
-	db := suite.createTestDb(false)
+	db := suite.createTestDB(false)
 	defer db.Close()
 
 	// DROP should work when guard is disabled
@@ -402,6 +402,6 @@ func (suite *SqlGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
 	suite.NoError(err, "DROP should work when SQL guard is disabled")
 }
 
-func TestSqlGuardSuite(t *testing.T) {
+func TestSQLGuardSuite(t *testing.T) {
 	suite.Run(t, new(SqlGuardTestSuite))
 }

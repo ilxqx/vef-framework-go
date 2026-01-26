@@ -15,13 +15,13 @@ import (
 func NewResource(service schema.Service) api.Resource {
 	return &Resource{
 		service: service,
-		Resource: api.NewResource(
+		Resource: api.NewRPCResource(
 			"sys/schema",
-			api.WithApis(
-				api.Spec{Action: "list_tables", Public: isSchemaApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_table_schema", Public: isSchemaApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "list_views", Public: isSchemaApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "list_triggers", Public: isSchemaApiPublic, Limit: api.RateLimit{Max: 60}},
+			api.WithOperations(
+				api.OperationSpec{Action: "list_tables", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
+				api.OperationSpec{Action: "get_table_schema", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
+				api.OperationSpec{Action: "list_views", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
+				api.OperationSpec{Action: "list_triggers", Public: isSchemaApiPublic, RateLimit: &api.RateLimitConfig{Max: 60}},
 			),
 		),
 	}

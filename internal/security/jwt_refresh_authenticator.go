@@ -11,67 +11,61 @@ import (
 )
 
 const (
-	AuthTypeRefresh = "refresh"
+	AuthKindRefresh = "refresh"
 )
 
-type JwtRefreshAuthenticator struct {
-	jwt        *security.Jwt
+type JWTRefreshAuthenticator struct {
+	jwt        *security.JWT
 	userLoader security.UserLoader
 }
 
-func NewJwtRefreshAuthenticator(jwt *security.Jwt, userLoader security.UserLoader) security.Authenticator {
-	return &JwtRefreshAuthenticator{
+func NewJWTRefreshAuthenticator(jwt *security.JWT, userLoader security.UserLoader) security.Authenticator {
+	return &JWTRefreshAuthenticator{
 		jwt:        jwt,
 		userLoader: userLoader,
 	}
 }
 
-func (j *JwtRefreshAuthenticator) Supports(authType string) bool {
-	return authType == AuthTypeRefresh
+func (j *JWTRefreshAuthenticator) Supports(kind string) bool {
+	return kind == AuthKindRefresh
 }
 
-func (j *JwtRefreshAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
+func (j *JWTRefreshAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
 	if j.userLoader == nil {
-		return nil, result.Err(i18n.T("user_loader_not_implemented"), result.WithCode(result.ErrCodeNotImplemented))
+		return nil, result.ErrNotImplemented(i18n.T(result.ErrMessageUserLoaderNotImplemented))
 	}
 
 	token := authentication.Principal
 	if token == constants.Empty {
-		return nil, result.Err(
-			i18n.T("token_invalid"),
-			result.WithCode(result.ErrCodePrincipalInvalid),
-		)
+		return nil, result.ErrTokenInvalid
 	}
 
 	claimsAccessor, err := j.jwt.Parse(token)
 	if err != nil {
-		logger.Warnf("Jwt refresh token validation failed: %v", err)
+		logger.Warnf("JWT refresh token validation failed: %v", err)
 
 		return nil, err
 	}
 
 	if claimsAccessor.Type() != tokenTypeRefresh {
-		return nil, result.Err(
-			i18n.T("token_invalid"),
-			result.WithCode(result.ErrCodeTokenInvalid),
-		)
+		return nil, result.ErrTokenInvalid
 	}
 
 	subjectParts := strings.SplitN(claimsAccessor.Subject(), constants.At, 2)
-	userId := subjectParts[0]
+	userID := subjectParts[0]
 
 	// Reload user to get latest permissions/status instead of relying on stale token data.
-	principal, err := j.userLoader.LoadById(ctx, userId)
+	principal, err := j.userLoader.LoadByID(ctx, userID)
 	if err != nil {
-		logger.Warnf("Failed to reload user by Id %q: %v", userId, err)
+		logger.Warnf("Failed to reload user by ID %q: %v", userID, err)
 
 		return nil, err
 	}
 
 	if principal == nil {
-		logger.Warnf("User not found by Id %q", userId)
+		logger.Warnf("User not found by ID %q", userID)
 
-		return nil, result.Err(i18n.T("record_not_found"), result.WithCode(result.ErrCodeRecordNotFound))
+		return nil, result.ErrRecordNotFound
 	}
 
 	return principal, nil

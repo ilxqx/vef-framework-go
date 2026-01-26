@@ -13,14 +13,14 @@ type MergeTestSuite struct {
 
 // TestBasicMerge tests MERGE with updates and inserts.
 func (suite *MergeTestSuite) TestBasicMerge() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
 	suite.T().Logf("Testing basic MERGE for %s", suite.dbType)
 
 	type UserMergeData struct {
-		Id       string `bun:"id"`
+		ID       string `bun:"id"`
 		Name     string `bun:"name"`
 		Email    string `bun:"email"`
 		Age      int16  `bun:"age"`
@@ -28,9 +28,9 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 	}
 
 	sourceData := []UserMergeData{
-		{Id: "user1", Name: "Alice Updated", Email: "alice.updated@example.com", Age: 31, IsActive: true},
-		{Id: "user4", Name: "David New", Email: "david@example.com", Age: 28, IsActive: true},
-		{Id: "user5", Name: "Eva New", Email: "eva@example.com", Age: 26, IsActive: false},
+		{ID: "user1", Name: "Alice Updated", Email: "alice.updated@example.com", Age: 31, IsActive: true},
+		{ID: "user4", Name: "David New", Email: "david@example.com", Age: 28, IsActive: true},
+		{ID: "user5", Name: "Eva New", Email: "eva@example.com", Age: 26, IsActive: false},
 	}
 
 	// Cleanup inserted data after test
@@ -83,14 +83,14 @@ func (suite *MergeTestSuite) TestBasicMerge() {
 	suite.T().Logf("Found %d new users after merge (user4, user5)", len(newUsers))
 
 	for _, user := range newUsers {
-		suite.T().Logf("New user - Id: %s, Name: %s, Email: %s, Age: %d, Active: %v",
-			user.Id, user.Name, user.Email, user.Age, user.IsActive)
+		suite.T().Logf("New user - ID: %s, Name: %s, Email: %s, Age: %d, Active: %v",
+			user.ID, user.Name, user.Email, user.Age, user.IsActive)
 	}
 }
 
 // TestCteMethods tests CTE methods: With for named CTEs, WithValues for inline data CTEs.
 func (suite *MergeTestSuite) TestCteMethods() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -128,15 +128,15 @@ func (suite *MergeTestSuite) TestCteMethods() {
 
 	suite.Run("WithValuesCTE", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 			Age   int16  `bun:"age"`
 		}
 
 		sourceData := []UserMergeData{
-			{Id: "cte1", Name: "CTE User 1", Email: "cte1@example.com", Age: 25},
-			{Id: "cte2", Name: "CTE User 2", Email: "cte2@example.com", Age: 30},
+			{ID: "cte1", Name: "CTE User 1", Email: "cte1@example.com", Age: 25},
+			{ID: "cte2", Name: "CTE User 2", Email: "cte2@example.com", Age: 30},
 		}
 
 		// Cleanup inserted data after test
@@ -173,7 +173,7 @@ func (suite *MergeTestSuite) TestCteMethods() {
 
 // TestTableSourceMethods tests target table specification: ModelTable, Table, TableExpr, TableSubQuery with/without aliases.
 func (suite *MergeTestSuite) TestTableSourceMethods() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -181,12 +181,12 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 	suite.Run("ModelTableBasic", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "mt1", Name: "ModelTable User", Email: "mt1@example.com"}}
+		sourceData := []UserMergeData{{ID: "mt1", Name: "ModelTable User", Email: "mt1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -222,12 +222,12 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 	suite.Run("ModelTableWithAlias", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "mt2", Name: "ModelTable Alias User", Email: "mt2@example.com"}}
+		sourceData := []UserMergeData{{ID: "mt2", Name: "ModelTable Alias User", Email: "mt2@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -263,12 +263,12 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 	suite.Run("TableBasic", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "t1", Name: "Table User", Email: "t1@example.com"}}
+		sourceData := []UserMergeData{{ID: "t1", Name: "Table User", Email: "t1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -304,12 +304,12 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 	suite.Run("TableWithAlias", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "t2", Name: "Table Alias User", Email: "t2@example.com"}}
+		sourceData := []UserMergeData{{ID: "t2", Name: "Table Alias User", Email: "t2@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -345,12 +345,12 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 	suite.Run("TableExprBasic", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "te1", Name: "TableExpr User", Email: "te1@example.com"}}
+		sourceData := []UserMergeData{{ID: "te1", Name: "TableExpr User", Email: "te1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -388,12 +388,12 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 	suite.Run("TableSubQueryBasic", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "tsq1", Name: "TableSubQuery User", Email: "tsq1@example.com"}}
+		sourceData := []UserMergeData{{ID: "tsq1", Name: "TableSubQuery User", Email: "tsq1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -436,7 +436,7 @@ func (suite *MergeTestSuite) TestTableSourceMethods() {
 
 // TestUsingMethods tests source data specification: UsingTable, UsingExpr, UsingSubQuery with/without aliases.
 func (suite *MergeTestSuite) TestUsingMethods() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -444,12 +444,12 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 	suite.Run("UsingWithAlias", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "ua1", Name: "Using Alias User", Email: "ua1@example.com"}}
+		sourceData := []UserMergeData{{ID: "ua1", Name: "Using Alias User", Email: "ua1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -484,13 +484,13 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 	suite.Run("UsingTableBasic", func() {
 		type PostMergeData struct {
-			Id        string `bun:"id,pk"`
+			ID        string `bun:"id,pk"`
 			Title     string `bun:"title"`
 			ViewCount int    `bun:"view_count"`
 		}
 
 		sourceData := []PostMergeData{
-			{Id: "post1", Title: "Updated Post Title", ViewCount: 200},
+			{ID: "post1", Title: "Updated Post Title", ViewCount: 200},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -518,13 +518,13 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 	suite.Run("UsingTableWithAlias", func() {
 		type PostMergeData struct {
-			Id        string `bun:"id,pk"`
+			ID        string `bun:"id,pk"`
 			Title     string `bun:"title"`
 			ViewCount int    `bun:"view_count"`
 		}
 
 		sourceData := []PostMergeData{
-			{Id: "post1", Title: "Updated Post Title", ViewCount: 200},
+			{ID: "post1", Title: "Updated Post Title", ViewCount: 200},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -552,12 +552,12 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 	suite.Run("UsingExprBasic", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "ue1", Name: "UsingExpr User", Email: "ue1@example.com"}}
+		sourceData := []UserMergeData{{ID: "ue1", Name: "UsingExpr User", Email: "ue1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -592,12 +592,12 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 	suite.Run("UsingExprWithAlias", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "uea1", Name: "UsingExpr Alias User", Email: "uea1@example.com"}}
+		sourceData := []UserMergeData{{ID: "uea1", Name: "UsingExpr Alias User", Email: "uea1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -662,7 +662,7 @@ func (suite *MergeTestSuite) TestUsingMethods() {
 
 // TestReturningMethods tests RETURNING clause: specific columns, all columns (*), or none.
 func (suite *MergeTestSuite) TestReturningMethods() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -670,14 +670,14 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 	suite.Run("ReturningSpecificColumns", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
 		sourceData := []UserMergeData{
-			{Id: "ret1", Name: "Return User 1", Email: "ret1@example.com"},
-			{Id: "ret2", Name: "Return User 2", Email: "ret2@example.com"},
+			{ID: "ret1", Name: "Return User 1", Email: "ret1@example.com"},
+			{ID: "ret2", Name: "Return User 2", Email: "ret2@example.com"},
 		}
 
 		// Cleanup inserted data after test
@@ -691,7 +691,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 		}()
 
 		type ReturnResult struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -715,18 +715,18 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 		suite.T().Logf("RETURNING specific columns returned %d results", len(returnedUsers))
 
 		for _, result := range returnedUsers {
-			suite.T().Logf("Returned: Id=%s, Name=%s", result.Id, result.Name)
+			suite.T().Logf("Returned: ID=%s, Name=%s", result.ID, result.Name)
 		}
 	})
 
 	suite.Run("ReturningAll", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "reta1", Name: "ReturnAll User", Email: "reta1@example.com"}}
+		sourceData := []UserMergeData{{ID: "reta1", Name: "ReturnAll User", Email: "reta1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -758,18 +758,18 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 		suite.T().Logf("RETURNING * returned %d results", len(returnedUsers))
 
 		for _, result := range returnedUsers {
-			suite.T().Logf("Returned all columns: Id=%s, Name=%s", result.Id, result.Name)
+			suite.T().Logf("Returned all columns: ID=%s, Name=%s", result.ID, result.Name)
 		}
 	})
 
 	suite.Run("ReturningNone", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "retn1", Name: "ReturnNone User", Email: "retn1@example.com"}}
+		sourceData := []UserMergeData{{ID: "retn1", Name: "ReturnNone User", Email: "retn1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -806,7 +806,7 @@ func (suite *MergeTestSuite) TestReturningMethods() {
 
 // TestWhenNotMatchedByTarget tests insertion when row exists in source but not in target (with optional conditions).
 func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -814,12 +814,12 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 
 	suite.Run("BasicWhenNotMatchedByTarget", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "wnmbt1", Name: "NotMatchedByTarget User", Email: "wnmbt1@example.com"}}
+		sourceData := []UserMergeData{{ID: "wnmbt1", Name: "NotMatchedByTarget User", Email: "wnmbt1@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -854,14 +854,14 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 
 	suite.Run("ConditionalWhenNotMatchedByTarget", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
 		sourceData := []UserMergeData{
-			{Id: "wnmbtc1", Name: "Conditional User 1", Email: "wnmbtc1@example.com"},
-			{Id: "wnmbtc2", Name: "", Email: "wnmbtc2@example.com"},
+			{ID: "wnmbtc1", Name: "Conditional User 1", Email: "wnmbtc1@example.com"},
+			{ID: "wnmbtc2", Name: "", Email: "wnmbtc2@example.com"},
 		}
 
 		// Cleanup inserted data after test
@@ -900,7 +900,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedByTarget() {
 
 // TestWhenNotMatchedBySource tests updates/deletes when row exists in target but not in source (with optional conditions).
 func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -912,8 +912,8 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			{Name: "User to Keep", Email: "keep@example.com", Age: 25, IsActive: true},
 			{Name: "User to Update", Email: "update@example.com", Age: 30, IsActive: true},
 		}
-		testUsers[0].Id = "wnmbs1"
-		testUsers[1].Id = "wnmbs2"
+		testUsers[0].ID = "wnmbs1"
+		testUsers[1].ID = "wnmbs2"
 
 		for _, user := range testUsers {
 			_, err := suite.db.NewInsert().
@@ -933,14 +933,14 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		}()
 
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
 		// Source only contains wnmbs1, so wnmbs2 will be "not matched by source"
 		sourceData := []UserMergeData{
-			{Id: "wnmbs1", Name: "User to Keep Updated", Email: "keep_updated@example.com"},
+			{ID: "wnmbs1", Name: "User to Keep Updated", Email: "keep_updated@example.com"},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -1000,9 +1000,9 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 			{Name: "Active User 2", Email: "active2@example.com", Age: 28, IsActive: true},
 			{Name: "Inactive User", Email: "inactive@example.com", Age: 30, IsActive: false},
 		}
-		testUsers[0].Id = "wnmbsc1"
-		testUsers[1].Id = "wnmbsc2"
-		testUsers[2].Id = "wnmbsc3"
+		testUsers[0].ID = "wnmbsc1"
+		testUsers[1].ID = "wnmbsc2"
+		testUsers[2].ID = "wnmbsc3"
 
 		for _, user := range testUsers {
 			_, err := suite.db.NewInsert().
@@ -1022,14 +1022,14 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 		}()
 
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
 		// Source only contains wnmbsc1, so wnmbsc2 and wnmbsc3 will be "not matched by source"
 		sourceData := []UserMergeData{
-			{Id: "wnmbsc1", Name: "Active User 1 Updated", Email: "active1_updated@example.com"},
+			{ID: "wnmbsc1", Name: "Active User 1 Updated", Email: "active1_updated@example.com"},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -1089,7 +1089,7 @@ func (suite *MergeTestSuite) TestWhenNotMatchedBySource() {
 
 // TestThenDoNothing tests no-op actions for matched/not-matched conditions.
 func (suite *MergeTestSuite) TestThenDoNothing() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1097,14 +1097,14 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 
 	suite.Run("WhenMatchedDoNothing", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
 		sourceData := []UserMergeData{
-			{Id: "user1", Name: "Should Not Update", Email: "user1@example.com"},
-			{Id: "dnm1", Name: "Should Insert", Email: "dnm1@example.com"},
+			{ID: "user1", Name: "Should Not Update", Email: "user1@example.com"},
+			{ID: "dnm1", Name: "Should Insert", Email: "dnm1@example.com"},
 		}
 
 		// Cleanup inserted data after test
@@ -1142,13 +1142,13 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 
 	suite.Run("WhenNotMatchedDoNothing", func() {
 		type UserMergeData struct {
-			Id   string `bun:"id,pk"`
+			ID   string `bun:"id,pk"`
 			Name string `bun:"name"`
 		}
 
 		sourceData := []UserMergeData{
-			{Id: "user1", Name: "Should Update"},
-			{Id: "dnn1", Name: "Should Not Insert"},
+			{ID: "user1", Name: "Should Update"},
+			{ID: "dnn1", Name: "Should Not Insert"},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -1177,7 +1177,7 @@ func (suite *MergeTestSuite) TestThenDoNothing() {
 
 // TestThenUpdate tests update actions: Set, SetExpr, SetColumns, SetAll.
 func (suite *MergeTestSuite) TestThenUpdate() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1185,11 +1185,11 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 	suite.Run("SetSingleValue", func() {
 		type UserMergeData struct {
-			Id   string `bun:"id,pk"`
+			ID   string `bun:"id,pk"`
 			Name string `bun:"name"`
 		}
 
-		sourceData := []UserMergeData{{Id: "user1", Name: "Set Single"}}
+		sourceData := []UserMergeData{{ID: "user1", Name: "Set Single"}}
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
@@ -1214,12 +1214,12 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 	suite.Run("SetMultipleValues", func() {
 		type UserMergeData struct {
-			Id   string `bun:"id,pk"`
+			ID   string `bun:"id,pk"`
 			Name string `bun:"name"`
 			Age  int16  `bun:"age"`
 		}
 
-		sourceData := []UserMergeData{{Id: "user1", Name: "Multiple", Age: 35}}
+		sourceData := []UserMergeData{{ID: "user1", Name: "Multiple", Age: 35}}
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
@@ -1245,11 +1245,11 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 	suite.Run("SetExprBasic", func() {
 		type PostMergeData struct {
-			Id        string `bun:"id,pk"`
+			ID        string `bun:"id,pk"`
 			ViewCount int    `bun:"view_count"`
 		}
 
-		sourceData := []PostMergeData{{Id: "post1", ViewCount: 100}}
+		sourceData := []PostMergeData{{ID: "post1", ViewCount: 100}}
 
 		result, err := suite.db.NewMerge().
 			Model(&Post{}).
@@ -1276,12 +1276,12 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 	suite.Run("SetColumnsBasic", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "user1", Name: "SetColumns Name", Email: "setcols@example.com"}}
+		sourceData := []UserMergeData{{ID: "user1", Name: "SetColumns Name", Email: "setcols@example.com"}}
 
 		result, err := suite.db.NewMerge().
 			Model(&User{}).
@@ -1306,7 +1306,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 	suite.Run("SetAllWithExclusions", func() {
 		type UserMergeData struct {
-			Id       string `bun:"id,pk"`
+			ID       string `bun:"id,pk"`
 			Name     string `bun:"name"`
 			Email    string `bun:"email"`
 			Age      int16  `bun:"age"`
@@ -1314,7 +1314,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 		}
 
 		sourceData := []UserMergeData{
-			{Id: "user1", Name: "SetAll Name", Email: "setall@example.com", Age: 45, IsActive: true},
+			{ID: "user1", Name: "SetAll Name", Email: "setall@example.com", Age: 45, IsActive: true},
 		}
 
 		result, err := suite.db.NewMerge().
@@ -1341,7 +1341,7 @@ func (suite *MergeTestSuite) TestThenUpdate() {
 
 // TestThenInsert tests insert actions: Value, ValueExpr, Values, ValuesAll.
 func (suite *MergeTestSuite) TestThenInsert() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1349,10 +1349,10 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 	suite.Run("ValueSingleColumn", func() {
 		type UserMergeData struct {
-			Id string `bun:"id,pk"`
+			ID string `bun:"id,pk"`
 		}
 
-		sourceData := []UserMergeData{{Id: "val1"}}
+		sourceData := []UserMergeData{{ID: "val1"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -1389,10 +1389,10 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 	suite.Run("ValueMultipleColumns", func() {
 		type UserMergeData struct {
-			Id string `bun:"id,pk"`
+			ID string `bun:"id,pk"`
 		}
 
-		sourceData := []UserMergeData{{Id: "valm1"}}
+		sourceData := []UserMergeData{{ID: "valm1"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -1430,11 +1430,11 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 	suite.Run("ValueExprBasic", func() {
 		type UserMergeData struct {
-			Id   string `bun:"id,pk"`
+			ID   string `bun:"id,pk"`
 			Name string `bun:"name"`
 		}
 
-		sourceData := []UserMergeData{{Id: "vale1", Name: "ValueExpr"}}
+		sourceData := []UserMergeData{{ID: "vale1", Name: "ValueExpr"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -1473,12 +1473,12 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 	suite.Run("ValuesMultipleColumns", func() {
 		type UserMergeData struct {
-			Id    string `bun:"id,pk"`
+			ID    string `bun:"id,pk"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
 
-		sourceData := []UserMergeData{{Id: "vals1", Name: "Values User", Email: "values@example.com"}}
+		sourceData := []UserMergeData{{ID: "vals1", Name: "Values User", Email: "values@example.com"}}
 
 		// Cleanup inserted data after test
 		defer func() {
@@ -1513,7 +1513,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 	suite.Run("ValuesAllWithExclusions", func() {
 		type UserMergeData struct {
-			Id       string `bun:"id,pk"`
+			ID       string `bun:"id,pk"`
 			Name     string `bun:"name"`
 			Email    string `bun:"email"`
 			Age      int16  `bun:"age"`
@@ -1521,7 +1521,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 		}
 
 		sourceData := []UserMergeData{
-			{Id: "vala1", Name: "ValuesAll User", Email: "valall@example.com", Age: 28, IsActive: true},
+			{ID: "vala1", Name: "ValuesAll User", Email: "valall@example.com", Age: 28, IsActive: true},
 		}
 
 		// Cleanup inserted data after test
@@ -1558,7 +1558,7 @@ func (suite *MergeTestSuite) TestThenInsert() {
 
 // TestThenDelete tests deletion when rows exist in target but not in source.
 func (suite *MergeTestSuite) TestThenDelete() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
@@ -1570,9 +1570,9 @@ func (suite *MergeTestSuite) TestThenDelete() {
 		{Title: "Test Post 3", Status: "archived", ViewCount: 25},
 	}
 
-	testPosts[0].Id = "merge_test_1"
-	testPosts[1].Id = "merge_test_2"
-	testPosts[2].Id = "merge_test_3"
+	testPosts[0].ID = "merge_test_1"
+	testPosts[1].ID = "merge_test_2"
+	testPosts[2].ID = "merge_test_3"
 
 	suite.T().Logf("Creating %d test posts for DELETE scenario", len(testPosts))
 
@@ -1580,8 +1580,8 @@ func (suite *MergeTestSuite) TestThenDelete() {
 		_, err := suite.db.NewInsert().
 			Model(&post).
 			Exec(suite.ctx)
-		suite.NoError(err, "Failed to create test post %d (Id: %s)", i+1, post.Id)
-		suite.T().Logf("Created test post %d: %s - %s (views: %d)", i+1, post.Id, post.Title, post.ViewCount)
+		suite.NoError(err, "Failed to create test post %d (Id: %s)", i+1, post.ID)
+		suite.T().Logf("Created test post %d: %s - %s (views: %d)", i+1, post.ID, post.Title, post.ViewCount)
 	}
 
 	// Cleanup test posts after test (merge_test_3 should be deleted by MERGE)
@@ -1595,15 +1595,15 @@ func (suite *MergeTestSuite) TestThenDelete() {
 	}()
 
 	type PostUpdateData struct {
-		Id        string `bun:"id,pk"`
+		ID        string `bun:"id,pk"`
 		Title     string `bun:"title"`
 		Status    string `bun:"status"`
 		ViewCount int    `bun:"view_count"`
 	}
 
 	sourceData := []PostUpdateData{
-		{Id: "merge_test_1", Title: "Updated Test Post 1", Status: "published", ViewCount: 120},
-		{Id: "merge_test_2", Title: "Updated Test Post 2", Status: "published", ViewCount: 80},
+		{ID: "merge_test_1", Title: "Updated Test Post 1", Status: "published", ViewCount: 120},
+		{ID: "merge_test_2", Title: "Updated Test Post 2", Status: "published", ViewCount: 80},
 	}
 
 	suite.T().Logf("Executing MERGE with DELETE - %d source records, missing merge_test_3 to test deletion", len(sourceData))
@@ -1647,30 +1647,30 @@ func (suite *MergeTestSuite) TestThenDelete() {
 	suite.T().Logf("Remaining posts after MERGE with DELETE: %d", len(remainingPosts))
 
 	for _, post := range remainingPosts {
-		suite.T().Logf("Remaining post %s: %s - %s (views: %d)", post.Id, post.Title, post.Status, post.ViewCount)
-		suite.NotEqual("merge_test_3", post.Id, "Post merge_test_3 with low view count should be deleted")
+		suite.T().Logf("Remaining post %s: %s - %s (views: %d)", post.ID, post.Title, post.Status, post.ViewCount)
+		suite.NotEqual("merge_test_3", post.ID, "Post merge_test_3 with low view count should be deleted")
 	}
 }
 
 // TestMergeWithConditions tests MERGE with conditional WHEN clauses (e.g., only update when source > target).
 func (suite *MergeTestSuite) TestMergeWithConditions() {
-	if suite.dbType != constants.DbPostgres {
+	if suite.dbType != constants.Postgres {
 		suite.T().Skipf("MERGE statement is only supported by PostgreSQL, skipping for %s", suite.dbType)
 	}
 
 	suite.T().Logf("Testing MERGE with conditions for %s", suite.dbType)
 
 	type PostMergeData struct {
-		Id        string `bun:"id,pk"`
+		ID        string `bun:"id,pk"`
 		Title     string `bun:"title"`
 		Status    string `bun:"status"`
 		ViewCount int    `bun:"view_count"`
 	}
 
 	sourceData := []PostMergeData{
-		{Id: "post1", Title: "Updated Post 1", Status: "published", ViewCount: 150},
-		{Id: "post2", Title: "Updated Post 2", Status: "draft", ViewCount: 75},
-		{Id: "new1", Title: "New Post 1", Status: "draft", ViewCount: 0},
+		{ID: "post1", Title: "Updated Post 1", Status: "published", ViewCount: 150},
+		{ID: "post2", Title: "Updated Post 2", Status: "draft", ViewCount: 75},
+		{ID: "new1", Title: "New Post 1", Status: "draft", ViewCount: 0},
 	}
 
 	// Cleanup inserted post after test
@@ -1728,6 +1728,6 @@ func (suite *MergeTestSuite) TestMergeWithConditions() {
 	suite.T().Logf("Posts after conditional MERGE: %d", len(updatedPosts))
 
 	for _, post := range updatedPosts {
-		suite.T().Logf("Post %s: %s - %s (views: %d)", post.Id, post.Title, post.Status, post.ViewCount)
+		suite.T().Logf("Post %s: %s - %s (views: %d)", post.ID, post.Title, post.Status, post.ViewCount)
 	}
 }

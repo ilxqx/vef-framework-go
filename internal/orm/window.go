@@ -230,22 +230,22 @@ type WindowVarianceBuilder interface {
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
-// WindowJsonObjectAggBuilder defines JSON_OBJECT_AGG() as window function builder.
-type WindowJsonObjectAggBuilder interface {
-	BaseAggregate[WindowJsonObjectAggBuilder]
-	DistinctableAggregate[WindowJsonObjectAggBuilder]
-	OrderableAggregate[WindowJsonObjectAggBuilder]
+// WindowJSONObjectAggBuilder defines JSON_OBJECT_AGG() as window function builder.
+type WindowJSONObjectAggBuilder interface {
+	BaseAggregate[WindowJSONObjectAggBuilder]
+	DistinctableAggregate[WindowJSONObjectAggBuilder]
+	OrderableAggregate[WindowJSONObjectAggBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 
-	KeyColumn(column string) WindowJsonObjectAggBuilder
-	KeyExpr(expr any) WindowJsonObjectAggBuilder
+	KeyColumn(column string) WindowJSONObjectAggBuilder
+	KeyExpr(expr any) WindowJSONObjectAggBuilder
 }
 
-// WindowJsonArrayAggBuilder defines JSON_ARRAY_AGG() as window function builder.
-type WindowJsonArrayAggBuilder interface {
-	BaseAggregate[WindowJsonArrayAggBuilder]
-	DistinctableAggregate[WindowJsonArrayAggBuilder]
-	OrderableAggregate[WindowJsonArrayAggBuilder]
+// WindowJSONArrayAggBuilder defines JSON_ARRAY_AGG() as window function builder.
+type WindowJSONArrayAggBuilder interface {
+	BaseAggregate[WindowJSONArrayAggBuilder]
+	DistinctableAggregate[WindowJSONArrayAggBuilder]
+	OrderableAggregate[WindowJSONArrayAggBuilder]
 	WindowPartitionable[WindowFrameablePartitionBuilder]
 }
 
@@ -1013,7 +1013,7 @@ func (wv *windowVarianceExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []by
 }
 
 type windowJsonObjectAggExpr struct {
-	*jsonObjectAggExpr[WindowJsonObjectAggBuilder]
+	*jsonObjectAggExpr[WindowJSONObjectAggBuilder]
 	*baseWindowExpr
 }
 
@@ -1028,7 +1028,7 @@ func (wj *windowJsonObjectAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_
 }
 
 type windowJsonArrayAggExpr struct {
-	*jsonArrayAggExpr[WindowJsonArrayAggBuilder]
+	*jsonArrayAggExpr[WindowJSONArrayAggBuilder]
 	*baseWindowExpr
 }
 
@@ -1147,7 +1147,7 @@ func newCumeDistExpr(eb ExprBuilder) *cumeDistExpr {
 	}
 }
 
-func newNtileExpr(eb ExprBuilder) *nTileExpr {
+func newNTileExpr(eb ExprBuilder) *nTileExpr {
 	return &nTileExpr{
 		baseWindowExpr: &baseWindowExpr{
 			eb:       eb,
@@ -1348,26 +1348,26 @@ func newWindowVarianceExpr(qb QueryBuilder) *windowVarianceExpr {
 	return expr
 }
 
-func newWindowJsonObjectAggExpr(qb QueryBuilder) *windowJsonObjectAggExpr {
+func newWindowJSONObjectAggExpr(qb QueryBuilder) *windowJsonObjectAggExpr {
 	expr := &windowJsonObjectAggExpr{
 		baseWindowExpr: &baseWindowExpr{
 			eb: qb.ExprBuilder(),
 		},
 	}
 
-	expr.jsonObjectAggExpr = newGenericJsonObjectAggExpr[WindowJsonObjectAggBuilder](expr, qb)
+	expr.jsonObjectAggExpr = newGenericJSONObjectAggExpr[WindowJSONObjectAggBuilder](expr, qb)
 
 	return expr
 }
 
-func newWindowJsonArrayAggExpr(qb QueryBuilder) *windowJsonArrayAggExpr {
+func newWindowJSONArrayAggExpr(qb QueryBuilder) *windowJsonArrayAggExpr {
 	expr := &windowJsonArrayAggExpr{
 		baseWindowExpr: &baseWindowExpr{
 			eb: qb.ExprBuilder(),
 		},
 	}
 
-	expr.jsonArrayAggExpr = newGenericJsonArrayAggExpr[WindowJsonArrayAggBuilder](expr, qb)
+	expr.jsonArrayAggExpr = newGenericJSONArrayAggExpr[WindowJSONArrayAggBuilder](expr, qb)
 
 	return expr
 }

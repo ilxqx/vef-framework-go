@@ -84,13 +84,9 @@ func init() {
 }
 
 func RegisterValidationRules(rules ...ValidationRule) error {
-	if err := streams.FromSlice(rules).ForEachErr(func(rule ValidationRule) error {
+	return streams.FromSlice(rules).ForEachErr(func(rule ValidationRule) error {
 		return rule.register(validator)
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 type CustomTypeFunc = func(field reflect.Value) any
@@ -113,14 +109,15 @@ func RegisterNullValueTypeFunc[T any]() {
 }
 
 func Validate(value any) error {
-	if err := validator.Struct(value); err != nil {
-		var validationErrors v.ValidationErrors
-		errors.As(err, &validationErrors)
-
-		for _, validationError := range validationErrors {
-			return result.Err(validationError.Translate(translator), result.WithCode(result.ErrCodeBadRequest))
-		}
+	err := validator.Struct(value)
+	if err == nil {
+		return nil
 	}
 
-	return nil
+	var validationErrors v.ValidationErrors
+	if !errors.As(err, &validationErrors) || len(validationErrors) == 0 {
+		return result.Err(err.Error(), result.WithCode(result.ErrCodeBadRequest))
+	}
+
+	return result.Err(validationErrors[0].Translate(translator), result.WithCode(result.ErrCodeBadRequest))
 }

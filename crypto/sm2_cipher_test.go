@@ -23,7 +23,7 @@ func TestSm2Cipher_EncryptDecrypt(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should generate SM2 key pair")
 
-	cipher, err := NewSm2(privateKey, &privateKey.PublicKey)
+	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err, "Should create SM2 cipher")
 
 	tests := []struct {
@@ -70,7 +70,7 @@ func TestSm2Cipher_FromPem(t *testing.T) {
 	pemPriv := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: derPriv})
 	pemPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: derPub})
 
-	cipher, err := NewSm2FromPem(pemPriv, pemPub)
+	cipher, err := NewSM2FromPEM(pemPriv, pemPub)
 	require.NoError(t, err, "Should create SM2 cipher from PEM")
 
 	plaintext := "PEM roundtrip message"
@@ -101,7 +101,7 @@ func TestSm2Cipher_FromHex(t *testing.T) {
 	hexPriv := encoding.ToHex(derPriv)
 	hexPub := encoding.ToHex(derPub)
 
-	cipher, err := NewSm2FromHex(hexPriv, hexPub)
+	cipher, err := NewSM2FromHex(hexPriv, hexPub)
 	require.NoError(t, err, "Should create SM2 cipher from hex")
 
 	plaintext := "HEX roundtrip message"
@@ -117,7 +117,7 @@ func TestSm2Cipher_PublicKeyOnly(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should generate SM2 key pair")
 
-	cipher, err := NewSm2(nil, &privateKey.PublicKey)
+	cipher, err := NewSM2(nil, &privateKey.PublicKey)
 	require.NoError(t, err, "Should create SM2 cipher with public key only")
 
 	plaintext := "Test message"
@@ -133,7 +133,7 @@ func TestSm2Cipher_PrivateKeyOnly(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should generate SM2 key pair")
 
-	cipher, err := NewSm2(privateKey, nil)
+	cipher, err := NewSM2(privateKey, nil)
 	require.NoError(t, err, "Should create SM2 cipher with private key only")
 
 	plaintext := "Test message"
@@ -148,7 +148,7 @@ func TestSm2Cipher_PrivateKeyOnly(t *testing.T) {
 
 // TestSm2Cipher_NoKeys tests that creating cipher without keys fails.
 func TestSm2Cipher_NoKeys(t *testing.T) {
-	_, err := NewSm2(nil, nil)
+	_, err := NewSM2(nil, nil)
 	assert.Error(t, err, "Should reject creating cipher without any keys")
 }
 
@@ -157,7 +157,7 @@ func TestSm2Cipher_MultipleEncryptions(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err, "Should generate SM2 key pair")
 
-	cipher, err := NewSm2(privateKey, &privateKey.PublicKey)
+	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err, "Should create SM2 cipher")
 
 	plaintext := "Test message"
@@ -185,7 +185,7 @@ func TestSm2Cipher_SignVerify(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err)
 
-	cipher, err := NewSm2(privateKey, &privateKey.PublicKey)
+	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -219,7 +219,7 @@ func TestSm2Cipher_SignWithoutPrivateKey(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err)
 
-	cipher, err := NewSm2(nil, &privateKey.PublicKey)
+	cipher, err := NewSM2(nil, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	data := "Test message"
@@ -232,14 +232,14 @@ func TestSm2Cipher_VerifyWithoutPublicKey(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err)
 
-	signerCipher, err := NewSm2(privateKey, &privateKey.PublicKey)
+	signerCipher, err := NewSM2(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	data := "Test message"
 	signature, err := signerCipher.Sign(data)
 	require.NoError(t, err)
 
-	verifierCipher, err := NewSm2(privateKey, nil)
+	verifierCipher, err := NewSM2(privateKey, nil)
 	require.NoError(t, err)
 
 	valid, err := verifierCipher.Verify(data, signature)
@@ -251,7 +251,7 @@ func TestSm2Cipher_InvalidSignature(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err)
 
-	cipher, err := NewSm2(privateKey, &privateKey.PublicKey)
+	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	data := "Test message"
@@ -264,7 +264,7 @@ func TestSm2Cipher_DifferentSignatures(t *testing.T) {
 	privateKey, err := generateSM2KeyPair()
 	require.NoError(t, err)
 
-	cipher, err := NewSm2(privateKey, &privateKey.PublicKey)
+	cipher, err := NewSM2(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	data := "Test message"

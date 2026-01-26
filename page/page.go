@@ -1,9 +1,5 @@
 package page
 
-import (
-	"github.com/ilxqx/vef-framework-go/api"
-)
-
 const (
 	// DefaultPageNumber is the default page number for pagination (starts from 1).
 	DefaultPageNumber int = 1
@@ -15,8 +11,6 @@ const (
 
 // Pageable represents pagination parameters for querying data.
 type Pageable struct {
-	api.M
-
 	Page int `json:"page"` // 1-based
 	Size int `json:"size"`
 }

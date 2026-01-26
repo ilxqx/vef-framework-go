@@ -41,7 +41,7 @@ func (suite *MinIOServiceTestSuite) SetupSuite() {
 
 	suite.minioContainer = testhelpers.NewMinIOContainer(suite.ctx, &suite.Suite)
 
-	provider, err := New(*suite.minioContainer.Config, &config.AppConfig{})
+	provider, err := New(*suite.minioContainer.MinIOConfig, &config.AppConfig{})
 	suite.Require().NoError(err, "NewMinIOService should succeed")
 	suite.service = provider
 
@@ -243,28 +243,28 @@ func (suite *MinIOServiceTestSuite) TestListObjects() {
 	})
 }
 
-func (suite *MinIOServiceTestSuite) TestGetPresignedUrl() {
-	suite.T().Logf("Testing GetPresignedUrl for MinIO service")
+func (suite *MinIOServiceTestSuite) TestGetPresignedURL() {
+	suite.T().Logf("Testing GetPresignedURL for MinIO service")
 
 	suite.Run("GetMethod", func() {
 		suite.uploadTestObject()
 
-		url, err := suite.service.GetPresignedUrl(suite.ctx, storage.PresignedURLOptions{
+		url, err := suite.service.GetPresignedURL(suite.ctx, storage.PresignedURLOptions{
 			Key:     suite.testObjectKey,
 			Expires: 1 * time.Hour,
 			Method:  http.MethodGet,
 		})
 
-		suite.NoError(err, "GetPresignedUrl should succeed")
-		suite.NotEmpty(url, "Url should not be empty")
-		suite.Contains(url, suite.testBucketName, "Url should contain bucket name")
-		suite.Contains(url, suite.testObjectKey, "Url should contain object key")
+		suite.NoError(err, "GetPresignedURL should succeed")
+		suite.NotEmpty(url, "URL should not be empty")
+		suite.Contains(url, suite.testBucketName, "URL should contain bucket name")
+		suite.Contains(url, suite.testObjectKey, "URL should contain object key")
 
 		downloadReq, err := http.NewRequestWithContext(suite.ctx, http.MethodGet, url, nil)
 		suite.Require().NoError(err, "Creating download request should succeed")
 
 		resp, err := http.DefaultClient.Do(downloadReq)
-		suite.Require().NoError(err, "Downloading via presigned Url should succeed")
+		suite.Require().NoError(err, "Downloading via presigned URL should succeed")
 
 		defer resp.Body.Close()
 
@@ -275,22 +275,22 @@ func (suite *MinIOServiceTestSuite) TestGetPresignedUrl() {
 	})
 
 	suite.Run("PutMethod", func() {
-		url, err := suite.service.GetPresignedUrl(suite.ctx, storage.PresignedURLOptions{
+		url, err := suite.service.GetPresignedURL(suite.ctx, storage.PresignedURLOptions{
 			Key:     "presigned-upload.txt",
 			Expires: 1 * time.Hour,
 			Method:  http.MethodPut,
 		})
 
-		suite.NoError(err, "GetPresignedUrl for PUT should succeed")
-		suite.NotEmpty(url, "Url should not be empty")
-		suite.Contains(url, suite.testBucketName, "Url should contain bucket name")
+		suite.NoError(err, "GetPresignedURL for PUT should succeed")
+		suite.NotEmpty(url, "URL should not be empty")
+		suite.Contains(url, suite.testBucketName, "URL should contain bucket name")
 
-		uploadData := []byte("Uploaded via presigned Url")
+		uploadData := []byte("Uploaded via presigned URL")
 		req, err := http.NewRequestWithContext(suite.ctx, http.MethodPut, url, bytes.NewReader(uploadData))
 		suite.Require().NoError(err, "Creating upload request should succeed")
 
 		resp, err := http.DefaultClient.Do(req)
-		suite.Require().NoError(err, "Uploading via presigned Url should succeed")
+		suite.Require().NoError(err, "Uploading via presigned URL should succeed")
 
 		defer resp.Body.Close()
 

@@ -29,6 +29,11 @@ func (r *RbacDataPermissionResolver) ResolveDataScope(
 	principal *security.Principal,
 	permToken string,
 ) (security.DataScope, error) {
+	// If loader is nil, no data scope resolution is possible
+	if r.loader == nil {
+		return nil, nil
+	}
+
 	// If principal is nil or has no roles, they have no permissions
 	if principal == nil || len(principal.Roles) == 0 {
 		return nil, nil

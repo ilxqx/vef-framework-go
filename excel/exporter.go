@@ -146,12 +146,7 @@ func (e *exporter) writeData(f *excelize.File, sheetName string, data any) error
 
 			cellValue, err := e.formatValue(fieldValue.Interface(), col)
 			if err != nil {
-				return tabular.ExportError{
-					Row:    rowIdx,
-					Column: col.Name,
-					Field:  fieldValue.Type().Name(),
-					Err:    fmt.Errorf("format value: %w", err),
-				}
+				return tabular.ExportError{Row: rowIdx, Column: col.Name, Field: fieldValue.Type().Name(), Err: fmt.Errorf("format value: %w", err)}
 			}
 
 			colLetter, err := excelize.ColumnNumberToName(colIdx + 1)
@@ -169,8 +164,6 @@ func (e *exporter) writeData(f *excelize.File, sheetName string, data any) error
 	return nil
 }
 
-// formatValue falls back to default formatter when custom formatter is missing,
-// preventing export failures due to configuration errors.
 func (e *exporter) formatValue(value any, col *tabular.Column) (string, error) {
 	if col.Formatter != constants.Empty {
 		if formatter, ok := e.formatters[col.Formatter]; ok {

@@ -18,8 +18,8 @@ type Service interface {
 	DeleteObjects(ctx context.Context, opts DeleteObjectsOptions) error
 	// ListObjects lists objects in a bucket with optional filtering
 	ListObjects(ctx context.Context, opts ListObjectsOptions) ([]ObjectInfo, error)
-	// GetPresignedUrl generates a presigned Url for temporary access to an object
-	GetPresignedUrl(ctx context.Context, opts PresignedURLOptions) (string, error)
+	// GetPresignedURL generates a presigned URL for temporary access to an object
+	GetPresignedURL(ctx context.Context, opts PresignedURLOptions) (string, error)
 	// CopyObject copies an object from source to destination
 	CopyObject(ctx context.Context, opts CopyObjectOptions) (*ObjectInfo, error)
 	// MoveObject moves an object from source to destination (implemented as Copy + Delete)

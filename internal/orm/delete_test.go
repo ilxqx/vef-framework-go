@@ -63,9 +63,9 @@ func (suite *DeleteTestSuite) TestCTE() {
 
 	suite.Run("WithValuesCTE", func() {
 		testPosts := []*Post{
-			{Title: "CTE Values Post 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft", ViewCount: 10},
-			{Title: "CTE Values Post 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published", ViewCount: 20},
-			{Title: "CTE Values Post 3", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "review", ViewCount: 30},
+			{Title: "CTE Values Post 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft", ViewCount: 10},
+			{Title: "CTE Values Post 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published", ViewCount: 20},
+			{Title: "CTE Values Post 3", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "review", ViewCount: 30},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -109,7 +109,7 @@ func (suite *DeleteTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithRecursiveCTE", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skip("SQLite recursive CTE with DELETE requires special handling")
 
 			return
@@ -125,8 +125,8 @@ func (suite *DeleteTestSuite) TestCTE() {
 		suite.NoError(err, "Should insert test categories")
 
 		testPosts := []*Post{
-			{Title: "Recursive Post 1", Content: "Content", UserId: "user1", CategoryId: testCategories[0].Id, Status: "published"},
-			{Title: "Recursive Post 2", Content: "Content", UserId: "user1", CategoryId: testCategories[1].Id, Status: "published"},
+			{Title: "Recursive Post 1", Content: "Content", UserID: "user1", CategoryID: testCategories[0].ID, Status: "published"},
+			{Title: "Recursive Post 2", Content: "Content", UserID: "user1", CategoryID: testCategories[1].ID, Status: "published"},
 		}
 
 		_, err = suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -224,8 +224,8 @@ func (suite *DeleteTestSuite) TestTableSource() {
 
 	suite.Run("TableAndTableFrom", func() {
 		testPosts := []*Post{
-			{Title: "Table Source Post 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
-			{Title: "Table Source Post 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published"},
+			{Title: "Table Source Post 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
+			{Title: "Table Source Post 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -289,7 +289,7 @@ func (suite *DeleteTestSuite) TestTableSource() {
 	})
 }
 
-// TestFiltering tests filtering methods (Where, WherePk, WhereDeleted, IncludeDeleted).
+// TestFiltering tests filtering methods (Where, WherePK, WhereDeleted, IncludeDeleted).
 func (suite *DeleteTestSuite) TestFiltering() {
 	suite.T().Logf("Testing filtering methods for %s", suite.dbType)
 
@@ -339,29 +339,29 @@ func (suite *DeleteTestSuite) TestFiltering() {
 		}
 
 		_, err := suite.db.NewInsert().Model(testUser).Exec(suite.ctx)
-		suite.NoError(err, "Should insert test user for WherePk")
+		suite.NoError(err, "Should insert test user for WherePK")
 
 		result, err := suite.db.NewDelete().
 			Model((*User)(nil)).
 			Where(func(cb ConditionBuilder) {
-				cb.PkEquals(testUser.Id)
+				cb.PKEquals(testUser.ID)
 			}).
 			Exec(suite.ctx)
 
-		suite.NoError(err, "WherePk should work correctly")
+		suite.NoError(err, "WherePK should work correctly")
 
 		rowsAffected, err := result.RowsAffected()
 		suite.NoError(err, "Should get rows affected count")
 		suite.Equal(int64(1), rowsAffected, "Should delete 1 user by primary key")
 
-		suite.T().Logf("Deleted user by primary key: %s", testUser.Id)
+		suite.T().Logf("Deleted user by primary key: %s", testUser.ID)
 	})
 
 	suite.Run("ComplexWhereConditions", func() {
 		testPosts := []*Post{
-			{Title: "Complex Filter 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft", ViewCount: 5},
-			{Title: "Complex Filter 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published", ViewCount: 50},
-			{Title: "Complex Filter 3", Content: "Content", UserId: "user2", CategoryId: "cat1", Status: "published", ViewCount: 150},
+			{Title: "Complex Filter 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft", ViewCount: 5},
+			{Title: "Complex Filter 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published", ViewCount: 50},
+			{Title: "Complex Filter 3", Content: "Content", UserID: "user2", CategoryID: "cat1", Status: "published", ViewCount: 150},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -405,8 +405,8 @@ func (suite *DeleteTestSuite) TestFiltering() {
 		suite.NoError(err, "Should insert test users for subquery filtering")
 
 		testPosts := []*Post{
-			{Title: "Subquery Post 1", Content: "Content", UserId: testUsers[0].Id, CategoryId: "cat1", Status: "published"},
-			{Title: "Subquery Post 2", Content: "Content", UserId: testUsers[1].Id, CategoryId: "cat1", Status: "published"},
+			{Title: "Subquery Post 1", Content: "Content", UserID: testUsers[0].ID, CategoryID: "cat1", Status: "published"},
+			{Title: "Subquery Post 2", Content: "Content", UserID: testUsers[1].ID, CategoryID: "cat1", Status: "published"},
 		}
 
 		_, err = suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -458,7 +458,7 @@ func (suite *DeleteTestSuite) TestFiltering() {
 func (suite *DeleteTestSuite) TestOrdering() {
 	suite.T().Logf("Testing ordering methods for %s", suite.dbType)
 
-	if suite.dbType == constants.DbPostgres || suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.Postgres || suite.dbType == constants.SQLite {
 		suite.T().Skipf("%s doesn't support DELETE with ORDER BY/LIMIT in current configuration", suite.dbType)
 
 		return
@@ -515,9 +515,9 @@ func (suite *DeleteTestSuite) TestOrdering() {
 
 	suite.Run("OrderByDescending", func() {
 		testPosts := []*Post{
-			{Title: "Order Post A", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published", ViewCount: 10},
-			{Title: "Order Post B", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published", ViewCount: 50},
-			{Title: "Order Post C", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published", ViewCount: 100},
+			{Title: "Order Post A", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published", ViewCount: 10},
+			{Title: "Order Post B", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published", ViewCount: 50},
+			{Title: "Order Post C", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published", ViewCount: 100},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -611,7 +611,7 @@ func (suite *DeleteTestSuite) TestOrdering() {
 func (suite *DeleteTestSuite) TestLimit() {
 	suite.T().Logf("Testing Limit method for %s", suite.dbType)
 
-	if suite.dbType == constants.DbPostgres || suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.Postgres || suite.dbType == constants.SQLite {
 		suite.T().Skipf("%s doesn't support DELETE with LIMIT in current configuration", suite.dbType)
 
 		return
@@ -619,10 +619,10 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 	suite.Run("LimitBasic", func() {
 		testPosts := []*Post{
-			{Title: "Limit Post 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
-			{Title: "Limit Post 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
-			{Title: "Limit Post 3", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
-			{Title: "Limit Post 4", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
+			{Title: "Limit Post 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
+			{Title: "Limit Post 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
+			{Title: "Limit Post 3", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
+			{Title: "Limit Post 4", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -715,8 +715,8 @@ func (suite *DeleteTestSuite) TestLimit() {
 
 	suite.Run("LimitEdgeCases", func() {
 		testPosts := []*Post{
-			{Title: "Edge Limit 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published"},
-			{Title: "Edge Limit 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published"},
+			{Title: "Edge Limit 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published"},
+			{Title: "Edge Limit 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -745,7 +745,7 @@ func (suite *DeleteTestSuite) TestLimit() {
 func (suite *DeleteTestSuite) TestReturning() {
 	suite.T().Logf("Testing Returning methods for %s", suite.dbType)
 
-	if suite.dbType == constants.DbMySQL {
+	if suite.dbType == constants.MySQL {
 		suite.T().Skip("MySQL doesn't support RETURNING clause")
 
 		return
@@ -761,7 +761,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 		suite.NoError(err, "Should insert test users for returning")
 
 		type DeleteResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
@@ -780,10 +780,10 @@ func (suite *DeleteTestSuite) TestReturning() {
 		suite.Len(returnedUsers, 2, "Should return 2 deleted user records")
 
 		for i, user := range returnedUsers {
-			suite.NotEmpty(user.Id, "Returned ID should not be empty")
+			suite.NotEmpty(user.ID, "Returned ID should not be empty")
 			suite.NotEmpty(user.Name, "Returned name should not be empty")
 			suite.NotEmpty(user.Email, "Returned email should not be empty")
-			suite.T().Logf("Returned user %d: ID=%s, Name=%s, Email=%s", i+1, user.Id, user.Name, user.Email)
+			suite.T().Logf("Returned user %d: ID=%s, Name=%s, Email=%s", i+1, user.ID, user.Name, user.Email)
 		}
 
 		var deletedUsers []User
@@ -802,7 +802,7 @@ func (suite *DeleteTestSuite) TestReturning() {
 
 	suite.Run("ReturningAllColumns", func() {
 		testPosts := []*Post{
-			{Title: "Return All Post", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft", ViewCount: 10},
+			{Title: "Return All Post", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft", ViewCount: 10},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -822,12 +822,12 @@ func (suite *DeleteTestSuite) TestReturning() {
 		suite.Len(returnedPosts, 1, "Should return 1 deleted post")
 
 		post := returnedPosts[0]
-		suite.NotEmpty(post.Id, "Returned ID should not be empty")
+		suite.NotEmpty(post.ID, "Returned ID should not be empty")
 		suite.Equal("Return All Post", post.Title, "Returned title should match")
 		suite.Equal("draft", post.Status, "Returned status should match")
 		suite.Equal(10, post.ViewCount, "Returned view count should match")
 
-		suite.T().Logf("Deleted 1 post with RETURNING ALL: ID=%s, Title=%s", post.Id, post.Title)
+		suite.T().Logf("Deleted 1 post with RETURNING ALL: ID=%s, Title=%s", post.ID, post.Title)
 	})
 
 	suite.Run("ReturningNoColumns", func() {
@@ -909,8 +909,8 @@ func (suite *DeleteTestSuite) TestForceDelete() {
 
 	suite.Run("ForceDeleteBehavior", func() {
 		testPosts := []*Post{
-			{Title: "Force Post 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published"},
-			{Title: "Force Post 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
+			{Title: "Force Post 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published"},
+			{Title: "Force Post 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -994,8 +994,8 @@ func (suite *DeleteTestSuite) TestApply() {
 
 	suite.Run("ApplyIfTrue", func() {
 		testPosts := []*Post{
-			{Title: "ApplyIf Post 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
-			{Title: "ApplyIf Post 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published"},
+			{Title: "ApplyIf Post 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
+			{Title: "ApplyIf Post 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
@@ -1112,22 +1112,22 @@ func (suite *DeleteTestSuite) TestExecution() {
 	})
 
 	suite.Run("ScanWithReturning", func() {
-		if suite.dbType == constants.DbMySQL {
+		if suite.dbType == constants.MySQL {
 			suite.T().Skip("MySQL doesn't support RETURNING with Scan")
 
 			return
 		}
 
 		testPosts := []*Post{
-			{Title: "Scan Post 1", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "draft"},
-			{Title: "Scan Post 2", Content: "Content", UserId: "user1", CategoryId: "cat1", Status: "published"},
+			{Title: "Scan Post 1", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "draft"},
+			{Title: "Scan Post 2", Content: "Content", UserID: "user1", CategoryID: "cat1", Status: "published"},
 		}
 
 		_, err := suite.db.NewInsert().Model(&testPosts).Exec(suite.ctx)
 		suite.NoError(err, "Should insert test posts for scan")
 
 		type DeleteResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Title  string `bun:"title"`
 			Status string `bun:"status"`
 		}
@@ -1146,9 +1146,9 @@ func (suite *DeleteTestSuite) TestExecution() {
 		suite.Len(returnedPosts, 2, "Should return 2 deleted posts")
 
 		for _, post := range returnedPosts {
-			suite.NotEmpty(post.Id, "Returned ID should not be empty")
+			suite.NotEmpty(post.ID, "Returned ID should not be empty")
 			suite.NotEmpty(post.Title, "Returned title should not be empty")
-			suite.T().Logf("Scanned deleted post: ID=%s, Title=%s, Status=%s", post.Id, post.Title, post.Status)
+			suite.T().Logf("Scanned deleted post: ID=%s, Title=%s, Status=%s", post.ID, post.Title, post.Status)
 		}
 	})
 

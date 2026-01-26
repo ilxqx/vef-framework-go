@@ -1,6 +1,11 @@
 package orm
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/ilxqx/vef-framework-go/dbhelpers"
+	"github.com/ilxqx/vef-framework-go/result"
+)
 
 var (
 	ErrSubQuery                     = errors.New("cannot execute a subquery directly; use it as part of a parent query")
@@ -12,3 +17,41 @@ var (
 	ErrModelMustBePointerToStruct   = errors.New("model must be a pointer to struct")
 	ErrPrimaryKeyUnsupportedType    = errors.New("unsupported primary key type")
 )
+
+// translateWriteError converts database-specific errors to framework errors.
+// It handles duplicate key and foreign key violations with appropriate logging.
+func translateWriteError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if dbhelpers.IsDuplicateKeyError(err) {
+		logger.Warnf("Record already exists: %v", err)
+
+		return result.ErrRecordAlreadyExists
+	}
+
+	if dbhelpers.IsForeignKeyError(err) {
+		logger.Warnf("Foreign key violation: %v", err)
+
+		return result.ErrForeignKeyViolation
+	}
+
+	return err
+}
+
+// translateDeleteError converts database-specific errors to framework errors for delete operations.
+// It only handles foreign key violations since duplicate key errors don't apply to deletes.
+func translateDeleteError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if dbhelpers.IsForeignKeyError(err) {
+		logger.Warnf("Foreign key violation: %v", err)
+
+		return result.ErrForeignKeyViolation
+	}
+
+	return err
+}

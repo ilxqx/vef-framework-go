@@ -63,16 +63,8 @@ func (p *ProxyMiddleware) handleFileProxy(ctx fiber.Ctx) error {
 		logger.Warnf("Failed to stat object %s: %v", key, err)
 	}
 
-	if stat != nil && stat.ContentType != constants.Empty {
-		ctx.Set(fiber.HeaderContentType, stat.ContentType)
-	} else {
-		ext := filepath.Ext(key)
-		if contentType := mime.TypeByExtension(ext); contentType != constants.Empty {
-			ctx.Set(fiber.HeaderContentType, contentType)
-		} else {
-			ctx.Set(fiber.HeaderContentType, fiber.MIMEOctetStream)
-		}
-	}
+	contentType := detectContentType(stat, key)
+	ctx.Set(fiber.HeaderContentType, contentType)
 
 	ctx.Set(fiber.HeaderCacheControl, "public, max-age=86400, must-revalidate")
 
@@ -87,4 +79,16 @@ func NewProxyMiddleware(service storage.Service) app.Middleware {
 	return &ProxyMiddleware{
 		service: service,
 	}
+}
+
+func detectContentType(stat *storage.ObjectInfo, key string) string {
+	if stat != nil && stat.ContentType != constants.Empty {
+		return stat.ContentType
+	}
+
+	if contentType := mime.TypeByExtension(filepath.Ext(key)); contentType != constants.Empty {
+		return contentType
+	}
+
+	return fiber.MIMEOctetStream
 }

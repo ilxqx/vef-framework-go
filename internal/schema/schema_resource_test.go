@@ -64,7 +64,7 @@ func (suite *SchemaResourceTestSuite) TestSQLiteResource() {
 	suite.T().Log("Testing Schema Resource for SQLite")
 
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	suite.runResourceTests(dsConfig, "SQLite")
@@ -72,20 +72,20 @@ func (suite *SchemaResourceTestSuite) TestSQLiteResource() {
 
 func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.DatasourceConfig, dbType string) {
 	var (
-		bunDb   *bun.DB
+		bunDB   *bun.DB
 		testApp *app.App
 	)
 
 	testApp, stop := apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(dsConfig),
-		fx.Populate(&bunDb),
+		fx.Populate(&bunDB),
 	)
 
 	defer stop()
 
-	suite.setupTestTables(bunDb.DB, dsConfig.Type)
-	defer suite.cleanupTestTables(bunDb.DB, dsConfig.Type)
+	suite.setupTestTables(bunDB.DB, dsConfig.Type)
+	defer suite.cleanupTestTables(bunDB.DB, dsConfig.Type)
 
 	suite.Run("ListTables", func() {
 		resp := suite.makeApiRequest(testApp, api.Request{
@@ -231,7 +231,7 @@ func (suite *SchemaResourceTestSuite) runResourceTests(dsConfig *config.Datasour
 }
 
 func (suite *SchemaResourceTestSuite) makeApiRequest(testApp *app.App, body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJson(body)
+	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
@@ -249,17 +249,17 @@ func (suite *SchemaResourceTestSuite) readBody(resp *http.Response) result.Resul
 
 	suite.Require().NoError(err, "Should read response body")
 
-	res, err := encoding.FromJson[result.Result](string(body))
+	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err, "Should decode response JSON")
 
 	return *res
 }
 
-func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constants.DbType) {
+func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
 	var ordersSql, itemsSql string
 
 	switch dbType {
-	case constants.DbPostgres:
+	case constants.Postgres:
 		ordersSql = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id SERIAL PRIMARY KEY,
@@ -278,7 +278,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
 
-	case constants.DbMySQL:
+	case constants.MySQL:
 		ordersSql = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id INT AUTO_INCREMENT PRIMARY KEY,
@@ -299,7 +299,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 				INDEX idx_items_order (order_id)
 			)`
 
-	case constants.DbSQLite:
+	case constants.SQLite:
 		ordersSql = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -326,7 +326,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 	suite.Require().NoError(err, "Creating resource_test_items table should succeed")
 }
 
-func (suite *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ constants.DbType) {
+func (suite *SchemaResourceTestSuite) cleanupTestTables(db *sql.DB, _ constants.DBType) {
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_items")
 	_, _ = db.ExecContext(suite.ctx, "DROP TABLE IF EXISTS resource_test_orders")
 }

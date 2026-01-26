@@ -160,31 +160,31 @@ type AuditConditionBuilder interface {
 	OrUpdatedAtNotBetween(start, end time.Time, alias ...string) ConditionBuilder
 }
 
-// PkConditionBuilder is a builder for primary key conditions.
-type PkConditionBuilder interface {
-	// PkEquals is a condition that checks if the primary key is equal to a value.
-	PkEquals(pk any, alias ...string) ConditionBuilder
-	// OrPkEquals is a condition that checks if the primary key is equal to a value.
-	OrPkEquals(pk any, alias ...string) ConditionBuilder
-	// PkNotEquals is a condition that checks if the primary key is not equal to a value.
-	PkNotEquals(pk any, alias ...string) ConditionBuilder
-	// OrPkNotEquals is a condition that checks if the primary key is not equal to a value.
-	OrPkNotEquals(pk any, alias ...string) ConditionBuilder
-	// PkIn is a condition that checks if the primary key is in a list of values.
-	PkIn(pks any, alias ...string) ConditionBuilder
-	// OrPkIn is a condition that checks if the primary key is in a list of values.
-	OrPkIn(pks any, alias ...string) ConditionBuilder
-	// PkNotIn is a condition that checks if the primary key is not in a list of values.
-	PkNotIn(pks any, alias ...string) ConditionBuilder
-	// OrPkNotIn is a condition that checks if the primary key is not in a list of values.
-	OrPkNotIn(pks any, alias ...string) ConditionBuilder
+// PKConditionBuilder is a builder for primary key conditions.
+type PKConditionBuilder interface {
+	// PKEquals is a condition that checks if the primary key is equal to a value.
+	PKEquals(pk any, alias ...string) ConditionBuilder
+	// OrPKEquals is a condition that checks if the primary key is equal to a value.
+	OrPKEquals(pk any, alias ...string) ConditionBuilder
+	// PKNotEquals is a condition that checks if the primary key is not equal to a value.
+	PKNotEquals(pk any, alias ...string) ConditionBuilder
+	// OrPKNotEquals is a condition that checks if the primary key is not equal to a value.
+	OrPKNotEquals(pk any, alias ...string) ConditionBuilder
+	// PKIn is a condition that checks if the primary key is in a list of values.
+	PKIn(pks any, alias ...string) ConditionBuilder
+	// OrPKIn is a condition that checks if the primary key is in a list of values.
+	OrPKIn(pks any, alias ...string) ConditionBuilder
+	// PKNotIn is a condition that checks if the primary key is not in a list of values.
+	PKNotIn(pks any, alias ...string) ConditionBuilder
+	// OrPKNotIn is a condition that checks if the primary key is not in a list of values.
+	OrPKNotIn(pks any, alias ...string) ConditionBuilder
 }
 
 // ConditionBuilder is a builder for conditions.
 type ConditionBuilder interface {
 	Applier[ConditionBuilder]
 	AuditConditionBuilder
-	PkConditionBuilder
+	PKConditionBuilder
 	// Equals is a condition that checks if a column is equal to a value.
 	Equals(column string, value any) ConditionBuilder
 	// OrEquals is a condition that checks if a column is equal to a value.

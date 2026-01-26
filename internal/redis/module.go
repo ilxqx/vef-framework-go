@@ -19,13 +19,7 @@ var Module = fx.Module(
 					return fmt.Errorf("failed to connect to redis: %w", err)
 				}
 
-				if err := logRedisServerInfo(ctx, client); err != nil {
-					return fmt.Errorf("failed to get redis server info: %w", err)
-				}
-
-				logger.Infof("Redis client started successfully: %s", client.Options().Addr)
-
-				return nil
+				return logRedisServerInfo(ctx, client)
 			}),
 			fx.OnStop(func(client *redis.Client) error {
 				logger.Info("Closing Redis client...")

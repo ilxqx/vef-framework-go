@@ -14,32 +14,31 @@ import (
 // MemoryBus is a simple, thread-safe in-memory event bus implementation.
 type MemoryBus struct {
 	middlewares []event.Middleware
-
-	// Event subscription management
 	subscribers map[string]map[string]*subscription
-
-	// Event processing
-	eventCh chan *eventMessage
-
-	// Lifecycle management
-	ctx     context.Context
-	cancel  context.CancelFunc
-	wg      sync.WaitGroup
-	mu      sync.RWMutex
-	started bool
+	eventCh     chan event.Event
+	ctx         context.Context
+	cancel      context.CancelFunc
+	wg          sync.WaitGroup
+	mu          sync.RWMutex
+	started     bool
 }
 
 // subscription represents an event subscription.
 type subscription struct {
-	id        string
-	eventType string
-	handler   event.HandlerFunc
-	created   time.Time
+	id      string
+	handler event.HandlerFunc
 }
 
-// eventMessage wraps an event for processing.
-type eventMessage struct {
-	event event.Event
+// NewMemoryBus creates an in-memory event bus.
+func NewMemoryBus(middlewares []event.Middleware) event.Bus {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &MemoryBus{
+		middlewares: middlewares,
+		subscribers: make(map[string]map[string]*subscription),
+		eventCh:     make(chan event.Event, 1000),
+		ctx:         ctx,
+		cancel:      cancel,
+	}
 }
 
 // Start initializes and starts the event bus.
@@ -89,99 +88,73 @@ func (b *MemoryBus) Shutdown(ctx context.Context) error {
 	}
 }
 
-// Publish publishes an event asynchronously and returns a completion channel.
-func (b *MemoryBus) Publish(event event.Event) {
-	message := &eventMessage{
-		event: event,
-	}
-
-	b.eventCh <- message
+// Publish publishes an event asynchronously.
+func (b *MemoryBus) Publish(evt event.Event) {
+	b.eventCh <- evt
 }
 
 // Subscribe registers a handler for specific event types.
 func (b *MemoryBus) Subscribe(eventType string, handler event.HandlerFunc) event.UnsubscribeFunc {
-	id := id.GenerateUuid()
+	subID := id.GenerateUUID()
 	sub := &subscription{
-		id:        id,
-		eventType: eventType,
-		handler:   handler,
-		created:   time.Now(),
+		id:      subID,
+		handler: handler,
 	}
 
 	b.mu.Lock()
-
 	if b.subscribers[eventType] == nil {
 		b.subscribers[eventType] = make(map[string]*subscription)
 	}
-
-	b.subscribers[eventType][id] = sub
+	b.subscribers[eventType][subID] = sub
 	b.mu.Unlock()
 
-	unsubscribe := func() {
+	return func() {
 		b.mu.Lock()
 		defer b.mu.Unlock()
 
 		if subs, exists := b.subscribers[eventType]; exists {
-			if _, exists := subs[id]; exists {
-				delete(subs, id)
-
-				if len(subs) == 0 {
-					delete(b.subscribers, eventType)
-				}
+			delete(subs, subID)
+			if len(subs) == 0 {
+				delete(b.subscribers, eventType)
 			}
 		}
 	}
-
-	return unsubscribe
 }
 
 // processEvents is the main event processing goroutine.
 func (b *MemoryBus) processEvents() {
 	for {
 		select {
-		case message, ok := <-b.eventCh:
+		case evt, ok := <-b.eventCh:
 			if !ok {
 				return
 			}
-
-			go b.handleEvent(message)
-
+			go b.deliverEvent(evt)
 		case <-b.ctx.Done():
 			return
 		}
 	}
 }
 
-// handleEvent processes a single event message.
-func (b *MemoryBus) handleEvent(message *eventMessage) {
-	if err := b.deliverEvent(message.event); err != nil {
-		logger.Errorf("Error delivering event: %v", err)
-	}
-}
-
 // deliverEvent delivers an event to all matching subscribers.
-func (b *MemoryBus) deliverEvent(evt event.Event) error {
+func (b *MemoryBus) deliverEvent(evt event.Event) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
-
-	eventType := evt.Type()
 
 	processedEvent := evt
 	if err := streams.FromSlice(b.middlewares).ForEachErr(func(middleware event.Middleware) error {
 		return middleware.Process(b.ctx, processedEvent, func(ctx context.Context, e event.Event) error {
 			processedEvent = e
-
 			return nil
 		})
 	}); err != nil {
-		return err
+		logger.Errorf("Error processing event middleware: %v", err)
+		return
 	}
 
-	if subs, exists := b.subscribers[eventType]; exists {
+	if subs, exists := b.subscribers[evt.Type()]; exists {
 		for _, sub := range subs {
 			sub.handler(b.ctx, processedEvent)
 		}
 	}
-
-	return nil
 }

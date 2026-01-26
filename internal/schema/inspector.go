@@ -16,7 +16,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-var ErrUnsupportedDbType = errors.New("unsupported database type")
+var ErrUnsupportedDBType = errors.New("unsupported database type")
 
 type AtlasInspector struct {
 	inspector as.Inspector
@@ -24,40 +24,31 @@ type AtlasInspector struct {
 }
 
 // NewInspector creates a new Atlas Inspector for the given database connection.
-func NewInspector(db *sql.DB, dbType constants.DbType, schemaName string) (Inspector, error) {
-	var (
-		inspector as.Inspector
-		schema    string
-		err       error
-	)
+func NewInspector(db *sql.DB, dbType constants.DBType, schemaName string) (Inspector, error) {
+	var inspector as.Inspector
+	var schema string
+	var err error
 
 	switch dbType {
-	case constants.DbPostgres:
+	case constants.Postgres:
 		inspector, err = postgres.Open(db)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open postgres inspector: %w", err)
-		}
-
 		schema = lo.CoalesceOrEmpty(schemaName, "public")
 
-	case constants.DbMySQL:
+	case constants.MySQL:
 		inspector, err = mysql.Open(db)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open mysql inspector: %w", err)
-		}
 		// For MySQL, schema is the database name, which is already set in the connection
 		schema = constants.Empty
 
-	case constants.DbSQLite:
+	case constants.SQLite:
 		inspector, err = sqlite.Open(db)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open sqlite inspector: %w", err)
-		}
-
 		schema = "main"
 
 	default:
-		return nil, fmt.Errorf("%w: %s", ErrUnsupportedDbType, dbType)
+		return nil, fmt.Errorf("%w: %s", ErrUnsupportedDBType, dbType)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %s inspector: %w", dbType, err)
 	}
 
 	return &AtlasInspector{

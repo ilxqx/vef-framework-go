@@ -17,10 +17,10 @@ const refreshTokenNotBefore = time.Duration(0)
 // Rate limits for authentication endpoints in test environment.
 // High limits prevent test failures from rate limiting.
 var (
-	loginRateLimit = api.RateLimit{
+	loginRateLimit = &api.RateLimitConfig{
 		Max: 1000,
 	}
-	refreshRateLimit = api.RateLimit{
+	refreshRateLimit = &api.RateLimitConfig{
 		Max: 1000,
 	}
 )

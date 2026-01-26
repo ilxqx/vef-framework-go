@@ -3,40 +3,36 @@ package tabular
 import (
 	"errors"
 	"fmt"
-
-	"github.com/ilxqx/vef-framework-go/constants"
 )
 
 // ErrUnsupportedType indicates the target type is not supported by the parser.
 var ErrUnsupportedType = errors.New("unsupported type")
 
+func formatRowError(row int, column, field string, err error) string {
+	switch {
+	case column != "" && field != "":
+		return fmt.Sprintf("row %d, column %s (field %s): %v", row, column, field, err)
+	case column != "":
+		return fmt.Sprintf("row %d, column %s: %v", row, column, err)
+	case field != "":
+		return fmt.Sprintf("row %d, field %s: %v", row, field, err)
+	default:
+		return fmt.Sprintf("row %d: %v", row, err)
+	}
+}
+
 // ImportError represents an error that occurred during data import.
+// Row is 1-based and includes the header row.
 type ImportError struct {
-	// Row is the row number where the error occurred (1-based, includes header row)
-	Row int
-	// Column is the column name where the error occurred (optional)
+	Row    int
 	Column string
-	// Field is the struct field name where the error occurred (optional)
-	Field string
-	// Err is the underlying error
-	Err error
+	Field  string
+	Err    error
 }
 
 // Error implements the error interface.
 func (e ImportError) Error() string {
-	if e.Column != constants.Empty && e.Field != constants.Empty {
-		return fmt.Sprintf("row %d, column %s (field %s): %v", e.Row, e.Column, e.Field, e.Err)
-	}
-
-	if e.Column != constants.Empty {
-		return fmt.Sprintf("row %d, column %s: %v", e.Row, e.Column, e.Err)
-	}
-
-	if e.Field != constants.Empty {
-		return fmt.Sprintf("row %d, field %s: %v", e.Row, e.Field, e.Err)
-	}
-
-	return fmt.Sprintf("row %d: %v", e.Row, e.Err)
+	return formatRowError(e.Row, e.Column, e.Field, e.Err)
 }
 
 // Unwrap returns the underlying error.
@@ -45,32 +41,17 @@ func (e ImportError) Unwrap() error {
 }
 
 // ExportError represents an error that occurred during data export.
+// Row is 0-based data row index.
 type ExportError struct {
-	// Row is the data row index where the error occurred (0-based)
-	Row int
-	// Column is the column name where the error occurred (optional)
+	Row    int
 	Column string
-	// Field is the struct field name where the error occurred (optional)
-	Field string
-	// Err is the underlying error
-	Err error
+	Field  string
+	Err    error
 }
 
 // Error implements the error interface.
 func (e ExportError) Error() string {
-	if e.Column != constants.Empty && e.Field != constants.Empty {
-		return fmt.Sprintf("row %d, column %s (field %s): %v", e.Row, e.Column, e.Field, e.Err)
-	}
-
-	if e.Column != constants.Empty {
-		return fmt.Sprintf("row %d, column %s: %v", e.Row, e.Column, e.Err)
-	}
-
-	if e.Field != constants.Empty {
-		return fmt.Sprintf("row %d, field %s: %v", e.Row, e.Field, e.Err)
-	}
-
-	return fmt.Sprintf("row %d: %v", e.Row, e.Err)
+	return formatRowError(e.Row, e.Column, e.Field, e.Err)
 }
 
 // Unwrap returns the underlying error.

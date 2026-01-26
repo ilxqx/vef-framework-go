@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRandomIdGenerator(t *testing.T) {
+func TestRandomIDGenerator(t *testing.T) {
 	t.Run("CreateWithCustomAlphabetAndLength", func(t *testing.T) {
 		alphabet := "0123456789ABCDEF"
 		length := 16
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 		assert.NotNil(t, generator, "Generator should not be nil")
 
 		id := generator.Generate()
@@ -24,10 +24,10 @@ func TestRandomIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("GenerateUniqueIdsWithDefaultAlphabet", func(t *testing.T) {
+	t.Run("GenerateUniqueIDsWithDefaultAlphabet", func(t *testing.T) {
 		alphabet := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 		length := 21
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		ids := make(map[string]bool)
 		iterations := 10000
@@ -44,7 +44,7 @@ func TestRandomIdGenerator(t *testing.T) {
 	t.Run("NumericAlphabet", func(t *testing.T) {
 		alphabet := "0123456789"
 		length := 10
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		id := generator.Generate()
 		assert.Len(t, id, length, "ID should have correct length")
@@ -58,7 +58,7 @@ func TestRandomIdGenerator(t *testing.T) {
 	t.Run("AlphabeticCharacters", func(t *testing.T) {
 		alphabet := "abcdefghijklmnopqrstuvwxyz"
 		length := 12
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		id := generator.Generate()
 		assert.Len(t, id, length, "ID should have correct length")
@@ -69,10 +69,10 @@ func TestRandomIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("ShortIds", func(t *testing.T) {
+	t.Run("ShortIDs", func(t *testing.T) {
 		alphabet := "ABCDEF"
 		length := 4
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		id := generator.Generate()
 		assert.Len(t, id, length, "ID should have correct length")
@@ -83,10 +83,10 @@ func TestRandomIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("LongIds", func(t *testing.T) {
+	t.Run("LongIDs", func(t *testing.T) {
 		alphabet := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		length := 128
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		id := generator.Generate()
 		assert.Len(t, id, length, "ID should have correct length")
@@ -100,7 +100,7 @@ func TestRandomIdGenerator(t *testing.T) {
 	t.Run("ThreadSafe", func(t *testing.T) {
 		alphabet := "0123456789abcdefghijklmnopqrstuvwxyz"
 		length := 16
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		const (
 			numGoroutines   = 100
@@ -132,7 +132,7 @@ func TestRandomIdGenerator(t *testing.T) {
 	t.Run("SingleCharacterAlphabet", func(t *testing.T) {
 		alphabet := "A"
 		length := 5
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		id := generator.Generate()
 		assert.Equal(t, "AAAAA", id, "Single character alphabet should repeat character")
@@ -141,7 +141,7 @@ func TestRandomIdGenerator(t *testing.T) {
 	t.Run("SpecialCharacters", func(t *testing.T) {
 		alphabet := "!@#$%^&*()"
 		length := 8
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		id := generator.Generate()
 		assert.Len(t, id, length, "ID should have correct length")
@@ -152,10 +152,10 @@ func TestRandomIdGenerator(t *testing.T) {
 		}
 	})
 
-	t.Run("DifferentIdsWithSameParameters", func(t *testing.T) {
+	t.Run("DifferentIDsWithSameParameters", func(t *testing.T) {
 		alphabet := "0123456789abcdef"
 		length := 20
-		generator := NewRandomIdGenerator(alphabet, length)
+		generator := NewRandomIDGenerator(alphabet, length)
 
 		ids := make([]string, 100)
 		for i := range ids {

@@ -7,14 +7,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
 
-// NewContentTypeMiddleware enforces JSON/multipart for state-changing requests to prevent accidental form submissions.
+// NewContentTypeMiddleware enforces JSON/multipart for POST/PUT requests.
 func NewContentTypeMiddleware() app.Middleware {
 	return &SimpleMiddleware{
 		handler: func(ctx fiber.Ctx) error {
 			method := ctx.Method()
-			if method != fiber.MethodPost && method != fiber.MethodPut ||
-				webhelpers.IsJson(ctx) ||
-				webhelpers.IsMultipart(ctx) {
+			isStateChanging := method == fiber.MethodPost || method == fiber.MethodPut
+			if !isStateChanging || webhelpers.IsJSON(ctx) || webhelpers.IsMultipart(ctx) {
 				return ctx.Next()
 			}
 

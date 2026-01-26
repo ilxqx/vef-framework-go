@@ -22,9 +22,10 @@ func (m *SimpleMiddleware) Order() int {
 }
 
 func (m *SimpleMiddleware) Apply(router fiber.Router) {
-	if m.path != constants.Empty {
-		router.Use(m.path, m.handler)
-	} else {
+	if m.path == constants.Empty {
 		router.Use(m.handler)
+		return
 	}
+
+	router.Use(m.path, m.handler)
 }

@@ -1,7 +1,4 @@
 package constants
 
-const (
-	// VEFVersion represents the current version of the VEF Framework.
-	// This version number follows semantic versioning (semver) format.
-	VEFVersion = "v0.17.1"
-)
+// VEFVersion is the current version of the VEF Framework (semver format).
+const VEFVersion = "v0.17.1"

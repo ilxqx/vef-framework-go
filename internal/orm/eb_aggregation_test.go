@@ -106,7 +106,7 @@ func (suite *AggregationFunctionsTestSuite) TestCountColumn() {
 		type DistinctStats struct {
 			UniqueStatuses   int64 `bun:"unique_statuses"`
 			UniqueCategories int64 `bun:"unique_categories"`
-			DistinctUserIds  int64 `bun:"distinct_user_ids"`
+			DistinctUserIDs  int64 `bun:"distinct_user_ids"`
 		}
 
 		var stats DistinctStats
@@ -127,10 +127,10 @@ func (suite *AggregationFunctionsTestSuite) TestCountColumn() {
 		suite.NoError(err, "DISTINCT CountColumn should work")
 		suite.True(stats.UniqueStatuses > 0, "Should have unique statuses")
 		suite.True(stats.UniqueCategories > 0, "Should have unique categories")
-		suite.True(stats.DistinctUserIds > 0, "Should have distinct user IDs")
+		suite.True(stats.DistinctUserIDs > 0, "Should have distinct user IDs")
 
 		suite.T().Logf("Unique statuses: %d, categories: %d, users: %d",
-			stats.UniqueStatuses, stats.UniqueCategories, stats.DistinctUserIds)
+			stats.UniqueStatuses, stats.UniqueCategories, stats.DistinctUserIDs)
 	})
 }
 
@@ -643,7 +643,7 @@ func (suite *AggregationFunctionsTestSuite) TestArrayAgg() {
 		suite.True(len(result.UniqueStatuses) > 0, "Should have unique statuses")
 
 		// Verify ordering (only PostgreSQL supports ORDER BY in ARRAY_AGG)
-		if suite.dbType == constants.DbPostgres {
+		if suite.dbType == constants.Postgres {
 			for i := 1; i < len(result.ViewCountArray); i++ {
 				suite.True(result.ViewCountArray[i-1] >= result.ViewCountArray[i],
 					"View counts should be in descending order")
@@ -699,7 +699,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonObjectAgg() {
 			Model((*Post)(nil)).
 			Select("status").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonObjectAgg(func(joab JsonObjectAggBuilder) {
+				return eb.JSONObjectAgg(func(joab JSONObjectAggBuilder) {
 					joab.KeyColumn("id")
 					joab.Column("title")
 				})
@@ -726,7 +726,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 	suite.Run("JsonArrayAggBasic", func() {
 		type JsonArrayAggResult struct {
 			Status     string `bun:"status"`
-			TitlesJson string `bun:"titles_json"`
+			TitlesJSON string `bun:"titles_json"`
 		}
 
 		var results []JsonArrayAggResult
@@ -735,7 +735,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 			Model((*Post)(nil)).
 			Select("status").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonArrayAgg(func(jaab JsonArrayAggBuilder) {
+				return eb.JSONArrayAgg(func(jaab JSONArrayAggBuilder) {
 					jaab.Column("title")
 				})
 			}, "titles_json").
@@ -747,13 +747,13 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 		suite.True(len(results) > 0, "Should have JsonArrayAgg results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.TitlesJson, "Aggregated JSON array should not be empty")
-			suite.T().Logf("Status: %s, JSON Array: %s", result.Status, result.TitlesJson)
+			suite.NotEmpty(result.TitlesJSON, "Aggregated JSON array should not be empty")
+			suite.T().Logf("Status: %s, JSON Array: %s", result.Status, result.TitlesJSON)
 		}
 	})
 
 	suite.Run("JsonArrayAggWithOrdering", func() {
-		if suite.dbType == constants.DbMySQL {
+		if suite.dbType == constants.MySQL {
 			suite.T().Skipf("JsonArrayAgg with ORDER BY skipped for %s (MySQL does not support ORDER BY in JSON_ARRAYAGG)", suite.dbType)
 
 			return
@@ -761,7 +761,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 
 		type OrderedJsonArray struct {
 			Status     string `bun:"status"`
-			TitlesJson string `bun:"titles_json"`
+			TitlesJSON string `bun:"titles_json"`
 		}
 
 		var results []OrderedJsonArray
@@ -770,7 +770,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 			Model((*Post)(nil)).
 			Select("status").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonArrayAgg(func(jaab JsonArrayAggBuilder) {
+				return eb.JSONArrayAgg(func(jaab JSONArrayAggBuilder) {
 					jaab.Column("title").OrderBy("view_count")
 				})
 			}, "titles_json").
@@ -782,13 +782,13 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 		suite.True(len(results) > 0, "Should have results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.TitlesJson, "JSON array should not be empty")
-			suite.T().Logf("Status: %s, Ordered JSON Array: %s", result.Status, result.TitlesJson)
+			suite.NotEmpty(result.TitlesJSON, "JSON array should not be empty")
+			suite.T().Logf("Status: %s, Ordered JSON Array: %s", result.Status, result.TitlesJSON)
 		}
 	})
 
 	suite.Run("JsonArrayAggWithDistinct", func() {
-		if suite.dbType == constants.DbMySQL {
+		if suite.dbType == constants.MySQL {
 			suite.T().Skipf("JsonArrayAgg with DISTINCT skipped for %s (MySQL does not support DISTINCT in JSON_ARRAYAGG)", suite.dbType)
 
 			return
@@ -803,7 +803,7 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.JsonArrayAgg(func(jaab JsonArrayAggBuilder) {
+				return eb.JSONArrayAgg(func(jaab JSONArrayAggBuilder) {
 					jaab.Column("status").Distinct()
 				})
 			}, "all_statuses").
@@ -1064,7 +1064,7 @@ func (suite *AggregationFunctionsTestSuite) TestStdDev() {
 	suite.T().Logf("Testing StdDev function for %s", suite.dbType)
 
 	suite.Run("BasicStdDev", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 		}
 
@@ -1103,7 +1103,7 @@ func (suite *AggregationFunctionsTestSuite) TestStdDev() {
 	})
 
 	suite.Run("CombinedStatisticalFunctions", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skipf("StdDev skipped for %s (SQLite does not support statistical functions)", suite.dbType)
 		}
 
@@ -1164,7 +1164,7 @@ func (suite *AggregationFunctionsTestSuite) TestVariance() {
 	suite.T().Logf("Testing Variance function for %s", suite.dbType)
 
 	suite.Run("BasicVariance", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skipf("Variance skipped for %s (SQLite not supported)", suite.dbType)
 		}
 
@@ -1203,7 +1203,7 @@ func (suite *AggregationFunctionsTestSuite) TestVariance() {
 	})
 
 	suite.Run("VarianceWithPopulationAndSample", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skipf("Variance with modes skipped for %s (SQLite not supported)", suite.dbType)
 		}
 

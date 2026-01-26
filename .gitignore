@@ -30,15 +30,11 @@ go.work.sum
 .claude/
 .factory/
 .kiro/
-.mcp.json
 openspec
 CLAUDE.md
 AGENTS.md
 TEST_GUIDELINES.md
 cmd/CMD_DEV_GUIDELINES.md
-APPROVAL.md
-approval/
-internal/approval/
 
 # shell scripts
 *.sh

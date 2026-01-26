@@ -131,52 +131,28 @@ func parseDecimalRange(values []string) (any, any, bool) {
 }
 
 func parseDateRange(values []string) (any, any, bool) {
-	start, err := time.ParseInLocation(time.DateOnly, values[0], time.Local)
-	if err != nil {
-		logger.Warnf("Invalid range value, expected date, got %v", values[0])
-
-		return nil, nil, false
-	}
-
-	end, err := time.ParseInLocation(time.DateOnly, values[1], time.Local)
-	if err != nil {
-		logger.Warnf("Invalid range value, expected date, got %v", values[1])
-
-		return nil, nil, false
-	}
-
-	return start, end, true
+	return parseTimeRangeWithLayout(values, time.DateOnly, "date")
 }
 
 func parseTimeRange(values []string) (any, any, bool) {
-	start, err := time.ParseInLocation(time.TimeOnly, values[0], time.Local)
-	if err != nil {
-		logger.Warnf("Invalid range value, expected time, got %v", values[0])
-
-		return nil, nil, false
-	}
-
-	end, err := time.ParseInLocation(time.TimeOnly, values[1], time.Local)
-	if err != nil {
-		logger.Warnf("Invalid range value, expected time, got %v", values[1])
-
-		return nil, nil, false
-	}
-
-	return start, end, true
+	return parseTimeRangeWithLayout(values, time.TimeOnly, "time")
 }
 
 func parseDateTimeRange(values []string) (any, any, bool) {
-	start, err := time.ParseInLocation(time.DateTime, values[0], time.Local)
+	return parseTimeRangeWithLayout(values, time.DateTime, "datetime")
+}
+
+func parseTimeRangeWithLayout(values []string, layout, typeName string) (any, any, bool) {
+	start, err := time.ParseInLocation(layout, values[0], time.Local)
 	if err != nil {
-		logger.Warnf("Invalid range value, expected datetime, got %v", values[0])
+		logger.Warnf("Invalid range value, expected %s, got %v", typeName, values[0])
 
 		return nil, nil, false
 	}
 
-	end, err := time.ParseInLocation(time.DateTime, values[1], time.Local)
+	end, err := time.ParseInLocation(layout, values[1], time.Local)
 	if err != nil {
-		logger.Warnf("Invalid range value, expected datetime, got %v", values[1])
+		logger.Warnf("Invalid range value, expected %s, got %v", typeName, values[1])
 
 		return nil, nil, false
 	}

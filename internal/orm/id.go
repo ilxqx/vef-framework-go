@@ -23,5 +23,5 @@ func (*IdHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, field *schema.Fie
 
 // Name returns the column name for the ID field.
 func (*IdHandler) Name() string {
-	return constants.ColumnId
+	return constants.ColumnID
 }

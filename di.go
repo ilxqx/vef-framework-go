@@ -106,9 +106,9 @@ func ProvideSpaConfig(constructor any, paramTags ...string) fx.Option {
 	)
 }
 
-// SupplySpaConfigs supplies multiple Single Page Application configurations to the dependency injection container.
+// SupplySPAConfigs supplies multiple Single Page Application configurations to the dependency injection container.
 // All configs will be registered in the "vef:spa" group.
-func SupplySpaConfigs(config *middleware.SpaConfig, configs ...*middleware.SpaConfig) fx.Option {
+func SupplySPAConfigs(config *middleware.SPAConfig, configs ...*middleware.SPAConfig) fx.Option {
 	spaConfigs := make([]any, 0, len(configs)+1)
 
 	spaConfigs = append(
@@ -121,7 +121,7 @@ func SupplySpaConfigs(config *middleware.SpaConfig, configs ...*middleware.SpaCo
 	if len(configs) > 0 {
 		spaConfigs = append(
 			spaConfigs,
-			lo.Map(configs, func(item *middleware.SpaConfig, _ int) any {
+			lo.Map(configs, func(item *middleware.SPAConfig, _ int) any {
 				return fx.Annotate(
 					item,
 					fx.ResultTags(`group:"vef:spa"`),

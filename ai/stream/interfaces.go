@@ -18,7 +18,7 @@ type StreamWriter interface {
 type CallbackWriter interface {
 	WriteText(content string)
 	WriteToolCall(id, name, arguments string)
-	WriteToolResult(toolCallId, content string)
+	WriteToolResult(toolCallID, content string)
 	WriteReasoning(reasoning string)
 	WriteData(dataType string, data any)
 	WriteMessage(msg Message)

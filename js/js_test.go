@@ -9,14 +9,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/js"
 )
 
-// TestNew tests the creation of a new JavaScript runtime with preloaded libraries.
 func TestNew(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err, "New() should create runtime successfully")
 	require.NotNil(t, vm, "Runtime should not be nil")
 }
 
-// TestDayJs tests the Day.js library functionality.
 func TestDayJs(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err)
@@ -66,7 +64,6 @@ func TestDayJs(t *testing.T) {
 	}
 }
 
-// TestBigJs tests the Big.js library functionality.
 func TestBigJs(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err)
@@ -112,7 +109,6 @@ func TestBigJs(t *testing.T) {
 	}
 }
 
-// TestRadashUtils tests the Radash utility library functionality.
 func TestRadashUtils(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err)
@@ -194,7 +190,6 @@ func TestRadashUtils(t *testing.T) {
 	}
 }
 
-// TestValidatorJs tests the Validator.js library functionality.
 func TestValidatorJs(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err)
@@ -265,7 +260,6 @@ func TestValidatorJs(t *testing.T) {
 	}
 }
 
-// TestCombinedLibraries tests using multiple libraries together.
 func TestCombinedLibraries(t *testing.T) {
 	t.Run("DateFormattingAndValidation", func(t *testing.T) {
 		vm, err := js.New()
@@ -326,7 +320,6 @@ func TestCombinedLibraries(t *testing.T) {
 	})
 }
 
-// TestGoJavaScriptInterop tests data exchange between Go and JavaScript.
 func TestGoJavaScriptInterop(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err)
@@ -402,7 +395,6 @@ func TestGoJavaScriptInterop(t *testing.T) {
 	})
 }
 
-// TestParse tests JavaScript source code parsing.
 func TestParse(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -460,7 +452,6 @@ func TestParse(t *testing.T) {
 	}
 }
 
-// TestTypeCheckers tests the type checking utility functions.
 func TestTypeCheckers(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err)
@@ -527,7 +518,6 @@ func TestTypeCheckers(t *testing.T) {
 	}
 }
 
-// TestErrorHandling tests runtime error handling.
 func TestErrorHandling(t *testing.T) {
 	vm, err := js.New()
 	require.NoError(t, err)

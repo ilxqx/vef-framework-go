@@ -39,7 +39,7 @@ func TestToBase64(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := ToBase64(tt.input)
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected, result, "Base64 encoding should produce expected output")
 		})
 	}
 }
@@ -54,7 +54,7 @@ func TestFromBase64(t *testing.T) {
 		{
 			name:      "EmptyString",
 			input:     "",
-			expected:  []byte{},
+			expected:  nil,
 			expectErr: false,
 		},
 		{
@@ -87,10 +87,10 @@ func TestFromBase64(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := FromBase64(tt.input)
 			if tt.expectErr {
-				assert.Error(t, err)
+				assert.Error(t, err, "FromBase64 should return error for invalid input")
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				require.NoError(t, err, "FromBase64 should decode valid Base64 string without error")
+				assert.Equal(t, tt.expected, result, "Decoded bytes should match expected value")
 			}
 		})
 	}
@@ -99,17 +99,17 @@ func TestFromBase64(t *testing.T) {
 func TestBase64RoundTrip(t *testing.T) {
 	data := make([]byte, 256)
 	_, err := rand.Read(data)
-	require.NoError(t, err)
+	require.NoError(t, err, "Random data generation should succeed")
 
 	encoded := ToBase64(data)
-	assert.NotEmpty(t, encoded)
+	assert.NotEmpty(t, encoded, "Encoded Base64 string should not be empty")
 
 	decoded, err := FromBase64(encoded)
-	require.NoError(t, err)
-	assert.Equal(t, data, decoded)
+	require.NoError(t, err, "Decoding Base64 string should succeed")
+	assert.Equal(t, data, decoded, "Round-trip encoding/decoding should preserve original data")
 }
 
-func TestToBase64Url(t *testing.T) {
+func TestToBase64URL(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []byte
@@ -134,13 +134,13 @@ func TestToBase64Url(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ToBase64Url(tt.input)
-			assert.Equal(t, tt.expected, result)
+			result := ToBase64URL(tt.input)
+			assert.Equal(t, tt.expected, result, "Base64URL encoding should produce URL-safe output")
 		})
 	}
 }
 
-func TestFromBase64Url(t *testing.T) {
+func TestFromBase64URL(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
@@ -150,7 +150,7 @@ func TestFromBase64Url(t *testing.T) {
 		{
 			name:      "EmptyString",
 			input:     "",
-			expected:  []byte{},
+			expected:  nil,
 			expectErr: false,
 		},
 		{
@@ -169,12 +169,12 @@ func TestFromBase64Url(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := FromBase64Url(tt.input)
+			result, err := FromBase64URL(tt.input)
 			if tt.expectErr {
-				assert.Error(t, err)
+				assert.Error(t, err, "FromBase64URL should return error for invalid input")
 			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				require.NoError(t, err, "FromBase64URL should decode valid Base64URL string without error")
+				assert.Equal(t, tt.expected, result, "Decoded bytes should match expected value")
 			}
 		})
 	}
@@ -183,12 +183,12 @@ func TestFromBase64Url(t *testing.T) {
 func TestBase64UrlRoundTrip(t *testing.T) {
 	data := make([]byte, 256)
 	_, err := rand.Read(data)
-	require.NoError(t, err)
+	require.NoError(t, err, "Random data generation should succeed")
 
-	encoded := ToBase64Url(data)
-	assert.NotEmpty(t, encoded)
+	encoded := ToBase64URL(data)
+	assert.NotEmpty(t, encoded, "Encoded Base64URL string should not be empty")
 
-	decoded, err := FromBase64Url(encoded)
-	require.NoError(t, err)
-	assert.Equal(t, data, decoded)
+	decoded, err := FromBase64URL(encoded)
+	require.NoError(t, err, "Decoding Base64URL string should succeed")
+	assert.Equal(t, data, decoded, "Round-trip encoding/decoding should preserve original data")
 }

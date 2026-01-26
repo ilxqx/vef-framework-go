@@ -22,7 +22,7 @@ func TestRsaCipher_Oaep(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should generate RSA key pair")
 
-	cipher, err := NewRsa(privateKey, &privateKey.PublicKey, WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher in OAEP mode")
 
 	tests := []struct {
@@ -53,7 +53,7 @@ func TestRsaCipher_Pkcs1v15(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should generate RSA key pair")
 
-	cipher, err := NewRsa(privateKey, &privateKey.PublicKey, WithRsaMode(RsaModePkcs1v15))
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, WithRSAMode(RsaModePKCS1v15))
 	require.NoError(t, err, "Should create RSA cipher in PKCS1v15 mode")
 
 	tests := []struct {
@@ -97,7 +97,7 @@ func TestRsaCipher_FromPem(t *testing.T) {
 		Bytes: publicKeyBytes,
 	})
 
-	cipher, err := NewRsaFromPem(privatePEM, publicPEM, WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSAFromPem(privatePEM, publicPEM, WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher from PEM")
 
 	plaintext := "Test message"
@@ -115,7 +115,7 @@ func TestRsaCipher_PublicKeyOnly(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should generate RSA key pair")
 
-	cipher, err := NewRsa(nil, &privateKey.PublicKey, WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSA(nil, &privateKey.PublicKey, WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher with public key only")
 
 	plaintext := "Test message"
@@ -131,7 +131,7 @@ func TestRsaCipher_PrivateKeyOnly(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should generate RSA key pair")
 
-	cipher, err := NewRsa(privateKey, nil, WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSA(privateKey, nil, WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher with private key only")
 
 	plaintext := "Test message"
@@ -146,7 +146,7 @@ func TestRsaCipher_PrivateKeyOnly(t *testing.T) {
 
 // TestRsaCipher_NoKeys tests that creating cipher without keys fails.
 func TestRsaCipher_NoKeys(t *testing.T) {
-	_, err := NewRsa(nil, nil, WithRsaMode(RsaModeOaep))
+	_, err := NewRSA(nil, nil, WithRSAMode(RsaModeOAEP))
 	assert.Error(t, err, "Should reject creating cipher without any keys")
 }
 
@@ -163,7 +163,7 @@ func TestRsaCipher_Pkcs8PrivateKey(t *testing.T) {
 		Bytes: privateKeyBytes,
 	})
 
-	cipher, err := NewRsaFromPem(privatePEM, nil, WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSAFromPem(privatePEM, nil, WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher from PKCS8 PEM")
 
 	plaintext := "Test message"
@@ -189,7 +189,7 @@ func TestRsaCipher_FromHex(t *testing.T) {
 
 	publicKeyHex := hex.EncodeToString(publicKeyBytes)
 
-	cipher, err := NewRsaFromHex(privateKeyHex, publicKeyHex, WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSAFromHex(privateKeyHex, publicKeyHex, WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher from hex")
 
 	plaintext := "Test message"
@@ -212,7 +212,7 @@ func TestRsaCipher_FromHex_Pkcs8(t *testing.T) {
 
 	privateKeyHex := hex.EncodeToString(privateKeyBytes)
 
-	cipher, err := NewRsaFromHex(privateKeyHex, "", WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSAFromHex(privateKeyHex, "", WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher from PKCS8 hex")
 
 	plaintext := "Test message"
@@ -238,7 +238,7 @@ func TestRsaCipher_FromBase64(t *testing.T) {
 
 	publicKeyBase64 := base64.StdEncoding.EncodeToString(publicKeyBytes)
 
-	cipher, err := NewRsaFromBase64(privateKeyBase64, publicKeyBase64, WithRsaMode(RsaModeOaep))
+	cipher, err := NewRSAFromBase64(privateKeyBase64, publicKeyBase64, WithRSAMode(RsaModeOAEP))
 	require.NoError(t, err, "Should create RSA cipher from base64")
 
 	plaintext := "Test message with base64 encoded keys"
@@ -256,7 +256,7 @@ func TestRsaCipher_DefaultMode(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err, "Should generate RSA key pair")
 
-	cipher, err := NewRsa(privateKey, &privateKey.PublicKey)
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err, "Should create RSA cipher with default mode")
 
 	plaintext := "Test default mode"
@@ -285,7 +285,7 @@ func TestRsaCipher_KeySizes(t *testing.T) {
 			privateKey, err := generateRSAKeyPair(tt.keySize)
 			require.NoError(t, err, "Should generate %d-bit RSA key", tt.keySize)
 
-			cipher, err := NewRsa(privateKey, &privateKey.PublicKey, WithRsaMode(RsaModeOaep))
+			cipher, err := NewRSA(privateKey, &privateKey.PublicKey, WithRSAMode(RsaModeOAEP))
 			require.NoError(t, err, "Should create RSA cipher")
 
 			plaintext := "Test message"
@@ -304,7 +304,7 @@ func TestRsaCipher_SignVerifyPss(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err)
 
-	cipher, err := NewRsa(privateKey, &privateKey.PublicKey, WithRsaSignMode(RsaSignModePss))
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, WithRSASignMode(RsaSignModePSS))
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -337,7 +337,7 @@ func TestRsaCipher_SignVerifyPkcs1v15(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err)
 
-	cipher, err := NewRsa(privateKey, &privateKey.PublicKey, WithRsaSignMode(RsaSignModePkcs1v15))
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey, WithRSASignMode(RsaSignModePKCS1v15))
 	require.NoError(t, err)
 
 	data := "Test message"
@@ -353,7 +353,7 @@ func TestRsaCipher_SignWithoutPrivateKey(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err)
 
-	cipher, err := NewRsa(nil, &privateKey.PublicKey)
+	cipher, err := NewRSA(nil, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	data := "Test message"
@@ -366,14 +366,14 @@ func TestRsaCipher_VerifyWithoutPublicKey(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err)
 
-	signerCipher, err := NewRsa(privateKey, &privateKey.PublicKey)
+	signerCipher, err := NewRSA(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	data := "Test message"
 	signature, err := signerCipher.Sign(data)
 	require.NoError(t, err)
 
-	verifierCipher, err := NewRsa(privateKey, nil)
+	verifierCipher, err := NewRSA(privateKey, nil)
 	require.NoError(t, err)
 
 	valid, err := verifierCipher.Verify(data, signature)
@@ -385,7 +385,7 @@ func TestRsaCipher_InvalidSignature(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err)
 
-	cipher, err := NewRsa(privateKey, &privateKey.PublicKey)
+	cipher, err := NewRSA(privateKey, &privateKey.PublicKey)
 	require.NoError(t, err)
 
 	data := "Test message"
@@ -398,10 +398,10 @@ func TestRsaCipher_DifferentSignModes(t *testing.T) {
 	privateKey, err := generateRSAKeyPair(2048)
 	require.NoError(t, err)
 
-	pssCipher, err := NewRsa(privateKey, &privateKey.PublicKey, WithRsaSignMode(RsaSignModePss))
+	pssCipher, err := NewRSA(privateKey, &privateKey.PublicKey, WithRSASignMode(RsaSignModePSS))
 	require.NoError(t, err)
 
-	pkcs1Cipher, err := NewRsa(privateKey, &privateKey.PublicKey, WithRsaSignMode(RsaSignModePkcs1v15))
+	pkcs1Cipher, err := NewRSA(privateKey, &privateKey.PublicKey, WithRSASignMode(RsaSignModePKCS1v15))
 	require.NoError(t, err)
 
 	data := "Test message"

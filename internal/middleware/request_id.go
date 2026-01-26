@@ -1,17 +1,17 @@
 package middleware
 
 import (
+	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 
-	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/id"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 )
 
-func NewRequestIdMiddleware() app.Middleware {
+func NewRequestIDMiddleware() app.Middleware {
 	handler := requestid.New(requestid.Config{
-		Generator: id.GenerateUuid,
-		Header:    constants.HeaderXRequestId,
+		Generator: id.GenerateUUID,
+		Header:    fiber.HeaderXRequestID,
 	})
 
 	return &SimpleMiddleware{

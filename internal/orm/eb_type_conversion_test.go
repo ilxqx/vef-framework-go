@@ -8,7 +8,7 @@ import (
 
 // TypeConversionFunctionsTestSuite tests type conversion function methods of ExprBuilder
 // including ToString, ToInteger, ToDecimal, ToFloat, ToBool, ToDate, ToTime, ToTimestamp,
-// and ToJson.
+// and ToJSON.
 //
 // This suite verifies cross-database compatibility for type conversion functions across
 // PostgreSQL, MySQL, and SQLite.
@@ -22,7 +22,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToString() {
 
 	suite.Run("ConvertNumberToString", func() {
 		type ToStringResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 			CountStr  string `bun:"count_str"`
 		}
@@ -45,7 +45,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToString() {
 		for _, result := range toStringResults {
 			suite.NotEmpty(result.CountStr, "String representation should not be empty")
 			suite.T().Logf("ID: %s, ViewCount: %d, CountStr: '%s'",
-				result.Id, result.ViewCount, result.CountStr)
+				result.ID, result.ViewCount, result.CountStr)
 		}
 	})
 }
@@ -56,7 +56,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToInteger() {
 
 	suite.Run("ConvertStringToInteger", func() {
 		type ToIntegerResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Original string `bun:"original"`
 			IntValue int64  `bun:"int_value"`
 		}
@@ -81,7 +81,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToInteger() {
 		for _, result := range toIntResults {
 			suite.True(result.IntValue >= 0, "Integer value should be non-negative")
 			suite.T().Logf("ID: %s, Original: '%s', IntValue: %d",
-				result.Id, result.Original, result.IntValue)
+				result.ID, result.Original, result.IntValue)
 		}
 	})
 }
@@ -92,7 +92,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloat() {
 
 	suite.Run("ConvertNumberToFloat", func() {
 		type ToFloatResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			ViewCount  int64   `bun:"view_count"`
 			FloatValue float64 `bun:"float_value"`
 		}
@@ -114,7 +114,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloat() {
 		for _, result := range toFloatResults {
 			suite.Equal(float64(result.ViewCount), result.FloatValue, "Float value should equal view count")
 			suite.T().Logf("ID: %s, ViewCount: %d, FloatValue: %.2f",
-				result.Id, result.ViewCount, result.FloatValue)
+				result.ID, result.ViewCount, result.FloatValue)
 		}
 	})
 }
@@ -125,7 +125,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimal() {
 
 	suite.Run("ConvertToDecimalWithPrecision", func() {
 		type ToDecimalResult struct {
-			Id           string  `bun:"id"`
+			ID           string  `bun:"id"`
 			ViewCount    int64   `bun:"view_count"`
 			DecimalValue float64 `bun:"decimal_value"`
 		}
@@ -147,7 +147,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimal() {
 		for _, result := range toDecimalResults {
 			suite.True(result.DecimalValue >= 0, "Decimal value should be non-negative")
 			suite.T().Logf("ID: %s, ViewCount: %d, DecimalValue: %.2f",
-				result.Id, result.ViewCount, result.DecimalValue)
+				result.ID, result.ViewCount, result.DecimalValue)
 		}
 	})
 }
@@ -158,7 +158,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBool() {
 
 	suite.Run("ConvertExpressionToBoolean", func() {
 		type ToBoolResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			ViewCount  int64  `bun:"view_count"`
 			IsPositive bool   `bun:"is_positive"`
 		}
@@ -179,7 +179,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBool() {
 
 		for _, result := range toBoolResults {
 			suite.T().Logf("ID: %s, ViewCount: %d, IsPositive: %v",
-				result.Id, result.ViewCount, result.IsPositive)
+				result.ID, result.ViewCount, result.IsPositive)
 		}
 	})
 }
@@ -190,7 +190,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDate() {
 
 	suite.Run("ConvertTimestampToDate", func() {
 		type ToDateResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			CreatedAt time.Time `bun:"created_at"`
 			DateOnly  time.Time `bun:"date_only"`
 		}
@@ -212,7 +212,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDate() {
 		for _, result := range toDateResults {
 			suite.NotZero(result.DateOnly, "Date should not be zero")
 			suite.T().Logf("ID: %s, CreatedAt: %s, DateOnly: %s",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.DateOnly.Format(time.RFC3339))
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.DateOnly.Format(time.RFC3339))
 		}
 	})
 }
@@ -223,7 +223,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTime() {
 
 	suite.Run("ConvertTimestampToTime", func() {
 		type ToTimeResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			CreatedAt time.Time `bun:"created_at"`
 			TimeOnly  time.Time `bun:"time_only"`
 		}
@@ -245,7 +245,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTime() {
 		for _, result := range toTimeResults {
 			suite.NotZero(result.TimeOnly, "Time should not be zero")
 			suite.T().Logf("ID: %s, CreatedAt: %s, TimeOnly: %s",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.TimeOnly.Format(time.RFC3339))
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.TimeOnly.Format(time.RFC3339))
 		}
 	})
 }
@@ -256,7 +256,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestamp() {
 
 	suite.Run("ConvertToTimestamp", func() {
 		type ToTimestampResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			CreatedAt time.Time `bun:"created_at"`
 			Timestamp time.Time `bun:"timestamp"`
 		}
@@ -278,40 +278,40 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestamp() {
 		for _, result := range toTimestampResults {
 			suite.NotZero(result.Timestamp, "Timestamp should not be zero")
 			suite.T().Logf("ID: %s, CreatedAt: %s, Timestamp: %s",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.Timestamp.Format(time.RFC3339))
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.Timestamp.Format(time.RFC3339))
 		}
 	})
 }
 
-// TestToJson tests the ToJson function.
-func (suite *TypeConversionFunctionsTestSuite) TestToJson() {
-	suite.T().Logf("Testing ToJson function for %s", suite.dbType)
+// TestToJSON tests the ToJSON function.
+func (suite *TypeConversionFunctionsTestSuite) TestToJSON() {
+	suite.T().Logf("Testing ToJSON function for %s", suite.dbType)
 
-	suite.Run("ConvertToJson", func() {
-		type ToJsonResult struct {
-			Id        string `bun:"id"`
+	suite.Run("ConvertToJSON", func() {
+		type ToJSONResult struct {
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			JsonValue string `bun:"json_value"`
 		}
 
-		var toJsonResults []ToJsonResult
+		var toJsonResults []ToJSONResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.ToJson(eb.JsonObject("title", eb.Column("title"), "id", eb.Column("id")))
+				return eb.ToJSON(eb.JSONObject("title", eb.Column("title"), "id", eb.Column("id")))
 			}, "json_value").
 			Limit(3).
 			Scan(suite.ctx, &toJsonResults)
 
-		suite.NoError(err, "ToJson should work on supported databases")
-		suite.True(len(toJsonResults) > 0, "Should have ToJson results")
+		suite.NoError(err, "ToJSON should work on supported databases")
+		suite.True(len(toJsonResults) > 0, "Should have ToJSON results")
 
 		for _, result := range toJsonResults {
 			suite.NotEmpty(result.JsonValue, "Json value should not be empty")
 			suite.T().Logf("ID: %s, Title: %s, JsonValue: %s",
-				result.Id, result.Title, result.JsonValue)
+				result.ID, result.Title, result.JsonValue)
 		}
 	})
 }
@@ -322,7 +322,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringNullHandling() {
 
 	suite.Run("ConvertNullToString", func() {
 		type NullToStringResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			Title      string  `bun:"title"`
 			StringNull *string `bun:"string_null"`
 		}
@@ -344,7 +344,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.StringNull, "ToString(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, StringNull: %v",
-				result.Id, result.Title, result.StringNull)
+				result.ID, result.Title, result.StringNull)
 		}
 	})
 }
@@ -355,7 +355,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
 
 	suite.Run("ConvertNullToInteger", func() {
 		type NullToIntegerResult struct {
-			Id      string `bun:"id"`
+			ID      string `bun:"id"`
 			Title   string `bun:"title"`
 			IntNull *int64 `bun:"int_null"`
 		}
@@ -377,7 +377,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.IntNull, "ToInteger(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, IntNull: %v",
-				result.Id, result.Title, result.IntNull)
+				result.ID, result.Title, result.IntNull)
 		}
 	})
 }
@@ -388,7 +388,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
 
 	suite.Run("ConvertNullToFloat", func() {
 		type NullToFloatResult struct {
-			Id        string   `bun:"id"`
+			ID        string   `bun:"id"`
 			Title     string   `bun:"title"`
 			FloatNull *float64 `bun:"float_null"`
 		}
@@ -410,7 +410,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.FloatNull, "ToFloat(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, FloatNull: %v",
-				result.Id, result.Title, result.FloatNull)
+				result.ID, result.Title, result.FloatNull)
 		}
 	})
 }
@@ -421,7 +421,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
 
 	suite.Run("ConvertNullToDecimal", func() {
 		type NullToDecimalResult struct {
-			Id          string   `bun:"id"`
+			ID          string   `bun:"id"`
 			Title       string   `bun:"title"`
 			DecimalNull *float64 `bun:"decimal_null"`
 		}
@@ -443,7 +443,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.DecimalNull, "ToDecimal(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, DecimalNull: %v",
-				result.Id, result.Title, result.DecimalNull)
+				result.ID, result.Title, result.DecimalNull)
 		}
 	})
 }
@@ -454,7 +454,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
 
 	suite.Run("ConvertNullToBool", func() {
 		type NullToBoolResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Title    string `bun:"title"`
 			BoolNull *bool  `bun:"bool_null"`
 		}
@@ -476,7 +476,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.BoolNull, "ToBool(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, BoolNull: %v",
-				result.Id, result.Title, result.BoolNull)
+				result.ID, result.Title, result.BoolNull)
 		}
 	})
 }
@@ -487,7 +487,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateNullHandling() {
 
 	suite.Run("ConvertNullToDate", func() {
 		type NullToDateResult struct {
-			Id       string     `bun:"id"`
+			ID       string     `bun:"id"`
 			Title    string     `bun:"title"`
 			DateNull *time.Time `bun:"date_null"`
 		}
@@ -509,7 +509,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.DateNull, "ToDate(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, DateNull: %v",
-				result.Id, result.Title, result.DateNull)
+				result.ID, result.Title, result.DateNull)
 		}
 	})
 }
@@ -520,7 +520,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
 
 	suite.Run("ConvertNullToTime", func() {
 		type NullToTimeResult struct {
-			Id       string     `bun:"id"`
+			ID       string     `bun:"id"`
 			Title    string     `bun:"title"`
 			TimeNull *time.Time `bun:"time_null"`
 		}
@@ -542,7 +542,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.TimeNull, "ToTime(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, TimeNull: %v",
-				result.Id, result.Title, result.TimeNull)
+				result.ID, result.Title, result.TimeNull)
 		}
 	})
 }
@@ -553,7 +553,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
 
 	suite.Run("ConvertNullToTimestamp", func() {
 		type NullToTimestampResult struct {
-			Id            string     `bun:"id"`
+			ID            string     `bun:"id"`
 			Title         string     `bun:"title"`
 			TimestampNull *time.Time `bun:"timestamp_null"`
 		}
@@ -575,40 +575,40 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampNullHandling() {
 		for _, result := range results {
 			suite.Nil(result.TimestampNull, "ToTimestamp(NULL) should return NULL")
 			suite.T().Logf("ID: %s, Title: %s, TimestampNull: %v",
-				result.Id, result.Title, result.TimestampNull)
+				result.ID, result.Title, result.TimestampNull)
 		}
 	})
 }
 
-// TestToJsonNullHandling tests the ToJson function with NULL values.
-func (suite *TypeConversionFunctionsTestSuite) TestToJsonNullHandling() {
-	suite.T().Logf("Testing ToJson NULL handling for %s", suite.dbType)
+// TestToJSONNullHandling tests the ToJSON function with NULL values.
+func (suite *TypeConversionFunctionsTestSuite) TestToJSONNullHandling() {
+	suite.T().Logf("Testing ToJSON NULL handling for %s", suite.dbType)
 
-	suite.Run("ConvertNullToJson", func() {
-		type NullToJsonResult struct {
-			Id       string  `bun:"id"`
+	suite.Run("ConvertNullToJSON", func() {
+		type NullToJSONResult struct {
+			ID       string  `bun:"id"`
 			Title    string  `bun:"title"`
-			JsonNull *string `bun:"json_null"`
+			JSONNull *string `bun:"json_null"`
 		}
 
-		var results []NullToJsonResult
+		var results []NullToJSONResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.ToJson(eb.Expr("NULL"))
+				return eb.ToJSON(eb.Expr("NULL"))
 			}, "json_null").
 			Limit(3).
 			Scan(suite.ctx, &results)
 
-		suite.NoError(err, "ToJson(NULL) should work")
+		suite.NoError(err, "ToJSON(NULL) should work")
 		suite.True(len(results) > 0, "Should have results")
 
 		for _, result := range results {
-			suite.Nil(result.JsonNull, "ToJson(NULL) should return NULL")
-			suite.T().Logf("ID: %s, Title: %s, JsonNull: %v",
-				result.Id, result.Title, result.JsonNull)
+			suite.Nil(result.JSONNull, "ToJSON(NULL) should return NULL")
+			suite.T().Logf("ID: %s, Title: %s, JSONNull: %v",
+				result.ID, result.Title, result.JSONNull)
 		}
 	})
 }
@@ -619,7 +619,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 	suite.Run("DecimalWithPrecisionAndScale", func() {
 		type DecimalPrecisionResult struct {
-			Id           string  `bun:"id"`
+			ID           string  `bun:"id"`
 			ViewCount    int64   `bun:"view_count"`
 			DecimalValue float64 `bun:"decimal_value"`
 		}
@@ -640,13 +640,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, ViewCount: %d, DecimalValue: %.2f",
-				result.Id, result.ViewCount, result.DecimalValue)
+				result.ID, result.ViewCount, result.DecimalValue)
 		}
 	})
 
 	suite.Run("DecimalWithPrecisionOnly", func() {
 		type DecimalPrecisionOnlyResult struct {
-			Id           string  `bun:"id"`
+			ID           string  `bun:"id"`
 			ViewCount    int64   `bun:"view_count"`
 			DecimalValue float64 `bun:"decimal_value"`
 		}
@@ -667,13 +667,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, ViewCount: %d, DecimalValue: %.0f",
-				result.Id, result.ViewCount, result.DecimalValue)
+				result.ID, result.ViewCount, result.DecimalValue)
 		}
 	})
 
 	suite.Run("DecimalWithoutParameters", func() {
 		type DecimalNoParamsResult struct {
-			Id           string  `bun:"id"`
+			ID           string  `bun:"id"`
 			ViewCount    int64   `bun:"view_count"`
 			DecimalValue float64 `bun:"decimal_value"`
 		}
@@ -694,7 +694,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDecimalPrecisionVariations(
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, ViewCount: %d, DecimalValue: %.0f",
-				result.Id, result.ViewCount, result.DecimalValue)
+				result.ID, result.ViewCount, result.DecimalValue)
 		}
 	})
 }
@@ -705,7 +705,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 	suite.Run("DateWithoutFormat", func() {
 		type DateNoFormatResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			CreatedAt time.Time `bun:"created_at"`
 			DateValue time.Time `bun:"date_value"`
 		}
@@ -727,13 +727,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 		for _, result := range results {
 			suite.NotZero(result.DateValue, "Date should not be zero")
 			suite.T().Logf("ID: %s, CreatedAt: %s, DateValue: %s",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.DateValue.Format(time.RFC3339))
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.DateValue.Format(time.RFC3339))
 		}
 	})
 
 	suite.Run("DateWithFormat", func() {
 		type DateWithFormatResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			DateValue time.Time `bun:"date_value"`
 		}
 
@@ -741,9 +741,9 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.DbPostgres:
+		case constants.Postgres:
 			formatStr = "YYYY-MM-DD"
-		case constants.DbMySQL:
+		case constants.MySQL:
 			formatStr = "%Y-%m-%d"
 		default:
 			formatStr = "YYYY-MM-DD"
@@ -764,7 +764,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 		for _, result := range results {
 			suite.NotZero(result.DateValue, "Date should not be zero")
 			suite.T().Logf("ID: %s, DateValue: %s",
-				result.Id, result.DateValue.Format(time.RFC3339))
+				result.ID, result.DateValue.Format(time.RFC3339))
 		}
 	})
 }
@@ -775,7 +775,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 	suite.Run("TimeWithoutFormat", func() {
 		type TimeNoFormatResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			CreatedAt time.Time `bun:"created_at"`
 			TimeValue time.Time `bun:"time_value"`
 		}
@@ -797,13 +797,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 		for _, result := range results {
 			suite.NotZero(result.TimeValue, "Time should not be zero")
 			suite.T().Logf("ID: %s, CreatedAt: %s, TimeValue: %s",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.TimeValue.Format(time.RFC3339))
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.TimeValue.Format(time.RFC3339))
 		}
 	})
 
 	suite.Run("TimeWithFormat", func() {
 		type TimeWithFormatResult struct {
-			Id        string    `bun:"id"`
+			ID        string    `bun:"id"`
 			TimeValue time.Time `bun:"time_value"`
 		}
 
@@ -811,9 +811,9 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.DbPostgres:
+		case constants.Postgres:
 			formatStr = "HH24:MI:SS"
-		case constants.DbMySQL:
+		case constants.MySQL:
 			formatStr = "%H:%i:%s"
 		default:
 			formatStr = "HH24:MI:SS"
@@ -834,7 +834,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 		for _, result := range results {
 			suite.NotZero(result.TimeValue, "Time should not be zero")
 			suite.T().Logf("ID: %s, TimeValue: %s",
-				result.Id, result.TimeValue.Format(time.RFC3339))
+				result.ID, result.TimeValue.Format(time.RFC3339))
 		}
 	})
 }
@@ -845,7 +845,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 	suite.Run("TimestampWithoutFormat", func() {
 		type TimestampNoFormatResult struct {
-			Id             string    `bun:"id"`
+			ID             string    `bun:"id"`
 			CreatedAt      time.Time `bun:"created_at"`
 			TimestampValue time.Time `bun:"timestamp_value"`
 		}
@@ -867,13 +867,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 		for _, result := range results {
 			suite.NotZero(result.TimestampValue, "Timestamp should not be zero")
 			suite.T().Logf("ID: %s, CreatedAt: %s, TimestampValue: %s",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.TimestampValue.Format(time.RFC3339))
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.TimestampValue.Format(time.RFC3339))
 		}
 	})
 
 	suite.Run("TimestampWithFormat", func() {
 		type TimestampWithFormatResult struct {
-			Id             string    `bun:"id"`
+			ID             string    `bun:"id"`
 			TimestampValue time.Time `bun:"timestamp_value"`
 		}
 
@@ -881,9 +881,9 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.DbPostgres:
+		case constants.Postgres:
 			formatStr = "YYYY-MM-DD HH24:MI:SS"
-		case constants.DbMySQL:
+		case constants.MySQL:
 			formatStr = "%Y-%m-%d %H:%i:%s"
 		default:
 			formatStr = "YYYY-MM-DD HH24:MI:SS"
@@ -904,7 +904,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 		for _, result := range results {
 			suite.NotZero(result.TimestampValue, "Timestamp should not be zero")
 			suite.T().Logf("ID: %s, TimestampValue: %s",
-				result.Id, result.TimestampValue.Format(time.RFC3339))
+				result.ID, result.TimestampValue.Format(time.RFC3339))
 		}
 	})
 }
@@ -915,7 +915,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() 
 
 	suite.Run("ConvertBooleanToString", func() {
 		type BoolToStringResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			IsActive     bool   `bun:"is_active"`
 			ActiveString string `bun:"active_string"`
 		}
@@ -937,13 +937,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() 
 		for _, result := range results {
 			suite.NotEmpty(result.ActiveString, "Boolean string should not be empty")
 			suite.T().Logf("ID: %s, IsActive: %v, ActiveString: '%s'",
-				result.Id, result.IsActive, result.ActiveString)
+				result.ID, result.IsActive, result.ActiveString)
 		}
 	})
 
 	suite.Run("ConvertDateToString", func() {
 		type DateToStringResult struct {
-			Id         string    `bun:"id"`
+			ID         string    `bun:"id"`
 			CreatedAt  time.Time `bun:"created_at"`
 			DateString string    `bun:"date_string"`
 		}
@@ -965,7 +965,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToStringFromDifferentTypes() 
 		for _, result := range results {
 			suite.NotEmpty(result.DateString, "Date string should not be empty")
 			suite.T().Logf("ID: %s, CreatedAt: %s, DateString: '%s'",
-				result.Id, result.CreatedAt.Format(time.RFC3339), result.DateString)
+				result.ID, result.CreatedAt.Format(time.RFC3339), result.DateString)
 		}
 	})
 }
@@ -976,7 +976,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 	suite.Run("ConvertNegativeStringToInteger", func() {
 		type NegativeIntResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			IntValue int64  `bun:"int_value"`
 		}
 
@@ -996,13 +996,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 		for _, result := range results {
 			suite.Equal(int64(-123), result.IntValue, "Should convert negative string correctly")
-			suite.T().Logf("ID: %s, IntValue: %d", result.Id, result.IntValue)
+			suite.T().Logf("ID: %s, IntValue: %d", result.ID, result.IntValue)
 		}
 	})
 
 	suite.Run("ConvertZeroStringToInteger", func() {
 		type ZeroIntResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			IntValue int64  `bun:"int_value"`
 		}
 
@@ -1022,7 +1022,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerFromStrings() {
 
 		for _, result := range results {
 			suite.Equal(int64(0), result.IntValue, "Should convert '0' correctly")
-			suite.T().Logf("ID: %s, IntValue: %d", result.Id, result.IntValue)
+			suite.T().Logf("ID: %s, IntValue: %d", result.ID, result.IntValue)
 		}
 	})
 }
@@ -1033,7 +1033,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 	suite.Run("ConvertDecimalStringToFloat", func() {
 		type DecimalStringResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			FloatValue float64 `bun:"float_value"`
 		}
 
@@ -1053,13 +1053,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 		for _, result := range results {
 			suite.InDelta(3.14159, result.FloatValue, 0.00001, "Should convert decimal string correctly")
-			suite.T().Logf("ID: %s, FloatValue: %.5f", result.Id, result.FloatValue)
+			suite.T().Logf("ID: %s, FloatValue: %.5f", result.ID, result.FloatValue)
 		}
 	})
 
 	suite.Run("ConvertNegativeFloatString", func() {
 		type NegativeFloatResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			FloatValue float64 `bun:"float_value"`
 		}
 
@@ -1079,7 +1079,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatFromStrings() {
 
 		for _, result := range results {
 			suite.InDelta(-99.99, result.FloatValue, 0.01, "Should convert negative float string correctly")
-			suite.T().Logf("ID: %s, FloatValue: %.2f", result.Id, result.FloatValue)
+			suite.T().Logf("ID: %s, FloatValue: %.2f", result.ID, result.FloatValue)
 		}
 	})
 }
@@ -1090,7 +1090,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 	suite.Run("ConvertPositiveIntegerToBool", func() {
 		type PositiveIntBoolResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			BoolValue bool   `bun:"bool_value"`
 		}
 
@@ -1110,13 +1110,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		for _, result := range results {
 			suite.True(result.BoolValue, "ToBool(1) should return true")
-			suite.T().Logf("ID: %s, BoolValue: %v", result.Id, result.BoolValue)
+			suite.T().Logf("ID: %s, BoolValue: %v", result.ID, result.BoolValue)
 		}
 	})
 
 	suite.Run("ConvertZeroToBool", func() {
 		type ZeroBoolResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			BoolValue bool   `bun:"bool_value"`
 		}
 
@@ -1136,13 +1136,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		for _, result := range results {
 			suite.False(result.BoolValue, "ToBool(0) should return false")
-			suite.T().Logf("ID: %s, BoolValue: %v", result.Id, result.BoolValue)
+			suite.T().Logf("ID: %s, BoolValue: %v", result.ID, result.BoolValue)
 		}
 	})
 
 	suite.Run("ConvertNegativeIntegerToBool", func() {
 		type NegativeIntBoolResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			BoolValue bool   `bun:"bool_value"`
 		}
 
@@ -1162,7 +1162,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDirectConversion() {
 
 		for _, result := range results {
 			suite.True(result.BoolValue, "ToBool(-1) should return true (non-zero)")
-			suite.T().Logf("ID: %s, BoolValue: %v", result.Id, result.BoolValue)
+			suite.T().Logf("ID: %s, BoolValue: %v", result.ID, result.BoolValue)
 		}
 	})
 }
@@ -1173,7 +1173,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions()
 
 	suite.Run("ConvertLargePositiveInteger", func() {
 		type LargePositiveResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			IntValue int64  `bun:"int_value"`
 		}
 
@@ -1193,13 +1193,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions()
 
 		for _, result := range results {
 			suite.Equal(int64(2147483647), result.IntValue, "Should handle large positive integer")
-			suite.T().Logf("ID: %s, IntValue: %d", result.Id, result.IntValue)
+			suite.T().Logf("ID: %s, IntValue: %d", result.ID, result.IntValue)
 		}
 	})
 
 	suite.Run("ConvertLargeNegativeInteger", func() {
 		type LargeNegativeResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			IntValue int64  `bun:"int_value"`
 		}
 
@@ -1219,7 +1219,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToIntegerBoundaryConditions()
 
 		for _, result := range results {
 			suite.Equal(int64(-2147483647), result.IntValue, "Should handle large negative integer")
-			suite.T().Logf("ID: %s, IntValue: %d", result.Id, result.IntValue)
+			suite.T().Logf("ID: %s, IntValue: %d", result.ID, result.IntValue)
 		}
 	})
 }
@@ -1230,7 +1230,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 	suite.Run("ConvertVerySmallFloat", func() {
 		type VerySmallFloatResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			FloatValue float64 `bun:"float_value"`
 		}
 
@@ -1250,13 +1250,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 		for _, result := range results {
 			suite.InDelta(0.000001, result.FloatValue, 0.0000001, "Should handle very small float")
-			suite.T().Logf("ID: %s, FloatValue: %.7f", result.Id, result.FloatValue)
+			suite.T().Logf("ID: %s, FloatValue: %.7f", result.ID, result.FloatValue)
 		}
 	})
 
 	suite.Run("ConvertVeryLargeFloat", func() {
 		type VeryLargeFloatResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			FloatValue float64 `bun:"float_value"`
 		}
 
@@ -1276,13 +1276,13 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 		for _, result := range results {
 			suite.InDelta(999999999.99, result.FloatValue, 0.01, "Should handle very large float")
-			suite.T().Logf("ID: %s, FloatValue: %.2f", result.Id, result.FloatValue)
+			suite.T().Logf("ID: %s, FloatValue: %.2f", result.ID, result.FloatValue)
 		}
 	})
 
 	suite.Run("ConvertZeroFloat", func() {
 		type ZeroFloatResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			FloatValue float64 `bun:"float_value"`
 		}
 
@@ -1302,7 +1302,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToFloatPrecisionAndBoundaries
 
 		for _, result := range results {
 			suite.Equal(float64(0.0), result.FloatValue, "Should handle zero float")
-			suite.T().Logf("ID: %s, FloatValue: %.1f", result.Id, result.FloatValue)
+			suite.T().Logf("ID: %s, FloatValue: %.1f", result.ID, result.FloatValue)
 		}
 	})
 }
@@ -1313,7 +1313,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehavio
 
 	suite.Run("VerifyBooleanRepresentation", func() {
 		type BoolRepresentationResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			IsActive   bool   `bun:"is_active"`
 			BoolAsBool bool   `bun:"bool_as_bool"`
 		}
@@ -1335,7 +1335,7 @@ func (suite *TypeConversionFunctionsTestSuite) TestToBoolDatabaseSpecificBehavio
 		for _, result := range results {
 			suite.Equal(result.IsActive, result.BoolAsBool, "ToBool should preserve boolean value")
 			suite.T().Logf("ID: %s, IsActive: %v, BoolAsBool: %v (DB: %s)",
-				result.Id, result.IsActive, result.BoolAsBool, suite.dbType)
+				result.ID, result.IsActive, result.BoolAsBool, suite.dbType)
 		}
 	})
 }

@@ -45,6 +45,7 @@ func getStringValue(fieldValue reflect.Value) (string, bool) {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		if fieldValue.IsNil() {
 			return constants.Empty, false
 		}
@@ -74,6 +75,7 @@ func setStringValue(fieldValue reflect.Value, value string) {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		strValue := value
 		fieldValue.Set(reflect.ValueOf(&strValue))
 
@@ -90,6 +92,7 @@ func getStringSliceValue(fieldValue reflect.Value) ([]string, bool) {
 
 	if fieldType.Kind() == reflect.Slice &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		if fieldValue.IsNil() {
 			return nil, false
 		}
@@ -105,6 +108,7 @@ func setStringSliceValue(fieldValue reflect.Value, value []string) {
 
 	if fieldType.Kind() == reflect.Slice &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		fieldValue.Set(reflect.ValueOf(value))
 	}
 }
@@ -128,6 +132,7 @@ func isStringType(fieldType reflect.Type) bool {
 
 	if fieldType.Kind() == reflect.Pointer &&
 		fieldType.Elem().Kind() == reflect.String {
+
 		return true
 	}
 
@@ -284,7 +289,7 @@ func (p *defaultPromoter[T]) promoteFiles(ctx context.Context, model *T) error {
 		return nil
 	}
 
-	if err := streams.FromSlice(p.fields).ForEachErr(func(field metaField) error {
+	return streams.FromSlice(p.fields).ForEachErr(func(field metaField) error {
 		fieldValue := value.FieldByIndex(field.index)
 		if !fieldValue.CanSet() {
 			return nil
@@ -295,18 +300,15 @@ func (p *defaultPromoter[T]) promoteFiles(ctx context.Context, model *T) error {
 			return p.promoteUploadedFileField(ctx, fieldValue, field.isArray, field.typ, field.attrs)
 
 		case MetaTypeRichText:
-			return p.promoteContentField(ctx, fieldValue, extractHtmlUrls, replaceHtmlUrls, field.typ, field.attrs)
+			return p.promoteContentField(ctx, fieldValue, extractHTMLURLs, replaceHTMLURLs, field.typ, field.attrs)
 
 		case MetaTypeMarkdown:
-			return p.promoteContentField(ctx, fieldValue, extractMarkdownUrls, replaceMarkdownUrls, field.typ, field.attrs)
+			return p.promoteContentField(ctx, fieldValue, extractMarkdownURLs, replaceMarkdownURLs, field.typ, field.attrs)
+
+		default:
+			return nil
 		}
-
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (p *defaultPromoter[T]) promoteUploadedFileField(ctx context.Context, fieldValue reflect.Value, isArray bool, metaType MetaType, attrs map[string]string) error {
@@ -381,7 +383,8 @@ func (p *defaultPromoter[T]) promoteContentField(
 
 	// Only promote temp files; permanent files remain unchanged.
 	replacements := make(map[string]string)
-	if err := streams.FromSlice(urls).ForEachErr(func(url string) error {
+
+	err := streams.FromSlice(urls).ForEachErr(func(url string) error {
 		if !strings.HasPrefix(url, TempPrefix) {
 			return nil
 		}
@@ -396,7 +399,8 @@ func (p *defaultPromoter[T]) promoteContentField(
 		}
 
 		return nil
-	}); err != nil {
+	})
+	if err != nil {
 		return err
 	}
 
@@ -440,7 +444,7 @@ func (p *defaultPromoter[T]) cleanupReplacedFiles(ctx context.Context, newModel,
 
 	newSet := collections.NewHashSetFrom(newKeys...)
 
-	if err := streams.FromSlice(oldFiles).ForEachErr(func(fileInfo fileInfo) error {
+	return streams.FromSlice(oldFiles).ForEachErr(func(fileInfo fileInfo) error {
 		if newSet.Contains(fileInfo.key) {
 			return nil
 		}
@@ -452,17 +456,13 @@ func (p *defaultPromoter[T]) cleanupReplacedFiles(ctx context.Context, newModel,
 		p.publishEvent(NewFileDeletedEvent(fileInfo.metaType, fileInfo.key, fileInfo.attrs))
 
 		return nil
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (p *defaultPromoter[T]) deleteAllFiles(ctx context.Context, model *T) error {
 	files := p.extractAllFileKeysWithInfo(model)
 
-	if err := streams.FromSlice(files).ForEachErr(func(fileInfo fileInfo) error {
+	return streams.FromSlice(files).ForEachErr(func(fileInfo fileInfo) error {
 		fileInfo.key = strings.TrimSpace(fileInfo.key)
 		if fileInfo.key == constants.Empty {
 			return nil
@@ -475,11 +475,7 @@ func (p *defaultPromoter[T]) deleteAllFiles(ctx context.Context, model *T) error
 		p.publishEvent(NewFileDeletedEvent(fileInfo.metaType, fileInfo.key, fileInfo.attrs))
 
 		return nil
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 type fileInfo struct {
@@ -530,7 +526,7 @@ func (p *defaultPromoter[T]) extractAllFileKeysWithInfo(model *T) []fileInfo {
 
 		case MetaTypeRichText:
 			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
-				urls := extractHtmlUrls(content)
+				urls := extractHTMLURLs(content)
 				for _, url := range urls {
 					allFiles = append(allFiles, fileInfo{
 						key:      url,
@@ -542,7 +538,7 @@ func (p *defaultPromoter[T]) extractAllFileKeysWithInfo(model *T) []fileInfo {
 
 		case MetaTypeMarkdown:
 			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
-				urls := extractMarkdownUrls(content)
+				urls := extractMarkdownURLs(content)
 				for _, url := range urls {
 					allFiles = append(allFiles, fileInfo{
 						key:      url,
@@ -589,13 +585,13 @@ func (p *defaultPromoter[T]) extractAllFileKeys(model *T) []string {
 
 		case MetaTypeRichText:
 			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
-				urls := extractHtmlUrls(content)
+				urls := extractHTMLURLs(content)
 				allKeys = append(allKeys, urls...)
 			}
 
 		case MetaTypeMarkdown:
 			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
-				urls := extractMarkdownUrls(content)
+				urls := extractMarkdownURLs(content)
 				allKeys = append(allKeys, urls...)
 			}
 		}

@@ -97,11 +97,8 @@ func (p *WorkerPool[TIn, TOut]) removeWorker(w *Worker[TIn, TOut]) {
 
 // scaleIfNeeded adds workers when queue depth > workers * 2.
 func (p *WorkerPool[TIn, TOut]) scaleIfNeeded() {
-	queueDepth := len(p.highQueue) + len(p.mediumQueue) + len(p.lowQueue)
-
-	p.workerMu.RLock()
-	currentWorkers := len(p.workers)
-	p.workerMu.RUnlock()
+	queueDepth := p.queueDepth()
+	currentWorkers := p.workerCount()
 
 	if queueDepth > currentWorkers*2 && currentWorkers < p.config.MaxWorkers {
 		if err := p.addWorker(); err != nil {
@@ -122,16 +119,9 @@ func (p *WorkerPool[TIn, TOut]) submit(task *Task[TIn, TOut]) error {
 
 	p.stats.totalSubmitted.Add(1)
 
-	var queue chan *Task[TIn, TOut]
-	switch task.Priority {
-	case PriorityHigh:
-		queue = p.highQueue
-	case PriorityMedium:
-		queue = p.mediumQueue
-	case PriorityLow:
-		queue = p.lowQueue
-	default:
-		return ErrInvalidPriority
+	queue, err := p.queueForPriority(task.Priority)
+	if err != nil {
+		return err
 	}
 
 	select {
@@ -148,6 +138,19 @@ func (p *WorkerPool[TIn, TOut]) submit(task *Task[TIn, TOut]) error {
 	}
 }
 
+func (p *WorkerPool[TIn, TOut]) queueForPriority(priority Priority) (chan *Task[TIn, TOut], error) {
+	switch priority {
+	case PriorityHigh:
+		return p.highQueue, nil
+	case PriorityMedium:
+		return p.mediumQueue, nil
+	case PriorityLow:
+		return p.lowQueue, nil
+	default:
+		return nil, ErrInvalidPriority
+	}
+}
+
 func (p *WorkerPool[TIn, TOut]) Shutdown(ctx context.Context) error {
 	var shutdownErr error
 
@@ -159,38 +162,55 @@ func (p *WorkerPool[TIn, TOut]) Shutdown(ctx context.Context) error {
 		close(p.mediumQueue)
 		close(p.lowQueue)
 
-		p.workerMu.RLock()
+		p.stopAllWorkers()
 
-		for _, worker := range p.workers {
-			worker.stop()
-		}
-
-		p.workerMu.RUnlock()
-
-		done := make(chan struct{})
-		go func() {
-			p.wg.Wait()
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			p.logger.Info("worker pool shutdown complete")
-		case <-ctx.Done():
-			shutdownErr = fmt.Errorf("shutdown timeout: %w", ctx.Err())
-			p.logger.Errorf("worker pool shutdown timeout: %v", shutdownErr)
-		}
+		shutdownErr = p.waitForWorkers(ctx)
 	})
 
 	return shutdownErr
 }
 
-func (p *WorkerPool[TIn, TOut]) getStats() SchedulerStats {
+func (p *WorkerPool[TIn, TOut]) stopAllWorkers() {
 	p.workerMu.RLock()
-	totalWorkers := len(p.workers)
-	p.workerMu.RUnlock()
+	defer p.workerMu.RUnlock()
 
-	queuedTasks := len(p.highQueue) + len(p.mediumQueue) + len(p.lowQueue)
+	for _, worker := range p.workers {
+		worker.stop()
+	}
+}
 
-	return p.stats.snapshot(totalWorkers, queuedTasks)
+func (p *WorkerPool[TIn, TOut]) waitForWorkers(ctx context.Context) error {
+	done := make(chan struct{})
+
+	go func() {
+		p.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		p.logger.Info("worker pool shutdown complete")
+
+		return nil
+	case <-ctx.Done():
+		err := fmt.Errorf("shutdown timeout: %w", ctx.Err())
+		p.logger.Errorf("worker pool shutdown timeout: %v", err)
+
+		return err
+	}
+}
+
+func (p *WorkerPool[TIn, TOut]) getStats() SchedulerStats {
+	return p.stats.snapshot(p.workerCount(), p.queueDepth())
+}
+
+func (p *WorkerPool[TIn, TOut]) workerCount() int {
+	p.workerMu.RLock()
+	defer p.workerMu.RUnlock()
+
+	return len(p.workers)
+}
+
+func (p *WorkerPool[TIn, TOut]) queueDepth() int {
+	return len(p.highQueue) + len(p.mediumQueue) + len(p.lowQueue)
 }

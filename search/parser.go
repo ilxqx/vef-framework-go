@@ -74,19 +74,21 @@ func parseStruct(t reflect.Type) []Condition {
 }
 
 func buildCondition(field reflect.StructField, attrs map[string]string) Condition {
-	var (
-		column  = attrs[AttrColumn]
-		columns []string
+	column := attrs[AttrColumn]
+	columns := lo.Ternary(
+		column == constants.Empty,
+		[]string{lo.SnakeCase(field.Name)},
+		strings.Split(column, constants.Pipe),
 	)
-	if column == constants.Empty {
-		columns = []string{lo.SnakeCase(field.Name)}
-	} else {
-		columns = strings.Split(column, constants.Pipe)
-	}
 
-	operator := attrs[AttrOperator]
-	if operator == constants.Empty {
-		operator = lo.CoalesceOrEmpty(attrs[strhelpers.DefaultKey], string(Equals))
+	operator := lo.CoalesceOrEmpty(attrs[AttrOperator], attrs[strhelpers.DefaultKey], string(Equals))
+
+	params := make(map[string]string)
+	if attrs[AttrParams] != constants.Empty {
+		params = strhelpers.ParseTag(attrs[AttrParams],
+			strhelpers.WithSpacePairDelimiter(),
+			strhelpers.WithValueDelimiter(constants.ByteColon),
+		)
 	}
 
 	return Condition{
@@ -94,17 +96,6 @@ func buildCondition(field reflect.StructField, attrs map[string]string) Conditio
 		Alias:    attrs[AttrAlias],
 		Columns:  columns,
 		Operator: Operator(operator),
-		Params: lo.TernaryF(
-			attrs[AttrParams] == constants.Empty,
-			func() map[string]string {
-				return make(map[string]string)
-			},
-			func() map[string]string {
-				return strhelpers.ParseTag(attrs[AttrParams],
-					strhelpers.WithSpacePairDelimiter(),
-					strhelpers.WithValueDelimiter(constants.ByteColon),
-				)
-			},
-		),
+		Params:   params,
 	}
 }

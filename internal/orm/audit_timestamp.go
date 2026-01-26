@@ -12,7 +12,7 @@ import (
 // CreatedAtHandler implements InsertHandler for automatically setting created_at timestamps.
 type CreatedAtHandler struct{}
 
-func (*CreatedAtHandler) OnInsert(query *BunInsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
+func (*CreatedAtHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, _ *schema.Field, _ any, value reflect.Value) {
 	if value.IsZero() {
 		value.Set(reflect.ValueOf(datetime.Now()))
 	}
@@ -25,17 +25,15 @@ func (*CreatedAtHandler) Name() string {
 // UpdatedAtHandler implements UpdateHandler for automatically managing updated_at timestamps.
 type UpdatedAtHandler struct{}
 
-func (ua *UpdatedAtHandler) OnUpdate(query *BunUpdateQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
-	name := ua.Name()
-
+func (ua *UpdatedAtHandler) OnUpdate(query *BunUpdateQuery, _ *schema.Table, _ *schema.Field, _ any, value reflect.Value) {
 	if query.hasSet {
-		query.Set(name, datetime.Now())
+		query.Set(ua.Name(), datetime.Now())
 	} else {
 		value.Set(reflect.ValueOf(datetime.Now()))
 	}
 }
 
-func (*UpdatedAtHandler) OnInsert(query *BunInsertQuery, table *schema.Table, field *schema.Field, model any, value reflect.Value) {
+func (*UpdatedAtHandler) OnInsert(_ *BunInsertQuery, _ *schema.Table, _ *schema.Field, _ any, value reflect.Value) {
 	if value.IsZero() {
 		value.Set(reflect.ValueOf(datetime.Now()))
 	}

@@ -48,12 +48,10 @@ func (*AllDataScope) Priority() int {
 }
 
 func (*AllDataScope) Supports(*Principal, *orm.Table) bool {
-	// Always supports any table
 	return true
 }
 
 func (*AllDataScope) Apply(*Principal, orm.SelectQuery) error {
-	// No filtering - allow all data
 	return nil
 }
 
@@ -86,7 +84,6 @@ func (*SelfDataScope) Priority() int {
 }
 
 func (s *SelfDataScope) Supports(_ *Principal, table *orm.Table) bool {
-	// Check if the table has the created_by field
 	field, _ := table.Field(s.createdByColumn)
 
 	return field != nil
@@ -94,7 +91,7 @@ func (s *SelfDataScope) Supports(_ *Principal, table *orm.Table) bool {
 
 func (s *SelfDataScope) Apply(principal *Principal, query orm.SelectQuery) error {
 	query.Where(func(cb orm.ConditionBuilder) {
-		cb.Equals(s.createdByColumn, principal.Id)
+		cb.Equals(s.createdByColumn, principal.ID)
 	})
 
 	return nil

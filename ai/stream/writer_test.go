@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSseWriter_WriteChunk(t *testing.T) {
+func TestSSEWriter_WriteChunk(t *testing.T) {
 	tests := []struct {
 		name     string
 		chunk    Chunk
@@ -47,7 +47,7 @@ func TestSseWriter_WriteChunk(t *testing.T) {
 	}
 }
 
-func TestSseWriter_WriteDone(t *testing.T) {
+func TestSSEWriter_WriteDone(t *testing.T) {
 	var buf bytes.Buffer
 
 	w := newSseWriter(bufio.NewWriter(&buf))
@@ -58,7 +58,7 @@ func TestSseWriter_WriteDone(t *testing.T) {
 	assert.Equal(t, "data: [DONE]\n\n", buf.String())
 }
 
-func TestSseWriter_Flush(t *testing.T) {
+func TestSSEWriter_Flush(t *testing.T) {
 	var buf bytes.Buffer
 
 	bw := bufio.NewWriter(&buf)
@@ -71,7 +71,7 @@ func TestSseWriter_Flush(t *testing.T) {
 	assert.Equal(t, "pending data", buf.String())
 }
 
-func TestSseHeaders(t *testing.T) {
+func TestSSEHeaders(t *testing.T) {
 	assert.Equal(t, "text/event-stream", SseHeaders["Content-Type"])
 	assert.Equal(t, "no-cache", SseHeaders["Cache-Control"])
 	assert.Equal(t, "keep-alive", SseHeaders["Connection"])
@@ -80,12 +80,12 @@ func TestSseHeaders(t *testing.T) {
 	assert.Equal(t, "no", SseHeaders["X-Accel-Buffering"])
 }
 
-func TestDefaultIdGenerator_Format(t *testing.T) {
+func TestDefaultIDGenerator_Format(t *testing.T) {
 	prefixes := []string{"message", "text", "reasoning", "call"}
 
 	for _, prefix := range prefixes {
 		t.Run(prefix, func(t *testing.T) {
-			id := defaultIdGenerator(prefix)
+			id := defaultIDGenerator(prefix)
 
 			assert.True(t, strings.HasPrefix(id, prefix+"_"))
 			// UUID v7 format: prefix_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -96,11 +96,11 @@ func TestDefaultIdGenerator_Format(t *testing.T) {
 	}
 }
 
-func TestDefaultIdGenerator_Uniqueness(t *testing.T) {
+func TestDefaultIDGenerator_Uniqueness(t *testing.T) {
 	ids := make(map[string]bool)
 
 	for range 100 {
-		id := defaultIdGenerator("test")
+		id := defaultIDGenerator("test")
 		assert.False(t, ids[id], "duplicate id generated: %s", id)
 		ids[id] = true
 	}

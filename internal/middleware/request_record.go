@@ -35,58 +35,64 @@ func simplifyUserAgent(ua string) string {
 
 	ua = strings.ToLower(ua)
 
-	var os string
-	switch {
-	case strings.Contains(ua, "android"):
-		os = "Android"
-	case strings.Contains(ua, "iphone") || strings.Contains(ua, "ipad"):
-		os = "iOS"
-	case strings.Contains(ua, "mac os x") || strings.Contains(ua, "macintosh"):
-		os = "Mac"
-	case strings.Contains(ua, "windows"):
-		os = "Windows"
-	case strings.Contains(ua, "linux"):
-		os = "Linux"
-	default:
-		os = "Unknown"
-	}
-
-	var client string
-	switch {
-	case strings.Contains(ua, "micromessenger"):
-		client = "WeChat"
-	case strings.Contains(ua, "dingtalk"):
-		client = "DingTalk"
-	case strings.Contains(ua, "alipay"):
-		client = "Alipay"
-	case strings.Contains(ua, "edg/") || strings.Contains(ua, "edge/"):
-		client = "Edge"
-	case strings.Contains(ua, "chrome/") && !strings.Contains(ua, "edg"):
-		client = "Chrome"
-	case strings.Contains(ua, "safari/") && !strings.Contains(ua, "chrome"):
-		client = "Safari"
-	case strings.Contains(ua, "firefox/"):
-		client = "Firefox"
-	case strings.Contains(ua, "postman"):
-		client = "Postman"
-	case strings.Contains(ua, "curl"):
-		client = "cURL"
-	case strings.Contains(ua, "okhttp"):
-		client = "OkHttp"
-	default:
-		client = constants.Empty
-	}
+	os := detectOS(ua)
+	client := detectClient(ua)
 
 	if client != constants.Empty && os != "Unknown" {
 		return client + constants.Slash + os
-	} else if client != constants.Empty {
+	}
+	if client != constants.Empty {
 		return client
 	}
 
 	return os
 }
 
-func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SpaConfig) bool {
+func detectOS(ua string) string {
+	switch {
+	case strings.Contains(ua, "android"):
+		return "Android"
+	case strings.Contains(ua, "iphone") || strings.Contains(ua, "ipad"):
+		return "iOS"
+	case strings.Contains(ua, "mac os x") || strings.Contains(ua, "macintosh"):
+		return "Mac"
+	case strings.Contains(ua, "windows"):
+		return "Windows"
+	case strings.Contains(ua, "linux"):
+		return "Linux"
+	default:
+		return "Unknown"
+	}
+}
+
+func detectClient(ua string) string {
+	switch {
+	case strings.Contains(ua, "micromessenger"):
+		return "WeChat"
+	case strings.Contains(ua, "dingtalk"):
+		return "DingTalk"
+	case strings.Contains(ua, "alipay"):
+		return "Alipay"
+	case strings.Contains(ua, "edg/") || strings.Contains(ua, "edge/"):
+		return "Edge"
+	case strings.Contains(ua, "chrome/") && !strings.Contains(ua, "edg"):
+		return "Chrome"
+	case strings.Contains(ua, "safari/") && !strings.Contains(ua, "chrome"):
+		return "Safari"
+	case strings.Contains(ua, "firefox/"):
+		return "Firefox"
+	case strings.Contains(ua, "postman"):
+		return "Postman"
+	case strings.Contains(ua, "curl"):
+		return "cURL"
+	case strings.Contains(ua, "okhttp"):
+		return "OkHttp"
+	default:
+		return constants.Empty
+	}
+}
+
+func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SPAConfig) bool {
 	if ctx.Method() != fiber.MethodGet {
 		return false
 	}
@@ -107,119 +113,106 @@ func isSpaStaticRequest(ctx fiber.Ctx, spaConfigs []*middleware.SpaConfig) bool 
 	return false
 }
 
+func formatLatency(ms int64, latencyStr string) string {
+	switch {
+	case ms >= 1000:
+		return output.String(latencyStr).Foreground(termenv.ANSIBrightRed).Bold().String()
+	case ms >= 500:
+		return output.String(latencyStr).Foreground(termenv.ANSIBrightYellow).Bold().String()
+	case ms >= 200:
+		return output.String(latencyStr).Foreground(termenv.ANSIBrightBlue).String()
+	default:
+		return output.String(latencyStr).Foreground(termenv.ANSIBrightGreen).String()
+	}
+}
+
+func formatStatus(status int) string {
+	color := termenv.ANSIBrightRed
+	if status >= 200 && status < 300 {
+		color = termenv.ANSIBrightGreen
+	}
+
+	return output.String(cast.ToString(status)).Foreground(color).String()
+}
+
 func formatRequestDetails(ctx fiber.Ctx, data *loggerMiddleware.Data) string {
-	method, path := ctx.Method(), ctx.Path()
-	ip, latency, status := webhelpers.GetIp(ctx), data.Stop.Sub(data.Start), ctx.Response().StatusCode()
+	method, reqPath := ctx.Method(), ctx.Path()
+	ip, latency, status := webhelpers.GetIP(ctx), data.Stop.Sub(data.Start), ctx.Response().StatusCode()
 	ua := simplifyUserAgent(ctx.Get(fiber.HeaderUserAgent))
+	ms := latency.Milliseconds()
 
 	var latencyStr string
-	if ms := latency.Milliseconds(); ms > 0 {
+	if ms > 0 {
 		latencyStr = cast.ToString(ms) + "ms"
 	} else {
 		latencyStr = cast.ToString(latency.Microseconds()) + "μs"
 	}
 
 	var sb strings.Builder
+	sb.WriteString(labelValueSeparator)
+	sb.WriteString(output.String(method).Foreground(termenv.ANSIBrightCyan).String())
+	sb.WriteString(constants.Space)
+	sb.WriteString(output.String(reqPath).Foreground(termenv.ANSIBrightCyan).String())
 
-	_, _ = sb.WriteString(labelValueSeparator)
-	_, _ = sb.WriteString(
-		output.String(method).Foreground(termenv.ANSIBrightCyan).String(),
-	)
-	_, _ = sb.WriteString(constants.Space)
-	_, _ = sb.WriteString(
-		output.String(path).Foreground(termenv.ANSIBrightCyan).String(),
-	)
+	sb.WriteString(labelValueSeparator)
+	sb.WriteString(ipLabel)
+	sb.WriteString(output.String(ip).Foreground(termenv.ANSIBrightCyan).String())
 
-	_, _ = sb.WriteString(labelValueSeparator)
-	_, _ = sb.WriteString(ipLabel)
-	_, _ = sb.WriteString(
-		output.String(ip).Foreground(termenv.ANSIBrightCyan).String(),
-	)
+	sb.WriteString(labelValueSeparator)
+	sb.WriteString(uaLabel)
+	sb.WriteString(output.String(ua).Foreground(termenv.ANSIBrightCyan).String())
 
-	_, _ = sb.WriteString(labelValueSeparator)
-	_, _ = sb.WriteString(uaLabel)
-	_, _ = sb.WriteString(
-		output.String(ua).Foreground(termenv.ANSIBrightCyan).String(),
-	)
+	sb.WriteString(labelValueSeparator)
+	sb.WriteString(latencyLabel)
+	sb.WriteString(formatLatency(ms, latencyStr))
 
-	_, _ = sb.WriteString(labelValueSeparator)
-	_, _ = sb.WriteString(latencyLabel)
-	ms := latency.Milliseconds()
-
-	var latencyOutput termenv.Style
-	switch {
-	case ms >= 1000:
-		latencyOutput = output.String(latencyStr).Foreground(termenv.ANSIBrightRed).Bold()
-	case ms >= 500:
-		latencyOutput = output.String(latencyStr).Foreground(termenv.ANSIBrightYellow).Bold()
-	case ms >= 200:
-		latencyOutput = output.String(latencyStr).Foreground(termenv.ANSIBrightBlue)
-	default:
-		latencyOutput = output.String(latencyStr).Foreground(termenv.ANSIBrightGreen)
-	}
-
-	_, _ = sb.WriteString(latencyOutput.String())
-
-	_, _ = sb.WriteString(labelValueSeparator)
-	_, _ = sb.WriteString(statusLabel)
-
-	statusColor := termenv.ANSIBrightRed
-	if status >= 200 && status < 300 {
-		statusColor = termenv.ANSIBrightGreen
-	}
-
-	_, _ = sb.WriteString(
-		output.String(cast.ToString(status)).Foreground(statusColor).String(),
-	)
+	sb.WriteString(labelValueSeparator)
+	sb.WriteString(statusLabel)
+	sb.WriteString(formatStatus(status))
 
 	return sb.String()
 }
 
+func logRequest(ctx fiber.Ctx, data *loggerMiddleware.Data) {
+	details := formatRequestDetails(ctx, data)
+	logger := contextx.Logger(ctx)
+
+	if data.ChainErr == nil {
+		logger.Infof(
+			"%s%s",
+			output.String("Request completed").Foreground(termenv.ANSIBrightGreen).String(),
+			details,
+		)
+		return
+	}
+
+	if err, ok := result.AsErr(data.ChainErr); ok {
+		msg := "Request completed with error: " + data.ChainErr.Error() +
+			string(constants.ByteLeftParenthesis) + cast.ToString(err.Code) + string(constants.ByteRightParenthesis)
+		logger.Warnf(
+			"%s%s",
+			output.String(msg).Foreground(termenv.ANSIBrightYellow).String(),
+			details,
+		)
+		return
+	}
+
+	msg := "Request failed with error: " + data.ChainErr.Error()
+	logger.Errorf(
+		"%s%s",
+		output.String(msg).Foreground(termenv.ANSIBrightRed).String(),
+		details,
+	)
+}
+
 // NewRequestRecordMiddleware skips SPA static assets to reduce log noise while capturing API traffic.
-func NewRequestRecordMiddleware(spaConfigs []*middleware.SpaConfig) app.Middleware {
+func NewRequestRecordMiddleware(spaConfigs []*middleware.SPAConfig) app.Middleware {
 	handler := loggerMiddleware.New(loggerMiddleware.Config{
 		Next: func(ctx fiber.Ctx) bool {
 			return isSpaStaticRequest(ctx, spaConfigs)
 		},
 		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, _ *loggerMiddleware.Config) error {
-			details := formatRequestDetails(ctx, data)
-			logger := contextx.Logger(ctx)
-
-			if data.ChainErr != nil {
-				if err, ok := result.AsErr(data.ChainErr); ok {
-					var sb strings.Builder
-
-					_, _ = sb.WriteString("Request completed with error: ")
-					_, _ = sb.WriteString(data.ChainErr.Error())
-					_ = sb.WriteByte(constants.ByteLeftParenthesis)
-					_, _ = sb.WriteString(cast.ToString(err.Code))
-					_ = sb.WriteByte(constants.ByteRightParenthesis)
-
-					logger.Warnf(
-						"%s%s",
-						output.String(sb.String()).Foreground(termenv.ANSIBrightYellow).String(),
-						details,
-					)
-				} else {
-					var sb strings.Builder
-
-					_, _ = sb.WriteString("Request failed with error: ")
-					_, _ = sb.WriteString(data.ChainErr.Error())
-
-					logger.Errorf(
-						"%s%s",
-						output.String(sb.String()).Foreground(termenv.ANSIBrightRed).String(),
-						details,
-					)
-				}
-			} else {
-				logger.Infof(
-					"%s%s",
-					output.String("Request completed").Foreground(termenv.ANSIBrightGreen).String(),
-					details,
-				)
-			}
-
+			logRequest(ctx, data)
 			return nil
 		},
 	})

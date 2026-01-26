@@ -15,7 +15,6 @@ import (
 	"github.com/ilxqx/vef-framework-go/monitor"
 )
 
-// MonitorServiceTestSuite tests the monitor service implementation.
 type MonitorServiceTestSuite struct {
 	suite.Suite
 
@@ -72,7 +71,6 @@ func (suite *MonitorServiceTestSuite) TearDownSuite() {
 	}
 }
 
-// TestOverview tests the system overview functionality.
 func (suite *MonitorServiceTestSuite) TestOverview() {
 	suite.T().Log("Testing Overview method")
 
@@ -82,7 +80,7 @@ func (suite *MonitorServiceTestSuite) TestOverview() {
 		suite.NotNil(overview, "Overview should not be nil")
 
 		suite.NotNil(overview.Host, "Host info should be present")
-		suite.NotNil(overview.Cpu, "Cpu info should be present")
+		suite.NotNil(overview.CPU, "CPU info should be present")
 		suite.NotNil(overview.Memory, "Memory info should be present")
 		suite.NotNil(overview.Disk, "Disk info should be present")
 		suite.NotNil(overview.Network, "Network info should be present")
@@ -109,14 +107,13 @@ func (suite *MonitorServiceTestSuite) TestOverview() {
 	})
 }
 
-// TestCpu tests CPU information retrieval.
-func (suite *MonitorServiceTestSuite) TestCpu() {
-	suite.T().Log("Testing Cpu method")
+func (suite *MonitorServiceTestSuite) TestCPU() {
+	suite.T().Log("Testing CPU method")
 
 	suite.Run("Success", func() {
-		cpuInfo, err := suite.serviceWithCustomBuildInfo.Cpu(suite.ctx)
-		suite.NoError(err, "Cpu should not return error")
-		suite.NotNil(cpuInfo, "CpuInfo should not be nil")
+		cpuInfo, err := suite.serviceWithCustomBuildInfo.CPU(suite.ctx)
+		suite.NoError(err, "CPU should not return error")
+		suite.NotNil(cpuInfo, "CPUInfo should not be nil")
 
 		suite.Greater(cpuInfo.PhysicalCores, 0, "Should have at least 1 physical core")
 		suite.Greater(cpuInfo.LogicalCores, 0, "Should have at least 1 logical core")
@@ -128,7 +125,6 @@ func (suite *MonitorServiceTestSuite) TestCpu() {
 	})
 }
 
-// TestMemory tests memory information retrieval.
 func (suite *MonitorServiceTestSuite) TestMemory() {
 	suite.T().Log("Testing Memory method")
 
@@ -149,7 +145,6 @@ func (suite *MonitorServiceTestSuite) TestMemory() {
 	})
 }
 
-// TestDisk tests disk information retrieval.
 func (suite *MonitorServiceTestSuite) TestDisk() {
 	suite.T().Log("Testing Disk method")
 
@@ -170,7 +165,6 @@ func (suite *MonitorServiceTestSuite) TestDisk() {
 	})
 }
 
-// TestNetwork tests network information retrieval.
 func (suite *MonitorServiceTestSuite) TestNetwork() {
 	suite.T().Log("Testing Network method")
 
@@ -185,11 +179,10 @@ func (suite *MonitorServiceTestSuite) TestNetwork() {
 			suite.NotEmpty(iface.Name, "Interface name should not be empty")
 		}
 
-		suite.NotNil(netInfo.IoCounters, "IO counters should be present")
+		suite.NotNil(netInfo.IOCounters, "IO counters should be present")
 	})
 }
 
-// TestHost tests host information retrieval.
 func (suite *MonitorServiceTestSuite) TestHost() {
 	suite.T().Log("Testing Host method")
 
@@ -199,7 +192,7 @@ func (suite *MonitorServiceTestSuite) TestHost() {
 		suite.NotNil(hostInfo1, "HostInfo should not be nil")
 
 		suite.NotEmpty(hostInfo1.Hostname, "Hostname should not be empty")
-		suite.NotEmpty(hostInfo1.Os, "OS should not be empty")
+		suite.NotEmpty(hostInfo1.OS, "OS should not be empty")
 		suite.NotEmpty(hostInfo1.Platform, "Platform should not be empty")
 	})
 
@@ -211,12 +204,11 @@ func (suite *MonitorServiceTestSuite) TestHost() {
 		suite.NoError(err, "Second call should not return error")
 
 		suite.Equal(hostInfo1.Hostname, hostInfo2.Hostname, "Hostname should be consistent")
-		suite.Equal(hostInfo1.Os, hostInfo2.Os, "OS should be consistent")
+		suite.Equal(hostInfo1.OS, hostInfo2.OS, "OS should be consistent")
 		suite.Equal(hostInfo1.Platform, hostInfo2.Platform, "Platform should be consistent")
 	})
 }
 
-// TestProcess tests process information retrieval.
 func (suite *MonitorServiceTestSuite) TestProcess() {
 	suite.T().Log("Testing Process method")
 
@@ -225,15 +217,14 @@ func (suite *MonitorServiceTestSuite) TestProcess() {
 		suite.NoError(err, "Process should not return error")
 		suite.NotNil(procInfo, "ProcessInfo should not be nil")
 
-		suite.Greater(procInfo.Pid, int32(0), "PID should be > 0")
+		suite.Greater(procInfo.PID, int32(0), "PID should be > 0")
 		suite.NotEmpty(procInfo.Name, "Process name should not be empty")
-		suite.GreaterOrEqual(procInfo.CpuPercent, 0.0, "CPU percent should be >= 0")
+		suite.GreaterOrEqual(procInfo.CPUPercent, 0.0, "CPU percent should be >= 0")
 		suite.GreaterOrEqual(procInfo.MemoryPercent, float32(0.0), "Memory percent should be >= 0")
-		suite.Greater(procInfo.MemoryRss, uint64(0), "Memory RSS should be > 0")
+		suite.Greater(procInfo.MemoryRSS, uint64(0), "Memory RSS should be > 0")
 	})
 }
 
-// TestLoad tests system load averages retrieval.
 func (suite *MonitorServiceTestSuite) TestLoad() {
 	suite.T().Log("Testing Load method")
 
@@ -248,7 +239,6 @@ func (suite *MonitorServiceTestSuite) TestLoad() {
 	})
 }
 
-// TestBuildInfo tests build information retrieval.
 func (suite *MonitorServiceTestSuite) TestBuildInfo() {
 	suite.T().Log("Testing BuildInfo method")
 

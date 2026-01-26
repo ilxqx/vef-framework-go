@@ -7,12 +7,12 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
-	t.Run("GenerateNonEmptyId", func(t *testing.T) {
+	t.Run("GenerateNonEmptyID", func(t *testing.T) {
 		id := Generate()
 		assert.NotEmpty(t, id, "ID should not be empty")
 	})
 
-	t.Run("GenerateUniqueIds", func(t *testing.T) {
+	t.Run("GenerateUniqueIDs", func(t *testing.T) {
 		ids := make(map[string]bool)
 		iterations := 1000
 
@@ -25,7 +25,7 @@ func TestGenerate(t *testing.T) {
 		assert.Len(t, ids, iterations, "All IDs should be unique")
 	})
 
-	t.Run("UseXidGeneratorByDefault", func(t *testing.T) {
+	t.Run("UseXIDGeneratorByDefault", func(t *testing.T) {
 		id := Generate()
 
 		assert.Len(t, id, 20, "XID should be 20 characters")
@@ -38,9 +38,9 @@ func TestGenerate(t *testing.T) {
 	})
 }
 
-func TestGenerateUuid(t *testing.T) {
-	t.Run("GenerateValidUuidV7", func(t *testing.T) {
-		uuid := GenerateUuid()
+func TestGenerateUUID(t *testing.T) {
+	t.Run("GenerateValidUUIDV7", func(t *testing.T) {
+		uuid := GenerateUUID()
 		assert.NotEmpty(t, uuid, "UUID should not be empty")
 		assert.Len(t, uuid, 36, "UUID should be 36 characters")
 		assert.Equal(t, "-", string(uuid[8]), "UUID should have dash at position 8")
@@ -50,12 +50,12 @@ func TestGenerateUuid(t *testing.T) {
 		assert.Equal(t, "7", string(uuid[14]), "UUID v7 should have version 7 at position 14")
 	})
 
-	t.Run("GenerateUniqueUuids", func(t *testing.T) {
+	t.Run("GenerateUniqueUUIDs", func(t *testing.T) {
 		uuids := make(map[string]bool)
 		iterations := 1000
 
 		for range iterations {
-			uuid := GenerateUuid()
+			uuid := GenerateUUID()
 			assert.False(t, uuids[uuid], "UUID should be unique: %s", uuid)
 			uuids[uuid] = true
 		}
@@ -66,19 +66,19 @@ func TestGenerateUuid(t *testing.T) {
 
 func TestDefaultGenerators(t *testing.T) {
 	t.Run("Initialized", func(t *testing.T) {
-		assert.NotNil(t, DefaultXidIdGenerator, "DefaultXidIdGenerator should be initialized")
-		assert.NotNil(t, DefaultUuidIdGenerator, "DefaultUuidIdGenerator should be initialized")
-		assert.NotNil(t, DefaultSnowflakeIdGenerator, "DefaultSnowflakeIdGenerator should be initialized")
+		assert.NotNil(t, DefaultXIDGenerator, "DefaultXIDGenerator should be initialized")
+		assert.NotNil(t, DefaultUUIDGenerator, "DefaultUUIDGenerator should be initialized")
+		assert.NotNil(t, DefaultSnowflakeIDGenerator, "DefaultSnowflakeGenerator should be initialized")
 	})
 
-	t.Run("GenerateIds", func(t *testing.T) {
-		xid := DefaultXidIdGenerator.Generate()
+	t.Run("GenerateIDs", func(t *testing.T) {
+		xid := DefaultXIDGenerator.Generate()
 		assert.NotEmpty(t, xid, "XID generator should produce ID")
 
-		uuid := DefaultUuidIdGenerator.Generate()
+		uuid := DefaultUUIDGenerator.Generate()
 		assert.NotEmpty(t, uuid, "UUID generator should produce ID")
 
-		snowflake := DefaultSnowflakeIdGenerator.Generate()
+		snowflake := DefaultSnowflakeIDGenerator.Generate()
 		assert.NotEmpty(t, snowflake, "Snowflake generator should produce ID")
 	})
 }

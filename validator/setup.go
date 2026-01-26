@@ -15,54 +15,32 @@ func setup() {
 		func(field reflect.Value) any {
 			switch v := field.Interface().(type) {
 			case null.String:
-				if v.Valid {
-					return v.String
-				}
+				return nullValue(v.Valid, v.String)
 			case null.Int:
-				if v.Valid {
-					return v.Int64
-				}
+				return nullValue(v.Valid, v.Int64)
 			case null.Int16:
-				if v.Valid {
-					return v.Int16
-				}
+				return nullValue(v.Valid, v.Int16)
 			case null.Int32:
-				if v.Valid {
-					return v.Int32
-				}
+				return nullValue(v.Valid, v.Int32)
 			case null.Float:
-				if v.Valid {
-					return v.Float64
-				}
+				return nullValue(v.Valid, v.Float64)
 			case null.Bool:
-				if v.Valid {
-					return v.Bool
-				}
+				return nullValue(v.Valid, v.Bool)
 			case null.Byte:
-				if v.Valid {
-					return v.Byte
-				}
+				return nullValue(v.Valid, v.Byte)
 			case null.DateTime:
-				if v.Valid {
-					return v.V
-				}
+				return nullValue(v.Valid, v.V)
 			case null.Date:
-				if v.Valid {
-					return v.V
-				}
+				return nullValue(v.Valid, v.V)
 			case null.Time:
-				if v.Valid {
-					return v.V
-				}
+				return nullValue(v.Valid, v.V)
 			case null.Decimal:
-				if v.Valid {
-					return v.Decimal
-				}
+				return nullValue(v.Valid, v.Decimal)
 			default:
 				logger.Warnf("Unsupported null type: %T", field.Interface())
-			}
 
-			return nil
+				return nil
+			}
 		},
 		null.String{},
 		null.Int{},
@@ -76,4 +54,12 @@ func setup() {
 		null.Time{},
 		null.Decimal{},
 	)
+}
+
+func nullValue[T any](valid bool, value T) any {
+	if valid {
+		return value
+	}
+
+	return nil
 }

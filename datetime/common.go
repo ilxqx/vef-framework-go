@@ -24,73 +24,51 @@ var (
 // scanTimeValue is a generic helper function for scanning time values from database sources.
 // It handles various input types including []byte, string, time.Time and their pointer variants.
 func scanTimeValue(src any, parseString func(string) (any, error), convertTime func(time.Time) any, typeName string, dest any) error {
-	switch value := src.(type) {
+	switch v := src.(type) {
 	case []byte:
-		parsed, err := parseString(string(value))
-		if err != nil {
-			return err
-		}
-
-		return assignValue(dest, parsed)
-
+		return parseAndAssign(string(v), parseString, dest)
 	case *[]byte:
-		if value == nil {
+		if v == nil {
 			return nil
 		}
 
-		parsed, err := parseString(string(*value))
-		if err != nil {
-			return err
-		}
-
-		return assignValue(dest, parsed)
+		return parseAndAssign(string(*v), parseString, dest)
 
 	case string:
-		parsed, err := parseString(value)
-		if err != nil {
-			return err
-		}
-
-		return assignValue(dest, parsed)
-
+		return parseAndAssign(v, parseString, dest)
 	case *string:
-		if value == nil {
+		if v == nil {
 			return nil
 		}
 
-		parsed, err := parseString(*value)
-		if err != nil {
-			return err
-		}
-
-		return assignValue(dest, parsed)
+		return parseAndAssign(*v, parseString, dest)
 
 	case time.Time:
-		converted := convertTime(value)
-
-		return assignValue(dest, converted)
+		return assignValue(dest, convertTime(v))
 	case *time.Time:
-		if value == nil {
+		if v == nil {
 			return nil
 		}
 
-		converted := convertTime(*value)
-
-		return assignValue(dest, converted)
+		return assignValue(dest, convertTime(*v))
 
 	default:
-		// Try using cast library as fallback for other types
 		if str, err := cast.ToStringE(src); err == nil {
-			parsed, err := parseString(str)
-			if err != nil {
-				return err
-			}
-
-			return assignValue(dest, parsed)
+			return parseAndAssign(str, parseString, dest)
 		}
 
 		return fmt.Errorf("%w: %s value: %v", ErrFailedScan, typeName, src)
 	}
+}
+
+// parseAndAssign parses a string value and assigns the result to the destination.
+func parseAndAssign(s string, parseString func(string) (any, error), dest any) error {
+	parsed, err := parseString(s)
+	if err != nil {
+		return err
+	}
+
+	return assignValue(dest, parsed)
 }
 
 // assignValue assigns the parsed value to the destination pointer using type assertion.

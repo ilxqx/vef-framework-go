@@ -13,10 +13,10 @@ const refreshTokenNotBefore = accessTokenExpires / 2
 // Rate limits for authentication endpoints in production environment.
 // Strict limits protect against brute-force attacks and token abuse.
 var (
-	loginRateLimit = api.RateLimit{
+	loginRateLimit = &api.RateLimitConfig{
 		Max: 6,
 	}
-	refreshRateLimit = api.RateLimit{
+	refreshRateLimit = &api.RateLimitConfig{
 		Max: 1,
 	}
 )

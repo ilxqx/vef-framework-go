@@ -16,15 +16,14 @@ type PostgresContainer struct {
 	DsConfig  *config.DatasourceConfig
 }
 
-func (c *PostgresContainer) Terminate(ctx context.Context, suite *suite.Suite) {
+func (c *PostgresContainer) Terminate(ctx context.Context, s *suite.Suite) {
 	if err := c.container.Terminate(ctx); err != nil {
-		suite.T().Logf("Failed to terminate postgres container: %v", err)
+		s.T().Logf("Failed to terminate postgres container: %v", err)
 	}
 }
 
-func NewPostgresContainer(ctx context.Context, suite *suite.Suite) *PostgresContainer {
-	// Start PostgreSQL container
-	postgresContainer, err := postgres.Run(
+func NewPostgresContainer(ctx context.Context, s *suite.Suite) *PostgresContainer {
+	container, err := postgres.Run(
 		ctx,
 		PostgresImage,
 		postgres.WithDatabase(TestDatabaseName),
@@ -36,29 +35,24 @@ func NewPostgresContainer(ctx context.Context, suite *suite.Suite) *PostgresCont
 				WithStartupTimeout(DefaultContainerTimeout),
 		),
 	)
+	s.Require().NoError(err)
+	s.T().Log("PostgreSQL container started successfully")
 
-	suite.Require().NoError(err)
-	suite.T().Log("PostgreSQL container started successfully")
+	host, err := container.Host(ctx)
+	s.Require().NoError(err)
 
-	// Get container connection details
-	host, err := postgresContainer.Host(ctx)
-	suite.Require().NoError(err)
-
-	port, err := postgresContainer.MappedPort(ctx, "5432")
-	suite.Require().NoError(err)
-
-	// Create database config
-	dsConfig := &config.DatasourceConfig{
-		Type:     "postgres",
-		Host:     host,
-		Port:     uint16(port.Int()),
-		User:     TestUsername,
-		Password: TestPassword,
-		Database: TestDatabaseName,
-	}
+	port, err := container.MappedPort(ctx, "5432")
+	s.Require().NoError(err)
 
 	return &PostgresContainer{
-		container: postgresContainer,
-		DsConfig:  dsConfig,
+		container: container,
+		DsConfig: &config.DatasourceConfig{
+			Type:     "postgres",
+			Host:     host,
+			Port:     uint16(port.Int()),
+			User:     TestUsername,
+			Password: TestPassword,
+			Database: TestDatabaseName,
+		},
 	}
 }

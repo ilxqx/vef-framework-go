@@ -11,28 +11,28 @@ import (
 )
 
 func TestSnowflakeEdgeCases(t *testing.T) {
-	t.Run("MaximumNodeId", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(63)
+	t.Run("MaximumNodeID", func(t *testing.T) {
+		generator, err := NewSnowflakeIDGenerator(63)
 		require.NoError(t, err)
 
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Max node ID should generate valid IDs")
 	})
 
-	t.Run("NodeIdExceedingMaximum", func(t *testing.T) {
-		_, err := NewSnowflakeIdGenerator(64)
+	t.Run("NodeIDExceedingMaximum", func(t *testing.T) {
+		_, err := NewSnowflakeIDGenerator(64)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create snowflake node")
 	})
 
-	t.Run("NegativeNodeId", func(t *testing.T) {
-		_, err := NewSnowflakeIdGenerator(-1)
+	t.Run("NegativeNodeID", func(t *testing.T) {
+		_, err := NewSnowflakeIDGenerator(-1)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to create snowflake node")
 	})
 
 	t.Run("RapidSequenceGeneration", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(1)
+		generator, err := NewSnowflakeIDGenerator(1)
 		require.NoError(t, err)
 
 		ids := make(map[string]bool)
@@ -49,7 +49,7 @@ func TestSnowflakeEdgeCases(t *testing.T) {
 
 func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	t.Run("EmptyAlphabet", func(t *testing.T) {
-		generator := NewRandomIdGenerator("", 10)
+		generator := NewRandomIDGenerator("", 10)
 		assert.NotNil(t, generator, "Should create generator even with empty alphabet")
 
 		assert.Panics(t, func() {
@@ -58,7 +58,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("ZeroLength", func(t *testing.T) {
-		generator := NewRandomIdGenerator("abc", 0)
+		generator := NewRandomIDGenerator("abc", 0)
 
 		assert.Panics(t, func() {
 			generator.Generate()
@@ -66,13 +66,13 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("SingleCharacterAlphabet", func(t *testing.T) {
-		generator := NewRandomIdGenerator("X", 10)
+		generator := NewRandomIDGenerator("X", 10)
 		id := generator.Generate()
 		assert.Equal(t, "XXXXXXXXXX", id, "Single character alphabet should repeat character")
 	})
 
 	t.Run("VeryLongIds", func(t *testing.T) {
-		generator := NewRandomIdGenerator("0123456789", 1000)
+		generator := NewRandomIDGenerator("0123456789", 1000)
 		id := generator.Generate()
 		assert.Len(t, id, 1000, "Should handle very long ID generation")
 
@@ -82,7 +82,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("UnicodeCharacters", func(t *testing.T) {
-		generator := NewRandomIdGenerator("αβγδε", 5)
+		generator := NewRandomIDGenerator("αβγδε", 5)
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Should handle unicode alphabet")
 
@@ -94,9 +94,9 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 }
 
-func TestUuidEdgeCases(t *testing.T) {
+func TestUUIDEdgeCases(t *testing.T) {
 	t.Run("RapidGenerationWithoutCollision", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+		generator := NewUUIDGenerator()
 		uuids := make(map[string]bool)
 
 		for range 100000 {
@@ -109,7 +109,7 @@ func TestUuidEdgeCases(t *testing.T) {
 	})
 
 	t.Run("VersionAndVariantBitsUnderLoad", func(t *testing.T) {
-		generator := NewUuidIdGenerator()
+		generator := NewUUIDGenerator()
 
 		for range 1000 {
 			uuid := generator.Generate()
@@ -134,7 +134,7 @@ func TestXidEdgeCases(t *testing.T) {
 
 		for range numGenerators {
 			go func() {
-				generator := NewXidIdGenerator()
+				generator := NewXIDGenerator()
 				for range idsPerGenerator {
 					idChan <- generator.Generate()
 				}
@@ -153,7 +153,7 @@ func TestXidEdgeCases(t *testing.T) {
 	})
 
 	t.Run("FormatConsistency", func(t *testing.T) {
-		generator := NewXidIdGenerator()
+		generator := NewXIDGenerator()
 
 		for range 1000 {
 			id := generator.Generate()
@@ -169,30 +169,30 @@ func TestXidEdgeCases(t *testing.T) {
 }
 
 func TestEnvironmentVariables(t *testing.T) {
-	t.Run("InvalidNodeIdEnvironmentVariable", func(t *testing.T) {
-		originalNodeId := os.Getenv("NODE_ID")
+	t.Run("InvalidNodeIDEnvironmentVariable", func(t *testing.T) {
+		originalNodeID := os.Getenv("NODE_ID")
 
 		defer func() {
-			if originalNodeId != "" {
-				_ = os.Setenv("NODE_ID", originalNodeId)
+			if originalNodeID != "" {
+				_ = os.Setenv("NODE_ID", originalNodeID)
 			} else {
 				_ = os.Unsetenv("NODE_ID")
 			}
 		}()
 
-		assert.NotNil(t, DefaultSnowflakeIdGenerator, "Default generator should be initialized")
+		assert.NotNil(t, DefaultSnowflakeIDGenerator, "Default generator should be initialized")
 	})
 }
 
 func TestInterfaceCompliance(t *testing.T) {
 	t.Run("AllGeneratorsImplementInterface", func(t *testing.T) {
-		generators := []IdGenerator{
-			NewXidIdGenerator(),
-			NewUuidIdGenerator(),
-			NewRandomIdGenerator("abc", 10),
-			DefaultXidIdGenerator,
-			DefaultUuidIdGenerator,
-			DefaultSnowflakeIdGenerator,
+		generators := []IDGenerator{
+			NewXIDGenerator(),
+			NewUUIDGenerator(),
+			NewRandomIDGenerator("abc", 10),
+			DefaultXIDGenerator,
+			DefaultUUIDGenerator,
+			DefaultSnowflakeIDGenerator,
 		}
 
 		for i, generator := range generators {
@@ -204,7 +204,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	})
 
 	t.Run("SnowflakeGeneratorFromConstructor", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(1)
+		generator, err := NewSnowflakeIDGenerator(1)
 		require.NoError(t, err)
 
 		id := generator.Generate()
@@ -215,14 +215,14 @@ func TestInterfaceCompliance(t *testing.T) {
 func TestMemoryUsage(t *testing.T) {
 	t.Run("GeneratorsShouldNotLeakMemory", func(t *testing.T) {
 		for i := range 1000 {
-			_ = NewXidIdGenerator()
-			_ = NewUuidIdGenerator()
-			_ = NewRandomIdGenerator("abc", 10)
+			_ = NewXIDGenerator()
+			_ = NewUUIDGenerator()
+			_ = NewRandomIDGenerator("abc", 10)
 
 			if i%100 == 0 {
-				DefaultXidIdGenerator.Generate()
-				DefaultUuidIdGenerator.Generate()
-				DefaultSnowflakeIdGenerator.Generate()
+				DefaultXIDGenerator.Generate()
+				DefaultUUIDGenerator.Generate()
+				DefaultSnowflakeIDGenerator.Generate()
 			}
 		}
 
@@ -232,11 +232,11 @@ func TestMemoryUsage(t *testing.T) {
 
 func TestStringManipulation(t *testing.T) {
 	t.Run("IdsSafeForCommonStringOperations", func(t *testing.T) {
-		generators := []IdGenerator{
-			DefaultXidIdGenerator,
-			DefaultUuidIdGenerator,
-			DefaultSnowflakeIdGenerator,
-			NewRandomIdGenerator("0123456789abcdef", 16),
+		generators := []IDGenerator{
+			DefaultXIDGenerator,
+			DefaultUUIDGenerator,
+			DefaultSnowflakeIDGenerator,
+			NewRandomIDGenerator("0123456789abcdef", 16),
 		}
 
 		for _, generator := range generators {

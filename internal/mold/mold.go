@@ -47,23 +47,17 @@ func New() *MoldTransformer {
 	}
 }
 
-// Register adds a transformation with the given tag
+// Register adds a transformation with the given tag.
 //
-// NOTES:
-// - if the key already exists, the previous transformation function will be replaced.
-// - this method is not thread-safe it is intended that these all be registered before hand.
+// NOTE: This method is not thread-safe; register all transformations before use.
 func (t *MoldTransformer) Register(tag string, fn mold.Func) {
-	if len(tag) == 0 {
+	if tag == "" {
 		panic("mold: transformation tag cannot be empty")
 	}
-
 	if fn == nil {
 		panic("mold: transformation function cannot be nil")
 	}
-
-	_, ok := restrictedTags[tag]
-
-	if ok || strings.ContainsAny(tag, restrictedTagChars) {
+	if _, ok := restrictedTags[tag]; ok || strings.ContainsAny(tag, restrictedTagChars) {
 		panic(fmt.Sprintf(restrictedTagErr, tag))
 	}
 
@@ -71,22 +65,17 @@ func (t *MoldTransformer) Register(tag string, fn mold.Func) {
 }
 
 // RegisterAlias registers a mapping of a single transform tag that
-// defines a common or complex set of transformations to simplify adding transforms
-// to structs.
+// defines a common or complex set of transformations.
 //
-// NOTE: this function is not thread-safe it is intended that these all be registered before hand.
+// NOTE: This method is not thread-safe; register all aliases before use.
 func (t *MoldTransformer) RegisterAlias(alias, tags string) {
-	if len(alias) == 0 {
+	if alias == "" {
 		panic("mold: transformation alias cannot be empty")
 	}
-
-	if len(tags) == 0 {
+	if tags == "" {
 		panic("mold: aliased tags cannot be empty")
 	}
-
-	_, ok := restrictedTags[alias]
-
-	if ok || strings.ContainsAny(alias, restrictedTagChars) {
+	if _, ok := restrictedTags[alias]; ok || strings.ContainsAny(alias, restrictedTagChars) {
 		panic(fmt.Sprintf(restrictedAliasErr, alias))
 	}
 
@@ -94,26 +83,19 @@ func (t *MoldTransformer) RegisterAlias(alias, tags string) {
 }
 
 // RegisterStructLevel registers a StructLevelFunc against a number of types.
-// Why does this exist? For structs for which you may not have access or rights to add tags too,
-// from other packages your using.
 //
-// NOTES:
-// - this method is not thread-safe it is intended that these all be registered prior to any validation.
+// NOTE: This method is not thread-safe; register all struct-level functions before use.
 func (t *MoldTransformer) RegisterStructLevel(fn mold.StructLevelFunc, types ...any) {
 	if t.structLevelFuncs == nil {
 		t.structLevelFuncs = make(map[reflect.Type]mold.StructLevelFunc)
 	}
-
 	for _, typ := range types {
 		t.structLevelFuncs[reflect.TypeOf(typ)] = fn
 	}
 }
 
-// RegisterInterceptor registers a new interceptor functions against one or more types.
-// This InterceptorFunc allows one to intercept the incoming to redirect the application of modifications
-// to an inner type/value.
-//
-// Eg. Sql.NullString.
+// RegisterInterceptor registers interceptor functions against one or more types.
+// InterceptorFunc allows intercepting incoming values to redirect modifications to an inner type/value.
 func (t *MoldTransformer) RegisterInterceptor(fn mold.InterceptorFunc, types ...any) {
 	for _, typ := range types {
 		t.interceptors[reflect.TypeOf(typ)] = fn
@@ -123,7 +105,6 @@ func (t *MoldTransformer) RegisterInterceptor(fn mold.InterceptorFunc, types ...
 // Struct applies transformations against the provided struct.
 func (t *MoldTransformer) Struct(ctx context.Context, v any) error {
 	orig := reflect.ValueOf(v)
-
 	if orig.Kind() != reflect.Ptr || orig.IsNil() {
 		return &ErrInvalidTransformValue{typ: reflect.TypeOf(v), fn: "Struct"}
 	}
@@ -131,24 +112,24 @@ func (t *MoldTransformer) Struct(ctx context.Context, v any) error {
 	val := orig.Elem()
 	typ := val.Type()
 
-	if val.Kind() != reflect.Struct || val.Type() == timeType {
+	if val.Kind() != reflect.Struct || typ == timeType {
 		return &ErrInvalidTransformation{typ: reflect.TypeOf(v)}
 	}
 
 	return t.setByStruct(ctx, orig, val, typ)
 }
 
-func (t *MoldTransformer) setByStruct(ctx context.Context, parent, current reflect.Value, typ reflect.Type) (err error) {
+func (t *MoldTransformer) setByStruct(ctx context.Context, parent, current reflect.Value, typ reflect.Type) error {
 	cs, ok := t.cCache.Get(typ)
 	if !ok {
+		var err error
 		if cs, err = t.extractStructCache(current); err != nil {
 			return err
 		}
 	}
 
-	// run is struct has a corresponding struct level transformation
 	if cs.fn != nil {
-		if err = cs.fn(ctx, MoldStructLevel{
+		if err := cs.fn(ctx, MoldStructLevel{
 			transformer: t,
 			parent:      parent,
 			current:     current,
@@ -158,7 +139,7 @@ func (t *MoldTransformer) setByStruct(ctx context.Context, parent, current refle
 	}
 
 	for name, field := range cs.fields {
-		if err = t.setByFieldWithContainer(ctx, name, current.Field(field.idx), field.cTags, current, cs); err != nil {
+		if err := t.setByFieldWithContainer(ctx, name, current.Field(field.idx), field.cTags, current, cs); err != nil {
 			return err
 		}
 	}
@@ -167,251 +148,164 @@ func (t *MoldTransformer) setByStruct(ctx context.Context, parent, current refle
 }
 
 // Field applies the provided transformations against the variable.
-func (t *MoldTransformer) Field(ctx context.Context, v any, tags string) (err error) {
-	if len(tags) == 0 || tags == ignoreTag {
+func (t *MoldTransformer) Field(ctx context.Context, v any, tags string) error {
+	if tags == "" || tags == ignoreTag {
 		return nil
 	}
 
 	val := reflect.ValueOf(v)
-
 	if val.Kind() != reflect.Pointer || val.IsNil() {
 		return &ErrInvalidTransformValue{typ: reflect.TypeOf(v), fn: "Field"}
 	}
 
 	val = val.Elem()
-
-	// find cached tag
-	ctag, ok := t.tCache.Get(tags)
-	if !ok {
-		t.tCache.lock.Lock()
-
-		// could have been multiple trying to access, but once first is done this ensures tag
-		// isn't parsed again.
-		ctag, ok = t.tCache.Get(tags)
-		if !ok {
-			if ctag, _, err = t.parseFieldTagsRecursive(tags, constants.Empty, constants.Empty, false); err != nil {
-				t.tCache.lock.Unlock()
-
-				return err
-			}
-
-			t.tCache.Set(tags, ctag)
-		}
-
-		t.tCache.lock.Unlock()
+	ctag, err := t.getOrParseTagCache(tags)
+	if err != nil {
+		return err
 	}
 
-	err = t.setByField(ctx, val, ctag)
-
-	return err
+	return t.setByField(ctx, val, ctag)
 }
 
-func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name string, original reflect.Value, ct *cTag, structValue reflect.Value, structCache *cStruct) (err error) {
+func (t *MoldTransformer) getOrParseTagCache(tags string) (*cTag, error) {
+	if ctag, ok := t.tCache.Get(tags); ok {
+		return ctag, nil
+	}
+
+	t.tCache.lock.Lock()
+	defer t.tCache.lock.Unlock()
+
+	if ctag, ok := t.tCache.Get(tags); ok {
+		return ctag, nil
+	}
+
+	ctag, _, err := t.parseFieldTagsRecursive(tags, constants.Empty, constants.Empty, false)
+	if err != nil {
+		return nil, err
+	}
+
+	t.tCache.Set(tags, ctag)
+	return ctag, nil
+}
+
+func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value, ct *cTag) error {
+	return t.setByFieldInternal(ctx, constants.Empty, original, ct, reflect.Value{}, nil)
+}
+
+func (t *MoldTransformer) setByFieldWithContainer(ctx context.Context, name string, original reflect.Value, ct *cTag, structValue reflect.Value, structCache *cStruct) error {
+	return t.setByFieldInternal(ctx, name, original, ct, structValue, structCache)
+}
+
+func (t *MoldTransformer) setByFieldInternal(ctx context.Context, name string, original reflect.Value, ct *cTag, structValue reflect.Value, structCache *cStruct) (err error) {
 	current, kind := t.extractType(original)
 
 	if ct != nil && ct.hasTag {
 		for ct != nil {
 			switch ct.typeof {
 			case typeEndKeys:
-				return err
+				return nil
+
 			case typeDive:
 				ct = ct.next
-
-				switch kind {
-				case reflect.Slice, reflect.Array:
-					err = t.setByIterable(ctx, current, ct)
-				case reflect.Map:
-					err = t.setByMap(ctx, current, ct)
-				case reflect.Pointer:
-					innerKind := current.Type().Elem().Kind()
-					if innerKind == reflect.Slice || innerKind == reflect.Map {
-						// is a nil pointer to a slice or map, nothing to do.
-						return nil
-					}
-					// not a valid use of the dive tag
-					fallthrough
-
-				default:
-					err = ErrInvalidDive
-				}
-
-				return err
+				return t.handleDive(ctx, current, kind, ct)
 
 			default:
-				if !current.CanAddr() {
-					newVal := reflect.New(current.Type()).Elem()
-					newVal.Set(current)
-
-					if err = ct.fn(ctx, MoldFieldLevel{
-						transformer: t,
-						name:        name,
-						parent:      original,
-						current:     newVal,
-						param:       ct.param,
-						container:   structValue,
-						sc:          structCache,
-					}); err != nil {
-						return err
-					}
-
-					original.Set(reflect.Indirect(newVal))
-					current, kind = t.extractType(original)
-				} else {
-					if err = ct.fn(ctx, MoldFieldLevel{
-						transformer: t,
-						name:        name,
-						parent:      original,
-						current:     current,
-						param:       ct.param,
-						container:   structValue,
-						sc:          structCache,
-					}); err != nil {
-						return err
-					}
-					// value could have been changed or reassigned
-					current, kind = t.extractType(current)
+				if current, kind, err = t.applyTransformation(ctx, name, original, current, ct, structValue, structCache); err != nil {
+					return err
 				}
-
 				ct = ct.next
 			}
 		}
 	}
 
-	// need to do this again because one of the previous
-	// sets could have set a struct value, where it was a
-	// nil pointer before
-	original2 := current
-	current, kind = t.extractType(current)
-
-	if kind == reflect.Struct {
-		typ := current.Type()
-		if typ == timeType {
-			return err
-		}
-
-		if !current.CanAddr() {
-			newVal := reflect.New(typ).Elem()
-			newVal.Set(current)
-
-			if err = t.setByStruct(ctx, original, newVal, typ); err != nil {
-				return err
-			}
-
-			original.Set(reflect.Indirect(newVal))
-
-			return err
-		}
-
-		err = t.setByStruct(ctx, original2, current, typ)
-	}
-
-	return err
+	return t.traverseStruct(ctx, current, original)
 }
 
-func (t *MoldTransformer) setByField(ctx context.Context, original reflect.Value, ct *cTag) (err error) {
-	current, kind := t.extractType(original)
-
-	if ct != nil && ct.hasTag {
-		for ct != nil {
-			switch ct.typeof {
-			case typeEndKeys:
-				return err
-			case typeDive:
-				ct = ct.next
-
-				switch kind {
-				case reflect.Slice, reflect.Array:
-					err = t.setByIterable(ctx, current, ct)
-				case reflect.Map:
-					err = t.setByMap(ctx, current, ct)
-				case reflect.Pointer:
-					innerKind := current.Type().Elem().Kind()
-					if innerKind == reflect.Slice || innerKind == reflect.Map {
-						// is a nil pointer to a slice or map, nothing to do.
-						return nil
-					}
-					// not a valid use of the dive tag
-					fallthrough
-
-				default:
-					err = ErrInvalidDive
-				}
-
-				return err
-
-			default:
-				if !current.CanAddr() {
-					newVal := reflect.New(current.Type()).Elem()
-					newVal.Set(current)
-
-					if err = ct.fn(ctx, MoldFieldLevel{
-						transformer: t,
-						parent:      original,
-						current:     newVal,
-						param:       ct.param,
-					}); err != nil {
-						return err
-					}
-
-					original.Set(reflect.Indirect(newVal))
-					current, kind = t.extractType(original)
-				} else {
-					if err = ct.fn(ctx, MoldFieldLevel{
-						transformer: t,
-						parent:      original,
-						current:     current,
-						param:       ct.param,
-					}); err != nil {
-						return err
-					}
-					// value could have been changed or reassigned
-					current, kind = t.extractType(current)
-				}
-
-				ct = ct.next
-			}
+func (t *MoldTransformer) handleDive(ctx context.Context, current reflect.Value, kind reflect.Kind, ct *cTag) error {
+	switch kind {
+	case reflect.Slice, reflect.Array:
+		return t.setByIterable(ctx, current, ct)
+	case reflect.Map:
+		return t.setByMap(ctx, current, ct)
+	case reflect.Pointer:
+		innerKind := current.Type().Elem().Kind()
+		if innerKind == reflect.Slice || innerKind == reflect.Map {
+			return nil
 		}
+		fallthrough
+	default:
+		return ErrInvalidDive
 	}
-
-	// need to do this again because one of the previous
-	// sets could have set a struct value, where it was a
-	// nil pointer before
-	original2 := current
-	current, kind = t.extractType(current)
-
-	if kind == reflect.Struct {
-		typ := current.Type()
-		if typ == timeType {
-			return err
-		}
-
-		if !current.CanAddr() {
-			newVal := reflect.New(typ).Elem()
-			newVal.Set(current)
-
-			if err = t.setByStruct(ctx, original, newVal, typ); err != nil {
-				return err
-			}
-
-			original.Set(reflect.Indirect(newVal))
-
-			return err
-		}
-
-		err = t.setByStruct(ctx, original2, current, typ)
-	}
-
-	return err
 }
 
-func (t *MoldTransformer) setByIterable(ctx context.Context, current reflect.Value, ct *cTag) (err error) {
-	for i := 0; i < current.Len(); i++ {
-		if err = t.setByField(ctx, current.Index(i), ct); err != nil {
+func (t *MoldTransformer) applyTransformation(ctx context.Context, name string, original, current reflect.Value, ct *cTag, structValue reflect.Value, structCache *cStruct) (reflect.Value, reflect.Kind, error) {
+	fl := MoldFieldLevel{
+		transformer: t,
+		name:        name,
+		parent:      original,
+		current:     current,
+		param:       ct.param,
+		container:   structValue,
+		sc:          structCache,
+	}
+
+	if !current.CanAddr() {
+		newVal := reflect.New(current.Type()).Elem()
+		newVal.Set(current)
+		fl.current = newVal
+
+		if err := ct.fn(ctx, fl); err != nil {
+			return current, current.Kind(), err
+		}
+
+		original.Set(reflect.Indirect(newVal))
+		newCurrent, newKind := t.extractType(original)
+		return newCurrent, newKind, nil
+	}
+
+	if err := ct.fn(ctx, fl); err != nil {
+		return current, current.Kind(), err
+	}
+
+	newCurrent, newKind := t.extractType(current)
+	return newCurrent, newKind, nil
+}
+
+func (t *MoldTransformer) traverseStruct(ctx context.Context, current, original reflect.Value) error {
+	original2 := current
+	current, kind := t.extractType(current)
+
+	if kind != reflect.Struct {
+		return nil
+	}
+
+	typ := current.Type()
+	if typ == timeType {
+		return nil
+	}
+
+	if !current.CanAddr() {
+		newVal := reflect.New(typ).Elem()
+		newVal.Set(current)
+
+		if err := t.setByStruct(ctx, original, newVal, typ); err != nil {
+			return err
+		}
+
+		original.Set(reflect.Indirect(newVal))
+		return nil
+	}
+
+	return t.setByStruct(ctx, original2, current, typ)
+}
+
+func (t *MoldTransformer) setByIterable(ctx context.Context, current reflect.Value, ct *cTag) error {
+	for i := range current.Len() {
+		if err := t.setByField(ctx, current.Index(i), ct); err != nil {
 			return err
 		}
 	}
-
-	return err
+	return nil
 }
 
 func (t *MoldTransformer) setByMap(ctx context.Context, current reflect.Value, ct *cTag) error {
@@ -420,20 +314,16 @@ func (t *MoldTransformer) setByMap(ctx context.Context, current reflect.Value, c
 		newVal.Set(current.MapIndex(key))
 
 		if ct != nil && ct.typeof == typeKeys && ct.keys != nil {
-			// remove current map key as we may be changing it
-			// and re-add to the map afterwards
 			current.SetMapIndex(key, reflect.Value{})
 
 			newKey := reflect.New(current.Type().Key()).Elem()
 			newKey.Set(key)
 			key = newKey
 
-			// handle map key
 			if err := t.setByField(ctx, key, ct.keys); err != nil {
 				return err
 			}
 
-			// can be nil when just keys being validated
 			if ct.next != nil {
 				if err := t.setByField(ctx, newVal, ct.next); err != nil {
 					return err
@@ -447,6 +337,5 @@ func (t *MoldTransformer) setByMap(ctx context.Context, current reflect.Value, c
 
 		current.SetMapIndex(key, newVal)
 	}
-
 	return nil
 }

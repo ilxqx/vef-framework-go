@@ -14,7 +14,7 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 	// Test 1: Simple equals with string
 	suite.Run("SimpleStringEquals", func() {
 		type EqualsResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Title  string `bun:"title"`
 			Status string `bun:"status"`
 		}
@@ -38,14 +38,14 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 
 		for _, result := range results {
 			suite.Equal("published", result.Status, "Status should be 'published'")
-			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.Id, result.Title, result.Status)
+			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.ID, result.Title, result.Status)
 		}
 	})
 
 	// Test 2: Equals with integer
 	suite.Run("IntegerEquals", func() {
 		type IntegerEqualsResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -67,14 +67,14 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 
 		for _, result := range results {
 			suite.Equal(int64(42), result.ViewCount, "ViewCount should be 42")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 3: Equals in SELECT clause
 	suite.Run("EqualsInSelect", func() {
 		type SelectEqualsResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Status      string `bun:"status"`
 			IsPublished bool   `bun:"is_published"`
 		}
@@ -101,7 +101,7 @@ func (suite *ComparisonExpressionsTestSuite) TestEquals() {
 				suite.False(result.IsPublished, "IsPublished should be false for non-published posts")
 			}
 
-			suite.T().Logf("ID: %s, Status: %s, IsPublished: %v", result.Id, result.Status, result.IsPublished)
+			suite.T().Logf("ID: %s, Status: %s, IsPublished: %v", result.ID, result.Status, result.IsPublished)
 		}
 	})
 }
@@ -113,7 +113,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 	// Test 1: Simple NotEquals with string
 	suite.Run("SimpleStringNotEquals", func() {
 		type NotEqualsResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Title  string `bun:"title"`
 			Status string `bun:"status"`
 		}
@@ -137,14 +137,14 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 
 		for _, result := range results {
 			suite.NotEqual("draft", result.Status, "Status should not be 'draft'")
-			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.Id, result.Title, result.Status)
+			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.ID, result.Title, result.Status)
 		}
 	})
 
 	// Test 2: NotEquals with integer
 	suite.Run("IntegerNotEquals", func() {
 		type IntegerNotEqualsResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 		}
 
@@ -167,14 +167,14 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 
 		for _, result := range results {
 			suite.NotEqual(int64(0), result.ViewCount, "ViewCount should not be 0")
-			suite.T().Logf("ID: %s, ViewCount: %d", result.Id, result.ViewCount)
+			suite.T().Logf("ID: %s, ViewCount: %d", result.ID, result.ViewCount)
 		}
 	})
 
 	// Test 3: NotEquals in SELECT clause
 	suite.Run("NotEqualsInSelect", func() {
 		type SelectNotEqualsResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Status   string `bun:"status"`
 			NotDraft bool   `bun:"not_draft"`
 		}
@@ -201,7 +201,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotEquals() {
 				suite.False(result.NotDraft, "NotDraft should be false for draft posts")
 			}
 
-			suite.T().Logf("ID: %s, Status: %s, NotDraft: %v", result.Id, result.Status, result.NotDraft)
+			suite.T().Logf("ID: %s, Status: %s, NotDraft: %v", result.ID, result.Status, result.NotDraft)
 		}
 	})
 }
@@ -213,7 +213,7 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThan() {
 	// Test 1: Simple GreaterThan
 	suite.Run("SimpleGreaterThan", func() {
 		type GreaterThanResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -237,14 +237,14 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThan() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount > 50, "ViewCount should be > 50")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 2: GreaterThan in SELECT clause
 	suite.Run("GreaterThanInSelect", func() {
 		type SelectGreaterThanResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			ViewCount  int64  `bun:"view_count"`
 			IsHighView bool   `bun:"is_high_view"`
 		}
@@ -271,7 +271,7 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThan() {
 				suite.False(result.IsHighView, "IsHighView should be false when ViewCount <= 80")
 			}
 
-			suite.T().Logf("ID: %s, ViewCount: %d, IsHighView: %v", result.Id, result.ViewCount, result.IsHighView)
+			suite.T().Logf("ID: %s, ViewCount: %d, IsHighView: %v", result.ID, result.ViewCount, result.IsHighView)
 		}
 	})
 }
@@ -283,7 +283,7 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 	// Test 1: Simple GreaterThanOrEqual
 	suite.Run("SimpleGreaterThanOrEqual", func() {
 		type GreaterThanOrEqualResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -307,14 +307,14 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 30, "ViewCount should be >= 30")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 2: GreaterThanOrEqual at boundary
 	suite.Run("BoundaryGreaterThanOrEqual", func() {
 		type BoundaryResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 		}
 
@@ -335,7 +335,7 @@ func (suite *ComparisonExpressionsTestSuite) TestGreaterThanOrEqual() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 42, "ViewCount should be >= 42")
-			suite.T().Logf("ID: %s, ViewCount: %d", result.Id, result.ViewCount)
+			suite.T().Logf("ID: %s, ViewCount: %d", result.ID, result.ViewCount)
 		}
 	})
 }
@@ -347,7 +347,7 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThan() {
 	// Test 1: Simple LessThan
 	suite.Run("SimpleLessThan", func() {
 		type LessThanResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -371,14 +371,14 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThan() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount < 70, "ViewCount should be < 70")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 2: LessThan in SELECT clause
 	suite.Run("LessThanInSelect", func() {
 		type SelectLessThanResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 			IsLowView bool   `bun:"is_low_view"`
 		}
@@ -405,7 +405,7 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThan() {
 				suite.False(result.IsLowView, "IsLowView should be false when ViewCount >= 30")
 			}
 
-			suite.T().Logf("ID: %s, ViewCount: %d, IsLowView: %v", result.Id, result.ViewCount, result.IsLowView)
+			suite.T().Logf("ID: %s, ViewCount: %d, IsLowView: %v", result.ID, result.ViewCount, result.IsLowView)
 		}
 	})
 }
@@ -417,7 +417,7 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 	// Test 1: Simple LessThanOrEqual
 	suite.Run("SimpleLessThanOrEqual", func() {
 		type LessThanOrEqualResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -441,14 +441,14 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount <= 50, "ViewCount should be <= 50")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 2: LessThanOrEqual at boundary
 	suite.Run("BoundaryLessThanOrEqual", func() {
 		type BoundaryResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 		}
 
@@ -469,7 +469,7 @@ func (suite *ComparisonExpressionsTestSuite) TestLessThanOrEqual() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount <= 42, "ViewCount should be <= 42")
-			suite.T().Logf("ID: %s, ViewCount: %d", result.Id, result.ViewCount)
+			suite.T().Logf("ID: %s, ViewCount: %d", result.ID, result.ViewCount)
 		}
 	})
 }
@@ -481,7 +481,7 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 	// Test 1: Simple Between with integers
 	suite.Run("SimpleBetweenIntegers", func() {
 		type BetweenResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -504,14 +504,14 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 30 && result.ViewCount <= 70, "ViewCount should be between 30 and 70")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 2: Between at boundaries
 	suite.Run("BetweenAtBoundaries", func() {
 		type BoundaryBetweenResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 		}
 
@@ -531,14 +531,14 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 
 		for _, result := range results {
 			suite.Equal(int64(42), result.ViewCount, "ViewCount should be exactly 42")
-			suite.T().Logf("ID: %s, ViewCount: %d", result.Id, result.ViewCount)
+			suite.T().Logf("ID: %s, ViewCount: %d", result.ID, result.ViewCount)
 		}
 	})
 
 	// Test 3: Between in SELECT clause
 	suite.Run("BetweenInSelect", func() {
 		type SelectBetweenResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			ViewCount    int64  `bun:"view_count"`
 			IsMediumView bool   `bun:"is_medium_view"`
 		}
@@ -565,7 +565,7 @@ func (suite *ComparisonExpressionsTestSuite) TestBetween() {
 				suite.False(result.IsMediumView, "IsMediumView should be false when outside range")
 			}
 
-			suite.T().Logf("ID: %s, ViewCount: %d, IsMediumView: %v", result.Id, result.ViewCount, result.IsMediumView)
+			suite.T().Logf("ID: %s, ViewCount: %d, IsMediumView: %v", result.ID, result.ViewCount, result.IsMediumView)
 		}
 	})
 }
@@ -577,7 +577,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotBetween() {
 	// Test 1: Simple NotBetween
 	suite.Run("SimpleNotBetween", func() {
 		type NotBetweenResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -600,14 +600,14 @@ func (suite *ComparisonExpressionsTestSuite) TestNotBetween() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount < 30 || result.ViewCount > 70, "ViewCount should be outside 30-70 range")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 2: NotBetween in SELECT clause
 	suite.Run("NotBetweenInSelect", func() {
 		type SelectNotBetweenResult struct {
-			Id            string `bun:"id"`
+			ID            string `bun:"id"`
 			ViewCount     int64  `bun:"view_count"`
 			IsExtremeView bool   `bun:"is_extreme_view"`
 		}
@@ -634,7 +634,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotBetween() {
 				suite.False(result.IsExtremeView, "IsExtremeView should be false when in range")
 			}
 
-			suite.T().Logf("ID: %s, ViewCount: %d, IsExtremeView: %v", result.Id, result.ViewCount, result.IsExtremeView)
+			suite.T().Logf("ID: %s, ViewCount: %d, IsExtremeView: %v", result.ID, result.ViewCount, result.IsExtremeView)
 		}
 	})
 }
@@ -646,7 +646,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 	// Test 1: Simple In with strings
 	suite.Run("SimpleInStrings", func() {
 		type InResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Title  string `bun:"title"`
 			Status string `bun:"status"`
 		}
@@ -669,14 +669,14 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 
 		for _, result := range results {
 			suite.True(result.Status == "published" || result.Status == "review", "Status should be in allowed list")
-			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.Id, result.Title, result.Status)
+			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.ID, result.Title, result.Status)
 		}
 	})
 
 	// Test 2: In with integers
 	suite.Run("InIntegers", func() {
 		type IntegerInResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 		}
 
@@ -699,14 +699,14 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 			suite.True(
 				result.ViewCount == 23 || result.ViewCount == 42 || result.ViewCount == 85 || result.ViewCount == 96,
 				"ViewCount should be in allowed list")
-			suite.T().Logf("ID: %s, ViewCount: %d", result.Id, result.ViewCount)
+			suite.T().Logf("ID: %s, ViewCount: %d", result.ID, result.ViewCount)
 		}
 	})
 
 	// Test 3: In with single value
 	suite.Run("InSingleValue", func() {
 		type SingleInResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Status string `bun:"status"`
 		}
 
@@ -728,14 +728,14 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 
 		for _, result := range results {
 			suite.Equal("draft", result.Status, "Status should be 'draft'")
-			suite.T().Logf("ID: %s, Status: %s", result.Id, result.Status)
+			suite.T().Logf("ID: %s, Status: %s", result.ID, result.Status)
 		}
 	})
 
 	// Test 4: In in SELECT clause
 	suite.Run("InInSelect", func() {
 		type SelectInResult struct {
-			Id             string `bun:"id"`
+			ID             string `bun:"id"`
 			Status         string `bun:"status"`
 			IsActiveStatus bool   `bun:"is_active_status"`
 		}
@@ -762,7 +762,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIn() {
 				suite.False(result.IsActiveStatus, "IsActiveStatus should be false for non-active statuses")
 			}
 
-			suite.T().Logf("ID: %s, Status: %s, IsActiveStatus: %v", result.Id, result.Status, result.IsActiveStatus)
+			suite.T().Logf("ID: %s, Status: %s, IsActiveStatus: %v", result.ID, result.Status, result.IsActiveStatus)
 		}
 	})
 }
@@ -774,7 +774,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 	// Test 1: Simple NotIn with strings
 	suite.Run("SimpleNotInStrings", func() {
 		type NotInResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Title  string `bun:"title"`
 			Status string `bun:"status"`
 		}
@@ -797,14 +797,14 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 
 		for _, result := range results {
 			suite.True(result.Status != "draft" && result.Status != "archived", "Status should not be in excluded list")
-			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.Id, result.Title, result.Status)
+			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.ID, result.Title, result.Status)
 		}
 	})
 
 	// Test 2: NotIn with integers
 	suite.Run("NotInIntegers", func() {
 		type IntegerNotInResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 		}
 
@@ -828,14 +828,14 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 			suite.True(
 				result.ViewCount != 0 && result.ViewCount != 10 && result.ViewCount != 20,
 				"ViewCount should not be in excluded list")
-			suite.T().Logf("ID: %s, ViewCount: %d", result.Id, result.ViewCount)
+			suite.T().Logf("ID: %s, ViewCount: %d", result.ID, result.ViewCount)
 		}
 	})
 
 	// Test 3: NotIn in SELECT clause
 	suite.Run("NotInInSelect", func() {
 		type SelectNotInResult struct {
-			Id            string `bun:"id"`
+			ID            string `bun:"id"`
 			Status        string `bun:"status"`
 			IsNotExcluded bool   `bun:"is_not_excluded"`
 		}
@@ -862,7 +862,7 @@ func (suite *ComparisonExpressionsTestSuite) TestNotIn() {
 				suite.False(result.IsNotExcluded, "IsNotExcluded should be false for excluded statuses")
 			}
 
-			suite.T().Logf("ID: %s, Status: %s, IsNotExcluded: %v", result.Id, result.Status, result.IsNotExcluded)
+			suite.T().Logf("ID: %s, Status: %s, IsNotExcluded: %v", result.ID, result.Status, result.IsNotExcluded)
 		}
 	})
 }
@@ -874,7 +874,7 @@ func (suite *ComparisonExpressionsTestSuite) TestCombinedComparisons() {
 	// Test 1: Combined comparisons in SELECT
 	suite.Run("CombinedComparisonsInSelect", func() {
 		type CombinedResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			ViewCount    int64  `bun:"view_count"`
 			IsHighView   bool   `bun:"is_high_view"`
 			IsMediumView bool   `bun:"is_medium_view"`
@@ -919,7 +919,7 @@ func (suite *ComparisonExpressionsTestSuite) TestCombinedComparisons() {
 			}
 
 			suite.T().Logf("ID: %s, ViewCount: %d, High: %v, Medium: %v, Low: %v",
-				result.Id, result.ViewCount, result.IsHighView, result.IsMediumView, result.IsLowView)
+				result.ID, result.ViewCount, result.IsHighView, result.IsMediumView, result.IsLowView)
 		}
 	})
 }
@@ -930,7 +930,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIsTrue() {
 
 	suite.Run("IsTrueOnBooleanColumn", func() {
 		type IsTrueResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Name     string `bun:"name"`
 			IsActive bool   `bun:"is_active"`
 		}
@@ -954,13 +954,13 @@ func (suite *ComparisonExpressionsTestSuite) TestIsTrue() {
 
 		for _, result := range results {
 			suite.True(result.IsActive, "IsActive should be true")
-			suite.T().Logf("ID: %s, Name: %s, IsActive: %v", result.Id, result.Name, result.IsActive)
+			suite.T().Logf("ID: %s, Name: %s, IsActive: %v", result.ID, result.Name, result.IsActive)
 		}
 	})
 
 	suite.Run("IsTrueOnExpression", func() {
 		type ExprIsTrueResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 			IsPopular bool   `bun:"is_popular"`
@@ -989,7 +989,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIsTrue() {
 		for _, result := range results {
 			suite.True(result.ViewCount > 50, "ViewCount should be > 50")
 			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d, IsPopular: %v",
-				result.Id, result.Title, result.ViewCount, result.IsPopular)
+				result.ID, result.Title, result.ViewCount, result.IsPopular)
 		}
 	})
 }
@@ -1000,7 +1000,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIsFalse() {
 
 	suite.Run("IsFalseOnBooleanColumn", func() {
 		type IsFalseResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Name     string `bun:"name"`
 			IsActive bool   `bun:"is_active"`
 		}
@@ -1024,13 +1024,13 @@ func (suite *ComparisonExpressionsTestSuite) TestIsFalse() {
 
 		for _, result := range results {
 			suite.False(result.IsActive, "IsActive should be false")
-			suite.T().Logf("ID: %s, Name: %s, IsActive: %v", result.Id, result.Name, result.IsActive)
+			suite.T().Logf("ID: %s, Name: %s, IsActive: %v", result.ID, result.Name, result.IsActive)
 		}
 	})
 
 	suite.Run("IsFalseOnExpression", func() {
 		type ExprIsFalseResult struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			Title        string `bun:"title"`
 			ViewCount    int64  `bun:"view_count"`
 			IsNotPopular bool   `bun:"is_not_popular"`
@@ -1059,7 +1059,7 @@ func (suite *ComparisonExpressionsTestSuite) TestIsFalse() {
 		for _, result := range results {
 			suite.False(result.ViewCount > 50, "ViewCount should be <= 50")
 			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d, IsNotPopular: %v",
-				result.Id, result.Title, result.ViewCount, result.IsNotPopular)
+				result.ID, result.Title, result.ViewCount, result.IsNotPopular)
 		}
 	})
 }

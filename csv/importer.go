@@ -8,8 +8,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ilxqx/go-streams"
-
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/tabular"
@@ -93,11 +91,10 @@ func (i *importer) Import(reader io.Reader) (any, []tabular.ImportError, error) 
 	if i.options.hasHeader {
 		headerRow := rows[i.options.skipRows]
 
-		var err error
-
-		columnMapping, err = i.buildColumnMapping(headerRow)
-		if err != nil {
-			return nil, nil, fmt.Errorf("build column mapping: %w", err)
+		var mappingErr error
+		columnMapping, mappingErr = i.buildColumnMapping(headerRow)
+		if mappingErr != nil {
+			return nil, nil, fmt.Errorf("build column mapping: %w", mappingErr)
 		}
 
 		dataStartIdx++
@@ -143,13 +140,10 @@ func (i *importer) buildColumnMapping(headerRow []string) (map[int]int, error) {
 	columns := i.schema.Columns()
 	mapping := make(map[int]int)
 
-	// Use streams to build name-to-index mapping
-	// Convert Stream2[int, *Column] to Stream[Pair] then to map
-	nameToSchemaIdx := streams.ToMap(
-		streams.ZipWithIndex(streams.FromSlice(columns)).ToPairs(),
-		func(p streams.Pair[int, *tabular.Column]) string { return p.Second.Name },
-		func(p streams.Pair[int, *tabular.Column]) int { return p.First },
-	)
+	nameToSchemaIdx := make(map[string]int, len(columns))
+	for idx, col := range columns {
+		nameToSchemaIdx[col.Name] = idx
+	}
 
 	seen := make(map[string]bool)
 	for csvIdx, headerName := range headerRow {
@@ -255,15 +249,16 @@ func (i *importer) parseValue(cellValue string, targetType reflect.Type, col *ta
 }
 
 func (i *importer) isEmptyRow(row []string) bool {
-	trimSpace := i.options.trimSpace
-
-	// Use Stream.NoneMatch for more declarative empty row check
-	return streams.FromSlice(row).NoneMatch(func(cell string) bool {
-		trimmed := cell
-		if trimSpace {
-			trimmed = strings.TrimSpace(cell)
+	for _, cell := range row {
+		value := cell
+		if i.options.trimSpace {
+			value = strings.TrimSpace(cell)
 		}
 
-		return trimmed != constants.Empty
-	})
+		if value != constants.Empty {
+			return false
+		}
+	}
+
+	return true
 }

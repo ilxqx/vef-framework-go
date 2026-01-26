@@ -14,27 +14,25 @@ import (
 )
 
 type provider struct {
-	dbType constants.DbType
+	dbType constants.DBType
 }
 
 func NewProvider() *provider {
 	return &provider{
-		dbType: constants.DbSQLite,
+		dbType: constants.SQLite,
 	}
 }
 
-func (p *provider) Type() constants.DbType {
+func (p *provider) Type() constants.DBType {
 	return p.dbType
 }
 
-func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
-	if err := p.ValidateConfig(config); err != nil {
+func (p *provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
+	if err := p.ValidateConfig(cfg); err != nil {
 		return nil, nil, err
 	}
 
-	dsn := p.buildDsn(config)
-
-	db, err := sql.Open(sqliteshim.ShimName, dsn)
+	db, err := sql.Open(sqliteshim.ShimName, p.buildDsn(cfg))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open sqlite database: %w", err)
 	}
@@ -42,7 +40,7 @@ func (p *provider) Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dia
 	return db, sqlitedialect.New(), nil
 }
 
-func (p *provider) ValidateConfig(config *config.DatasourceConfig) error {
+func (p *provider) ValidateConfig(_ *config.DatasourceConfig) error {
 	return nil
 }
 
@@ -50,12 +48,13 @@ func (p *provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
-// buildDsn uses file::memory: with shared cache to ensure multiple connections
-// share the same in-memory database when no path is specified.
-func (p *provider) buildDsn(config *config.DatasourceConfig) string {
-	if config.Path == constants.Empty {
+// buildDsn returns the DSN for SQLite. When no path is specified, it uses
+// file::memory: with shared cache to ensure multiple connections share
+// the same in-memory database.
+func (p *provider) buildDsn(cfg *config.DatasourceConfig) string {
+	if cfg.Path == constants.Empty {
 		return "file::memory:?mode=memory&cache=shared"
 	}
 
-	return "file:" + config.Path
+	return "file:" + cfg.Path
 }

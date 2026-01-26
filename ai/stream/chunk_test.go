@@ -10,7 +10,7 @@ func TestNewStartChunk(t *testing.T) {
 	chunk := NewStartChunk("msg_123")
 
 	assert.Equal(t, ChunkTypeStart, chunk["type"])
-	assert.Equal(t, "msg_123", chunk["messageId"])
+	assert.Equal(t, "msg_123", chunk["messageID"])
 }
 
 func TestNewFinishChunk(t *testing.T) {
@@ -134,7 +134,7 @@ func TestToolChunks(t *testing.T) {
 			fn:   func() Chunk { return NewToolInputStartChunk("call_1", "get_weather") },
 			expected: Chunk{
 				"type":       ChunkTypeToolInputStart,
-				"toolCallId": "call_1",
+				"toolCallID": "call_1",
 				"toolName":   "get_weather",
 			},
 		},
@@ -143,7 +143,7 @@ func TestToolChunks(t *testing.T) {
 			fn:   func() Chunk { return NewToolInputDeltaChunk("call_1", `{"city":`) },
 			expected: Chunk{
 				"type":           ChunkTypeToolInputDelta,
-				"toolCallId":     "call_1",
+				"toolCallID":     "call_1",
 				"inputTextDelta": `{"city":`,
 			},
 		},
@@ -154,7 +154,7 @@ func TestToolChunks(t *testing.T) {
 			},
 			expected: Chunk{
 				"type":       ChunkTypeToolInputAvailable,
-				"toolCallId": "call_1",
+				"toolCallID": "call_1",
 				"toolName":   "get_weather",
 				"input":      map[string]string{"city": "Beijing"},
 			},
@@ -166,7 +166,7 @@ func TestToolChunks(t *testing.T) {
 			},
 			expected: Chunk{
 				"type":       ChunkTypeToolOutputAvailable,
-				"toolCallId": "call_1",
+				"toolCallID": "call_1",
 				"output":     map[string]any{"temp": 25, "unit": "celsius"},
 			},
 		},
@@ -181,20 +181,20 @@ func TestToolChunks(t *testing.T) {
 }
 
 func TestSourceChunks(t *testing.T) {
-	t.Run("SourceUrlWithTitle", func(t *testing.T) {
-		chunk := NewSourceUrlChunk("src_1", "https://example.com", "Example Site")
+	t.Run("SourceURLWithTitle", func(t *testing.T) {
+		chunk := NewSourceURLChunk("src_1", "https://example.com", "Example Site")
 
-		assert.Equal(t, ChunkTypeSourceUrl, chunk["type"])
-		assert.Equal(t, "src_1", chunk["sourceId"])
+		assert.Equal(t, ChunkTypeSourceURL, chunk["type"])
+		assert.Equal(t, "src_1", chunk["sourceID"])
 		assert.Equal(t, "https://example.com", chunk["url"])
 		assert.Equal(t, "Example Site", chunk["title"])
 	})
 
-	t.Run("SourceUrlWithoutTitle", func(t *testing.T) {
-		chunk := NewSourceUrlChunk("src_1", "https://example.com", "")
+	t.Run("SourceURLWithoutTitle", func(t *testing.T) {
+		chunk := NewSourceURLChunk("src_1", "https://example.com", "")
 
-		assert.Equal(t, ChunkTypeSourceUrl, chunk["type"])
-		assert.Equal(t, "src_1", chunk["sourceId"])
+		assert.Equal(t, ChunkTypeSourceURL, chunk["type"])
+		assert.Equal(t, "src_1", chunk["sourceID"])
 		assert.Equal(t, "https://example.com", chunk["url"])
 		assert.NotContains(t, chunk, "title")
 	})
@@ -203,7 +203,7 @@ func TestSourceChunks(t *testing.T) {
 		chunk := NewSourceDocumentChunk("src_2", "application/pdf", "Report.pdf")
 
 		assert.Equal(t, ChunkTypeSourceDocument, chunk["type"])
-		assert.Equal(t, "src_2", chunk["sourceId"])
+		assert.Equal(t, "src_2", chunk["sourceID"])
 		assert.Equal(t, "application/pdf", chunk["mediaType"])
 		assert.Equal(t, "Report.pdf", chunk["title"])
 	})
@@ -212,7 +212,7 @@ func TestSourceChunks(t *testing.T) {
 		chunk := NewSourceDocumentChunk("src_2", "application/pdf", "")
 
 		assert.Equal(t, ChunkTypeSourceDocument, chunk["type"])
-		assert.Equal(t, "src_2", chunk["sourceId"])
+		assert.Equal(t, "src_2", chunk["sourceID"])
 		assert.Equal(t, "application/pdf", chunk["mediaType"])
 		assert.NotContains(t, chunk, "title")
 	})
@@ -222,7 +222,7 @@ func TestNewFileChunk(t *testing.T) {
 	chunk := NewFileChunk("file_1", "image/png", "https://cdn.example.com/image.png")
 
 	assert.Equal(t, ChunkTypeFile, chunk["type"])
-	assert.Equal(t, "file_1", chunk["fileId"])
+	assert.Equal(t, "file_1", chunk["fileID"])
 	assert.Equal(t, "image/png", chunk["mediaType"])
 	assert.Equal(t, "https://cdn.example.com/image.png", chunk["url"])
 }

@@ -30,7 +30,7 @@ type TestStruct struct {
 }
 
 type EmbeddedStruct struct {
-	Id   int    `json:"id"`
+	ID   int    `json:"id"`
 	Type string `json:"type"`
 }
 
@@ -106,7 +106,7 @@ func TestToMap(t *testing.T) {
 		input := StructWithEmbedding{
 			Name: "Test",
 			Embedded: EmbeddedStruct{
-				Id:   123,
+				ID:   123,
 				Type: "example",
 			},
 		}
@@ -222,7 +222,7 @@ func TestFromMap(t *testing.T) {
 		require.NotNil(t, result, "Result should not be nil")
 
 		assert.Equal(t, "Test", result.Name, "Name should match")
-		assert.Equal(t, 123, result.Embedded.Id, "Embedded id should match")
+		assert.Equal(t, 123, result.Embedded.ID, "Embedded id should match")
 		assert.Equal(t, "example", result.Embedded.Type, "Embedded type should match")
 	})
 
@@ -892,7 +892,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 
 	t.Run("NullInt32DecodeHook", func(t *testing.T) {
 		type StructWithNullInt32 struct {
-			Id null.Int32 `json:"id"`
+			ID null.Int32 `json:"id"`
 		}
 
 		input := map[string]any{
@@ -901,11 +901,11 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 
 		result, err := FromMap[StructWithNullInt32](input)
 		require.NoError(t, err, "int32 to null.Int32 conversion should succeed")
-		assert.True(t, result.Id.Valid, "Should be valid")
-		assert.Equal(t, int32(12345), result.Id.Int32, "Value should match")
+		assert.True(t, result.ID.Valid, "Should be valid")
+		assert.Equal(t, int32(12345), result.ID.Int32, "Value should match")
 
 		type StructWithInt32 struct {
-			Id int32 `json:"id"`
+			ID int32 `json:"id"`
 		}
 
 		input2 := map[string]any{
@@ -914,7 +914,7 @@ func TestNullSpecificTypesDecodeHook(t *testing.T) {
 
 		result2, err := FromMap[StructWithInt32](input2)
 		require.NoError(t, err, "null.Int32 to int32 conversion should succeed")
-		assert.Equal(t, int32(54321), result2.Id, "Value should match")
+		assert.Equal(t, int32(54321), result2.ID, "Value should match")
 	})
 
 	t.Run("NullFloatDecodeHook", func(t *testing.T) {
@@ -1268,7 +1268,7 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 			Name        null.String   `json:"name"`
 			Age         null.Int      `json:"age"`
 			ShortCount  null.Int16    `json:"shortCount"`
-			Id          null.Int32    `json:"id"`
+			ID          null.Int32    `json:"id"`
 			Score       null.Float    `json:"score"`
 			Flag        null.Byte     `json:"flag"`
 			Created     null.DateTime `json:"created"`
@@ -1309,8 +1309,8 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 		assert.True(t, result.ShortCount.Valid, "ShortCount should be valid")
 		assert.Equal(t, int16(100), result.ShortCount.Int16, "ShortCount should match")
 
-		assert.True(t, result.Id.Valid, "Id should be valid")
-		assert.Equal(t, int32(12345), result.Id.Int32, "Id should match")
+		assert.True(t, result.ID.Valid, "ID should be valid")
+		assert.Equal(t, int32(12345), result.ID.Int32, "ID should match")
 
 		assert.True(t, result.Score.Valid, "Score should be valid")
 		assert.Equal(t, 95.5, result.Score.Float64, "Score should match")

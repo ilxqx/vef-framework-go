@@ -30,24 +30,24 @@ func NewHandler(params HandlerParams) *Handler {
 		return nil
 	}
 
-	server := params.Server
+	httpHandler := createHTTPHandler(params.Server)
+	if params.McpConfig.RequireAuth {
+		httpHandler = applyAuthMiddleware(httpHandler, params.AuthManager)
+	}
 
-	var httpHandler http.Handler = mcp.NewStreamableHTTPHandler(
-		func(*http.Request) *mcp.Server {
-			return server
-		},
+	return &Handler{httpHandler: httpHandler}
+}
+
+func createHTTPHandler(server *mcp.Server) http.Handler {
+	return mcp.NewStreamableHTTPHandler(
+		func(*http.Request) *mcp.Server { return server },
 		&mcp.StreamableHTTPOptions{},
 	)
+}
 
-	if params.McpConfig.RequireAuth {
-		verifier := CreateTokenVerifier(params.AuthManager)
-		authMiddleware := auth.RequireBearerToken(verifier, nil)
-		httpHandler = authMiddleware(httpHandler)
-	}
-
-	return &Handler{
-		httpHandler: httpHandler,
-	}
+func applyAuthMiddleware(handler http.Handler, authManager security.AuthManager) http.Handler {
+	verifier := CreateTokenVerifier(authManager)
+	return auth.RequireBearerToken(verifier, nil)(handler)
 }
 
 func (h *Handler) FiberHandler() fiber.Handler {

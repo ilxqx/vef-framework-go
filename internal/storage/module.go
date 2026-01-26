@@ -36,13 +36,5 @@ var Module = fx.Module(
 			NewProxyMiddleware,
 			fx.ResultTags(`group:"vef:app:middlewares"`),
 		),
-		fx.Annotate(
-			NewStorageServiceHandlerParamResolver,
-			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
-		),
-		fx.Annotate(
-			NewStorageServiceFactoryParamResolver,
-			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
-		),
 	),
 )

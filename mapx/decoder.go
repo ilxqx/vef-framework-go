@@ -186,14 +186,14 @@ func WithDecodeNil() decoderOption {
 }
 
 // ToMap converts a struct value to a map[string]any.
-// The input value must be a struct or a pointer to a struct.
-func ToMap(value any, options ...decoderOption) (result map[string]any, err error) {
+func ToMap(value any, options ...decoderOption) (map[string]any, error) {
 	if reflect.Indirect(reflect.ValueOf(value)).Kind() != reflect.Struct {
 		return nil, ErrInvalidToMapValue
 	}
 
-	var decoder *mapstructure.Decoder
-	if decoder, err = NewDecoder(&result, options...); err != nil {
+	var result map[string]any
+	decoder, err := NewDecoder(&result, options...)
+	if err != nil {
 		return nil, err
 	}
 
@@ -205,18 +205,14 @@ func ToMap(value any, options ...decoderOption) (result map[string]any, err erro
 }
 
 // FromMap converts a map[string]any to a struct value.
-// The type parameter T must be a struct type.
 func FromMap[T any](value map[string]any, options ...decoderOption) (*T, error) {
 	if reflect.TypeFor[T]().Kind() != reflect.Struct {
 		return nil, ErrInvalidFromMapType
 	}
 
-	var (
-		result  T
-		decoder *mapstructure.Decoder
-		err     error
-	)
-	if decoder, err = NewDecoder(&result, options...); err != nil {
+	var result T
+	decoder, err := NewDecoder(&result, options...)
+	if err != nil {
 		return nil, err
 	}
 

@@ -19,11 +19,11 @@ type QueryArgs struct {
 
 // QueryTool provides MCP tool for executing parameterized SQL queries.
 type QueryTool struct {
-	db orm.Db
+	db orm.DB
 }
 
 // NewQueryTool creates a new QueryTool instance.
-func NewQueryTool(db orm.Db) mcp.ToolProvider {
+func NewQueryTool(db orm.DB) mcp.ToolProvider {
 	return &QueryTool{db: db}
 }
 
@@ -43,15 +43,8 @@ func (t *QueryTool) Tools() []mcp.ToolDefinition {
 
 // handleQuery executes a parameterized SQL query.
 func (t *QueryTool) handleQuery(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		db         = mcp.DbWithOperator(ctx, t.db)
-		args       QueryArgs
-		results    []map[string]any
-		jsonResult string
-		err        error
-	)
-
-	if err = json.Unmarshal(req.Params.Arguments, &args); err != nil {
+	var args QueryArgs
+	if err := json.Unmarshal(req.Params.Arguments, &args); err != nil {
 		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Failed to parse arguments: " + err.Error()), nil
 	}
@@ -60,17 +53,19 @@ func (t *QueryTool) handleQuery(ctx context.Context, req *mcp.CallToolRequest) (
 		return mcp.NewToolResultError("Sql parameter is required and must not be empty"), nil
 	}
 
-	if err = db.NewRaw(args.Sql, args.Params...).Scan(ctx, &results); err != nil {
+	db := mcp.DBWithOperator(ctx, t.db)
+	var results []map[string]any
+	if err := db.NewRaw(args.Sql, args.Params...).Scan(ctx, &results); err != nil {
 		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Query execution failed: " + err.Error()), nil
 	}
 
-	// Convert []byte to string to avoid Base64 encoding in JSON
 	for _, result := range results {
 		convertByteSlicesToStrings(result)
 	}
 
-	if jsonResult, err = encoding.ToJson(results); err != nil {
+	jsonResult, err := encoding.ToJSON(results)
+	if err != nil {
 		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Failed to encode results: " + err.Error()), nil
 	}

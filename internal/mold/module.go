@@ -44,15 +44,5 @@ var Module = fx.Module(
 			fx.ParamTags(`optional:"true"`),
 			fx.ResultTags(`group:"vef:mold:translators"`),
 		),
-		// Handler parameter resolver
-		fx.Annotate(
-			NewTransformerHandlerParamResolver,
-			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
-		),
-		// Factory parameter resolver
-		fx.Annotate(
-			NewTransformerFactoryParamResolver,
-			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
-		),
 	),
 )

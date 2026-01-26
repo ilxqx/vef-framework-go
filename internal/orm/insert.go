@@ -5,19 +5,16 @@ import (
 	"database/sql"
 	"reflect"
 
+	collections "github.com/ilxqx/go-collections"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
 
-	collections "github.com/ilxqx/go-collections"
-
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/dbhelpers"
-	"github.com/ilxqx/vef-framework-go/result"
 )
 
 // NewInsertQuery creates a new InsertQuery instance with the provided database instance.
 // It initializes the query builders and sets up the table schema context for proper query building.
-func NewInsertQuery(db *BunDb) *BunInsertQuery {
+func NewInsertQuery(db *BunDB) *BunInsertQuery {
 	eb := &QueryExprBuilder{}
 	iq := db.db.NewInsert()
 	dialect := db.db.Dialect()
@@ -41,7 +38,7 @@ func NewInsertQuery(db *BunDb) *BunInsertQuery {
 type BunInsertQuery struct {
 	QueryBuilder
 
-	db      *BunDb
+	db      *BunDB
 	dialect schema.Dialect
 	eb      ExprBuilder
 	query   *bun.InsertQuery
@@ -49,7 +46,7 @@ type BunInsertQuery struct {
 	returningColumns collections.Set[string]
 }
 
-func (q *BunInsertQuery) Db() Db {
+func (q *BunInsertQuery) DB() DB {
 	return q.db
 }
 
@@ -234,44 +231,25 @@ func (q *BunInsertQuery) beforeInsert() {
 	}
 }
 
-func (q *BunInsertQuery) Exec(ctx context.Context, dest ...any) (res sql.Result, err error) {
+func (q *BunInsertQuery) Exec(ctx context.Context, dest ...any) (sql.Result, error) {
 	q.beforeInsert()
 
-	if res, err = q.query.Exec(ctx, dest...); err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
-
-			return nil, result.ErrRecordAlreadyExists
-		}
-
-		if dbhelpers.IsForeignKeyError(err) {
-			logger.Warnf("Foreign key violation: %v", err)
-
-			return nil, result.ErrForeignKeyViolation
-		}
+	res, err := q.query.Exec(ctx, dest...)
+	if err != nil {
+		return nil, translateWriteError(err)
 	}
 
-	return res, err
+	return res, nil
 }
 
-func (q *BunInsertQuery) Scan(ctx context.Context, dest ...any) (err error) {
+func (q *BunInsertQuery) Scan(ctx context.Context, dest ...any) error {
 	q.beforeInsert()
 
-	if err = q.query.Scan(ctx, dest...); err != nil {
-		if dbhelpers.IsDuplicateKeyError(err) {
-			logger.Warnf("Record already exists: %v", err)
-
-			return result.ErrRecordAlreadyExists
-		}
-
-		if dbhelpers.IsForeignKeyError(err) {
-			logger.Warnf("Foreign key violation: %v", err)
-
-			return result.ErrForeignKeyViolation
-		}
+	if err := q.query.Scan(ctx, dest...); err != nil {
+		return translateWriteError(err)
 	}
 
-	return err
+	return nil
 }
 
 func (q *BunInsertQuery) Unwrap() *bun.InsertQuery {

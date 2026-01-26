@@ -29,7 +29,7 @@ func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client 
 		IdentitySuffix:        "vef",
 		Protocol:              3,
 		ContextTimeoutEnabled: true,
-		Network:               lo.Ternary(cfg.Network != constants.Empty, cfg.Network, "tcp"),
+		Network:               lo.CoalesceOrEmpty(cfg.Network, "tcp"),
 		Addr:                  buildRedisAddr(cfg),
 		Username:              cfg.User,
 		Password:              cfg.Password,
@@ -61,10 +61,7 @@ func NewClient(cfg *config.RedisConfig, appCfg *config.AppConfig) *redis.Client 
 // getPoolSize scales pool size with CPU cores (2x GOMAXPROCS) to handle concurrent requests efficiently
 // while capping at 100 to prevent resource exhaustion on large machines.
 func getPoolSize() int {
-	maxProcessors := runtime.GOMAXPROCS(0)
-	poolSize := min(max(maxProcessors*2, 4), 100)
-
-	return poolSize
+	return min(max(runtime.GOMAXPROCS(0)*2, 4), 100)
 }
 
 // getConnectionConfig scales pool timeout with pool size to reduce contention under load.
@@ -98,8 +95,8 @@ func logRedisServerInfo(ctx context.Context, client *redis.Client) error {
 }
 
 func buildRedisAddr(cfg *config.RedisConfig) string {
-	host := lo.Ternary(cfg.Host != constants.Empty, cfg.Host, "127.0.0.1")
-	port := lo.Ternary(cfg.Port != 0, cfg.Port, 6379)
+	host := lo.CoalesceOrEmpty(cfg.Host, "127.0.0.1")
+	port := lo.CoalesceOrEmpty(cfg.Port, 6379)
 
 	return fmt.Sprintf("%s:%d", host, port)
 }

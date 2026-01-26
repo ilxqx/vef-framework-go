@@ -25,17 +25,11 @@ func (d Date) Format(layout string) string {
 
 // Scan implements the sql.Scanner interface for database compatibility.
 func (d *Date) Scan(src any) error {
-	return scanTimeValue(
-		src,
-		func(s string) (any, error) {
-			return ParseDate(s)
-		},
-		func(t time.Time) any {
-			return DateOf(t)
-		},
-		"date",
-		d,
-	)
+	return scanTimeValue(src, func(s string) (any, error) {
+		return ParseDate(s)
+	}, func(t time.Time) any {
+		return DateOf(t)
+	}, "date", d)
 }
 
 // Value implements the driver.Valuer interface for database compatibility.

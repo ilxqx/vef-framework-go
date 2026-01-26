@@ -7,6 +7,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
+const saltPositionPrefix = "prefix"
+
 // hashFunc represents a hash function that returns a hex-encoded hash string.
 type hashFunc func(input []byte) string
 
@@ -23,7 +25,7 @@ func (e *hashEncoder) prepareInput(password, salt string) string {
 		return password
 	}
 
-	if e.saltPosition == "prefix" {
+	if e.saltPosition == saltPositionPrefix {
 		return salt + password
 	}
 

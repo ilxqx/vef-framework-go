@@ -99,7 +99,7 @@ func TestCallbackSource(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, RoleAssistant, msg.Role)
 		require.Len(t, msg.ToolCalls, 1)
-		assert.Equal(t, "call_1", msg.ToolCalls[0].Id)
+		assert.Equal(t, "call_1", msg.ToolCalls[0].ID)
 		assert.Equal(t, "get_weather", msg.ToolCalls[0].Name)
 		assert.Equal(t, `{"city":"Beijing"}`, msg.ToolCalls[0].Arguments)
 	})
@@ -115,7 +115,7 @@ func TestCallbackSource(t *testing.T) {
 		msg, err := source.Recv()
 		require.NoError(t, err)
 		assert.Equal(t, RoleTool, msg.Role)
-		assert.Equal(t, "call_1", msg.ToolCallId)
+		assert.Equal(t, "call_1", msg.ToolCallID)
 		assert.Equal(t, `{"temp":25}`, msg.Content)
 	})
 

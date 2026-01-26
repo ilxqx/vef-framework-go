@@ -23,10 +23,10 @@ var (
 	ErrCreateSM4CipherFromHexFailed    = errors.New("failed to create SM4 cipher from hex")
 	ErrCreateSM4CipherFromBase64Failed = errors.New("failed to create SM4 cipher from base64")
 
-	ErrDecodeJwtSecretFailed = errors.New("failed to decode jwt secret")
+	ErrDecodeJWTSecretFailed = errors.New("failed to decode jwt secret")
 
-	ErrUserDetailsTypeMustBeStruct        = errors.New("user details type must be a struct")
-	ErrExternalAppDetailsTypeMustBeStruct = errors.New("external app details type must be a struct")
+	ErrUserDetailsNotStruct        = errors.New("user details type must be a struct or struct pointer")
+	ErrExternalAppDetailsNotStruct = errors.New("external app details type must be a struct or struct pointer")
 
 	ErrQueryNotQueryBuilder = errors.New("query does not implement QueryBuilder interface")
 	ErrQueryModelNotSet     = errors.New("query must call Model() before applying data permission")

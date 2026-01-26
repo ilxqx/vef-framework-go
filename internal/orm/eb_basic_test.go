@@ -20,7 +20,7 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 	// Test 1: Simple column reference
 	suite.Run("SimpleColumnReference", func() {
 		type ColumnResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Title string `bun:"title"`
 		}
 
@@ -42,16 +42,16 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 		suite.True(len(results) > 0, "Should have column results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
-			suite.T().Logf("ID: %s, Title: %s", result.Id, result.Title)
+			suite.T().Logf("ID: %s, Title: %s", result.ID, result.Title)
 		}
 	})
 
 	// Test 2: Table-qualified column reference
 	suite.Run("TableQualifiedColumnReference", func() {
 		type QualifiedColumnResult struct {
-			PostId    string `bun:"post_id"`
+			PostID    string `bun:"post_id"`
 			PostTitle string `bun:"post_title"`
 			UserName  string `bun:"user_name"`
 		}
@@ -74,18 +74,18 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 		suite.True(len(results) > 0, "Should have qualified column results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.PostId, "Post ID should not be empty")
+			suite.NotEmpty(result.PostID, "Post ID should not be empty")
 			suite.NotEmpty(result.PostTitle, "Post title should not be empty")
 			suite.NotEmpty(result.UserName, "User name should not be empty")
 			suite.T().Logf("Post: %s - %s, User: %s",
-				result.PostId, result.PostTitle, result.UserName)
+				result.PostID, result.PostTitle, result.UserName)
 		}
 	})
 
 	// Test 3: Column with table alias parameter set to true (default behavior)
 	suite.Run("ColumnWithTableAliasTrue", func() {
 		type AliasTestResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Title string `bun:"title"`
 		}
 
@@ -108,16 +108,16 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 		suite.True(len(results) > 0, "Should have results with table alias")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
-			suite.T().Logf("ID: %s, Title: %s (with table alias)", result.Id, result.Title)
+			suite.T().Logf("ID: %s, Title: %s (with table alias)", result.ID, result.Title)
 		}
 	})
 
 	// Test 4: Column with table alias parameter set to false (skip table alias)
 	suite.Run("ColumnWithTableAliasFalse", func() {
 		type NoAliasResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Title string `bun:"title"`
 		}
 
@@ -140,9 +140,9 @@ func (suite *BasicExpressionsTestSuite) TestColumn() {
 		suite.True(len(results) > 0, "Should have results without table alias")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
-			suite.T().Logf("ID: %s, Title: %s (without table alias)", result.Id, result.Title)
+			suite.T().Logf("ID: %s, Title: %s (without table alias)", result.ID, result.Title)
 		}
 	})
 }
@@ -153,11 +153,11 @@ func (suite *BasicExpressionsTestSuite) TestTableColumns() {
 	// Test 1: TableColumns with default behavior (withTableAlias = true)
 	suite.Run("TableColumnsWithDefaultAlias", func() {
 		type TableColumnsResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
-			UserId    string `bun:"user_id"`
+			UserID    string `bun:"user_id"`
 		}
 
 		var results []TableColumnsResult
@@ -175,19 +175,19 @@ func (suite *BasicExpressionsTestSuite) TestTableColumns() {
 		suite.True(len(results) > 0, "Should have TableColumns results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.NotEmpty(result.Status, "Status should not be empty")
-			suite.NotEmpty(result.UserId, "User ID should not be empty")
-			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d, UserId: %s",
-				result.Id, result.Title, result.Status, result.ViewCount, result.UserId)
+			suite.NotEmpty(result.UserID, "User ID should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d, UserID: %s",
+				result.ID, result.Title, result.Status, result.ViewCount, result.UserID)
 		}
 	})
 
 	// Test 2: TableColumns with withTableAlias = true (explicit)
 	suite.Run("TableColumnsWithAliasTrue", func() {
 		type QualifiedColumnsResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
@@ -208,18 +208,18 @@ func (suite *BasicExpressionsTestSuite) TestTableColumns() {
 		suite.True(len(results) > 0, "Should have qualified columns results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.NotEmpty(result.Status, "Status should not be empty")
 			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
-				result.Id, result.Title, result.Status, result.ViewCount)
+				result.ID, result.Title, result.Status, result.ViewCount)
 		}
 	})
 
 	// Test 3: TableColumns with withTableAlias = false
 	suite.Run("TableColumnsWithoutAlias", func() {
 		type UnqualifiedColumnsResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
@@ -240,11 +240,11 @@ func (suite *BasicExpressionsTestSuite) TestTableColumns() {
 		suite.True(len(results) > 0, "Should have unqualified columns results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.NotEmpty(result.Status, "Status should not be empty")
 			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
-				result.Id, result.Title, result.Status, result.ViewCount)
+				result.ID, result.Title, result.Status, result.ViewCount)
 		}
 	})
 }
@@ -255,11 +255,11 @@ func (suite *BasicExpressionsTestSuite) TestAllColumns() {
 	// Test 1: AllColumns without alias (uses table alias when available)
 	suite.Run("AllColumnsWithDefaultBehavior", func() {
 		type AllColumnsResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
-			UserId    string `bun:"user_id"`
+			UserID    string `bun:"user_id"`
 		}
 
 		var results []AllColumnsResult
@@ -277,19 +277,19 @@ func (suite *BasicExpressionsTestSuite) TestAllColumns() {
 		suite.True(len(results) > 0, "Should have AllColumns results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.NotEmpty(result.Status, "Status should not be empty")
-			suite.NotEmpty(result.UserId, "User ID should not be empty")
-			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d, UserId: %s",
-				result.Id, result.Title, result.Status, result.ViewCount, result.UserId)
+			suite.NotEmpty(result.UserID, "User ID should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d, UserID: %s",
+				result.ID, result.Title, result.Status, result.ViewCount, result.UserID)
 		}
 	})
 
 	// Test 2: AllColumns with explicit table alias
 	suite.Run("AllColumnsWithExplicitAlias", func() {
 		type ExplicitAliasResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
@@ -310,18 +310,18 @@ func (suite *BasicExpressionsTestSuite) TestAllColumns() {
 		suite.True(len(results) > 0, "Should have explicit alias results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.NotEmpty(result.Status, "Status should not be empty")
 			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
-				result.Id, result.Title, result.Status, result.ViewCount)
+				result.ID, result.Title, result.Status, result.ViewCount)
 		}
 	})
 
 	// Test 3: AllColumns with empty alias (should use *)
 	suite.Run("AllColumnsWithEmptyAlias", func() {
 		type EmptyAliasResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			ViewCount int64  `bun:"view_count"`
@@ -342,22 +342,22 @@ func (suite *BasicExpressionsTestSuite) TestAllColumns() {
 		suite.True(len(results) > 0, "Should have results with empty alias")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.NotEmpty(result.Status, "Status should not be empty")
 			suite.T().Logf("ID: %s, Title: %s, Status: %s, ViewCount: %d",
-				result.Id, result.Title, result.Status, result.ViewCount)
+				result.ID, result.Title, result.Status, result.ViewCount)
 		}
 	})
 
 	// Test 4: AllColumns combined with additional expressions
 	suite.Run("AllColumnsCombinedWithExpressions", func() {
 		type CombinedResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			Status      string `bun:"status"`
 			ViewCount   int64  `bun:"view_count"`
-			UserId      string `bun:"user_id"`
+			UserID      string `bun:"user_id"`
 			DoubleViews int64  `bun:"double_views"`
 		}
 
@@ -379,14 +379,14 @@ func (suite *BasicExpressionsTestSuite) TestAllColumns() {
 		suite.True(len(results) > 0, "Should have combined results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.NotEmpty(result.Status, "Status should not be empty")
-			suite.NotEmpty(result.UserId, "User ID should not be empty")
+			suite.NotEmpty(result.UserID, "User ID should not be empty")
 			suite.Equal(result.ViewCount*2, result.DoubleViews,
 				"Double views should be ViewCount * 2")
 			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d, DoubleViews: %d",
-				result.Id, result.Title, result.ViewCount, result.DoubleViews)
+				result.ID, result.Title, result.ViewCount, result.DoubleViews)
 		}
 	})
 }
@@ -397,7 +397,7 @@ func (suite *BasicExpressionsTestSuite) TestNull() {
 	// Test: NULL value in SELECT
 	suite.Run("NullValueInSelect", func() {
 		type NullResult struct {
-			Id        string  `bun:"id"`
+			ID        string  `bun:"id"`
 			Title     string  `bun:"title"`
 			NullValue *string `bun:"null_value"`
 		}
@@ -418,11 +418,11 @@ func (suite *BasicExpressionsTestSuite) TestNull() {
 		suite.True(len(results) > 0, "Should have NULL results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.Nil(result.NullValue, "NULL value should be nil")
 			suite.T().Logf("ID: %s, Title: %s, NullValue: %v",
-				result.Id, result.Title, result.NullValue)
+				result.ID, result.Title, result.NullValue)
 		}
 	})
 }
@@ -433,7 +433,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 	// Test 1: IsNull - check for NULL values
 	suite.Run("CheckNullValues", func() {
 		type IsNullResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Status string `bun:"status"`
 			IsNull bool   `bun:"is_null"`
 		}
@@ -457,14 +457,14 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Status: %s, IsNull: %v",
-				result.Id, result.Status, result.IsNull)
+				result.ID, result.Status, result.IsNull)
 		}
 	})
 
 	// Test 2: IsNull in WHERE clause with Coalesce
 	suite.Run("IsNullWithCoalesce", func() {
 		type NullCoalesceResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Status    string `bun:"status"`
 			SafeValue string `bun:"safe_value"`
 		}
@@ -491,7 +491,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNull() {
 		for _, result := range results {
 			suite.NotEmpty(result.SafeValue, "Safe value should never be empty due to Coalesce")
 			suite.T().Logf("ID: %s, Status: %s, SafeValue: %s",
-				result.Id, result.Status, result.SafeValue)
+				result.ID, result.Status, result.SafeValue)
 		}
 	})
 }
@@ -502,7 +502,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 	// Test 1: IsNotNull - check for NOT NULL values
 	suite.Run("CheckNotNullValues", func() {
 		type IsNotNullResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			IsNotNull bool   `bun:"is_not_null"`
 		}
@@ -525,14 +525,14 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 		for _, result := range results {
 			suite.True(result.IsNotNull, "Title should not be NULL for existing posts")
 			suite.T().Logf("ID: %s, Title: %s, IsNotNull: %v",
-				result.Id, result.Title, result.IsNotNull)
+				result.ID, result.Title, result.IsNotNull)
 		}
 	})
 
 	// Test 2: Combined NULL checks
 	suite.Run("CombinedNullChecks", func() {
 		type NullCheckResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			Status    string `bun:"status"`
 			HasTitle  bool   `bun:"has_title"`
@@ -563,7 +563,7 @@ func (suite *BasicExpressionsTestSuite) TestIsNotNull() {
 			suite.True(result.HasTitle, "Has title should be true")
 			suite.True(result.HasStatus, "Has status should be true")
 			suite.T().Logf("ID: %s, Title: %s, Status: %s, HasTitle: %v, HasStatus: %v",
-				result.Id, result.Title, result.Status, result.HasTitle, result.HasStatus)
+				result.ID, result.Title, result.Status, result.HasTitle, result.HasStatus)
 		}
 	})
 }
@@ -574,7 +574,7 @@ func (suite *BasicExpressionsTestSuite) TestLiteral() {
 	// Test: Literal values in expressions
 	suite.Run("LiteralValuesInExpressions", func() {
 		type LiteralResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			Title      string `bun:"title"`
 			LiteralVal string `bun:"literal_val"`
 		}
@@ -597,7 +597,7 @@ func (suite *BasicExpressionsTestSuite) TestLiteral() {
 		for _, result := range results {
 			suite.Equal("test_literal", result.LiteralVal, "Literal value should match")
 			suite.T().Logf("ID: %s, Title: %s, Literal: %s",
-				result.Id, result.Title, result.LiteralVal)
+				result.ID, result.Title, result.LiteralVal)
 		}
 	})
 }
@@ -608,7 +608,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 	// Test 1: Simple ORDER BY expression
 	suite.Run("SimpleOrderBy", func() {
 		type OrderResult struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 			Age  int16  `bun:"age"`
 		}
@@ -633,7 +633,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 		var prevAge int16 = -1
 		for i, result := range results {
 			suite.T().Logf("ID: %s, Name: %s, Age: %d",
-				result.Id, result.Name, result.Age)
+				result.ID, result.Name, result.Age)
 
 			if i > 0 {
 				suite.True(result.Age <= prevAge,
@@ -647,7 +647,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 	// Test 2: Multiple ORDER BY columns
 	suite.Run("MultipleOrderByColumns", func() {
 		type MultiOrderResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			IsActive bool   `bun:"is_active"`
 			Age      int16  `bun:"age"`
 		}
@@ -676,7 +676,7 @@ func (suite *BasicExpressionsTestSuite) TestOrder() {
 		// Log results
 		for _, result := range results {
 			suite.T().Logf("ID: %s, IsActive: %v, Age: %d",
-				result.Id, result.IsActive, result.Age)
+				result.ID, result.IsActive, result.Age)
 		}
 	})
 }
@@ -813,7 +813,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 	// Test 1: Simple subquery in SELECT clause
 	suite.Run("SimpleSubQueryInSelect", func() {
 		type SubQueryResult struct {
-			Id        string  `bun:"id"`
+			ID        string  `bun:"id"`
 			Title     string  `bun:"title"`
 			ViewCount int64   `bun:"view_count"`
 			AvgViews  float64 `bun:"avg_views"`
@@ -840,18 +840,18 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 		suite.True(len(results) > 0, "Should have SubQuery results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.True(result.AvgViews > 0, "Average views should be positive")
 			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d, AvgViews: %.2f",
-				result.Id, result.Title, result.ViewCount, result.AvgViews)
+				result.ID, result.Title, result.ViewCount, result.AvgViews)
 		}
 	})
 
 	// Test 2: Subquery in WHERE clause
 	suite.Run("SubQueryInWhereClause", func() {
 		type FilteredResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -879,17 +879,17 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 		suite.True(len(results) > 0, "Should have filtered results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d (above average)",
-				result.Id, result.Title, result.ViewCount)
+				result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 3: Correlated subquery
 	suite.Run("CorrelatedSubQuery", func() {
 		type CorrelatedResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Name      string `bun:"name"`
 			PostCount int64  `bun:"post_count"`
 		}
@@ -918,18 +918,18 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 		suite.True(len(results) > 0, "Should have correlated subquery results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Name, "Name should not be empty")
 			suite.True(result.PostCount >= 0, "Post count should be non-negative")
 			suite.T().Logf("ID: %s, Name: %s, PostCount: %d",
-				result.Id, result.Name, result.PostCount)
+				result.ID, result.Name, result.PostCount)
 		}
 	})
 
 	// Test 4: Subquery with aggregate function
 	suite.Run("SubQueryWithAggregateFunction", func() {
 		type AggregateSubQueryResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			Title      string `bun:"title"`
 			ViewCount  int64  `bun:"view_count"`
 			MaxViews   int64  `bun:"max_views"`
@@ -974,7 +974,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 
 		var foundTopView bool
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Title, "Title should not be empty")
 			suite.True(result.MaxViews > 0, "Max views should be positive")
 			suite.True(result.ViewCount <= result.MaxViews,
@@ -988,7 +988,7 @@ func (suite *BasicExpressionsTestSuite) TestSubQuery() {
 			}
 
 			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d, MaxViews: %d, IsTop: %v",
-				result.Id, result.Title, result.ViewCount, result.MaxViews, result.IsTopViews)
+				result.ID, result.Title, result.ViewCount, result.MaxViews, result.IsTopViews)
 		}
 
 		suite.True(foundTopView, "Should find at least one top view post")
@@ -1001,7 +1001,7 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 
 	suite.Run("ExistsInWhereClause", func() {
 		type ExistsResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
@@ -1030,16 +1030,16 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 		suite.True(len(results) > 0, "Should have users with posts")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Name, "Name should not be empty")
 			suite.T().Logf("User with posts - ID: %s, Name: %s, Email: %s",
-				result.Id, result.Name, result.Email)
+				result.ID, result.Name, result.Email)
 		}
 	})
 
 	suite.Run("ExistsWithComplexCondition", func() {
 		type UserWithHighViewPosts struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -1067,16 +1067,16 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 		suite.T().Logf("Found %d users with high-view posts", len(results))
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Name, "Name should not be empty")
 			suite.T().Logf("User with high-view posts - ID: %s, Name: %s",
-				result.Id, result.Name)
+				result.ID, result.Name)
 		}
 	})
 
 	suite.Run("ExistsWithAND", func() {
 		type Result struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Title string `bun:"title"`
 		}
 
@@ -1106,8 +1106,8 @@ func (suite *BasicExpressionsTestSuite) TestExists() {
 		suite.T().Logf("Found %d posts", len(results))
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
-			suite.T().Logf("Post - ID: %s, Title: %s", result.Id, result.Title)
+			suite.NotEmpty(result.ID, "ID should not be empty")
+			suite.T().Logf("Post - ID: %s, Title: %s", result.ID, result.Title)
 		}
 	})
 }
@@ -1118,7 +1118,7 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 
 	suite.Run("NotExistsInWhereClause", func() {
 		type NotExistsResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
@@ -1147,16 +1147,16 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 		suite.T().Logf("Found %d users without posts", len(results))
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Name, "Name should not be empty")
 			suite.T().Logf("User without posts - ID: %s, Name: %s, Email: %s",
-				result.Id, result.Name, result.Email)
+				result.ID, result.Name, result.Email)
 		}
 	})
 
 	suite.Run("NotExistsWithComplexCondition", func() {
 		type UserWithoutHighViewPosts struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -1184,16 +1184,16 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 		suite.T().Logf("Found %d users without high-view posts", len(results))
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Name, "Name should not be empty")
 			suite.T().Logf("User without high-view posts - ID: %s, Name: %s",
-				result.Id, result.Name)
+				result.ID, result.Name)
 		}
 	})
 
 	suite.Run("ExistsAndNotExistsCombined", func() {
 		type CombinedResult struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -1231,9 +1231,9 @@ func (suite *BasicExpressionsTestSuite) TestNotExists() {
 		suite.T().Logf("Found %d users with posts but no high-view posts", len(results))
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Name, "Name should not be empty")
-			suite.T().Logf("User - ID: %s, Name: %s", result.Id, result.Name)
+			suite.T().Logf("User - ID: %s, Name: %s", result.ID, result.Name)
 		}
 	})
 }
@@ -1245,7 +1245,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 	// Test 1: NOT with equality condition
 	suite.Run("NotWithEqualityCondition", func() {
 		type NotResult struct {
-			Id     string `bun:"id"`
+			ID     string `bun:"id"`
 			Title  string `bun:"title"`
 			Status string `bun:"status"`
 		}
@@ -1269,14 +1269,14 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 
 		for _, result := range results {
 			suite.NotEqual("published", result.Status, "Status should not be 'published'")
-			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.Id, result.Title, result.Status)
+			suite.T().Logf("ID: %s, Title: %s, Status: %s", result.ID, result.Title, result.Status)
 		}
 	})
 
 	// Test 2: NOT with comparison condition
 	suite.Run("NotWithComparisonCondition", func() {
 		type ComparisonNotResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -1300,14 +1300,14 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount <= 50, "ViewCount should be <= 50")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	// Test 3: NOT with NULL check
 	suite.Run("NotWithNullCheck", func() {
 		type NullNotResult struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			Description string `bun:"description"`
 		}
@@ -1331,14 +1331,14 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 
 		for _, result := range results {
 			suite.NotEmpty(result.Description, "Description should not be empty")
-			suite.T().Logf("ID: %s, Title: %s, Description: %s", result.Id, result.Title, result.Description)
+			suite.T().Logf("ID: %s, Title: %s, Description: %s", result.ID, result.Title, result.Description)
 		}
 	})
 
 	// Test 4: NOT in SELECT expression
 	suite.Run("NotInSelectExpression", func() {
 		type SelectNotResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			Status     string `bun:"status"`
 			IsNotDraft bool   `bun:"is_not_draft"`
 		}
@@ -1361,7 +1361,7 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 		for _, result := range results {
 			expected := result.Status != "draft"
 			suite.Equal(expected, result.IsNotDraft, "IsNotDraft should match expectation")
-			suite.T().Logf("ID: %s, Status: %s, IsNotDraft: %v", result.Id, result.Status, result.IsNotDraft)
+			suite.T().Logf("ID: %s, Status: %s, IsNotDraft: %v", result.ID, result.Status, result.IsNotDraft)
 		}
 	})
 }
@@ -1370,13 +1370,13 @@ func (suite *BasicExpressionsTestSuite) TestNot() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *BasicExpressionsTestSuite) TestAny() {
-	if suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.SQLite {
 		suite.T().Skipf("Test skipped for %s (ANY operator not supported and cannot be easily simulated)", suite.dbType)
 
 		return
 	}
 
-	if suite.dbType == constants.DbMySQL {
+	if suite.dbType == constants.MySQL {
 		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
 
 		return
@@ -1386,7 +1386,7 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 
 	suite.Run("AnyWithEqualityCondition", func() {
 		type AnyResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
@@ -1418,15 +1418,15 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 		suite.True(len(results) > 0, "Should have ANY results")
 
 		for _, result := range results {
-			suite.NotEmpty(result.Id, "ID should not be empty")
+			suite.NotEmpty(result.ID, "ID should not be empty")
 			suite.NotEmpty(result.Name, "Name should not be empty")
-			suite.T().Logf("ID: %s, Name: %s, Email: %s", result.Id, result.Name, result.Email)
+			suite.T().Logf("ID: %s, Name: %s, Email: %s", result.ID, result.Name, result.Email)
 		}
 	})
 
 	suite.Run("AnyWithGreaterThanCondition", func() {
 		type ViewCountAnyResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -1462,7 +1462,7 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount > 50, "ViewCount should be > 50")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 }
@@ -1471,13 +1471,13 @@ func (suite *BasicExpressionsTestSuite) TestAny() {
 // Note: SQLite does not support ANY/ALL operators natively and simulation is not trivial.
 // MySQL supports ANY/ALL but does not allow LIMIT in ANY/ALL subqueries (Error 1235).
 func (suite *BasicExpressionsTestSuite) TestAll() {
-	if suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.SQLite {
 		suite.T().Skipf("Test skipped for %s (ALL operator not supported and cannot be easily simulated)", suite.dbType)
 
 		return
 	}
 
-	if suite.dbType == constants.DbMySQL {
+	if suite.dbType == constants.MySQL {
 		suite.T().Skipf("Test skipped for %s (LIMIT in ANY/ALL subqueries not supported - Error 1235)", suite.dbType)
 
 		return
@@ -1487,7 +1487,7 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 
 	suite.Run("AllWithEqualityCondition", func() {
 		type AllResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -1523,13 +1523,13 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount >= 10, "ViewCount should be >= 10")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 
 	suite.Run("AllWithLessThanCondition", func() {
 		type LessThanAllResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Title     string `bun:"title"`
 			ViewCount int64  `bun:"view_count"`
 		}
@@ -1565,7 +1565,7 @@ func (suite *BasicExpressionsTestSuite) TestAll() {
 
 		for _, result := range results {
 			suite.True(result.ViewCount < 200, "ViewCount should be < 200")
-			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.Id, result.Title, result.ViewCount)
+			suite.T().Logf("ID: %s, Title: %s, ViewCount: %d", result.ID, result.Title, result.ViewCount)
 		}
 	})
 }
@@ -1576,7 +1576,7 @@ func (suite *BasicExpressionsTestSuite) TestArithmeticOperators() {
 
 	suite.Run("BasicArithmeticOperations", func() {
 		type ArithmeticResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			ViewCount  int64   `bun:"view_count"`
 			Added      int64   `bun:"added"`
 			Subtracted int64   `bun:"subtracted"`
@@ -1639,7 +1639,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 	// Test 1: Simple arithmetic expression
 	suite.Run("SimpleArithmeticExpression", func() {
 		type ExprResult struct {
-			Id         string  `bun:"id"`
+			ID         string  `bun:"id"`
 			ViewCount  int64   `bun:"view_count"`
 			Doubled    int64   `bun:"doubled"`
 			Multiplied int64   `bun:"multiplied"`
@@ -1673,14 +1673,14 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 			suite.InDelta(float64(result.ViewCount)/2.0, result.Divided, 0.1,
 				"Divided should equal view_count / 2")
 			suite.T().Logf("ID: %s, ViewCount: %d, Doubled: %d, Multiplied: %d, Divided: %.1f",
-				result.Id, result.ViewCount, result.Doubled, result.Multiplied, result.Divided)
+				result.ID, result.ViewCount, result.Doubled, result.Multiplied, result.Divided)
 		}
 	})
 
 	// Test 2: String concatenation expression
 	suite.Run("StringConcatenationExpression", func() {
 		type StringExprResult struct {
-			Id              string `bun:"id"`
+			ID              string `bun:"id"`
 			Title           string `bun:"title"`
 			Status          string `bun:"status"`
 			TitleWithStatus string `bun:"title_with_status"`
@@ -1707,14 +1707,14 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 			suite.Contains(result.TitleWithStatus, result.Status,
 				"Concatenated string should contain status")
 			suite.T().Logf("ID: %s, Title: %s, Status: %s, Combined: %s",
-				result.Id, result.Title, result.Status, result.TitleWithStatus)
+				result.ID, result.Title, result.Status, result.TitleWithStatus)
 		}
 	})
 
 	// Test 3: Complex expression with functions
 	suite.Run("ComplexExpressionWithFunctions", func() {
 		type ComplexExprResult struct {
-			Id            string  `bun:"id"`
+			ID            string  `bun:"id"`
 			ViewCount     int64   `bun:"view_count"`
 			AbsDifference int64   `bun:"abs_difference"`
 			RoundedAvg    float64 `bun:"rounded_avg"`
@@ -1751,7 +1751,7 @@ func (suite *BasicExpressionsTestSuite) TestExpr() {
 			suite.True(result.AbsDifference >= 0, "Absolute difference should be non-negative")
 			suite.True(result.RoundedAvg >= 0, "Rounded average should be non-negative")
 			suite.T().Logf("ID: %s, ViewCount: %d, AbsDiff: %d, RoundedAvg: %.1f",
-				result.Id, result.ViewCount, result.AbsDifference, result.RoundedAvg)
+				result.ID, result.ViewCount, result.AbsDifference, result.RoundedAvg)
 		}
 	})
 }
@@ -1762,7 +1762,7 @@ func (suite *BasicExpressionsTestSuite) TestExprs() {
 	// Test: Combine multiple expressions with comma separator
 	suite.Run("CombineMultipleExpressions", func() {
 		type ExprsResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Name     string `bun:"name"`
 			Email    string `bun:"email"`
 			Combined string `bun:"combined"`
@@ -1788,7 +1788,7 @@ func (suite *BasicExpressionsTestSuite) TestExprs() {
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Name: %s, Email: %s, Combined: %s",
-				result.Id, result.Name, result.Email, result.Combined)
+				result.ID, result.Name, result.Email, result.Combined)
 		}
 	})
 }
@@ -1799,7 +1799,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 	// Test 1: Combine boolean expressions with OR
 	suite.Run("CombineConditionsWithOR", func() {
 		type ExprsWithSepResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Name      string `bun:"name"`
 			Age       int    `bun:"age"`
 			IsActive  bool   `bun:"is_active"`
@@ -1828,7 +1828,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Name: %s, Age: %d, IsActive: %t, MatchesOR: %t",
-				result.Id, result.Name, result.Age, result.IsActive, result.MatchesOR)
+				result.ID, result.Name, result.Age, result.IsActive, result.MatchesOR)
 			// Verify: should be true if age > 28 OR is_active = false
 			expected := result.Age > 28 || !result.IsActive
 			suite.Equal(expected, result.MatchesOR, "OR condition should match expected result")
@@ -1838,7 +1838,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 	// Test 2: Combine arithmetic expressions with addition
 	suite.Run("CombineArithmeticWithAddition", func() {
 		type ArithmeticResult struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Age   int    `bun:"age"`
 			Total int    `bun:"total"`
@@ -1867,7 +1867,7 @@ func (suite *BasicExpressionsTestSuite) TestExprsWithSep() {
 
 		for _, result := range results {
 			suite.T().Logf("ID: %s, Name: %s, Age: %d, Total: %d",
-				result.Id, result.Name, result.Age, result.Total)
+				result.ID, result.Name, result.Age, result.Total)
 			// Verify: total should be age + 10 + 5
 			expected := result.Age + 15
 			suite.Equal(expected, result.Total, "Addition should calculate correctly")
@@ -1884,7 +1884,7 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 	// - PostgreSQL/MySQL: use CONCAT function
 	suite.Run("CrossDatabaseStringConcatenation", func() {
 		type ConcatResult struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Name     string `bun:"name"`
 			Email    string `bun:"email"`
 			FullInfo string `bun:"full_info"`
@@ -1927,14 +1927,14 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 			suite.Contains(result.FullInfo, ">", "Full info should contain closing bracket")
 
 			suite.T().Logf("Id: %s, Name: %s, Email: %s, FullInfo: %s",
-				result.Id, result.Name, result.Email, result.FullInfo)
+				result.ID, result.Name, result.Email, result.FullInfo)
 		}
 	})
 
 	// Test: Database-specific case expression
 	suite.Run("DatabaseSpecificCaseExpression", func() {
 		type CaseResult struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			ViewCount int64  `bun:"view_count"`
 			Category  string `bun:"category"`
 		}
@@ -1976,8 +1976,8 @@ func (suite *BasicExpressionsTestSuite) TestExprByDialect() {
 			suite.Contains([]string{"High", "Medium", "Low"}, result.Category,
 				"Category should be one of: High, Medium, Low")
 
-			suite.T().Logf("Id: %s, ViewCount: %d, Category: %s",
-				result.Id, result.ViewCount, result.Category)
+			suite.T().Logf("ID: %s, ViewCount: %d, Category: %s",
+				result.ID, result.ViewCount, result.Category)
 		}
 	})
 }
@@ -2011,11 +2011,11 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialect() {
 
 		// Verify the correct callback was executed based on current database
 		switch suite.dbType {
-		case constants.DbPostgres:
+		case constants.Postgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
-		case constants.DbMySQL:
+		case constants.MySQL:
 			suite.Equal("mysql", executed, "MySQL callback should be executed")
-		case constants.DbSQLite:
+		case constants.SQLite:
 			suite.Equal("sqlite", executed, "SQLite callback should be executed")
 		}
 
@@ -2077,11 +2077,11 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
 
 		// Verify the correct callback was executed
 		switch suite.dbType {
-		case constants.DbPostgres:
+		case constants.Postgres:
 			suite.Equal("postgres", executed, "Postgres callback should be executed")
-		case constants.DbMySQL:
+		case constants.MySQL:
 			suite.Equal("mysql", executed, "MySQL callback should be executed")
-		case constants.DbSQLite:
+		case constants.SQLite:
 			suite.Equal("sqlite", executed, "SQLite callback should be executed")
 		}
 
@@ -2167,11 +2167,11 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 		// Verify the correct fragment was generated
 		fragmentStr := string(fragment)
 		switch suite.dbType {
-		case constants.DbPostgres:
+		case constants.Postgres:
 			suite.Contains(fragmentStr, "PostgreSQL", "Should contain PostgreSQL fragment")
-		case constants.DbMySQL:
+		case constants.MySQL:
 			suite.Contains(fragmentStr, "MySQL", "Should contain MySQL fragment")
-		case constants.DbSQLite:
+		case constants.SQLite:
 			suite.Contains(fragmentStr, "SQLite", "Should contain SQLite fragment")
 		}
 

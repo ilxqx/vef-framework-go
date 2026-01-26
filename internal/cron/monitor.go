@@ -69,5 +69,5 @@ func (m *jobMonitor) RecordJobTiming(startTime, endTime time.Time, id uuid.UUID,
 }
 
 func newJobMonitor() *jobMonitor {
-	return new(jobMonitor)
+	return &jobMonitor{}
 }

@@ -6,9 +6,9 @@ import (
 )
 
 // JobDescriptorOption is a function type for configuring job descriptors using the options pattern.
-// This allows for flexible and extensible job configuration.
 type JobDescriptorOption func(*jobDescriptor)
 
+// WithName assigns a human-readable name to the job.
 func WithName(name string) JobDescriptorOption {
 	return func(d *jobDescriptor) {
 		d.name = name
@@ -58,14 +58,14 @@ func WithLimitedRuns(limitedRuns uint) JobDescriptorOption {
 	}
 }
 
-// If the context is canceled, the job will be canceled as well.
+// WithContext associates a context with the job for cancellation support.
 func WithContext(ctx context.Context) JobDescriptorOption {
 	return func(d *jobDescriptor) {
 		d.ctx = ctx
 	}
 }
 
-// The handler must be a function, and params are the arguments to pass to it.
+// WithTask sets the handler function and its parameters for the job.
 func WithTask(handler any, params ...any) JobDescriptorOption {
 	return func(d *jobDescriptor) {
 		d.handler = handler

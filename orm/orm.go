@@ -3,7 +3,7 @@ package orm
 import "github.com/ilxqx/vef-framework-go/internal/orm"
 
 type (
-	Db                         = orm.Db
+	DB                         = orm.DB
 	SelectQuery                = orm.SelectQuery
 	InsertQuery                = orm.InsertQuery
 	UpdateQuery                = orm.UpdateQuery
@@ -26,7 +26,10 @@ type (
 	DateTimeUnit               = orm.DateTimeUnit
 	ColumnInfo                 = orm.ColumnInfo
 	Model                      = orm.Model
-	PkField                    = orm.PkField
+	IDModel                    = orm.IDModel
+	CreatedModel               = orm.CreatedModel
+	AuditedModel               = orm.AuditedModel
+	PKField                    = orm.PKField
 	ExprBuilder                = orm.ExprBuilder
 	OrderBuilder               = orm.OrderBuilder
 	CaseBuilder                = orm.CaseBuilder
@@ -45,8 +48,8 @@ type (
 	ArrayAggBuilder            = orm.ArrayAggBuilder
 	StdDevBuilder              = orm.StdDevBuilder
 	VarianceBuilder            = orm.VarianceBuilder
-	JsonObjectAggBuilder       = orm.JsonObjectAggBuilder
-	JsonArrayAggBuilder        = orm.JsonArrayAggBuilder
+	JSONObjectAggBuilder       = orm.JSONObjectAggBuilder
+	JSONArrayAggBuilder        = orm.JSONArrayAggBuilder
 	BitOrBuilder               = orm.BitOrBuilder
 	BitAndBuilder              = orm.BitAndBuilder
 	BoolOrBuilder              = orm.BoolOrBuilder
@@ -60,8 +63,8 @@ type (
 	WindowArrayAggBuilder      = orm.WindowArrayAggBuilder
 	WindowStdDevBuilder        = orm.WindowStdDevBuilder
 	WindowVarianceBuilder      = orm.WindowVarianceBuilder
-	WindowJsonObjectAggBuilder = orm.WindowJsonObjectAggBuilder
-	WindowJsonArrayAggBuilder  = orm.WindowJsonArrayAggBuilder
+	WindowJSONObjectAggBuilder = orm.WindowJSONObjectAggBuilder
+	WindowJSONArrayAggBuilder  = orm.WindowJSONArrayAggBuilder
 	WindowBitOrBuilder         = orm.WindowBitOrBuilder
 	WindowBitAndBuilder        = orm.WindowBitAndBuilder
 	WindowBoolOrBuilder        = orm.WindowBoolOrBuilder

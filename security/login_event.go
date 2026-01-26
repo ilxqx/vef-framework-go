@@ -15,11 +15,11 @@ type LoginEvent struct {
 	event.BaseEvent
 
 	AuthType   string `json:"authType"`
-	UserId     string `json:"userId"` // Populated on success
+	UserID     string `json:"userID"` // Populated on success
 	Username   string `json:"username"`
-	LoginIp    string `json:"loginIp"`
+	LoginIP    string `json:"loginIp"`
 	UserAgent  string `json:"userAgent"`
-	TraceId    string `json:"traceId"`
+	TraceID    string `json:"traceID"`
 	IsOk       bool   `json:"isOk"`
 	FailReason string `json:"failReason"` // Populated on failure
 	ErrorCode  int    `json:"errorCode"`
@@ -28,18 +28,18 @@ type LoginEvent struct {
 // NewLoginEvent creates a new login event with the given parameters.
 func NewLoginEvent(
 	authType string,
-	userId, username string,
-	loginIp, userAgent, traceId string,
+	userID, username string,
+	loginIP, userAgent, traceID string,
 	isOk bool, failReason string, errorCode int,
 ) *LoginEvent {
 	return &LoginEvent{
 		BaseEvent:  event.NewBaseEvent(eventTypeLogin),
 		AuthType:   authType,
-		UserId:     userId,
+		UserID:     userID,
 		Username:   username,
-		LoginIp:    loginIp,
+		LoginIP:    loginIP,
 		UserAgent:  userAgent,
-		TraceId:    traceId,
+		TraceID:    traceID,
 		IsOk:       isOk,
 		FailReason: failReason,
 		ErrorCode:  errorCode,

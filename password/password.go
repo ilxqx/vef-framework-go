@@ -1,14 +1,14 @@
 package password
 
 // Predefined encoder identifiers.
-type EncoderId string
+type EncoderID string
 
 const (
-	EncoderBcrypt    EncoderId = "bcrypt"
-	EncoderArgon2    EncoderId = "argon2"
-	EncoderScrypt    EncoderId = "scrypt"
-	EncoderPbkdf2    EncoderId = "pbkdf2"
-	EncoderMd5       EncoderId = "md5"
-	EncoderSha256    EncoderId = "sha256"
-	EncoderPlaintext EncoderId = "plaintext"
+	EncoderBcrypt    EncoderID = "bcrypt"
+	EncoderArgon2    EncoderID = "argon2"
+	EncoderScrypt    EncoderID = "scrypt"
+	EncoderPbkdf2    EncoderID = "pbkdf2"
+	EncoderMd5       EncoderID = "md5"
+	EncoderSha256    EncoderID = "sha256"
+	EncoderPlaintext EncoderID = "plaintext"
 )

@@ -4,12 +4,12 @@ import (
 	"io/fs"
 )
 
-// SpaConfig is the configuration for the Spa middleware.
-type SpaConfig struct {
-	// Path is the path to the Spa.
+// SPAConfig is the configuration for the SPA middleware.
+type SPAConfig struct {
+	// Path is the path to the SPA.
 	Path string
-	// Fs is the file system for the Spa.
+	// Fs is the file system for the SPA.
 	Fs fs.FS
-	// ExcludePaths are paths that should not be handled by the Spa (e.g., "/api", "/ws").
+	// ExcludePaths are paths that should not be handled by the SPA (e.g., "/api", "/ws").
 	ExcludePaths []string
 }

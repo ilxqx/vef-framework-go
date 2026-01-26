@@ -12,12 +12,12 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-type sm2Cipher struct {
+type SM2Cipher struct {
 	privateKey *sm2.PrivateKey
 	publicKey  *sm2.PublicKey
 }
 
-func NewSm2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (CipherSigner, error) {
+func NewSM2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (CipherSigner, error) {
 	if privateKey == nil && publicKey == nil {
 		return nil, ErrAtLeastOneKeyRequired
 	}
@@ -26,37 +26,37 @@ func NewSm2(privateKey *sm2.PrivateKey, publicKey *sm2.PublicKey) (CipherSigner,
 		publicKey = &privateKey.PublicKey
 	}
 
-	return &sm2Cipher{
+	return &SM2Cipher{
 		privateKey: privateKey,
 		publicKey:  publicKey,
 	}, nil
 }
 
-func NewSm2FromPem(privatePem, publicPem []byte) (CipherSigner, error) {
+func NewSM2FromPEM(privatePEM, publicPEM []byte) (CipherSigner, error) {
 	var (
 		privateKey *sm2.PrivateKey
 		publicKey  *sm2.PublicKey
 		err        error
 	)
 
-	if privatePem != nil {
-		privateKey, err = parseSm2PrivateKeyFromPem(privatePem)
+	if privatePEM != nil {
+		privateKey, err = parseSM2PrivateKeyFromPEM(privatePEM)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse private key: %w", err)
 		}
 	}
 
-	if publicPem != nil {
-		publicKey, err = parseSm2PublicKeyFromPem(publicPem)
+	if publicPEM != nil {
+		publicKey, err = parseSM2PublicKeyFromPEM(publicPEM)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse public key: %w", err)
 		}
 	}
 
-	return NewSm2(privateKey, publicKey)
+	return NewSM2(privateKey, publicKey)
 }
 
-func NewSm2FromHex(privateKeyHex, publicKeyHex string) (CipherSigner, error) {
+func NewSM2FromHex(privateKeyHex, publicKeyHex string) (CipherSigner, error) {
 	var (
 		privateKey *sm2.PrivateKey
 		publicKey  *sm2.PublicKey
@@ -78,10 +78,10 @@ func NewSm2FromHex(privateKeyHex, publicKeyHex string) (CipherSigner, error) {
 		}
 	}
 
-	return NewSm2(privateKey, publicKey)
+	return NewSM2(privateKey, publicKey)
 }
 
-func NewSm2FromBase64(privateKeyBase64, publicKeyBase64 string) (CipherSigner, error) {
+func NewSM2FromBase64(privateKeyBase64, publicKeyBase64 string) (CipherSigner, error) {
 	var (
 		privateKey *sm2.PrivateKey
 		publicKey  *sm2.PublicKey
@@ -103,10 +103,10 @@ func NewSm2FromBase64(privateKeyBase64, publicKeyBase64 string) (CipherSigner, e
 		}
 	}
 
-	return NewSm2(privateKey, publicKey)
+	return NewSM2(privateKey, publicKey)
 }
 
-func (s *sm2Cipher) Encrypt(plaintext string) (string, error) {
+func (s *SM2Cipher) Encrypt(plaintext string) (string, error) {
 	if s.publicKey == nil {
 		return constants.Empty, ErrPublicKeyRequiredForEncrypt
 	}
@@ -119,7 +119,7 @@ func (s *sm2Cipher) Encrypt(plaintext string) (string, error) {
 	return encoding.ToBase64(ciphertext), nil
 }
 
-func (s *sm2Cipher) Decrypt(ciphertext string) (string, error) {
+func (s *SM2Cipher) Decrypt(ciphertext string) (string, error) {
 	if s.privateKey == nil {
 		return constants.Empty, ErrPrivateKeyRequiredForDecrypt
 	}
@@ -137,7 +137,7 @@ func (s *sm2Cipher) Decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-func parseSm2PrivateKeyFromPem(pemData []byte) (*sm2.PrivateKey, error) {
+func parseSM2PrivateKeyFromPEM(pemData []byte) (*sm2.PrivateKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
 		return nil, ErrFailedDecodePemBlock
@@ -146,7 +146,7 @@ func parseSm2PrivateKeyFromPem(pemData []byte) (*sm2.PrivateKey, error) {
 	return x509.ParseSm2PrivateKey(block.Bytes)
 }
 
-func parseSm2PublicKeyFromPem(pemData []byte) (*sm2.PublicKey, error) {
+func parseSM2PublicKeyFromPEM(pemData []byte) (*sm2.PublicKey, error) {
 	block, _ := pem.Decode(pemData)
 	if block == nil {
 		return nil, ErrFailedDecodePemBlock
@@ -155,7 +155,7 @@ func parseSm2PublicKeyFromPem(pemData []byte) (*sm2.PublicKey, error) {
 	return x509.ParseSm2PublicKey(block.Bytes)
 }
 
-func (s *sm2Cipher) Sign(data string) (string, error) {
+func (s *SM2Cipher) Sign(data string) (string, error) {
 	if s.privateKey == nil {
 		return constants.Empty, ErrPrivateKeyRequiredForSign
 	}
@@ -168,7 +168,7 @@ func (s *sm2Cipher) Sign(data string) (string, error) {
 	return encoding.ToBase64(signature), nil
 }
 
-func (s *sm2Cipher) Verify(data, signature string) (bool, error) {
+func (s *SM2Cipher) Verify(data, signature string) (bool, error) {
 	if s.publicKey == nil {
 		return false, ErrPublicKeyRequiredForVerify
 	}
@@ -182,3 +182,5 @@ func (s *sm2Cipher) Verify(data, signature string) (bool, error) {
 
 	return valid, nil
 }
+
+var _ CipherSigner = (*SM2Cipher)(nil)

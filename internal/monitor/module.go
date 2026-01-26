@@ -21,14 +21,15 @@ var Module = fx.Module(
 	"vef:monitor",
 	fx.Decorate(func(cfg *config.MonitorConfig) *config.MonitorConfig {
 		cfgToUse := DefaultConfig()
-		if cfg != nil {
-			if cfg.SampleInterval > 0 {
-				cfgToUse.SampleInterval = cfg.SampleInterval
-			}
+		if cfg == nil {
+			return &cfgToUse
+		}
 
-			if cfg.SampleDuration > 0 {
-				cfgToUse.SampleDuration = cfg.SampleDuration
-			}
+		if cfg.SampleInterval > 0 {
+			cfgToUse.SampleInterval = cfg.SampleInterval
+		}
+		if cfg.SampleDuration > 0 {
+			cfgToUse.SampleDuration = cfg.SampleDuration
 		}
 
 		return &cfgToUse
@@ -36,18 +37,14 @@ var Module = fx.Module(
 	fx.Decorate(
 		fx.Annotate(
 			func(buildInfo *monitor.BuildInfo) *monitor.BuildInfo {
-				// Populate framework version (override any user-provided value)
-				if buildInfo != nil {
-					buildInfo.VEFVersion = constants.VEFVersion
-				} else {
+				if buildInfo == nil {
 					buildInfo = &monitor.BuildInfo{
-						VEFVersion: constants.VEFVersion,
 						AppVersion: "v0.0.0",
 						BuildTime:  "2022-08-08 01:00:00",
 						GitCommit:  "-",
 					}
 				}
-
+				buildInfo.VEFVersion = constants.VEFVersion
 				return buildInfo
 			},
 			fx.ParamTags(`optional:"true"`),

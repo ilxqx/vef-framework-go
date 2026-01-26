@@ -9,17 +9,17 @@ package id
 //	id := Generate()
 //	// Returns something like: "9m4e2mr0ui3e8a215n4g"
 func Generate() string {
-	return DefaultXidIdGenerator.Generate()
+	return DefaultXIDGenerator.Generate()
 }
 
-// GenerateUuid creates a new UUID v7 identifier using the default UUID generator.
+// GenerateUUID creates a new UUID v7 identifier using the default UUID generator.
 // UUID v7 provides time-based ordering and follows RFC 4122 standards.
 // The generated UUID is a 36-character string in the format: xxxxxxxx-xxxx-7xxx-xxxx-xxxxxxxxxxxx
 //
 // Example:
 //
-//	uuid := GenerateUuid()
+//	uuid := GenerateUUID()
 //	// Returns something like: "018f4e42-832a-7123-9abc-def012345678"
-func GenerateUuid() string {
-	return DefaultUuidIdGenerator.Generate()
+func GenerateUUID() string {
+	return DefaultUUIDGenerator.Generate()
 }

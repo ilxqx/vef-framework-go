@@ -28,7 +28,7 @@ func (e BaseEvent) Time() time.Time {
 	return e.time
 }
 
-func (e BaseEvent) Id() string {
+func (e BaseEvent) ID() string {
 	return e.id
 }
 
@@ -37,7 +37,6 @@ func (e BaseEvent) Source() string {
 }
 
 func (e BaseEvent) Meta() map[string]string {
-	// Return a copy to prevent external modification
 	result := make(map[string]string, len(e.meta))
 	maps.Copy(result, e.meta)
 
@@ -64,13 +63,13 @@ func WithMeta(key, value string) baseEventOption {
 func (e BaseEvent) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Type     string            `json:"type"`
-		Id       string            `json:"id"`
+		ID       string            `json:"id"`
 		Source   string            `json:"source"`
 		Time     time.Time         `json:"time"`
 		Metadata map[string]string `json:"metadata,omitempty"`
 	}{
 		Type:     e.typ,
-		Id:       e.id,
+		ID:       e.id,
 		Source:   e.source,
 		Time:     e.time,
 		Metadata: e.meta,
@@ -81,7 +80,7 @@ func (e BaseEvent) MarshalJSON() ([]byte, error) {
 func (e *BaseEvent) UnmarshalJSON(data []byte) error {
 	var temp struct {
 		Type     string            `json:"type"`
-		Id       string            `json:"id"`
+		ID       string            `json:"id"`
 		Source   string            `json:"source"`
 		Time     time.Time         `json:"time"`
 		Metadata map[string]string `json:"metadata,omitempty"`
@@ -92,7 +91,7 @@ func (e *BaseEvent) UnmarshalJSON(data []byte) error {
 	}
 
 	e.typ = temp.Type
-	e.id = temp.Id
+	e.id = temp.ID
 	e.source = temp.Source
 	e.time = temp.Time
 
@@ -109,21 +108,15 @@ func (e *BaseEvent) UnmarshalJSON(data []byte) error {
 func NewBaseEvent(eventType string, opts ...baseEventOption) BaseEvent {
 	event := BaseEvent{
 		typ:    eventType,
-		id:     generateEventId(),
+		id:     id.GenerateUUID(),
 		source: constants.Empty,
 		time:   time.Now(),
 		meta:   make(map[string]string),
 	}
 
-	// Apply all options
 	for _, opt := range opts {
 		opt(&event)
 	}
 
 	return event
-}
-
-// generateEventId creates a unique identifier for events.
-func generateEventId() string {
-	return id.GenerateUuid()
 }

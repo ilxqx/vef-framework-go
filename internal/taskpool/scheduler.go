@@ -49,13 +49,13 @@ func New[TIn, TOut any](config Config[TIn, TOut]) (Scheduler[TIn, TOut], error) 
 	return &DefaultScheduler[TIn, TOut]{pool: pool}, nil
 }
 
-func (s *DefaultScheduler[TIn, TOut]) createTask(ctx context.Context, payload TIn, opts []SubmitOption) (*Task[TIn, TOut], chan Result[TOut], chan struct{}) {
+func (s *DefaultScheduler[TIn, TOut]) Submit(ctx context.Context, payload TIn, opts ...SubmitOption) (Result[TOut], error) {
 	options := parseSubmitOptions(opts)
 	resultCh := make(chan Result[TOut], 1)
 	doneCh := make(chan struct{})
 
 	task := &Task[TIn, TOut]{
-		Id:          generateTaskId(),
+		ID:          generateTaskID(),
 		Context:     ctx,
 		Priority:    options.priority,
 		Payload:     payload,
@@ -63,12 +63,6 @@ func (s *DefaultScheduler[TIn, TOut]) createTask(ctx context.Context, payload TI
 		Done:        doneCh,
 		SubmittedAt: time.Now(),
 	}
-
-	return task, resultCh, doneCh
-}
-
-func (s *DefaultScheduler[TIn, TOut]) Submit(ctx context.Context, payload TIn, opts ...SubmitOption) (Result[TOut], error) {
-	task, resultCh, doneCh := s.createTask(ctx, payload, opts)
 
 	if err := s.pool.submit(task); err != nil {
 		close(resultCh)
@@ -86,7 +80,19 @@ func (s *DefaultScheduler[TIn, TOut]) Submit(ctx context.Context, payload TIn, o
 }
 
 func (s *DefaultScheduler[TIn, TOut]) SubmitAsync(ctx context.Context, payload TIn, opts ...SubmitOption) (<-chan Result[TOut], error) {
-	task, resultCh, doneCh := s.createTask(ctx, payload, opts)
+	options := parseSubmitOptions(opts)
+	resultCh := make(chan Result[TOut], 1)
+	doneCh := make(chan struct{})
+
+	task := &Task[TIn, TOut]{
+		ID:          generateTaskID(),
+		Context:     ctx,
+		Priority:    options.priority,
+		Payload:     payload,
+		Result:      resultCh,
+		Done:        doneCh,
+		SubmittedAt: time.Now(),
+	}
 
 	if err := s.pool.submit(task); err != nil {
 		close(resultCh)

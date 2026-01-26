@@ -54,7 +54,7 @@ func (suite *InspectorTestSuite) TestSQLiteInspector() {
 	suite.T().Log("Testing Inspector for SQLite")
 
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	suite.runInspectorTests(dsConfig, "SQLite")
@@ -114,11 +114,11 @@ func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DatasourceCo
 	})
 }
 
-func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DbType) {
+func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
 	var usersSql, postsSql string
 
 	switch dbType {
-	case constants.DbPostgres:
+	case constants.Postgres:
 		usersSql = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id SERIAL PRIMARY KEY,
@@ -136,7 +136,7 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.Db
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
 
-	case constants.DbMySQL:
+	case constants.MySQL:
 		usersSql = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id INT AUTO_INCREMENT PRIMARY KEY,
@@ -158,7 +158,7 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.Db
 				INDEX idx_status (status)
 			)`
 
-	case constants.DbSQLite:
+	case constants.SQLite:
 		usersSql = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,

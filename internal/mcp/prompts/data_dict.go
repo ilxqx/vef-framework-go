@@ -48,23 +48,10 @@ func (p *DataDictPrompt) Prompts() []mcp.PromptDefinition {
 
 // handleDataDictPrompt handles the data dictionary prompt request.
 func (p *DataDictPrompt) handleDataDictPrompt(_ context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-	// Get table names from arguments with defaults
-	dictTable := "sys_data_dict"
-	dictItemTable := "sys_data_dict_item"
+	dictTable := getArgument(req.Params.Arguments, "dict_table", "sys_data_dict")
+	dictItemTable := getArgument(req.Params.Arguments, "dict_item_table", "sys_data_dict_item")
 
-	if req.Params.Arguments != nil {
-		if v, ok := req.Params.Arguments["dict_table"]; ok && v != constants.Empty {
-			dictTable = v
-		}
-
-		if v, ok := req.Params.Arguments["dict_item_table"]; ok && v != constants.Empty {
-			dictItemTable = v
-		}
-	}
-
-	// Replace placeholders in the prompt content
-	content := dataDictPromptContent
-	content = strings.ReplaceAll(content, "{{DICT_TABLE}}", dictTable)
+	content := strings.ReplaceAll(dataDictPromptContent, "{{DICT_TABLE}}", dictTable)
 	content = strings.ReplaceAll(content, "{{DICT_ITEM_TABLE}}", dictItemTable)
 
 	return &mcp.GetPromptResult{
@@ -76,4 +63,14 @@ func (p *DataDictPrompt) handleDataDictPrompt(_ context.Context, req *mcp.GetPro
 			},
 		},
 	}, nil
+}
+
+func getArgument(args map[string]string, key, defaultValue string) string {
+	if args == nil {
+		return defaultValue
+	}
+	if v, ok := args[key]; ok && v != constants.Empty {
+		return v
+	}
+	return defaultValue
 }

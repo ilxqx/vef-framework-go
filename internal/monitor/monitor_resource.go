@@ -9,22 +9,25 @@ import (
 	"github.com/ilxqx/vef-framework-go/result"
 )
 
+// defaultRateLimit is the default rate limit configuration for monitor endpoints.
+var defaultRateLimit = &api.RateLimitConfig{Max: 60}
+
 // NewResource creates a new monitor resource with the provided service.
 func NewResource(service monitor.Service) api.Resource {
 	return &Resource{
 		service: service,
-		Resource: api.NewResource(
+		Resource: api.NewRPCResource(
 			"sys/monitor",
-			api.WithApis(
-				api.Spec{Action: "get_overview", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_cpu", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_memory", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_disk", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_network", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_host", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_process", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_load", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
-				api.Spec{Action: "get_build_info", Public: isMonitorApiPublic, Limit: api.RateLimit{Max: 60}},
+			api.WithOperations(
+				api.OperationSpec{Action: "get_overview", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_cpu", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_memory", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_disk", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_network", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_host", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_process", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_load", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
+				api.OperationSpec{Action: "get_build_info", Public: isMonitorApiPublic, RateLimit: defaultRateLimit},
 			),
 		),
 	}
@@ -33,7 +36,6 @@ func NewResource(service monitor.Service) api.Resource {
 // Resource handles system monitoring-related API endpoints.
 type Resource struct {
 	api.Resource
-
 	service monitor.Service
 }
 
@@ -43,20 +45,18 @@ func (r *Resource) GetOverview(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	return result.Ok(overview).Response(ctx)
 }
 
-// GetCpu returns detailed cpu information.
-func (r *Resource) GetCpu(ctx fiber.Ctx) error {
-	cpuInfo, err := r.service.Cpu(ctx.Context())
+// GetCPU returns detailed CPU information.
+func (r *Resource) GetCPU(ctx fiber.Ctx) error {
+	cpuInfo, err := r.service.CPU(ctx.Context())
 	if err != nil {
 		return result.Err(
-			i18n.T("monitor_not_ready"),
+			i18n.T(result.ErrMessageMonitorNotReady),
 			result.WithCode(result.ErrCodeMonitorNotReady),
 		)
 	}
-
 	return result.Ok(cpuInfo).Response(ctx)
 }
 
@@ -66,7 +66,6 @@ func (r *Resource) GetMemory(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	return result.Ok(memInfo).Response(ctx)
 }
 
@@ -76,7 +75,6 @@ func (r *Resource) GetDisk(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	return result.Ok(diskInfo).Response(ctx)
 }
 
@@ -86,7 +84,6 @@ func (r *Resource) GetNetwork(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	return result.Ok(netInfo).Response(ctx)
 }
 
@@ -96,7 +93,6 @@ func (r *Resource) GetHost(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	return result.Ok(hostInfo).Response(ctx)
 }
 
@@ -105,11 +101,10 @@ func (r *Resource) GetProcess(ctx fiber.Ctx) error {
 	procInfo, err := r.service.Process(ctx.Context())
 	if err != nil {
 		return result.Err(
-			i18n.T("monitor_not_ready"),
+			i18n.T(result.ErrMessageMonitorNotReady),
 			result.WithCode(result.ErrCodeMonitorNotReady),
 		)
 	}
-
 	return result.Ok(procInfo).Response(ctx)
 }
 
@@ -119,7 +114,6 @@ func (r *Resource) GetLoad(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	return result.Ok(loadInfo).Response(ctx)
 }
 

@@ -121,10 +121,7 @@ func (i *importer) doImport(f *excelize.File) (any, []tabular.ImportError, error
 		}
 
 		if err := validator.Validate(item); err != nil {
-			importErrors = append(importErrors, tabular.ImportError{
-				Row: excelRow,
-				Err: fmt.Errorf("validation failed: %w", err),
-			})
+			importErrors = append(importErrors, tabular.ImportError{Row: excelRow, Err: fmt.Errorf("validation failed: %w", err)})
 
 			continue
 		}
@@ -187,24 +184,14 @@ func (i *importer) parseRow(row []string, columnMapping map[int]int, excelRow in
 
 		field := result.FieldByIndex(col.Index)
 		if !field.CanSet() {
-			errors = append(errors, tabular.ImportError{
-				Row:    excelRow,
-				Column: col.Name,
-				Field:  field.Type().Name(),
-				Err:    ErrFieldNotSettable,
-			})
+			errors = append(errors, tabular.ImportError{Row: excelRow, Column: col.Name, Field: field.Type().Name(), Err: ErrFieldNotSettable})
 
 			continue
 		}
 
 		value, err := i.parseValue(cellValue, field.Type(), col)
 		if err != nil {
-			errors = append(errors, tabular.ImportError{
-				Row:    excelRow,
-				Column: col.Name,
-				Field:  field.Type().Name(),
-				Err:    fmt.Errorf("parse value: %w", err),
-			})
+			errors = append(errors, tabular.ImportError{Row: excelRow, Column: col.Name, Field: field.Type().Name(), Err: fmt.Errorf("parse value: %w", err)})
 
 			continue
 		}
@@ -215,8 +202,6 @@ func (i *importer) parseRow(row []string, columnMapping map[int]int, excelRow in
 	return result.Interface(), errors
 }
 
-// parseValue falls back to default parser when custom parser is missing,
-// preventing import failures due to configuration errors.
 func (i *importer) parseValue(cellValue string, targetType reflect.Type, col *tabular.Column) (any, error) {
 	if col.Parser != constants.Empty {
 		if parser, ok := i.parsers[col.Parser]; ok {
@@ -232,8 +217,7 @@ func (i *importer) parseValue(cellValue string, targetType reflect.Type, col *ta
 }
 
 func (i *importer) isEmptyRow(row []string) bool {
-	// Use Stream.NoneMatch for more declarative empty row check
-	return streams.FromSlice(row).NoneMatch(func(cell string) bool {
-		return cell != constants.Empty
+	return streams.FromSlice(row).AllMatch(func(cell string) bool {
+		return cell == constants.Empty
 	})
 }

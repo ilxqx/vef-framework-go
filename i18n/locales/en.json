@@ -69,5 +69,7 @@
   "validator_alphanum_us_dot": "{0} can only contain letters, numbers, underscores and dots",
   "monitor_not_ready": "Monitoring data is not ready yet, please try again later",
   "schema_table_not_found": "Table not found",
-  "dangerous_sql": "Dangerous SQL detected, execution blocked"
+  "dangerous_sql": "Dangerous SQL detected, execution blocked",
+  "unsupported_authentication_type": "Unsupported authentication type: {{.kind}}",
+  "processor_must_return_slice": "Processor must return a slice, got {{.type}}"
 }

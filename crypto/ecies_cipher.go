@@ -15,13 +15,13 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 )
 
-type EciesCurve string
+type ECIESCurve string
 
 const (
-	EciesCurveP256   EciesCurve = "P256"
-	EciesCurveP384   EciesCurve = "P384"
-	EciesCurveP521   EciesCurve = "P521"
-	EciesCurveX25519 EciesCurve = "X25519"
+	EciesCurveP256   ECIESCurve = "P256"
+	EciesCurveP384   ECIESCurve = "P384"
+	EciesCurveP521   ECIESCurve = "P521"
+	EciesCurveX25519 ECIESCurve = "X25519"
 )
 
 type eciesCipher struct {
@@ -29,9 +29,9 @@ type eciesCipher struct {
 	publicKey  *ecdh.PublicKey
 }
 
-type EciesOption func(*eciesCipher)
+type ECIESOption func(*eciesCipher)
 
-func NewEcies(privateKey *ecdh.PrivateKey, publicKey *ecdh.PublicKey, opts ...EciesOption) (Cipher, error) {
+func NewECIES(privateKey *ecdh.PrivateKey, publicKey *ecdh.PublicKey, opts ...ECIESOption) (Cipher, error) {
 	if privateKey == nil && publicKey == nil {
 		return nil, ErrAtLeastOneKeyRequired
 	}
@@ -52,7 +52,7 @@ func NewEcies(privateKey *ecdh.PrivateKey, publicKey *ecdh.PublicKey, opts ...Ec
 	return cipher, nil
 }
 
-func NewEciesFromBytes(privateKeyBytes, publicKeyBytes []byte, curve EciesCurve, opts ...EciesOption) (Cipher, error) {
+func NewECIESFromBytes(privateKeyBytes, publicKeyBytes []byte, curve ECIESCurve, opts ...ECIESOption) (Cipher, error) {
 	var (
 		privateKey *ecdh.PrivateKey
 		publicKey  *ecdh.PublicKey
@@ -73,10 +73,10 @@ func NewEciesFromBytes(privateKeyBytes, publicKeyBytes []byte, curve EciesCurve,
 		}
 	}
 
-	return NewEcies(privateKey, publicKey, opts...)
+	return NewECIES(privateKey, publicKey, opts...)
 }
 
-func NewEciesFromHex(privateKeyHex, publicKeyHex string, curve EciesCurve, opts ...EciesOption) (Cipher, error) {
+func NewECIESFromHex(privateKeyHex, publicKeyHex string, curve ECIESCurve, opts ...ECIESOption) (Cipher, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -95,10 +95,10 @@ func NewEciesFromHex(privateKeyHex, publicKeyHex string, curve EciesCurve, opts 
 		}
 	}
 
-	return NewEciesFromBytes(privateBytes, publicBytes, curve, opts...)
+	return NewECIESFromBytes(privateBytes, publicBytes, curve, opts...)
 }
 
-func NewEciesFromBase64(privateKeyBase64, publicKeyBase64 string, curve EciesCurve, opts ...EciesOption) (Cipher, error) {
+func NewECIESFromBase64(privateKeyBase64, publicKeyBase64 string, curve ECIESCurve, opts ...ECIESOption) (Cipher, error) {
 	var (
 		privateBytes []byte
 		publicBytes  []byte
@@ -117,28 +117,28 @@ func NewEciesFromBase64(privateKeyBase64, publicKeyBase64 string, curve EciesCur
 		}
 	}
 
-	return NewEciesFromBytes(privateBytes, publicBytes, curve, opts...)
+	return NewECIESFromBytes(privateBytes, publicBytes, curve, opts...)
 }
 
-func GenerateEciesKey(curve EciesCurve) (*ecdh.PrivateKey, error) {
+func GenerateECIESKey(curve ECIESCurve) (*ecdh.PrivateKey, error) {
 	ecdhCurve := getCurve(curve)
 
 	return ecdhCurve.GenerateKey(rand.Reader)
 }
 
-func getCurve(curve EciesCurve) ecdh.Curve {
-	switch curve {
-	case EciesCurveP256:
-		return ecdh.P256()
-	case EciesCurveP384:
-		return ecdh.P384()
-	case EciesCurveP521:
-		return ecdh.P521()
-	case EciesCurveX25519:
-		return ecdh.X25519()
-	default:
-		return ecdh.P256()
+func getCurve(curve ECIESCurve) ecdh.Curve {
+	curves := map[ECIESCurve]ecdh.Curve{
+		EciesCurveP256:   ecdh.P256(),
+		EciesCurveP384:   ecdh.P384(),
+		EciesCurveP521:   ecdh.P521(),
+		EciesCurveX25519: ecdh.X25519(),
 	}
+
+	if c, ok := curves[curve]; ok {
+		return c
+	}
+
+	return ecdh.P256()
 }
 
 func (e *eciesCipher) Encrypt(plaintext string) (string, error) {

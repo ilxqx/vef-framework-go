@@ -44,7 +44,7 @@ func (m *MockUserLoader) LoadByUsername(ctx context.Context, username string) (*
 	return args.Get(0).(*security.Principal), args.String(1), args.Error(2)
 }
 
-func (m *MockUserLoader) LoadById(ctx context.Context, id string) (*security.Principal, error) {
+func (m *MockUserLoader) LoadByID(ctx context.Context, id string) (*security.Principal, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -175,7 +175,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 			&config.SecurityConfig{
 				TokenExpires: 24 * time.Hour,
 			},
-			&security.JwtConfig{
+			&security.JWTConfig{
 				Secret:   suite.jwtSecret,
 				Audience: "test-app",
 			},
@@ -185,7 +185,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 				Return(suite.testUser, hashedPassword, nil).
 				Maybe()
 
-			suite.userLoader.On("LoadById", mock.Anything, "user001").
+			suite.userLoader.On("LoadByID", mock.Anything, "user001").
 				Return(suite.testUser, nil).
 				Maybe()
 
@@ -193,7 +193,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 				Return(nil, "", nil).
 				Maybe()
 
-			suite.userLoader.On("LoadById", mock.Anything, "nonexistent").
+			suite.userLoader.On("LoadByID", mock.Anything, "nonexistent").
 				Return(nil, nil).
 				Maybe()
 
@@ -206,7 +206,7 @@ func (suite *AuthResourceTestSuite) setupTestApp() {
 // Helper methods for making API requests and reading responses
 
 func (suite *AuthResourceTestSuite) makeApiRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJson(body)
+	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
@@ -220,7 +220,7 @@ func (suite *AuthResourceTestSuite) makeApiRequest(body api.Request) *http.Respo
 }
 
 func (suite *AuthResourceTestSuite) makeApiRequestWithToken(body api.Request, token string) *http.Response {
-	jsonBody, err := encoding.ToJson(body)
+	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err, "Should encode request to JSON")
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
@@ -239,7 +239,7 @@ func (suite *AuthResourceTestSuite) readBody(resp *http.Response) result.Result 
 	defer resp.Body.Close()
 
 	suite.Require().NoError(err, "Should read response body")
-	res, err := encoding.FromJson[result.Result](string(body))
+	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err, "Should decode response JSON")
 
 	return *res
@@ -265,7 +265,7 @@ func (suite *AuthResourceTestSuite) TestLoginSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -298,13 +298,13 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   "testuser",
 				"credentials": "wrongpassword",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail with wrong password")
@@ -319,13 +319,13 @@ func (suite *AuthResourceTestSuite) TestLoginInvalidCredentials() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   "nonexistent",
 				"credentials": "password123",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail with non-existent user")
@@ -345,12 +345,12 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"credentials": "password123",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail without username")
@@ -365,12 +365,12 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":      isecurity.AuthTypePassword,
+				"kind":      isecurity.AuthKindPassword,
 				"principal": "testuser",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail without password")
@@ -385,13 +385,13 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   "testuser",
 				"credentials": "",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail with empty password")
@@ -411,13 +411,13 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   username,
 				"credentials": "password123",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail when loader reports record not found")
@@ -438,13 +438,13 @@ func (suite *AuthResourceTestSuite) TestLoginMissingParameters() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   username,
 				"credentials": "password123",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail when loader returns unexpected error")
@@ -464,7 +464,7 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -501,7 +501,7 @@ func (suite *AuthResourceTestSuite) TestRefreshSuccess() {
 
 	suite.NotEqual(tokens["accessToken"], data["accessToken"], "New access token should be different")
 
-	suite.userLoader.AssertCalled(suite.T(), "LoadById", mock.Anything, "user001")
+	suite.userLoader.AssertCalled(suite.T(), "LoadByID", mock.Anything, "user001")
 }
 
 // TestRefreshInvalidToken tests refresh failures with invalid tokens.
@@ -540,11 +540,11 @@ func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Refresh should fail with empty token")
-		suite.Equal(result.ErrCodePrincipalInvalid, body.Code, "Should return principal invalid error")
+		suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 	})
 
 	suite.Run("MissingToken", func() {
@@ -557,11 +557,11 @@ func (suite *AuthResourceTestSuite) TestRefreshInvalidToken() {
 			Params: map[string]any{},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Refresh should fail without token")
-		suite.Equal(result.ErrCodePrincipalInvalid, body.Code, "Should return principal invalid error")
+		suite.Equal(result.ErrCodeTokenInvalid, body.Code, "Should return token invalid error")
 	})
 }
 
@@ -576,7 +576,7 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -599,7 +599,7 @@ func (suite *AuthResourceTestSuite) TestRefreshWithAccessToken() {
 		},
 	})
 
-	suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+	suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 	body := suite.readBody(resp)
 	suite.False(body.IsOk(), "Refresh should fail with access token")
@@ -617,7 +617,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -632,7 +632,7 @@ func (suite *AuthResourceTestSuite) TestRefreshUserNotFound() {
 	prevExpected := append([]*mock.Call(nil), suite.userLoader.ExpectedCalls...)
 	defer func() { suite.userLoader.ExpectedCalls = prevExpected }()
 
-	call := suite.userLoader.On("LoadById", mock.Anything, mock.Anything).Return((*security.Principal)(nil), nil).Once()
+	call := suite.userLoader.On("LoadByID", mock.Anything, mock.Anything).Return((*security.Principal)(nil), nil).Once()
 	if n := len(suite.userLoader.ExpectedCalls); n > 1 {
 		last := suite.userLoader.ExpectedCalls[n-1]
 		suite.userLoader.ExpectedCalls = append([]*mock.Call{last}, suite.userLoader.ExpectedCalls[:n-1]...)
@@ -668,7 +668,7 @@ func (suite *AuthResourceTestSuite) TestLogoutSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -706,7 +706,7 @@ func (suite *AuthResourceTestSuite) TestLoginAndRefreshFlow() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -778,7 +778,7 @@ func (suite *AuthResourceTestSuite) TestTokenDetails() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -811,7 +811,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -825,7 +825,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 
 	avatarURL := "https://example.com/avatar.jpg"
 	expectedUserInfo := &security.UserInfo{
-		Id:     "user001",
+		ID:     "user001",
 		Name:   "Test User",
 		Gender: security.GenderMale,
 		Avatar: null.StringFrom(avatarURL),
@@ -853,7 +853,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoSuccess() {
 	}
 
 	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
-		return p.Id == "user001"
+		return p.ID == "user001"
 	}), mock.Anything).Return(expectedUserInfo, nil).Once()
 
 	resp := suite.makeApiRequestWithToken(api.Request{
@@ -926,7 +926,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -939,7 +939,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoLoaderError() {
 	accessToken := tokens["accessToken"].(string)
 
 	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
-		return p.Id == "user001"
+		return p.ID == "user001"
 	}), mock.Anything).Return((*security.UserInfo)(nil), errors.New("database connection failed")).Once()
 
 	resp := suite.makeApiRequestWithToken(api.Request{
@@ -969,7 +969,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 			Version:  "v1",
 		},
 		Params: map[string]any{
-			"type":        isecurity.AuthTypePassword,
+			"kind":        isecurity.AuthKindPassword,
 			"principal":   "testuser",
 			"credentials": "password123",
 		},
@@ -982,7 +982,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 	accessToken := tokens["accessToken"].(string)
 
 	expectedUserInfo := &security.UserInfo{
-		Id:         "user001",
+		ID:         "user001",
 		Name:       "Test User",
 		Gender:     security.GenderUnknown,
 		PermTokens: []string{},
@@ -990,7 +990,7 @@ func (suite *AuthResourceTestSuite) TestGetUserInfoWithEmptyMenus() {
 	}
 
 	suite.userInfoLoader.On("LoadUserInfo", mock.Anything, mock.MatchedBy(func(p *security.Principal) bool {
-		return p.Id == "user001"
+		return p.ID == "user001"
 	}), mock.Anything).Return(expectedUserInfo, nil).Once()
 
 	resp := suite.makeApiRequestWithToken(api.Request{
@@ -1037,7 +1037,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   "testuser",
 				"credentials": "password123",
 			},
@@ -1056,16 +1056,16 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 		suite.NotNil(loginEvent, "Login event should not be nil")
 
 		suite.Equal("password", loginEvent.AuthType, "AuthType should be password")
-		suite.Equal("user001", loginEvent.UserId, "UserId should match")
+		suite.Equal("user001", loginEvent.UserID, "UserID should match")
 		suite.Equal("testuser", loginEvent.Username, "Username should match")
 		suite.True(loginEvent.IsOk, "IsOk should be true for successful login")
 		suite.Empty(loginEvent.FailReason, "FailReason should be empty for successful login")
 		suite.Equal(0, loginEvent.ErrorCode, "ErrorCode should be 0 for successful login")
-		suite.NotEmpty(loginEvent.LoginIp, "LoginIp should not be empty")
-		suite.NotEmpty(loginEvent.TraceId, "TraceId should not be empty")
+		suite.NotEmpty(loginEvent.LoginIP, "LoginIP should not be empty")
+		suite.NotEmpty(loginEvent.TraceID, "TraceID should not be empty")
 
-		suite.T().Logf("Login success event: UserId=%s, Username=%s, IsOk=%v, TraceId=%s",
-			loginEvent.UserId, loginEvent.Username, loginEvent.IsOk, loginEvent.TraceId)
+		suite.T().Logf("Login success event: UserID=%s, Username=%s, IsOk=%v, TraceID=%s",
+			loginEvent.UserID, loginEvent.Username, loginEvent.IsOk, loginEvent.TraceID)
 	})
 
 	suite.Run("LoginFailureEvent", func() {
@@ -1078,13 +1078,13 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   "testuser",
 				"credentials": "wrongpassword",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail")
@@ -1097,16 +1097,16 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 		suite.NotNil(loginEvent, "Login event should not be nil")
 
 		suite.Equal("password", loginEvent.AuthType, "AuthType should be password")
-		suite.Empty(loginEvent.UserId, "UserId should be empty for failed login")
+		suite.Empty(loginEvent.UserID, "UserID should be empty for failed login")
 		suite.Equal("testuser", loginEvent.Username, "Username should match")
 		suite.False(loginEvent.IsOk, "IsOk should be false for failed login")
 		suite.NotEmpty(loginEvent.FailReason, "FailReason should not be empty for failed login")
 		suite.Equal(result.ErrCodeCredentialsInvalid, loginEvent.ErrorCode, "ErrorCode should match")
-		suite.NotEmpty(loginEvent.LoginIp, "LoginIp should not be empty")
-		suite.NotEmpty(loginEvent.TraceId, "TraceId should not be empty")
+		suite.NotEmpty(loginEvent.LoginIP, "LoginIP should not be empty")
+		suite.NotEmpty(loginEvent.TraceID, "TraceID should not be empty")
 
-		suite.T().Logf("Login failure event: Username=%s, IsOk=%v, FailReason=%s, ErrorCode=%d, TraceId=%s",
-			loginEvent.Username, loginEvent.IsOk, loginEvent.FailReason, loginEvent.ErrorCode, loginEvent.TraceId)
+		suite.T().Logf("Login failure event: Username=%s, IsOk=%v, FailReason=%s, ErrorCode=%d, TraceID=%s",
+			loginEvent.Username, loginEvent.IsOk, loginEvent.FailReason, loginEvent.ErrorCode, loginEvent.TraceID)
 	})
 
 	suite.Run("UserNotFoundEvent", func() {
@@ -1119,13 +1119,13 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 				Version:  "v1",
 			},
 			Params: map[string]any{
-				"type":        isecurity.AuthTypePassword,
+				"kind":        isecurity.AuthKindPassword,
 				"principal":   "nonexistent",
 				"credentials": "password123",
 			},
 		})
 
-		suite.Equal(200, resp.StatusCode, "Should return 200 OK")
+		suite.Equal(401, resp.StatusCode, "Should return 401 Unauthorized")
 
 		body := suite.readBody(resp)
 		suite.False(body.IsOk(), "Login should fail")
@@ -1137,7 +1137,7 @@ func (suite *AuthResourceTestSuite) TestLoginEventPublished() {
 		suite.True(ok, "Event should be LoginEvent type")
 
 		suite.Equal("password", loginEvent.AuthType, "AuthType should be password")
-		suite.Empty(loginEvent.UserId, "UserId should be empty for non-existent user")
+		suite.Empty(loginEvent.UserID, "UserID should be empty for non-existent user")
 		suite.Equal("nonexistent", loginEvent.Username, "Username should match")
 		suite.False(loginEvent.IsOk, "IsOk should be false")
 		suite.Equal(result.ErrCodeCredentialsInvalid, loginEvent.ErrorCode, "ErrorCode should match")

@@ -6,139 +6,166 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 )
 
+// Predefined authentication errors (HTTP 401).
 var (
-	// ErrTokenExpired is the error for expired token.
-	ErrTokenExpired = Err(
-		i18n.T(ErrMessageTokenExpired),
-		WithCode(ErrCodeTokenExpired),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTokenInvalid is the error for invalid token.
-	ErrTokenInvalid = Err(
-		i18n.T(ErrMessageTokenInvalid),
-		WithCode(ErrCodeTokenInvalid),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTokenNotValidYet is the error for not valid yet token.
-	ErrTokenNotValidYet = Err(
-		i18n.T(ErrMessageTokenNotValidYet),
-		WithCode(ErrCodeTokenNotValidYet),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTokenInvalidIssuer is the error for invalid issuer token.
-	ErrTokenInvalidIssuer = Err(
-		i18n.T(ErrMessageTokenInvalidIssuer),
-		WithCode(ErrCodeTokenInvalidIssuer),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTokenInvalidAudience is the error for invalid audience token.
-	ErrTokenInvalidAudience = Err(
-		i18n.T(ErrMessageTokenInvalidAudience),
-		WithCode(ErrCodeTokenInvalidAudience),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTokenMissingSubject is the error for missing subject token.
-	ErrTokenMissingSubject = Err(
-		i18n.T(ErrMessageTokenMissingSubject),
-		WithCode(ErrCodeTokenMissingSubject),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTokenMissingTokenType is the error for missing token type token.
-	ErrTokenMissingTokenType = Err(
-		i18n.T(ErrMessageTokenMissingTokenType),
-		WithCode(ErrCodeTokenMissingTokenType),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrAppIdRequired is the error for missing app id.
-	ErrAppIdRequired = Err(
-		i18n.T(ErrMessageAppIdRequired),
-		WithCode(ErrCodeAppIdRequired),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTimestampRequired is the error for missing app timestamp.
-	ErrTimestampRequired = Err(
-		i18n.T(ErrMessageTimestampRequired),
-		WithCode(ErrCodeTimestampRequired),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrSignatureRequired is the error for missing app signature.
-	ErrSignatureRequired = Err(
-		i18n.T(ErrMessageSignatureRequired),
-		WithCode(ErrCodeSignatureRequired),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrTimestampInvalid is the error for invalid app timestamp.
-	ErrTimestampInvalid = Err(
-		i18n.T(ErrMessageTimestampInvalid),
-		WithCode(ErrCodeTimestampInvalid),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrSignatureExpired is the error for expired app signature.
-	ErrSignatureExpired = Err(
-		i18n.T(ErrMessageSignatureExpired),
-		WithCode(ErrCodeSignatureExpired),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrSignatureInvalid is the error for invalid app signature.
-	ErrSignatureInvalid = Err(
-		i18n.T(ErrMessageSignatureInvalid),
-		WithCode(ErrCodeSignatureInvalid),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrExternalAppNotFound is the error for app not found.
-	ErrExternalAppNotFound = Err(
-		i18n.T(ErrMessageExternalAppNotFound),
-		WithCode(ErrCodeExternalAppNotFound),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrExternalAppDisabled is the error for app disabled.
-	ErrExternalAppDisabled = Err(
-		i18n.T(ErrMessageExternalAppDisabled),
-		WithCode(ErrCodeExternalAppDisabled),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrIpNotAllowed is the error for ip not allowed.
-	ErrIpNotAllowed = Err(
-		i18n.T(ErrMessageIpNotAllowed),
-		WithCode(ErrCodeIpNotAllowed),
-		WithStatus(fiber.StatusUnauthorized),
-	)
-	// ErrUnauthenticated is the error for unauthenticated.
 	ErrUnauthenticated = Err(
 		i18n.T(ErrMessageUnauthenticated),
 		WithCode(ErrCodeUnauthenticated),
 		WithStatus(fiber.StatusUnauthorized),
 	)
-	// ErrAccessDenied is the error for access denied.
+	ErrTokenExpired = Err(
+		i18n.T(ErrMessageTokenExpired),
+		WithCode(ErrCodeTokenExpired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTokenInvalid = Err(
+		i18n.T(ErrMessageTokenInvalid),
+		WithCode(ErrCodeTokenInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTokenNotValidYet = Err(
+		i18n.T(ErrMessageTokenNotValidYet),
+		WithCode(ErrCodeTokenNotValidYet),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTokenInvalidIssuer = Err(
+		i18n.T(ErrMessageTokenInvalidIssuer),
+		WithCode(ErrCodeTokenInvalidIssuer),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTokenInvalidAudience = Err(
+		i18n.T(ErrMessageTokenInvalidAudience),
+		WithCode(ErrCodeTokenInvalidAudience),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTokenMissingSubject = Err(
+		i18n.T(ErrMessageTokenMissingSubject),
+		WithCode(ErrCodeTokenMissingSubject),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTokenMissingTokenType = Err(
+		i18n.T(ErrMessageTokenMissingTokenType),
+		WithCode(ErrCodeTokenMissingTokenType),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+)
+
+// Predefined external app authentication errors (HTTP 401).
+var (
+	ErrAppIDRequired = Err(
+		i18n.T(ErrMessageAppIDRequired),
+		WithCode(ErrCodeAppIDRequired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTimestampRequired = Err(
+		i18n.T(ErrMessageTimestampRequired),
+		WithCode(ErrCodeTimestampRequired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrSignatureRequired = Err(
+		i18n.T(ErrMessageSignatureRequired),
+		WithCode(ErrCodeSignatureRequired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrTimestampInvalid = Err(
+		i18n.T(ErrMessageTimestampInvalid),
+		WithCode(ErrCodeTimestampInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrSignatureExpired = Err(
+		i18n.T(ErrMessageSignatureExpired),
+		WithCode(ErrCodeSignatureExpired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrSignatureInvalid = Err(
+		i18n.T(ErrMessageSignatureInvalid),
+		WithCode(ErrCodeSignatureInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrExternalAppNotFound = Err(
+		i18n.T(ErrMessageExternalAppNotFound),
+		WithCode(ErrCodeExternalAppNotFound),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrExternalAppDisabled = Err(
+		i18n.T(ErrMessageExternalAppDisabled),
+		WithCode(ErrCodeExternalAppDisabled),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrIPNotAllowed = Err(
+		i18n.T(ErrMessageIPNotAllowed),
+		WithCode(ErrCodeIPNotAllowed),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+)
+
+// Predefined authorization and request errors.
+var (
 	ErrAccessDenied = Err(
 		i18n.T(ErrMessageAccessDenied),
 		WithCode(ErrCodeAccessDenied),
 		WithStatus(fiber.StatusForbidden),
 	)
-	// ErrUnknown is the error for unknown error.
+	ErrTooManyRequests = Err(
+		i18n.T(ErrMessageTooManyRequests),
+		WithCode(ErrCodeTooManyRequests),
+		WithStatus(fiber.StatusTooManyRequests),
+	)
+	ErrRequestTimeout = Err(
+		i18n.T(ErrMessageRequestTimeout),
+		WithCode(ErrCodeRequestTimeout),
+		WithStatus(fiber.StatusRequestTimeout),
+	)
 	ErrUnknown = Err(
 		i18n.T(ErrMessageUnknown),
 		WithCode(ErrCodeUnknown),
 		WithStatus(fiber.StatusInternalServerError),
 	)
-	// ErrRecordNotFound is the error for record not found.
+)
+
+// Predefined business errors (HTTP 200 with error code).
+var (
 	ErrRecordNotFound = Err(
 		i18n.T(ErrMessageRecordNotFound),
 		WithCode(ErrCodeRecordNotFound),
 	)
-	// ErrRecordAlreadyExists is the error for record already exists.
 	ErrRecordAlreadyExists = Err(
 		i18n.T(ErrMessageRecordAlreadyExists),
 		WithCode(ErrCodeRecordAlreadyExists),
 	)
-	// ErrForeignKeyViolation is the error for foreign key constraint violation.
 	ErrForeignKeyViolation = Err(
 		i18n.T(ErrMessageForeignKeyViolation),
 		WithCode(ErrCodeForeignKeyViolation),
 	)
-	// ErrDangerousSQL is the error for dangerous SQL operations.
 	ErrDangerousSQL = Err(
 		i18n.T(ErrMessageDangerousSQL),
 		WithCode(ErrCodeDangerousSQL),
 	)
 )
+
+// ErrNotImplemented creates a not implemented error with custom message (HTTP 501).
+func ErrNotImplemented(message string) Error {
+	return Err(
+		message,
+		WithCode(ErrCodeNotImplemented),
+		WithStatus(fiber.StatusNotImplemented),
+	)
+}
+
+// ErrCredentialsInvalid creates a credentials invalid error with custom message (HTTP 401).
+func ErrCredentialsInvalid(message string) Error {
+	return Err(
+		message,
+		WithCode(ErrCodeCredentialsInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+}
+
+// ErrPrincipalInvalid creates a principal invalid error with custom message (HTTP 401).
+func ErrPrincipalInvalid(message string) Error {
+	return Err(
+		message,
+		WithCode(ErrCodePrincipalInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+}

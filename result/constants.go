@@ -1,78 +1,109 @@
 package result
 
+// i18n message keys for API responses.
 const (
-	// Message IDs for i18n (used as keys in locale files).
-	OkMessage                             = "ok"                              // OkMessage is the i18n key for ok response
-	OkCode                                = 0                                 // OkCode is the code for ok response
-	ErrMessage                            = "error"                           // ErrMessage is the i18n key for error response
-	ErrMessageRecordNotFound              = "record_not_found"                // ErrMessageRecordNotFound is the i18n key for record not found error
-	ErrMessageRecordAlreadyExists         = "record_already_exists"           // ErrMessageRecordAlreadyExists is the i18n key for record already exists error
-	ErrMessageForeignKeyViolation         = "foreign_key_violation"           // ErrMessageForeignKeyViolation is the i18n key for foreign key violation error
-	ErrMessageUnknown                     = "unknown_error"                   // ErrMessageUnknown is the i18n key for unknown error
-	ErrMessageNotFound                    = "not_found"                       // ErrMessageNotFound is the i18n key for not found error
-	ErrMessageTooManyRequests             = "too_many_requests"               // ErrMessageTooManyRequests is the i18n key for too many requests error
-	ErrMessageUnauthenticated             = "unauthenticated"                 // ErrMessageUnauthenticated is the i18n key for unauthenticated error
-	ErrMessageTokenExpired                = "token_expired"                   // ErrMessageTokenExpired is the i18n key for expired token error
-	ErrMessageTokenInvalid                = "token_invalid"                   // ErrMessageTokenInvalid is the i18n key for invalid token error
-	ErrMessageTokenNotValidYet            = "token_not_valid_yet"             // ErrMessageTokenNotValidYet is the i18n key for not valid yet error
-	ErrMessageTokenInvalidIssuer          = "token_invalid_issuer"            // ErrMessageTokenInvalidIssuer is the i18n key for invalid issuer error
-	ErrMessageTokenInvalidAudience        = "token_invalid_audience"          // ErrMessageTokenInvalidAudience is the i18n key for invalid audience error
-	ErrMessageTokenMissingSubject         = "token_missing_subject"           // ErrMessageTokenMissingSubject is the i18n key for missing subject error
-	ErrMessageTokenMissingTokenType       = "token_missing_token_type"        // ErrMessageTokenMissingTokenType is the i18n key for missing token type error
-	ErrMessageAppIdRequired               = "app_id_required"                 // ErrMessageAppIdRequired is the i18n key for app id required error
-	ErrMessageTimestampRequired           = "timestamp_required"              // ErrMessageTimestampRequired is the i18n key for app timestamp required error
-	ErrMessageSignatureRequired           = "signature_required"              // ErrMessageSignatureRequired is the i18n key for app signature required error
-	ErrMessageTimestampInvalid            = "timestamp_invalid"               // ErrMessageTimestampInvalid is the i18n key for app timestamp invalid error
-	ErrMessageSignatureExpired            = "signature_expired"               // ErrMessageSignatureExpired is the i18n key for app signature expired error
-	ErrMessageExternalAppNotFound         = "external_app_not_found"          // ErrMessageExternalAppNotFound is the i18n key for app not found error
-	ErrMessageExternalAppDisabled         = "external_app_disabled"           // ErrMessageExternalAppDisabled is the i18n key for app disabled error
-	ErrMessageIpNotAllowed                = "ip_not_allowed"                  // ErrMessageIpNotAllowed is the i18n key for app ip not allowed error
-	ErrMessageSignatureInvalid            = "signature_invalid"               // ErrMessageSignatureInvalid is the i18n key for app signature invalid error
-	ErrMessageAccessDenied                = "access_denied"                   // ErrMessageAccessDenied is the i18n key for access denied error
-	ErrMessageUnsupportedMediaType        = "unsupported_media_type"          // ErrMessageUnsupportedMediaType is the i18n key for unsupported media type error
-	ErrMessageRequestTimeout              = "request_timeout"                 // ErrMessageRequestTimeout is the i18n key for request timeout error
-	ErrMessageMonitorNotReady             = "monitor_not_ready"               // ErrMessageMonitorNotReady is the i18n key for monitor data not ready error
-	ErrMessageInvalidFileKey              = "invalid_file_key"                // ErrMessageInvalidFileKey is the i18n key for invalid file key error
-	ErrMessageFileNotFound                = "file_not_found"                  // ErrMessageFileNotFound is the i18n key for file not found error
-	ErrMessageFailedToGetFile             = "failed_to_get_file"              // ErrMessageFailedToGetFile is the i18n key for failed to get file error
-	ErrMessageApiRequestParamsInvalidJson = "api_request_params_invalid_json" // ErrMessageApiRequestParamsInvalidJSON is the i18n key for invalid params JSON error
-	ErrMessageApiRequestMetaInvalidJson   = "api_request_meta_invalid_json"   // ErrMessageApiRequestMetaInvalidJSON is the i18n key for invalid meta JSON error
-	ErrMessageDangerousSQL                = "dangerous_sql"                   // ErrMessageDangerousSQL is the i18n key for dangerous SQL error
-	ErrCodeDefault                        = 2000                              // ErrCodeDefault is the default code for error response (2000 and above are business error codes)
-	ErrCodeRecordNotFound                 = 2001                              // ErrCodeRecordNotFound is the code for record not found error
-	ErrCodeRecordAlreadyExists            = 2002                              // ErrCodeRecordAlreadyExists is the code for record already exists error
-	ErrCodeForeignKeyViolation            = 2003                              // ErrCodeForeignKeyViolation is the code for foreign key violation error
-	ErrCodeMonitorNotReady                = 2100                              // ErrCodeMonitorNotReady is the code for monitor data not ready error
-	ErrCodeUnknown                        = 1900                              // ErrCodeUnknown is the code for unknown error
-	ErrCodeBadRequest                     = 1400                              // ErrCodeBadRequest is the code for bad request error
-	ErrCodeTooManyRequests                = 1401                              // ErrCodeTooManyRequests is the code for too many requests error
-	ErrCodeUnauthenticated                = 1000                              // ErrCodeUnauthenticated is the code for unauthenticated error
-	ErrCodeUnsupportedAuthenticationType  = 1001                              // ErrCodeUnsupportedAuthenticationType is the code for unsupported authentication type error
-	ErrCodeTokenExpired                   = 1002                              // ErrCodeTokenExpired is the code for expired token error
-	ErrCodeTokenInvalid                   = 1003                              // ErrCodeTokenInvalid is the code for invalid token error
-	ErrCodeTokenNotValidYet               = 1004                              // ErrCodeTokenNotValidYet is the code for not valid yet error
-	ErrCodeTokenInvalidIssuer             = 1005                              // ErrCodeTokenInvalidIssuer is the code for invalid issuer error
-	ErrCodeTokenInvalidAudience           = 1007                              // ErrCodeTokenInvalidAudience is the code for invalid audience error
-	ErrCodeTokenMissingSubject            = 1008                              // ErrCodeTokenMissingSubject is the code for missing subject error
-	ErrCodeTokenMissingTokenType          = 1009                              // ErrCodeTokenMissingTokenType is the code for missing token type error
-	ErrCodePrincipalInvalid               = 1010                              // ErrCodePrincipalInvalid is the code for invalid principal error
-	ErrCodeCredentialsInvalid             = 1011                              // ErrCodeCredentialsInvalid is the code for invalid credentials error
-	ErrCodeAppIdRequired                  = 1012                              // ErrCodeAppIdRequired is the code for app id required error
-	ErrCodeTimestampRequired              = 1013                              // ErrCodeTimestampRequired is the code for app timestamp required error
-	ErrCodeSignatureRequired              = 1014                              // ErrCodeSignatureRequired is the code for app signature required error
-	ErrCodeTimestampInvalid               = 1015                              // ErrCodeTimestampInvalid is the code for app timestamp invalid error
-	ErrCodeSignatureExpired               = 1016                              // ErrCodeSignatureExpired is the code for app signature expired error
-	ErrCodeExternalAppNotFound            = 1017                              // ErrCodeExternalAppNotFound is the code for app not found error
-	ErrCodeExternalAppDisabled            = 1018                              // ErrCodeExternalAppDisabled is the code for app disabled error
-	ErrCodeIpNotAllowed                   = 1019                              // ErrCodeIpNotAllowed is the code for ip not allowed error
-	ErrCodeSignatureInvalid               = 1020                              // ErrCodeSignatureInvalid is the code for app signature invalid error
-	ErrCodeAccessDenied                   = 1100                              // ErrCodeAccessDenied is the code for access denied error
-	ErrCodeNotFound                       = 1200                              // ErrCodeNotFound is the code for not found error
-	ErrCodeUnsupportedMediaType           = 1300                              // ErrCodeUnsupportedMediaType is the code for unsupported media type error
-	ErrCodeRequestTimeout                 = 1400                              // ErrCodeRequestTimeout is the code for request timeout error
-	ErrCodeNotImplemented                 = 1500                              // ErrCodeNotImplemented is the code for not implemented error
-	ErrCodeDangerousSQL                   = 1600                              // ErrCodeDangerousSQL is the code for dangerous SQL error
-	ErrCodeInvalidFileKey                 = 2200                              // ErrCodeInvalidFileKey is the code for invalid file key error
-	ErrCodeFileNotFound                   = 2201                              // ErrCodeFileNotFound is the code for file not found error
-	ErrCodeSchemaTableNotFound            = 2300                              // ErrCodeSchemaTableNotFound is the code for schema table not found error
+	OkMessage                             = "ok"
+	ErrMessage                            = "error"
+	ErrMessageRecordNotFound              = "record_not_found"
+	ErrMessageRecordAlreadyExists         = "record_already_exists"
+	ErrMessageForeignKeyViolation         = "foreign_key_violation"
+	ErrMessageUnknown                     = "unknown_error"
+	ErrMessageNotFound                    = "not_found"
+	ErrMessageTooManyRequests             = "too_many_requests"
+	ErrMessageUnauthenticated             = "unauthenticated"
+	ErrMessageTokenExpired                = "token_expired"
+	ErrMessageTokenInvalid                = "token_invalid"
+	ErrMessageTokenNotValidYet            = "token_not_valid_yet"
+	ErrMessageTokenInvalidIssuer          = "token_invalid_issuer"
+	ErrMessageTokenInvalidAudience        = "token_invalid_audience"
+	ErrMessageTokenMissingSubject         = "token_missing_subject"
+	ErrMessageTokenMissingTokenType       = "token_missing_token_type"
+	ErrMessageAppIDRequired               = "app_id_required"
+	ErrMessageTimestampRequired           = "timestamp_required"
+	ErrMessageSignatureRequired           = "signature_required"
+	ErrMessageTimestampInvalid            = "timestamp_invalid"
+	ErrMessageSignatureExpired            = "signature_expired"
+	ErrMessageExternalAppNotFound         = "external_app_not_found"
+	ErrMessageExternalAppDisabled         = "external_app_disabled"
+	ErrMessageIPNotAllowed                = "ip_not_allowed"
+	ErrMessageSignatureInvalid            = "signature_invalid"
+	ErrMessageAccessDenied                = "access_denied"
+	ErrMessageUnsupportedMediaType        = "unsupported_media_type"
+	ErrMessageRequestTimeout              = "request_timeout"
+	ErrMessageMonitorNotReady             = "monitor_not_ready"
+	ErrMessageInvalidFileKey              = "invalid_file_key"
+	ErrMessageFileNotFound                = "file_not_found"
+	ErrMessageFailedToGetFile             = "failed_to_get_file"
+	ErrMessageApiRequestParamsInvalidJSON      = "api_request_params_invalid_json"
+	ErrMessageApiRequestMetaInvalidJSON        = "api_request_meta_invalid_json"
+	ErrMessageDangerousSQL                     = "dangerous_sql"
+	ErrMessageExternalAppLoaderNotImplemented  = "external_app_loader_not_implemented"
+	ErrMessageCredentialsFormatInvalid         = "credentials_format_invalid"
+	ErrMessageCredentialsFieldsRequired        = "credentials_fields_required"
+	ErrMessageSignatureDecodeFailed            = "signature_decode_failed"
+	ErrMessageUnsupportedAuthenticationType    = "unsupported_authentication_type"
+	ErrMessageUserLoaderNotImplemented         = "user_loader_not_implemented"
+	ErrMessageUserInfoLoaderNotImplemented     = "user_info_loader_not_implemented"
+)
+
+// Response codes for API results.
+// Code 0 indicates success; codes 1000+ indicate authentication/authorization errors;
+// codes 2000+ indicate business logic errors.
+const (
+	OkCode = 0
+
+	// Authentication errors (1000-1099)
+	ErrCodeUnauthenticated               = 1000
+	ErrCodeUnsupportedAuthenticationType = 1001
+	ErrCodeTokenExpired                  = 1002
+	ErrCodeTokenInvalid                  = 1003
+	ErrCodeTokenNotValidYet              = 1004
+	ErrCodeTokenInvalidIssuer            = 1005
+	ErrCodeTokenInvalidAudience          = 1007
+	ErrCodeTokenMissingSubject           = 1008
+	ErrCodeTokenMissingTokenType         = 1009
+	ErrCodePrincipalInvalid              = 1010
+	ErrCodeCredentialsInvalid            = 1011
+	ErrCodeAppIDRequired                 = 1012
+	ErrCodeTimestampRequired             = 1013
+	ErrCodeSignatureRequired             = 1014
+	ErrCodeTimestampInvalid              = 1015
+	ErrCodeSignatureExpired              = 1016
+	ErrCodeExternalAppNotFound           = 1017
+	ErrCodeExternalAppDisabled           = 1018
+	ErrCodeIPNotAllowed                  = 1019
+	ErrCodeSignatureInvalid              = 1020
+
+	// Authorization errors (1100-1199)
+	ErrCodeAccessDenied = 1100
+
+	// Resource errors (1200-1299)
+	ErrCodeNotFound = 1200
+
+	// Media type errors (1300-1399)
+	ErrCodeUnsupportedMediaType = 1300
+
+	// Request errors (1400-1499)
+	ErrCodeBadRequest      = 1400
+	ErrCodeTooManyRequests = 1401
+	ErrCodeRequestTimeout  = 1402
+
+	// Not implemented (1500-1599)
+	ErrCodeNotImplemented = 1500
+
+	// SQL errors (1600-1699)
+	ErrCodeDangerousSQL = 1600
+
+	// Unknown errors (1900-1999)
+	ErrCodeUnknown = 1900
+
+	// Business errors (2000+)
+	ErrCodeDefault             = 2000
+	ErrCodeRecordNotFound      = 2001
+	ErrCodeRecordAlreadyExists = 2002
+	ErrCodeForeignKeyViolation = 2003
+	ErrCodeMonitorNotReady     = 2100
+	ErrCodeInvalidFileKey      = 2200
+	ErrCodeFileNotFound        = 2201
+	ErrCodeSchemaTableNotFound = 2300
 )

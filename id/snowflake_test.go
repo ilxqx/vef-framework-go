@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSnowflakeIdGenerator(t *testing.T) {
+func TestSnowflakeGenerator(t *testing.T) {
 	t.Run("CreateGenerator", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(1)
+		generator, err := NewSnowflakeIDGenerator(1)
 		require.NoError(t, err, "Should create generator without error")
 		assert.NotNil(t, generator, "Generator should not be nil")
 	})
 
 	t.Run("GenerateValidIds", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(1)
+		generator, err := NewSnowflakeIDGenerator(1)
 		require.NoError(t, err)
 
 		id := generator.Generate()
@@ -30,7 +30,7 @@ func TestSnowflakeIdGenerator(t *testing.T) {
 	})
 
 	t.Run("GenerateUniqueIds", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(1)
+		generator, err := NewSnowflakeIDGenerator(1)
 		require.NoError(t, err)
 
 		ids := make(map[string]bool)
@@ -45,11 +45,11 @@ func TestSnowflakeIdGenerator(t *testing.T) {
 		assert.Len(t, ids, iterations, "All IDs should be unique")
 	})
 
-	t.Run("DifferentNodeIds", func(t *testing.T) {
-		gen1, err := NewSnowflakeIdGenerator(1)
+	t.Run("DifferentNodeIDs", func(t *testing.T) {
+		gen1, err := NewSnowflakeIDGenerator(1)
 		require.NoError(t, err)
 
-		gen2, err := NewSnowflakeIdGenerator(2)
+		gen2, err := NewSnowflakeIDGenerator(2)
 		require.NoError(t, err)
 
 		id1 := gen1.Generate()
@@ -58,28 +58,28 @@ func TestSnowflakeIdGenerator(t *testing.T) {
 		assert.NotEqual(t, id1, id2, "IDs from different nodes should be different")
 	})
 
-	t.Run("InvalidNodeId", func(t *testing.T) {
-		_, err := NewSnowflakeIdGenerator(64)
+	t.Run("InvalidNodeID", func(t *testing.T) {
+		_, err := NewSnowflakeIDGenerator(64)
 		assert.Error(t, err, "Should fail with invalid node ID")
 		assert.Contains(t, err.Error(), "failed to create snowflake node")
 	})
 
-	t.Run("NegativeNodeId", func(t *testing.T) {
-		_, err := NewSnowflakeIdGenerator(-1)
+	t.Run("NegativeNodeID", func(t *testing.T) {
+		_, err := NewSnowflakeIDGenerator(-1)
 		assert.Error(t, err, "Should fail with negative node ID")
 	})
 }
 
 func TestSnowflakeEnvironmentVariables(t *testing.T) {
-	t.Run("UseNodeIdEnvironmentVariable", func(t *testing.T) {
-		assert.NotNil(t, DefaultSnowflakeIdGenerator, "Default generator should be initialized")
+	t.Run("UseNodeIDEnvironmentVariable", func(t *testing.T) {
+		assert.NotNil(t, DefaultSnowflakeIDGenerator, "Default generator should be initialized")
 
-		id := DefaultSnowflakeIdGenerator.Generate()
+		id := DefaultSnowflakeIDGenerator.Generate()
 		assert.NotEmpty(t, id, "Default generator should produce valid IDs")
 	})
 
 	t.Run("ConcurrentGeneration", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(1)
+		generator, err := NewSnowflakeIDGenerator(1)
 		require.NoError(t, err)
 
 		const (
@@ -111,7 +111,7 @@ func TestSnowflakeEnvironmentVariables(t *testing.T) {
 
 func TestSnowflakeConfiguration(t *testing.T) {
 	t.Run("CustomEpochConfiguration", func(t *testing.T) {
-		generator, err := NewSnowflakeIdGenerator(0)
+		generator, err := NewSnowflakeIDGenerator(0)
 		require.NoError(t, err)
 
 		id := generator.Generate()
@@ -122,14 +122,14 @@ func TestSnowflakeConfiguration(t *testing.T) {
 		assert.False(t, strings.Contains(id, "/"), "ID should not contain slashes")
 	})
 
-	t.Run("BoundaryNodeIds", func(t *testing.T) {
-		gen0, err := NewSnowflakeIdGenerator(0)
+	t.Run("BoundaryNodeIDs", func(t *testing.T) {
+		gen0, err := NewSnowflakeIDGenerator(0)
 		require.NoError(t, err)
 
 		id0 := gen0.Generate()
 		assert.NotEmpty(t, id0, "Node ID 0 should work")
 
-		gen63, err := NewSnowflakeIdGenerator(63)
+		gen63, err := NewSnowflakeIDGenerator(63)
 		require.NoError(t, err)
 
 		id63 := gen63.Generate()

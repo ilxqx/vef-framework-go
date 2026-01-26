@@ -329,9 +329,7 @@ func (c *redisCache[T]) Size(ctx context.Context) (int64, error) {
 
 // Close marks the cache as closed. The underlying Redis client remains managed externally.
 func (c *redisCache[T]) Close() error {
-	if c.closed.Swap(true) {
-		return nil
-	}
+	c.closed.Store(true)
 
 	return nil
 }

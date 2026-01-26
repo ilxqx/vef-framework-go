@@ -20,23 +20,23 @@ func NewAuthResource(authManager security.AuthManager, tokenGenerator security.T
 		tokenGenerator: tokenGenerator,
 		userInfoLoader: userInfoLoader,
 		publisher:      publisher,
-		Resource: api.NewResource(
+		Resource: api.NewRPCResource(
 			"security/auth",
-			api.WithApis(
-				api.Spec{
-					Action: "login",
-					Public: true,
-					Limit:  loginRateLimit,
+			api.WithOperations(
+				api.OperationSpec{
+					Action:    "login",
+					Public:    true,
+					RateLimit: loginRateLimit,
 				},
-				api.Spec{
-					Action: "refresh",
-					Public: true,
-					Limit:  refreshRateLimit,
+				api.OperationSpec{
+					Action:    "refresh",
+					Public:    true,
+					RateLimit: refreshRateLimit,
 				},
-				api.Spec{
+				api.OperationSpec{
 					Action: "logout",
 				},
-				api.Spec{
+				api.OperationSpec{
 					Action: "get_user_info",
 				},
 			),
@@ -64,9 +64,9 @@ type LoginParams struct {
 
 // Login authenticates a user and returns token credentials.
 func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
-	loginIp := webhelpers.GetIp(ctx)
+	loginIp := webhelpers.GetIP(ctx)
 	userAgent := ctx.Get(fiber.HeaderUserAgent)
-	traceId := contextx.RequestId(ctx)
+	traceID := contextx.RequestID(ctx)
 	username := params.Principal
 
 	principal, err := a.authManager.Authenticate(ctx.Context(), params.Authentication)
@@ -85,12 +85,12 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		}
 
 		loginEvent := security.NewLoginEvent(
-			params.Type,
+			params.Kind,
 			constants.Empty,
 			username,
 			loginIp,
 			userAgent,
-			traceId,
+			traceID,
 			false,
 			failReason,
 			errorCode,
@@ -106,12 +106,12 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 	}
 
 	loginEvent := security.NewLoginEvent(
-		params.Type,
-		principal.Id,
+		params.Kind,
+		principal.ID,
 		username,
 		loginIp,
 		userAgent,
-		traceId,
+		traceID,
 		true,
 		constants.Empty,
 		0,
@@ -132,7 +132,7 @@ type RefreshParams struct {
 // User data reload logic is handled by JwtRefreshAuthenticator.
 func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
 	principal, err := a.authManager.Authenticate(ctx.Context(), security.Authentication{
-		Type:      AuthTypeRefresh,
+		Kind:      AuthKindRefresh,
 		Principal: params.RefreshToken,
 	})
 	if err != nil {
@@ -149,24 +149,15 @@ func (a *AuthResource) Refresh(ctx fiber.Ctx, params RefreshParams) error {
 
 // Logout returns success immediately.
 // Token invalidation should be handled on the client side by removing stored tokens.
-func (a *AuthResource) Logout(ctx fiber.Ctx) error {
+func (*AuthResource) Logout(ctx fiber.Ctx) error {
 	return result.Ok().Response(ctx)
 }
 
 // GetUserInfo retrieves user information via UserInfoLoader.
 // Requires a UserInfoLoader implementation to be provided.
-func (a *AuthResource) GetUserInfo(ctx fiber.Ctx, principal *security.Principal) error {
+func (a *AuthResource) GetUserInfo(ctx fiber.Ctx, principal *security.Principal, params api.Params) error {
 	if a.userInfoLoader == nil {
-		return result.Err(i18n.T("user_info_loader_not_implemented"), result.WithCode(result.ErrCodeNotImplemented))
-	}
-
-	var params map[string]any
-	if req := contextx.ApiRequest(ctx); req != nil {
-		params = req.Params
-	}
-
-	if params == nil {
-		params = make(map[string]any)
+		return result.ErrNotImplemented(i18n.T(result.ErrMessageUserInfoLoaderNotImplemented))
 	}
 
 	userInfo, err := a.userInfoLoader.LoadUserInfo(ctx.Context(), principal, params)

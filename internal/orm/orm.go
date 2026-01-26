@@ -10,10 +10,10 @@ import (
 // logger is the named logger instance for the Orm package.
 var logger = log.Named("orm")
 
-// New creates a new Db instance that wraps the provided bun.IDB.
-// This function is used by the dependency injection system to provide Db instances.
-func New(db bun.IDB) Db {
-	inst := &BunDb{db: db}
+// New creates a new DB instance that wraps the provided bun.IDB.
+// This function is used by the dependency injection system to provide DB instances.
+func New(db bun.IDB) DB {
+	inst := &BunDB{db: db}
 
 	return inst.WithNamedArg(constants.ExprOperator, constants.OperatorSystem)
 }

@@ -38,13 +38,13 @@ func convertEinoMessage(msg *schema.Message) Message {
 	result := Message{
 		Role:       Role(msg.Role),
 		Content:    msg.Content,
-		ToolCallId: msg.ToolCallID,
+		ToolCallID: msg.ToolCallID,
 	}
 	if len(msg.ToolCalls) > 0 {
 		result.ToolCalls = make([]ToolCall, len(msg.ToolCalls))
 		for i, tc := range msg.ToolCalls {
 			result.ToolCalls[i] = ToolCall{
-				Id:        tc.ID,
+				ID:        tc.ID,
 				Name:      tc.Function.Name,
 				Arguments: tc.Function.Arguments,
 			}
@@ -157,17 +157,17 @@ func (w callbackWriterImpl) WriteToolCall(id, name, arguments string) {
 	w.ch <- Message{
 		Role: RoleAssistant,
 		ToolCalls: []ToolCall{{
-			Id:        id,
+			ID:        id,
 			Name:      name,
 			Arguments: arguments,
 		}},
 	}
 }
 
-func (w callbackWriterImpl) WriteToolResult(toolCallId, content string) {
+func (w callbackWriterImpl) WriteToolResult(toolCallID, content string) {
 	w.ch <- Message{
 		Role:       RoleTool,
-		ToolCallId: toolCallId,
+		ToolCallID: toolCallID,
 		Content:    content,
 	}
 }
@@ -213,7 +213,7 @@ func (a *aiMessageStreamSource) Recv() (Message, error) {
 		msg.ToolCalls = make([]ToolCall, len(chunk.ToolCalls))
 		for i, tc := range chunk.ToolCalls {
 			msg.ToolCalls[i] = ToolCall{
-				Id:        tc.Id,
+				ID:        tc.ID,
 				Name:      tc.Name,
 				Arguments: tc.Arguments,
 			}

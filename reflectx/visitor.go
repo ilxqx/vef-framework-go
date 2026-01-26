@@ -11,9 +11,7 @@ import (
 type TraversalMode int
 
 const (
-	// DepthFirst traverses deeply into each branch before moving to siblings.
 	DepthFirst TraversalMode = iota
-	// BreadthFirst traverses all siblings at the current level before going deeper.
 	BreadthFirst
 )
 
@@ -21,162 +19,107 @@ const (
 type VisitAction int
 
 const (
-	// Continue with normal traversal.
 	Continue VisitAction = iota
-	// Stop traversal immediately.
 	Stop
-	// SkipChildren skips traversing into child nodes of current node.
 	SkipChildren
 )
 
 // TagConfig configures which tagged fields should be recursively traversed.
 type TagConfig struct {
-	// Name is the tag key (e.g., "visit")
-	Name string
-	// Value is the tag value that triggers recursion (e.g., "dive")
+	Name  string
 	Value string
 }
 
 // VisitorConfig configures how the traversal should be performed.
 type VisitorConfig struct {
-	// TraversalMode specifies depth-first or breadth-first traversal
 	TraversalMode TraversalMode
-	// Recursive enables traversal into embedded structs and tagged fields
-	Recursive bool
-	// DiveTag configures which non-anonymous fields should be recursively traversed
-	// Default is TagConfig{Name: "visit", Value: "dive"}
-	DiveTag TagConfig
-	// MaxDepth limits the maximum recursion depth (0 means no limit)
-	MaxDepth int
+	Recursive     bool
+	DiveTag       TagConfig
+	MaxDepth      int
 }
 
 // VisitorOption configures visitor behavior.
 type VisitorOption func(*VisitorConfig)
 
 func WithTraversalMode(mode TraversalMode) VisitorOption {
-	return func(c *VisitorConfig) {
-		c.TraversalMode = mode
-	}
+	return func(c *VisitorConfig) { c.TraversalMode = mode }
 }
 
-// WithDisableRecursive disables recursive traversal into embedded structs and tagged fields.
-// By default, recursive traversal is enabled.
 func WithDisableRecursive() VisitorOption {
-	return func(c *VisitorConfig) {
-		c.Recursive = false
-	}
+	return func(c *VisitorConfig) { c.Recursive = false }
 }
 
-// WithDiveTag configures which non-anonymous fields should be recursively traversed.
 func WithDiveTag(tagName, tagValue string) VisitorOption {
-	return func(c *VisitorConfig) {
-		c.DiveTag = TagConfig{Name: tagName, Value: tagValue}
-	}
+	return func(c *VisitorConfig) { c.DiveTag = TagConfig{Name: tagName, Value: tagValue} }
 }
 
-// WithMaxDepth limits the maximum recursion depth (0 means no limit).
 func WithMaxDepth(maxDepth int) VisitorOption {
-	return func(c *VisitorConfig) {
-		c.MaxDepth = maxDepth
-	}
+	return func(c *VisitorConfig) { c.MaxDepth = maxDepth }
 }
 
-// defaultVisitorConfig returns the default configuration for struct traversal.
 func defaultVisitorConfig() VisitorConfig {
 	return VisitorConfig{
 		TraversalMode: DepthFirst,
 		Recursive:     true,
 		DiveTag:       TagConfig{Name: "visit", Value: "dive"},
-		MaxDepth:      0,
 	}
 }
 
-// Visitor defines callback functions for different types of nodes during traversal.
+// Visitor defines callback functions for struct traversal.
 type Visitor struct {
-	// VisitStruct is called when entering a struct type
 	VisitStruct StructVisitor
-	// VisitField is called for each struct field
-	VisitField FieldVisitor
-	// VisitMethod is called for each method (if not nil)
+	VisitField  FieldVisitor
 	VisitMethod MethodVisitor
 }
 
-// StructVisitor is called when entering a struct during traversal.
-// Parameters: structType, structValue, depth in traversal tree.
 type StructVisitor func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction
-
-// FieldVisitor is called for each field during traversal.
-// Parameters: field metadata, field value, depth in traversal tree.
 type FieldVisitor func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction
-
-// MethodVisitor is called for each method during traversal.
-// Parameters: method metadata, bound method value (ready to call), depth in traversal tree.
 type MethodVisitor func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction
 
-// TypeVisitor defines callback functions for type-only traversal (without values).
-// This is useful for static analysis, pre-initialization, and type introspection.
+// TypeVisitor defines callback functions for type-only traversal.
 type TypeVisitor struct {
-	// VisitStructType is called when entering a struct type
 	VisitStructType StructTypeVisitor
-	// VisitFieldType is called for each struct field type
-	VisitFieldType FieldTypeVisitor
-	// VisitMethodType is called for each method type (if not nil)
+	VisitFieldType  FieldTypeVisitor
 	VisitMethodType MethodTypeVisitor
 }
 
-// StructTypeVisitor is called when entering a struct type during traversal.
-// Parameters: structType, depth in traversal tree.
 type StructTypeVisitor func(structType reflect.Type, depth int) VisitAction
-
-// FieldTypeVisitor is called for each field type during traversal.
-// Parameters: field metadata, depth in traversal tree.
 type FieldTypeVisitor func(field reflect.StructField, depth int) VisitAction
-
-// MethodTypeVisitor is called for each method type during traversal.
-// Parameters: method metadata, receiver type, depth in traversal tree.
 type MethodTypeVisitor func(method reflect.Method, receiverType reflect.Type, depth int) VisitAction
 
-// VisitFor is a generic convenience function that visits a struct type T using type visitor callbacks.
-// This eliminates the need to call reflect.TypeOf manually.
+// VisitFor visits a struct type T using type visitor callbacks.
 func VisitFor[T any](visitor TypeVisitor, opts ...VisitorOption) {
 	VisitType(reflect.TypeFor[T](), visitor, opts...)
 }
 
-// VisitOf is a convenience function that visits a struct value using visitor callbacks.
-// This eliminates the need to call reflect.ValueOf manually.
+// VisitOf visits a struct value using visitor callbacks.
 func VisitOf(value any, visitor Visitor, opts ...VisitorOption) {
 	Visit(reflect.ValueOf(value), visitor, opts...)
 }
 
-// Visit traverses a struct using visitor callbacks with optional configuration.
-// It supports both depth-first and breadth-first traversal with configurable recursion rules.
+// Visit traverses a struct using visitor callbacks.
 func Visit(target reflect.Value, visitor Visitor, opts ...VisitorOption) {
 	config := defaultVisitorConfig()
 	for _, opt := range opts {
 		opt(&config)
 	}
-	// Ensure we have a valid target
+
 	if !target.IsValid() {
 		return
 	}
 
-	// Dereference pointers to get to the actual struct
 	for target.Kind() == reflect.Pointer {
 		if target.IsNil() {
 			return
 		}
-
 		target = target.Elem()
 	}
 
-	// Only work with structs
 	if target.Kind() != reflect.Struct {
 		return
 	}
 
-	// Initialize traversal state
 	visited := make(map[reflect.Type]bool)
-
 	if config.TraversalMode == DepthFirst {
 		visitDepthFirst(target, config, visitor, visited, 0, nil)
 	} else {
@@ -184,27 +127,22 @@ func Visit(target reflect.Value, visitor Visitor, opts ...VisitorOption) {
 	}
 }
 
-// VisitType traverses a struct type using type visitor callbacks with optional configuration.
-// This is optimized for type-only analysis without creating value instances.
-// It supports both depth-first and breadth-first traversal with configurable recursion rules.
+// VisitType traverses a struct type using type visitor callbacks.
 func VisitType(targetType reflect.Type, visitor TypeVisitor, opts ...VisitorOption) {
 	config := defaultVisitorConfig()
 	for _, opt := range opts {
 		opt(&config)
 	}
-	// Dereference pointer types to get to the actual struct type
+
 	for targetType.Kind() == reflect.Pointer {
 		targetType = targetType.Elem()
 	}
 
-	// Only work with structs
 	if targetType.Kind() != reflect.Struct {
 		return
 	}
 
-	// Initialize traversal state
 	visited := make(map[reflect.Type]bool)
-
 	if config.TraversalMode == DepthFirst {
 		visitTypeDepthFirst(targetType, config, visitor, visited, 0, nil)
 	} else {
@@ -212,83 +150,67 @@ func VisitType(targetType reflect.Type, visitor TypeVisitor, opts ...VisitorOpti
 	}
 }
 
-// visitDepthFirst performs depth-first traversal of the struct with index path tracking.
-// ParentIndexPath should be nil for the root struct and will be built up during recursion.
 func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor, visited map[reflect.Type]bool, depth int, parentIndexPath []int) VisitAction {
-	// Check max depth
 	if config.MaxDepth > 0 && depth >= config.MaxDepth {
 		return Continue
 	}
 
-	// Dereference pointers to get to the actual struct
 	for target.Kind() == reflect.Pointer {
 		if target.IsNil() {
 			return Continue
 		}
-
 		target = target.Elem()
 	}
 
-	// Only work with structs
 	if target.Kind() != reflect.Struct {
 		return Continue
 	}
 
 	targetType := target.Type()
-
-	// Prevent infinite recursion
 	if visited[targetType] {
 		return Continue
 	}
-
 	visited[targetType] = true
 
-	// Visit the struct itself
 	if visitor.VisitStruct != nil {
 		if action := visitor.VisitStruct(targetType, target, depth); action != Continue {
 			return action
 		}
 	}
 
-	// Visit fields
-	for i := 0; i < target.NumField(); i++ {
+	for i := range target.NumField() {
 		field := target.Field(i)
 		fieldType := targetType.Field(i)
 
-		// Skip unexported fields
 		if !field.CanInterface() {
 			continue
 		}
 
-		// Create a new StructField with the complete index path
 		fieldTypeCopy := fieldWithAbsoluteIndex(fieldType, parentIndexPath)
 
-		// Visit the field
 		if visitor.VisitField != nil {
-			if action := visitor.VisitField(fieldTypeCopy, field, depth); action == Stop {
+			switch action := visitor.VisitField(fieldTypeCopy, field, depth); action {
+			case Stop:
 				return Stop
-			} else if action == SkipChildren {
+			case SkipChildren:
 				continue
 			}
 		}
 
-		// Recursive traversal decision
 		if config.Recursive && shouldRecurse(fieldType, config.DiveTag) {
-			if action := visitDepthFirst(field, config, visitor, visited, depth+1, fieldTypeCopy.Index); action == Stop {
+			if visitDepthFirst(field, config, visitor, visited, depth+1, fieldTypeCopy.Index) == Stop {
 				return Stop
 			}
 		}
 	}
 
-	// Visit methods if enabled
-	if action := visitMethods(target, targetType, visitor.VisitMethod, depth); action == Stop {
+	if visitMethods(target, targetType, visitor.VisitMethod, depth) == Stop {
 		return Stop
 	}
 
 	return Continue
 }
 
-// visitBreadthFirst performs breadth-first traversal of the struct.
 func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visitor, visited map[reflect.Type]bool) {
 	type queueItem struct {
 		value           reflect.Value
@@ -301,21 +223,16 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 
 	for queue.Len() > 0 {
 		item := queue.Remove(queue.Front()).(queueItem)
-		current := item.value
-		depth := item.depth
-		parentIndexPath := item.parentIndexPath
+		current, depth, parentIndexPath := item.value, item.depth, item.parentIndexPath
 
-		// Check max depth
 		if config.MaxDepth > 0 && depth >= config.MaxDepth {
 			continue
 		}
 
-		// Dereference pointer if needed
 		for current.Kind() == reflect.Pointer {
 			if current.IsNil() {
 				continue
 			}
-
 			current = current.Elem()
 		}
 
@@ -324,128 +241,96 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 		}
 
 		currentType := current.Type()
-
-		// Prevent infinite recursion
 		if visited[currentType] {
 			continue
 		}
-
 		visited[currentType] = true
 
-		// Visit the struct
 		if visitor.VisitStruct != nil {
-			if action := visitor.VisitStruct(currentType, current, depth); action == Stop {
+			if visitor.VisitStruct(currentType, current, depth) == Stop {
 				return
 			}
 		}
 
-		// Collect child nodes for next level
-		var childNodes []queueItem
-
-		// Visit fields and collect recursive candidates
-		for i := 0; i < current.NumField(); i++ {
+		for i := range current.NumField() {
 			field := current.Field(i)
 			fieldType := currentType.Field(i)
 
-			// Skip unexported fields
 			if !field.CanInterface() {
 				continue
 			}
 
-			// Create a new StructField with the complete index path
 			fieldTypeCopy := fieldWithAbsoluteIndex(fieldType, parentIndexPath)
-
-			// Visit the field
 			skipChildren := false
 
 			if visitor.VisitField != nil {
-				if action := visitor.VisitField(fieldTypeCopy, field, depth); action == Stop {
+				switch action := visitor.VisitField(fieldTypeCopy, field, depth); action {
+				case Stop:
 					return
-				} else if action == SkipChildren {
+				case SkipChildren:
 					skipChildren = true
 				}
 			}
 
-			// Add to next level if should recurse
 			if !skipChildren && config.Recursive && shouldRecurse(fieldType, config.DiveTag) {
-				childNodes = append(childNodes, queueItem{field, depth + 1, fieldTypeCopy.Index})
+				queue.PushBack(queueItem{field, depth + 1, fieldTypeCopy.Index})
 			}
 		}
 
-		// Add child nodes to queue
-		for _, child := range childNodes {
-			queue.PushBack(child)
-		}
-
-		// Visit methods if enabled
-		if action := visitMethods(current, currentType, visitor.VisitMethod, depth); action == Stop {
+		if visitMethods(current, currentType, visitor.VisitMethod, depth) == Stop {
 			return
 		}
 	}
 }
 
-// visitTypeDepthFirst performs depth-first traversal of struct types with index path tracking.
-// ParentIndexPath should be nil for the root struct and will be built up during recursion.
 func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor TypeVisitor, visited map[reflect.Type]bool, depth int, parentIndexPath []int) VisitAction {
-	// Check max depth
 	if config.MaxDepth > 0 && depth >= config.MaxDepth {
 		return Continue
 	}
 
-	// Prevent infinite recursion
 	if visited[targetType] {
 		return Continue
 	}
-
 	visited[targetType] = true
 
-	// Visit the struct type itself
 	if visitor.VisitStructType != nil {
 		if action := visitor.VisitStructType(targetType, depth); action != Continue {
 			return action
 		}
 	}
 
-	// Visit field types
-	for i := 0; i < targetType.NumField(); i++ {
+	for i := range targetType.NumField() {
 		field := targetType.Field(i)
 
-		// Skip unexported fields
 		if !field.IsExported() {
 			continue
 		}
 
-		// Create a new StructField with the complete index path
 		fieldCopy := fieldWithAbsoluteIndex(field, parentIndexPath)
 
-		// Visit the field type
 		if visitor.VisitFieldType != nil {
-			if action := visitor.VisitFieldType(fieldCopy, depth); action == Stop {
+			switch action := visitor.VisitFieldType(fieldCopy, depth); action {
+			case Stop:
 				return Stop
-			} else if action == SkipChildren {
+			case SkipChildren:
 				continue
 			}
 		}
 
-		// Recursive traversal decision
 		if config.Recursive && shouldRecurse(field, config.DiveTag) {
-			fieldType := Indirect(field.Type)
-			// Pass the field's complete index path as parent path for children
-			if action := visitTypeDepthFirst(fieldType, config, visitor, visited, depth+1, fieldCopy.Index); action == Stop {
+			if visitTypeDepthFirst(Indirect(field.Type), config, visitor, visited, depth+1, fieldCopy.Index) == Stop {
 				return Stop
 			}
 		}
 	}
 
-	// Visit method types if enabled
-	if action := visitMethodTypes(targetType, visitor.VisitMethodType, depth); action == Stop {
+	if visitMethodTypes(targetType, visitor.VisitMethodType, depth) == Stop {
 		return Stop
 	}
 
 	return Continue
 }
 
-// visitTypeBreadthFirst performs breadth-first traversal of struct types.
 func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visitor TypeVisitor, visited map[reflect.Type]bool) {
 	type queueItem struct {
 		structType      reflect.Type
@@ -459,10 +344,8 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 	for queue.Len() > 0 {
 		item := queue.Remove(queue.Front()).(queueItem)
 		current := Indirect(item.structType)
-		depth := item.depth
-		parentIndexPath := item.parentIndexPath
+		depth, parentIndexPath := item.depth, item.parentIndexPath
 
-		// Check max depth
 		if config.MaxDepth > 0 && depth >= config.MaxDepth {
 			continue
 		}
@@ -471,88 +354,63 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 			continue
 		}
 
-		// Prevent infinite recursion
 		if visited[current] {
 			continue
 		}
-
 		visited[current] = true
 
-		// Visit the struct type
 		if visitor.VisitStructType != nil {
-			if action := visitor.VisitStructType(current, depth); action == Stop {
+			if visitor.VisitStructType(current, depth) == Stop {
 				return
 			}
 		}
 
-		// Collect child types for next level
-		var childTypes []queueItem
-
-		// Visit field types and collect recursive candidates
-		for i := 0; i < current.NumField(); i++ {
+		for i := range current.NumField() {
 			field := current.Field(i)
 
-			// Skip unexported fields
 			if !field.IsExported() {
 				continue
 			}
 
-			// Create a new StructField with the complete index path
 			fieldCopy := fieldWithAbsoluteIndex(field, parentIndexPath)
-
-			// Visit the field type
 			skipChildren := false
 
 			if visitor.VisitFieldType != nil {
-				if action := visitor.VisitFieldType(fieldCopy, depth); action == Stop {
+				switch action := visitor.VisitFieldType(fieldCopy, depth); action {
+				case Stop:
 					return
-				} else if action == SkipChildren {
+				case SkipChildren:
 					skipChildren = true
 				}
 			}
 
-			// Add to next level if should recurse
 			if !skipChildren && config.Recursive && shouldRecurse(field, config.DiveTag) {
-				fieldType := field.Type
-				childTypes = append(childTypes, queueItem{fieldType, depth + 1, fieldCopy.Index})
+				queue.PushBack(queueItem{field.Type, depth + 1, fieldCopy.Index})
 			}
 		}
 
-		// Add child types to queue
-		for _, child := range childTypes {
-			queue.PushBack(child)
-		}
-
-		// Visit method types if enabled
-		if action := visitMethodTypes(current, visitor.VisitMethodType, depth); action == Stop {
+		if visitMethodTypes(current, visitor.VisitMethodType, depth) == Stop {
 			return
 		}
 	}
 }
 
-// visitMethods visits all methods on a struct value (including pointer receiver methods).
 func visitMethods(target reflect.Value, targetType reflect.Type, visitor MethodVisitor, depth int) VisitAction {
 	if visitor == nil {
 		return Continue
 	}
 
-	// Use pointer type to access all methods (value + pointer receivers)
 	var ptrTarget reflect.Value
 	if target.CanAddr() {
 		ptrTarget = target.Addr()
 	} else {
-		// Create a pointer to a copy if original is not addressable
-		targetCopy := reflect.New(targetType)
-		targetCopy.Elem().Set(target)
-		ptrTarget = targetCopy
+		ptrTarget = reflect.New(targetType)
+		ptrTarget.Elem().Set(target)
 	}
 
 	ptrType := ptrTarget.Type()
-	for i := 0; i < ptrTarget.NumMethod(); i++ {
-		method := ptrType.Method(i)
-		methodValue := ptrTarget.Method(i)
-
-		if action := visitor(method, methodValue, depth); action == Stop {
+	for i := range ptrTarget.NumMethod() {
+		if visitor(ptrType.Method(i), ptrTarget.Method(i), depth) == Stop {
 			return Stop
 		}
 	}
@@ -560,17 +418,14 @@ func visitMethods(target reflect.Value, targetType reflect.Type, visitor MethodV
 	return Continue
 }
 
-// visitMethodTypes visits all method types on a struct type (including pointer receiver methods).
 func visitMethodTypes(targetType reflect.Type, visitor MethodTypeVisitor, depth int) VisitAction {
 	if visitor == nil {
 		return Continue
 	}
 
-	// Use pointer type to access all methods (value + pointer receivers)
 	ptrType := reflect.PointerTo(targetType)
-	for i := 0; i < ptrType.NumMethod(); i++ {
-		method := ptrType.Method(i)
-		if action := visitor(method, ptrType, depth); action == Stop {
+	for i := range ptrType.NumMethod() {
+		if visitor(ptrType.Method(i), ptrType, depth) == Stop {
 			return Stop
 		}
 	}
@@ -578,14 +433,11 @@ func visitMethodTypes(targetType reflect.Type, visitor MethodTypeVisitor, depth 
 	return Continue
 }
 
-// shouldRecurse determines if a field should be recursively traversed.
 func shouldRecurse(field reflect.StructField, diveTag TagConfig) bool {
-	// Always recurse into anonymous embedded fields
 	if field.Anonymous {
 		return Indirect(field.Type).Kind() == reflect.Struct
 	}
 
-	// Check for dive tag on non-anonymous fields
 	if diveTag.Name != constants.Empty && diveTag.Value != constants.Empty && field.Tag.Get(diveTag.Name) == diveTag.Value {
 		return Indirect(field.Type).Kind() == reflect.Struct
 	}
@@ -593,24 +445,17 @@ func shouldRecurse(field reflect.StructField, diveTag TagConfig) bool {
 	return false
 }
 
-// buildAbsoluteIndexPath builds the complete index path from root to the current field.
-// It concatenates parentIndexPath with the field's own Index.
 func buildAbsoluteIndexPath(parentIndexPath []int, field reflect.StructField) []int {
 	if len(parentIndexPath) > 0 {
 		fullIndexPath := make([]int, len(parentIndexPath)+len(field.Index))
 		copy(fullIndexPath, parentIndexPath)
 		copy(fullIndexPath[len(parentIndexPath):], field.Index)
-
 		return fullIndexPath
 	}
-	// Return a copy of field.Index to avoid unintended mutations
 	return append([]int(nil), field.Index...)
 }
 
-// fieldWithAbsoluteIndex creates a new StructField with the complete index path from root.
 func fieldWithAbsoluteIndex(field reflect.StructField, parentIndexPath []int) reflect.StructField {
-	fieldCopy := field
-	fieldCopy.Index = buildAbsoluteIndexPath(parentIndexPath, field)
-
-	return fieldCopy
+	field.Index = buildAbsoluteIndexPath(parentIndexPath, field)
+	return field
 }

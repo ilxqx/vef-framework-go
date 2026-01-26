@@ -6,100 +6,64 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 )
 
-// The Result is a struct that represents a result of an Api call.
+// Result represents an API response with code, message, and optional data.
 type Result struct {
-	// Code is the response code
-	Code int `json:"code"`
-	// Message is the response message
+	Code    int    `json:"code"`
 	Message string `json:"message"`
-	// Data is the response data
-	Data any `json:"data"`
+	Data    any    `json:"data"`
 }
 
-// Response returns a JSON response for the result.
-// Optionally accepts a custom HTTP status code; defaults to 200 (StatusOK) if not provided.
-//
-// Usage examples:
-//
-//	// Default status 200
-//	return result.Ok(data).Response(ctx)
-//
-//	// Custom status code
-//	return result.Ok(data).Response(ctx, fiber.StatusCreated)
+// Response sends the result as JSON with optional HTTP status (defaults to 200).
 func (r Result) Response(ctx fiber.Ctx, status ...int) error {
 	statusCode := fiber.StatusOK
 	if len(status) > 0 {
 		statusCode = status[0]
 	}
-
 	return ctx.Status(statusCode).JSON(r)
 }
 
-// IsOk checks if the result is ok.
+// IsOk returns true if the result code indicates success.
 func (r Result) IsOk() bool {
 	return r.Code == OkCode
 }
 
-// Ok creates a new Result with optional data and options.
-//
-// Usage examples:
-//
-//	// Simple success without data
-//	return result.Ok()
-//
-//	// Success with data
-//	return result.Ok(userData)
-//
-//	// Success with custom message
-//	return result.Ok(WithMessage("operation completed"))
-//
-//	// Success with data and custom message
-//	return result.Ok(userData, WithMessage("user created successfully"))
-//
-// Parameter order rules:
-//   - If provided, data must come before any option functions
-//   - Only one data argument is allowed
-//   - Multiple option functions can be provided
+// Ok creates a success Result with optional data and options.
+// Usage: Ok(), Ok(data), Ok(WithMessage(...)), Ok(data, WithMessage(...))
 func Ok(dataOrOptions ...any) Result {
 	var (
 		data             any
 		options          []okOption
 		firstOptionIndex = -1
-		dataCount        = 0
+		dataCount        int
 	)
 
 	for i, v := range dataOrOptions {
-		switch v := v.(type) {
-		case okOption:
+		if opt, ok := v.(okOption); ok {
 			if firstOptionIndex == -1 {
 				firstOptionIndex = i
 			}
-
-			options = append(options, v)
-
-		default:
-			if firstOptionIndex != -1 && i > firstOptionIndex {
-				panic("result.Ok: data must come before option functions. Correct usage: Ok(data, WithMessage(...))")
+			options = append(options, opt)
+		} else {
+			if firstOptionIndex != -1 {
+				panic("result.Ok: data must come before options")
 			}
-
 			dataCount++
 			if dataCount > 1 {
-				panic("result.Ok: only one data argument is allowed. Correct usage: Ok() or Ok(data) or Ok(data, options...)")
+				panic("result.Ok: only one data argument is allowed")
 			}
-
 			data = v
 		}
 	}
 
-	result := Result{
+	r := Result{
 		Code:    OkCode,
 		Message: i18n.T(OkMessage),
 		Data:    data,
 	}
 
 	for _, opt := range options {
-		opt(&result)
+		opt(&r)
 	}
 
-	return result
+	return r
 }

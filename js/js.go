@@ -39,28 +39,25 @@ var (
 //
 // WARNING: The returned Runtime is NOT thread-safe. Each goroutine should
 // create its own runtime instance.
-func New() (vm *Runtime, err error) {
-	vm = goja.New()
+func New() (*Runtime, error) {
+	vm := goja.New()
 	vm.SetParserOptions(parser.WithDisableSourceMaps)
 	vm.SetFieldNameMapper(goja.TagFieldNameMapper("json", true))
 
-	if _, err = vm.RunProgram(compiledDayJs); err != nil {
-		return vm, err
+	libraries := []*Program{
+		compiledDayJs,
+		compiledBigJs,
+		compiledUtilsJs,
+		compiledValidatorJs,
 	}
 
-	if _, err = vm.RunProgram(compiledBigJs); err != nil {
-		return vm, err
+	for _, lib := range libraries {
+		if _, err := vm.RunProgram(lib); err != nil {
+			return nil, err
+		}
 	}
 
-	if _, err = vm.RunProgram(compiledUtilsJs); err != nil {
-		return vm, err
-	}
-
-	if _, err = vm.RunProgram(compiledValidatorJs); err != nil {
-		return vm, err
-	}
-
-	return vm, err
+	return vm, nil
 }
 
 // Parse parses JavaScript source code into an AST.

@@ -15,18 +15,18 @@ import (
 
 type DatabaseProvider interface {
 	Connect(config *config.DatasourceConfig) (*sql.DB, schema.Dialect, error)
-	Type() constants.DbType
+	Type() constants.DBType
 	ValidateConfig(config *config.DatasourceConfig) error
 	QueryVersion(db *bun.DB) (string, error)
 }
 
 type providerRegistry struct {
-	providers map[constants.DbType]DatabaseProvider
+	providers map[constants.DBType]DatabaseProvider
 }
 
 func newProviderRegistry() *providerRegistry {
 	registry := &providerRegistry{
-		providers: make(map[constants.DbType]DatabaseProvider),
+		providers: make(map[constants.DBType]DatabaseProvider),
 	}
 
 	registry.register(sqlite.NewProvider())
@@ -40,7 +40,7 @@ func (r *providerRegistry) register(provider DatabaseProvider) {
 	r.providers[provider.Type()] = provider
 }
 
-func (r *providerRegistry) provider(dbType constants.DbType) (DatabaseProvider, bool) {
+func (r *providerRegistry) provider(dbType constants.DBType) (DatabaseProvider, bool) {
 	provider, exists := r.providers[dbType]
 
 	return provider, exists

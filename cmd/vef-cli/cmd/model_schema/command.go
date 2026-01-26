@@ -44,52 +44,7 @@ Example usage:
   // Using full GitHub path (no installation required)
   //go:generate go run github.com/ilxqx/vef-framework-go/cmd/vef-cli@latest generate-model-schema -i models -o schemas -p schemas
 `,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			input, _ := cmd.Flags().GetString("input")
-			outputPath, _ := cmd.Flags().GetString("output")
-			pkg, _ := cmd.Flags().GetString("package")
-
-			output := termenv.DefaultOutput()
-
-			inputInfo, err := os.Stat(input)
-			if err != nil {
-				_, _ = fmt.Print(output.String(fmt.Sprintf("✗ Input path does not exist: %s\n", input)).Foreground(termenv.ANSIRed).String())
-
-				return fmt.Errorf("input path does not exist: %w", err)
-			}
-
-			outputInfo, err := os.Stat(outputPath)
-			outputIsDir := err == nil && outputInfo.IsDir()
-			inputIsDir := inputInfo.IsDir()
-
-			if inputIsDir && !outputIsDir && err == nil {
-				_, _ = fmt.Println(output.String("✗ When input is a directory, output must also be a directory").Foreground(termenv.ANSIRed))
-
-				return errInputOutputMismatch
-			}
-
-			_, _ = fmt.Println(output.String("Generating model schemas...").Foreground(termenv.ANSICyan))
-			_, _ = fmt.Print(output.String("  Input: ").Foreground(termenv.ANSIBrightBlack))
-			_, _ = fmt.Println(input)
-			_, _ = fmt.Print(output.String("  Output: ").Foreground(termenv.ANSIBrightBlack))
-			_, _ = fmt.Println(outputPath)
-			_, _ = fmt.Print(output.String("  Package: ").Foreground(termenv.ANSIBrightBlack))
-			_, _ = fmt.Println(pkg)
-
-			if inputIsDir {
-				if err := GenerateDirectory(input, outputPath, pkg); err != nil {
-					return fmt.Errorf("failed to generate schemas: %w", err)
-				}
-			} else {
-				if err := GenerateFile(input, outputPath, pkg); err != nil {
-					return fmt.Errorf("failed to generate schema: %w", err)
-				}
-			}
-
-			_, _ = fmt.Println(output.String("✓ Successfully generated schema files").Foreground(termenv.ANSIGreen))
-
-			return nil
-		},
+		RunE: runGenerateModelSchema,
 	}
 
 	cmd.Flags().StringP("input", "i", "", "Input model file or directory path")
@@ -100,4 +55,57 @@ Example usage:
 	_ = cmd.MarkFlagRequired("output")
 
 	return cmd
+}
+
+func runGenerateModelSchema(cmd *cobra.Command, _ []string) error {
+	input, _ := cmd.Flags().GetString("input")
+	outputPath, _ := cmd.Flags().GetString("output")
+	pkg, _ := cmd.Flags().GetString("package")
+
+	output := termenv.DefaultOutput()
+
+	inputInfo, err := os.Stat(input)
+	if err != nil {
+		_, _ = fmt.Println(output.String(fmt.Sprintf("✗ Input path does not exist: %s", input)).Foreground(termenv.ANSIRed))
+
+		return fmt.Errorf("input path does not exist: %w", err)
+	}
+
+	outputInfo, err := os.Stat(outputPath)
+	outputIsDir := err == nil && outputInfo.IsDir()
+	inputIsDir := inputInfo.IsDir()
+
+	if inputIsDir && !outputIsDir && err == nil {
+		_, _ = fmt.Println(output.String("✗ When input is a directory, output must also be a directory").Foreground(termenv.ANSIRed))
+
+		return errInputOutputMismatch
+	}
+
+	printLabeledLine(output, "Generating model schemas...", "", termenv.ANSICyan)
+	printLabeledLine(output, "  Input: ", input, termenv.ANSIBrightBlack)
+	printLabeledLine(output, "  Output: ", outputPath, termenv.ANSIBrightBlack)
+	printLabeledLine(output, "  Package: ", pkg, termenv.ANSIBrightBlack)
+
+	if inputIsDir {
+		if err := GenerateDirectory(input, outputPath, pkg); err != nil {
+			return fmt.Errorf("failed to generate schemas: %w", err)
+		}
+	} else {
+		if err := GenerateFile(input, outputPath, pkg); err != nil {
+			return fmt.Errorf("failed to generate schema: %w", err)
+		}
+	}
+
+	_, _ = fmt.Println(output.String("✓ Successfully generated schema files").Foreground(termenv.ANSIGreen))
+
+	return nil
+}
+
+func printLabeledLine(output *termenv.Output, label, value string, color termenv.Color) {
+	if value == "" {
+		_, _ = fmt.Println(output.String(label).Foreground(color))
+	} else {
+		_, _ = fmt.Print(output.String(label).Foreground(color))
+		_, _ = fmt.Println(value)
+	}
 }

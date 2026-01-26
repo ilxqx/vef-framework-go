@@ -26,7 +26,7 @@ const (
 	ChunkTypeToolInputAvailable  ChunkType = "tool-input-available"
 	ChunkTypeToolOutputAvailable ChunkType = "tool-output-available"
 
-	ChunkTypeSourceUrl      ChunkType = "source-url"
+	ChunkTypeSourceURL      ChunkType = "source-url"
 	ChunkTypeSourceDocument ChunkType = "source-document"
 
 	ChunkTypeFile ChunkType = "file"
@@ -35,8 +35,8 @@ const (
 // Chunk represents a single chunk in the UI message stream.
 type Chunk map[string]any
 
-func NewStartChunk(messageId string) Chunk {
-	return Chunk{"type": ChunkTypeStart, "messageId": messageId}
+func NewStartChunk(messageID string) Chunk {
+	return Chunk{"type": ChunkTypeStart, "messageID": messageID}
 }
 
 func NewFinishChunk() Chunk {
@@ -79,43 +79,43 @@ func NewReasoningEndChunk(id string) Chunk {
 	return Chunk{"type": ChunkTypeReasoningEnd, "id": id}
 }
 
-func NewToolInputStartChunk(toolCallId, toolName string) Chunk {
+func NewToolInputStartChunk(toolCallID, toolName string) Chunk {
 	return Chunk{
 		"type":       ChunkTypeToolInputStart,
-		"toolCallId": toolCallId,
+		"toolCallID": toolCallID,
 		"toolName":   toolName,
 	}
 }
 
-func NewToolInputDeltaChunk(toolCallId, delta string) Chunk {
+func NewToolInputDeltaChunk(toolCallID, delta string) Chunk {
 	return Chunk{
 		"type":           ChunkTypeToolInputDelta,
-		"toolCallId":     toolCallId,
+		"toolCallID":     toolCallID,
 		"inputTextDelta": delta,
 	}
 }
 
-func NewToolInputAvailableChunk(toolCallId, toolName string, input any) Chunk {
+func NewToolInputAvailableChunk(toolCallID, toolName string, input any) Chunk {
 	return Chunk{
 		"type":       ChunkTypeToolInputAvailable,
-		"toolCallId": toolCallId,
+		"toolCallID": toolCallID,
 		"toolName":   toolName,
 		"input":      input,
 	}
 }
 
-func NewToolOutputAvailableChunk(toolCallId string, output any) Chunk {
+func NewToolOutputAvailableChunk(toolCallID string, output any) Chunk {
 	return Chunk{
 		"type":       ChunkTypeToolOutputAvailable,
-		"toolCallId": toolCallId,
+		"toolCallID": toolCallID,
 		"output":     output,
 	}
 }
 
-func NewSourceUrlChunk(sourceId, url, title string) Chunk {
+func NewSourceURLChunk(sourceID, url, title string) Chunk {
 	c := Chunk{
-		"type":     ChunkTypeSourceUrl,
-		"sourceId": sourceId,
+		"type":     ChunkTypeSourceURL,
+		"sourceID": sourceID,
 		"url":      url,
 	}
 	if title != constants.Empty {
@@ -125,10 +125,10 @@ func NewSourceUrlChunk(sourceId, url, title string) Chunk {
 	return c
 }
 
-func NewSourceDocumentChunk(sourceId, mediaType, title string) Chunk {
+func NewSourceDocumentChunk(sourceID, mediaType, title string) Chunk {
 	c := Chunk{
 		"type":      ChunkTypeSourceDocument,
-		"sourceId":  sourceId,
+		"sourceID":  sourceID,
 		"mediaType": mediaType,
 	}
 	if title != constants.Empty {
@@ -138,10 +138,10 @@ func NewSourceDocumentChunk(sourceId, mediaType, title string) Chunk {
 	return c
 }
 
-func NewFileChunk(fileId, mediaType, url string) Chunk {
+func NewFileChunk(fileID, mediaType, url string) Chunk {
 	return Chunk{
 		"type":      ChunkTypeFile,
-		"fileId":    fileId,
+		"fileID":    fileID,
 		"mediaType": mediaType,
 		"url":       url,
 	}

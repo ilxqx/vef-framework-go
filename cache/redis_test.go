@@ -19,7 +19,7 @@ import (
 )
 
 type TestUser struct {
-	Id   int    `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 	Age  int    `json:"age"`
 }
@@ -81,7 +81,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 	defer userCache.Close()
 
 	suite.Run("SetAndGet", func() {
-		user := TestUser{Id: 1, Name: "Alice", Age: 30}
+		user := TestUser{ID: 1, Name: "Alice", Age: 30}
 
 		err := userCache.Set(suite.ctx, "user1", user)
 		suite.Require().NoError(err)
@@ -92,7 +92,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 	})
 
 	suite.Run("Contains", func() {
-		user := TestUser{Id: 2, Name: "Bob", Age: 25}
+		user := TestUser{ID: 2, Name: "Bob", Age: 25}
 
 		err := userCache.Set(suite.ctx, "user2", user)
 		suite.Require().NoError(err)
@@ -102,7 +102,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 	})
 
 	suite.Run("Delete", func() {
-		user := TestUser{Id: 3, Name: "Charlie", Age: 35}
+		user := TestUser{ID: 3, Name: "Charlie", Age: 35}
 
 		err := userCache.Set(suite.ctx, "user3", user)
 		suite.Require().NoError(err)
@@ -118,8 +118,8 @@ func (suite *RedisCacheTestSuite) TestRedisCacheBasicOperations() {
 	})
 
 	suite.Run("UpdateExistingKey", func() {
-		originalUser := TestUser{Id: 4, Name: "David", Age: 40}
-		updatedUser := TestUser{Id: 4, Name: "David", Age: 41}
+		originalUser := TestUser{ID: 4, Name: "David", Age: 40}
+		updatedUser := TestUser{ID: 4, Name: "David", Age: 41}
 
 		err := userCache.Set(suite.ctx, "user4", originalUser)
 		suite.Require().NoError(err)
@@ -142,7 +142,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheTtl() {
 	defer userCache.Close()
 
 	suite.Run("CustomTtlExpiration", func() {
-		user := TestUser{Id: 5, Name: "Eve", Age: 28}
+		user := TestUser{ID: 5, Name: "Eve", Age: 28}
 
 		err := userCache.Set(suite.ctx, "ttl-user", user, 100*time.Millisecond)
 		suite.Require().NoError(err)
@@ -161,7 +161,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheTtl() {
 		cacheWithDefaultTtl := suite.setupRedisCache("test-default-ttl", WithRdsDefaultTtl(100*time.Millisecond))
 		defer cacheWithDefaultTtl.Close()
 
-		user := TestUser{Id: 6, Name: "Frank", Age: 32}
+		user := TestUser{ID: 6, Name: "Frank", Age: 32}
 
 		err := cacheWithDefaultTtl.Set(suite.ctx, "default-ttl-user", user)
 		suite.Require().NoError(err)
@@ -181,7 +181,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheGetOrLoad() {
 	userCache := suite.setupRedisCache("test-getorload")
 	defer userCache.Close()
 
-	user := TestUser{Id: 7, Name: "Grace", Age: 26}
+	user := TestUser{ID: 7, Name: "Grace", Age: 26}
 
 	var loadCount atomic.Int32
 
@@ -231,8 +231,8 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyPrefixIsolation() {
 	cache2 := suite.setupRedisCache("cache2")
 	defer cache2.Close()
 
-	user1 := TestUser{Id: 1, Name: "Alice", Age: 30}
-	user2 := TestUser{Id: 2, Name: "Bob", Age: 25}
+	user1 := TestUser{ID: 1, Name: "Alice", Age: 30}
+	user2 := TestUser{ID: 2, Name: "Bob", Age: 25}
 
 	err := cache1.Set(suite.ctx, "shared-key", user1)
 	suite.Require().NoError(err)
@@ -264,11 +264,11 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 	defer userCache.Close()
 
 	testUsers := map[string]TestUser{
-		"admin:1": {Id: 1, Name: "Admin Alice", Age: 35},
-		"admin:2": {Id: 2, Name: "Admin Bob", Age: 40},
-		"user:1":  {Id: 3, Name: "User Charlie", Age: 25},
-		"user:2":  {Id: 4, Name: "User David", Age: 30},
-		"guest:1": {Id: 5, Name: "Guest Eve", Age: 22},
+		"admin:1": {ID: 1, Name: "Admin Alice", Age: 35},
+		"admin:2": {ID: 2, Name: "Admin Bob", Age: 40},
+		"user:1":  {ID: 3, Name: "User Charlie", Age: 25},
+		"user:2":  {ID: 4, Name: "User David", Age: 30},
+		"guest:1": {ID: 5, Name: "Guest Eve", Age: 22},
 	}
 
 	for key, user := range testUsers {
@@ -378,12 +378,12 @@ func (suite *RedisCacheTestSuite) TestRedisCacheClear() {
 	defer cache2.Close()
 
 	for i := 1; i <= 5; i++ {
-		user := TestUser{Id: i, Name: fmt.Sprintf("User%d", i), Age: 20 + i}
+		user := TestUser{ID: i, Name: fmt.Sprintf("User%d", i), Age: 20 + i}
 		err := cache1.Set(suite.ctx, fmt.Sprintf("user-%d", i), user)
 		suite.Require().NoError(err)
 	}
 
-	user := TestUser{Id: 99, Name: "Other User", Age: 99}
+	user := TestUser{ID: 99, Name: "Other User", Age: 99}
 	err := cache2.Set(suite.ctx, "other-user", user)
 	suite.Require().NoError(err)
 
@@ -443,7 +443,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheClose() {
 	err = cache.Close()
 	suite.Require().NoError(err)
 
-	err = cache.Set(ctx, "key", TestUser{Id: 1})
+	err = cache.Set(ctx, "key", TestUser{ID: 1})
 	suite.Require().ErrorIs(err, ErrCacheClosed)
 
 	_, found := cache.Get(ctx, "key")
@@ -473,9 +473,9 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStripping() {
 
 	suite.Run("KeysReturnUserOriginalKeys", func() {
 		testData := map[string]TestUser{
-			"user:1":    {Id: 1, Name: "Alice", Age: 30},
-			"user:2":    {Id: 2, Name: "Bob", Age: 25},
-			"admin:100": {Id: 100, Name: "Admin", Age: 40},
+			"user:1":    {ID: 1, Name: "Alice", Age: 30},
+			"user:2":    {ID: 2, Name: "Bob", Age: 25},
+			"admin:100": {ID: 100, Name: "Admin", Age: 40},
 		}
 
 		for key, user := range testData {
@@ -557,7 +557,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		cache := suite.setupRedisCache("simple")
 		defer cache.Close()
 
-		user := TestUser{Id: 1, Name: "Alice", Age: 30}
+		user := TestUser{ID: 1, Name: "Alice", Age: 30}
 		err := cache.Set(suite.ctx, "test-key", user)
 		suite.Require().NoError(err)
 
@@ -575,7 +575,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		defer cache.Close()
 
 		complexKey := "namespace:subnamespace:item:123"
-		user := TestUser{Id: 123, Name: "Complex", Age: 35}
+		user := TestUser{ID: 123, Name: "Complex", Age: 35}
 
 		err := cache.Set(suite.ctx, complexKey, user)
 		suite.Require().NoError(err)
@@ -600,7 +600,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		}
 
 		for i, key := range specialKeys {
-			user := TestUser{Id: i + 1, Name: key, Age: 20 + i}
+			user := TestUser{ID: i + 1, Name: key, Age: 20 + i}
 			err := cache.Set(suite.ctx, key, user)
 			suite.Require().NoError(err)
 		}
@@ -619,7 +619,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheKeyStrippingEdgeCases() {
 		defer cache.Close()
 
 		userKey := "my-user-key"
-		user := TestUser{Id: 999, Name: "TestUser", Age: 50}
+		user := TestUser{ID: 999, Name: "TestUser", Age: 50}
 
 		err := cache.Set(suite.ctx, userKey, user)
 		suite.Require().NoError(err)

@@ -11,8 +11,8 @@ var (
 	ErrInvalidIterations = errors.New("invalid iterations: must be at least 1")
 	// ErrInvalidParallelism is returned when parallelism is less than 1.
 	ErrInvalidParallelism = errors.New("invalid parallelism: must be at least 1")
-	// ErrInvalidEncoderId is returned when CompositeEncoder receives an unknown encoder ID.
-	ErrInvalidEncoderId = errors.New("invalid encoder id: encoder not found")
+	// ErrInvalidEncoderID is returned when CompositeEncoder receives an unknown encoder ID.
+	ErrInvalidEncoderID = errors.New("invalid encoder id: encoder not found")
 	// ErrInvalidHashFormat is returned when encoded password has unexpected format.
 	ErrInvalidHashFormat = errors.New("invalid hash format")
 	// ErrDefaultEncoderNotFound is returned when the default encoder ID is not registered in CompositeEncoder.

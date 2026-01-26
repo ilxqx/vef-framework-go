@@ -445,7 +445,9 @@ func TestParseTag_BareValueMode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts := append([]ParseOption{WithBareValueMode(tt.mode)}, tt.opts...)
+			opts := make([]ParseOption, 0, 1+len(tt.opts))
+			opts = append(opts, WithBareValueMode(tt.mode))
+			opts = append(opts, tt.opts...)
 			result := ParseTag(tt.input, opts...)
 			assert.Equal(t, tt.expected, result)
 		})

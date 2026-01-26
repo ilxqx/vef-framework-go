@@ -10,7 +10,7 @@ import (
 // BaseQueryBuilder provides a common implementation for QueryBuilder interface.
 // It can be embedded in concrete query types to reduce code duplication.
 type BaseQueryBuilder struct {
-	db      *BunDb
+	db      *BunDB
 	dialect schema.Dialect
 	query   interface {
 		bun.Query
@@ -93,7 +93,7 @@ func (b *BaseQueryBuilder) String() string {
 }
 
 // newQueryBuilder creates a new query builder.
-func newQueryBuilder(db *BunDb, dialect schema.Dialect, query interface {
+func newQueryBuilder(db *BunDB, dialect schema.Dialect, query interface {
 	bun.Query
 	fmt.Stringer
 

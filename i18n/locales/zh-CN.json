@@ -69,5 +69,7 @@
   "validator_alphanum_us_dot": "{0}只能包含字母、数字、下划线和点",
   "monitor_not_ready": "监控数据尚未就绪, 请稍后重试",
   "schema_table_not_found": "表不存在",
-  "dangerous_sql": "检测到危险 SQL 操作, 执行已阻止"
+  "dangerous_sql": "检测到危险 SQL 操作, 执行已阻止",
+  "unsupported_authentication_type": "不支持的认证类型: {{.kind}}",
+  "processor_must_return_slice": "处理器必须返回切片类型, 实际返回 {{.type}}"
 }

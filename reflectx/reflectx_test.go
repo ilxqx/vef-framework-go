@@ -85,6 +85,46 @@ func TestIndirect(t *testing.T) {
 	}
 }
 
+func TestIsPointerToStruct(t *testing.T) {
+	t.Run("PointerToStruct", func(t *testing.T) {
+		structType := reflect.TypeFor[TestStruct]()
+		ptrType := reflect.TypeFor[*TestStruct]()
+
+		assert.False(t, IsPointerToStruct(structType), "Struct type should not be pointer to struct")
+		assert.True(t, IsPointerToStruct(ptrType), "Pointer to struct should return true")
+	})
+
+	t.Run("PointerToNonStruct", func(t *testing.T) {
+		stringType := reflect.TypeFor[string]()
+		stringPtrType := reflect.TypeFor[*string]()
+		intPtrType := reflect.TypeFor[*int]()
+
+		assert.False(t, IsPointerToStruct(stringType), "String type should not be pointer to struct")
+		assert.False(t, IsPointerToStruct(stringPtrType), "Pointer to string should not be pointer to struct")
+		assert.False(t, IsPointerToStruct(intPtrType), "Pointer to int should not be pointer to struct")
+	})
+
+	t.Run("NonPointerTypes", func(t *testing.T) {
+		stringType := reflect.TypeFor[string]()
+		intType := reflect.TypeFor[int]()
+		structType := reflect.TypeFor[TestStruct]()
+
+		assert.False(t, IsPointerToStruct(stringType), "String type should not be pointer to struct")
+		assert.False(t, IsPointerToStruct(intType), "Int type should not be pointer to struct")
+		assert.False(t, IsPointerToStruct(structType), "Struct type should not be pointer to struct")
+	})
+
+	t.Run("NilType", func(t *testing.T) {
+		var nilType reflect.Type
+		assert.False(t, IsPointerToStruct(nilType), "Nil type should not be pointer to struct")
+	})
+
+	t.Run("NestedStructPointer", func(t *testing.T) {
+		nestedPtrType := reflect.TypeFor[*NestedStruct]()
+		assert.True(t, IsPointerToStruct(nestedPtrType), "Pointer to nested struct should return true")
+	})
+}
+
 func TestIsSimilarType(t *testing.T) {
 	t.Run("IdenticalTypes", func(t *testing.T) {
 		t1 := reflect.TypeFor[int]()
@@ -319,6 +359,111 @@ func BenchmarkFindMethod(b *testing.B) {
 
 	for b.Loop() {
 		FindMethod(rv, "BaseMethod")
+	}
+}
+
+func TestCollectMethods(t *testing.T) {
+	t.Run("CollectsAllMethods", func(t *testing.T) {
+		nested := NestedStruct{
+			EmbeddedStruct: EmbeddedStruct{
+				BaseStruct: BaseStruct{Value: "test"},
+				Name:       "nested",
+			},
+			Age: 25,
+		}
+		rv := reflect.ValueOf(nested)
+
+		methods := CollectMethods(rv)
+
+		// Should contain all methods including promoted ones
+		assert.Contains(t, methods, "BaseMethod", "Should contain BaseMethod")
+		assert.Contains(t, methods, "BasePointerMethod", "Should contain BasePointerMethod")
+		assert.Contains(t, methods, "EmbeddedMethod", "Should contain EmbeddedMethod")
+		assert.Contains(t, methods, "NestedPointerMethod", "Should contain NestedPointerMethod")
+	})
+
+	t.Run("MethodsAreCallable", func(t *testing.T) {
+		base := BaseStruct{Value: "test"}
+		rv := reflect.ValueOf(base)
+
+		methods := CollectMethods(rv)
+
+		method, ok := methods["BaseMethod"]
+		require.True(t, ok, "Should have BaseMethod")
+
+		result := method.Call(nil)
+		assert.Equal(t, "base method", result[0].String())
+	})
+
+	t.Run("PointerReceiverMethodsCallable", func(t *testing.T) {
+		base := BaseStruct{Value: "test"}
+		rv := reflect.ValueOf(base)
+
+		methods := CollectMethods(rv)
+
+		method, ok := methods["BasePointerMethod"]
+		require.True(t, ok, "Should have BasePointerMethod")
+
+		result := method.Call(nil)
+		assert.Equal(t, "base pointer method", result[0].String())
+	})
+
+	t.Run("PointerInput", func(t *testing.T) {
+		base := &BaseStruct{Value: "test"}
+		rv := reflect.ValueOf(base)
+
+		methods := CollectMethods(rv)
+
+		assert.Contains(t, methods, "BaseMethod")
+		assert.Contains(t, methods, "BasePointerMethod")
+	})
+
+	t.Run("NilPointer", func(t *testing.T) {
+		var base *BaseStruct
+		rv := reflect.ValueOf(base)
+
+		methods := CollectMethods(rv)
+
+		assert.Empty(t, methods, "Should return empty map for nil pointer")
+	})
+
+	t.Run("NonStructType", func(t *testing.T) {
+		rv := reflect.ValueOf(42)
+
+		methods := CollectMethods(rv)
+
+		assert.Empty(t, methods, "Should return empty map for non-struct type")
+	})
+
+	t.Run("NonAddressableValue", func(t *testing.T) {
+		getValue := func() BaseStruct {
+			return BaseStruct{Value: "test"}
+		}
+
+		rv := reflect.ValueOf(getValue())
+
+		methods := CollectMethods(rv)
+
+		// Should still collect all methods including pointer receiver methods
+		assert.Contains(t, methods, "BaseMethod")
+		assert.Contains(t, methods, "BasePointerMethod")
+	})
+}
+
+func BenchmarkCollectMethods(b *testing.B) {
+	nested := NestedStruct{
+		EmbeddedStruct: EmbeddedStruct{
+			BaseStruct: BaseStruct{Value: "test"},
+			Name:       "nested",
+		},
+		Age: 25,
+	}
+	rv := reflect.ValueOf(nested)
+
+	b.ResetTimer()
+
+	for b.Loop() {
+		CollectMethods(rv)
 	}
 }
 

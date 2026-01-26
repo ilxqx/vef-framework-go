@@ -21,58 +21,58 @@ var (
 	}
 )
 
-// BunDb is a wrapper around the bun.DB type.
-type BunDb struct {
+// BunDB is a wrapper around the bun.DB type.
+type BunDB struct {
 	db bun.IDB
 }
 
-func (d *BunDb) NewSelect() SelectQuery {
+func (d *BunDB) NewSelect() SelectQuery {
 	return NewSelectQuery(d)
 }
 
-func (d *BunDb) NewInsert() InsertQuery {
+func (d *BunDB) NewInsert() InsertQuery {
 	return NewInsertQuery(d)
 }
 
-func (d *BunDb) NewUpdate() UpdateQuery {
+func (d *BunDB) NewUpdate() UpdateQuery {
 	return NewUpdateQuery(d)
 }
 
-func (d *BunDb) NewDelete() DeleteQuery {
+func (d *BunDB) NewDelete() DeleteQuery {
 	return NewDeleteQuery(d)
 }
 
-func (d *BunDb) NewMerge() MergeQuery {
+func (d *BunDB) NewMerge() MergeQuery {
 	return NewMergeQuery(d)
 }
 
-func (d *BunDb) NewRaw(query string, args ...any) RawQuery {
+func (d *BunDB) NewRaw(query string, args ...any) RawQuery {
 	return newRawQuery(d, query, args...)
 }
 
-func (d *BunDb) RunInTx(ctx context.Context, fn func(context.Context, Db) error) error {
+func (d *BunDB) RunInTX(ctx context.Context, fn func(context.Context, DB) error) error {
 	return d.db.RunInTx(
 		ctx,
 		txOptions,
 		func(ctx context.Context, tx bun.Tx) error {
-			return fn(ctx, &BunDb{db: tx})
+			return fn(ctx, &BunDB{db: tx})
 		},
 	)
 }
 
-func (d *BunDb) RunInReadOnlyTx(ctx context.Context, fn func(context.Context, Db) error) error {
+func (d *BunDB) RunInReadOnlyTX(ctx context.Context, fn func(context.Context, DB) error) error {
 	return d.db.RunInTx(
 		ctx,
 		readOnlyTxOptions,
 		func(ctx context.Context, tx bun.Tx) error {
-			return fn(ctx, &BunDb{db: tx})
+			return fn(ctx, &BunDB{db: tx})
 		},
 	)
 }
 
-func (d *BunDb) WithNamedArg(name string, value any) Db {
+func (d *BunDB) WithNamedArg(name string, value any) DB {
 	if db, ok := d.db.(*bun.DB); ok {
-		return &BunDb{db: db.WithNamedArg(name, value)}
+		return &BunDB{db: db.WithNamedArg(name, value)}
 	}
 
 	logger.Panicf("%q is not supported within a transaction context", "WithNamedArg")
@@ -80,8 +80,8 @@ func (d *BunDb) WithNamedArg(name string, value any) Db {
 	return d
 }
 
-func (d *BunDb) ModelPks(model any) (map[string]any, error) {
-	pks := d.ModelPkFields(model)
+func (d *BunDB) ModelPKs(model any) (map[string]any, error) {
+	pks := d.ModelPKFields(model)
 	pkValues := make(map[string]any, len(pks))
 
 	for _, pk := range pks {
@@ -96,35 +96,31 @@ func (d *BunDb) ModelPks(model any) (map[string]any, error) {
 	return pkValues, nil
 }
 
-func (d *BunDb) ModelPkFields(model any) []*PkField {
-	var db *bun.DB
-	if bd, ok := d.db.(*bun.DB); ok {
-		db = bd
-	} else {
-		db = d.db.NewDropTable().DB()
-	}
-
-	table := getTableSchema(model, db)
-	pks := make([]*PkField, len(table.PKs))
+func (d *BunDB) ModelPKFields(model any) []*PKField {
+	table := getTableSchema(model, d.getBunDB())
+	pks := make([]*PKField, len(table.PKs))
 
 	for i, pk := range table.PKs {
-		pks[i] = NewPkField(pk)
+		pks[i] = NewPKField(pk)
 	}
 
 	return pks
 }
 
-func (d *BunDb) TableOf(model any) *schema.Table {
-	var db *bun.DB
-	if bd, ok := d.db.(*bun.DB); ok {
-		db = bd
-	} else {
-		db = d.db.NewDropTable().DB()
-	}
-
-	return getTableSchema(model, db)
+func (d *BunDB) TableOf(model any) *schema.Table {
+	return getTableSchema(model, d.getBunDB())
 }
 
-func (d *BunDb) Unwrap() bun.IDB {
+func (d *BunDB) Unwrap() bun.IDB {
 	return d.db
+}
+
+// getBunDB extracts the underlying *bun.DB from the wrapper.
+// If the wrapper contains a transaction, it retrieves the DB from the transaction.
+func (d *BunDB) getBunDB() *bun.DB {
+	if db, ok := d.db.(*bun.DB); ok {
+		return db
+	}
+
+	return d.db.NewDropTable().DB()
 }

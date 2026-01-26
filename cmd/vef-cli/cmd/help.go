@@ -18,71 +18,11 @@ func setupHelpColors(cmd *cobra.Command) {
 			PrintBanner()
 		}
 
-		if cmd.Long != constants.Empty {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), cmd.Long)
-			_, _ = fmt.Fprintln(cmd.OutOrStdout())
-		} else if cmd.Short != constants.Empty {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), cmd.Short)
-			_, _ = fmt.Fprintln(cmd.OutOrStdout())
-		}
-
-		_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Usage:").Foreground(termenv.ANSICyan).Bold())
-		if cmd.Runnable() {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s [flags]\n", cmd.CommandPath())
-		}
-
-		if cmd.HasAvailableSubCommands() {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s [command]\n", cmd.CommandPath())
-		}
-
-		_, _ = fmt.Fprintln(cmd.OutOrStdout())
-
-		if cmd.HasAvailableSubCommands() {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Available Commands:").Foreground(termenv.ANSICyan).Bold())
-
-			maxLen := 0
-			for _, c := range cmd.Commands() {
-				if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
-					continue
-				}
-
-				if len(c.Name()) > maxLen {
-					maxLen = len(c.Name())
-				}
-			}
-
-			for _, c := range cmd.Commands() {
-				if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
-					continue
-				}
-
-				_, _ = fmt.Fprint(cmd.OutOrStdout(), output.String(fmt.Sprintf("  %s", c.Name())).Foreground(termenv.ANSIGreen))
-				spacing := maxLen - len(c.Name()) + 2
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%*s", spacing, constants.Space)
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), c.Short)
-			}
-
-			_, _ = fmt.Fprintln(cmd.OutOrStdout())
-		}
-
-		if cmd.HasAvailableLocalFlags() || cmd.HasAvailablePersistentFlags() {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Flags:").Foreground(termenv.ANSICyan).Bold())
-
-			if cmd.HasAvailableLocalFlags() {
-				printFlags(cmd, cmd.LocalFlags(), output)
-			}
-
-			if cmd.HasAvailableInheritedFlags() {
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("\nGlobal Flags:").Foreground(termenv.ANSICyan).Bold())
-				printFlags(cmd, cmd.InheritedFlags(), output)
-			}
-
-			_, _ = fmt.Fprintln(cmd.OutOrStdout())
-		}
-
-		if cmd.HasAvailableSubCommands() {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Use \"%s [command] --help\" for more information about a command.\n", cmd.CommandPath())
-		}
+		printDescription(cmd)
+		printUsage(cmd, output)
+		printAvailableCommands(cmd, output)
+		printFlags(cmd, output)
+		printHelpHint(cmd)
 
 		return nil
 	})
@@ -92,7 +32,90 @@ func setupHelpColors(cmd *cobra.Command) {
 	})
 }
 
-func printFlags(cmd *cobra.Command, flags any, output *termenv.Output) {
+func printDescription(cmd *cobra.Command) {
+	desc := cmd.Long
+	if desc == constants.Empty {
+		desc = cmd.Short
+	}
+
+	if desc != constants.Empty {
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), desc)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
+	}
+}
+
+func printUsage(cmd *cobra.Command, output *termenv.Output) {
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Usage:").Foreground(termenv.ANSICyan).Bold())
+
+	if cmd.Runnable() {
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s [flags]\n", cmd.CommandPath())
+	}
+
+	if cmd.HasAvailableSubCommands() {
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  %s [command]\n", cmd.CommandPath())
+	}
+
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+}
+
+func printAvailableCommands(cmd *cobra.Command, output *termenv.Output) {
+	if !cmd.HasAvailableSubCommands() {
+		return
+	}
+
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Available Commands:").Foreground(termenv.ANSICyan).Bold())
+
+	maxLen := 0
+	for _, c := range cmd.Commands() {
+		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+			continue
+		}
+
+		if len(c.Name()) > maxLen {
+			maxLen = len(c.Name())
+		}
+	}
+
+	for _, c := range cmd.Commands() {
+		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
+			continue
+		}
+
+		_, _ = fmt.Fprint(cmd.OutOrStdout(), output.String(fmt.Sprintf("  %s", c.Name())).Foreground(termenv.ANSIGreen))
+		spacing := maxLen - len(c.Name()) + 2
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%*s", spacing, constants.Space)
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), c.Short)
+	}
+
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+}
+
+func printFlags(cmd *cobra.Command, output *termenv.Output) {
+	if !cmd.HasAvailableLocalFlags() && !cmd.HasAvailablePersistentFlags() {
+		return
+	}
+
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("Flags:").Foreground(termenv.ANSICyan).Bold())
+
+	if cmd.HasAvailableLocalFlags() {
+		printFlagUsages(cmd, cmd.LocalFlags(), output)
+	}
+
+	if cmd.HasAvailableInheritedFlags() {
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), output.String("\nGlobal Flags:").Foreground(termenv.ANSICyan).Bold())
+		printFlagUsages(cmd, cmd.InheritedFlags(), output)
+	}
+
+	_, _ = fmt.Fprintln(cmd.OutOrStdout())
+}
+
+func printHelpHint(cmd *cobra.Command) {
+	if cmd.HasAvailableSubCommands() {
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Use \"%s [command] --help\" for more information about a command.\n", cmd.CommandPath())
+	}
+}
+
+func printFlagUsages(cmd *cobra.Command, flags any, output *termenv.Output) {
 	type FlagSet interface {
 		FlagUsages() string
 	}

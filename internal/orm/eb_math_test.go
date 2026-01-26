@@ -641,7 +641,7 @@ func (suite *MathFunctionsTestSuite) TestRandom() {
 
 	suite.Run("RandomNumberGeneration", func() {
 		type RandomResult struct {
-			Id        string  `bun:"id"`
+			ID        string  `bun:"id"`
 			RandomVal float64 `bun:"random_val"`
 		}
 
@@ -662,7 +662,7 @@ func (suite *MathFunctionsTestSuite) TestRandom() {
 
 		for _, result := range results {
 			suite.True(result.RandomVal >= 0 && result.RandomVal < 1, "Random should be in [0, 1)")
-			suite.T().Logf("ID: %s, Random: %.6f", result.Id, result.RandomVal)
+			suite.T().Logf("ID: %s, Random: %.6f", result.ID, result.RandomVal)
 		}
 	})
 }

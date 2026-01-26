@@ -34,8 +34,8 @@ type ModelConfig struct {
 	Model string
 	// ApiKey is the API key for authentication.
 	ApiKey string
-	// BaseUrl is the base URL for the API endpoint.
-	BaseUrl string
+	// BaseURL is the base URL for the API endpoint.
+	BaseURL string
 	// Temperature controls randomness (0.0 to 1.0).
 	Temperature float64
 	// MaxTokens limits the maximum tokens in the response.

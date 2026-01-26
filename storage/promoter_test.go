@@ -53,7 +53,7 @@ func (m *MockService) ListObjects(ctx context.Context, opts ListObjectsOptions) 
 	return nil, nil
 }
 
-func (m *MockService) GetPresignedUrl(ctx context.Context, opts PresignedURLOptions) (string, error) {
+func (m *MockService) GetPresignedURL(ctx context.Context, opts PresignedURLOptions) (string, error) {
 	return "", nil
 }
 

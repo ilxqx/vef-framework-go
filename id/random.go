@@ -2,19 +2,19 @@ package id
 
 import nid "github.com/matoous/go-nanoid/v2"
 
-type randomIdGenerator struct {
+type randomIDGenerator struct {
 	alphabet string
 	length   int
 }
 
 // Generate creates a new random ID using the configured alphabet and length.
-func (g *randomIdGenerator) Generate() string {
+func (g *randomIDGenerator) Generate() string {
 	return nid.MustGenerate(g.alphabet, g.length)
 }
 
-// NewRandomIdGenerator creates a new random ID generator with custom alphabet and length.
-func NewRandomIdGenerator(alphabet string, length int) IdGenerator {
-	return &randomIdGenerator{
+// NewRandomIDGenerator creates a new random ID generator with custom alphabet and length.
+func NewRandomIDGenerator(alphabet string, length int) IDGenerator {
+	return &randomIDGenerator{
 		alphabet: alphabet,
 		length:   length,
 	}

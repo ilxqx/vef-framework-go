@@ -1,33 +1,44 @@
 package constants
 
+// Placeholder key for named arguments in database queries.
+const PlaceholderKeyOperator = "Operator"
+
+// System operators for audit tracking.
 const (
-	PlaceholderKeyOperator = "Operator" // PlaceholderKeyOperator is the placeholder for the operator in the db
+	OperatorSystem    = "system"
+	OperatorCronJob   = "cron_job"
+	OperatorAnonymous = "anonymous"
+)
 
-	OperatorSystem    = "system"    // OperatorSystem is the operator for the system
-	OperatorCronJob   = "cron_job"  // OperatorCronJob is the operator for the cron job
-	OperatorAnonymous = "anonymous" // OperatorAnonymous is the operator for the anonymous
+// SQL expression placeholders for query building.
+const (
+	ExprOperator     = "?Operator"
+	ExprTableColumns = "?TableColumns"
+	ExprColumns      = "?Columns"
+	ExprTablePKs     = "?TablePKs"
+	ExprPKs          = "?PKs"
+	ExprTableName    = "?TableName"
+	ExprTableAlias   = "?TableAlias"
+)
 
-	ExprOperator     = "?Operator"     // ExprOperator is the operator placeholder
-	ExprTableColumns = "?TableColumns" // ExprTableColumns is the table columns placeholder
-	ExprColumns      = "?Columns"      // ExprColumns is the columns' placeholder
-	ExprTablePks     = "?TablePKs"     // ExprTablePks is the table primary keys' placeholder
-	ExprPks          = "?PKs"          // ExprPks is the primary keys placeholder
-	ExprTableName    = "?TableName"    // ExprTableName is the table name placeholder
-	ExprTableAlias   = "?TableAlias"   // ExprTableAlias is the table alias placeholder
+// Database column names for audit fields.
+const (
+	ColumnID            = "id"
+	ColumnCreatedAt     = "created_at"
+	ColumnUpdatedAt     = "updated_at"
+	ColumnCreatedBy     = "created_by"
+	ColumnUpdatedBy     = "updated_by"
+	ColumnCreatedByName = "created_by_name"
+	ColumnUpdatedByName = "updated_by_name"
+)
 
-	ColumnId            = "id"              // ColumnId is the column name for the id
-	ColumnCreatedAt     = "created_at"      // ColumnCreatedAt is the column name for the created at
-	ColumnUpdatedAt     = "updated_at"      // ColumnUpdatedAt is the column name for the updated at
-	ColumnCreatedBy     = "created_by"      // ColumnCreatedBy is the column name for the created by
-	ColumnUpdatedBy     = "updated_by"      // ColumnUpdatedBy is the column name for the updated by
-	ColumnCreatedByName = "created_by_name" // ColumnCreatedByName is the column name for the created by name
-	ColumnUpdatedByName = "updated_by_name" // ColumnUpdatedByName is the column name for the updated by name
-
-	FieldId            = "Id"            // FieldId is the field name for the id
-	FieldCreatedAt     = "CreatedAt"     // FieldCreatedAt is the field name for the created at
-	FieldUpdatedAt     = "UpdatedAt"     // FieldUpdatedAt is the field name for the updated at
-	FieldCreatedBy     = "CreatedBy"     // FieldCreatedBy is the field name for the created by
-	FieldUpdatedBy     = "UpdatedBy"     // FieldUpdatedBy is the field name for the updated by
-	FieldCreatedByName = "CreatedByName" // FieldCreatedByName is the field name for the created by name
-	FieldUpdatedByName = "UpdatedByName" // FieldUpdatedByName is the field name for the updated by name
+// Go struct field names corresponding to audit columns.
+const (
+	FieldID            = "ID"
+	FieldCreatedAt     = "CreatedAt"
+	FieldUpdatedAt     = "UpdatedAt"
+	FieldCreatedBy     = "CreatedBy"
+	FieldUpdatedBy     = "UpdatedBy"
+	FieldCreatedByName = "CreatedByName"
+	FieldUpdatedByName = "UpdatedByName"
 )

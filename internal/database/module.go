@@ -17,14 +17,14 @@ var (
 		"vef:database",
 		fx.Provide(
 			fx.Annotate(
-				func(lc fx.Lifecycle, config *config.DatasourceConfig) (db *bun.DB, err error) {
-					if db, err = New(config); err != nil {
+				func(lc fx.Lifecycle, cfg *config.DatasourceConfig) (db *bun.DB, err error) {
+					if db, err = New(cfg); err != nil {
 						return db, err
 					}
 
-					provider, exists := registry.provider(config.Type)
+					provider, exists := registry.provider(cfg.Type)
 					if !exists {
-						return nil, newUnsupportedDbTypeError(config.Type)
+						return nil, newUnsupportedDBTypeError(cfg.Type)
 					}
 
 					lc.Append(
@@ -33,7 +33,7 @@ var (
 								if err := db.PingContext(ctx); err != nil {
 									return wrapPingError(provider.Type(), err)
 								}
-								if err := logDbVersion(provider, db, logger); err != nil {
+								if err := logDBVersion(provider, db, logger); err != nil {
 									return err
 								}
 

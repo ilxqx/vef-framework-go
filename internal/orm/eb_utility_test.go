@@ -13,7 +13,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 	// Test 1: DECODE for status mapping with string results
 	suite.Run("DecodeStatusDescriptionMapping", func() {
 		type DecodeStatusResult struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			Title      string `bun:"title"`
 			Status     string `bun:"status"`
 			StatusDesc string `bun:"status_desc"`
@@ -55,14 +55,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}
 
 			suite.T().Logf("Id: %s, Post %s: %s -> %s",
-				result.Id, result.Title, result.Status, result.StatusDesc)
+				result.ID, result.Title, result.Status, result.StatusDesc)
 		}
 	})
 
 	// Test 2: DECODE for status priority mapping with integer results
 	suite.Run("DecodeStatusPriorityMapping", func() {
 		type DecodePriorityResult struct {
-			Id             string `bun:"id"`
+			ID             string `bun:"id"`
 			Title          string `bun:"title"`
 			Status         string `bun:"status"`
 			StatusPriority int64  `bun:"status_priority"`
@@ -104,14 +104,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}
 
 			suite.T().Logf("Id: %s, Post %s: %s -> Priority: %d",
-				result.Id, result.Title, result.Status, result.StatusPriority)
+				result.ID, result.Title, result.Status, result.StatusPriority)
 		}
 	})
 
 	// Test 3: DECODE with combined string and integer mappings
 	suite.Run("DecodeCombinedMapping", func() {
 		type DecodeCombinedResult struct {
-			Id             string `bun:"id"`
+			ID             string `bun:"id"`
 			Title          string `bun:"title"`
 			Status         string `bun:"status"`
 			StatusDesc     string `bun:"status_desc"`
@@ -168,14 +168,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}
 
 			suite.T().Logf("Id: %s, Post %s: %s -> %s (Priority: %d)",
-				result.Id, result.Title, result.Status, result.StatusDesc, result.StatusPriority)
+				result.ID, result.Title, result.Status, result.StatusDesc, result.StatusPriority)
 		}
 	})
 
 	// Test 4: DECODE with invalid arguments (less than 3 parameters)
 	suite.Run("DecodeInvalidArguments", func() {
 		type DecodeInvalidResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Result *string `bun:"result"`
 		}
@@ -196,14 +196,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 
 		for _, result := range results {
 			suite.Nil(result.Result, "Result should be NULL for invalid DECODE arguments")
-			suite.T().Logf("Id: %s, Title: %s, Result: NULL (as expected)", result.Id, result.Title)
+			suite.T().Logf("Id: %s, Title: %s, Result: NULL (as expected)", result.ID, result.Title)
 		}
 	})
 
 	// Test 5: DECODE with minimal arguments (exactly 3 parameters)
 	suite.Run("DecodeMinimalArguments", func() {
 		type DecodeMinimalResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Status string  `bun:"status"`
 			Label  *string `bun:"label"`
@@ -241,14 +241,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}
 
 			suite.T().Logf("Id: %s, Title: %s, Status: %s -> Label: %s",
-				result.Id, result.Title, result.Status, labelStr)
+				result.ID, result.Title, result.Status, labelStr)
 		}
 	})
 
 	// Test 6: DECODE without default value (even number of arguments)
 	suite.Run("DecodeWithoutDefault", func() {
 		type DecodeNoDefaultResult struct {
-			Id     string  `bun:"id"`
+			ID     string  `bun:"id"`
 			Title  string  `bun:"title"`
 			Status string  `bun:"status"`
 			Tag    *string `bun:"tag"`
@@ -291,14 +291,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}
 
 			suite.T().Logf("Id: %s, Title: %s, Status: %s -> Tag: %s",
-				result.Id, result.Title, result.Status, tagStr)
+				result.ID, result.Title, result.Status, tagStr)
 		}
 	})
 
 	// Test 7: DECODE with NULL value mapping
 	suite.Run("DecodeNullValueMapping", func() {
 		type DecodeNullMappingResult struct {
-			Id          string  `bun:"id"`
+			ID          string  `bun:"id"`
 			Title       string  `bun:"title"`
 			Description *string `bun:"description"`
 			DescLabel   string  `bun:"desc_label"`
@@ -337,14 +337,14 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}
 
 			suite.T().Logf("Id: %s, Title: %s, Description: %s -> Label: %s",
-				result.Id, result.Title, descStr, result.DescLabel)
+				result.ID, result.Title, descStr, result.DescLabel)
 		}
 	})
 
 	// Test 8: DECODE with nested expression as input
 	suite.Run("DecodeNestedExpression", func() {
 		type DecodeNestedResult struct {
-			Id            string `bun:"id"`
+			ID            string `bun:"id"`
 			Title         string `bun:"title"`
 			ViewCount     int64  `bun:"view_count"`
 			ViewCategory  string `bun:"view_category"`
@@ -411,7 +411,7 @@ func (suite *UtilityFunctionsTestSuite) TestDecode() {
 			}
 
 			suite.T().Logf("Id: %s, Title: %s, ViewCount: %d -> Category: %s (%s)",
-				result.Id, result.Title, result.ViewCount, result.ViewCategory, result.CategoryLabel)
+				result.ID, result.Title, result.ViewCount, result.ViewCategory, result.CategoryLabel)
 		}
 	})
 }

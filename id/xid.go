@@ -2,17 +2,17 @@ package id
 
 import "github.com/rs/xid"
 
-// DefaultXidIdGenerator is the default XID generator instance.
-var DefaultXidIdGenerator = NewXidIdGenerator()
+// DefaultXIDGenerator is the default XID generator instance.
+var DefaultXIDGenerator = NewXIDGenerator()
 
-type xidIdGenerator struct{}
+type xidGenerator struct{}
 
 // Generate creates a new XID as a 20-character base32-encoded string.
-func (g *xidIdGenerator) Generate() string {
+func (g *xidGenerator) Generate() string {
 	return xid.New().String()
 }
 
-// NewXidIdGenerator creates a new XID generator instance.
-func NewXidIdGenerator() IdGenerator {
-	return &xidIdGenerator{}
+// NewXIDGenerator creates a new XID generator instance.
+func NewXIDGenerator() IDGenerator {
+	return &xidGenerator{}
 }

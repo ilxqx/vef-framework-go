@@ -1,5 +1,39 @@
 package log
 
+// Level represents a logging priority. Higher levels are more important.
+type Level int8
+
+const (
+	// LevelDebug logs are typically voluminous and usually disabled in production.
+	LevelDebug Level = iota + 1
+	// LevelInfo is the default logging priority.
+	LevelInfo
+	// LevelWarn logs are more important than Info but don't need individual human review.
+	LevelWarn
+	// LevelError logs are high-priority. A smoothly running application shouldn't generate any.
+	LevelError
+	// LevelPanic logs a message, then panics.
+	LevelPanic
+)
+
+// String returns the string representation of the log level.
+func (l Level) String() string {
+	switch l {
+	case LevelDebug:
+		return "debug"
+	case LevelInfo:
+		return "info"
+	case LevelWarn:
+		return "warn"
+	case LevelError:
+		return "error"
+	case LevelPanic:
+		return "panic"
+	default:
+		return "unknown"
+	}
+}
+
 // Logger defines the core logging interface for structured logging across the framework.
 type Logger interface {
 	// Named creates a child logger with the given namespace.

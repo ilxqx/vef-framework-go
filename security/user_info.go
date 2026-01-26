@@ -30,7 +30,7 @@ type UserMenu struct {
 }
 
 type UserInfo struct {
-	Id         string      `json:"id"`
+	ID         string      `json:"id"`
 	Name       string      `json:"name"`
 	Gender     Gender      `json:"gender"`
 	Avatar     null.String `json:"avatar"`

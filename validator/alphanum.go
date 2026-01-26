@@ -13,43 +13,25 @@ var (
 )
 
 func newAlphanumUsRule() ValidationRule {
-	return ValidationRule{
-		RuleTag:                  "alphanum_us",
-		ErrMessageTemplate:       "{0}只能包含字母、数字和下划线",
-		ErrMessageI18nKey:        "validator_alphanum_us",
-		CallValidationEvenIfNull: false,
-		Validate: func(fl v.FieldLevel) bool {
-			return alphanumUsRegex.MatchString(fl.Field().String())
-		},
-		ParseParam: func(fe v.FieldError) []string {
-			return []string{fe.Field()}
-		},
-	}
+	return newRegexRule("alphanum_us", alphanumUsRegex, "{0}只能包含字母、数字和下划线", "validator_alphanum_us")
 }
 
 func newAlphanumUsSlashRule() ValidationRule {
-	return ValidationRule{
-		RuleTag:                  "alphanum_us_slash",
-		ErrMessageTemplate:       "{0}只能包含字母、数字、下划线和斜线",
-		ErrMessageI18nKey:        "validator_alphanum_us_slash",
-		CallValidationEvenIfNull: false,
-		Validate: func(fl v.FieldLevel) bool {
-			return alphanumUsSlashRegex.MatchString(fl.Field().String())
-		},
-		ParseParam: func(fe v.FieldError) []string {
-			return []string{fe.Field()}
-		},
-	}
+	return newRegexRule("alphanum_us_slash", alphanumUsSlashRegex, "{0}只能包含字母、数字、下划线和斜线", "validator_alphanum_us_slash")
 }
 
 func newAlphanumUsDotRule() ValidationRule {
+	return newRegexRule("alphanum_us_dot", alphanumUsDotRegex, "{0}只能包含字母、数字、下划线和点", "validator_alphanum_us_dot")
+}
+
+func newRegexRule(ruleTag string, regex *regexp.Regexp, errMessageTemplate, errMessageI18nKey string) ValidationRule {
 	return ValidationRule{
-		RuleTag:                  "alphanum_us_dot",
-		ErrMessageTemplate:       "{0}只能包含字母、数字、下划线和点",
-		ErrMessageI18nKey:        "validator_alphanum_us_dot",
+		RuleTag:                  ruleTag,
+		ErrMessageTemplate:       errMessageTemplate,
+		ErrMessageI18nKey:        errMessageI18nKey,
 		CallValidationEvenIfNull: false,
 		Validate: func(fl v.FieldLevel) bool {
-			return alphanumUsDotRegex.MatchString(fl.Field().String())
+			return regex.MatchString(fl.Field().String())
 		},
 		ParseParam: func(fe v.FieldError) []string {
 			return []string{fe.Field()}

@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd"
-)
+import "github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd"
 
 var (
 	version = "0.0.1"
@@ -10,10 +8,6 @@ var (
 )
 
 func main() {
-	versionInfo := cmd.GetVersionInfo(version, date)
-
-	cmd.Version = versionInfo.Version
-	cmd.Date = versionInfo.Date
-
+	cmd.Init(version, date)
 	cmd.Execute()
 }

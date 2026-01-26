@@ -417,7 +417,7 @@ type UserSearch struct {
 ```go
 type UserParams struct {
     api.P
-    Id       string      `json:"id"` // Required for updates
+    ID       string      `json:"id"` // Required for updates
 
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
     Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"Email"`
@@ -433,7 +433,7 @@ When Create and Update operations have different validation requirements, use st
 // Shared fields
 type UserParams struct {
     api.P
-    Id       string
+    ID       string
     Username string      `json:"username" validate:"required,alphanum,max=32" label:"Username"`
     Email    null.String `json:"email" validate:"omitempty,email,max=64" label:"Email"`
     IsActive bool        `json:"isActive"`
@@ -911,8 +911,8 @@ import "github.com/ilxqx/vef-framework-go/treebuilder"
 FindTreeApi: apis.NewFindTreeApi[models.Organization, payloads.OrganizationSearch](
     buildOrganizationTree,
 ).
-    WithIdColumn("id").              // ID column name (default: "id")
-    WithParentIdColumn("parent_id"). // Parent ID column name (default: "parent_id")
+    WithIDColumn("id").              // ID column name (default: "id")
+    WithParentIDColumn("parent_id"). // Parent ID column name (default: "parent_id")
     WithDefaultSort(&sort.OrderSpec{
         Column:    "sort_order",
         Direction: sort.OrderAsc,
@@ -922,8 +922,8 @@ func buildOrganizationTree(flatModels []models.Organization) []models.Organizati
     return treebuilder.Build(
         flatModels,
         treebuilder.Adapter[models.Organization]{
-            GetId:       func(m models.Organization) string { return m.Id },
-            GetParentId: func(m models.Organization) string { return m.ParentId.ValueOrZero() },
+            GetID:       func(m models.Organization) string { return m.ID },
+            GetParentID: func(m models.Organization) string { return m.ParentID.ValueOrZero() },
             SetChildren: func(m *models.Organization, children []models.Organization) {
                 m.Children = children
             },
@@ -942,7 +942,7 @@ Your model must have:
 type Organization struct {
     orm.Model
     Name     string          `json:"name"`
-    ParentId null.String     `json:"parentId" bun:"type:varchar(20)"` // NULL for root nodes
+    ParentID null.String     `json:"parentID" bun:"type:varchar(20)"` // NULL for root nodes
     Children []Organization  `json:"children" bun:"-"`                // Computed, not in DB
 }
 ```
@@ -959,8 +959,8 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.Org
         LabelColumn: "name",
         ValueColumn: "id",
     }).
-    WithIdColumn("id").
-    WithParentIdColumn("parent_id").
+    WithIDColumn("id").
+    WithParentIDColumn("parent_id").
     WithDefaultSort(&sort.OrderSpec{
         Column:    "sort_order",
         Direction: sort.OrderAsc,
@@ -980,7 +980,7 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
     WithCsvOptions(&csv.ExportOptions{            // CSV-specific options
         Delimiter: ',',
     }).
-    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx, db orm.Db) error {
+    WithPreExport(func(users []User, search UserSearch, ctx fiber.Ctx, db orm.DB) error {
         // Modify data before export (e.g., data masking)
         for i := range users {
             users[i].Password = "***"
@@ -999,7 +999,7 @@ Add custom business logic before/after CRUD operations:
 
 ```go
 CreateApi: apis.NewCreateApi[User, UserParams]().
-    WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.DB) error {
         // Hash password before creating user
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
         if err != nil {
@@ -1008,7 +1008,7 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
         model.Password = string(hashed)
         return nil
     }).
-    WithPostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.Db) error {
+    WithPostCreate(func(model *User, params *UserParams, ctx fiber.Ctx, tx orm.DB) error {
         // Send welcome email after user creation (within transaction)
         return sendWelcomeEmail(model.Email)
     }),
@@ -1038,7 +1038,7 @@ Available hooks:
 ```go
 // System user protection - Prevent deletion of critical system users
 DeleteApi: apis.NewDeleteApi[User]().
-    WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.Db) error {
+    WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.DB) error {
         // Protect system-internal users from deletion
         switch model.Username {
         case "system", "anonymous", "cron":
@@ -1049,7 +1049,7 @@ DeleteApi: apis.NewDeleteApi[User]().
 
 // Conditional password hashing - Only hash if password is being changed
 UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
-    WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.DB) error {
         // Only hash password if it's being updated
         if params.Password.Valid && params.Password.String != "" {
             hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password.String), bcrypt.DefaultCost)
@@ -1066,7 +1066,7 @@ UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
 
 // Business validation - Validate business rules before operation
 CreateApi: apis.NewCreateApi[Order, OrderParams]().
-    WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.Db) error {
+    WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.DB) error {
         // Validate order total matches item totals
         if model.TotalAmount <= 0 {
             return result.Err("Order total must be greater than zero")
@@ -1127,7 +1127,7 @@ func NewRoleResource() api.Resource {
 // Custom handler method for find_role_permissions action
 func (r *RoleResource) FindRolePermissions(
     ctx fiber.Ctx,
-    db orm.Db,
+    db orm.DB,
     params payloads.RolePermissionQuery,
 ) error {
     // Custom business logic
@@ -1138,11 +1138,11 @@ func (r *RoleResource) FindRolePermissions(
 // Custom handler method for save_role_permissions action
 func (r *RoleResource) SaveRolePermissions(
     ctx fiber.Ctx,
-    db orm.Db,
+    db orm.DB,
     params payloads.RolePermissionParams,
 ) error {
     // Transaction-based custom logic
-    return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+    return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
         // Save permissions in transaction
         // ...
         return nil
@@ -1164,7 +1164,7 @@ Add custom endpoints by defining methods on your resource:
 ```go
 func (r *UserResource) ResetPassword(
     ctx fiber.Ctx,
-    db orm.Db,
+    db orm.DB,
     logger log.Logger,
     principal *security.Principal,
     params ResetPasswordParams,
@@ -1192,7 +1192,7 @@ func (r *UserResource) ResetPassword(
 **Injectable Parameters:**
 
 - `fiber.Ctx` - HTTP context
-- `orm.Db` - Database connection
+- `orm.DB` - Database connection
 - `log.Logger` - Logger instance
 - `mold.Transformer` - Data transformer
 - `*security.Principal` - Current authenticated user
@@ -1360,7 +1360,7 @@ type UserSearch struct {
 Execute multiple operations in a transaction:
 
 ```go
-err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
     // Insert user
     _, err := tx.NewInsert().Model(&user).Exec(txCtx)
     if err != nil {
@@ -1368,7 +1368,7 @@ err := db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
     }
 
     // Update related records
-    _, err = tx.NewUpdate().Model(&profile).WherePk().Exec(txCtx)
+    _, err = tx.NewUpdate().Model(&profile).WherePK().Exec(txCtx)
     return err // Auto-commit on nil, rollback on error
 })
 ```
@@ -1397,7 +1397,7 @@ import (
 )
 
 type MyUserLoader struct {
-    db orm.Db
+    db orm.DB
 }
 
 func (l *MyUserLoader) LoadByUsername(ctx context.Context, username string) (*security.Principal, string, error) {
@@ -1425,7 +1425,7 @@ func (l *MyUserLoader) LoadById(ctx context.Context, id string) (*security.Princ
     // Similar implementation
 }
 
-func NewMyUserLoader(db orm.Db) *MyUserLoader {
+func NewMyUserLoader(db orm.DB) *MyUserLoader {
     return &MyUserLoader{db: db}
 }
 
@@ -1460,7 +1460,7 @@ import (
 )
 
 type MyRolePermissionsLoader struct {
-    db orm.Db
+    db orm.DB
 }
 
 // LoadPermissions loads all permissions for the given role
@@ -1498,7 +1498,7 @@ func (l *MyRolePermissionsLoader) LoadPermissions(ctx context.Context, role stri
     return result, nil
 }
 
-func NewMyRolePermissionsLoader(db orm.Db) security.RolePermissionsLoader {
+func NewMyRolePermissionsLoader(db orm.DB) security.RolePermissionsLoader {
     return &MyRolePermissionsLoader{db: db}
 }
 
@@ -1628,7 +1628,7 @@ func (s *DepartmentDataScope) Supports(principal *security.Principal, table *orm
 func (s *DepartmentDataScope) Apply(principal *security.Principal, query orm.SelectQuery) error {
     // Get user's department ID from principal.Details
     type UserDetails struct {
-        DepartmentId string `json:"departmentId"`
+        DepartmentID string `json:"departmentId"`
     }
     
     details, ok := principal.Details.(UserDetails)
@@ -1638,7 +1638,7 @@ func (s *DepartmentDataScope) Apply(principal *security.Principal, query orm.Sel
     
     // Apply filtering condition
     query.Where(func(cb orm.ConditionBuilder) {
-        cb.Equals("department_id", details.DepartmentId)
+        cb.Equals("department_id", details.DepartmentID)
     })
     
     return nil
@@ -1797,7 +1797,7 @@ func (r *UserResource) CreateUser(ctx fiber.Ctx, bus event.Bus, ...) error {
     bus.Publish(event.NewBaseEvent(
         "user.created",
         event.WithSource("user-service"),
-        event.WithMeta("userId", user.Id),
+        event.WithMeta("userID", user.Id),
     ))
     
     return result.Ok().Response(ctx)
@@ -1809,7 +1809,7 @@ func main() {
         vef.Invoke(func(bus event.Bus, logger log.Logger) {
             unsubscribe := bus.Subscribe("user.created", func(ctx context.Context, e event.Event) {
                 // Handle event
-                logger.Infof("User created: %s", e.Meta()["userId"])
+                logger.Infof("User created: %s", e.Meta()["userID"])
             })
             
             // Optionally unsubscribe later
@@ -1837,7 +1837,7 @@ import (
 var Module = vef.Module(
     "app:vef",
     vef.Invoke(
-        func(lc vef.Lifecycle, db orm.Db, subscriber event.Subscriber) {
+        func(lc vef.Lifecycle, db orm.DB, subscriber event.Subscriber) {
             // Create and register audit event subscriber
             auditSub := NewAuditEventSubscriber(db, subscriber)
 
@@ -1868,11 +1868,11 @@ var Module = vef.Module(
 
 ```go
 type AuditEventSubscriber struct {
-    db           orm.Db
+    db           orm.DB
     unsubscribe  event.UnsubscribeFunc
 }
 
-func NewAuditEventSubscriber(db orm.Db, subscriber event.Subscriber) *AuditEventSubscriber {
+func NewAuditEventSubscriber(db orm.DB, subscriber event.Subscriber) *AuditEventSubscriber {
     sub := &AuditEventSubscriber{db: db}
 
     // Subscribe and store unsubscribe function
@@ -1903,7 +1903,7 @@ import "github.com/ilxqx/vef-framework-go/contextx"
 
 func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
     // Get request-scoped database (with operator pre-configured)
-    db := contextx.Db(ctx)
+    db := contextx.DB(ctx)
 
     // Get current authenticated user
     principal := contextx.Principal(ctx)
@@ -1925,7 +1925,7 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
 
 **Available Helpers:**
 
-- **`contextx.Db(ctx)`** - Returns request-scoped `orm.Db` with audit fields (like `operator`) pre-configured
+- **`contextx.DB(ctx)`** - Returns request-scoped `orm.DB` with audit fields (like `operator`) pre-configured
 - **`contextx.Principal(ctx)`** - Returns current `*security.Principal` (authenticated user or anonymous)
 - **`contextx.Logger(ctx)`** - Returns request-scoped `log.Logger` with request ID for correlation
 - **`contextx.DataPermApplier(ctx)`** - Returns request-scoped `security.DataPermissionApplier` used by the data permission middleware
@@ -1941,7 +1941,7 @@ func (r *RoleResource) CustomMethod(ctx fiber.Ctx) error {
 // Prefer this: Parameter injection in handler
 func (r *UserResource) UpdateProfile(
     ctx fiber.Ctx,
-    db orm.Db,           // Injected by framework
+    db orm.DB,           // Injected by framework
     logger log.Logger,   // Injected by framework
     params ProfileParams,
 ) error {
@@ -1951,7 +1951,7 @@ func (r *UserResource) UpdateProfile(
 
 // Use contextx when injection not available
 func helperFunction(ctx fiber.Ctx) error {
-    db := contextx.Db(ctx)       // Extract from context
+    db := contextx.DB(ctx)       // Extract from context
     logger := contextx.Logger(ctx)
     logger.Infof("Helper function")
     // ...
@@ -2295,7 +2295,7 @@ func (r *UserResource) UploadAvatar(
         Size:        params.File.Size,
         ContentType: params.File.Header.Get("Content-Type"),
         Metadata: map[string]string{
-            "userId": "12345",
+            "userID": "12345",
         },
     })
     if err != nil {
@@ -2445,13 +2445,13 @@ The generated schema provides type-safe field accessors:
 package schemas
 
 var User = struct {
-    Id        func(withTablePrefix ...bool) string
+    ID        func(withTablePrefix ...bool) string
     Username  func(withTablePrefix ...bool) string
     Email     func(withTablePrefix ...bool) string
     CreatedAt func(withTablePrefix ...bool) string
     // ... other fields
 }{
-    Id:        field("id", "su"),
+    ID:        field("id", "su"),
     Username:  field("username", "su"),
     Email:     field("email", "su"),
     CreatedAt: field("created_at", "su"),

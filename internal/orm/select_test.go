@@ -20,7 +20,7 @@ func (suite *SelectTestSuite) TestCTE() {
 
 	suite.Run("WithBasicCTE", func() {
 		type PostWithUser struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Title    string `bun:"title"`
 			UserName string `bun:"user_name"`
 		}
@@ -52,7 +52,7 @@ func (suite *SelectTestSuite) TestCTE() {
 		suite.True(len(postsWithUsers) > 0, "Should return posts with user information")
 
 		for _, post := range postsWithUsers {
-			suite.NotEmpty(post.Id, "ID should not be empty")
+			suite.NotEmpty(post.ID, "ID should not be empty")
 			suite.NotEmpty(post.Title, "Title should not be empty")
 			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
 		}
@@ -101,14 +101,14 @@ func (suite *SelectTestSuite) TestCTE() {
 	})
 
 	suite.Run("WithRecursiveCTE", func() {
-		if suite.dbType == constants.DbSQLite {
+		if suite.dbType == constants.SQLite {
 			suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated UNION SQL")
 		}
 
 		type CommentHierarchy struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Content  string `bun:"content"`
-			ParentId string `bun:"parent_id"`
+			ParentID string `bun:"parent_id"`
 			Level    int    `bun:"level"`
 		}
 
@@ -118,7 +118,7 @@ func (suite *SelectTestSuite) TestCTE() {
 			WithRecursive("comment_tree", func(query SelectQuery) {
 				query.Model((*Post)(nil)).
 					Select("id", "category_id", "title", "status").
-					SelectExpr(func(eb ExprBuilder) any {
+					SelectExpr(func(ExprBuilder) any {
 						return 0
 					}, "level").
 					Where(func(cb ConditionBuilder) {
@@ -143,7 +143,7 @@ func (suite *SelectTestSuite) TestCTE() {
 		suite.NoError(err, "WITH RECURSIVE should work when supported")
 
 		for _, comment := range commentTree {
-			suite.NotEmpty(comment.Id, "Comment ID should not be empty")
+			suite.NotEmpty(comment.ID, "Comment ID should not be empty")
 			suite.True(comment.Level >= 0, "Level should be non-negative")
 			suite.T().Logf("Comment level %d: %s", comment.Level, comment.Content)
 		}
@@ -168,10 +168,10 @@ func (suite *SelectTestSuite) TestSelectAll() {
 		suite.Len(users, 3, "Should return 3 users")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.NotEmpty(user.Name, "Name should be populated")
 			suite.NotEmpty(user.Email, "Email should be populated")
-			suite.T().Logf("User: ID=%s, Name=%s, Email=%s", user.Id, user.Name, user.Email)
+			suite.T().Logf("User: ID=%s, Name=%s, Email=%s", user.ID, user.Name, user.Email)
 		}
 	})
 }
@@ -182,7 +182,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 
 	suite.Run("SelectSpecificColumns", func() {
 		type UserBasic struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
@@ -200,16 +200,16 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 		suite.Len(users, 2, "Should return 2 users")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.NotEmpty(user.Name, "Name should be populated")
 			suite.NotEmpty(user.Email, "Email should be populated")
-			suite.T().Logf("User: ID=%s, Name=%s, Email=%s", user.Id, user.Name, user.Email)
+			suite.T().Logf("User: ID=%s, Name=%s, Email=%s", user.ID, user.Name, user.Email)
 		}
 	})
 
 	suite.Run("SelectWithAlias", func() {
 		type PostWithAlias struct {
-			Id          string `bun:"id"`
+			ID          string `bun:"id"`
 			Title       string `bun:"title"`
 			PostStatus  string `bun:"post_status"`
 			ViewDisplay string `bun:"view_display"`
@@ -232,7 +232,7 @@ func (suite *SelectTestSuite) TestSelectAndSelectAs() {
 		suite.True(len(posts) > 0, "Should return posts")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 			suite.NotEmpty(post.Title, "Title should be populated")
 			suite.NotEmpty(post.PostStatus, "Status should be populated")
 			suite.Contains(post.ViewDisplay, "Views:", "View display should contain prefix")
@@ -247,7 +247,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 	suite.Run("SelectExpression", func() {
 		type PostWithCalculated struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			Title      string `bun:"title"`
 			StatusDesc string `bun:"status_desc"`
 			ViewRange  string `bun:"view_range"`
@@ -285,7 +285,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 		suite.True(len(posts) > 0, "Should return posts")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 			suite.NotEmpty(post.Title, "Title should be populated")
 			suite.NotEmpty(post.StatusDesc, "Status description should be calculated")
 			suite.NotEmpty(post.ViewRange, "View range should be calculated")
@@ -295,7 +295,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 
 	suite.Run("MultipleSelectExpr", func() {
 		type UserWithStats struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Name      string `bun:"name"`
 			UpperName string `bun:"upper_name"`
 			NameLen   int    `bun:"name_len"`
@@ -329,7 +329,7 @@ func (suite *SelectTestSuite) TestSelectExpr() {
 		suite.True(len(users) > 0, "Should return users")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.NotEmpty(user.Name, "Name should be populated")
 			suite.NotEmpty(user.UpperName, "Upper name should be calculated")
 			suite.True(user.NameLen > 0, "Name length should be positive")
@@ -358,17 +358,17 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 		suite.Len(users, 2, "Should return 2 users")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.NotEmpty(user.CreatedAt, "CreatedAt should be populated")
 			suite.NotEmpty(user.CreatedBy, "CreatedBy should be populated")
 			suite.T().Logf("User: ID=%s, CreatedAt=%s, CreatedBy=%s",
-				user.Id, user.CreatedAt, user.CreatedBy)
+				user.ID, user.CreatedAt, user.CreatedBy)
 		}
 	})
 
 	suite.Run("SelectModelColumnsWithExpr", func() {
 		type UserWithExpr struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			CreatedAt string `bun:"created_at"`
 			CreatedBy string `bun:"created_by"`
 			UpdatedAt string `bun:"updated_at"`
@@ -394,46 +394,46 @@ func (suite *SelectTestSuite) TestSelectModelColumns() {
 		suite.True(len(users) > 0, "Should return users")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.NotEmpty(user.Name, "Name should be populated")
 			suite.NotEmpty(user.CreatedAt, "CreatedAt should be populated")
 			suite.True(user.NameLen > 0, "Name length should be positive")
 			suite.T().Logf("User: ID=%s, Name=%s (len=%d), CreatedAt=%s",
-				user.Id, user.Name, user.NameLen, user.CreatedAt)
+				user.ID, user.Name, user.NameLen, user.CreatedAt)
 		}
 	})
 }
 
-// TestSelectModelPks tests SelectModelPks method.
-func (suite *SelectTestSuite) TestSelectModelPks() {
-	suite.T().Logf("Testing SelectModelPks for %s", suite.dbType)
+// TestSelectModelPKs tests SelectModelPKs method.
+func (suite *SelectTestSuite) TestSelectModelPKs() {
+	suite.T().Logf("Testing SelectModelPKs for %s", suite.dbType)
 
-	suite.Run("SelectModelPksBasic", func() {
+	suite.Run("SelectModelPKsBasic", func() {
 		type UserIDOnly struct {
-			Id string `bun:"id"`
+			ID string `bun:"id"`
 		}
 
 		var users []UserIDOnly
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectModelPks().
+			SelectModelPKs().
 			OrderBy("id").
 			Limit(3).
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "SelectModelPks should work correctly")
+		suite.NoError(err, "SelectModelPKs should work correctly")
 		suite.Len(users, 3, "Should return 3 users")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
-			suite.T().Logf("User ID: %s", user.Id)
+			suite.NotEmpty(user.ID, "ID should be populated")
+			suite.T().Logf("User ID: %s", user.ID)
 		}
 	})
 
-	suite.Run("SelectModelPksWithExpr", func() {
+	suite.Run("SelectModelPKsWithExpr", func() {
 		type UserWithExpr struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			NameDesc string `bun:"name_desc"`
 		}
 
@@ -441,7 +441,7 @@ func (suite *SelectTestSuite) TestSelectModelPks() {
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectModelPks().
+			SelectModelPKs().
 			SelectExpr(func(eb ExprBuilder) any {
 				return eb.Concat("User: ", eb.Column("name"))
 			}, "name_desc").
@@ -449,14 +449,14 @@ func (suite *SelectTestSuite) TestSelectModelPks() {
 			Limit(2).
 			Scan(suite.ctx, &users)
 
-		suite.NoError(err, "SelectModelPks with SelectExpr should work")
+		suite.NoError(err, "SelectModelPKs with SelectExpr should work")
 		suite.True(len(users) > 0, "Should return users")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.NotEmpty(user.NameDesc, "Name description should be calculated")
 			suite.Contains(user.NameDesc, "User:", "Name description should contain prefix")
-			suite.T().Logf("User: ID=%s, %s", user.Id, user.NameDesc)
+			suite.T().Logf("User: ID=%s, %s", user.ID, user.NameDesc)
 		}
 	})
 }
@@ -467,7 +467,7 @@ func (suite *SelectTestSuite) TestExclude() {
 
 	suite.Run("ExcludeSpecificColumns", func() {
 		type UserWithoutSensitive struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Name      string `bun:"name"`
 			CreatedAt string `bun:"created_at"`
 			CreatedBy string `bun:"created_by"`
@@ -489,9 +489,9 @@ func (suite *SelectTestSuite) TestExclude() {
 
 		for _, user := range users {
 			suite.Empty(user.Name, "Name should not be populated")
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.NotEmpty(user.CreatedAt, "CreatedAt should be populated")
-			suite.T().Logf("User: ID=%s, CreatedAt=%s", user.Id, user.CreatedAt)
+			suite.T().Logf("User: ID=%s, CreatedAt=%s", user.ID, user.CreatedAt)
 		}
 	})
 
@@ -604,9 +604,9 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 		suite.T().Logf("SelectAll overrode SelectModelColumns: got %d users", len(users4))
 	})
 
-	suite.Run("SelectModelPksOverridesSelectModelColumns", func() {
+	suite.Run("SelectModelPKsOverridesSelectModelColumns", func() {
 		type UserIDOnly struct {
-			Id string `bun:"id,pk"`
+			ID string `bun:"id,pk"`
 		}
 
 		var users5 []UserIDOnly
@@ -614,30 +614,30 @@ func (suite *SelectTestSuite) TestSelectMutualExclusivity() {
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
 			SelectModelColumns().
-			SelectModelPks().
+			SelectModelPKs().
 			Scan(suite.ctx, &users5)
 
-		suite.NoError(err, "SelectModelPks should override SelectModelColumns")
+		suite.NoError(err, "SelectModelPKs should override SelectModelColumns")
 		suite.True(len(users5) > 0, "Should return results")
-		suite.NotEmpty(users5[0].Id, "ID should be populated")
+		suite.NotEmpty(users5[0].ID, "ID should be populated")
 
-		suite.T().Logf("SelectModelPks overrode SelectModelColumns: got %d users with ID only", len(users5))
+		suite.T().Logf("SelectModelPKs overrode SelectModelColumns: got %d users with ID only", len(users5))
 	})
 
-	suite.Run("SelectModelColumnsOverridesSelectModelPks", func() {
+	suite.Run("SelectModelColumnsOverridesSelectModelPKs", func() {
 		var users6 []User
 
 		err := suite.db.NewSelect().
 			Model(&users6).
-			SelectModelPks().
+			SelectModelPKs().
 			SelectModelColumns().
 			Scan(suite.ctx)
 
-		suite.NoError(err, "SelectModelColumns should override SelectModelPks")
+		suite.NoError(err, "SelectModelColumns should override SelectModelPKs")
 		suite.True(len(users6) > 0, "Should return results")
 		suite.NotEmpty(users6[0].Name, "Name should be populated when SelectModelColumns is used")
 
-		suite.T().Logf("SelectModelColumns overrode SelectModelPks: got %d users", len(users6))
+		suite.T().Logf("SelectModelColumns overrode SelectModelPKs: got %d users", len(users6))
 	})
 }
 
@@ -647,7 +647,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 	suite.Run("SelectExprWithSelectAll", func() {
 		type UserWithComputed struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Name     string `bun:"name"`
 			Email    string `bun:"email"`
 			Age      int16  `bun:"age"`
@@ -744,7 +744,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 	suite.Run("SelectExprPreservedWhenSwitchingBaseSelection", func() {
 		type UserAllWithComputed struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Name     string `bun:"name"`
 			Email    string `bun:"email"`
 			Age      int16  `bun:"age"`
@@ -779,7 +779,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 
 	suite.Run("SelectExprWithSelectModelColumns", func() {
 		type UserModelWithTotal struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			CreatedAt  string `bun:"created_at"`
 			CreatedBy  string `bun:"created_by"`
 			UpdatedAt  string `bun:"updated_at"`
@@ -816,7 +816,7 @@ func (suite *SelectTestSuite) TestSelectExprCumulative() {
 	})
 }
 
-// TestSelectIdempotency tests that SelectModelColumns and SelectModelPks are idempotent.
+// TestSelectIdempotency tests that SelectModelColumns and SelectModelPKs are idempotent.
 func (suite *SelectTestSuite) TestSelectIdempotency() {
 	suite.T().Logf("Testing Select method idempotency for %s", suite.dbType)
 
@@ -837,25 +837,25 @@ func (suite *SelectTestSuite) TestSelectIdempotency() {
 		suite.T().Logf("Multiple SelectModelColumns calls: got %d users", len(users1))
 	})
 
-	suite.Run("MultipleSelectModelPksCalls", func() {
+	suite.Run("MultipleSelectModelPKsCalls", func() {
 		type UserIDOnly struct {
-			Id string `bun:"id,pk"`
+			ID string `bun:"id,pk"`
 		}
 
 		var users2 []UserIDOnly
 
 		err := suite.db.NewSelect().
 			Model((*User)(nil)).
-			SelectModelPks().
-			SelectModelPks().
-			SelectModelPks().
+			SelectModelPKs().
+			SelectModelPKs().
+			SelectModelPKs().
 			Scan(suite.ctx, &users2)
 
-		suite.NoError(err, "Multiple SelectModelPks should not cause errors")
+		suite.NoError(err, "Multiple SelectModelPKs should not cause errors")
 		suite.True(len(users2) > 0, "Should return results")
-		suite.NotEmpty(users2[0].Id, "ID should be populated")
+		suite.NotEmpty(users2[0].ID, "ID should be populated")
 
-		suite.T().Logf("Multiple SelectModelPks calls: got %d users", len(users2))
+		suite.T().Logf("Multiple SelectModelPKs calls: got %d users", len(users2))
 	})
 
 	suite.Run("MultipleSelectAllCalls", func() {
@@ -944,7 +944,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 		}
 
 		type DistinctExpr struct {
-			Id         string `bun:"id"`
+			ID         string `bun:"id"`
 			Title      string `bun:"title"`
 			StatusDesc string `bun:"status_desc"`
 		}
@@ -970,7 +970,7 @@ func (suite *SelectTestSuite) TestDistinct() {
 		suite.True(len(posts) > 0, "Should return distinct expression posts")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should not be empty")
+			suite.NotEmpty(post.ID, "ID should not be empty")
 			suite.T().Logf("Distinct expr post: %s (Status: %s)", post.Title, post.StatusDesc)
 		}
 	})
@@ -982,7 +982,7 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 
 	suite.Run("ModelAndModelTable", func() {
 		type PostFromUserTable struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Title string `bun:"title"`
 		}
 
@@ -1002,14 +1002,14 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		suite.True(len(posts) > 0, "Should return users from specified table")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
-			suite.T().Logf("User from table: ID=%s, Name=%s", post.Id, post.Title)
+			suite.NotEmpty(post.ID, "ID should be populated")
+			suite.T().Logf("User from table: ID=%s, Name=%s", post.ID, post.Title)
 		}
 	})
 
 	suite.Run("TableAndAlias", func() {
 		type TableWithAlias struct {
-			Id    string `bun:"id"`
+			ID    string `bun:"id"`
 			Name  string `bun:"name"`
 			Email string `bun:"email"`
 		}
@@ -1030,14 +1030,14 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		suite.True(len(users) > 0, "Should return users from table with alias")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
-			suite.T().Logf("User with alias: ID=%s, Name=%s", user.Id, user.Name)
+			suite.NotEmpty(user.ID, "ID should be populated")
+			suite.T().Logf("User with alias: ID=%s, Name=%s", user.ID, user.Name)
 		}
 	})
 
 	suite.Run("TableFrom", func() {
 		type UserFromModel struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -1057,14 +1057,14 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		suite.True(len(users) > 0, "Should return users from model")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
-			suite.T().Logf("User from model: ID=%s, Name=%s", user.Id, user.Name)
+			suite.NotEmpty(user.ID, "ID should be populated")
+			suite.T().Logf("User from model: ID=%s, Name=%s", user.ID, user.Name)
 		}
 	})
 
 	suite.Run("TableExpr", func() {
 		type ExprTable struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -1085,14 +1085,14 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		suite.True(len(users) > 0, "Should return users from expression table")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
-			suite.T().Logf("User from expr: ID=%s, Name=%s", user.Id, user.Name)
+			suite.NotEmpty(user.ID, "ID should be populated")
+			suite.T().Logf("User from expr: ID=%s, Name=%s", user.ID, user.Name)
 		}
 	})
 
 	suite.Run("TableSubQuery", func() {
 		type SubQueryTable struct {
-			Id   string `bun:"id"`
+			ID   string `bun:"id"`
 			Name string `bun:"name"`
 		}
 
@@ -1115,8 +1115,8 @@ func (suite *SelectTestSuite) TestModelAndTable() {
 		suite.True(len(users) > 0, "Should return users from subquery table")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
-			suite.T().Logf("User from subquery: ID=%s, Name=%s", user.Id, user.Name)
+			suite.NotEmpty(user.ID, "ID should be populated")
+			suite.T().Logf("User from subquery: ID=%s, Name=%s", user.ID, user.Name)
 		}
 	})
 }
@@ -1127,7 +1127,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 	suite.Run("BasicInnerJoin", func() {
 		type PostWithUser struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Title    string `bun:"title"`
 			UserName string `bun:"user_name"`
 		}
@@ -1152,14 +1152,14 @@ func (suite *SelectTestSuite) TestJoins() {
 		suite.True(len(posts) > 0, "Should return posts with user info")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
 		}
 	})
 
 	suite.Run("LeftJoin", func() {
 		type CategoryWithPostCount struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Name      string `bun:"name"`
 			PostCount int64  `bun:"post_count"`
 		}
@@ -1183,7 +1183,7 @@ func (suite *SelectTestSuite) TestJoins() {
 		suite.True(len(categories) > 0, "Should return categories with post counts")
 
 		for _, category := range categories {
-			suite.NotEmpty(category.Id, "ID should be populated")
+			suite.NotEmpty(category.ID, "ID should be populated")
 			suite.True(category.PostCount >= 0, "Post count should be non-negative")
 			suite.T().Logf("Category: %s (%d posts)", category.Name, category.PostCount)
 		}
@@ -1191,9 +1191,9 @@ func (suite *SelectTestSuite) TestJoins() {
 
 	suite.Run("RightJoin", func() {
 		type UserWithPosts struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Name      string `bun:"name"`
-			PostId    string `bun:"post_id"`
+			PostID    string `bun:"post_id"`
 			PostTitle string `bun:"post_title"`
 		}
 
@@ -1223,16 +1223,16 @@ func (suite *SelectTestSuite) TestJoins() {
 	})
 
 	suite.Run("FullJoin", func() {
-		if suite.dbType == constants.DbMySQL {
+		if suite.dbType == constants.MySQL {
 			suite.T().Skip("Skipping for MySQL: FULL JOIN not supported (use LEFT JOIN UNION RIGHT JOIN instead)")
 
 			return
 		}
 
 		type UserWithPosts struct {
-			Id        string `bun:"id"`
+			ID        string `bun:"id"`
 			Name      string `bun:"name"`
-			PostId    string `bun:"post_id"`
+			PostID    string `bun:"post_id"`
 			PostTitle string `bun:"post_title"`
 		}
 
@@ -1260,9 +1260,9 @@ func (suite *SelectTestSuite) TestJoins() {
 
 	suite.Run("CrossJoin", func() {
 		type UserCategoryCross struct {
-			UserId       string `bun:"user_id"`
+			UserID       string `bun:"user_id"`
 			UserName     string `bun:"user_name"`
-			CategoryId   string `bun:"category_id"`
+			CategoryID   string `bun:"category_id"`
 			CategoryName string `bun:"category_name"`
 		}
 
@@ -1292,7 +1292,7 @@ func (suite *SelectTestSuite) TestJoins() {
 
 	suite.Run("JoinWithTable", func() {
 		type PostWithCategory struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			Title        string `bun:"title"`
 			CategoryName string `bun:"category_name"`
 		}
@@ -1317,14 +1317,14 @@ func (suite *SelectTestSuite) TestJoins() {
 		suite.True(len(posts) > 0, "Should return posts with categories")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 			suite.T().Logf("Post: %s in %s", post.Title, post.CategoryName)
 		}
 	})
 
 	suite.Run("JoinWithSubQuery", func() {
 		type PostWithActiveUser struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Title    string `bun:"title"`
 			UserName string `bun:"user_name"`
 		}
@@ -1358,7 +1358,7 @@ func (suite *SelectTestSuite) TestJoins() {
 		suite.True(len(posts) > 0, "Should return posts with active users")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
 		}
 	})
@@ -1370,7 +1370,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 	// Define result struct for JoinRelations tests
 	type PostWithUserName struct {
-		Id       string `bun:"id"`
+		ID       string `bun:"id"`
 		Title    string `bun:"title"`
 		UserName string `bun:"user_name"`
 	}
@@ -1400,7 +1400,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 		suite.True(len(posts) > 0, "Should return posts with user names")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 			suite.NotEmpty(post.UserName, "User name should be loaded via JoinRelations")
 			suite.T().Logf("Post: %s by %s", post.Title, post.UserName)
 		}
@@ -1408,7 +1408,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 	suite.Run("JoinRelationsMultiple", func() {
 		type PostWithUserAndCategory struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			Title        string `bun:"title"`
 			UserName     string `bun:"user_name"`
 			CategoryName string `bun:"category_name"`
@@ -1448,7 +1448,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 		suite.True(len(posts) > 0, "Should return posts with user and category names")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 			suite.NotEmpty(post.UserName, "User name should be loaded")
 			suite.NotEmpty(post.CategoryName, "Category name should be loaded")
 			suite.T().Logf("Post: %s by %s in %s", post.Title, post.UserName, post.CategoryName)
@@ -1457,7 +1457,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 	suite.Run("JoinRelationsWithJoinType", func() {
 		type PostWithCategory struct {
-			Id           string `bun:"id"`
+			ID           string `bun:"id"`
 			Title        string `bun:"title"`
 			CategoryName string `bun:"category_name"`
 		}
@@ -1493,7 +1493,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 
 	suite.Run("JoinRelationsWithCustomCondition", func() {
 		type PostWithActiveUser struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Title    string `bun:"title"`
 			UserName string `bun:"user_name"`
 		}
@@ -1543,7 +1543,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 		suite.True(len(posts) > 0, "Should return posts with relations")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 
 			if post.User != nil {
 				suite.NotEmpty(post.User.Name, "User relation should be loaded")
@@ -1576,7 +1576,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 		suite.True(len(posts) > 0, "Should return posts with customized user relations")
 
 		for _, post := range posts {
-			suite.NotEmpty(post.Id, "ID should be populated")
+			suite.NotEmpty(post.ID, "ID should be populated")
 
 			if post.User != nil {
 				suite.NotEmpty(post.User.Name, "User relation should be loaded with custom select")
@@ -1587,7 +1587,7 @@ func (suite *SelectTestSuite) TestJoinRelations() {
 	})
 }
 
-// TestWhere tests Where, WherePk, WhereDeleted, and IncludeDeleted methods.
+// TestWhere tests Where, WherePK, WhereDeleted, and IncludeDeleted methods.
 func (suite *SelectTestSuite) TestWhere() {
 	suite.T().Logf("Testing Where methods for %s", suite.dbType)
 
@@ -1614,7 +1614,7 @@ func (suite *SelectTestSuite) TestWhere() {
 		}
 	})
 
-	suite.Run("WherePk", func() {
+	suite.Run("WherePK", func() {
 		var firstUser User
 
 		err := suite.db.NewSelect().
@@ -1626,14 +1626,14 @@ func (suite *SelectTestSuite) TestWhere() {
 
 		var user User
 
-		user.Id = firstUser.Id
+		user.ID = firstUser.ID
 		err = suite.db.NewSelect().
 			Model(&user).
-			WherePk().
+			WherePK().
 			Scan(suite.ctx)
 
 		suite.NoError(err, "WHERE PK should work correctly")
-		suite.Equal(firstUser.Id, user.Id, "Should find user by primary key")
+		suite.Equal(firstUser.ID, user.ID, "Should find user by primary key")
 		suite.Equal(firstUser.Email, user.Email, "Should match email")
 
 		suite.T().Logf("Found user by PK: %s (%s)", user.Name, user.Email)
@@ -1704,7 +1704,7 @@ func (suite *SelectTestSuite) TestGroupByAndHaving() {
 						Else("Junior")
 				})
 			}).
-			OrderByExpr(func(eb ExprBuilder) any {
+			OrderByExpr(func(ExprBuilder) any {
 				// Use positional reference to the first select column (age_group)
 				return 1
 			}).
@@ -1783,7 +1783,7 @@ func (suite *SelectTestSuite) TestOrderBy() {
 
 	suite.Run("OrderByExpr", func() {
 		type UserWithComputedOrder struct {
-			Id       string `bun:"id"`
+			ID       string `bun:"id"`
 			Name     string `bun:"name"`
 			Age      int16  `bun:"age"`
 			OrderKey int    `bun:"order_key"`
@@ -1821,7 +1821,7 @@ func (suite *SelectTestSuite) TestOrderBy() {
 		suite.True(len(users) > 0, "Should return users with computed ordering")
 
 		for _, user := range users {
-			suite.NotEmpty(user.Id, "ID should be populated")
+			suite.NotEmpty(user.ID, "ID should be populated")
 			suite.T().Logf("User: %s (age=%d, order_key=%d)", user.Name, user.Age, user.OrderKey)
 		}
 	})
@@ -1865,7 +1865,7 @@ func (suite *SelectTestSuite) TestPagination() {
 
 		// Verify no overlap
 		if len(page1) > 0 && len(page2) > 0 {
-			suite.NotEqual(page1[0].Id, page2[0].Id, "Pages should not overlap")
+			suite.NotEqual(page1[0].ID, page2[0].ID, "Pages should not overlap")
 		}
 
 		suite.T().Logf("Total: %d, Page1: %d users, Page2: %d users",
@@ -1900,7 +1900,7 @@ func (suite *SelectTestSuite) TestLocking() {
 	suite.T().Logf("Testing Locking methods for %s", suite.dbType)
 
 	// SQLite doesn't support row-level locking (FOR SHARE/FOR UPDATE)
-	if suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.SQLite {
 		suite.T().Skip("Skipping for SQLite: row-level locking (FOR SHARE/FOR UPDATE) not supported, uses database-level locking instead")
 
 		return
@@ -1994,7 +1994,7 @@ func (suite *SelectTestSuite) TestLocking() {
 func (suite *SelectTestSuite) TestSetOperations() {
 	suite.T().Logf("Testing Set Operations for %s", suite.dbType)
 
-	if suite.dbType == constants.DbSQLite {
+	if suite.dbType == constants.SQLite {
 		suite.T().Skip("Skipping for SQLite: bun framework bug causes extra parentheses in generated set operation SQL, resulting in syntax errors")
 
 		return
@@ -2011,7 +2011,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 		err := suite.db.NewSelect().
 			Table("test_user").
 			Select("name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(ExprBuilder) any {
 				return "user"
 			}, "type").
 			Where(func(cb ConditionBuilder) {
@@ -2020,7 +2020,7 @@ func (suite *SelectTestSuite) TestSetOperations() {
 			Union(func(query SelectQuery) {
 				query.Table("test_category").
 					Select("name").
-					SelectExpr(func(eb ExprBuilder) any {
+					SelectExpr(func(ExprBuilder) any {
 						return "category"
 					}, "type")
 			}).
@@ -2049,14 +2049,14 @@ func (suite *SelectTestSuite) TestSetOperations() {
 		err := suite.db.NewSelect().
 			Table("test_user").
 			Select("name").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(ExprBuilder) any {
 				return "user"
 			}, "type").
 			Limit(1).
 			UnionAll(func(query SelectQuery) {
 				query.Table("test_category").
 					Select("name").
-					SelectExpr(func(eb ExprBuilder) any {
+					SelectExpr(func(ExprBuilder) any {
 						return "category"
 					}, "type").
 					Limit(1)

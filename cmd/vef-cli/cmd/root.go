@@ -22,6 +22,13 @@ var rootCmd = &cobra.Command{
 	Long:  `A command-line tool for VEF Framework to help with code generation and project setup.`,
 }
 
+// Init initializes version information from ldflags or runtime/debug.
+func Init(ldflagsVersion, ldflagsDate string) {
+	info := GetVersionInfo(ldflagsVersion, ldflagsDate)
+	Version = info.Version
+	Date = info.Date
+}
+
 // Execute runs the root command.
 func Execute() {
 	rootCmd.Version = Version
@@ -35,13 +42,16 @@ func Execute() {
 }
 
 func init() {
+	subCommands := []*cobra.Command{
+		create.Command(),
+		build_info.Command(),
+		model_schema.Command(),
+	}
+
 	setupHelpColors(rootCmd)
 
-	rootCmd.AddCommand(create.Command())
-	rootCmd.AddCommand(build_info.Command())
-	rootCmd.AddCommand(model_schema.Command())
-
-	for _, cmd := range rootCmd.Commands() {
+	for _, cmd := range subCommands {
 		setupHelpColors(cmd)
+		rootCmd.AddCommand(cmd)
 	}
 }

@@ -58,135 +58,106 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 	fieldType := field.Type()
 	fieldKind := fieldType.Kind()
 
-	// Handle string
-	if fieldKind == reflect.String {
+	switch {
+	case fieldKind == reflect.String:
 		return field.String(), nil
-	}
 
-	// Handle signed integers
-	if isSignedInt(fieldKind) {
+	case isSignedInt(fieldKind):
 		return cast.ToStringE(field.Int())
-	}
 
-	// Handle unsigned integers
-	if isUnsignedInt(fieldKind) {
+	case isUnsignedInt(fieldKind):
 		return cast.ToStringE(field.Uint())
-	}
 
-	// Handle pointer types
-	if fieldKind == reflect.Pointer {
-		if field.IsNil() {
-			return constants.Empty, nil
-		}
+	case fieldKind == reflect.Pointer:
+		return extractPointerStringValue(fieldName, field)
 
-		elemType := reflectx.Indirect(fieldType)
-		elemKind := elemType.Kind()
-		elemValue := field.Elem()
+	case fieldType == nullStringType:
+		return field.Interface().(null.String).ValueOrZero(), nil
 
-		// *string
-		if elemKind == reflect.String {
-			return elemValue.String(), nil
-		}
-
-		// *int, *int8, *int16, *int32, *int64
-		if isSignedInt(elemKind) {
-			return cast.ToStringE(elemValue.Int())
-		}
-
-		// *uint, *uint8, *uint16, *uint32, *uint64
-		if isUnsignedInt(elemKind) {
-			return cast.ToStringE(elemValue.Uint())
-		}
-	}
-
-	// Handle null.String
-	if fieldType == nullStringType {
-		nullStr := field.Interface().(null.String)
-		return nullStr.ValueOrZero(), nil
-	}
-
-	// Handle null.Int
-	if fieldType == nullIntType {
+	case fieldType == nullIntType:
 		nullInt := field.Interface().(null.Int)
 		if !nullInt.Valid {
 			return constants.Empty, nil
 		}
-
 		return cast.ToStringE(nullInt.Int64)
-	}
 
-	// Handle null.Int16
-	if fieldType == nullInt16Type {
+	case fieldType == nullInt16Type:
 		nullInt16 := field.Interface().(null.Int16)
 		if !nullInt16.Valid {
 			return constants.Empty, nil
 		}
-
 		return cast.ToStringE(nullInt16.Int16)
-	}
 
-	// Handle null.Int32
-	if fieldType == nullInt32Type {
+	case fieldType == nullInt32Type:
 		nullInt32 := field.Interface().(null.Int32)
 		if !nullInt32.Valid {
 			return constants.Empty, nil
 		}
-
 		return cast.ToStringE(nullInt32.Int32)
+
+	default:
+		return constants.Empty, fmt.Errorf("%w: field %q has unsupported type %v (supported: string, *string, null.String, null.Int, null.Int16, null.Int32, integers and their pointer forms)", ErrUnsupportedFieldType, fieldName, fieldType)
+	}
+}
+
+// extractPointerStringValue extracts string value from pointer types.
+func extractPointerStringValue(fieldName string, field reflect.Value) (string, error) {
+	if field.IsNil() {
+		return constants.Empty, nil
 	}
 
-	return constants.Empty, fmt.Errorf("%w: field %q has unsupported type %v (supported: string, *string, null.String, null.Int, null.Int16, null.Int32, integers and their pointer forms)", ErrUnsupportedFieldType, fieldName, fieldType)
+	elemType := reflectx.Indirect(field.Type())
+	elemKind := elemType.Kind()
+	elemValue := field.Elem()
+
+	switch {
+	case elemKind == reflect.String:
+		return elemValue.String(), nil
+	case isSignedInt(elemKind):
+		return cast.ToStringE(elemValue.Int())
+	case isUnsignedInt(elemKind):
+		return cast.ToStringE(elemValue.Uint())
+	default:
+		return constants.Empty, fmt.Errorf("%w: field %q has unsupported pointer element type %v", ErrUnsupportedFieldType, fieldName, elemType)
+	}
 }
 
 // isSignedInt checks if the kind is a signed integer type.
 func isSignedInt(kind reflect.Kind) bool {
-	switch kind {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return true
-	default:
-		return false
-	}
+	return kind >= reflect.Int && kind <= reflect.Int64
 }
 
 // isUnsignedInt checks if the kind is an unsigned integer type.
 func isUnsignedInt(kind reflect.Kind) bool {
-	switch kind {
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return true
-	default:
-		return false
-	}
+	return kind >= reflect.Uint && kind <= reflect.Uint64
 }
 
 // setTranslatedValue sets the translated string value to the target field.
 // Supports string, *string, and null.String types.
 func setTranslatedValue(translatedField reflect.Value, translated, translatedFieldName string) error {
 	translatedFieldType := translatedField.Type()
+	fieldKind := translatedFieldType.Kind()
 
-	if translatedFieldType.Kind() == reflect.String {
+	if fieldKind == reflect.String {
 		translatedField.SetString(translated)
-
 		return nil
 	}
 
-	if translatedFieldType.Kind() == reflect.Pointer {
-		valueType := translatedFieldType.Elem()
-		if valueType.Kind() == reflect.String {
-			if translatedField.IsNil() {
-				translatedField.Set(reflect.New(valueType))
-			}
-
-			translatedField.Elem().SetString(translated)
-
-			return nil
+	if fieldKind == reflect.Pointer {
+		elemType := translatedFieldType.Elem()
+		if elemType.Kind() != reflect.String {
+			return fmt.Errorf("%w: translated field %q has unsupported pointer type %v", ErrUnsupportedFieldType, translatedFieldName, translatedFieldType)
 		}
 
-		return fmt.Errorf("%w: translated field %q has unsupported pointer type %v", ErrUnsupportedFieldType, translatedFieldName, translatedFieldType)
+		if translatedField.IsNil() {
+			translatedField.Set(reflect.New(elemType))
+		}
+		translatedField.Elem().SetString(translated)
+		return nil
 	}
 
 	if translatedFieldType == nullStringType {
 		translatedField.Set(reflect.ValueOf(null.StringFrom(translated)))
-
 		return nil
 	}
 
