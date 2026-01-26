@@ -15,72 +15,72 @@ import (
 )
 
 type findTreeApi[TModel, TSearch any] struct {
-	FindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]]
+	Find[TModel, TSearch, []TModel, FindTree[TModel, TSearch]]
 
 	idColumn       string
-	parentIdColumn string
+	parentIDColumn string
 	treeBuilder    func(flatModels []TModel) []TModel
 }
 
-func (a *findTreeApi[TModel, TSearch]) Provide() api.Spec {
-	return a.Build(a.findTree)
+func (a *findTreeApi[TModel, TSearch]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{a.Build(a.findTree)}
 }
 
 // This column is used to identify individual nodes and establish parent-child relationships.
-func (a *findTreeApi[TModel, TSearch]) WithIdColumn(name string) FindTreeApi[TModel, TSearch] {
+func (a *findTreeApi[TModel, TSearch]) WithIDColumn(name string) FindTree[TModel, TSearch] {
 	a.idColumn = name
 
 	return a
 }
 
 // This column establishes the hierarchical relationship between parent and child nodes.
-func (a *findTreeApi[TModel, TSearch]) WithParentIdColumn(name string) FindTreeApi[TModel, TSearch] {
-	a.parentIdColumn = name
+func (a *findTreeApi[TModel, TSearch]) WithParentIDColumn(name string) FindTree[TModel, TSearch] {
+	a.parentIDColumn = name
 
 	return a
 }
 
 // WithSelect adds a column to the SELECT clause.
 // Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithSelect(column string, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
-	a.FindApi.WithSelect(column, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
+func (a *findTreeApi[TModel, TSearch]) WithSelect(column string, parts ...QueryPart) FindTree[TModel, TSearch] {
+	a.Find.WithSelect(column, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
 }
 
 // WithSelectAs adds a column with an alias to the SELECT clause.
 // Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithSelectAs(column, alias string, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
-	a.FindApi.WithSelectAs(column, alias, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
+func (a *findTreeApi[TModel, TSearch]) WithSelectAs(column, alias string, parts ...QueryPart) FindTree[TModel, TSearch] {
+	a.Find.WithSelectAs(column, alias, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
 }
 
 // WithCondition adds a WHERE condition using ConditionBuilder.
 // Defaults to QueryBase (filter starting nodes) unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTreeApi[TModel, TSearch] {
-	a.FindApi.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
+func (a *findTreeApi[TModel, TSearch]) WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) FindTree[TModel, TSearch] {
+	a.Find.WithCondition(fn, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
 	return a
 }
 
 // WithRelation adds a relation join to the query.
 // Defaults to QueryBase and QueryRecursive for tree queries unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
-	a.FindApi.WithRelation(relation, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
+func (a *findTreeApi[TModel, TSearch]) WithRelation(relation *orm.RelationSpec, parts ...QueryPart) FindTree[TModel, TSearch] {
+	a.Find.WithRelation(relation, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase, QueryRecursive})...)
 
 	return a
 }
 
 // WithQueryApplier adds a custom query applier function.
 // Defaults to QueryBase (apply during base CTE selection) unless specific parts are provided.
-func (a *findTreeApi[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTreeApi[TModel, TSearch] {
-	a.FindApi.WithQueryApplier(applier, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
+func (a *findTreeApi[TModel, TSearch]) WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) FindTree[TModel, TSearch] {
+	a.Find.WithQueryApplier(applier, lo.Ternary(len(parts) > 0, parts, []QueryPart{QueryBase})...)
 
 	return a
 }
 
-func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
+func (a *findTreeApi[TModel, TSearch]) findTree(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
 	if err := a.Setup(db, &FindApiConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryBase},
@@ -96,11 +96,11 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 		return nil, fmt.Errorf("%w: column %q does not exist in model %T (tree node id)", ErrColumnNotFound, a.idColumn, (*TModel)(nil))
 	}
 
-	if !table.HasField(a.parentIdColumn) {
-		return nil, fmt.Errorf("%w: column %q does not exist in model %T (parent reference)", ErrColumnNotFound, a.parentIdColumn, (*TModel)(nil))
+	if !table.HasField(a.parentIDColumn) {
+		return nil, fmt.Errorf("%w: column %q does not exist in model %T (parent reference)", ErrColumnNotFound, a.parentIDColumn, (*TModel)(nil))
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error {
 		var (
 			flatModels []TModel
 			query      = db.NewSelect()
@@ -111,7 +111,7 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 				// Base query - the starting point of the tree traversal
 				baseQuery := cteQuery.Model((*TModel)(nil)).SelectModelColumns()
 
-				if err := a.ConfigureQuery(baseQuery, search, ctx, QueryBase); err != nil {
+				if err := a.ConfigureQuery(baseQuery, search, meta, ctx, QueryBase); err != nil {
 					// Store error for later return
 					SetQueryError(ctx, err)
 
@@ -122,7 +122,7 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 				cteQuery.UnionAll(func(recursiveQuery orm.SelectQuery) {
 					recursiveQuery.Model((*TModel)(nil)).SelectModelColumns()
 
-					if err := a.ConfigureQuery(recursiveQuery, search, ctx, QueryRecursive); err != nil {
+					if err := a.ConfigureQuery(recursiveQuery, search, meta, ctx, QueryRecursive); err != nil {
 						SetQueryError(ctx, err)
 
 						return
@@ -132,7 +132,7 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 					recursiveQuery.JoinTable(
 						"_tree",
 						func(cb orm.ConditionBuilder) {
-							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIdColumn, "_tree"))
+							cb.EqualsColumn(a.idColumn, dbhelpers.ColumnWithAlias(a.parentIDColumn, "_tree"))
 						},
 					)
 				})
@@ -144,7 +144,7 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 			return queryErr
 		}
 
-		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+		if err := a.ConfigureQuery(query, search, meta, ctx, QueryRoot); err != nil {
 			return err
 		}
 
@@ -159,8 +159,6 @@ func (a *findTreeApi[TModel, TSearch]) findTree(db orm.Db) (func(ctx fiber.Ctx, 
 			}); err != nil {
 				return err
 			}
-		} else {
-			flatModels = make([]TModel, 0)
 		}
 
 		models := a.treeBuilder(flatModels)

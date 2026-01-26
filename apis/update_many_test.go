@@ -15,28 +15,28 @@ import (
 // Test Resources.
 type TestUserUpdateManyResource struct {
 	api.Resource
-	apis.UpdateManyApi[TestUser, TestUserUpdateParams]
+	apis.UpdateMany[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyResource() api.Resource {
 	return &TestUserUpdateManyResource{
-		Resource:      api.NewResource("test/user_update_many"),
-		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().Public(),
+		Resource:   api.NewRPCResource("test/user_update_many"),
+		UpdateMany: apis.NewUpdateMany[TestUser, TestUserUpdateParams]().Public(),
 	}
 }
 
 // Resource with PreUpdateMany hook.
 type TestUserUpdateManyWithPreHookResource struct {
 	api.Resource
-	apis.UpdateManyApi[TestUser, TestUserUpdateParams]
+	apis.UpdateMany[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 	return &TestUserUpdateManyWithPreHookResource{
-		Resource: api.NewResource("test/user_update_many_prehook"),
-		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().
+		Resource: api.NewRPCResource("test/user_update_many_prehook"),
+		UpdateMany: apis.NewUpdateMany[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPreUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.Db) error {
+			WithPreUpdateMany(func(_, models []TestUser, paramsList []TestUserUpdateParams, _ orm.UpdateQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Add suffix to all descriptions
 				for i := range models {
 					if paramsList[i].Description != "" {
@@ -52,15 +52,15 @@ func NewTestUserUpdateManyWithPreHookResource() api.Resource {
 // Resource with PostUpdateMany hook.
 type TestUserUpdateManyWithPostHookResource struct {
 	api.Resource
-	apis.UpdateManyApi[TestUser, TestUserUpdateParams]
+	apis.UpdateMany[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateManyWithPostHookResource() api.Resource {
 	return &TestUserUpdateManyWithPostHookResource{
-		Resource: api.NewResource("test/user_update_many_posthook"),
-		UpdateManyApi: apis.NewUpdateManyApi[TestUser, TestUserUpdateParams]().
+		Resource: api.NewRPCResource("test/user_update_many_posthook"),
+		UpdateMany: apis.NewUpdateMany[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPostUpdateMany(func(oldModels, models []TestUser, paramsList []TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
+			WithPostUpdateMany(func(_, models []TestUser, _ []TestUserUpdateParams, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count
 				ctx.Set("X-Updated-Count", strconv.Itoa(len(models)))
 
@@ -266,7 +266,7 @@ func (suite *UpdateManyTestSuite) TestUpdateManyNegativeCases() {
 		suite.T().Logf("Validation failed as expected for non-existent user in batch")
 	})
 
-	suite.Run("MissingId", func() {
+	suite.Run("MissingID", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update_many",

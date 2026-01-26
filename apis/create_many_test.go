@@ -15,28 +15,28 @@ import (
 // Test Resources.
 type TestUserCreateManyResource struct {
 	api.Resource
-	apis.CreateManyApi[TestUser, TestUserCreateParams]
+	apis.CreateMany[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyResource() api.Resource {
 	return &TestUserCreateManyResource{
-		Resource:      api.NewResource("test/user_create_many"),
-		CreateManyApi: apis.NewCreateManyApi[TestUser, TestUserCreateParams]().Public(),
+		Resource:   api.NewRPCResource("test/user_create_many"),
+		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().Public(),
 	}
 }
 
 // Resource with PreCreateMany hook.
 type TestUserCreateManyWithPreHookResource struct {
 	api.Resource
-	apis.CreateManyApi[TestUser, TestUserCreateParams]
+	apis.CreateMany[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyWithPreHookResource() api.Resource {
 	return &TestUserCreateManyWithPreHookResource{
-		Resource: api.NewResource("test/user_create_many_prehook"),
-		CreateManyApi: apis.NewCreateManyApi[TestUser, TestUserCreateParams]().
+		Resource: api.NewRPCResource("test/user_create_many_prehook"),
+		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().
 			Public().
-			WithPreCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error {
+			WithPreCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.DB) error {
 				// Add prefix to all names
 				for i := range models {
 					models[i].Name = "Mr. " + models[i].Name
@@ -50,15 +50,15 @@ func NewTestUserCreateManyWithPreHookResource() api.Resource {
 // Resource with PostCreateMany hook.
 type TestUserCreateManyWithPostHookResource struct {
 	api.Resource
-	apis.CreateManyApi[TestUser, TestUserCreateParams]
+	apis.CreateMany[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateManyWithPostHookResource() api.Resource {
 	return &TestUserCreateManyWithPostHookResource{
-		Resource: api.NewResource("test/user_create_many_posthook"),
-		CreateManyApi: apis.NewCreateManyApi[TestUser, TestUserCreateParams]().
+		Resource: api.NewRPCResource("test/user_create_many_posthook"),
+		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().
 			Public().
-			WithPostCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, ctx fiber.Ctx, tx orm.Db) error {
+			WithPostCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, ctx fiber.Ctx, tx orm.DB) error {
 				// Set custom header with count
 				ctx.Set("X-Created-Count", strconv.Itoa(len(models)))
 

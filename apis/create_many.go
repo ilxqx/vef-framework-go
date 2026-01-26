@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
@@ -16,46 +15,44 @@ import (
 )
 
 type createManyApi[TModel, TParams any] struct {
-	ApiBuilder[CreateManyApi[TModel, TParams]]
+	Builder[CreateMany[TModel, TParams]]
 
 	preCreateMany  PreCreateManyProcessor[TModel, TParams]
 	postCreateMany PostCreateManyProcessor[TModel, TParams]
 }
 
-// Provide generates the final Api specification for batch model creation.
-// Returns a complete api.Spec that can be registered with the router.
-func (c *createManyApi[TModel, TParams]) Provide() api.Spec {
-	return c.Build(c.createMany)
+func (c *createManyApi[TModel, TParams]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{c.Build(c.createMany)}
 }
 
-func (c *createManyApi[TModel, TParams]) WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams] {
+func (c *createManyApi[TModel, TParams]) WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams] {
 	c.preCreateMany = processor
 
 	return c
 }
 
-func (c *createManyApi[TModel, TParams]) WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams] {
+func (c *createManyApi[TModel, TParams]) WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams] {
 	c.postCreateMany = processor
 
 	return c
 }
 
-func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params CreateManyParams[TParams]) error, error) {
+func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params CreateManyParams[TParams]) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 
-	return func(ctx fiber.Ctx, db orm.Db, params CreateManyParams[TParams]) error {
+	return func(ctx fiber.Ctx, db orm.DB, params CreateManyParams[TParams]) error {
 		if len(params.List) == 0 {
 			return result.Ok([]map[string]any{}).Response(ctx)
 		}
 
 		models := make([]TModel, len(params.List))
-		if err := streams.Range(0, len(params.List)).ForEachErr(func(i int) error {
-			return copier.Copy(&params.List[i], &models[i])
-		}); err != nil {
-			return err
+		for i := range params.List {
+			if err := copier.Copy(&params.List[i], &models[i]); err != nil {
+				return err
+			}
 		}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 			query := tx.NewInsert().Model(&models)
 			if c.preCreateMany != nil {
 				if err := c.preCreateMany(models, params.List, query, ctx, tx); err != nil {
@@ -93,7 +90,7 @@ func (c *createManyApi[TModel, TParams]) createMany(sc storage.Service, publishe
 
 			pks := make([]map[string]any, len(models))
 			for i := range models {
-				pk, err := db.ModelPks(&models[i])
+				pk, err := db.ModelPKs(&models[i])
 				if err != nil {
 					if cleanupErr := batchCleanup(txCtx, promoter, models); cleanupErr != nil {
 						return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %w", err, cleanupErr)

@@ -37,25 +37,25 @@ type ExportUserSearch struct {
 
 type TestUserExportResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportResource() api.Resource {
 	return &TestUserExportResource{
-		Resource:  api.NewResource("test/user_export"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().Public(),
+		Resource: api.NewRPCResource("test/user_export"),
+		Export:   apis.NewExport[ExportUser, ExportUserSearch]().Public(),
 	}
 }
 
 type TestUserExportWithOptionsResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithOptionsResource() api.Resource {
 	return &TestUserExportWithOptionsResource{
-		Resource: api.NewResource("test/user_export_opts"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
+		Resource: api.NewRPCResource("test/user_export_opts"),
+		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithExcelOptions(excel.WithSheetName("用户列表")),
 	}
@@ -63,13 +63,13 @@ func NewTestUserExportWithOptionsResource() api.Resource {
 
 type TestUserExportWithFilenameResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithFilenameResource() api.Resource {
 	return &TestUserExportWithFilenameResource{
-		Resource: api.NewResource("test/user_export_filename"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
+		Resource: api.NewRPCResource("test/user_export_filename"),
+		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithFilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
 				return "custom_users.xlsx"
@@ -79,15 +79,15 @@ func NewTestUserExportWithFilenameResource() api.Resource {
 
 type TestUserExportWithPreProcessorResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithPreProcessorResource() api.Resource {
 	return &TestUserExportWithPreProcessorResource{
-		Resource: api.NewResource("test/user_export_preproc"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
+		Resource: api.NewRPCResource("test/user_export_preproc"),
+		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
-			WithPreExport(func(models []ExportUser, search ExportUserSearch, ctx fiber.Ctx, db orm.Db) error {
+			WithPreExport(func(models []ExportUser, search ExportUserSearch, ctx fiber.Ctx, db orm.DB) error {
 				// Add custom header with count
 				ctx.Set("X-Export-Count", string(rune('0'+len(models))))
 
@@ -98,13 +98,13 @@ func NewTestUserExportWithPreProcessorResource() api.Resource {
 
 type TestUserExportWithFilterResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportWithFilterResource() api.Resource {
 	return &TestUserExportWithFilterResource{
-		Resource: api.NewResource("test/user_export_filter"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
+		Resource: api.NewRPCResource("test/user_export_filter"),
+		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active")
 			}).
@@ -114,13 +114,13 @@ func NewTestUserExportWithFilterResource() api.Resource {
 
 type TestUserExportCSVResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVResource() api.Resource {
 	return &TestUserExportCSVResource{
-		Resource: api.NewResource("test/user_export_csv"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
+		Resource: api.NewRPCResource("test/user_export_csv"),
+		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithDefaultFormat(apis.FormatCsv),
 	}
@@ -128,13 +128,13 @@ func NewTestUserExportCSVResource() api.Resource {
 
 type TestUserExportCSVWithOptionsResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVWithOptionsResource() api.Resource {
 	return &TestUserExportCSVWithOptionsResource{
-		Resource: api.NewResource("test/user_export_csv_opts"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
+		Resource: api.NewRPCResource("test/user_export_csv_opts"),
+		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithDefaultFormat(apis.FormatCsv).
 			WithCsvOptions(csv.WithExportDelimiter(';')),
@@ -143,13 +143,13 @@ func NewTestUserExportCSVWithOptionsResource() api.Resource {
 
 type TestUserExportCSVWithFilenameResource struct {
 	api.Resource
-	apis.ExportApi[ExportUser, ExportUserSearch]
+	apis.Export[ExportUser, ExportUserSearch]
 }
 
 func NewTestUserExportCSVWithFilenameResource() api.Resource {
 	return &TestUserExportCSVWithFilenameResource{
-		Resource: api.NewResource("test/user_export_csv_filename"),
-		ExportApi: apis.NewExportApi[ExportUser, ExportUserSearch]().
+		Resource: api.NewRPCResource("test/user_export_csv_filename"),
+		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithDefaultFormat(apis.FormatCsv).
 			WithFilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {

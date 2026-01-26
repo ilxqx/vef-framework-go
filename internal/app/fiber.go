@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
@@ -10,22 +9,16 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/samber/lo"
 
+	"github.com/ilxqx/go-streams"
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
-	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/internal/api"
 )
 
 // createFiberApp creates a new Fiber application with the given configuration.
 func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
-	specifiedLimit := strings.TrimSpace(cfg.BodyLimit)
+	bodyLimitStr := lo.CoalesceOrEmpty(strings.TrimSpace(cfg.BodyLimit), "10mib")
 
-	bodyLimit, err := humanize.ParseBytes(
-		lo.Ternary(
-			specifiedLimit != constants.Empty,
-			specifiedLimit,
-			"10mib",
-		),
-	)
+	bodyLimit, err := humanize.ParseBytes(bodyLimitStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse body limit: %w", err)
 	}
@@ -37,13 +30,11 @@ func createFiberApp(cfg *config.AppConfig) (*fiber.App, error) {
 			}
 		},
 		fiber.Config{
-			AppName:       lo.CoalesceOrEmpty(cfg.Name, "vef-app"),
-			BodyLimit:     int(bodyLimit),
-			CaseSensitive: true,
-			IdleTimeout:   30 * time.Second,
-			ErrorHandler:  handleError,
-			// JSONEncoder:     json.Marshal,
-			// JSONDecoder:     json.Unmarshal,
+			AppName:         lo.CoalesceOrEmpty(cfg.Name, "vef-app"),
+			BodyLimit:       int(bodyLimit),
+			CaseSensitive:   true,
+			IdleTimeout:     30 * time.Second,
+			ErrorHandler:    handleError,
 			StrictRouting:   false,
 			StructValidator: newStructValidator(),
 			ServerHeader:    "vef",
@@ -65,32 +56,36 @@ func configureFiberApp(
 	app *fiber.App,
 	middlewares []Middleware,
 	apiEngine api.Engine,
-	openApiEngine api.Engine,
-) {
-	beforeMiddlewares := lo.Filter(middlewares, func(mid Middleware, _ int) bool {
-		return mid != nil && mid.Order() < 0
-	})
-	afterMiddlewares := lo.Filter(middlewares, func(mid Middleware, _ int) bool {
-		return mid != nil && mid.Order() > 0
+) error {
+	beforeMiddlewares := streams.FromSlice(middlewares).
+		Filter(func(m Middleware) bool {
+			return m != nil && m.Order() < 0
+		}).
+		Sorted(func(a, b Middleware) int {
+			return a.Order() - b.Order()
+		})
+
+	afterMiddlewares := streams.FromSlice(middlewares).
+		Filter(func(m Middleware) bool {
+			return m != nil && m.Order() > 0
+		}).
+		Sorted(func(a, b Middleware) int {
+			return a.Order() - b.Order()
+		})
+
+	beforeMiddlewares.ForEach(func(m Middleware) {
+		logger.Infof("Applying before middleware %q", m.Name())
+		m.Apply(app)
 	})
 
-	slices.SortFunc(beforeMiddlewares, func(a, b Middleware) int {
-		return a.Order() - b.Order()
-	})
-	slices.SortFunc(afterMiddlewares, func(a, b Middleware) int {
-		return a.Order() - b.Order()
-	})
-
-	for _, mid := range beforeMiddlewares {
-		logger.Infof("Applying before middleware %q", mid.Name())
-		mid.Apply(app)
+	if err := apiEngine.Mount(app); err != nil {
+		return fmt.Errorf("failed to mount api engine: %w", err)
 	}
 
-	apiEngine.Connect(app)
-	openApiEngine.Connect(app)
+	afterMiddlewares.ForEach(func(m Middleware) {
+		logger.Infof("Applying after middleware %q", m.Name())
+		m.Apply(app)
+	})
 
-	for _, mid := range afterMiddlewares {
-		logger.Infof("Applying after middleware %q", mid.Name())
-		mid.Apply(app)
-	}
+	return nil
 }

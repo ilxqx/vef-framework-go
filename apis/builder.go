@@ -6,20 +6,26 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 )
 
-type baseApiBuilder[T any] struct {
+type baseBuilder[T any] struct {
+	kind        api.Kind
 	action      string
-	version     string
 	enableAudit bool
 	timeout     time.Duration
 	public      bool
 	permToken   string
-	rateLimit   api.RateLimit
+	rateLimit   *api.RateLimitConfig
 
 	self T
 }
 
-func (b *baseApiBuilder[T]) Action(action string) T {
-	if err := api.ValidateActionName(action); err != nil {
+func (b *baseBuilder[T]) ResourceKind(kind api.Kind) T {
+	b.kind = kind
+
+	return b.self
+}
+
+func (b *baseBuilder[T]) Action(action string) T {
+	if err := api.ValidateActionName(action, b.kind); err != nil {
 		panic(err)
 	}
 
@@ -28,48 +34,47 @@ func (b *baseApiBuilder[T]) Action(action string) T {
 	return b.self
 }
 
-func (b *baseApiBuilder[T]) EnableAudit() T {
+func (b *baseBuilder[T]) EnableAudit() T {
 	b.enableAudit = true
 
 	return b.self
 }
 
-func (b *baseApiBuilder[T]) Timeout(timeout time.Duration) T {
+func (b *baseBuilder[T]) Timeout(timeout time.Duration) T {
 	b.timeout = timeout
 
 	return b.self
 }
 
-func (b *baseApiBuilder[T]) Public() T {
+func (b *baseBuilder[T]) Public() T {
 	b.public = true
 
 	return b.self
 }
 
-func (b *baseApiBuilder[T]) PermToken(token string) T {
+func (b *baseBuilder[T]) PermToken(token string) T {
 	b.permToken = token
 
 	return b.self
 }
 
-func (b *baseApiBuilder[T]) RateLimit(max int, expiration time.Duration) T {
-	b.rateLimit = api.RateLimit{
-		Max:        max,
-		Expiration: expiration,
+func (b *baseBuilder[T]) RateLimit(max int, period time.Duration) T {
+	b.rateLimit = &api.RateLimitConfig{
+		Max:    max,
+		Period: period,
 	}
 
 	return b.self
 }
 
-func (b *baseApiBuilder[T]) Build(handler any) api.Spec {
-	return api.Spec{
+func (b *baseBuilder[T]) Build(handler any) api.OperationSpec {
+	return api.OperationSpec{
 		Action:      b.action,
-		Version:     b.version,
 		EnableAudit: b.enableAudit,
 		Timeout:     b.timeout,
 		Public:      b.public,
 		PermToken:   b.permToken,
-		Limit:       b.rateLimit,
+		RateLimit:   b.rateLimit,
 		Handler:     handler,
 	}
 }

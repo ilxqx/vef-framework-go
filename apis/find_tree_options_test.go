@@ -11,54 +11,54 @@ import (
 // Test Resources.
 type TestCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptionsApi[TestCategory, TestCategorySearch]
+	apis.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewTestCategoryFindTreeOptionsResource() api.Resource {
 	return &TestCategoryFindTreeOptionsResource{
-		Resource: api.NewResource("test/category_tree_options"),
-		FindTreeOptionsApi: apis.NewFindTreeOptionsApi[TestCategory, TestCategorySearch]().
+		Resource: api.NewRPCResource("test/category_tree_options"),
+		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			Public().
 			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn: "name",
 				ValueColumn: "id",
 			}).
-			WithIdColumn("id").
-			WithParentIdColumn("parent_id"),
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id"),
 	}
 }
 
 // Resource with custom field mapping.
 type CustomFieldCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptionsApi[TestCategory, TestCategorySearch]
+	apis.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewCustomFieldCategoryFindTreeOptionsResource() api.Resource {
 	return &CustomFieldCategoryFindTreeOptionsResource{
-		Resource: api.NewResource("test/category_tree_options_custom"),
-		FindTreeOptionsApi: apis.NewFindTreeOptionsApi[TestCategory, TestCategorySearch]().
+		Resource: api.NewRPCResource("test/category_tree_options_custom"),
+		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			Public().
 			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn:       "code",
 				ValueColumn:       "id",
 				DescriptionColumn: "description",
 			}).
-			WithIdColumn("id").
-			WithParentIdColumn("parent_id"),
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id"),
 	}
 }
 
 // Filtered Tree Options Resource.
 type FilteredCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptionsApi[TestCategory, TestCategorySearch]
+	apis.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewFilteredCategoryFindTreeOptionsResource() api.Resource {
 	return &FilteredCategoryFindTreeOptionsResource{
-		Resource: api.NewResource("test/category_tree_options_filtered"),
-		FindTreeOptionsApi: apis.NewFindTreeOptionsApi[TestCategory, TestCategorySearch]().
+		Resource: api.NewRPCResource("test/category_tree_options_filtered"),
+		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				// Only show Books and its children
 				cb.Group(func(cb orm.ConditionBuilder) {
@@ -73,21 +73,21 @@ func NewFilteredCategoryFindTreeOptionsResource() api.Resource {
 // Meta Tree Options Resource.
 type MetaCategoryFindTreeOptionsResource struct {
 	api.Resource
-	apis.FindTreeOptionsApi[TestCategory, TestCategorySearch]
+	apis.FindTreeOptions[TestCategory, TestCategorySearch]
 }
 
 func NewMetaCategoryFindTreeOptionsResource() api.Resource {
 	return &MetaCategoryFindTreeOptionsResource{
-		Resource: api.NewResource("test/category_tree_options_meta"),
-		FindTreeOptionsApi: apis.NewFindTreeOptionsApi[TestCategory, TestCategorySearch]().
+		Resource: api.NewRPCResource("test/category_tree_options_meta"),
+		FindTreeOptions: apis.NewFindTreeOptions[TestCategory, TestCategorySearch]().
 			Public().
 			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn: "name",
 				ValueColumn: "id",
 				MetaColumns: []string{"code", "description"},
 			}).
-			WithIdColumn("id").
-			WithParentIdColumn("parent_id"),
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id"),
 	}
 }
 

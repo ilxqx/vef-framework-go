@@ -33,13 +33,13 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	// Setup test data using fixtures
 	setupTestFixtures(t, ctx, db, dsConfig.Type)
 
-	ormDb := orm.New(db)
+	ormDB := orm.New(db)
 
 	// Create FindAll Suite
 	findAllSuite := &FindAllTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -49,7 +49,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	findPageSuite := &FindPageTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -59,7 +59,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	findOneSuite := &FindOneTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -69,7 +69,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	findOptionsSuite := &FindOptionsTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -79,7 +79,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	findTreeSuite := &FindTreeTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -89,7 +89,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	findTreeOptionsSuite := &FindTreeOptionsTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -99,7 +99,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	createSuite := &CreateTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -107,7 +107,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	createManySuite := &CreateManyTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -117,7 +117,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	updateSuite := &UpdateTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -125,7 +125,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	updateManySuite := &UpdateManyTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -135,7 +135,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	deleteSuite := &DeleteTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -143,7 +143,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	deleteManySuite := &DeleteManyTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -153,7 +153,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	exportSuite := &ExportTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -163,7 +163,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	importSuite := &ImportTestSuite{
 		BaseSuite{
 			ctx:      ctx,
-			db:       ormDb,
+			db:       ormDB,
 			dbType:   dsConfig.Type,
 			dsConfig: dsConfig,
 		},
@@ -189,7 +189,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	// generated WITH clause wraps SELECT statements in parentheses. Skip these tests on SQLite
 	// until the upstream Bun query builder relaxes that requirement.
 	t.Run("TestFindTree", func(t *testing.T) {
-		if dsConfig.Type == constants.DbSQLite {
+		if dsConfig.Type == constants.SQLite {
 			t.Skip("Skipping FindTree test for SQLite due to Bun recursive CTE syntax issue")
 		}
 
@@ -197,7 +197,7 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 	})
 
 	t.Run("TestFindTreeOptions", func(t *testing.T) {
-		if dsConfig.Type == constants.DbSQLite {
+		if dsConfig.Type == constants.SQLite {
 			t.Skip("Skipping FindTreeOptions test for SQLite due to Bun recursive CTE syntax issue")
 		}
 
@@ -238,27 +238,27 @@ func runAllApiTests(t *testing.T, ctx context.Context, dsConfig *config.Datasour
 }
 
 // setupTestFixtures loads test data from fixture files using dbfixture.
-func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType constants.DbType) {
+func setupTestFixtures(t *testing.T, ctx context.Context, db bun.IDB, dbType constants.DBType) {
 	t.Logf("Setting up test fixtures for %s", dbType)
 
-	bunDb, ok := db.(*bun.DB)
+	bunDB, ok := db.(*bun.DB)
 	if !ok {
 		require.Fail(t, "Could not convert to *bun.DB")
 	}
 
 	// Register models
-	bunDb.RegisterModel(
+	bunDB.RegisterModel(
 		(*TestAuditUser)(nil),
 		(*TestUser)(nil),
 		(*TestCategory)(nil),
-		(*TestCompositePkItem)(nil),
+		(*TestCompositePKItem)(nil),
 		(*ExportUser)(nil),
 		(*ImportUser)(nil),
 	)
 
 	// Create fixture loader with template functions
 	fixture := dbfixture.New(
-		bunDb,
+		bunDB,
 		dbfixture.WithRecreateTables(),
 	)
 
@@ -307,7 +307,7 @@ func TestSQLite(t *testing.T) {
 
 	// Create SQLite in-memory database config
 	dsConfig := &config.DatasourceConfig{
-		Type: constants.DbSQLite,
+		Type: constants.SQLite,
 	}
 
 	// Run all Api tests

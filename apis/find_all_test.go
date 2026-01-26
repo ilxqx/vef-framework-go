@@ -14,20 +14,20 @@ import (
 // Test Resources.
 type TestUserFindAllResource struct {
 	api.Resource
-	apis.FindAllApi[TestUser, TestUserSearch]
+	apis.FindAll[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindAllResource() api.Resource {
 	return &TestUserFindAllResource{
-		Resource:   api.NewResource("test/user_all"),
-		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().Public(),
+		Resource: api.NewRPCResource("test/user_all"),
+		FindAll:  apis.NewFindAll[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindAllResource struct {
 	api.Resource
-	apis.FindAllApi[TestUser, TestUserSearch]
+	apis.FindAll[TestUser, TestUserSearch]
 }
 
 type ProcessedUserList struct {
@@ -37,8 +37,8 @@ type ProcessedUserList struct {
 
 func NewProcessedUserFindAllResource() api.Resource {
 	return &ProcessedUserFindAllResource{
-		Resource: api.NewResource("test/user_all_processed"),
-		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_all_processed"),
+		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			Public().
 			WithProcessor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				return ProcessedUserList{
@@ -52,13 +52,13 @@ func NewProcessedUserFindAllResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFindAllResource struct {
 	api.Resource
-	apis.FindAllApi[TestUser, TestUserSearch]
+	apis.FindAll[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFindAllResource() api.Resource {
 	return &FilteredUserFindAllResource{
-		Resource: api.NewResource("test/user_all_filtered"),
-		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_all_filtered"),
+		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active")
 			}).
@@ -69,13 +69,13 @@ func NewFilteredUserFindAllResource() api.Resource {
 // Ordered User Resource - with order applier.
 type OrderedUserFindAllResource struct {
 	api.Resource
-	apis.FindAllApi[TestUser, TestUserSearch]
+	apis.FindAll[TestUser, TestUserSearch]
 }
 
 func NewOrderedUserFindAllResource() api.Resource {
 	return &OrderedUserFindAllResource{
-		Resource: api.NewResource("test/user_all_ordered"),
-		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_all_ordered"),
+		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			WithDefaultSort(&sort.OrderSpec{
 				Column: "age",
 			}).
@@ -86,13 +86,13 @@ func NewOrderedUserFindAllResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindAllResource struct {
 	api.Resource
-	apis.FindAllApi[TestUser, TestUserSearch]
+	apis.FindAll[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindAllResource() api.Resource {
 	return &AuditUserTestUserFindAllResource{
-		Resource: api.NewResource("test/user_all_audit"),
-		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_all_audit"),
+		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			WithAuditUserNames((*TestAuditUser)(nil)).
 			Public(),
 	}
@@ -101,13 +101,13 @@ func NewAuditUserTestUserFindAllResource() api.Resource {
 // NoDefaultSort User Resource - explicitly disable default sorting.
 type NoDefaultSortUserFindAllResource struct {
 	api.Resource
-	apis.FindAllApi[TestUser, TestUserSearch]
+	apis.FindAll[TestUser, TestUserSearch]
 }
 
 func NewNoDefaultSortUserFindAllResource() api.Resource {
 	return &NoDefaultSortUserFindAllResource{
-		Resource: api.NewResource("test/user_all_no_default_sort"),
-		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_all_no_default_sort"),
+		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			WithDefaultSort(). // Empty call to disable default sorting
 			Public(),
 	}
@@ -116,13 +116,13 @@ func NewNoDefaultSortUserFindAllResource() api.Resource {
 // MultipleDefaultSort User Resource - with multiple default sort columns.
 type MultipleDefaultSortUserFindAllResource struct {
 	api.Resource
-	apis.FindAllApi[TestUser, TestUserSearch]
+	apis.FindAll[TestUser, TestUserSearch]
 }
 
 func NewMultipleDefaultSortUserFindAllResource() api.Resource {
 	return &MultipleDefaultSortUserFindAllResource{
-		Resource: api.NewResource("test/user_all_multi_sort"),
-		FindAllApi: apis.NewFindAllApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_all_multi_sort"),
+		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			WithDefaultSort(
 				&sort.OrderSpec{
 					Column:    "status",

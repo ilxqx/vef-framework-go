@@ -15,7 +15,7 @@ type CustomCtx struct {
 
 	logger    log.Logger
 	principal *security.Principal
-	db        orm.Db
+	db        orm.DB
 }
 
 // Principal returns the authenticated principal (user/system/app) for the current request.
@@ -23,8 +23,8 @@ func (c *CustomCtx) Principal() *security.Principal {
 	return c.principal
 }
 
-// Db returns the database connection for the current request.
-func (c *CustomCtx) Db() orm.Db {
+// DB returns the database connection for the current request.
+func (c *CustomCtx) DB() orm.DB {
 	return c.db
 }
 
@@ -33,14 +33,17 @@ func (c *CustomCtx) Logger() log.Logger {
 	return c.logger
 }
 
+// SetLogger sets the logger instance for the current request.
 func (c *CustomCtx) SetLogger(logger log.Logger) {
 	c.logger = logger
 }
 
+// SetPrincipal sets the authenticated principal for the current request.
 func (c *CustomCtx) SetPrincipal(principal *security.Principal) {
 	c.principal = principal
 }
 
-func (c *CustomCtx) SetDb(db orm.Db) {
+// SetDB sets the database connection for the current request.
+func (c *CustomCtx) SetDB(db orm.DB) {
 	c.db = db
 }

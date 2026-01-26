@@ -5,122 +5,231 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ilxqx/go-collections"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-var (
-	versionPattern      = regexp.MustCompile(`^v\d+$`)
-	snakeCasePattern    = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
-	resourceNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*(/[a-z][a-z0-9]*(_[a-z0-9]+)*)*$`)
+type Kind uint8
+
+const (
+	// KindRPC represents the KindRPC kind.
+	KindRPC Kind = iota + 1
+	// KindREST represents the KindREST kind.
+	KindREST
 )
 
-// ValidateResourceName checks if the resource name follows the correct format.
-// Resource names must be in snake_case and can contain slashes for namespacing.
-// Valid examples: "user", "sys/user", "auth/get_user_info"
-// Invalid examples: "User", "sys/User", "sys/getUserInfo", "sys/".
-func ValidateResourceName(name string) error {
-	if name == constants.Empty {
-		return ErrResourceNameEmpty
+func (k Kind) String() string {
+	switch k {
+	case KindRPC:
+		return "rpc"
+	case KindREST:
+		return "rest"
+	default:
+		return "unknown"
 	}
-
-	if !resourceNamePattern.MatchString(name) {
-		return fmt.Errorf("%w (e.g., user, sys/user, auth/get_user_info): %q", ErrResourceNameInvalidFormat, name)
-	}
-
-	// Additional check: no trailing or leading slashes, no consecutive slashes
-	if strings.HasPrefix(name, constants.Slash) || strings.HasSuffix(name, constants.Slash) {
-		return fmt.Errorf("%w: %q", ErrResourceNameInvalidSlash, name)
-	}
-
-	if strings.Contains(name, constants.DoubleSlash) {
-		return fmt.Errorf("%w: %q", ErrResourceNameConsecutiveSlashes, name)
-	}
-
-	return nil
 }
 
-// ValidateActionName checks if the action name follows snake_case format.
-// Valid examples: "create", "find_page", "get_user_info"
-// Invalid examples: "Create", "findPage", "getUserInfo".
-func ValidateActionName(action string) error {
+var (
+	versionPattern          = regexp.MustCompile(`^v\d+$`)
+	snakeCasePattern        = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
+	resourceNamePattern     = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*(/[a-z][a-z0-9]*(_[a-z0-9]+)*)*$`)
+	restResourceNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*(/[a-z][a-z0-9]*(-[a-z0-9]+)*)*$`)
+
+	validHttpVerbs = collections.NewHashSetFrom(
+		"get",
+		"post",
+		"put",
+		"delete",
+		"patch",
+		"head",
+		"options",
+		"trace",
+		"connect",
+		"all",
+	)
+)
+
+// ValidateActionName validates the action name based on the resource kind.
+// For RPC, action must be snake_case (e.g., create, find_page).
+// For REST, action format is "<method>" or "<method> <sub-resource>" (e.g., "get", "post user-friends").
+func ValidateActionName(action string, kind Kind) error {
 	if action == constants.Empty {
-		return ErrActionNameEmpty
+		return ErrEmptyActionName
 	}
 
+	switch kind {
+	case KindRPC:
+		return validateRPCAction(action)
+	case KindREST:
+		return validateRESTAction(action)
+	default:
+		return fmt.Errorf("%w: invalid resource kind %d", ErrInvalidResourceKind, kind)
+	}
+}
+
+func validateRPCAction(action string) error {
 	if !snakeCasePattern.MatchString(action) {
-		return fmt.Errorf("%w (e.g., create, find_page, get_user_info): %q", ErrActionNameInvalidFormat, action)
+		return fmt.Errorf("%w (e.g., create, find_page, get_user_info): %q", ErrInvalidActionName, action)
 	}
 
 	return nil
 }
 
+func validateRESTAction(action string) error {
+	parts := strings.SplitN(action, constants.Space, 3)
+	if len(parts) > 2 {
+		return fmt.Errorf("%w (e.g., get, post, get user-friends): %q", ErrInvalidActionName, action)
+	}
+
+	verb := parts[0]
+	if !validHttpVerbs.Contains(verb) {
+		return fmt.Errorf("%w (invalid verb %q): %q", ErrInvalidActionName, verb, action)
+	}
+
+	if len(parts) == 2 {
+		subRes := parts[1]
+		if subRes == constants.Empty || !restResourceNamePattern.MatchString(subRes) {
+			return fmt.Errorf("%w (invalid sub-resource %q): %q", ErrInvalidActionName, subRes, action)
+		}
+	}
+
+	return nil
+}
+
+// baseResource provides a basic implementation of the Resource interface.
 type baseResource struct {
-	version string
-	name    string
-	apis    []Spec
+	kind       Kind
+	name       string
+	version    string
+	auth       *AuthConfig
+	operations []OperationSpec
 }
 
-func (b *baseResource) Version() string {
-	return b.version
-}
-
-func (b *baseResource) Name() string {
-	return b.name
-}
-
-func (b *baseResource) Apis() []Spec {
-	return b.apis
-}
-
-// NewResource creates a new resource with the given name and optional configuration.
-// It initializes the resource with version v1 by default and applies any provided options.
-// The resource name must be in snake_case format and can contain slashes for namespacing.
-// Panics if the resource name format is invalid.
-func NewResource(name string, opts ...resourceOption) Resource {
-	if err := ValidateResourceName(name); err != nil {
-		panic(fmt.Sprintf("api: %v", err))
+func (r *baseResource) validate() error {
+	if err := r.validateVersion(); err != nil {
+		return err
 	}
 
-	resource := &baseResource{
-		version: VersionV1,
-		name:    name,
+	if err := r.validateName(); err != nil {
+		return err
 	}
 
+	return r.validateOperations()
+}
+
+func (r *baseResource) validateVersion() error {
+	if r.version != constants.Empty && !versionPattern.MatchString(r.version) {
+		return fmt.Errorf("%w: %q", ErrInvalidVersionFormat, r.version)
+	}
+
+	return nil
+}
+
+func (r *baseResource) validateName() error {
+	if r.name == constants.Empty {
+		return ErrEmptyResourceName
+	}
+
+	if strings.HasPrefix(r.name, constants.Slash) || strings.HasSuffix(r.name, constants.Slash) {
+		return fmt.Errorf("%w: %q", ErrResourceNameSlash, r.name)
+	}
+
+	if strings.Contains(r.name, constants.DoubleSlash) {
+		return fmt.Errorf("%w: %q", ErrResourceNameDoubleSlash, r.name)
+	}
+
+	switch r.kind {
+	case KindRPC:
+		if !resourceNamePattern.MatchString(r.name) {
+			return fmt.Errorf("%w (RPC e.g., user, sys/user, sys/data_dict): %q", ErrInvalidResourceName, r.name)
+		}
+	case KindREST:
+		if !restResourceNamePattern.MatchString(r.name) {
+			return fmt.Errorf("%w (REST e.g., user, sys/user, sys/data-dict): %q", ErrInvalidResourceName, r.name)
+		}
+	default:
+		return fmt.Errorf("%w: invalid resource kind %d", ErrInvalidResourceKind, r.kind)
+	}
+
+	return nil
+}
+
+func (r *baseResource) validateOperations() error {
+	for i, op := range r.operations {
+		if op.Action == constants.Empty {
+			return fmt.Errorf("%w: operation index %d", ErrEmptyActionName, i)
+		}
+
+		if err := ValidateActionName(op.Action, r.kind); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// NewRESTResource creates a new REST resource with the given name and options.
+func NewRESTResource(name string, opts ...resourceOption) baseResource {
+	return newResource(KindREST, name, opts...)
+}
+
+// NewRPCResource creates a new baseResource with the given name and options.
+func NewRPCResource(name string, opts ...resourceOption) baseResource {
+	return newResource(KindRPC, name, opts...)
+}
+
+func newResource(kind Kind, name string, opts ...resourceOption) baseResource {
+	r := baseResource{
+		kind: kind,
+		name: name,
+	}
 	for _, opt := range opts {
-		opt(resource)
+		opt(&r)
 	}
 
-	return resource
+	if err := r.validate(); err != nil {
+		panic(err)
+	}
+
+	return r
 }
 
+// Kind returns the resource kind.
+func (r baseResource) Kind() Kind { return r.kind }
+
+// Name returns the resource name.
+func (r baseResource) Name() string { return r.name }
+
+// Version returns the resource version.
+func (r baseResource) Version() string { return r.version }
+
+// Auth returns the resource authentication configuration.
+func (r baseResource) Auth() *AuthConfig { return r.auth }
+
+// Operations returns the resource operations.
+func (r baseResource) Operations() []OperationSpec { return r.operations }
+
+// resourceOption configures a baseResource.
 type resourceOption func(*baseResource)
 
-// This option allows overriding the default v1 version with a custom version string.
-// The version must match the pattern "v" followed by one or more digits (e.g., v1, v2, v10).
-// Panics if the version format is invalid.
-func WithVersion(version string) resourceOption {
+// WithVersion sets the resource version.
+func WithVersion(v string) resourceOption {
 	return func(r *baseResource) {
-		if !versionPattern.MatchString(version) {
-			panic(fmt.Sprintf("api: invalid version format %q, must match pattern v+digits (e.g., v1, v2, v10)", version))
-		}
-
-		r.version = version
+		r.version = v
 	}
 }
 
-// WithApis configures the Api endpoints for the resource.
-// It accepts a variadic list of Spec objects that define the available Apis.
-// All action names in the Spec objects must be in snake_case format.
-// Panics if any action name format is invalid.
-func WithApis(apis ...Spec) resourceOption {
+// WithOperations sets the resource operations.
+func WithOperations(ops ...OperationSpec) resourceOption {
 	return func(r *baseResource) {
-		// Validate all action names
-		for i, spec := range apis {
-			if err := ValidateActionName(spec.Action); err != nil {
-				panic(fmt.Sprintf("api: invalid action at index %d: %v", i, err))
-			}
-		}
+		r.operations = ops
+	}
+}
 
-		r.apis = apis
+// WithAuth sets the resource authentication configuration.
+func WithAuth(auth *AuthConfig) resourceOption {
+	return func(r *baseResource) {
+		r.auth = auth
 	}
 }

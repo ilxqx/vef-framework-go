@@ -51,9 +51,9 @@ type TreeDataOption struct {
 	DataOption
 
 	// Unique identifier for the tree node
-	Id string `json:"-" bun:"id"`
+	ID string `json:"-" bun:"id"`
 	// Parent node identifier (null for root nodes)
-	ParentId null.String `json:"-" bun:"parent_id"`
+	ParentID null.String `json:"-" bun:"parent_id"`
 	// Nested child options forming the tree structure
 	Children []TreeDataOption `json:"children,omitempty" bun:"-"`
 }

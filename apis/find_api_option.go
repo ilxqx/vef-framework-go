@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/ilxqx/go-streams"
 
-	"github.com/ilxqx/vef-framework-go/contextx"
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/search"
 	"github.com/ilxqx/vef-framework-go/sort"
@@ -44,11 +44,11 @@ const (
 // It can target specific query parts for fine-grained control,
 // which is essential for recursive CTE queries used in tree operations.
 //
-// The Applier function receives the query, search parameters, and fiber context,
+// The Applier function receives the query, search parameters, meta, and fiber context,
 // allowing for dynamic configuration based on runtime data.
 type FindApiOption struct {
 	Parts   []QueryPart
-	Applier func(query orm.SelectQuery, search any, ctx fiber.Ctx) error
+	Applier func(query orm.SelectQuery, search any, meta api.Meta, ctx fiber.Ctx) error
 }
 
 // resolveQueryParts resolves the target query parts for an option.
@@ -66,7 +66,7 @@ func resolveQueryParts(parts ...QueryPart) []QueryPart {
 func withSelect(column string, parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.Select(column)
 
 			return nil
@@ -79,7 +79,7 @@ func withSelect(column string, parts ...QueryPart) *FindApiOption {
 func withSelectAs(column, alias string, parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.SelectAs(column, alias)
 
 			return nil
@@ -93,9 +93,9 @@ func withSelectAs(column, alias string, parts ...QueryPart) *FindApiOption {
 func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, _ any, meta api.Meta, _ fiber.Ctx) error {
 			var sortable Sortable
-			if err := contextx.ApiRequest(ctx).Meta.Decode(&sortable); err != nil {
+			if err := meta.Decode(&sortable); err != nil {
 				return err
 			}
 
@@ -148,7 +148,7 @@ func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
 func withCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.Where(fn)
 
 			return nil
@@ -163,7 +163,7 @@ func withSearchApplier[TSearch any](parts ...QueryPart) *FindApiOption {
 
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, search any, _ api.Meta, _ fiber.Ctx) error {
 			s, ok := search.(TSearch)
 			if !ok {
 				var expectedType TSearch
@@ -190,7 +190,7 @@ func withSearchApplier[TSearch any](parts ...QueryPart) *FindApiOption {
 func withQueryApplier[TSearch any](applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, search any, _ api.Meta, ctx fiber.Ctx) error {
 			s, ok := search.(TSearch)
 			if !ok {
 				var expectedType TSearch
@@ -212,7 +212,7 @@ func withQueryApplier[TSearch any](applier func(query orm.SelectQuery, search TS
 func withDataPerm(parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, ctx fiber.Ctx) error {
 			return ApplyDataPermission(query, ctx)
 		},
 	}
@@ -223,7 +223,7 @@ func withDataPerm(parts ...QueryPart) *FindApiOption {
 func withRelation(relation *orm.RelationSpec, parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.JoinRelations(relation)
 
 			return nil
@@ -238,7 +238,7 @@ func withAuditUserNames(userModel any, nameColumn string, parts ...QueryPart) *F
 
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
-		Applier: func(query orm.SelectQuery, search any, ctx fiber.Ctx) error {
+		Applier: func(query orm.SelectQuery, _ any, _ api.Meta, _ fiber.Ctx) error {
 			query.JoinRelations(relations...)
 
 			return nil

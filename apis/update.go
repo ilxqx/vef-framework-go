@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
@@ -18,47 +17,45 @@ import (
 )
 
 type updateApi[TModel, TParams any] struct {
-	ApiBuilder[UpdateApi[TModel, TParams]]
+	Builder[Update[TModel, TParams]]
 
 	preUpdate        PreUpdateProcessor[TModel, TParams]
 	postUpdate       PostUpdateProcessor[TModel, TParams]
 	dataPermDisabled bool
 }
 
-// Provide generates the final Api specification for model updates.
-// Returns a complete api.Spec that can be registered with the router.
-func (u *updateApi[TModel, TParams]) Provide() api.Spec {
-	return u.Build(u.update)
+func (u *updateApi[TModel, TParams]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{u.Build(u.update)}
 }
 
-func (u *updateApi[TModel, TParams]) WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) Update[TModel, TParams] {
 	u.preUpdate = processor
 
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) Update[TModel, TParams] {
 	u.postUpdate = processor
 
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) DisableDataPerm() UpdateApi[TModel, TParams] {
+func (u *updateApi[TModel, TParams]) DisableDataPerm() Update[TModel, TParams] {
 	u.dataPermDisabled = true
 
 	return u
 }
 
-func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
+func (u *updateApi[TModel, TParams]) update(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params TParams) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
-	pks := db.ModelPkFields((*TModel)(nil))
+	pks := db.ModelPKFields((*TModel)(nil))
 
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, params TParams) error {
+	return func(ctx fiber.Ctx, db orm.DB, params TParams) error {
 		var (
 			oldModel   TModel
 			model      TModel
@@ -69,7 +66,7 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 			return err
 		}
 
-		if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
+		for _, pk := range pks {
 			pkValue, err := pk.Value(modelValue)
 			if err != nil {
 				return err
@@ -78,13 +75,9 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 			if reflect.ValueOf(pkValue).IsZero() {
 				return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 			}
-
-			return nil
-		}); err != nil {
-			return err
 		}
 
-		query := db.NewSelect().Model(&model).WherePk()
+		query := db.NewSelect().Model(&model).WherePK()
 		if !u.dataPermDisabled {
 			if err := ApplyDataPermission(query, ctx); err != nil {
 				return err
@@ -95,7 +88,7 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 			return err
 		}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 			query := tx.NewUpdate().Model(&oldModel)
 			if u.preUpdate != nil {
 				if err := u.preUpdate(&oldModel, &model, &params, query, ctx, tx); err != nil {
@@ -111,7 +104,7 @@ func (u *updateApi[TModel, TParams]) update(db orm.Db, sc storage.Service, publi
 				return fmt.Errorf("promote files failed: %w", err)
 			}
 
-			if _, err := query.WherePk().Exec(txCtx); err != nil {
+			if _, err := query.WherePK().Exec(txCtx); err != nil {
 				if cleanupErr := promoter.Promote(txCtx, &model, &oldModel); cleanupErr != nil {
 					return fmt.Errorf("update failed: %w; rollback files also failed: %w", err, cleanupErr)
 				}

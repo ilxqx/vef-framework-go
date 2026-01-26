@@ -14,20 +14,20 @@ import (
 // Test Resources.
 type TestUserFindOneResource struct {
 	api.Resource
-	apis.FindOneApi[TestUser, TestUserSearch]
+	apis.FindOne[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindOneResource() api.Resource {
 	return &TestUserFindOneResource{
-		Resource:   api.NewResource("test/user"),
-		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().Public(),
+		Resource: api.NewRPCResource("test/user"),
+		FindOne:  apis.NewFindOne[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindOneResource struct {
 	api.Resource
-	apis.FindOneApi[TestUser, TestUserSearch]
+	apis.FindOne[TestUser, TestUserSearch]
 }
 
 type ProcessedUser struct {
@@ -38,8 +38,8 @@ type ProcessedUser struct {
 
 func NewProcessedUserFindOneResource() api.Resource {
 	return &ProcessedUserFindOneResource{
-		Resource: api.NewResource("test/user_processed"),
-		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_processed"),
+		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
 			Public().
 			WithProcessor(func(user TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				return ProcessedUser{
@@ -53,13 +53,13 @@ func NewProcessedUserFindOneResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFineOneResource struct {
 	api.Resource
-	apis.FindOneApi[TestUser, TestUserSearch]
+	apis.FindOne[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFineOneResource() api.Resource {
 	return &FilteredUserFineOneResource{
-		Resource: api.NewResource("test/user_filtered"),
-		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_filtered"),
+		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active").GreaterThan("age", 32)
 			}).
@@ -70,13 +70,13 @@ func NewFilteredUserFineOneResource() api.Resource {
 // Ordered User Resource - with order applier.
 type OrderedUserFindOneResource struct {
 	api.Resource
-	apis.FindOneApi[TestUser, TestUserSearch]
+	apis.FindOne[TestUser, TestUserSearch]
 }
 
 func NewOrderedUserFindOneResource() api.Resource {
 	return &OrderedUserFindOneResource{
-		Resource: api.NewResource("test/user_ordered"),
-		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_ordered"),
+		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
 			WithDefaultSort(&sort.OrderSpec{
 				Column:    "age",
 				Direction: sort.OrderDesc,
@@ -88,13 +88,13 @@ func NewOrderedUserFindOneResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindOneResource struct {
 	api.Resource
-	apis.FindOneApi[TestUser, TestUserSearch]
+	apis.FindOne[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindOneResource() api.Resource {
 	return &AuditUserTestUserFindOneResource{
-		Resource: api.NewResource("test/user_audit"),
-		FindOneApi: apis.NewFindOneApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_audit"),
+		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
 			WithAuditUserNames((*TestAuditUser)(nil)).
 			Public(),
 	}

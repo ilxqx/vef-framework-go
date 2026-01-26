@@ -13,26 +13,26 @@ import (
 // Test Resources.
 type TestUserFindPageResource struct {
 	api.Resource
-	apis.FindPageApi[TestUser, TestUserSearch]
+	apis.FindPage[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindPageResource() api.Resource {
 	return &TestUserFindPageResource{
-		Resource:    api.NewResource("test/user_page"),
-		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().Public(),
+		Resource: api.NewRPCResource("test/user_page"),
+		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().Public(),
 	}
 }
 
 // Processed User Resource - with processor.
 type ProcessedUserFindPageResource struct {
 	api.Resource
-	apis.FindPageApi[TestUser, TestUserSearch]
+	apis.FindPage[TestUser, TestUserSearch]
 }
 
 func NewProcessedUserFindPageResource() api.Resource {
 	return &ProcessedUserFindPageResource{
-		Resource: api.NewResource("test/user_page_processed"),
-		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_page_processed"),
+		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().
 			Public().
 			WithProcessor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
 				// Processor must return a slice - convert each user to a processed version
@@ -52,13 +52,13 @@ func NewProcessedUserFindPageResource() api.Resource {
 // Filtered User Resource - with filter applier.
 type FilteredUserFindPageResource struct {
 	api.Resource
-	apis.FindPageApi[TestUser, TestUserSearch]
+	apis.FindPage[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFindPageResource() api.Resource {
 	return &FilteredUserFindPageResource{
-		Resource: api.NewResource("test/user_page_filtered"),
-		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_page_filtered"),
+		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active")
 			}).
@@ -69,13 +69,13 @@ func NewFilteredUserFindPageResource() api.Resource {
 // AuditUser User Resource - with audit user names.
 type AuditUserTestUserFindPageResource struct {
 	api.Resource
-	apis.FindPageApi[TestUser, TestUserSearch]
+	apis.FindPage[TestUser, TestUserSearch]
 }
 
 func NewAuditUserTestUserFindPageResource() api.Resource {
 	return &AuditUserTestUserFindPageResource{
-		Resource: api.NewResource("test/user_page_audit"),
-		FindPageApi: apis.NewFindPageApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_page_audit"),
+		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().
 			WithAuditUserNames((*TestAuditUser)(nil)).
 			Public(),
 	}

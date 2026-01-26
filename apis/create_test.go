@@ -13,28 +13,28 @@ import (
 // Test Resources.
 type TestUserCreateResource struct {
 	api.Resource
-	apis.CreateApi[TestUser, TestUserCreateParams]
+	apis.Create[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateResource() api.Resource {
 	return &TestUserCreateResource{
-		Resource:  api.NewResource("test/user_create"),
-		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().Public(),
+		Resource: api.NewRPCResource("test/user_create"),
+		Create:   apis.NewCreate[TestUser, TestUserCreateParams]().Public(),
 	}
 }
 
 // Resource with PreCreate hook.
 type TestUserCreateWithPreHookResource struct {
 	api.Resource
-	apis.CreateApi[TestUser, TestUserCreateParams]
+	apis.Create[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateWithPreHookResource() api.Resource {
 	return &TestUserCreateWithPreHookResource{
-		Resource: api.NewResource("test/user_create_prehook"),
-		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().
+		Resource: api.NewRPCResource("test/user_create_prehook"),
+		Create: apis.NewCreate[TestUser, TestUserCreateParams]().
 			Public().
-			WithPreCreate(func(model *TestUser, params *TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error {
+			WithPreCreate(func(model *TestUser, params *TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.DB) error {
 				// Add prefix to name
 				model.Name = "Mr. " + model.Name
 
@@ -46,17 +46,17 @@ func NewTestUserCreateWithPreHookResource() api.Resource {
 // Resource with PostCreate hook.
 type TestUserCreateWithPostHookResource struct {
 	api.Resource
-	apis.CreateApi[TestUser, TestUserCreateParams]
+	apis.Create[TestUser, TestUserCreateParams]
 }
 
 func NewTestUserCreateWithPostHookResource() api.Resource {
 	return &TestUserCreateWithPostHookResource{
-		Resource: api.NewResource("test/user_create_posthook"),
-		CreateApi: apis.NewCreateApi[TestUser, TestUserCreateParams]().
+		Resource: api.NewRPCResource("test/user_create_posthook"),
+		Create: apis.NewCreate[TestUser, TestUserCreateParams]().
 			Public().
-			WithPostCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.Db) error {
+			WithPostCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.DB) error {
 				// Log or perform additional operations
-				ctx.Set("X-Created-User-Id", model.Id)
+				ctx.Set("X-Created-User-ID", model.ID)
 
 				return nil
 			}),
@@ -172,7 +172,7 @@ func (suite *CreateTestSuite) TestCreateWithPostHook() {
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	suite.NotEmpty(resp.Header.Get("X-Created-User-Id"), "Should set X-Created-User-Id header via PostCreate hook")
+	suite.NotEmpty(resp.Header.Get("X-Created-User-ID"), "Should set X-Created-User-ID header via PostCreate hook")
 
 	body := suite.readBody(resp)
 	suite.True(body.IsOk(), "Should return successful response")
@@ -180,7 +180,7 @@ func (suite *CreateTestSuite) TestCreateWithPostHook() {
 	pk := suite.readDataAsMap(body.Data)
 	suite.NotEmpty(pk["id"], "Should return created user id")
 
-	suite.T().Logf("Created user with PostCreate hook, id: %v, header: %s", pk["id"], resp.Header.Get("X-Created-User-Id"))
+	suite.T().Logf("Created user with PostCreate hook, id: %v, header: %s", pk["id"], resp.Header.Get("X-Created-User-ID"))
 }
 
 // TestCreateNegativeCases tests negative scenarios.

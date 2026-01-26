@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/copier"
@@ -18,47 +17,45 @@ import (
 )
 
 type updateManyApi[TModel, TParams any] struct {
-	ApiBuilder[UpdateManyApi[TModel, TParams]]
+	Builder[UpdateMany[TModel, TParams]]
 
 	preUpdateMany    PreUpdateManyProcessor[TModel, TParams]
 	postUpdateMany   PostUpdateManyProcessor[TModel, TParams]
 	dataPermDisabled bool
 }
 
-// Provide generates the final Api specification for batch model updates.
-// Returns a complete api.Spec that can be registered with the router.
-func (u *updateManyApi[TModel, TParams]) Provide() api.Spec {
-	return u.Build(u.updateMany)
+func (u *updateManyApi[TModel, TParams]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{u.Build(u.updateMany)}
 }
 
-func (u *updateManyApi[TModel, TParams]) WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams] {
 	u.preUpdateMany = processor
 
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams] {
 	u.postUpdateMany = processor
 
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) DisableDataPerm() UpdateManyApi[TModel, TParams] {
+func (u *updateManyApi[TModel, TParams]) DisableDataPerm() UpdateMany[TModel, TParams] {
 	u.dataPermDisabled = true
 
 	return u
 }
 
-func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params UpdateManyParams[TParams]) error, error) {
+func (u *updateManyApi[TModel, TParams]) updateMany(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params UpdateManyParams[TParams]) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
-	pks := db.ModelPkFields((*TModel)(nil))
+	pks := db.ModelPKFields((*TModel)(nil))
 
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, params UpdateManyParams[TParams]) error {
+	return func(ctx fiber.Ctx, db orm.DB, params UpdateManyParams[TParams]) error {
 		if len(params.List) == 0 {
 			return result.Ok().Response(ctx)
 		}
@@ -66,13 +63,13 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 		oldModels := make([]TModel, len(params.List))
 		models := make([]TModel, len(params.List))
 
-		if err := streams.Range(0, len(params.List)).ForEachErr(func(i int) error {
+		for i := range params.List {
 			if err := copier.Copy(&params.List[i], &models[i]); err != nil {
 				return err
 			}
 
 			modelValue := reflect.ValueOf(&models[i]).Elem()
-			if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
+			for _, pk := range pks {
 				pkValue, err := pk.Value(modelValue)
 				if err != nil {
 					return err
@@ -81,13 +78,9 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 				if reflect.ValueOf(pkValue).IsZero() {
 					return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 				}
-
-				return nil
-			}); err != nil {
-				return err
 			}
 
-			query := db.NewSelect().Model(&models[i]).WherePk()
+			query := db.NewSelect().Model(&models[i]).WherePK()
 			if !u.dataPermDisabled {
 				if err := ApplyDataPermission(query, ctx); err != nil {
 					return err
@@ -97,13 +90,9 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 			if err := query.Scan(ctx.Context(), &oldModels[i]); err != nil {
 				return err
 			}
-
-			return nil
-		}); err != nil {
-			return err
 		}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 			query := tx.NewUpdate().Model(&oldModels)
 
 			if u.preUpdateMany != nil {
@@ -112,13 +101,13 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 				}
 			}
 
-			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
-				return copier.Copy(&models[i], &oldModels[i], copier.WithIgnoreEmpty())
-			}); err != nil {
-				return err
+			for i := range models {
+				if err := copier.Copy(&models[i], &oldModels[i], copier.WithIgnoreEmpty()); err != nil {
+					return err
+				}
 			}
 
-			if err := streams.Range(0, len(oldModels)).ForEachErr(func(i int) error {
+			for i := range oldModels {
 				if err := promoter.Promote(txCtx, &oldModels[i], &models[i]); err != nil {
 					if rollbackErr := batchRollback(txCtx, promoter, oldModels, models, i); rollbackErr != nil {
 						return fmt.Errorf("promote files for model %d failed: %w; rollback also failed: %w", i, err, rollbackErr)
@@ -126,10 +115,6 @@ func (u *updateManyApi[TModel, TParams]) updateMany(db orm.Db, sc storage.Servic
 
 					return fmt.Errorf("promote files for model %d failed: %w", i, err)
 				}
-
-				return nil
-			}); err != nil {
-				return err
 			}
 
 			if _, err := query.Bulk().Exec(txCtx); err != nil {

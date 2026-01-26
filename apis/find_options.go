@@ -10,23 +10,23 @@ import (
 )
 
 type findOptionsApi[TModel, TSearch any] struct {
-	FindApi[TModel, TSearch, []DataOption, FindOptionsApi[TModel, TSearch]]
+	Find[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]]
 
 	defaultColumnMapping *DataOptionColumnMapping
 }
 
-func (a *findOptionsApi[TModel, TSearch]) Provide() api.Spec {
-	return a.Build(a.findOptions)
+func (a *findOptionsApi[TModel, TSearch]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{a.Build(a.findOptions)}
 }
 
 // This mapping provides fallback values for column mapping when not explicitly specified in queries.
-func (a *findOptionsApi[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptionsApi[TModel, TSearch] {
+func (a *findOptionsApi[TModel, TSearch]) WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptions[TModel, TSearch] {
 	a.defaultColumnMapping = mapping
 
 	return a
 }
 
-func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, config DataOptionConfig, search TSearch) error, error) {
+func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, search TSearch, meta api.Meta) error, error) {
 	if err := a.Setup(db, &FindApiConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
@@ -39,7 +39,7 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 
 	table := db.TableOf((*TModel)(nil))
 
-	return func(ctx fiber.Ctx, db orm.Db, config DataOptionConfig, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, search TSearch, meta api.Meta) error {
 		var (
 			options []DataOption
 			query   = db.NewSelect().Model((*TModel)(nil))
@@ -85,7 +85,7 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.Db) (func(ctx fiber
 			)
 		})
 
-		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+		if err := a.ConfigureQuery(query, search, meta, ctx, QueryRoot); err != nil {
 			return err
 		}
 

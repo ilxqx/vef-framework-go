@@ -48,7 +48,7 @@ type TestUser struct {
 type TestUserSearch struct {
 	api.P
 
-	Id      null.String `json:"id"      search:"eq"`
+	ID      null.String `json:"id"      search:"eq"`
 	Keyword null.String `json:"keyword" search:"contains,column=name|description"`
 	Email   null.String `json:"email"   search:"eq"`
 	Status  null.String `json:"status"  search:"eq"`
@@ -63,7 +63,7 @@ type TestCategory struct {
 	Name        string  `json:"name"               bun:",notnull"`
 	Code        string  `json:"code"               bun:",unique,notnull"`
 	Description string  `json:"description"`
-	ParentId    *string `json:"parentId"`
+	ParentID    *string `json:"parentId"`
 	Sort        int     `json:"sort"               bun:",notnull,default:0"`
 	Children    any     `json:"children,omitempty" bun:"-"`
 }
@@ -72,17 +72,17 @@ type TestCategory struct {
 type TestCategorySearch struct {
 	api.P
 
-	Id       null.String `json:"id"       search:"eq"`
+	ID       null.String `json:"id"       search:"eq"`
 	Keyword  null.String `json:"keyword"  search:"contains,column=name|description"`
 	Code     null.String `json:"code"     search:"eq"`
-	ParentId null.String `json:"parentId" search:"eq"`
+	ParentID null.String `json:"parentId" search:"eq"`
 }
 
-// TestCompositePkItem is a test model with composite primary keys.
-type TestCompositePkItem struct {
+// TestCompositePKItem is a test model with composite primary keys.
+type TestCompositePKItem struct {
 	bun.BaseModel `bun:"table:test_composite_pk_item,alias:tcpi"`
 
-	TenantId  string `json:"tenantId"  bun:",pk,notnull"`
+	TenantID  string `json:"tenantId"  bun:",pk,notnull"`
 	ItemCode  string `json:"itemCode"  bun:",pk,notnull"`
 	Name      string `json:"name"      bun:",notnull"`
 	Quantity  int    `json:"quantity"  bun:",notnull,default:0"`
@@ -97,15 +97,15 @@ type BaseSuite struct {
 	ctx      context.Context
 	app      *app.App
 	stop     func()
-	db       orm.Db
-	dbType   constants.DbType
+	db       orm.DB
+	dbType   constants.DBType
 	dsConfig *config.DatasourceConfig
 }
 
 func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 	suite.T().Logf("Setting up test app with %s database", suite.dbType)
 
-	bunDb := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
+	bunDB := suite.db.(orm.Unwrapper[bun.IDB]).Unwrap()
 
 	opts := make([]fx.Option, len(resourceCtors)+2)
 	for i, ctor := range resourceCtors {
@@ -117,7 +117,7 @@ func (suite *BaseSuite) setupBaseSuite(resourceCtors ...any) {
 
 	// Use fx.Decorate to replace the database connection
 	opts[len(opts)-1] = fx.Decorate(func() bun.IDB {
-		return bunDb
+		return bunDB
 	})
 
 	suite.app, suite.stop = apptest.NewTestApp(
@@ -135,7 +135,7 @@ func (suite *BaseSuite) tearDownBaseSuite() {
 // Helper methods for the suite
 
 func (suite *BaseSuite) makeApiRequest(body api.Request) *http.Response {
-	jsonBody, err := encoding.ToJson(body)
+	jsonBody, err := encoding.ToJSON(body)
 	suite.Require().NoError(err)
 
 	req := httptest.NewRequest(fiber.MethodPost, "/api", strings.NewReader(jsonBody))
@@ -156,7 +156,7 @@ func (suite *BaseSuite) readBody(resp *http.Response) result.Result {
 	}()
 
 	suite.Require().NoError(err)
-	res, err := encoding.FromJson[result.Result](string(body))
+	res, err := encoding.FromJSON[result.Result](string(body))
 	suite.Require().NoError(err)
 
 	return *res

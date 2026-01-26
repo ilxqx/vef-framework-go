@@ -7,6 +7,7 @@ import (
 	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/page"
@@ -14,23 +15,23 @@ import (
 )
 
 type findPageApi[TModel, TSearch any] struct {
-	FindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]]
+	Find[TModel, TSearch, []TModel, FindPage[TModel, TSearch]]
 
 	defaultPageSize int
 }
 
-func (a *findPageApi[TModel, TSearch]) Provide() api.Spec {
-	return a.Build(a.findPage)
+func (a *findPageApi[TModel, TSearch]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{a.Build(a.findPage)}
 }
 
 // This value is used when the request's page size is zero or invalid.
-func (a *findPageApi[TModel, TSearch]) WithDefaultPageSize(size int) FindPageApi[TModel, TSearch] {
+func (a *findPageApi[TModel, TSearch]) WithDefaultPageSize(size int) FindPage[TModel, TSearch] {
 	a.defaultPageSize = size
 
 	return a
 }
 
-func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) error, error) {
+func (a *findPageApi[TModel, TSearch]) findPage(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, pageable page.Pageable, search TSearch, meta api.Meta) error, error) {
 	if err := a.Setup(db, &FindApiConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
@@ -41,7 +42,7 @@ func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 		return nil, err
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, pageable page.Pageable, search TSearch) (err error) {
+	return func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, pageable page.Pageable, search TSearch, meta api.Meta) (err error) {
 		pageable.Normalize(a.defaultPageSize)
 
 		var (
@@ -50,7 +51,7 @@ func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 			total  int64
 		)
 
-		if err = a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+		if err = a.ConfigureQuery(query, search, meta, ctx, QueryRoot); err != nil {
 			return err
 		}
 
@@ -58,32 +59,35 @@ func (a *findPageApi[TModel, TSearch]) findPage(db orm.Db) (func(ctx fiber.Ctx, 
 			return err
 		}
 
-		if total > 0 {
-			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
-				return transformer.Struct(ctx.Context(), &models[i])
-			}); err != nil {
-				return err
-			}
-
-			processedModels := a.Process(models, search, ctx)
-			if models, ok := processedModels.([]TModel); ok {
-				return result.Ok(page.New(pageable, total, models)).Response(ctx)
-			}
-
-			modelsValue := reflect.Indirect(reflect.ValueOf(processedModels))
-			if modelsValue.Kind() != reflect.Slice {
-				return result.Errf("processor must return a slice, got %T", processedModels)
-			}
-
-			items := streams.MapTo(
-				streams.Range(0, modelsValue.Len()),
-				func(i int) any { return modelsValue.Index(i).Interface() },
-			).Collect()
-
-			return result.Ok(page.New(pageable, total, items)).Response(ctx)
+		if total == 0 {
+			return result.Ok(page.New(pageable, total, []any{})).Response(ctx)
 		}
 
-		// Ensure empty slice instead of nil for consistent JSON response
-		return result.Ok(page.New(pageable, total, []any{})).Response(ctx)
+		if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
+			return transformer.Struct(ctx.Context(), &models[i])
+		}); err != nil {
+			return err
+		}
+
+		processedModels := a.Process(models, search, ctx)
+		if typedModels, ok := processedModels.([]TModel); ok {
+			return result.Ok(page.New(pageable, total, typedModels)).Response(ctx)
+		}
+
+		modelsValue := reflect.Indirect(reflect.ValueOf(processedModels))
+		if modelsValue.Kind() != reflect.Slice {
+			return result.Err(
+				i18n.T(ErrMessageProcessorMustReturnSlice, map[string]any{"type": reflect.TypeOf(processedModels).String()}),
+				result.WithCode(ErrCodeProcessorInvalidReturn),
+				result.WithStatus(fiber.StatusInternalServerError),
+			)
+		}
+
+		items := make([]any, modelsValue.Len())
+		for i := range items {
+			items[i] = modelsValue.Index(i).Interface()
+		}
+
+		return result.Ok(page.New(pageable, total, items)).Response(ctx)
 	}, nil
 }

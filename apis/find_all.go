@@ -11,14 +11,14 @@ import (
 )
 
 type findAllApi[TModel, TSearch any] struct {
-	FindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]]
+	Find[TModel, TSearch, []TModel, FindAll[TModel, TSearch]]
 }
 
-func (a *findAllApi[TModel, TSearch]) Provide() api.Spec {
-	return a.Build(a.findAll)
+func (a *findAllApi[TModel, TSearch]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{a.Build(a.findAll)}
 }
 
-func (a *findAllApi[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
+func (a *findAllApi[TModel, TSearch]) findAll(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
 	if err := a.Setup(db, &FindApiConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
@@ -29,13 +29,13 @@ func (a *findAllApi[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db
 		return nil, err
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error {
 		var (
 			models []TModel
 			query  = db.NewSelect().Model(&models)
 		)
 
-		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+		if err := a.ConfigureQuery(query, search, meta, ctx, QueryRoot); err != nil {
 			return err
 		}
 
@@ -45,19 +45,16 @@ func (a *findAllApi[TModel, TSearch]) findAll(db orm.Db) (func(ctx fiber.Ctx, db
 			return err
 		}
 
-		if len(models) > 0 {
-			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
-				return transformer.Struct(ctx.Context(), &models[i])
-			}); err != nil {
-				return err
-			}
-
-			return result.Ok(a.Process(models, search, ctx)).Response(ctx)
-		} else {
-			// Ensure empty slice instead of nil for consistent JSON response
-			models = make([]TModel, 0)
+		if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
+			return transformer.Struct(ctx.Context(), &models[i])
+		}); err != nil {
+			return err
 		}
 
-		return result.Ok(models).Response(ctx)
+		if models == nil {
+			models = []TModel{}
+		}
+
+		return result.Ok(a.Process(models, search, ctx)).Response(ctx)
 	}, nil
 }

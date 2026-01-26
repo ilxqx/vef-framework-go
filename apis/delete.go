@@ -6,10 +6,8 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/orm"
@@ -18,65 +16,62 @@ import (
 )
 
 type deleteApi[TModel any] struct {
-	ApiBuilder[DeleteApi[TModel]]
+	Builder[Delete[TModel]]
 
 	preDelete        PreDeleteProcessor[TModel]
 	postDelete       PostDeleteProcessor[TModel]
 	dataPermDisabled bool
 }
 
-// Provide generates the final Api specification for model deletion.
-// Returns a complete api.Spec that can be registered with the router.
-func (d *deleteApi[TModel]) Provide() api.Spec {
-	return d.Build(d.delete)
+func (d *deleteApi[TModel]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{d.Build(d.delete)}
 }
 
-func (d *deleteApi[TModel]) WithPreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel] {
+func (d *deleteApi[TModel]) WithPreDelete(processor PreDeleteProcessor[TModel]) Delete[TModel] {
 	d.preDelete = processor
 
 	return d
 }
 
-func (d *deleteApi[TModel]) WithPostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel] {
+func (d *deleteApi[TModel]) WithPostDelete(processor PostDeleteProcessor[TModel]) Delete[TModel] {
 	d.postDelete = processor
 
 	return d
 }
 
-func (d *deleteApi[TModel]) DisableDataPerm() DeleteApi[TModel] {
+func (d *deleteApi[TModel]) DisableDataPerm() Delete[TModel] {
 	d.dataPermDisabled = true
 
 	return d
 }
 
-func (d *deleteApi[TModel]) delete(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db) error, error) {
+func (d *deleteApi[TModel]) delete(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params api.Params) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
-	pks := db.ModelPkFields((*TModel)(nil))
+	pks := db.ModelPKFields((*TModel)(nil))
 
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db) error {
+	return func(ctx fiber.Ctx, db orm.DB, params api.Params) error {
 		var (
 			model      TModel
 			modelValue = reflect.ValueOf(&model).Elem()
-			req        = contextx.ApiRequest(ctx)
 		)
 
-		if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
-			value, ok := req.Params[pk.Name]
+		for _, pk := range pks {
+			value, ok := params[pk.Name]
 			if !ok {
 				return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 			}
 
-			return pk.Set(modelValue, value)
-		}); err != nil {
-			return err
+			if err := pk.Set(modelValue, value); err != nil {
+				return err
+			}
 		}
 
-		query := db.NewSelect().Model(&model).WherePk()
+		query := db.NewSelect().Model(&model).WherePK()
 		if !d.dataPermDisabled {
 			if err := ApplyDataPermission(query, ctx); err != nil {
 				return err
@@ -87,7 +82,7 @@ func (d *deleteApi[TModel]) delete(db orm.Db, sc storage.Service, publisher even
 			return err
 		}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 			query := tx.NewDelete().Model(&model)
 			if d.preDelete != nil {
 				if err := d.preDelete(&model, query, ctx, tx); err != nil {
@@ -95,7 +90,7 @@ func (d *deleteApi[TModel]) delete(db orm.Db, sc storage.Service, publisher even
 				}
 			}
 
-			if _, err := query.WherePk().Exec(txCtx); err != nil {
+			if _, err := query.WherePK().Exec(txCtx); err != nil {
 				return err
 			}
 

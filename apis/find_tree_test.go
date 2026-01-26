@@ -16,11 +16,11 @@ import (
 // Tree builder for TestCategory.
 func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 	adapter := treebuilder.Adapter[TestCategory]{
-		GetId: func(c TestCategory) string {
-			return c.Id
+		GetID: func(c TestCategory) string {
+			return c.ID
 		},
-		GetParentId: func(c TestCategory) string {
-			return lo.FromPtrOr(c.ParentId, constants.Empty)
+		GetParentID: func(c TestCategory) string {
+			return lo.FromPtrOr(c.ParentID, constants.Empty)
 		},
 		SetChildren: func(c *TestCategory, children []TestCategory) {
 			c.Children = children
@@ -33,29 +33,29 @@ func buildCategoryTree(flatCategories []TestCategory) []TestCategory {
 // Test Resources.
 type TestCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeApi[TestCategory, TestCategorySearch]
+	apis.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewTestCategoryFindTreeResource() api.Resource {
 	return &TestCategoryFindTreeResource{
-		Resource: api.NewResource("test/category_tree"),
-		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
+		Resource: api.NewRPCResource("test/category_tree"),
+		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
-			WithIdColumn("id").
-			WithParentIdColumn("parent_id"),
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id"),
 	}
 }
 
 // Filtered Tree Resource.
 type FilteredCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeApi[TestCategory, TestCategorySearch]
+	apis.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewFilteredCategoryFindTreeResource() api.Resource {
 	return &FilteredCategoryFindTreeResource{
-		Resource: api.NewResource("test/category_tree_filtered"),
-		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
+		Resource: api.NewRPCResource("test/category_tree_filtered"),
+		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			WithCondition(func(cb orm.ConditionBuilder) {
 				// Only show Electronics and its children
 				cb.Group(func(cb orm.ConditionBuilder) {
@@ -64,43 +64,43 @@ func NewFilteredCategoryFindTreeResource() api.Resource {
 				})
 			}).
 			Public().
-			WithIdColumn("id").
-			WithParentIdColumn("parent_id"),
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id"),
 	}
 }
 
 // Ordered Tree Resource.
 type OrderedCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeApi[TestCategory, TestCategorySearch]
+	apis.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewOrderedCategoryFindTreeResource() api.Resource {
 	return &OrderedCategoryFindTreeResource{
-		Resource: api.NewResource("test/category_tree_ordered"),
-		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
+		Resource: api.NewRPCResource("test/category_tree_ordered"),
+		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			WithDefaultSort(&sort.OrderSpec{
 				Column: "sort",
 			}).
 			Public().
-			WithIdColumn("id").
-			WithParentIdColumn("parent_id"),
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id"),
 	}
 }
 
 // AuditUser Tree Resource - with audit user names.
 type AuditUserCategoryFindTreeResource struct {
 	api.Resource
-	apis.FindTreeApi[TestCategory, TestCategorySearch]
+	apis.FindTree[TestCategory, TestCategorySearch]
 }
 
 func NewAuditUserCategoryFindTreeResource() api.Resource {
 	return &AuditUserCategoryFindTreeResource{
-		Resource: api.NewResource("test/category_tree_audit"),
-		FindTreeApi: apis.NewFindTreeApi[TestCategory, TestCategorySearch](buildCategoryTree).
+		Resource: api.NewRPCResource("test/category_tree_audit"),
+		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
 			Public().
-			WithIdColumn("id").
-			WithParentIdColumn("parent_id").
+			WithIDColumn("id").
+			WithParentIDColumn("parent_id").
 			WithAuditUserNames((*TestAuditUser)(nil)),
 	}
 }
@@ -194,7 +194,7 @@ func (suite *FindTreeTestSuite) TestFindTreeWithSearch() {
 		suite.T().Logf("Found 1 category matching code 'electronics': %s", electronics["name"])
 	})
 
-	suite.Run("SearchByParentId", func() {
+	suite.Run("SearchByParentID", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/category_tree",

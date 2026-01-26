@@ -19,7 +19,7 @@ import (
 )
 
 type importApi[TModel any] struct {
-	ApiBuilder[ImportApi[TModel]]
+	Builder[Import[TModel]]
 
 	defaultFormat TabularFormat
 	excelOpts     []excel.ImportOption
@@ -28,37 +28,35 @@ type importApi[TModel any] struct {
 	postImport    PostImportProcessor[TModel]
 }
 
-// Provide generates the final Api specification for import.
-// Returns a complete api.Spec that can be registered with the router.
-func (i *importApi[TModel]) Provide() api.Spec {
-	return i.Build(i.importData)
+func (i *importApi[TModel]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{i.Build(i.importData)}
 }
 
-func (i *importApi[TModel]) WithDefaultFormat(format TabularFormat) ImportApi[TModel] {
+func (i *importApi[TModel]) WithDefaultFormat(format TabularFormat) Import[TModel] {
 	i.defaultFormat = format
 
 	return i
 }
 
-func (i *importApi[TModel]) WithExcelOptions(opts ...excel.ImportOption) ImportApi[TModel] {
+func (i *importApi[TModel]) WithExcelOptions(opts ...excel.ImportOption) Import[TModel] {
 	i.excelOpts = opts
 
 	return i
 }
 
-func (i *importApi[TModel]) WithCsvOptions(opts ...csv.ImportOption) ImportApi[TModel] {
+func (i *importApi[TModel]) WithCsvOptions(opts ...csv.ImportOption) Import[TModel] {
 	i.csvOpts = opts
 
 	return i
 }
 
-func (i *importApi[TModel]) WithPreImport(processor PreImportProcessor[TModel]) ImportApi[TModel] {
+func (i *importApi[TModel]) WithPreImport(processor PreImportProcessor[TModel]) Import[TModel] {
 	i.preImport = processor
 
 	return i
 }
 
-func (i *importApi[TModel]) WithPostImport(processor PostImportProcessor[TModel]) ImportApi[TModel] {
+func (i *importApi[TModel]) WithPostImport(processor PostImportProcessor[TModel]) Import[TModel] {
 	i.postImport = processor
 
 	return i
@@ -76,13 +74,13 @@ type importConfig struct {
 	Format TabularFormat `json:"format"`
 }
 
-func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger log.Logger, config importConfig, params importParams) error {
+func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.DB, logger log.Logger, config importConfig, params importParams) error {
 	excelImporter := excel.NewImporterFor[TModel](i.excelOpts...)
 	csvImporter := csv.NewImporterFor[TModel](i.csvOpts...)
 
-	return func(ctx fiber.Ctx, db orm.Db, logger log.Logger, config importConfig, params importParams) error {
+	return func(ctx fiber.Ctx, db orm.DB, logger log.Logger, config importConfig, params importParams) error {
 		// Import requests must use multipart/form-data format
-		if webhelpers.IsJson(ctx) {
+		if webhelpers.IsJSON(ctx) {
 			return result.Err(i18n.T("import_requires_multipart"))
 		}
 
@@ -132,7 +130,7 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.Db, logger l
 			}.Response(ctx)
 		}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 			query := tx.NewInsert().Model(&models)
 			if i.preImport != nil {
 				if err := i.preImport(models, query, ctx, tx); err != nil {

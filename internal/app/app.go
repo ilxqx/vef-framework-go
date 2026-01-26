@@ -9,9 +9,9 @@ import (
 	"github.com/muesli/termenv"
 	"go.uber.org/fx"
 
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/internal/api"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 )
 
@@ -93,10 +93,9 @@ func (a *App) Test(req *http.Request, timeout ...time.Duration) (*http.Response,
 type AppParams struct {
 	fx.In
 
-	Config        *config.AppConfig
-	Middlewares   []Middleware `group:"vef:app:middlewares"`
-	ApiEngine     api.Engine   `name:"vef:api:engine"`
-	OpenApiEngine api.Engine   `name:"vef:openapi:engine"`
+	Config      *config.AppConfig
+	Middlewares []Middleware `group:"vef:app:middlewares"`
+	ApiEngine   api.Engine
 }
 
 // New creates a new VEF application instance with the provided dependencies.
@@ -109,7 +108,9 @@ func New(params AppParams) (*App, error) {
 		return nil, fmt.Errorf("failed to create fiber app: %w", err)
 	}
 
-	configureFiberApp(fiberApp, params.Middlewares, params.ApiEngine, params.OpenApiEngine)
+	if err := configureFiberApp(fiberApp, params.Middlewares, params.ApiEngine); err != nil {
+		return nil, err
+	}
 
 	return &App{
 		app:  fiberApp,

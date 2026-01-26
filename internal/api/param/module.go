@@ -1,0 +1,84 @@
+package param
+
+import (
+	"go.uber.org/fx"
+)
+
+var Module = fx.Module(
+	"vef:api:param",
+	fx.Provide(
+		fx.Private,
+		// Handler param resolvers
+		fx.Annotate(
+			NewCtxResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewDBResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewLoggerResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewPrincipalResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewSchedulerResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewPublisherResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewTransformerResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewStorageResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewParamsResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewMetaResolver,
+			fx.ResultTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		// Factory param resolvers
+		fx.Annotate(
+			NewDBFactoryResolver,
+			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewSchedulerFactoryResolver,
+			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewPublisherFactoryResolver,
+			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewTransformerFactoryResolver,
+			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewStorageFactoryResolver,
+			fx.ResultTags(`group:"vef:api:factory_param_resolvers"`),
+		),
+	),
+	fx.Provide(
+		fx.Annotate(
+			NewHandlerParamResolverManager,
+			fx.ParamTags(`group:"vef:api:handler_param_resolvers"`),
+		),
+		fx.Annotate(
+			NewFactoryParamResolverManager,
+			fx.ParamTags(`group:"vef:api:factory_param_resolvers"`),
+		),
+	),
+)

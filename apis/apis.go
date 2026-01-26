@@ -6,168 +6,176 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 )
 
-// NewApiBuilder creates a new base Api builder instance.
-func NewApiBuilder[T any](self T, version ...string) ApiBuilder[T] {
-	return &baseApiBuilder[T]{
+// NewBuilder creates a new base Api builder instance.
+func NewBuilder[T any](self T, kind ...api.Kind) Builder[T] {
+	return &baseBuilder[T]{
 		self: self,
-		version: lo.TernaryF(
-			len(version) > 0,
-			func() string { return version[0] },
-			func() string { return api.VersionV1 },
+		kind: lo.TernaryF(
+			len(kind) > 0,
+			func() api.Kind { return kind[0] },
+			func() api.Kind { return api.KindRPC },
 		),
 	}
 }
 
-// NewCreateApi creates a new CreateApi instance for single record creation.
-func NewCreateApi[TModel, TParams any](version ...string) CreateApi[TModel, TParams] {
+func getAction(rpcAction, restAction string, kind ...api.Kind) string {
+	if len(kind) > 0 && kind[0] == api.KindREST {
+		return restAction
+	}
+
+	return rpcAction
+}
+
+// NewCreate creates a new Create instance for single record creation.
+func NewCreate[TModel, TParams any](kind ...api.Kind) Create[TModel, TParams] {
 	api := new(createApi[TModel, TParams])
-	api.ApiBuilder = NewApiBuilder[CreateApi[TModel, TParams]](api, version...)
+	api.Builder = NewBuilder[Create[TModel, TParams]](api, kind...)
 
-	return api.Action(ActionCreate)
+	return api.Action(getAction(RPCActionCreate, RESTActionCreate, kind...))
 }
 
-// NewUpdateApi creates a new UpdateApi instance for single record update.
-func NewUpdateApi[TModel, TParams any](version ...string) UpdateApi[TModel, TParams] {
+// NewUpdate creates a new Update instance for single record update.
+func NewUpdate[TModel, TParams any](kind ...api.Kind) Update[TModel, TParams] {
 	api := new(updateApi[TModel, TParams])
-	api.ApiBuilder = NewApiBuilder[UpdateApi[TModel, TParams]](api, version...)
+	api.Builder = NewBuilder[Update[TModel, TParams]](api, kind...)
 
-	return api.Action(ActionUpdate)
+	return api.Action(getAction(RPCActionUpdate, RESTActionUpdate, kind...))
 }
 
-// NewDeleteApi creates a new DeleteApi instance for single record deletion.
-func NewDeleteApi[TModel any](version ...string) DeleteApi[TModel] {
+// NewDelete creates a new DeleteApi instance for single record deletion.
+func NewDelete[TModel any](kind ...api.Kind) Delete[TModel] {
 	api := new(deleteApi[TModel])
-	api.ApiBuilder = NewApiBuilder[DeleteApi[TModel]](api, version...)
+	api.Builder = NewBuilder[Delete[TModel]](api, kind...)
 
-	return api.Action(ActionDelete)
+	return api.Action(getAction(RPCActionDelete, RESTActionDelete, kind...))
 }
 
-// NewCreateManyApi creates a new CreateManyApi instance for batch creation.
-func NewCreateManyApi[TModel, TParams any](version ...string) CreateManyApi[TModel, TParams] {
+// NewCreateMany creates a new CreateMany instance for batch creation.
+func NewCreateMany[TModel, TParams any](kind ...api.Kind) CreateMany[TModel, TParams] {
 	api := new(createManyApi[TModel, TParams])
-	api.ApiBuilder = NewApiBuilder[CreateManyApi[TModel, TParams]](api, version...)
+	api.Builder = NewBuilder[CreateMany[TModel, TParams]](api, kind...)
 
-	return api.Action(ActionCreateMany)
+	return api.Action(getAction(RPCActionCreateMany, RESTActionCreateMany, kind...))
 }
 
-// NewUpdateManyApi creates a new UpdateManyApi instance for batch update.
-func NewUpdateManyApi[TModel, TParams any](version ...string) UpdateManyApi[TModel, TParams] {
+// NewUpdateMany creates a new UpdateMany instance for batch update.
+func NewUpdateMany[TModel, TParams any](kind ...api.Kind) UpdateMany[TModel, TParams] {
 	api := new(updateManyApi[TModel, TParams])
-	api.ApiBuilder = NewApiBuilder[UpdateManyApi[TModel, TParams]](api, version...)
+	api.Builder = NewBuilder[UpdateMany[TModel, TParams]](api, kind...)
 
-	return api.Action(ActionUpdateMany)
+	return api.Action(getAction(RPCActionUpdateMany, RESTActionUpdateMany, kind...))
 }
 
-// NewDeleteManyApi creates a new DeleteManyApi instance for batch deletion.
-func NewDeleteManyApi[TModel any](version ...string) DeleteManyApi[TModel] {
+// NewDeleteMany creates a new DeleteMany instance for batch deletion.
+func NewDeleteMany[TModel any](kind ...api.Kind) DeleteMany[TModel] {
 	api := new(deleteManyApi[TModel])
-	api.ApiBuilder = NewApiBuilder[DeleteManyApi[TModel]](api, version...)
+	api.Builder = NewBuilder[DeleteMany[TModel]](api, kind...)
 
-	return api.Action(ActionDeleteMany)
+	return api.Action(getAction(RPCActionDeleteMany, RESTActionDeleteMany, kind...))
 }
 
-// NewFindApi creates the base FindApi instance used by all find-type endpoints.
-func NewFindApi[TModel, TSearch, TProcessor, TApi any](self TApi, version ...string) FindApi[TModel, TSearch, TProcessor, TApi] {
+// NewFind creates the base Find instance used by all find-type endpoints.
+func NewFind[TModel, TSearch, TProcessor, TApi any](self TApi, kind ...api.Kind) Find[TModel, TSearch, TProcessor, TApi] {
 	return &baseFindApi[TModel, TSearch, TProcessor, TApi]{
-		ApiBuilder: NewApiBuilder(self),
+		Builder: NewBuilder(self, kind...),
 
 		self: self,
 	}
 }
 
-// NewFindOneApi creates a new FindOneApi instance.
-func NewFindOneApi[TModel, TSearch any](version ...string) FindOneApi[TModel, TSearch] {
+// NewFindOne creates a new FindOne instance.
+func NewFindOne[TModel, TSearch any](kind ...api.Kind) FindOne[TModel, TSearch] {
 	api := new(findOneApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]](
+	api.Find = NewFind[TModel, TSearch, TModel, FindOne[TModel, TSearch]](
 		api,
-		version...,
+		kind...,
 	)
 
-	return api.Action(ActionFindOne)
+	return api.Action(getAction(RPCActionFindOne, RESTActionFindOne, kind...))
 }
 
-// NewFindAllApi creates a new FindAllApi instance.
-func NewFindAllApi[TModel, TSearch any](version ...string) FindAllApi[TModel, TSearch] {
+// NewFindAll creates a new FindAll instance.
+func NewFindAll[TModel, TSearch any](kind ...api.Kind) FindAll[TModel, TSearch] {
 	api := new(findAllApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]](
+	api.Find = NewFind[TModel, TSearch, []TModel, FindAll[TModel, TSearch]](
 		api,
-		version...,
+		kind...,
 	)
 
-	return api.Action(ActionFindAll)
+	return api.Action(getAction(RPCActionFindAll, RESTActionFindAll, kind...))
 }
 
-// NewFindPageApi creates a new FindPageApi instance.
-func NewFindPageApi[TModel, TSearch any](version ...string) FindPageApi[TModel, TSearch] {
+// NewFindPage creates a new FindPage instance.
+func NewFindPage[TModel, TSearch any](kind ...api.Kind) FindPage[TModel, TSearch] {
 	api := new(findPageApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]](
+	api.Find = NewFind[TModel, TSearch, []TModel, FindPage[TModel, TSearch]](
 		api,
-		version...,
+		kind...,
 	)
 
-	return api.Action(ActionFindPage)
+	return api.Action(getAction(RPCActionFindPage, RESTActionFindPage, kind...))
 }
 
-// NewFindOptionsApi creates a new FindOptionsApi.
-func NewFindOptionsApi[TModel, TSearch any](version ...string) FindOptionsApi[TModel, TSearch] {
+// NewFindOptions creates a new FindOptions instance.
+func NewFindOptions[TModel, TSearch any](kind ...api.Kind) FindOptions[TModel, TSearch] {
 	api := new(findOptionsApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, []DataOption, FindOptionsApi[TModel, TSearch]](
+	api.Find = NewFind[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]](
 		api,
-		version...,
+		kind...,
 	)
 
-	return api.Action(ActionFindOptions)
+	return api.Action(getAction(RPCActionFindOptions, RESTActionFindOptions, kind...))
 }
 
-// NewFindTreeApi creates a new FindTreeApi for hierarchical data retrieval.
+// NewFindTree creates a new FindTree for hierarchical data retrieval.
 // The treeBuilder function converts flat database records into nested tree structures.
 // Requires models to have id and parent_id columns for parent-child relationships.
-func NewFindTreeApi[TModel, TSearch any](
+func NewFindTree[TModel, TSearch any](
 	treeBuilder func(flatModels []TModel) []TModel,
-	version ...string,
-) FindTreeApi[TModel, TSearch] {
+	kind ...api.Kind,
+) FindTree[TModel, TSearch] {
 	api := &findTreeApi[TModel, TSearch]{
-		idColumn:       IdColumn,
-		parentIdColumn: ParentIdColumn,
+		idColumn:       IDColumn,
+		parentIDColumn: ParentIDColumn,
 		treeBuilder:    treeBuilder,
 	}
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]](
+	api.Find = NewFind[TModel, TSearch, []TModel, FindTree[TModel, TSearch]](
 		api,
-		version...,
+		kind...,
 	)
 
-	return api.Action(ActionFindTree)
+	return api.Action(getAction(RPCActionFindTree, RESTActionFindTree, kind...))
 }
 
-// NewFindTreeOptionsApi creates a new FindTreeOptionsApi.
-func NewFindTreeOptionsApi[TModel, TSearch any](version ...string) FindTreeOptionsApi[TModel, TSearch] {
+// NewFindTreeOptions creates a new FindTreeOptions instance.
+func NewFindTreeOptions[TModel, TSearch any](kind ...api.Kind) FindTreeOptions[TModel, TSearch] {
 	api := &findTreeOptionsApi[TModel, TSearch]{
-		idColumn:       IdColumn,
-		parentIdColumn: ParentIdColumn,
+		idColumn:       IDColumn,
+		parentIDColumn: ParentIDColumn,
 	}
-	api.FindApi = NewFindApi[TModel, TSearch, []TreeDataOption, FindTreeOptionsApi[TModel, TSearch]](
+	api.Find = NewFind[TModel, TSearch, []TreeDataOption, FindTreeOptions[TModel, TSearch]](
 		api,
-		version...,
+		kind...,
 	)
 
-	return api.Action(ActionFindTreeOptions)
+	return api.Action(getAction(RPCActionFindTreeOptions, RESTActionFindTreeOptions, kind...))
 }
 
-// NewExportApi creates a new ExportApi instance.
-func NewExportApi[TModel, TSearch any](version ...string) ExportApi[TModel, TSearch] {
+// NewExport creates a new Export instance.
+func NewExport[TModel, TSearch any](kind ...api.Kind) Export[TModel, TSearch] {
 	api := new(exportApi[TModel, TSearch])
-	api.FindApi = NewFindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]](
+	api.Find = NewFind[TModel, TSearch, []TModel, Export[TModel, TSearch]](
 		api,
-		version...,
+		kind...,
 	)
 
-	return api.Action(ActionExport)
+	return api.Action(getAction(RPCActionExport, RESTActionExport, kind...))
 }
 
-// NewImportApi creates a new ImportApi instance.
-func NewImportApi[TModel any](version ...string) ImportApi[TModel] {
+// NewImport creates a new Import instance.
+func NewImport[TModel any](kind ...api.Kind) Import[TModel] {
 	api := new(importApi[TModel])
-	api.ApiBuilder = NewApiBuilder[ImportApi[TModel]](api, version...)
+	api.Builder = NewBuilder[Import[TModel]](api, kind...)
 
-	return api.Action(ActionImport)
+	return api.Action(getAction(RPCActionImport, RESTActionImport, kind...))
 }

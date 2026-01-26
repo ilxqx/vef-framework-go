@@ -15,40 +15,38 @@ import (
 )
 
 type createApi[TModel, TParams any] struct {
-	ApiBuilder[CreateApi[TModel, TParams]]
+	Builder[Create[TModel, TParams]]
 
 	preCreate  PreCreateProcessor[TModel, TParams]
 	postCreate PostCreateProcessor[TModel, TParams]
 }
 
-// Provide generates the final Api specification for model creation.
-// Returns a complete api.Spec that can be registered with the router.
-func (c *createApi[TModel, TParams]) Provide() api.Spec {
-	return c.Build(c.create)
+func (c *createApi[TModel, TParams]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{c.Build(c.create)}
 }
 
-func (c *createApi[TModel, TParams]) WithPreCreate(processor PreCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
+func (c *createApi[TModel, TParams]) WithPreCreate(processor PreCreateProcessor[TModel, TParams]) Create[TModel, TParams] {
 	c.preCreate = processor
 
 	return c
 }
 
-func (c *createApi[TModel, TParams]) WithPostCreate(processor PostCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams] {
+func (c *createApi[TModel, TParams]) WithPostCreate(processor PostCreateProcessor[TModel, TParams]) Create[TModel, TParams] {
 	c.postCreate = processor
 
 	return c
 }
 
-func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params TParams) error, error) {
+func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params TParams) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 
-	return func(ctx fiber.Ctx, db orm.Db, params TParams) error {
+	return func(ctx fiber.Ctx, db orm.DB, params TParams) error {
 		var model TModel
 		if err := copier.Copy(&params, &model); err != nil {
 			return err
 		}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 			query := tx.NewInsert().Model(&model)
 			if c.preCreate != nil {
 				if err := c.preCreate(&model, &params, query, ctx, tx); err != nil {
@@ -78,7 +76,7 @@ func (c *createApi[TModel, TParams]) create(sc storage.Service, publisher event.
 				}
 			}
 
-			pks, err := db.ModelPks(&model)
+			pks, err := db.ModelPKs(&model)
 			if err != nil {
 				if cleanupErr := promoter.Promote(txCtx, nil, &model); cleanupErr != nil {
 					return fmt.Errorf("get primary keys failed: %w; cleanup files also failed: %w", err, cleanupErr)

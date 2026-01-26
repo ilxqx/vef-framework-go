@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -17,71 +16,66 @@ import (
 )
 
 type deleteManyApi[TModel any] struct {
-	ApiBuilder[DeleteManyApi[TModel]]
+	Builder[DeleteMany[TModel]]
 
 	preDeleteMany    PreDeleteManyProcessor[TModel]
 	postDeleteMany   PostDeleteManyProcessor[TModel]
 	dataPermDisabled bool
 }
 
-// Provide generates the final Api specification for batch model deletion.
-// Returns a complete api.Spec that can be registered with the router.
-func (d *deleteManyApi[TModel]) Provide() api.Spec {
-	return d.Build(d.deleteMany)
+func (d *deleteManyApi[TModel]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{d.Build(d.deleteMany)}
 }
 
-func (d *deleteManyApi[TModel]) WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
+func (d *deleteManyApi[TModel]) WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteMany[TModel] {
 	d.preDeleteMany = processor
 
 	return d
 }
 
-func (d *deleteManyApi[TModel]) WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel] {
+func (d *deleteManyApi[TModel]) WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteMany[TModel] {
 	d.postDeleteMany = processor
 
 	return d
 }
 
-func (d *deleteManyApi[TModel]) DisableDataPerm() DeleteManyApi[TModel] {
+func (d *deleteManyApi[TModel]) DisableDataPerm() DeleteMany[TModel] {
 	d.dataPermDisabled = true
 
 	return d
 }
 
-func (d *deleteManyApi[TModel]) deleteMany(db orm.Db, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error, error) {
+func (d *deleteManyApi[TModel]) deleteMany(db orm.DB, sc storage.Service, publisher event.Publisher) (func(ctx fiber.Ctx, db orm.DB, params DeleteManyParams) error, error) {
 	promoter := storage.NewPromoter[TModel](sc, publisher)
 	schema := db.TableOf((*TModel)(nil))
-	pks := db.ModelPkFields((*TModel)(nil))
+	pks := db.ModelPKFields((*TModel)(nil))
 
 	if len(pks) == 0 {
 		return nil, fmt.Errorf("%w: %s", ErrModelNoPrimaryKey, schema.Name)
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, params DeleteManyParams) error {
-		if len(params.Pks) == 0 {
+	return func(ctx fiber.Ctx, db orm.DB, params DeleteManyParams) error {
+		if len(params.PKs) == 0 {
 			return result.Ok().Response(ctx)
 		}
 
-		models := make([]TModel, len(params.Pks))
+		models := make([]TModel, len(params.PKs))
 
-		if err := streams.Range(0, len(params.Pks)).ForEachErr(func(i int) error {
-			pkValue := params.Pks[i]
+		for i, pkValue := range params.PKs {
 			modelValue := reflect.ValueOf(&models[i]).Elem()
 
-			// Try to interpret pkValue as a map first (works for both single and composite Pks)
 			if pkMap, ok := pkValue.(map[string]any); ok {
-				if err := streams.FromSlice(pks).ForEachErr(func(pk *orm.PkField) error {
+				for _, pk := range pks {
 					value, ok := pkMap[pk.Name]
 					if !ok {
 						return result.Err(i18n.T("primary_key_required", map[string]any{"field": pk.Name}))
 					}
 
-					return pk.Set(modelValue, value)
-				}); err != nil {
-					return err
+					if err := pk.Set(modelValue, value); err != nil {
+						return err
+					}
 				}
 			} else {
-				// Direct value format - only valid for single primary key
 				if len(pks) != 1 {
 					return result.Err(i18n.T("composite_primary_key_requires_map"))
 				}
@@ -91,19 +85,19 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db, sc storage.Service, publis
 				}
 			}
 
-			query := db.NewSelect().Model(&models[i]).WherePk()
+			query := db.NewSelect().Model(&models[i]).WherePK()
 			if !d.dataPermDisabled {
 				if err := ApplyDataPermission(query, ctx); err != nil {
 					return err
 				}
 			}
 
-			return query.Scan(ctx.Context(), &models[i])
-		}); err != nil {
-			return err
+			if err := query.Scan(ctx.Context(), &models[i]); err != nil {
+				return err
+			}
 		}
 
-		return db.RunInTx(ctx.Context(), func(txCtx context.Context, tx orm.Db) error {
+		return db.RunInTX(ctx.Context(), func(txCtx context.Context, tx orm.DB) error {
 			query := tx.NewDelete().Model(&models)
 			if d.preDeleteMany != nil {
 				if err := d.preDeleteMany(models, query, ctx, tx); err != nil {
@@ -111,7 +105,7 @@ func (d *deleteManyApi[TModel]) deleteMany(db orm.Db, sc storage.Service, publis
 				}
 			}
 
-			if _, err := query.WherePk().Exec(txCtx); err != nil {
+			if _, err := query.WherePK().Exec(txCtx); err != nil {
 				return err
 			}
 

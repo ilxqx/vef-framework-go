@@ -12,104 +12,105 @@ import (
 	"github.com/ilxqx/vef-framework-go/sort"
 )
 
-// ApiBuilder defines the interface for building Api endpoints.
-type ApiBuilder[T any] interface {
+// Builder defines the interface for building Api endpoints.
+type Builder[T any] interface {
+	ResourceKind(kind api.Kind) T
 	Action(action string) T
 	EnableAudit() T
 	Timeout(timeout time.Duration) T
 	Public() T
 	PermToken(token string) T
-	RateLimit(max int, expiration time.Duration) T
-	Build(handler any) api.Spec
+	RateLimit(max int, period time.Duration) T
+	Build(handler any) api.OperationSpec
 }
 
-// CreateApi provides a fluent interface for building create endpoints.
+// Create provides a fluent interface for building create endpoints.
 // Supports pre/post processing hooks and transaction-based model creation.
-type CreateApi[TModel, TParams any] interface {
-	api.Provider
-	ApiBuilder[CreateApi[TModel, TParams]]
+type Create[TModel, TParams any] interface {
+	api.OperationsProvider
+	Builder[Create[TModel, TParams]]
 
 	// This processor is called before the model is saved to the database.
-	WithPreCreate(processor PreCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams]
+	WithPreCreate(processor PreCreateProcessor[TModel, TParams]) Create[TModel, TParams]
 	// This processor is called after the model is successfully saved within the same transaction.
-	WithPostCreate(processor PostCreateProcessor[TModel, TParams]) CreateApi[TModel, TParams]
+	WithPostCreate(processor PostCreateProcessor[TModel, TParams]) Create[TModel, TParams]
 }
 
-// UpdateApi provides a fluent interface for building update endpoints.
+// Update provides a fluent interface for building update endpoints.
 // Loads existing model, merges changes, and supports pre/post processing hooks.
-type UpdateApi[TModel, TParams any] interface {
-	api.Provider
-	ApiBuilder[UpdateApi[TModel, TParams]]
+type Update[TModel, TParams any] interface {
+	api.OperationsProvider
+	Builder[Update[TModel, TParams]]
 
 	// This processor is called before the model is updated in the database.
-	WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
+	WithPreUpdate(processor PreUpdateProcessor[TModel, TParams]) Update[TModel, TParams]
 	// This processor is called after the model is successfully updated within the same transaction.
-	WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) UpdateApi[TModel, TParams]
-	DisableDataPerm() UpdateApi[TModel, TParams]
+	WithPostUpdate(processor PostUpdateProcessor[TModel, TParams]) Update[TModel, TParams]
+	DisableDataPerm() Update[TModel, TParams]
 }
 
-// DeleteApi provides a fluent interface for building delete endpoints.
+// Delete provides a fluent interface for building delete endpoints.
 // Validates primary key, loads model, and supports pre/post processing hooks.
-type DeleteApi[TModel any] interface {
-	api.Provider
-	ApiBuilder[DeleteApi[TModel]]
+type Delete[TModel any] interface {
+	api.OperationsProvider
+	Builder[Delete[TModel]]
 
 	// This processor is called before the model is deleted from the database.
-	WithPreDelete(processor PreDeleteProcessor[TModel]) DeleteApi[TModel]
+	WithPreDelete(processor PreDeleteProcessor[TModel]) Delete[TModel]
 	// This processor is called after the model is successfully deleted within the same transaction.
-	WithPostDelete(processor PostDeleteProcessor[TModel]) DeleteApi[TModel]
-	DisableDataPerm() DeleteApi[TModel]
+	WithPostDelete(processor PostDeleteProcessor[TModel]) Delete[TModel]
+	DisableDataPerm() Delete[TModel]
 }
 
-// CreateManyApi provides a fluent interface for building batch create endpoints.
+// CreateMany provides a fluent interface for building batch create endpoints.
 // Creates multiple models atomically in a single transaction with pre/post hooks.
-type CreateManyApi[TModel, TParams any] interface {
-	api.Provider
-	ApiBuilder[CreateManyApi[TModel, TParams]]
+type CreateMany[TModel, TParams any] interface {
+	api.OperationsProvider
+	Builder[CreateMany[TModel, TParams]]
 
 	// This processor is called before the models are saved to the database.
-	WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams]
+	WithPreCreateMany(processor PreCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams]
 	// This processor is called after the models are successfully saved within the same transaction.
-	WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateManyApi[TModel, TParams]
+	WithPostCreateMany(processor PostCreateManyProcessor[TModel, TParams]) CreateMany[TModel, TParams]
 }
 
-// UpdateManyApi provides a fluent interface for building batch update endpoints.
+// UpdateMany provides a fluent interface for building batch update endpoints.
 // Updates multiple models atomically with validation, merge, and pre/post hooks.
-type UpdateManyApi[TModel, TParams any] interface {
-	api.Provider
-	ApiBuilder[UpdateManyApi[TModel, TParams]]
+type UpdateMany[TModel, TParams any] interface {
+	api.OperationsProvider
+	Builder[UpdateMany[TModel, TParams]]
 
 	// This processor is called before the models are updated in the database.
-	WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
+	WithPreUpdateMany(processor PreUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams]
 	// This processor is called after the models are successfully updated within the same transaction.
-	WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateManyApi[TModel, TParams]
-	DisableDataPerm() UpdateManyApi[TModel, TParams]
+	WithPostUpdateMany(processor PostUpdateManyProcessor[TModel, TParams]) UpdateMany[TModel, TParams]
+	DisableDataPerm() UpdateMany[TModel, TParams]
 }
 
-// DeleteManyApi provides a fluent interface for building batch delete endpoints.
+// DeleteMany provides a fluent interface for building batch delete endpoints.
 // Deletes multiple models atomically with validation and pre/post hooks.
-type DeleteManyApi[TModel any] interface {
-	api.Provider
-	ApiBuilder[DeleteManyApi[TModel]]
+type DeleteMany[TModel any] interface {
+	api.OperationsProvider
+	Builder[DeleteMany[TModel]]
 
 	// This processor is called before the models are deleted from the database.
-	WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
+	WithPreDeleteMany(processor PreDeleteManyProcessor[TModel]) DeleteMany[TModel]
 	// This processor is called after the models are successfully deleted within the same transaction.
-	WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteManyApi[TModel]
-	DisableDataPerm() DeleteManyApi[TModel]
+	WithPostDeleteMany(processor PostDeleteManyProcessor[TModel]) DeleteMany[TModel]
+	DisableDataPerm() DeleteMany[TModel]
 }
 
-// FindApi provides a fluent interface for building find endpoints.
+// Find provides a fluent interface for building find endpoints.
 // All configuration is done through FindApiOptions passed to NewFindXxxApi constructors.
-type FindApi[TModel, TSearch, TProcessorIn, TApi any] interface {
-	ApiBuilder[TApi]
+type Find[TModel, TSearch, TProcessorIn, TApi any] interface {
+	Builder[TApi]
 
 	// Setup initializes the FindApi with framework-level options and validates configuration.
 	// Must be called before query execution. Config specifies which QueryParts framework options apply to.
-	Setup(db orm.Db, config *FindApiConfig, opts ...*FindApiOption) error
+	Setup(db orm.DB, config *FindApiConfig, opts ...*FindApiOption) error
 	// ConfigureQuery applies FindApiOptions for the specified QueryPart to the query.
 	// Returns error if any option applier fails.
-	ConfigureQuery(query orm.SelectQuery, search TSearch, ctx fiber.Ctx, part QueryPart) error
+	ConfigureQuery(query orm.SelectQuery, search TSearch, meta api.Meta, ctx fiber.Ctx, part QueryPart) error
 	// Process applies post-query processing to transform results.
 	// Returns input unchanged if no Processor is configured.
 	Process(input TProcessorIn, search TSearch, ctx fiber.Ctx) any
@@ -135,85 +136,85 @@ type FindApi[TModel, TSearch, TProcessorIn, TApi any] interface {
 	WithQueryApplier(applier func(query orm.SelectQuery, search TSearch, ctx fiber.Ctx) error, parts ...QueryPart) TApi
 }
 
-// FindOneApi provides a fluent interface for building find one endpoints.
+// FindOne provides a fluent interface for building find one endpoints.
 // Returns a single record matching the search criteria.
-type FindOneApi[TModel, TSearch any] interface {
-	api.Provider
-	FindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]]
+type FindOne[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, TModel, FindOne[TModel, TSearch]]
 }
 
-// FindAllApi provides a fluent interface for building find all endpoints.
+// FindAll provides a fluent interface for building find all endpoints.
 // Returns all records matching the search criteria (with a safety limit).
-type FindAllApi[TModel, TSearch any] interface {
-	api.Provider
-	FindApi[TModel, TSearch, []TModel, FindAllApi[TModel, TSearch]]
+type FindAll[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, FindAll[TModel, TSearch]]
 }
 
-// FindPageApi provides a fluent interface for building find page endpoints.
+// FindPage provides a fluent interface for building find page endpoints.
 // Returns paginated results with total count.
-type FindPageApi[TModel, TSearch any] interface {
-	api.Provider
-	FindApi[TModel, TSearch, []TModel, FindPageApi[TModel, TSearch]]
+type FindPage[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, FindPage[TModel, TSearch]]
 
-	WithDefaultPageSize(size int) FindPageApi[TModel, TSearch]
+	WithDefaultPageSize(size int) FindPage[TModel, TSearch]
 }
 
-// FindTreeApi provides a fluent interface for building find tree endpoints.
+// FindTree provides a fluent interface for building find tree endpoints.
 // Returns hierarchical data using recursive CTEs.
-type FindTreeApi[TModel, TSearch any] interface {
-	api.Provider
-	FindApi[TModel, TSearch, []TModel, FindTreeApi[TModel, TSearch]]
+type FindTree[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, FindTree[TModel, TSearch]]
 
 	// This column is used to identify individual nodes and establish parent-child relationships.
-	WithIdColumn(name string) FindTreeApi[TModel, TSearch]
+	WithIDColumn(name string) FindTree[TModel, TSearch]
 	// This column establishes the hierarchical relationship between parent and child nodes.
-	WithParentIdColumn(name string) FindTreeApi[TModel, TSearch]
+	WithParentIDColumn(name string) FindTree[TModel, TSearch]
 }
 
-// FindOptionsApi provides a fluent interface for building find options endpoints.
+// FindOptions provides a fluent interface for building find options endpoints.
 // Returns a simplified list of options (value, label, description) for dropdowns and selects.
-type FindOptionsApi[TModel, TSearch any] interface {
-	api.Provider
-	FindApi[TModel, TSearch, []DataOption, FindOptionsApi[TModel, TSearch]]
+type FindOptions[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []DataOption, FindOptions[TModel, TSearch]]
 
 	// This mapping provides fallback values for column mapping when not explicitly specified in queries.
-	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptionsApi[TModel, TSearch]
+	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindOptions[TModel, TSearch]
 }
 
-// FindTreeOptionsApi provides a fluent interface for building find tree options endpoints.
+// FindTreeOptions provides a fluent interface for building find tree options endpoints.
 // Returns hierarchical options using recursive CTEs for tree-structured dropdowns.
-type FindTreeOptionsApi[TModel, TSearch any] interface {
-	api.Provider
-	FindApi[TModel, TSearch, []TreeDataOption, FindTreeOptionsApi[TModel, TSearch]]
+type FindTreeOptions[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TreeDataOption, FindTreeOptions[TModel, TSearch]]
 
 	// This mapping provides fallback values for label, value, description, and sort columns.
-	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptionsApi[TModel, TSearch]
-	WithIdColumn(name string) FindTreeOptionsApi[TModel, TSearch]
-	WithParentIdColumn(name string) FindTreeOptionsApi[TModel, TSearch]
+	WithDefaultColumnMapping(mapping *DataOptionColumnMapping) FindTreeOptions[TModel, TSearch]
+	WithIDColumn(name string) FindTreeOptions[TModel, TSearch]
+	WithParentIDColumn(name string) FindTreeOptions[TModel, TSearch]
 }
 
-// ExportApi provides a fluent interface for building export endpoints.
+// Export provides a fluent interface for building export endpoints.
 // Queries data based on search conditions and exports to Excel or Csv file.
-type ExportApi[TModel, TSearch any] interface {
-	api.Provider
-	FindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]]
+type Export[TModel, TSearch any] interface {
+	api.OperationsProvider
+	Find[TModel, TSearch, []TModel, Export[TModel, TSearch]]
 
-	WithDefaultFormat(format TabularFormat) ExportApi[TModel, TSearch]
-	WithExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch]
-	WithCsvOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch]
-	WithPreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch]
-	WithFilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch]
+	WithDefaultFormat(format TabularFormat) Export[TModel, TSearch]
+	WithExcelOptions(opts ...excel.ExportOption) Export[TModel, TSearch]
+	WithCsvOptions(opts ...csv.ExportOption) Export[TModel, TSearch]
+	WithPreExport(processor PreExportProcessor[TModel, TSearch]) Export[TModel, TSearch]
+	WithFilenameBuilder(builder FilenameBuilder[TSearch]) Export[TModel, TSearch]
 }
 
-// ImportApi provides a fluent interface for building import endpoints.
+// Import provides a fluent interface for building import endpoints.
 // Parses uploaded Excel or Csv file and creates records in database.
-type ImportApi[TModel any] interface {
-	api.Provider
-	ApiBuilder[ImportApi[TModel]]
+type Import[TModel any] interface {
+	api.OperationsProvider
+	Builder[Import[TModel]]
 
-	WithDefaultFormat(format TabularFormat) ImportApi[TModel]
-	WithExcelOptions(opts ...excel.ImportOption) ImportApi[TModel]
-	WithCsvOptions(opts ...csv.ImportOption) ImportApi[TModel]
-	WithPreImport(processor PreImportProcessor[TModel]) ImportApi[TModel]
-	WithPostImport(processor PostImportProcessor[TModel]) ImportApi[TModel]
+	WithDefaultFormat(format TabularFormat) Import[TModel]
+	WithExcelOptions(opts ...excel.ImportOption) Import[TModel]
+	WithCsvOptions(opts ...csv.ImportOption) Import[TModel]
+	WithPreImport(processor PreImportProcessor[TModel]) Import[TModel]
+	WithPostImport(processor PostImportProcessor[TModel]) Import[TModel]
 }

@@ -2,7 +2,6 @@ package apis
 
 import (
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
 	"github.com/ilxqx/vef-framework-go/api"
@@ -23,7 +22,7 @@ const (
 )
 
 type exportApi[TModel, TSearch any] struct {
-	FindApi[TModel, TSearch, []TModel, ExportApi[TModel, TSearch]]
+	Find[TModel, TSearch, []TModel, Export[TModel, TSearch]]
 
 	defaultFormat   TabularFormat
 	excelOpts       []excel.ExportOption
@@ -32,37 +31,35 @@ type exportApi[TModel, TSearch any] struct {
 	filenameBuilder FilenameBuilder[TSearch]
 }
 
-// Provide generates the final Api specification for export.
-// Returns a complete api.Spec that can be registered with the router.
-func (a *exportApi[TModel, TSearch]) Provide() api.Spec {
-	return a.Build(a.exportData)
+func (a *exportApi[TModel, TSearch]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{a.Build(a.exportData)}
 }
 
-func (a *exportApi[TModel, TSearch]) WithDefaultFormat(format TabularFormat) ExportApi[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) WithDefaultFormat(format TabularFormat) Export[TModel, TSearch] {
 	a.defaultFormat = format
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithExcelOptions(opts ...excel.ExportOption) ExportApi[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) WithExcelOptions(opts ...excel.ExportOption) Export[TModel, TSearch] {
 	a.excelOpts = opts
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithCsvOptions(opts ...csv.ExportOption) ExportApi[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) WithCsvOptions(opts ...csv.ExportOption) Export[TModel, TSearch] {
 	a.csvOpts = opts
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithPreExport(processor PreExportProcessor[TModel, TSearch]) ExportApi[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) WithPreExport(processor PreExportProcessor[TModel, TSearch]) Export[TModel, TSearch] {
 	a.preExport = processor
 
 	return a
 }
 
-func (a *exportApi[TModel, TSearch]) WithFilenameBuilder(builder FilenameBuilder[TSearch]) ExportApi[TModel, TSearch] {
+func (a *exportApi[TModel, TSearch]) WithFilenameBuilder(builder FilenameBuilder[TSearch]) Export[TModel, TSearch] {
 	a.filenameBuilder = builder
 
 	return a
@@ -74,7 +71,7 @@ type exportConfig struct {
 	Format TabularFormat `json:"format"`
 }
 
-func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, config exportConfig, search TSearch) error, error) {
+func (a *exportApi[TModel, TSearch]) exportData(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, config exportConfig, search TSearch, meta api.Meta) error, error) {
 	if err := a.Setup(db, &FindApiConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
@@ -88,7 +85,7 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 	excelExporter := excel.NewExporterFor[TModel](a.excelOpts...)
 	csvExporter := csv.NewExporterFor[TModel](a.csvOpts...)
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, config exportConfig, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, config exportConfig, search TSearch, meta api.Meta) error {
 		var (
 			format                       = lo.CoalesceOrEmpty(config.Format, a.defaultFormat, FormatExcel)
 			exporter                     tabular.Exporter
@@ -113,7 +110,7 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 			query  = db.NewSelect().Model(&models).SelectModelColumns()
 		)
 
-		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+		if err := a.ConfigureQuery(query, search, meta, ctx, QueryRoot); err != nil {
 			return err
 		}
 		// Execute query with safety limit
@@ -122,10 +119,8 @@ func (a *exportApi[TModel, TSearch]) exportData(db orm.Db) (func(ctx fiber.Ctx, 
 			return err
 		}
 
-		if len(models) > 0 {
-			if err := streams.Range(0, len(models)).ForEachErr(func(i int) error {
-				return transformer.Struct(ctx.Context(), &models[i])
-			}); err != nil {
+		for i := range models {
+			if err := transformer.Struct(ctx.Context(), &models[i]); err != nil {
 				return err
 			}
 		}

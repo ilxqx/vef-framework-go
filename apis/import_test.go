@@ -39,25 +39,25 @@ type ImportUserSearch struct {
 
 type TestUserImportResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser]
+	apis.Import[ImportUser]
 }
 
 func NewTestUserImportResource() api.Resource {
 	return &TestUserImportResource{
-		Resource:  api.NewResource("test/user_import"),
-		ImportApi: apis.NewImportApi[ImportUser]().Public(),
+		Resource: api.NewRPCResource("test/user_import"),
+		Import:   apis.NewImport[ImportUser]().Public(),
 	}
 }
 
 type TestUserImportWithOptionsResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser]
+	apis.Import[ImportUser]
 }
 
 func NewTestUserImportWithOptionsResource() api.Resource {
 	return &TestUserImportWithOptionsResource{
-		Resource: api.NewResource("test/user_import_opts"),
-		ImportApi: apis.NewImportApi[ImportUser]().
+		Resource: api.NewRPCResource("test/user_import_opts"),
+		Import: apis.NewImport[ImportUser]().
 			Public().
 			WithExcelOptions(excel.WithImportSheetName("用户列表")),
 	}
@@ -65,15 +65,15 @@ func NewTestUserImportWithOptionsResource() api.Resource {
 
 type TestUserImportWithPreProcessorResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser]
+	apis.Import[ImportUser]
 }
 
 func NewTestUserImportWithPreProcessorResource() api.Resource {
 	return &TestUserImportWithPreProcessorResource{
-		Resource: api.NewResource("test/user_import_preproc"),
-		ImportApi: apis.NewImportApi[ImportUser]().
+		Resource: api.NewRPCResource("test/user_import_preproc"),
+		Import: apis.NewImport[ImportUser]().
 			Public().
-			WithPreImport(func(models []ImportUser, query orm.InsertQuery, ctx fiber.Ctx, tx orm.Db) error {
+			WithPreImport(func(models []ImportUser, query orm.InsertQuery, ctx fiber.Ctx, tx orm.DB) error {
 				// Pre-process all models - change inactive to pending
 				for i := range models {
 					if models[i].Status == "inactive" {
@@ -88,15 +88,15 @@ func NewTestUserImportWithPreProcessorResource() api.Resource {
 
 type TestUserImportWithPostProcessorResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser]
+	apis.Import[ImportUser]
 }
 
 func NewTestUserImportWithPostProcessorResource() api.Resource {
 	return &TestUserImportWithPostProcessorResource{
-		Resource: api.NewResource("test/user_import_postproc"),
-		ImportApi: apis.NewImportApi[ImportUser]().
+		Resource: api.NewRPCResource("test/user_import_postproc"),
+		Import: apis.NewImport[ImportUser]().
 			Public().
-			WithPostImport(func(models []ImportUser, ctx fiber.Ctx, db orm.Db) error {
+			WithPostImport(func(models []ImportUser, ctx fiber.Ctx, db orm.DB) error {
 				// Set custom header with count
 				ctx.Set("X-Import-Count", string(rune('0'+len(models))))
 
@@ -107,13 +107,13 @@ func NewTestUserImportWithPostProcessorResource() api.Resource {
 
 type TestUserImportCSVResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser]
+	apis.Import[ImportUser]
 }
 
 func NewTestUserImportCSVResource() api.Resource {
 	return &TestUserImportCSVResource{
-		Resource: api.NewResource("test/user_import_csv"),
-		ImportApi: apis.NewImportApi[ImportUser]().
+		Resource: api.NewRPCResource("test/user_import_csv"),
+		Import: apis.NewImport[ImportUser]().
 			Public().
 			WithDefaultFormat(apis.FormatCsv),
 	}
@@ -121,13 +121,13 @@ func NewTestUserImportCSVResource() api.Resource {
 
 type TestUserImportCSVWithOptionsResource struct {
 	api.Resource
-	apis.ImportApi[ImportUser]
+	apis.Import[ImportUser]
 }
 
 func NewTestUserImportCSVWithOptionsResource() api.Resource {
 	return &TestUserImportCSVWithOptionsResource{
-		Resource: api.NewResource("test/user_import_csv_opts"),
-		ImportApi: apis.NewImportApi[ImportUser]().
+		Resource: api.NewRPCResource("test/user_import_csv_opts"),
+		Import: apis.NewImport[ImportUser]().
 			Public().
 			WithDefaultFormat(apis.FormatCsv).
 			WithCsvOptions(csv.WithImportDelimiter(';')),
@@ -632,7 +632,7 @@ func (suite *ImportTestSuite) makeMultipartApiRequest(req api.Request, filename 
 
 	// Add params as JSON string if present
 	if req.Params != nil {
-		paramsJSON, err := encoding.ToJson(req.Params)
+		paramsJSON, err := encoding.ToJSON(req.Params)
 		suite.NoError(err)
 
 		_ = writer.WriteField("params", paramsJSON)
@@ -640,7 +640,7 @@ func (suite *ImportTestSuite) makeMultipartApiRequest(req api.Request, filename 
 
 	// Add meta as JSON string if present
 	if req.Meta != nil {
-		metaJSON, err := encoding.ToJson(req.Meta)
+		metaJSON, err := encoding.ToJSON(req.Meta)
 		suite.NoError(err)
 
 		_ = writer.WriteField("meta", metaJSON)

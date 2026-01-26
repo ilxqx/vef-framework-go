@@ -48,7 +48,7 @@ func (suite *AppTestSuite) SetupSuite() {
 	suite.app, suite.stop = apptest.NewTestApp(
 		suite.T(),
 		fx.Replace(&config.DatasourceConfig{
-			Type: constants.DbSQLite,
+			Type: constants.SQLite,
 		}),
 		fx.Invoke(func() {
 			// Re-initialize i18n with default language after clearing env var
@@ -80,10 +80,10 @@ type TestResource struct {
 
 func NewTestResource() api.Resource {
 	return &TestResource{
-		Resource: api.NewResource(
+		Resource: api.NewRPCResource(
 			"test",
-			api.WithApis(
-				api.Spec{
+			api.WithOperations(
+				api.OperationSpec{
 					Action: "ping",
 					Public: true,
 				},
@@ -92,7 +92,7 @@ func NewTestResource() api.Resource {
 	}
 }
 
-func (r *TestResource) Ping(ctx fiber.Ctx) error {
+func (*TestResource) Ping(ctx fiber.Ctx) error {
 	return result.Ok("pong").Response(ctx)
 }
 

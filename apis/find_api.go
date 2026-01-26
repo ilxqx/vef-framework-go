@@ -4,9 +4,9 @@ import (
 	"slices"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
+	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/sort"
@@ -15,7 +15,7 @@ import (
 // baseFindApi is the base implementation for all Find APIs.
 // It provides a unified query configuration system using FindApiOptions.
 type baseFindApi[TModel, TSearch, TProcessorIn, TApi any] struct {
-	ApiBuilder[TApi]
+	Builder[TApi]
 
 	setupDone           bool
 	dataPermDisabled    bool
@@ -32,7 +32,7 @@ type baseFindApi[TModel, TSearch, TProcessorIn, TApi any] struct {
 // Setup initializes the FindApi with database and configuration.
 // This method is called once in factory functions and is safe to call multiple times.
 // Subsequent calls are no-ops.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.Db, config *FindApiConfig, opts ...*FindApiOption) error {
+func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.DB, config *FindApiConfig, opts ...*FindApiOption) error {
 	if a.setupDone {
 		return nil
 	}
@@ -63,7 +63,7 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.Db, conf
 			}
 
 			if pkLen > 1 {
-				return ErrAuditUserCompositePk
+				return ErrAuditUserCompositePK
 			}
 
 			opt := withAuditUserNames(
@@ -121,46 +121,27 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.Db, conf
 }
 
 // ConfigureQuery applies all query configuration options for the specified query part.
-// This is the core method that processes FindApiOptions and applies them to the query.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) ConfigureQuery(query orm.SelectQuery, search TSearch, ctx fiber.Ctx, part QueryPart) error {
-	// Use pre-grouped options for efficient lookup
-	// Track applied options to avoid duplicates when an option targets both specific part and QueryAll
+func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) ConfigureQuery(query orm.SelectQuery, search TSearch, meta api.Meta, ctx fiber.Ctx, part QueryPart) error {
 	applied := make(map[*FindApiOption]bool)
 
-	if err := streams.FromSlice(a.optionsByPart[part]).ForEachErr(func(opt *FindApiOption) error {
-		if applied[opt] {
-			return nil
+	applyOpts := func(opts []*FindApiOption) error {
+		for _, opt := range opts {
+			if applied[opt] {
+				continue
+			}
+			if err := opt.Applier(query, search, meta, ctx); err != nil {
+				return err
+			}
+			applied[opt] = true
 		}
-
-		if err := opt.Applier(query, search, ctx); err != nil {
-			return err
-		}
-
-		applied[opt] = true
-
 		return nil
-	}); err != nil {
+	}
+
+	if err := applyOpts(a.optionsByPart[part]); err != nil {
 		return err
 	}
 
-	// Apply options for QueryAll (applies to all parts)
-	if err := streams.FromSlice(a.optionsByPart[QueryAll]).ForEachErr(func(opt *FindApiOption) error {
-		if applied[opt] {
-			return nil
-		}
-
-		if err := opt.Applier(query, search, ctx); err != nil {
-			return err
-		}
-
-		applied[opt] = true
-
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	return applyOpts(a.optionsByPart[QueryAll])
 }
 
 // Process applies post-query processing to transform or enrich the query results.

@@ -13,28 +13,28 @@ import (
 // Test Resources.
 type TestUserDeleteResource struct {
 	api.Resource
-	apis.DeleteApi[TestUser]
+	apis.Delete[TestUser]
 }
 
 func NewTestUserDeleteResource() api.Resource {
 	return &TestUserDeleteResource{
-		Resource:  api.NewResource("test/user_delete"),
-		DeleteApi: apis.NewDeleteApi[TestUser]().Public(),
+		Resource: api.NewRPCResource("test/user_delete"),
+		Delete:   apis.NewDelete[TestUser]().Public(),
 	}
 }
 
 // Resource with PreDelete hook.
 type TestUserDeleteWithPreHookResource struct {
 	api.Resource
-	apis.DeleteApi[TestUser]
+	apis.Delete[TestUser]
 }
 
 func NewTestUserDeleteWithPreHookResource() api.Resource {
 	return &TestUserDeleteWithPreHookResource{
-		Resource: api.NewResource("test/user_delete_prehook"),
-		DeleteApi: apis.NewDeleteApi[TestUser]().
+		Resource: api.NewRPCResource("test/user_delete_prehook"),
+		Delete: apis.NewDelete[TestUser]().
 			Public().
-			WithPreDelete(func(model *TestUser, query orm.DeleteQuery, ctx fiber.Ctx, tx orm.Db) error {
+			WithPreDelete(func(model *TestUser, query orm.DeleteQuery, ctx fiber.Ctx, tx orm.DB) error {
 				// Log or check conditions before delete
 				if model.Status == "active" {
 					ctx.Set("X-Delete-Warning", "Deleting active user")
@@ -48,17 +48,17 @@ func NewTestUserDeleteWithPreHookResource() api.Resource {
 // Resource with PostDelete hook.
 type TestUserDeleteWithPostHookResource struct {
 	api.Resource
-	apis.DeleteApi[TestUser]
+	apis.Delete[TestUser]
 }
 
 func NewTestUserDeleteWithPostHookResource() api.Resource {
 	return &TestUserDeleteWithPostHookResource{
-		Resource: api.NewResource("test/user_delete_posthook"),
-		DeleteApi: apis.NewDeleteApi[TestUser]().
+		Resource: api.NewRPCResource("test/user_delete_posthook"),
+		Delete: apis.NewDelete[TestUser]().
 			Public().
-			WithPostDelete(func(model *TestUser, ctx fiber.Ctx, tx orm.Db) error {
+			WithPostDelete(func(model *TestUser, ctx fiber.Ctx, tx orm.DB) error {
 				// Set custom header after deletion
-				ctx.Set("X-Deleted-User-Id", model.Id)
+				ctx.Set("X-Deleted-User-ID", model.ID)
 
 				return nil
 			}),
@@ -149,13 +149,13 @@ func (suite *DeleteTestSuite) TestDeleteWithPostHook() {
 	})
 
 	suite.Equal(200, resp.StatusCode, "Should return 200 status code")
-	suite.Equal("user003", resp.Header.Get("X-Deleted-User-Id"), "Should set X-Deleted-User-Id header via PostDelete hook")
+	suite.Equal("user003", resp.Header.Get("X-Deleted-User-ID"), "Should set X-Deleted-User-ID header via PostDelete hook")
 
 	body := suite.readBody(resp)
 	suite.True(body.IsOk(), "Should return successful response")
 	suite.Equal(body.Message, i18n.T(result.OkMessage), "Should return OK message")
 
-	suite.T().Logf("Deleted user003 with PostDelete hook, user id: %s", resp.Header.Get("X-Deleted-User-Id"))
+	suite.T().Logf("Deleted user003 with PostDelete hook, user id: %s", resp.Header.Get("X-Deleted-User-ID"))
 }
 
 // TestDeleteNegativeCases tests negative scenarios.
@@ -182,7 +182,7 @@ func (suite *DeleteTestSuite) TestDeleteNegativeCases() {
 		suite.T().Logf("Validation failed as expected for non-existent user")
 	})
 
-	suite.Run("MissingId", func() {
+	suite.Run("MissingID", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_delete",

@@ -10,14 +10,14 @@ import (
 )
 
 type findOneApi[TModel, TSearch any] struct {
-	FindApi[TModel, TSearch, TModel, FindOneApi[TModel, TSearch]]
+	Find[TModel, TSearch, TModel, FindOne[TModel, TSearch]]
 }
 
-func (a *findOneApi[TModel, TSearch]) Provide() api.Spec {
-	return a.Build(a.findOne)
+func (a *findOneApi[TModel, TSearch]) Provide() []api.OperationSpec {
+	return []api.OperationSpec{a.Build(a.findOne)}
 }
 
-func (a *findOneApi[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error, error) {
+func (a *findOneApi[TModel, TSearch]) findOne(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error, error) {
 	if err := a.Setup(db, &FindApiConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryRoot},
@@ -28,13 +28,13 @@ func (a *findOneApi[TModel, TSearch]) findOne(db orm.Db) (func(ctx fiber.Ctx, db
 		return nil, err
 	}
 
-	return func(ctx fiber.Ctx, db orm.Db, transformer mold.Transformer, search TSearch) error {
+	return func(ctx fiber.Ctx, db orm.DB, transformer mold.Transformer, search TSearch, meta api.Meta) error {
 		var (
 			model TModel
 			query = db.NewSelect().Model(&model)
 		)
 
-		if err := a.ConfigureQuery(query, search, ctx, QueryRoot); err != nil {
+		if err := a.ConfigureQuery(query, search, meta, ctx, QueryRoot); err != nil {
 			return err
 		}
 

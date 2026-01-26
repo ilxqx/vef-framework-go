@@ -12,27 +12,27 @@ import (
 
 type TestUserUpdateResource struct {
 	api.Resource
-	apis.UpdateApi[TestUser, TestUserUpdateParams]
+	apis.Update[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateResource() api.Resource {
 	return &TestUserUpdateResource{
-		Resource:  api.NewResource("test/user_update"),
-		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().Public(),
+		Resource: api.NewRPCResource("test/user_update"),
+		Update:   apis.NewUpdate[TestUser, TestUserUpdateParams]().Public(),
 	}
 }
 
 type TestUserUpdateWithPreHookResource struct {
 	api.Resource
-	apis.UpdateApi[TestUser, TestUserUpdateParams]
+	apis.Update[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateWithPreHookResource() api.Resource {
 	return &TestUserUpdateWithPreHookResource{
-		Resource: api.NewResource("test/user_update_prehook"),
-		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().
+		Resource: api.NewRPCResource("test/user_update_prehook"),
+		Update: apis.NewUpdate[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.Db) error {
+			WithPreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.DB) error {
 				if params.Description != "" {
 					model.Description = params.Description + " [Updated]"
 				}
@@ -44,15 +44,15 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 
 type TestUserUpdateWithPostHookResource struct {
 	api.Resource
-	apis.UpdateApi[TestUser, TestUserUpdateParams]
+	apis.Update[TestUser, TestUserUpdateParams]
 }
 
 func NewTestUserUpdateWithPostHookResource() api.Resource {
 	return &TestUserUpdateWithPostHookResource{
-		Resource: api.NewResource("test/user_update_posthook"),
-		UpdateApi: apis.NewUpdateApi[TestUser, TestUserUpdateParams]().
+		Resource: api.NewRPCResource("test/user_update_posthook"),
+		Update: apis.NewUpdate[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPostUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, tx orm.Db) error {
+			WithPostUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, tx orm.DB) error {
 				ctx.Set("X-Updated-User-Name", model.Name)
 
 				return nil
@@ -63,7 +63,7 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 type TestUserUpdateParams struct {
 	api.P
 
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"        validate:"required"`
 	Email       string `json:"email"       validate:"required,email"`
 	Description string `json:"description"`
@@ -201,7 +201,7 @@ func (suite *UpdateTestSuite) TestUpdateNegativeCases() {
 		suite.T().Logf("Validation failed as expected for non-existent user")
 	})
 
-	suite.Run("MissingId", func() {
+	suite.Run("MissingID", func() {
 		resp := suite.makeApiRequest(api.Request{
 			Identifier: api.Identifier{
 				Resource: "test/user_update",

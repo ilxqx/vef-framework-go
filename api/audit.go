@@ -10,54 +10,52 @@ const (
 	eventTypeAudit = "vef.api.request.audit"
 )
 
-// AuditEvent represents an Api audit log event.
-// It captures comprehensive information about Api requests including
-// request details, user identity, response status, and performance metrics.
+// AuditEvent represents an Api request audit log event.
 type AuditEvent struct {
 	event.BaseEvent
 
 	// Api identification
-	Resource string `json:"resource"` // Api resource name
-	Action   string `json:"action"`   // Api action name
-	Version  string `json:"version"`  // Api version
+	Resource string `json:"resource"`
+	Action   string `json:"action"`
+	Version  string `json:"version"`
 
 	// User identification
-	UserId    string `json:"userId"`    // Operating user id
-	UserAgent string `json:"userAgent"` // User agent (User-Agent header)
+	UserID    string `json:"userId"`
+	UserAgent string `json:"userAgent"`
 
 	// Request information
-	RequestId     string         `json:"requestId"`     // Request Id
-	RequestIP     string         `json:"requestIp"`     // Request IP address
-	RequestParams map[string]any `json:"requestParams"` // Request parameters
-	RequestMeta   map[string]any `json:"requestMeta"`   // Request metadata
+	RequestID     string         `json:"requestId"`
+	RequestIP     string         `json:"requestIp"`
+	RequestParams map[string]any `json:"requestParams"`
+	RequestMeta   map[string]any `json:"requestMeta"`
 
 	// Response information
-	ResultCode    int    `json:"resultCode"`    // Result code (business code)
-	ResultMessage string `json:"resultMessage"` // Result message
-	ResultData    any    `json:"resultData"`    // Result data (optional)
+	ResultCode    int    `json:"resultCode"`
+	ResultMessage string `json:"resultMessage"`
+	ResultData    any    `json:"resultData"`
 
 	// Performance metrics
-	ElapsedTime int `json:"elapsedTime"` // Elapsed time in milliseconds
+	ElapsedTime int64 `json:"elapsedTime"` // Elapsed time in milliseconds
 }
 
 // NewAuditEvent creates a new audit event with the given parameters.
 func NewAuditEvent(
 	apiResource, apiAction, apiVersion string,
-	userId, userAgent string,
-	requestId, requestIp string,
+	userID, userAgent string,
+	requestID, requestIP string,
 	requestParams, requestMeta map[string]any,
 	resultCode int, resultMessage string, resultData any,
-	elapsedTime int,
+	elapsedTime int64,
 ) *AuditEvent {
 	return &AuditEvent{
 		BaseEvent:     event.NewBaseEvent(eventTypeAudit),
 		Resource:      apiResource,
 		Action:        apiAction,
 		Version:       apiVersion,
-		UserId:        userId,
+		UserID:        userID,
 		UserAgent:     userAgent,
-		RequestId:     requestId,
-		RequestIP:     requestIp,
+		RequestID:     requestID,
+		RequestIP:     requestIP,
 		RequestParams: requestParams,
 		RequestMeta:   requestMeta,
 		ResultCode:    resultCode,

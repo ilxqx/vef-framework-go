@@ -80,12 +80,20 @@ func handleError(ctx fiber.Ctx, err error) error {
 	return responseError(result.ErrUnknown, ctx)
 }
 
-// responseError returns the response with the error.
+// responseError sends an error response to the client.
 func responseError(e result.Error, ctx fiber.Ctx) error {
-	r := result.Result{
+	return result.Result{
 		Code:    e.Code,
 		Message: e.Message,
-	}
+	}.Response(ctx, e.Status)
+}
 
-	return r.Response(ctx, e.Status)
+// MapFiberError maps a Fiber HTTP status code to a business error code and i18n message key.
+// Returns ErrCodeUnknown and ErrMessageUnknown if no mapping exists.
+func MapFiberError(statusCode int) (code int, messageKey string, ok bool) {
+	mapping, ok := fiberErrorMappings[statusCode]
+	if !ok {
+		return result.ErrCodeUnknown, result.ErrMessageUnknown, false
+	}
+	return mapping.code, mapping.message, true
 }

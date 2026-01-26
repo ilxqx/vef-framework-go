@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 	"github.com/uptrace/bun/schema"
 
@@ -156,23 +155,18 @@ func parseMetaColumn(spec string) (column, alias string) {
 }
 
 // parseMetaColumns parses meta column specifications into structured info.
-// This function should be called once to avoid redundant parsing.
 func parseMetaColumns(specs []string) []orm.ColumnInfo {
 	if len(specs) == 0 {
 		return nil
 	}
 
-	return streams.MapTo(
-		streams.FromSlice(specs),
-		func(spec string) orm.ColumnInfo {
-			columnName, aliasName := parseMetaColumn(spec)
+	result := make([]orm.ColumnInfo, len(specs))
+	for i, spec := range specs {
+		columnName, aliasName := parseMetaColumn(spec)
+		result[i] = orm.ColumnInfo{Name: columnName, Alias: aliasName}
+	}
 
-			return orm.ColumnInfo{
-				Name:  columnName,
-				Alias: aliasName,
-			}
-		},
-	).Collect()
+	return result
 }
 
 // validateMetaColumns validates that all meta columns exist in the table schema.
@@ -192,15 +186,12 @@ func validateMetaColumns(schema *schema.Table, metaColumns []orm.ColumnInfo) err
 
 // buildMetaJsonExpr constructs a JSON_OBJECT expression for meta columns.
 func buildMetaJsonExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.QueryAppender {
-	// Build JSON_OBJECT arguments: key1, value1, key2, value2, ...
-	jsonArgs := streams.FlatMap(
-		streams.FromSlice(metaColumns),
-		func(col orm.ColumnInfo) streams.Stream[any] {
-			return streams.Of[any](col.Alias, eb.Column(col.Name))
-		},
-	).Collect()
+	jsonArgs := make([]any, 0, len(metaColumns)*2)
+	for _, col := range metaColumns {
+		jsonArgs = append(jsonArgs, col.Alias, eb.Column(col.Name))
+	}
 
-	return eb.JsonObject(jsonArgs...)
+	return eb.JSONObject(jsonArgs...)
 }
 
 // batchCleanup cleans up files in batch, collecting all errors.
@@ -209,28 +200,17 @@ func batchCleanup[TModel any](
 	promoter storage.Promoter[TModel],
 	models []TModel,
 ) error {
-	errs := streams.MapTo(
-		streams.Range(0, len(models)),
-		func(i int) error {
-			if err := promoter.Promote(ctx, nil, &models[i]); err != nil {
-				return fmt.Errorf("model %d: %w", i, err)
-			}
-
-			return nil
-		},
-	).Filter(func(err error) bool {
-		return err != nil
-	}).Collect()
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
+	var errs []error
+	for i := range models {
+		if err := promoter.Promote(ctx, nil, &models[i]); err != nil {
+			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
+		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // batchRollback rolls back files in batch, collecting all errors.
-// Used in update operations to rollback to old files when failures occur.
 // Count specifies how many models to rollback (typically the index where the error occurred).
 func batchRollback[TModel any](
 	ctx context.Context,
@@ -238,22 +218,12 @@ func batchRollback[TModel any](
 	oldModels, newModels []TModel,
 	count int,
 ) error {
-	errs := streams.MapTo(
-		streams.Range(0, count),
-		func(i int) error {
-			if err := promoter.Promote(ctx, &newModels[i], &oldModels[i]); err != nil {
-				return fmt.Errorf("model %d: %w", i, err)
-			}
-
-			return nil
-		},
-	).Filter(func(err error) bool {
-		return err != nil
-	}).Collect()
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
+	var errs []error
+	for i := range count {
+		if err := promoter.Promote(ctx, &newModels[i], &oldModels[i]); err != nil {
+			errs = append(errs, fmt.Errorf("model %d: %w", i, err))
+		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

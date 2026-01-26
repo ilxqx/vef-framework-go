@@ -11,13 +11,13 @@ import (
 // Test Resources.
 type TestUserFindOptionsResource struct {
 	api.Resource
-	apis.FindOptionsApi[TestUser, TestUserSearch]
+	apis.FindOptions[TestUser, TestUserSearch]
 }
 
 func NewTestUserFindOptionsResource() api.Resource {
 	return &TestUserFindOptionsResource{
-		Resource: api.NewResource("test/user_options"),
-		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_options"),
+		FindOptions: apis.NewFindOptions[TestUser, TestUserSearch]().
 			Public().
 			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn: "name",
@@ -29,13 +29,13 @@ func NewTestUserFindOptionsResource() api.Resource {
 // Resource with custom field mapping.
 type CustomFieldUserFindOptionsResource struct {
 	api.Resource
-	apis.FindOptionsApi[TestUser, TestUserSearch]
+	apis.FindOptions[TestUser, TestUserSearch]
 }
 
 func NewCustomFieldUserFindOptionsResource() api.Resource {
 	return &CustomFieldUserFindOptionsResource{
-		Resource: api.NewResource("test/user_options_custom"),
-		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_options_custom"),
+		FindOptions: apis.NewFindOptions[TestUser, TestUserSearch]().
 			Public().
 			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn:       "email",
@@ -48,13 +48,13 @@ func NewCustomFieldUserFindOptionsResource() api.Resource {
 // Filtered Options Resource.
 type FilteredUserFindOptionsResource struct {
 	api.Resource
-	apis.FindOptionsApi[TestUser, TestUserSearch]
+	apis.FindOptions[TestUser, TestUserSearch]
 }
 
 func NewFilteredUserFindOptionsResource() api.Resource {
 	return &FilteredUserFindOptionsResource{
-		Resource: api.NewResource("test/user_options_filtered"),
-		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_options_filtered"),
+		FindOptions: apis.NewFindOptions[TestUser, TestUserSearch]().
 			WithCondition(func(cb orm.ConditionBuilder) {
 				cb.Equals("status", "active")
 			}).
@@ -65,13 +65,13 @@ func NewFilteredUserFindOptionsResource() api.Resource {
 // Meta Options Resource.
 type MetaUserFindOptionsResource struct {
 	api.Resource
-	apis.FindOptionsApi[TestUser, TestUserSearch]
+	apis.FindOptions[TestUser, TestUserSearch]
 }
 
 func NewMetaUserFindOptionsResource() api.Resource {
 	return &MetaUserFindOptionsResource{
-		Resource: api.NewResource("test/user_options_meta"),
-		FindOptionsApi: apis.NewFindOptionsApi[TestUser, TestUserSearch]().
+		Resource: api.NewRPCResource("test/user_options_meta"),
+		FindOptions: apis.NewFindOptions[TestUser, TestUserSearch]().
 			Public().
 			WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
 				LabelColumn: "name",
