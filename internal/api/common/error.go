@@ -1,9 +1,28 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/api"
+)
+
+// Sentinel errors for API engine operations.
+var (
+	ErrResourceNil              = errors.New("resource cannot be nil")
+	ErrResourceNameEmpty        = errors.New("resource name cannot be empty")
+	ErrOperationNotFound        = errors.New("operation not found")
+	ErrOperationActionEmpty     = errors.New("operation action cannot be empty")
+	ErrNoRouterForKind          = errors.New("no router can handle operation type")
+	ErrNoRouterFound            = errors.New("no router found")
+	ErrNoHandlerResolverFound   = errors.New("no handler resolver found")
+	ErrHandlerRequired          = errors.New("handler is required for REST operations")
+	ErrMethodNotFound           = errors.New("api action method not found")
+	ErrMethodAmbiguous          = errors.New("api action method matches multiple methods")
+	ErrHandlerInvalidReturnType = errors.New("handler method has invalid return type, must be 'error'")
+	ErrHandlerTooManyReturns    = errors.New("handler method has too many return values")
+	ErrHandlerMustBeFunc        = errors.New("provided handler must be a function")
+	ErrHandlerNil               = errors.New("provided handler function cannot be nil")
 )
 
 type BaseError struct {

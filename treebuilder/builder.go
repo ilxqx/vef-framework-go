@@ -40,6 +40,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 	visited := make(map[string]bool)
 
 	var setChildrenRecursively func(*T)
+
 	setChildrenRecursively = func(nodePtr *T) {
 		id := adapter.GetID(*nodePtr)
 		if id == constants.Empty || visited[id] {
@@ -61,6 +62,7 @@ func Build[T any](nodes []T, adapter Adapter[T]) []T {
 		for i, ptr := range childPtrs {
 			children[i] = *ptr
 		}
+
 		adapter.SetChildren(nodePtr, children)
 	}
 

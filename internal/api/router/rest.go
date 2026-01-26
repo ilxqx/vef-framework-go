@@ -51,6 +51,7 @@ func (*REST) CanHandle(kind api.Kind) bool {
 
 func (r *REST) Setup(router fiber.Router) error {
 	r.group = router.Group(r.basePath)
+
 	return nil
 }
 
@@ -84,7 +85,7 @@ func (r *REST) createResolver(op *api.Operation) fiber.Handler {
 }
 
 // parseAction extracts HTTP method and sub-path from action string.
-// Format: "METHOD [/path]" (e.g., "GET", "POST /items", "DELETE /:id")
+// Format: "METHOD [/path]" (e.g., "GET", "POST /items", "DELETE /:id").
 func (*REST) parseAction(action string) (string, string) {
 	parts := strings.SplitN(action, constants.Space, 2)
 	method := strings.ToUpper(parts[0])

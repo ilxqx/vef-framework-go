@@ -16,6 +16,7 @@ func FromBase64(s string) ([]byte, error) {
 	if s == constants.Empty {
 		return nil, nil
 	}
+
 	return base64.StdEncoding.DecodeString(s)
 }
 
@@ -29,5 +30,6 @@ func FromBase64URL(s string) ([]byte, error) {
 	if s == constants.Empty {
 		return nil, nil
 	}
+
 	return base64.URLEncoding.DecodeString(s)
 }

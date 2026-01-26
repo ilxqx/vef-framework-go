@@ -92,6 +92,7 @@ func (suite *GOBTestSuite) TestFromGOB() {
 		if len(data) > 5 {
 			data = data[:5]
 		}
+
 		_, err = FromGOB[SimpleStruct](data)
 
 		assertErrorWithContext(suite.T(), err, "FromGOB should return error for corrupted GOB data")
@@ -105,6 +106,7 @@ func (suite *GOBTestSuite) TestDecodeGOB() {
 		require.NoError(suite.T(), err, "ToGOB should succeed for test setup")
 
 		var result MediumStruct
+
 		err = DecodeGOB(data, &result)
 
 		require.NoError(suite.T(), err, "DecodeGOB should decode into struct pointer without error")
@@ -114,6 +116,7 @@ func (suite *GOBTestSuite) TestDecodeGOB() {
 
 	suite.Run("InvalidData", func() {
 		data := []byte("invalid gob data")
+
 		var result MediumStruct
 
 		err := DecodeGOB(data, &result)
@@ -123,6 +126,7 @@ func (suite *GOBTestSuite) TestDecodeGOB() {
 
 	suite.Run("EmptyData", func() {
 		data := []byte{}
+
 		var result MediumStruct
 
 		err := DecodeGOB(data, &result)
@@ -136,6 +140,7 @@ func (suite *GOBTestSuite) TestDecodeGOB() {
 		require.NoError(suite.T(), err, "ToGOB should succeed for test setup")
 
 		var result SimpleStruct
+
 		err = DecodeGOB(data, result)
 
 		assertErrorWithContext(suite.T(), err, "DecodeGOB should return error when target is not a pointer")

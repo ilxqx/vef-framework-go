@@ -16,5 +16,6 @@ func FromHex(s string) ([]byte, error) {
 	if s == constants.Empty {
 		return nil, nil
 	}
+
 	return hex.DecodeString(s)
 }

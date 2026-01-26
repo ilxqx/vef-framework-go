@@ -202,6 +202,7 @@ func (*TestRESTResource) Get(ctx fiber.Ctx, params *GetItemsParams) error {
 	if page == "" {
 		page = "1"
 	}
+
 	size := params.Size
 	if size == "" {
 		size = "10"
@@ -293,6 +294,7 @@ func (suite *RESTEngineTestSuite) SetupSuite() {
 	}
 
 	var err error
+
 	suite.hashedPassword, err = password.NewBcryptEncoder().Encode("password123")
 	suite.Require().NoError(err)
 
@@ -381,7 +383,7 @@ func (suite *RESTEngineTestSuite) setupTestApp() {
 	)
 }
 
-func (suite *RESTEngineTestSuite) makeRESTRequest(method, path string, body string) *http.Response {
+func (suite *RESTEngineTestSuite) makeRESTRequest(method, path, body string) *http.Response {
 	var req *http.Request
 	if body != "" {
 		req = httptest.NewRequest(method, path, strings.NewReader(body))
@@ -396,7 +398,7 @@ func (suite *RESTEngineTestSuite) makeRESTRequest(method, path string, body stri
 	return resp
 }
 
-func (suite *RESTEngineTestSuite) makeRESTRequestWithToken(method, path string, body string, token string) *http.Response {
+func (suite *RESTEngineTestSuite) makeRESTRequestWithToken(method, path, body, token string) *http.Response {
 	var req *http.Request
 	if body != "" {
 		req = httptest.NewRequest(method, path, strings.NewReader(body))
@@ -404,6 +406,7 @@ func (suite *RESTEngineTestSuite) makeRESTRequestWithToken(method, path string, 
 	} else {
 		req = httptest.NewRequest(method, path, nil)
 	}
+
 	req.Header.Set(fiber.HeaderAuthorization, constants.AuthSchemeBearer+" "+token)
 
 	resp, err := suite.app.Test(req, 30*time.Second)

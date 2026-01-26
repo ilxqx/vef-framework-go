@@ -11,6 +11,7 @@ func ToGOB(value any) ([]byte, error) {
 	if err := gob.NewEncoder(&buffer).Encode(value); err != nil {
 		return nil, err
 	}
+
 	return buffer.Bytes(), nil
 }
 
@@ -20,6 +21,7 @@ func FromGOB[T any](data []byte) (*T, error) {
 	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&result); err != nil {
 		return nil, err
 	}
+
 	return &result, nil
 }
 

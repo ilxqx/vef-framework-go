@@ -114,7 +114,7 @@ func TestIsHandlerFactory(t *testing.T) {
 	})
 
 	t.Run("InvalidFactoryTooManyReturns", func(t *testing.T) {
-		fn := func() (func() error, error, int) { return nil, nil, 0 }
+		fn := func() (func() error, int, error) { return nil, 0, nil }
 		result := isHandlerFactory(reflect.TypeOf(fn))
 		assert.False(t, result, "Factory with too many returns should be invalid")
 	})

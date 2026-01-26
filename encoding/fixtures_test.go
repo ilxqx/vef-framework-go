@@ -10,53 +10,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// SimpleStruct represents a simple test structure with basic fields
+// SimpleStruct represents a simple test structure with basic fields.
 type SimpleStruct struct {
-	Name   string `json:"name" xml:"Name"`
-	Age    int    `json:"age" xml:"Age"`
-	Active bool   `json:"active" xml:"Active"`
+	Name   string `json:"name" xml:"name"`
+	Age    int    `json:"age" xml:"age"`
+	Active bool   `json:"active" xml:"active"`
 }
 
-// MediumStruct represents a medium complexity test structure
+// MediumStruct represents a medium complexity test structure.
 type MediumStruct struct {
-	ID       string            `json:"id" xml:"ID"`
+	ID       string            `json:"id" xml:"id"`
 	Items    []SimpleStruct    `json:"items" xml:"Items>Item"`
 	Tags     []string          `json:"tags" xml:"Tags>Tag"`
 	Metadata map[string]string `json:"metadata" xml:"Metadata>Entry"`
 }
 
-// ComplexStruct represents a complex test structure with nested data
+// ComplexStruct represents a complex test structure with nested data.
 type ComplexStruct struct {
-	ID       string         `json:"id" xml:"ID"`
-	Data     map[string]any `json:"data" xml:"Data"`
+	ID       string         `json:"id" xml:"id"`
+	Data     map[string]any `json:"data" xml:"data"`
 	Items    []MediumStruct `json:"items" xml:"Items>Item"`
-	Nested   *ComplexStruct `json:"nested,omitempty" xml:"Nested,omitempty"`
-	Created  time.Time      `json:"created" xml:"Created"`
-	Score    float64        `json:"score" xml:"Score"`
-	Count    int64          `json:"count" xml:"Count"`
-	Enabled  bool           `json:"enabled" xml:"Enabled"`
-	Optional *string        `json:"optional,omitempty" xml:"Optional,omitempty"`
+	Nested   *ComplexStruct `json:"nested,omitempty" xml:"nested,omitempty"`
+	Created  time.Time      `json:"created" xml:"created"`
+	Score    float64        `json:"score" xml:"score"`
+	Count    int64          `json:"count" xml:"count"`
+	Enabled  bool           `json:"enabled" xml:"enabled"`
+	Optional *string        `json:"optional,omitempty" xml:"optional,omitempty"`
 }
 
-// generateLargeData generates random binary data of specified size
+// generateLargeData generates random binary data of specified size.
 func generateLargeData(size int) []byte {
 	data := make([]byte, size)
 	_, _ = rand.Read(data)
+
 	return data
 }
 
-// generateRandomString generates a random string of specified length
+// generateRandomString generates a random string of specified length.
 func generateRandomString(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 	b := make([]byte, length)
+
 	_, _ = rand.Read(b)
 	for i := range b {
 		b[i] = charset[int(b[i])%len(charset)]
 	}
+
 	return string(b)
 }
 
-// generateSimpleStruct generates a random SimpleStruct
+// generateSimpleStruct generates a random SimpleStruct.
 func generateSimpleStruct() SimpleStruct {
 	return SimpleStruct{
 		Name:   generateRandomString(10),
@@ -65,20 +69,20 @@ func generateSimpleStruct() SimpleStruct {
 	}
 }
 
-// generateMediumStruct generates a random MediumStruct
+// generateMediumStruct generates a random MediumStruct.
 func generateMediumStruct(itemCount int) MediumStruct {
 	items := make([]SimpleStruct, itemCount)
-	for i := 0; i < itemCount; i++ {
+	for i := range itemCount {
 		items[i] = generateSimpleStruct()
 	}
 
 	tags := make([]string, itemCount)
-	for i := 0; i < itemCount; i++ {
+	for i := range itemCount {
 		tags[i] = generateRandomString(5)
 	}
 
 	metadata := make(map[string]string)
-	for i := 0; i < itemCount; i++ {
+	for range itemCount {
 		metadata[generateRandomString(5)] = generateRandomString(10)
 	}
 
@@ -90,7 +94,7 @@ func generateMediumStruct(itemCount int) MediumStruct {
 	}
 }
 
-// generateComplexStruct generates a random ComplexStruct
+// generateComplexStruct generates a random ComplexStruct.
 func generateComplexStruct(depth int) ComplexStruct {
 	data := map[string]any{
 		"key1": generateRandomString(10),
@@ -99,7 +103,7 @@ func generateComplexStruct(depth int) ComplexStruct {
 	}
 
 	items := make([]MediumStruct, 2)
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		items[i] = generateMediumStruct(3)
 	}
 
@@ -125,24 +129,22 @@ func generateComplexStruct(depth int) ComplexStruct {
 	return result
 }
 
-// generateNestedStruct generates a nested structure with specified depth
-func generateNestedStruct(depth int) interface{} {
+// generateNestedStruct generates a nested structure with specified depth.
+func generateNestedStruct(depth int) any {
 	if depth <= 0 {
 		return generateSimpleStruct()
 	}
+
 	return generateComplexStruct(depth - 1)
 }
 
-// generateLargeStruct generates a large structure with many items
+// generateLargeStruct generates a large structure with many items.
 func generateLargeStruct(targetSize int) ComplexStruct {
 	// Estimate: each MediumStruct is roughly 1KB when encoded
-	itemCount := targetSize / 1024
-	if itemCount < 1 {
-		itemCount = 1
-	}
+	itemCount := max(targetSize/1024, 1)
 
 	items := make([]MediumStruct, itemCount)
-	for i := 0; i < itemCount; i++ {
+	for i := range itemCount {
 		items[i] = generateMediumStruct(10)
 	}
 
@@ -157,71 +159,81 @@ func generateLargeStruct(targetSize int) ComplexStruct {
 	}
 }
 
-// generateUnicodeString generates a string with Unicode characters
+// generateUnicodeString generates a string with Unicode characters.
 func generateUnicodeString() string {
 	return "Hello世界🌍Привет مرحبا"
 }
 
-// generateSpecialCharString generates a string with special characters
+// generateSpecialCharString generates a string with special characters.
 func generateSpecialCharString() string {
 	return `Special chars: \n\t\r"'<>&`
 }
 
-// generateControlCharString generates a string with control characters
+// generateControlCharString generates a string with control characters.
 func generateControlCharString() string {
 	var sb strings.Builder
 	// Add some printable chars
 	sb.WriteString("Start")
 	// Add control characters (ASCII 0-31)
-	for i := 0; i < 32; i++ {
+	for i := range 32 {
 		sb.WriteByte(byte(i))
 	}
+
 	sb.WriteString("End")
+
 	return sb.String()
 }
 
-// assertStructEqual compares two structs and provides detailed error messages
-func assertStructEqual(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) bool {
+// assertStructEqual compares two structs and provides detailed error messages.
+func assertStructEqual(t *testing.T, expected, actual any, msgAndArgs ...any) bool {
 	t.Helper()
+
 	return assert.Equal(t, expected, actual, msgAndArgs...)
 }
 
-// assertErrorContains checks if error contains expected substring
-func assertErrorContains(t *testing.T, err error, substring string, msgAndArgs ...interface{}) bool {
+// assertErrorContains checks if error contains expected substring.
+func assertErrorContains(t *testing.T, err error, substring string, msgAndArgs ...any) bool {
 	t.Helper()
+
 	if !assert.Error(t, err, msgAndArgs...) {
 		return false
 	}
+
 	return assert.Contains(t, err.Error(), substring, msgAndArgs...)
 }
 
-// assertNoErrorWithContext asserts no error with context message
+// assertNoErrorWithContext asserts no error with context message.
 func assertNoErrorWithContext(t *testing.T, err error, context string) bool {
 	t.Helper()
+
 	return assert.NoError(t, err, fmt.Sprintf("should not return error when %s", context))
 }
 
-// assertErrorWithContext asserts error exists with context message
+// assertErrorWithContext asserts error exists with context message.
 func assertErrorWithContext(t *testing.T, err error, context string) bool {
 	t.Helper()
+
 	return assert.Error(t, err, fmt.Sprintf("should return error when %s", context))
 }
 
-// assertNotEmptyWithContext asserts value is not empty with context message
-func assertNotEmptyWithContext(t *testing.T, value interface{}, context string) bool {
+// assertNotEmptyWithContext asserts value is not empty with context message.
+func assertNotEmptyWithContext(t *testing.T, value any, context string) bool {
 	t.Helper()
+
 	return assert.NotEmpty(t, value, fmt.Sprintf("%s should not be empty", context))
 }
 
-// assertContainsWithContext asserts string contains substring with context message
+// assertContainsWithContext asserts string contains substring with context message.
 func assertContainsWithContext(t *testing.T, s, substring, context string) bool {
 	t.Helper()
+
 	return assert.Contains(t, s, substring, fmt.Sprintf("%s should contain '%s'", context, substring))
 }
 
-// assertEqualWithContext asserts equality with context message
-func assertEqualWithContext(t *testing.T, expected, actual interface{}, fieldName string) bool {
+// assertEqualWithContext asserts equality with context message.
+func assertEqualWithContext(t *testing.T, expected, actual any, fieldName string) bool {
 	t.Helper()
+
 	return assert.Equal(t, expected, actual, fmt.Sprintf("field %s should equal %v, but got %v", fieldName, expected, actual))
 }
 
@@ -402,9 +414,11 @@ func TestGenerateControlCharString(t *testing.T) {
 	for _, ch := range str {
 		if ch < 32 {
 			hasControlChar = true
+
 			break
 		}
 	}
+
 	assert.True(t, hasControlChar, "should contain control characters")
 }
 

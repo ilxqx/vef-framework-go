@@ -230,6 +230,7 @@ func (suite *RPCEngineTestSuite) SetupSuite() {
 	}
 
 	var err error
+
 	suite.hashedPassword, err = password.NewBcryptEncoder().Encode("password123")
 	suite.Require().NoError(err)
 

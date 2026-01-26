@@ -15,11 +15,11 @@ type LoginEvent struct {
 	event.BaseEvent
 
 	AuthType   string `json:"authType"`
-	UserID     string `json:"userID"` // Populated on success
+	UserID     string `json:"userId"` // Populated on success
 	Username   string `json:"username"`
 	LoginIP    string `json:"loginIp"`
 	UserAgent  string `json:"userAgent"`
-	TraceID    string `json:"traceID"`
+	TraceID    string `json:"traceId"`
 	IsOk       bool   `json:"isOk"`
 	FailReason string `json:"failReason"` // Populated on failure
 	ErrorCode  int    `json:"errorCode"`

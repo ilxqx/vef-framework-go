@@ -141,7 +141,7 @@ func (e *engine) Mount(router fiber.Router) error {
 		for identifier := range ops.Seq() {
 			op, ok := e.operations.Get(identifier)
 			if !ok {
-				return fmt.Errorf("operation %s not found", identifier)
+				return fmt.Errorf("%w: %s", common.ErrOperationNotFound, identifier)
 			}
 
 			handler, err := e.adaptHandler(op)
@@ -167,12 +167,12 @@ func (e *engine) Lookup(identifier api.Identifier) *api.Operation {
 // registerResource registers a single resource.
 func (e *engine) registerResource(res api.Resource) error {
 	if res == nil {
-		return errors.New("resource cannot be nil")
+		return common.ErrResourceNil
 	}
 
 	resourceName := res.Name()
 	if resourceName == constants.Empty {
-		return errors.New("resource name cannot be empty")
+		return common.ErrResourceNameEmpty
 	}
 
 	for _, collector := range e.collectors {
@@ -190,7 +190,7 @@ func (e *engine) registerResource(res api.Resource) error {
 
 func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) error {
 	if spec.Action == constants.Empty {
-		return fmt.Errorf("operation action cannot be empty for resource %s", res.Name())
+		return fmt.Errorf("%w for resource %s", common.ErrOperationActionEmpty, res.Name())
 	}
 
 	resName := res.Name()
@@ -207,7 +207,7 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 
 	rs := e.findRouterStrategy(res.Kind())
 	if rs == nil {
-		return fmt.Errorf("no router can handle operation type %s", res.Kind())
+		return fmt.Errorf("%w: %s", common.ErrNoRouterForKind, res.Kind())
 	}
 
 	h, err := e.resolveHandler(spec, res)
@@ -242,7 +242,7 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 
 	operations, ok := e.routerOperations.Get(rs)
 	if !ok {
-		return fmt.Errorf("no router found for %s", rs.Name())
+		return fmt.Errorf("%w: %s", common.ErrNoRouterFound, rs.Name())
 	}
 
 	operations.AddIfAbsent(op.Identifier)
@@ -300,7 +300,7 @@ func (e *engine) resolveHandler(spec api.OperationSpec, res api.Resource) (any, 
 		}
 	}
 
-	return nil, fmt.Errorf("no handler resolver found for %s:%s", spec.Action, res.Name())
+	return nil, fmt.Errorf("%w for %s:%s", common.ErrNoHandlerResolverFound, spec.Action, res.Name())
 }
 
 // resolveTimeout returns operation timeout or default.

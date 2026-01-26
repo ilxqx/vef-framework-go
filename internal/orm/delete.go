@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	collections "github.com/ilxqx/go-collections"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/schema"
+
+	collections "github.com/ilxqx/go-collections"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 )

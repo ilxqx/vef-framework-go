@@ -40,8 +40,8 @@ type Post struct {
 	Title       string  `json:"title"       bun:"title,notnull"`
 	Content     string  `json:"content"     bun:"content,notnull"`
 	Description *string `json:"description" bun:"description"`
-	UserID      string  `json:"userID"      bun:"user_id,notnull"`
-	CategoryID  string  `json:"categoryID"  bun:"category_id,notnull"`
+	UserID      string  `json:"userId"      bun:"user_id,notnull"`
+	CategoryID  string  `json:"categoryId"  bun:"category_id,notnull"`
 	Status      string  `json:"status"      bun:"status,notnull,default:'draft'"`
 	ViewCount   int     `json:"viewCount"   bun:"view_count,notnull,default:0"`
 
@@ -79,7 +79,7 @@ type Category struct {
 
 	Name        string  `json:"name"        bun:"name,notnull,unique"`
 	Description *string `json:"description" bun:"description"`
-	ParentID    *string `json:"parentID"    bun:"parent_id"`
+	ParentID    *string `json:"parentId"    bun:"parent_id"`
 
 	// Relations
 	Posts    []Post     `json:"posts"    bun:"rel:has-many,join:id=category_id"`

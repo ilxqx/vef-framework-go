@@ -858,12 +858,14 @@ func TestWrapHandlerIfNecessary(t *testing.T) {
 		op := &api.Operation{Timeout: 10 * time.Millisecond}
 		slowHandler := func(fiber.Ctx) error {
 			time.Sleep(100 * time.Millisecond)
+
 			return nil
 		}
 		wrappedHandler := e.wrapHandlerIfNecessary(slowHandler, op)
 
 		app := fiber.New()
 		defer app.Shutdown()
+
 		app.Get("/test", wrappedHandler)
 
 		req := httptest.NewRequest("GET", "/test", nil)

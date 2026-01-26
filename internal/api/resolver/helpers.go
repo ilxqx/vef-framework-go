@@ -9,6 +9,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
+	"github.com/ilxqx/vef-framework-go/internal/api/common"
 	"github.com/ilxqx/vef-framework-go/internal/api/handler"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 )
@@ -55,7 +56,7 @@ func findHandlerMethod(target reflect.Value, name string) (reflect.Value, error)
 
 	switch len(matches) {
 	case 0:
-		return reflect.Value{}, fmt.Errorf("api action method %q not found in resource %q", name, target.Type().String())
+		return reflect.Value{}, fmt.Errorf("%w: %q in resource %q", common.ErrMethodNotFound, name, target.Type().String())
 	case 1:
 		return allMethods[matches[0]], nil
 	default:
@@ -64,8 +65,8 @@ func findHandlerMethod(target reflect.Value, name string) (reflect.Value, error)
 			return allMethods[best], nil
 		}
 
-		return reflect.Value{}, fmt.Errorf("api action method %q matches multiple methods %v in resource %q",
-			name, matches, target.Type().String())
+		return reflect.Value{}, fmt.Errorf("%w: %q matches %v in resource %q",
+			common.ErrMethodAmbiguous, name, matches, target.Type().String())
 	}
 }
 
@@ -111,12 +112,12 @@ func validateHandlerSignature(method reflect.Type) error {
 			return nil
 		}
 
-		return fmt.Errorf("handler method has invalid return type, must be 'error': %q -> %q",
-			method.String(), method.Out(0).String())
+		return fmt.Errorf("%w: %q -> %q",
+			common.ErrHandlerInvalidReturnType, method.String(), method.Out(0).String())
 	}
 
-	return fmt.Errorf("handler method has too many return values, must have at most 1 (error) or none: %q has %d returns",
-		method.String(), numOut)
+	return fmt.Errorf("%w: %q has %d returns",
+		common.ErrHandlerTooManyReturns, method.String(), numOut)
 }
 
 // isHandlerFactory checks for factory signatures that return handler closures.
@@ -140,11 +141,11 @@ func isHandlerFactory(method reflect.Type) bool {
 
 func validateHandler(handler reflect.Value) error {
 	if handler.Kind() != reflect.Func {
-		return fmt.Errorf("provided handler must be a function, got %s", handler.Kind())
+		return fmt.Errorf("%w, got %s", common.ErrHandlerMustBeFunc, handler.Kind())
 	}
 
 	if handler.IsNil() {
-		return fmt.Errorf("provided handler function cannot be nil")
+		return common.ErrHandlerNil
 	}
 
 	if isHandlerFactory(handler.Type()) {

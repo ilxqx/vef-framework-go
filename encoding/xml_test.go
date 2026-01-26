@@ -23,9 +23,9 @@ func (suite *XMLTestSuite) TestToXML() {
 
 		require.NoError(suite.T(), err, "ToXML should encode valid struct without error")
 		assert.Contains(suite.T(), result, "<SimpleStruct>", "XML should contain root element")
-		assert.Contains(suite.T(), result, "<Name>", "XML should contain Name element")
-		assert.Contains(suite.T(), result, "<Age>", "XML should contain Age element")
-		assert.Contains(suite.T(), result, "<Active>", "XML should contain Active element")
+		assert.Contains(suite.T(), result, "<name>", "XML should contain name element")
+		assert.Contains(suite.T(), result, "<age>", "XML should contain age element")
+		assert.Contains(suite.T(), result, "<active>", "XML should contain active element")
 	})
 
 	suite.Run("EmptyStruct", func() {
@@ -34,9 +34,9 @@ func (suite *XMLTestSuite) TestToXML() {
 
 		require.NoError(suite.T(), err, "ToXML should encode empty struct without error")
 		assert.Contains(suite.T(), result, "<SimpleStruct>", "XML should contain root element")
-		assert.Contains(suite.T(), result, "<Name></Name>", "XML should contain empty Name element")
-		assert.Contains(suite.T(), result, "<Age>0</Age>", "XML should contain zero Age element")
-		assert.Contains(suite.T(), result, "<Active>false</Active>", "XML should contain false Active element")
+		assert.Contains(suite.T(), result, "<name></name>", "XML should contain empty name element")
+		assert.Contains(suite.T(), result, "<age>0</age>", "XML should contain zero age element")
+		assert.Contains(suite.T(), result, "<active>false</active>", "XML should contain false active element")
 	})
 
 	suite.Run("StructWithSpecialCharacters", func() {
@@ -56,7 +56,7 @@ func (suite *XMLTestSuite) TestToXML() {
 
 func (suite *XMLTestSuite) TestFromXML() {
 	suite.Run("ValidXML", func() {
-		input := `<SimpleStruct><Name>John Doe</Name><Age>30</Age><Active>true</Active></SimpleStruct>`
+		input := `<SimpleStruct><name>John Doe</name><age>30</age><active>true</active></SimpleStruct>`
 		result, err := FromXML[SimpleStruct](input)
 
 		require.NoError(suite.T(), err, "FromXML should decode valid XML without error")
@@ -67,7 +67,7 @@ func (suite *XMLTestSuite) TestFromXML() {
 	})
 
 	suite.Run("PartialXML", func() {
-		input := `<SimpleStruct><Name>Jane Doe</Name></SimpleStruct>`
+		input := `<SimpleStruct><name>Jane Doe</name></SimpleStruct>`
 		result, err := FromXML[SimpleStruct](input)
 
 		require.NoError(suite.T(), err, "FromXML should decode partial XML without error")
@@ -78,7 +78,7 @@ func (suite *XMLTestSuite) TestFromXML() {
 	})
 
 	suite.Run("InvalidXMLMissingClosingTag", func() {
-		input := `<SimpleStruct><Name>John Doe</Name><Age>30</SimpleStruct>`
+		input := `<SimpleStruct><name>John Doe</name><age>30</SimpleStruct>`
 		_, err := FromXML[SimpleStruct](input)
 
 		assertErrorWithContext(suite.T(), err, "FromXML should return error for malformed XML")
@@ -96,7 +96,7 @@ func (suite *XMLTestSuite) TestFromXML() {
 	})
 
 	suite.Run("XMLWithEscapedCharacters", func() {
-		input := `<SimpleStruct><Name>Test &amp; &lt;Special&gt;</Name><Age>30</Age><Active>true</Active></SimpleStruct>`
+		input := `<SimpleStruct><name>Test &amp; &lt;Special&gt;</name><age>30</age><active>true</active></SimpleStruct>`
 		result, err := FromXML[SimpleStruct](input)
 
 		require.NoError(suite.T(), err, "FromXML should decode escaped characters without error")
@@ -107,7 +107,8 @@ func (suite *XMLTestSuite) TestFromXML() {
 
 func (suite *XMLTestSuite) TestDecodeXML() {
 	suite.Run("DecodeIntoStructPointer", func() {
-		input := `<SimpleStruct><Name>John Doe</Name><Age>30</Age><Active>true</Active></SimpleStruct>`
+		input := `<SimpleStruct><name>John Doe</name><age>30</age><active>true</active></SimpleStruct>`
+
 		var result SimpleStruct
 
 		err := DecodeXML(input, &result)
@@ -119,7 +120,8 @@ func (suite *XMLTestSuite) TestDecodeXML() {
 	})
 
 	suite.Run("InvalidXML", func() {
-		input := `<SimpleStruct><Name>John Doe</Name><Age>30</SimpleStruct>`
+		input := `<SimpleStruct><name>John Doe</name><age>30</SimpleStruct>`
+
 		var result SimpleStruct
 
 		err := DecodeXML(input, &result)
@@ -128,7 +130,8 @@ func (suite *XMLTestSuite) TestDecodeXML() {
 	})
 
 	suite.Run("DecodeIntoNonPointer", func() {
-		input := `<SimpleStruct><Name>John Doe</Name><Age>30</Age></SimpleStruct>`
+		input := `<SimpleStruct><name>John Doe</name><age>30</age></SimpleStruct>`
+
 		var result SimpleStruct
 
 		err := DecodeXML(input, result)
@@ -169,4 +172,3 @@ func (suite *XMLTestSuite) TestXMLRoundTrip() {
 		assert.Equal(suite.T(), input.Name, decoded.Name, "Special characters should be preserved in round-trip")
 	})
 }
-

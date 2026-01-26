@@ -12,13 +12,13 @@ import (
 
 type TestNode struct {
 	ID       string     `json:"id"`
-	ParentID string     `json:"parentID"`
+	ParentID string     `json:"parentId"`
 	Name     string     `json:"name"`
 	Children []TestNode `json:"children"`
 }
 
 type TestCategory struct {
-	CategoryID    string         `json:"categoryID"`
+	CategoryID    string         `json:"categoryId"`
 	ParentCatID   string         `json:"parentCatId"`
 	CategoryName  string         `json:"categoryName"`
 	SubCategories []TestCategory `json:"subCategories"`
@@ -78,6 +78,7 @@ func findNodeByID(nodes []TestNode, id string) *TestNode {
 			return &nodes[i]
 		}
 	}
+
 	return nil
 }
 
@@ -87,6 +88,7 @@ func findCategoryByID(categories []TestCategory, id string) *TestCategory {
 			return &categories[i]
 		}
 	}
+
 	return nil
 }
 
@@ -559,6 +561,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		const nodeCount = 1000
 
 		nodes := make([]TestNode, nodeCount)
+
 		nodes[0] = TestNode{ID: "root", ParentID: constants.Empty, Name: "Root"}
 		for i := 1; i < nodeCount; i++ {
 			nodes[i] = TestNode{
@@ -580,6 +583,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		const depth = 100
 
 		nodes := make([]TestNode, depth)
+
 		nodes[0] = TestNode{ID: "0", ParentID: constants.Empty, Name: "Root"}
 		for i := 1; i < depth; i++ {
 			nodes[i] = TestNode{
@@ -595,6 +599,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		require.Len(t, result, 1)
 
 		current := result[0]
+
 		depthCount := 1
 		for len(current.Children) > 0 {
 			current = current.Children[0]
@@ -699,11 +704,13 @@ func TestAdapter_BenchmarkScenarios(t *testing.T) {
 		require.Len(t, result, 1)
 
 		var countNodes func([]TestNode) int
+
 		countNodes = func(nodes []TestNode) int {
 			count := len(nodes)
 			for _, node := range nodes {
 				count += countNodes(node.Children)
 			}
+
 			return count
 		}
 

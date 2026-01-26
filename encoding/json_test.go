@@ -133,6 +133,7 @@ func (suite *JSONTestSuite) TestFromJSON() {
 func (suite *JSONTestSuite) TestDecodeJSON() {
 	suite.Run("DecodeIntoStructPointer", func() {
 		input := `{"id":"test123","items":[],"tags":["tag1"]}`
+
 		var result MediumStruct
 
 		err := DecodeJSON(input, &result)
@@ -145,6 +146,7 @@ func (suite *JSONTestSuite) TestDecodeJSON() {
 
 	suite.Run("InvalidJSON", func() {
 		input := `{"id":"test","items":}`
+
 		var result MediumStruct
 
 		err := DecodeJSON(input, &result)
@@ -154,6 +156,7 @@ func (suite *JSONTestSuite) TestDecodeJSON() {
 
 	suite.Run("EmptyJSON", func() {
 		input := `{}`
+
 		var result MediumStruct
 
 		err := DecodeJSON(input, &result)
@@ -164,6 +167,7 @@ func (suite *JSONTestSuite) TestDecodeJSON() {
 
 	suite.Run("DecodeIntoNonPointer", func() {
 		input := `{"id":"test"}`
+
 		var result MediumStruct
 
 		err := DecodeJSON(input, result)
@@ -244,4 +248,3 @@ func (suite *JSONTestSuite) TestJSONRoundTrip() {
 		assert.Equal(suite.T(), input.Created.Unix(), decoded.Created.Unix(), "Time field should be preserved (comparing Unix timestamps)")
 	})
 }
-

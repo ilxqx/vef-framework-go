@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/api"
+	"github.com/ilxqx/vef-framework-go/internal/api/common"
 )
 
 type REST struct{}
@@ -18,8 +19,8 @@ func (r *REST) Resolve(resource api.Resource, spec api.OperationSpec) (any, erro
 	}
 
 	if spec.Handler == nil {
-		return nil, fmt.Errorf("handler is required for REST operations (resource: %s, action: %s)",
-			resource.Name(), spec.Action)
+		return nil, fmt.Errorf("%w (resource: %s, action: %s)",
+			common.ErrHandlerRequired, resource.Name(), spec.Action)
 	}
 
 	return resolveHandlerFromSpec(spec, resource)

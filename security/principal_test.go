@@ -17,7 +17,7 @@ type TestUserDetails struct {
 }
 
 type TestExternalAppDetails struct {
-	AppID     string   `json:"appID"`
+	AppID     string   `json:"appId"`
 	AppSecret string   `json:"appSecret"`
 	Scopes    []string `json:"scopes"`
 }
@@ -201,7 +201,7 @@ func TestPrincipalJSONUnmarshal(t *testing.T) {
 			"name": "Auth Service",
 			"roles": ["service"],
 			"details": {
-				"appID": "app_123456",
+				"appId": "app_123456",
 				"appSecret": "secret_abc",
 				"scopes": ["read", "write"]
 			}
@@ -278,7 +278,7 @@ func TestAttemptUnmarshalDetails(t *testing.T) {
 
 		app := NewExternalApp("app123", "Test App")
 		detailsMap := map[string]any{
-			"appID":     "app_123",
+			"appId":     "app_123",
 			"appSecret": "secret",
 			"scopes":    []any{"read", "write"},
 		}
