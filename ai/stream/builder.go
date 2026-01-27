@@ -102,16 +102,16 @@ func (b *Builder) Stream(ctx fiber.Ctx) error {
 	}
 
 	return ctx.SendStreamWriter(func(w *bufio.Writer) {
-		b.streamToWriter(w)
+		b.doStreamWrite(w)
 	})
 }
 
 // StreamToWriter streams messages to a bufio.Writer.
 func (b *Builder) StreamToWriter(w *bufio.Writer) {
-	b.streamToWriter(w)
+	b.doStreamWrite(w)
 }
 
-func (b *Builder) streamToWriter(w *bufio.Writer) {
+func (b *Builder) doStreamWrite(w *bufio.Writer) {
 	defer func() { _ = b.source.Close() }()
 
 	writer := newSseWriter(w)

@@ -16,7 +16,8 @@ linters:
     - govet        
     - ineffassign  
     - staticcheck  
-    - unused       
+    - unused
+    - revive      
 
     - inamedparam
     - asciicheck
@@ -49,6 +50,59 @@ linters:
     - tagalign
 
   settings:
+    revive:
+      severity: error
+      enable-all-rules: true
+      rules:
+        - name: line-length-limit
+          arguments: [600]
+        - name: max-public-structs
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: exported
+          disabled: true
+        - name: add-constant
+          disabled: true
+        - name: struct-tag
+          arguments: ["json,inline", "validate,alphanum_us,dec_min,dec_max,phone_number,alphanum_us_dot,alphanum_us_slash"]
+        - name: var-naming
+          arguments:
+            - ["API", "HTML"]
+            - []
+            - [{ skip-initialism-name-checks: false, upper-case-const: false, skip-package-name-checks: true }]
+        - name: function-length
+          disabled: true
+        - name: cognitive-complexity
+          disabled: true
+        - name: cyclomatic
+          disabled: true
+        - name: enforce-switch-style
+          arguments: ["allowNoDefault"]
+        - name: import-shadowing
+          disabled: true
+        - name: unhandled-error
+          arguments: 
+            - "^fmt\\.Print(f|ln)?$"
+            - "^(bytes\\.Buffer|strings\\.Builder)\\.Write(Byte|Rune|String)?$"
+        - name: unchecked-type-assertion
+          disabled: true
+        - name: context-as-argument
+          arguments:
+            - { allow-types-before: "*testing.T" }
+        - name: flag-parameter
+          disabled: true
+        - name: nested-structs
+          disabled: true
+        - name: early-return
+          arguments: ["preserve-scope"]
+        - name: function-result-limit
+          arguments: [4]
+        - name: bare-return
+          disabled: true
+        - name: confusing-naming
+          disabled: true
+
     inamedparam:
       skip-single-param: true
  
@@ -120,6 +174,8 @@ linters:
       strict: false
 
   exclusions:
+    paths:
+      - internal/approval
     rules:
       - path: '(.+)_test\.go'
         linters:

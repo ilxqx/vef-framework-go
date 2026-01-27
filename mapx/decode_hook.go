@@ -170,6 +170,7 @@ func convertNullType[T any, P *T, N any](
 		if from == mapping.baseType {
 			return fromBase(value.(T)), nil
 		}
+
 		return fromPtr(value.(P)), nil
 	}
 
@@ -178,6 +179,7 @@ func convertNullType[T any, P *T, N any](
 		if to == mapping.baseType {
 			return toBase(value.(N)), nil
 		}
+
 		return toPtr(value.(N)), nil
 	}
 
@@ -191,6 +193,7 @@ func convertNullValue(from, to reflect.Type, value any) (any, error) {
 		if !method.IsValid() {
 			return nil, ErrValueOrZeroMethodNotFound
 		}
+
 		return method.Call(nil)[0].Interface(), nil
 	}
 
@@ -209,6 +212,7 @@ func isNullValue(t reflect.Type) bool {
 	}
 
 	name := t.Name()
+
 	return len(name) >= 5 && name[:5] == "Value"
 }
 
@@ -219,5 +223,6 @@ func convertFileHeader(from, to reflect.Type, value any) (any, error) {
 			return files[0], nil
 		}
 	}
+
 	return value, nil
 }

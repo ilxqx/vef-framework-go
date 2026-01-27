@@ -22,7 +22,7 @@ func setupTestService(t *testing.T) (storage.Service, func()) {
 	require.NoError(t, err)
 
 	cleanup := func() {
-		os.RemoveAll(tempDir)
+		_ = os.RemoveAll(tempDir)
 	}
 
 	return service, cleanup

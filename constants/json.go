@@ -2,9 +2,9 @@ package constants
 
 // JSON constants.
 const (
-	JsonNull  = "null"
-	JsonQuote = '"'
+	JSONNull  = "null"
+	JSONQuote = '"'
 )
 
-// JsonNullBytes is the byte slice representation of JSON null.
-var JsonNullBytes = []byte(JsonNull)
+// JSONNullBytes is the byte slice representation of JSON null.
+var JSONNullBytes = []byte(JSONNull)

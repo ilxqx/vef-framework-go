@@ -8,7 +8,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/reflectx"
 	"github.com/ilxqx/vef-framework-go/validator"
@@ -62,7 +62,7 @@ func buildParamsResolver(paramType reflect.Type) HandlerParamResolverFunc {
 	t := reflectx.Indirect(paramType)
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
-		req := common.Request(ctx)
+		req := shared.Request(ctx)
 		if req == nil {
 			return reflect.Value{}, fmt.Errorf("%w: %w", ErrResolveHandlerParamType, ErrRequestNotFound)
 		}
@@ -88,7 +88,7 @@ func buildMetaResolver(metaType reflect.Type) HandlerParamResolverFunc {
 	t := reflectx.Indirect(metaType)
 
 	return func(ctx fiber.Ctx) (reflect.Value, error) {
-		req := common.Request(ctx)
+		req := shared.Request(ctx)
 		if req == nil {
 			return reflect.Value{}, fmt.Errorf("%w: %w", ErrResolveHandlerParamType, ErrRequestNotFound)
 		}

@@ -17,10 +17,10 @@ func NewStorageResolver(service storage.Service) api.HandlerParamResolver {
 	return &StorageResolver{service: service}
 }
 
-func (r *StorageResolver) Type() reflect.Type {
+func (*StorageResolver) Type() reflect.Type {
 	return reflect.TypeFor[storage.Service]()
 }
 
-func (r *StorageResolver) Resolve(fiber.Ctx) (reflect.Value, error) {
+func (r *StorageResolver) Resolve(_ fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(r.service), nil
 }

@@ -15,7 +15,7 @@ func NewStorageFactoryResolver(service storage.Service) api.FactoryParamResolver
 	return &StorageFactoryResolver{service: service}
 }
 
-func (r *StorageFactoryResolver) Type() reflect.Type {
+func (*StorageFactoryResolver) Type() reflect.Type {
 	return reflect.TypeFor[storage.Service]()
 }
 

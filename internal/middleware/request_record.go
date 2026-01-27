@@ -5,10 +5,9 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/muesli/termenv"
 	"github.com/spf13/cast"
-
-	loggerMiddleware "github.com/gofiber/fiber/v3/middleware/logger"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
@@ -41,6 +40,7 @@ func simplifyUserAgent(ua string) string {
 	if client != constants.Empty && os != "Unknown" {
 		return client + constants.Slash + os
 	}
+
 	if client != constants.Empty {
 		return client
 	}
@@ -135,7 +135,7 @@ func formatStatus(status int) string {
 	return output.String(cast.ToString(status)).Foreground(color).String()
 }
 
-func formatRequestDetails(ctx fiber.Ctx, data *loggerMiddleware.Data) string {
+func formatRequestDetails(ctx fiber.Ctx, data *logger.Data) string {
 	method, reqPath := ctx.Method(), ctx.Path()
 	ip, latency, status := webhelpers.GetIP(ctx), data.Stop.Sub(data.Start), ctx.Response().StatusCode()
 	ua := simplifyUserAgent(ctx.Get(fiber.HeaderUserAgent))
@@ -173,7 +173,7 @@ func formatRequestDetails(ctx fiber.Ctx, data *loggerMiddleware.Data) string {
 	return sb.String()
 }
 
-func logRequest(ctx fiber.Ctx, data *loggerMiddleware.Data) {
+func logRequest(ctx fiber.Ctx, data *logger.Data) {
 	details := formatRequestDetails(ctx, data)
 	logger := contextx.Logger(ctx)
 
@@ -183,6 +183,7 @@ func logRequest(ctx fiber.Ctx, data *loggerMiddleware.Data) {
 			output.String("Request completed").Foreground(termenv.ANSIBrightGreen).String(),
 			details,
 		)
+
 		return
 	}
 
@@ -194,6 +195,7 @@ func logRequest(ctx fiber.Ctx, data *loggerMiddleware.Data) {
 			output.String(msg).Foreground(termenv.ANSIBrightYellow).String(),
 			details,
 		)
+
 		return
 	}
 
@@ -207,12 +209,13 @@ func logRequest(ctx fiber.Ctx, data *loggerMiddleware.Data) {
 
 // NewRequestRecordMiddleware skips SPA static assets to reduce log noise while capturing API traffic.
 func NewRequestRecordMiddleware(spaConfigs []*middleware.SPAConfig) app.Middleware {
-	handler := loggerMiddleware.New(loggerMiddleware.Config{
+	handler := logger.New(logger.Config{
 		Next: func(ctx fiber.Ctx) bool {
 			return isSpaStaticRequest(ctx, spaConfigs)
 		},
-		LoggerFunc: func(ctx fiber.Ctx, data *loggerMiddleware.Data, _ *loggerMiddleware.Config) error {
+		LoggerFunc: func(ctx fiber.Ctx, data *logger.Data, _ *logger.Config) error {
 			logRequest(ctx, data)
+
 			return nil
 		},
 	})

@@ -44,21 +44,27 @@ func (c *Config[TIn, TOut]) applyDefaults() {
 	if c.MinWorkers <= 0 {
 		c.MinWorkers = DefaultMinWorkers
 	}
+
 	if c.MaxWorkers <= 0 {
 		c.MaxWorkers = runtime.NumCPU() * 2
 	}
+
 	if c.IdleTimeout == 0 {
 		c.IdleTimeout = DefaultIdleTimeout
 	}
+
 	if c.TaskQueueSize <= 0 {
 		c.TaskQueueSize = DefaultTaskQueueSize
 	}
+
 	if c.TaskTimeout == 0 {
 		c.TaskTimeout = DefaultTaskTimeout
 	}
+
 	if c.MaxTaskTimeout == 0 {
 		c.MaxTaskTimeout = DefaultMaxTaskTimeout
 	}
+
 	if c.HealthCheckInterval == 0 {
 		c.HealthCheckInterval = DefaultHealthCheckInterval
 	}
@@ -69,12 +75,15 @@ func (c *Config[TIn, TOut]) validateConstraints() error {
 		return fmt.Errorf("%w: MinWorkers (%d) > MaxWorkers (%d)",
 			ErrInvalidConfig, c.MinWorkers, c.MaxWorkers)
 	}
+
 	if c.DelegateFactory == nil {
 		return fmt.Errorf("%w: DelegateFactory is required", ErrInvalidConfig)
 	}
+
 	if c.Logger == nil {
 		return fmt.Errorf("%w: Logger is required", ErrInvalidConfig)
 	}
+
 	if c.TaskTimeout > c.MaxTaskTimeout {
 		return fmt.Errorf("%w: TaskTimeout (%v) > MaxTaskTimeout (%v)",
 			ErrInvalidConfig, c.TaskTimeout, c.MaxTaskTimeout)

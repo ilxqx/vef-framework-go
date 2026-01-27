@@ -43,17 +43,17 @@ func (e BaseEvent) Meta() map[string]string {
 	return result
 }
 
-// baseEventOption defines an option for configuring BaseEvent creation.
-type baseEventOption func(*BaseEvent)
+// BaseEventOption defines an option for configuring BaseEvent creation.
+type BaseEventOption func(*BaseEvent)
 
-func WithSource(source string) baseEventOption {
+func WithSource(source string) BaseEventOption {
 	return func(e *BaseEvent) {
 		e.source = source
 	}
 }
 
 // WithMeta adds a metadata key-value pair.
-func WithMeta(key, value string) baseEventOption {
+func WithMeta(key, value string) BaseEventOption {
 	return func(e *BaseEvent) {
 		e.meta[key] = value
 	}
@@ -105,7 +105,7 @@ func (e *BaseEvent) UnmarshalJSON(data []byte) error {
 
 // NewBaseEvent creates a new BaseEvent with the specified type.
 // Optional source and metadata can be set using WithSource and WithMeta options.
-func NewBaseEvent(eventType string, opts ...baseEventOption) BaseEvent {
+func NewBaseEvent(eventType string, opts ...BaseEventOption) BaseEvent {
 	event := BaseEvent{
 		typ:    eventType,
 		id:     id.GenerateUUID(),

@@ -31,7 +31,7 @@ type ComplexSearch struct {
 	Rating   float64 `search:"operator=gt"`
 
 	StatusList string `search:"column=status,operator=in,params=delimiter:|"`
-	ExcludeIds string `search:"column=id,operator=notIn"`
+	ExcludeIDs string `search:"column=id,operator=notIn"`
 
 	PriceRange monad.Range[int] `search:"column=price,operator=between"`
 	DateRange  string           `search:"column=created_at,operator=between,params=type:date,delimiter:-"`

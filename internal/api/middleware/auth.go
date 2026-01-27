@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
@@ -27,19 +27,19 @@ func NewAuth(registry api.AuthStrategyRegistry, checker security.PermissionCheck
 }
 
 // Name returns the middleware name.
-func (m *Auth) Name() string {
+func (*Auth) Name() string {
 	return "auth"
 }
 
 // Order returns the middleware order.
 // Authentication runs first in the middleware chain.
-func (m *Auth) Order() int {
+func (*Auth) Order() int {
 	return -100
 }
 
 // Process handles the authentication.
 func (m *Auth) Process(ctx fiber.Ctx) error {
-	op := common.Operation(ctx)
+	op := shared.Operation(ctx)
 	if op == nil {
 		contextx.Logger(ctx).Errorf("Authentication failed: %v", ErrOperationNotFound)
 
@@ -73,7 +73,7 @@ func (m *Auth) checkPermission(ctx fiber.Ctx, op *api.Operation, principal *secu
 		return ctx.Next()
 	}
 
-	if permToken, ok := op.Auth.Options[common.AuthOptionPermToken].(string); ok && permToken != constants.Empty {
+	if permToken, ok := op.Auth.Options[shared.AuthOptionPermToken].(string); ok && permToken != constants.Empty {
 		if err := m.doCheck(ctx.Context(), principal, permToken); err != nil {
 			return err
 		}

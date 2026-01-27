@@ -12,6 +12,7 @@ func unmarshalConfig[T any](cfg config.Config, key string, target *T) (*T, error
 	if err := cfg.Unmarshal(key, target); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s config: %w", key, err)
 	}
+
 	return target, nil
 }
 
@@ -41,6 +42,7 @@ func newStorageConfig(cfg config.Config) (*config.StorageConfig, error) {
 
 func newMonitorConfig(cfg config.Config) (*config.MonitorConfig, error) {
 	monitorConfig := monitor.DefaultConfig()
+
 	return unmarshalConfig(cfg, "vef.monitor", &monitorConfig)
 }
 

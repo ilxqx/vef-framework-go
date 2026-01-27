@@ -218,14 +218,14 @@ func (u DateTimeUnit) String() string {
 		return "YEAR"
 	case UnitMonth:
 		return "MONTH"
-	case UnitDay:
-		return "DAY"
 	case UnitHour:
 		return "HOUR"
 	case UnitMinute:
 		return "MINUTE"
 	case UnitSecond:
 		return "SECOND"
+	case UnitDay:
+		fallthrough
 	default:
 		return "DAY"
 	}
@@ -248,14 +248,14 @@ func (u DateTimeUnit) ForSQLite() string {
 		return "years"
 	case UnitMonth:
 		return "months"
-	case UnitDay:
-		return "days"
 	case UnitHour:
 		return "hours"
 	case UnitMinute:
 		return "minutes"
 	case UnitSecond:
 		return "seconds"
+	case UnitDay:
+		fallthrough
 	default:
 		return "days"
 	}
@@ -268,14 +268,14 @@ func (u DateTimeUnit) ForDateTrunc() string {
 		return "year"
 	case UnitMonth:
 		return "month"
-	case UnitDay:
-		return "day"
 	case UnitHour:
 		return "hour"
 	case UnitMinute:
 		return "minute"
 	case UnitSecond:
 		return "second"
+	case UnitDay:
+		fallthrough
 	default:
 		return "day"
 	}

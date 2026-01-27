@@ -92,6 +92,7 @@ func CollectMethods(target reflect.Value) map[string]reflect.Value {
 		if target.IsNil() {
 			return methods
 		}
+
 		target = target.Elem()
 	}
 
@@ -100,6 +101,7 @@ func CollectMethods(target reflect.Value) map[string]reflect.Value {
 	}
 
 	targetType := target.Type()
+
 	var ptrTarget reflect.Value
 	if target.CanAddr() {
 		ptrTarget = target.Addr()
@@ -155,6 +157,7 @@ func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.V
 		if sourceValue.IsNil() {
 			return reflect.Zero(targetType), nil
 		}
+
 		if elemValue := sourceValue.Elem(); elemValue.Type().AssignableTo(targetType) {
 			return elemValue, nil
 		}
@@ -165,6 +168,7 @@ func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.V
 		if sourceType.AssignableTo(targetType.Elem()) {
 			ptrValue := reflect.New(targetType.Elem())
 			ptrValue.Elem().Set(sourceValue)
+
 			return ptrValue, nil
 		}
 	}
@@ -174,9 +178,11 @@ func ConvertValue(sourceValue reflect.Value, targetType reflect.Type) (reflect.V
 		if sourceValue.IsNil() {
 			return reflect.Zero(targetType), nil
 		}
+
 		if elemValue := sourceValue.Elem(); elemValue.Type().AssignableTo(targetType.Elem()) {
 			ptrValue := reflect.New(targetType.Elem())
 			ptrValue.Elem().Set(elemValue)
+
 			return ptrValue, nil
 		}
 	}

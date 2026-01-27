@@ -8,7 +8,7 @@ var DefaultXIDGenerator = NewXIDGenerator()
 type xidGenerator struct{}
 
 // Generate creates a new XID as a 20-character base32-encoded string.
-func (g *xidGenerator) Generate() string {
+func (*xidGenerator) Generate() string {
 	return xid.New().String()
 }
 

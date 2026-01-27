@@ -14,7 +14,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/internal/log"
 	"github.com/ilxqx/vef-framework-go/result"
 )
@@ -141,7 +141,7 @@ func (e *engine) Mount(router fiber.Router) error {
 		for identifier := range ops.Seq() {
 			op, ok := e.operations.Get(identifier)
 			if !ok {
-				return fmt.Errorf("%w: %s", common.ErrOperationNotFound, identifier)
+				return fmt.Errorf("%w: %s", shared.ErrOperationNotFound, identifier)
 			}
 
 			handler, err := e.adaptHandler(op)
@@ -167,12 +167,12 @@ func (e *engine) Lookup(identifier api.Identifier) *api.Operation {
 // registerResource registers a single resource.
 func (e *engine) registerResource(res api.Resource) error {
 	if res == nil {
-		return common.ErrResourceNil
+		return shared.ErrResourceNil
 	}
 
 	resourceName := res.Name()
 	if resourceName == constants.Empty {
-		return common.ErrResourceNameEmpty
+		return shared.ErrResourceNameEmpty
 	}
 
 	for _, collector := range e.collectors {
@@ -190,7 +190,7 @@ func (e *engine) registerResource(res api.Resource) error {
 
 func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) error {
 	if spec.Action == constants.Empty {
-		return fmt.Errorf("%w for resource %s", common.ErrOperationActionEmpty, res.Name())
+		return fmt.Errorf("%w for resource %s", shared.ErrOperationActionEmpty, res.Name())
 	}
 
 	resName := res.Name()
@@ -202,12 +202,12 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 			ac.Options = make(map[string]any)
 		}
 
-		ac.Options[common.AuthOptionPermToken] = spec.PermToken
+		ac.Options[shared.AuthOptionPermToken] = spec.PermToken
 	}
 
 	rs := e.findRouterStrategy(res.Kind())
 	if rs == nil {
-		return fmt.Errorf("%w: %s", common.ErrNoRouterForKind, res.Kind())
+		return fmt.Errorf("%w: %s", shared.ErrNoRouterForKind, res.Kind())
 	}
 
 	h, err := e.resolveHandler(spec, res)
@@ -226,14 +226,14 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 		RateLimit:   e.resolveRateLimit(spec.RateLimit),
 		EnableAudit: spec.EnableAudit,
 		Meta: map[string]any{
-			common.MetaKeyResource: res,
+			shared.MetaKeyResource: res,
 		},
 		Handler: h,
 	}
 
 	if existing, inserted := e.operations.PutIfAbsent(op.Identifier, op); !inserted {
-		return &common.DuplicateError{
-			BaseError: common.BaseError{
+		return &shared.DuplicateError{
+			BaseError: shared.BaseError{
 				Identifier: &op.Identifier,
 			},
 			Existing: existing,
@@ -242,7 +242,7 @@ func (e *engine) registerOperation(res api.Resource, spec api.OperationSpec) err
 
 	operations, ok := e.routerOperations.Get(rs)
 	if !ok {
-		return fmt.Errorf("%w: %s", common.ErrNoRouterFound, rs.Name())
+		return fmt.Errorf("%w: %s", shared.ErrNoRouterFound, rs.Name())
 	}
 
 	operations.AddIfAbsent(op.Identifier)
@@ -300,7 +300,7 @@ func (e *engine) resolveHandler(spec api.OperationSpec, res api.Resource) (any, 
 		}
 	}
 
-	return nil, fmt.Errorf("%w for %s:%s", common.ErrNoHandlerResolverFound, spec.Action, res.Name())
+	return nil, fmt.Errorf("%w for %s:%s", shared.ErrNoHandlerResolverFound, spec.Action, res.Name())
 }
 
 // resolveTimeout returns operation timeout or default.
@@ -337,7 +337,7 @@ func (e *engine) adaptHandler(op *api.Operation) (fiber.Handler, error) {
 	return nil, fmt.Errorf("%w: %T", ErrNoHandlerAdapter, op.Handler)
 }
 
-func (e *engine) wrapHandlerIfNecessary(handler fiber.Handler, op *api.Operation) fiber.Handler {
+func (*engine) wrapHandlerIfNecessary(handler fiber.Handler, op *api.Operation) fiber.Handler {
 	if op.Timeout <= 0 {
 		return handler
 	}

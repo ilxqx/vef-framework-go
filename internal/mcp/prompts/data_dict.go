@@ -47,7 +47,7 @@ func (p *DataDictPrompt) Prompts() []mcp.PromptDefinition {
 }
 
 // handleDataDictPrompt handles the data dictionary prompt request.
-func (p *DataDictPrompt) handleDataDictPrompt(_ context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+func (*DataDictPrompt) handleDataDictPrompt(_ context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 	dictTable := getArgument(req.Params.Arguments, "dict_table", "sys_data_dict")
 	dictItemTable := getArgument(req.Params.Arguments, "dict_item_table", "sys_data_dict_item")
 
@@ -69,8 +69,10 @@ func getArgument(args map[string]string, key, defaultValue string) string {
 	if args == nil {
 		return defaultValue
 	}
+
 	if v, ok := args[key]; ok && v != constants.Empty {
 		return v
 	}
+
 	return defaultValue
 }

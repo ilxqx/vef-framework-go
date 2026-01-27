@@ -23,7 +23,7 @@ type DataDictTranslator struct {
 	resolver mold.DataDictResolver
 }
 
-func (t *DataDictTranslator) Supports(kind string) bool {
+func (*DataDictTranslator) Supports(kind string) bool {
 	return strings.HasPrefix(kind, dictKeyPrefix)
 }
 
@@ -37,6 +37,7 @@ func (t *DataDictTranslator) Translate(ctx context.Context, kind, value string) 
 	result, err := t.resolver.Resolve(ctx, dictKey, value)
 	if err != nil {
 		t.logger.Errorf("Failed to resolve dictionary %q for code %q: %v", dictKey, value, err)
+
 		return constants.Empty, err
 	}
 

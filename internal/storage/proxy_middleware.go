@@ -19,11 +19,11 @@ type ProxyMiddleware struct {
 	service storage.Service
 }
 
-func (p *ProxyMiddleware) Name() string {
+func (*ProxyMiddleware) Name() string {
 	return "storage_proxy"
 }
 
-func (p *ProxyMiddleware) Order() int {
+func (*ProxyMiddleware) Order() int {
 	return 900
 }
 

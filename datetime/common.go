@@ -75,11 +75,29 @@ func parseAndAssign(s string, parseString func(string) (any, error), dest any) e
 func assignValue(dest, value any) error {
 	switch d := dest.(type) {
 	case *DateTime:
-		*d = value.(DateTime)
+		v, ok := value.(DateTime)
+		if !ok {
+			return fmt.Errorf("%w: expected DateTime, got %T", ErrUnsupportedDestType, value)
+		}
+
+		*d = v
+
 	case *Date:
-		*d = value.(Date)
+		v, ok := value.(Date)
+		if !ok {
+			return fmt.Errorf("%w: expected Date, got %T", ErrUnsupportedDestType, value)
+		}
+
+		*d = v
+
 	case *Time:
-		*d = value.(Time)
+		v, ok := value.(Time)
+		if !ok {
+			return fmt.Errorf("%w: expected Time, got %T", ErrUnsupportedDestType, value)
+		}
+
+		*d = v
+
 	default:
 		return fmt.Errorf("%w: %T", ErrUnsupportedDestType, dest)
 	}
@@ -107,7 +125,7 @@ func parseTimeWithFallback(value, layout string) (time.Time, error) {
 
 // validateJSONFormat checks if the JSON bytes have the expected format for time types.
 func validateJSONFormat(bs []byte, expectedLength int) error {
-	if len(bs) != expectedLength+2 || bs[0] != constants.JsonQuote || bs[len(bs)-1] != constants.JsonQuote {
+	if len(bs) != expectedLength+2 || bs[0] != constants.JSONQuote || bs[len(bs)-1] != constants.JSONQuote {
 		return fmt.Errorf("%w: expected length %d with quotes", ErrInvalidJSONFormat, expectedLength)
 	}
 

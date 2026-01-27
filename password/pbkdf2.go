@@ -130,7 +130,7 @@ func getHashFuncByName(name string) func() hash.Hash {
 	}
 }
 
-func (e *pbkdf2Encoder) decodeHash(encodedPassword string) (*pbkdf2Params, []byte, []byte, error) {
+func (*pbkdf2Encoder) decodeHash(encodedPassword string) (params *pbkdf2Params, salt, hash []byte, err error) {
 	parts := strings.Split(encodedPassword, "$")
 	if len(parts) != 5 {
 		return nil, nil, nil, ErrInvalidHashFormat
@@ -143,20 +143,20 @@ func (e *pbkdf2Encoder) decodeHash(encodedPassword string) (*pbkdf2Params, []byt
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	params := &pbkdf2Params{
+	params = &pbkdf2Params{
 		hashFunction: hashFunction,
 	}
 
-	if _, err := fmt.Sscanf(parts[2], "i=%d", &params.iterations); err != nil {
+	if _, err = fmt.Sscanf(parts[2], "i=%d", &params.iterations); err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	salt, err := base64.RawStdEncoding.DecodeString(parts[3])
+	salt, err = base64.RawStdEncoding.DecodeString(parts[3])
 	if err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	hash, err := base64.RawStdEncoding.DecodeString(parts[4])
+	hash, err = base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}

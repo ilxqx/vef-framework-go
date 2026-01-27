@@ -291,10 +291,10 @@ func (suite *TypeConversionFunctionsTestSuite) TestToJSON() {
 		type ToJSONResult struct {
 			ID        string `bun:"id"`
 			Title     string `bun:"title"`
-			JsonValue string `bun:"json_value"`
+			JSONValue string `bun:"json_value"`
 		}
 
-		var toJsonResults []ToJSONResult
+		var toJSONResults []ToJSONResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
@@ -303,15 +303,15 @@ func (suite *TypeConversionFunctionsTestSuite) TestToJSON() {
 				return eb.ToJSON(eb.JSONObject("title", eb.Column("title"), "id", eb.Column("id")))
 			}, "json_value").
 			Limit(3).
-			Scan(suite.ctx, &toJsonResults)
+			Scan(suite.ctx, &toJSONResults)
 
 		suite.NoError(err, "ToJSON should work on supported databases")
-		suite.True(len(toJsonResults) > 0, "Should have ToJSON results")
+		suite.True(len(toJSONResults) > 0, "Should have ToJSON results")
 
-		for _, result := range toJsonResults {
-			suite.NotEmpty(result.JsonValue, "Json value should not be empty")
-			suite.T().Logf("ID: %s, Title: %s, JsonValue: %s",
-				result.ID, result.Title, result.JsonValue)
+		for _, result := range toJSONResults {
+			suite.NotEmpty(result.JSONValue, "Json value should not be empty")
+			suite.T().Logf("ID: %s, Title: %s, JSONValue: %s",
+				result.ID, result.Title, result.JSONValue)
 		}
 	})
 }
@@ -741,10 +741,10 @@ func (suite *TypeConversionFunctionsTestSuite) TestToDateWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.Postgres:
-			formatStr = "YYYY-MM-DD"
 		case constants.MySQL:
 			formatStr = "%Y-%m-%d"
+		case constants.Postgres:
+			fallthrough
 		default:
 			formatStr = "YYYY-MM-DD"
 		}
@@ -811,10 +811,10 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimeWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.Postgres:
-			formatStr = "HH24:MI:SS"
 		case constants.MySQL:
 			formatStr = "%H:%i:%s"
+		case constants.Postgres:
+			fallthrough
 		default:
 			formatStr = "HH24:MI:SS"
 		}
@@ -881,10 +881,10 @@ func (suite *TypeConversionFunctionsTestSuite) TestToTimestampWithFormat() {
 
 		var formatStr string
 		switch suite.dbType {
-		case constants.Postgres:
-			formatStr = "YYYY-MM-DD HH24:MI:SS"
 		case constants.MySQL:
 			formatStr = "%Y-%m-%d %H:%i:%s"
+		case constants.Postgres:
+			fallthrough
 		default:
 			formatStr = "YYYY-MM-DD HH24:MI:SS"
 		}

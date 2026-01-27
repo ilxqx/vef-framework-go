@@ -25,13 +25,16 @@ const (
 func setValue[T any](ctx context.Context, key contextKey, value T) context.Context {
 	if c, ok := ctx.(fiber.Ctx); ok {
 		c.Locals(key, value)
+
 		return c
 	}
+
 	return context.WithValue(ctx, key, value)
 }
 
 func RequestID(ctx context.Context) string {
 	id, _ := ctx.Value(KeyRequestID).(string)
+
 	return id
 }
 
@@ -41,6 +44,7 @@ func SetRequestID(ctx context.Context, requestID string) context.Context {
 
 func Principal(ctx context.Context) *security.Principal {
 	principal, _ := ctx.Value(KeyPrincipal).(*security.Principal)
+
 	return principal
 }
 
@@ -50,6 +54,7 @@ func SetPrincipal(ctx context.Context, principal *security.Principal) context.Co
 
 func Logger(ctx context.Context) log.Logger {
 	logger, _ := ctx.Value(KeyLogger).(log.Logger)
+
 	return logger
 }
 
@@ -59,6 +64,7 @@ func SetLogger(ctx context.Context, logger log.Logger) context.Context {
 
 func DB(ctx context.Context) orm.DB {
 	db, _ := ctx.Value(KeyDB).(orm.DB)
+
 	return db
 }
 
@@ -68,6 +74,7 @@ func SetDB(ctx context.Context, db orm.DB) context.Context {
 
 func DataPermApplier(ctx context.Context) security.DataPermissionApplier {
 	applier, _ := ctx.Value(KeyDataPermApplier).(security.DataPermissionApplier)
+
 	return applier
 }
 

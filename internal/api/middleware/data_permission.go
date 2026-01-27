@@ -8,7 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
@@ -27,19 +27,19 @@ func NewDataPermission(resolver security.DataPermissionResolver) api.Middleware 
 }
 
 // Name returns the middleware name.
-func (m *DataPermissionMiddleware) Name() string {
+func (*DataPermissionMiddleware) Name() string {
 	return "data_permission"
 }
 
 // Order returns the middleware order.
 // Runs after authentication (-100) but before rate limiting (-80).
-func (m *DataPermissionMiddleware) Order() int {
+func (*DataPermissionMiddleware) Order() int {
 	return -80
 }
 
 // Process handles the data permission resolution.
 func (m *DataPermissionMiddleware) Process(ctx fiber.Ctx) error {
-	op := common.Operation(ctx)
+	op := shared.Operation(ctx)
 	if op == nil {
 		contextx.Logger(ctx).Errorf("Data permission check failed: %v", ErrOperationNotFound)
 
@@ -61,7 +61,7 @@ func (m *DataPermissionMiddleware) checkPermission(ctx fiber.Ctx, op *api.Operat
 		return ctx.Next()
 	}
 
-	if permToken, ok := op.Auth.Options[common.AuthOptionPermToken].(string); ok && permToken != constants.Empty {
+	if permToken, ok := op.Auth.Options[shared.AuthOptionPermToken].(string); ok && permToken != constants.Empty {
 		if err := m.doCheck(ctx, principal, permToken); err != nil {
 			return err
 		}

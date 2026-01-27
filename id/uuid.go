@@ -13,11 +13,12 @@ var DefaultUUIDGenerator = NewUUIDGenerator()
 type uuidGenerator struct{}
 
 // Generate creates a new UUID v7 as a 36-character hyphenated string.
-func (g *uuidGenerator) Generate() string {
+func (*uuidGenerator) Generate() string {
 	id, err := uuid.NewV7()
 	if err != nil {
 		panic(fmt.Errorf("failed to generate UUID: %w", err))
 	}
+
 	return id.String()
 }
 

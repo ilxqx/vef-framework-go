@@ -8,14 +8,14 @@ func NewPlaintextEncoder() Encoder {
 	return new(plaintextEncoder)
 }
 
-func (e *plaintextEncoder) Encode(password string) (string, error) {
+func (*plaintextEncoder) Encode(password string) (string, error) {
 	return password, nil
 }
 
-func (e *plaintextEncoder) Matches(password, encodedPassword string) bool {
+func (*plaintextEncoder) Matches(password, encodedPassword string) bool {
 	return password == encodedPassword
 }
 
-func (e *plaintextEncoder) UpgradeEncoding(encodedPassword string) bool {
+func (*plaintextEncoder) UpgradeEncoding(_ string) bool {
 	return true
 }

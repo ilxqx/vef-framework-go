@@ -29,6 +29,7 @@ func (t *translatorImpl) T(messageID string, templateData ...map[string]any) str
 	message, err := t.Te(messageID, templateData...)
 	if err != nil {
 		logger.Warnf("Translation failed for messageID %q: %v", messageID, err)
+
 		return messageID
 	}
 

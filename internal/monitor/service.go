@@ -99,7 +99,7 @@ func (s *DefaultService) Overview(ctx context.Context) (*monitor.SystemOverview,
 	return &overview, nil
 }
 
-func (s *DefaultService) buildDiskSummary(diskInfo *monitor.DiskInfo) *monitor.DiskSummary {
+func (*DefaultService) buildDiskSummary(diskInfo *monitor.DiskInfo) *monitor.DiskSummary {
 	var (
 		total, used uint64
 		seenDevices = make(map[string]bool)
@@ -115,6 +115,7 @@ func (s *DefaultService) buildDiskSummary(diskInfo *monitor.DiskInfo) *monitor.D
 			if seenDevices[container] {
 				continue
 			}
+
 			seenDevices[container] = true
 		}
 
@@ -135,7 +136,7 @@ func (s *DefaultService) buildDiskSummary(diskInfo *monitor.DiskInfo) *monitor.D
 	}
 }
 
-func (s *DefaultService) buildNetworkSummary(netInfo *monitor.NetworkInfo) *monitor.NetworkSummary {
+func (*DefaultService) buildNetworkSummary(netInfo *monitor.NetworkInfo) *monitor.NetworkSummary {
 	var bytesSent, bytesRecv, packetsSent, packetsRecv uint64
 	for _, counter := range netInfo.IOCounters {
 		bytesSent += counter.BytesSent
@@ -217,11 +218,12 @@ func (s *DefaultService) CPU(_ context.Context) (*monitor.CPUInfo, error) {
 	if cached == nil {
 		return nil, ErrCPUInfoNotReady
 	}
+
 	return cached.(*monitor.CPUInfo), nil
 }
 
 // Memory returns memory usage information.
-func (s *DefaultService) Memory(ctx context.Context) (*monitor.MemoryInfo, error) {
+func (*DefaultService) Memory(ctx context.Context) (*monitor.MemoryInfo, error) {
 	vMem, err := mem.VirtualMemoryWithContext(ctx)
 	if err != nil {
 		return nil, err
@@ -297,7 +299,7 @@ func convertSwapMemory(s *mem.SwapMemoryStat) *monitor.SwapMemory {
 }
 
 // Disk returns disk usage and partition information.
-func (s *DefaultService) Disk(ctx context.Context) (*monitor.DiskInfo, error) {
+func (*DefaultService) Disk(ctx context.Context) (*monitor.DiskInfo, error) {
 	partitions, err := disk.PartitionsWithContext(ctx, false)
 	if err != nil {
 		return nil, err
@@ -355,11 +357,12 @@ func convertDiskIOCounters(counters map[string]disk.IOCountersStat) map[string]*
 			Label:            c.Label,
 		}
 	}
+
 	return result
 }
 
 // Network returns network interface and I/O statistics.
-func (s *DefaultService) Network(ctx context.Context) (*monitor.NetworkInfo, error) {
+func (*DefaultService) Network(ctx context.Context) (*monitor.NetworkInfo, error) {
 	interfaces, err := net.InterfacesWithContext(ctx)
 	if err != nil {
 		return nil, err
@@ -411,7 +414,7 @@ func (s *DefaultService) Network(ctx context.Context) (*monitor.NetworkInfo, err
 }
 
 // Host returns host information.
-func (s *DefaultService) Host(ctx context.Context) (*monitor.HostInfo, error) {
+func (*DefaultService) Host(ctx context.Context) (*monitor.HostInfo, error) {
 	info, err := host.InfoWithContext(ctx)
 	if err != nil {
 		return nil, err
@@ -440,11 +443,12 @@ func (s *DefaultService) Process(_ context.Context) (*monitor.ProcessInfo, error
 	if cached == nil {
 		return nil, ErrProcessInfoNotReady
 	}
+
 	return cached.(*monitor.ProcessInfo), nil
 }
 
 // Load returns system load averages.
-func (s *DefaultService) Load(ctx context.Context) (*monitor.LoadInfo, error) {
+func (*DefaultService) Load(ctx context.Context) (*monitor.LoadInfo, error) {
 	avg, err := load.AvgWithContext(ctx)
 	if err != nil {
 		return nil, err
@@ -467,6 +471,7 @@ func (s *DefaultService) BuildInfo() *monitor.BuildInfo {
 			GitCommit:  "unknown",
 		}
 	}
+
 	return s.buildInfo
 }
 
@@ -506,9 +511,11 @@ func (s *DefaultService) Close() error {
 	if s.samplerCancel != nil {
 		s.samplerCancel()
 	}
+
 	if s.samplerDone != nil {
 		<-s.samplerDone
 	}
+
 	return nil
 }
 
@@ -518,9 +525,12 @@ func (s *DefaultService) sampleCPU(ctx context.Context) {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return
 		}
+
 		logger.Errorf("Failed to sample CPU info: %v", err)
+
 		return
 	}
+
 	s.cpuCache.Store(cpuInfo)
 }
 
@@ -563,9 +573,12 @@ func (s *DefaultService) sampleProcess(ctx context.Context) {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return
 		}
+
 		logger.Errorf("Failed to sample process info: %v", err)
+
 		return
 	}
+
 	s.processCache.Store(processInfo)
 }
 
@@ -622,14 +635,17 @@ func (s *DefaultService) collectProcessInfo(ctx context.Context) (*monitor.Proce
 	}, nil
 }
 
-func (s *DefaultService) collectMemoryInfo(ctx context.Context, proc *process.Process) (rss, vms, swap uint64) {
+func (*DefaultService) collectMemoryInfo(ctx context.Context, proc *process.Process) (rss, vms, swap uint64) {
 	memInfo, err := proc.MemoryInfoWithContext(ctx)
 	if err != nil {
 		logger.Warnf("Failed to get memory info: %v", err)
+
 		return 0, 0, 0
 	}
+
 	if memInfo == nil {
 		return 0, 0, 0
 	}
+
 	return memInfo.RSS, memInfo.VMS, memInfo.Swap
 }

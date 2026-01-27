@@ -63,7 +63,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) WithQueryApplier(applier func(quer
 	return a
 }
 
-func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, sortable Sortable, search TSearch, meta api.Meta) error, error) {
+func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, _ Sortable, search TSearch, meta api.Meta) error, error) {
 	if err := a.Setup(db, &FindApiConfig{
 		QueryParts: &QueryPartsConfig{
 			Condition:         []QueryPart{QueryBase},
@@ -89,7 +89,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(c
 		return nil, fmt.Errorf("%w: column %q does not exist in model %T (parent reference)", ErrColumnNotFound, a.parentIDColumn, (*TModel)(nil))
 	}
 
-	return func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, sortable Sortable, search TSearch, meta api.Meta) error {
+	return func(ctx fiber.Ctx, db orm.DB, config DataOptionConfig, _ Sortable, search TSearch, meta api.Meta) error {
 		var (
 			flatOptions []TreeDataOption
 			query       = db.NewSelect().Model((*TModel)(nil))
@@ -185,7 +185,7 @@ func (a *findTreeOptionsApi[TModel, TSearch]) findTreeOptions(db orm.DB) (func(c
 		query.ApplyIf(len(metaColumns) > 0, func(sq orm.SelectQuery) {
 			sq.SelectExpr(
 				func(eb orm.ExprBuilder) any {
-					return buildMetaJsonExpr(eb, metaColumns)
+					return buildMetaJSONExpr(eb, metaColumns)
 				},
 				"meta",
 			)

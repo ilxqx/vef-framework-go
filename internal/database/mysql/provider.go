@@ -14,21 +14,21 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-type provider struct {
+type Provider struct {
 	dbType constants.DBType
 }
 
-func NewProvider() *provider {
-	return &provider{
+func NewProvider() *Provider {
+	return &Provider{
 		dbType: constants.MySQL,
 	}
 }
 
-func (p *provider) Type() constants.DBType {
+func (p *Provider) Type() constants.DBType {
 	return p.dbType
 }
 
-func (p *provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
+func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(cfg); err != nil {
 		return nil, nil, err
 	}
@@ -41,7 +41,7 @@ func (p *provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialec
 	return sql.OpenDB(connector), mysqldialect.New(), nil
 }
 
-func (p *provider) ValidateConfig(cfg *config.DatasourceConfig) error {
+func (*Provider) ValidateConfig(cfg *config.DatasourceConfig) error {
 	if cfg.Database == constants.Empty {
 		return ErrMySQLDatabaseRequired
 	}
@@ -49,11 +49,11 @@ func (p *provider) ValidateConfig(cfg *config.DatasourceConfig) error {
 	return nil
 }
 
-func (p *provider) QueryVersion(db *bun.DB) (string, error) {
+func (*Provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
-func (p *provider) buildConfig(cfg *config.DatasourceConfig) *mysql.Config {
+func (*Provider) buildConfig(cfg *config.DatasourceConfig) *mysql.Config {
 	mysqlCfg := mysql.NewConfig()
 	mysqlCfg.User = lo.Ternary(cfg.User != constants.Empty, cfg.User, "root")
 	mysqlCfg.Passwd = cfg.Password

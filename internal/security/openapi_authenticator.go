@@ -8,7 +8,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/encoding"
-	"github.com/ilxqx/vef-framework-go/hash"
+	"github.com/ilxqx/vef-framework-go/hashx"
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -72,7 +72,7 @@ func (a *OpenApiAuthenticator) Authenticate(ctx context.Context, authentication 
 		return nil, fmt.Errorf("failed to decode app secret: %w", err)
 	}
 
-	expectedSignatureHex := hash.HmacSHA256(secretBytes, []byte(signaturePayload))
+	expectedSignatureHex := hashx.HmacSHA256(secretBytes, []byte(signaturePayload))
 
 	providedMac, err := encoding.FromHex(signatureHex)
 	if err != nil {

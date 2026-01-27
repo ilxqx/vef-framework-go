@@ -82,7 +82,7 @@ func (p *PKField) Set(model, value any) error {
 	return nil
 }
 
-func (p *PKField) validateModel(model any) (reflect.Value, error) {
+func (*PKField) validateModel(model any) (reflect.Value, error) {
 	if value, ok := model.(reflect.Value); ok {
 		if value.Kind() == reflect.Pointer {
 			value = value.Elem()

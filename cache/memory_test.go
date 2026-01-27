@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestCache[T any](maxSize int64, defaultTtl time.Duration, evictionPolicy EvictionPolicy, gcInterval time.Duration) Cache[T] {
+func newTestCache[T any](maxSize int64, defaultTTL time.Duration, evictionPolicy EvictionPolicy, gcInterval time.Duration) Cache[T] {
 	return NewMemory[T](
 		WithMemMaxSize(maxSize),
-		WithMemDefaultTtl(defaultTtl),
+		WithMemDefaultTTL(defaultTTL),
 		WithMemEvictionPolicy(evictionPolicy),
 		WithMemGCInterval(gcInterval),
 	)
@@ -26,28 +26,30 @@ func TestNewMemoryOptions(t *testing.T) {
 		cache := NewMemory[string]()
 		defer cache.Close()
 
-		mc := cache.(*memoryCache[string])
+		mc, ok := cache.(*memoryCache[string])
+		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
 		assert.Zero(t, mc.maxSize)
 		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
-		assert.Zero(t, mc.defaultTtl)
+		assert.Zero(t, mc.defaultTTL)
 		assert.Greater(t, mc.gcInterval, time.Duration(0))
 	})
 
 	t.Run("WithOptions", func(t *testing.T) {
 		cache := NewMemory[string](
 			WithMemMaxSize(128),
-			WithMemDefaultTtl(2*time.Minute),
+			WithMemDefaultTTL(2*time.Minute),
 			WithMemEvictionPolicy(EvictionPolicyLFU),
 			WithMemGCInterval(500*time.Millisecond),
 		)
 		defer cache.Close()
 
-		mc := cache.(*memoryCache[string])
+		mc, ok := cache.(*memoryCache[string])
+		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
 		assert.Equal(t, int64(128), mc.maxSize)
 		assert.Equal(t, EvictionPolicyLFU, mc.evictionPolicy)
-		assert.Equal(t, 2*time.Minute, mc.defaultTtl)
+		assert.Equal(t, 2*time.Minute, mc.defaultTTL)
 		assert.Equal(t, 500*time.Millisecond, mc.gcInterval)
 	})
 }
@@ -127,7 +129,7 @@ func TestMemoryCacheBasicOperations(t *testing.T) {
 
 		var loaderCalls atomic.Int32
 
-		loader := func(ctx context.Context) (string, error) {
+		loader := func(context.Context) (string, error) {
 			loaderCalls.Add(1)
 
 			return "loaded", nil
@@ -491,7 +493,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 		_ = cache.Set(ctx, "c", 3)
 
 		sum := 0
-		err := cache.ForEach(ctx, func(key string, value int) bool {
+		err := cache.ForEach(ctx, func(_ string, value int) bool {
 			sum += value
 
 			return true
@@ -510,7 +512,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 		_ = cache.Set(ctx, "post:1", 30)
 
 		sum := 0
-		err := cache.ForEach(ctx, func(key string, value int) bool {
+		err := cache.ForEach(ctx, func(_ string, value int) bool {
 			sum += value
 
 			return true
@@ -529,7 +531,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 		_ = cache.Set(ctx, "c", 3)
 
 		count := 0
-		err := cache.ForEach(ctx, func(key string, value int) bool {
+		err := cache.ForEach(ctx, func(_ string, _ int) bool {
 			count++
 
 			return count < 2
@@ -544,7 +546,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 		defer cache.Close()
 
 		called := false
-		err := cache.ForEach(ctx, func(key string, value int) bool {
+		err := cache.ForEach(ctx, func(_ string, _ int) bool {
 			called = true
 
 			return true
@@ -564,7 +566,7 @@ func TestMemoryCacheForEach(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		count := 0
-		cache.ForEach(ctx, func(key string, value int) bool {
+		cache.ForEach(ctx, func(_ string, _ int) bool {
 			count++
 
 			return true
@@ -660,7 +662,7 @@ func TestMemoryCacheClose(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, keys)
 
-		err = cache.ForEach(ctx, func(key, value string) bool {
+		err = cache.ForEach(ctx, func(_, _ string) bool {
 			return true
 		})
 		assert.NoError(t, err)
@@ -718,14 +720,10 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 
 		var wg sync.WaitGroup
 		for i := range 50 {
-			wg.Add(1)
-
-			go func(n int) {
-				defer wg.Done()
-
-				key := fmt.Sprintf("key%d", n)
-				_ = cache.Set(ctx, key, n)
-			}(i)
+			wg.Go(func() {
+				key := fmt.Sprintf("key%d", i)
+				_ = cache.Set(ctx, key, i)
+			})
 		}
 
 		wg.Wait()
@@ -734,7 +732,7 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 		assert.LessOrEqual(t, size, int64(100))
 	})
 
-	t.Run("ConcurrentReads", func(t *testing.T) {
+	t.Run("ConcurrentReads", func(*testing.T) {
 		cache := newTestCache[int](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
@@ -744,14 +742,10 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 
 		var wg sync.WaitGroup
 		for i := range 50 {
-			wg.Add(1)
-
-			go func(n int) {
-				defer wg.Done()
-
-				key := fmt.Sprintf("key%d", n)
+			wg.Go(func() {
+				key := fmt.Sprintf("key%d", i)
 				cache.Get(ctx, key)
-			}(i)
+			})
 		}
 
 		wg.Wait()
@@ -764,36 +758,24 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 		var wg sync.WaitGroup
 
 		for i := range 50 {
-			wg.Add(1)
-
-			go func(n int) {
-				defer wg.Done()
-
-				key := fmt.Sprintf("key%d", n)
-				_ = cache.Set(ctx, key, n)
-			}(i)
+			wg.Go(func() {
+				key := fmt.Sprintf("key%d", i)
+				_ = cache.Set(ctx, key, i)
+			})
 		}
 
 		for i := range 50 {
-			wg.Add(1)
-
-			go func(n int) {
-				defer wg.Done()
-
-				key := fmt.Sprintf("key%d", n)
+			wg.Go(func() {
+				key := fmt.Sprintf("key%d", i)
 				cache.Get(ctx, key)
-			}(i)
+			})
 		}
 
 		for i := range 25 {
-			wg.Add(1)
-
-			go func(n int) {
-				defer wg.Done()
-
-				key := fmt.Sprintf("key%d", n)
+			wg.Go(func() {
+				key := fmt.Sprintf("key%d", i)
 				cache.Delete(ctx, key)
-			}(i)
+			})
 		}
 
 		wg.Wait()
@@ -809,14 +791,10 @@ func TestMemoryCacheConcurrency(t *testing.T) {
 
 		var wg sync.WaitGroup
 		for i := range 100 {
-			wg.Add(1)
-
-			go func(n int) {
-				defer wg.Done()
-
-				key := fmt.Sprintf("key%d", n)
-				_ = cache.Set(ctx, key, n)
-			}(i)
+			wg.Go(func() {
+				key := fmt.Sprintf("key%d", i)
+				_ = cache.Set(ctx, key, i)
+			})
 		}
 
 		wg.Wait()
@@ -846,7 +824,8 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		cache := newTestCache[string](0, 0, EvictionPolicyLRU, 5*time.Minute)
 		defer cache.Close()
 
-		mc := cache.(*memoryCache[string])
+		mc, ok := cache.(*memoryCache[string])
+		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
 		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
 
@@ -866,7 +845,8 @@ func TestMemoryCacheEdgeCases(t *testing.T) {
 		cache := newTestCache[string](-1, 0, EvictionPolicyLFU, 5*time.Minute)
 		defer cache.Close()
 
-		mc := cache.(*memoryCache[string])
+		mc, ok := cache.(*memoryCache[string])
+		require.True(t, ok, "Type assertion to *memoryCache[string] should succeed")
 
 		assert.Equal(t, EvictionPolicyNone, mc.evictionPolicy)
 

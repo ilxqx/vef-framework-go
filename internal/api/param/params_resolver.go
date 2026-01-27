@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 )
 
 type ParamsResolver struct{}
@@ -16,7 +16,7 @@ func (*ParamsResolver) Type() reflect.Type {
 }
 
 func (*ParamsResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
-	if req := common.Request(ctx); req != nil && req.Params != nil {
+	if req := shared.Request(ctx); req != nil && req.Params != nil {
 		return reflect.ValueOf(req.Params), nil
 	}
 

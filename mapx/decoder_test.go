@@ -13,7 +13,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 type TestStruct struct {
@@ -1365,8 +1365,8 @@ func TestNullTypesIntegrationAdvanced(t *testing.T) {
 func TestDecodeOrderDirection(t *testing.T) {
 	t.Run("DecodeStringToOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
-			Column    string              `json:"column"`
-			Direction sort.OrderDirection `json:"direction"`
+			Column    string               `json:"column"`
+			Direction sortx.OrderDirection `json:"direction"`
 		}
 
 		input := map[string]any{
@@ -1383,12 +1383,12 @@ func TestDecodeOrderDirection(t *testing.T) {
 		require.NoError(t, err, "Decode should succeed")
 
 		assert.Equal(t, "name", result.Column, "Column should match")
-		assert.Equal(t, sort.OrderAsc, result.Direction, "Direction should be asc")
+		assert.Equal(t, sortx.OrderAsc, result.Direction, "Direction should be asc")
 	})
 
 	t.Run("DecodeUppercaseStringToOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
-			Direction sort.OrderDirection `json:"direction"`
+			Direction sortx.OrderDirection `json:"direction"`
 		}
 
 		input := map[string]any{
@@ -1403,23 +1403,23 @@ func TestDecodeOrderDirection(t *testing.T) {
 		err = decoder.Decode(input)
 		require.NoError(t, err, "Decode should succeed")
 
-		assert.Equal(t, sort.OrderDesc, result.Direction, "Direction should be desc")
+		assert.Equal(t, sortx.OrderDesc, result.Direction, "Direction should be desc")
 	})
 
 	t.Run("DecodeMixedCaseStringToOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
-			Direction sort.OrderDirection `json:"direction"`
+			Direction sortx.OrderDirection `json:"direction"`
 		}
 
 		tests := []struct {
 			name     string
 			input    string
-			expected sort.OrderDirection
+			expected sortx.OrderDirection
 		}{
-			{"Asc", "Asc", sort.OrderAsc},
-			{"AsC", "AsC", sort.OrderAsc},
-			{"Desc", "Desc", sort.OrderDesc},
-			{"DeSc", "DeSc", sort.OrderDesc},
+			{"Asc", "Asc", sortx.OrderAsc},
+			{"AsC", "AsC", sortx.OrderAsc},
+			{"Desc", "Desc", sortx.OrderDesc},
+			{"DeSc", "DeSc", sortx.OrderDesc},
 		}
 
 		for _, tt := range tests {
@@ -1443,7 +1443,7 @@ func TestDecodeOrderDirection(t *testing.T) {
 
 	t.Run("DecodeOrderDirectionWithSpaces", func(t *testing.T) {
 		type SortSpec struct {
-			Direction sort.OrderDirection `json:"direction"`
+			Direction sortx.OrderDirection `json:"direction"`
 		}
 
 		input := map[string]any{
@@ -1458,12 +1458,12 @@ func TestDecodeOrderDirection(t *testing.T) {
 		err = decoder.Decode(input)
 		require.NoError(t, err, "Decode should succeed")
 
-		assert.Equal(t, sort.OrderAsc, result.Direction, "Direction should be asc with spaces trimmed")
+		assert.Equal(t, sortx.OrderAsc, result.Direction, "Direction should be asc with spaces trimmed")
 	})
 
 	t.Run("DecodeInvalidOrderDirectionValue", func(t *testing.T) {
 		type SortSpec struct {
-			Direction sort.OrderDirection `json:"direction"`
+			Direction sortx.OrderDirection `json:"direction"`
 		}
 
 		input := map[string]any{
@@ -1482,7 +1482,7 @@ func TestDecodeOrderDirection(t *testing.T) {
 
 	t.Run("DecodeMultipleOrderDirectionInSlice", func(t *testing.T) {
 		type SortRequest struct {
-			Sort []sort.OrderSpec `json:"sort"`
+			Sort []sortx.OrderSpec `json:"sort"`
 		}
 
 		input := map[string]any{
@@ -1502,9 +1502,9 @@ func TestDecodeOrderDirection(t *testing.T) {
 
 		require.Len(t, result.Sort, 2, "Should have 2 sort specs")
 		assert.Equal(t, "name", result.Sort[0].Column, "First column should be name")
-		assert.Equal(t, sort.OrderAsc, result.Sort[0].Direction, "First direction should be asc")
+		assert.Equal(t, sortx.OrderAsc, result.Sort[0].Direction, "First direction should be asc")
 		assert.Equal(t, "age", result.Sort[1].Column, "Second column should be age")
-		assert.Equal(t, sort.OrderDesc, result.Sort[1].Direction, "Second direction should be desc")
+		assert.Equal(t, sortx.OrderDesc, result.Sort[1].Direction, "Second direction should be desc")
 	})
 
 	t.Run("DecodeNestedOrderDirectionInComplexStruct", func(t *testing.T) {
@@ -1515,10 +1515,10 @@ func TestDecodeOrderDirection(t *testing.T) {
 		}
 
 		type QueryRequest struct {
-			Filters []FilterSpec     `json:"filters"`
-			Sort    []sort.OrderSpec `json:"sort"`
-			Page    int              `json:"page"`
-			Size    int              `json:"size"`
+			Filters []FilterSpec      `json:"filters"`
+			Sort    []sortx.OrderSpec `json:"sort"`
+			Page    int               `json:"page"`
+			Size    int               `json:"size"`
 		}
 
 		input := map[string]any{
@@ -1545,15 +1545,15 @@ func TestDecodeOrderDirection(t *testing.T) {
 		assert.Equal(t, 20, result.Size, "Size should match")
 		require.Len(t, result.Sort, 2, "Should have 2 sort specs")
 		assert.Equal(t, "created_at", result.Sort[0].Column, "First column should be created_at")
-		assert.Equal(t, sort.OrderDesc, result.Sort[0].Direction, "First direction should be desc")
+		assert.Equal(t, sortx.OrderDesc, result.Sort[0].Direction, "First direction should be desc")
 		assert.Equal(t, "name", result.Sort[1].Column, "Second column should be name")
-		assert.Equal(t, sort.OrderAsc, result.Sort[1].Direction, "Second direction should be asc")
+		assert.Equal(t, sortx.OrderAsc, result.Sort[1].Direction, "Second direction should be asc")
 	})
 
 	t.Run("FromMapWithOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
-			Column    string              `json:"column"`
-			Direction sort.OrderDirection `json:"direction"`
+			Column    string               `json:"column"`
+			Direction sortx.OrderDirection `json:"direction"`
 		}
 
 		input := map[string]any{
@@ -1565,24 +1565,24 @@ func TestDecodeOrderDirection(t *testing.T) {
 		require.NoError(t, err, "FromMap should succeed")
 
 		assert.Equal(t, "email", result.Column, "Column should match")
-		assert.Equal(t, sort.OrderDesc, result.Direction, "Direction should be desc")
+		assert.Equal(t, sortx.OrderDesc, result.Direction, "Direction should be desc")
 	})
 
 	t.Run("ToMapWithOrderDirection", func(t *testing.T) {
 		type SortSpec struct {
-			Column    string              `json:"column"`
-			Direction sort.OrderDirection `json:"direction"`
+			Column    string               `json:"column"`
+			Direction sortx.OrderDirection `json:"direction"`
 		}
 
 		input := SortSpec{
 			Column:    "username",
-			Direction: sort.OrderAsc,
+			Direction: sortx.OrderAsc,
 		}
 
 		result, err := ToMap(input)
 		require.NoError(t, err, "ToMap should succeed")
 
 		assert.Equal(t, "username", result["column"], "Column should match")
-		assert.Equal(t, sort.OrderAsc, result["direction"], "Direction should match")
+		assert.Equal(t, sortx.OrderAsc, result["direction"], "Direction should match")
 	})
 }

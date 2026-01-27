@@ -55,6 +55,7 @@ func newWorker[TIn, TOut any](id int, pool *WorkerPool[TIn, TOut]) *Worker[TIn, 
 // run is the main worker loop, locks to OS thread for delegate compatibility.
 func (w *Worker[TIn, TOut]) run() {
 	runtime.LockOSThread()
+
 	defer runtime.UnlockOSThread()
 
 	if err := w.initDelegate(); err != nil {
@@ -74,6 +75,7 @@ func (w *Worker[TIn, TOut]) initDelegate() error {
 	if err := w.delegate.Init(ctx, w.pool.config.DelegateConfig); err != nil {
 		w.logger.Errorf("delegate init failed: %v", err)
 		w.setState(workerStateStopped)
+
 		w.initDone <- err
 
 		return err

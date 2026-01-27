@@ -8,13 +8,13 @@ import (
 	"github.com/uptrace/bun/driver/pgdriver"
 )
 
-// PostgreSQL error codes
+// PostgreSQL error codes.
 const (
 	pgUniqueViolation     = "23505"
 	pgForeignKeyViolation = "23503"
 )
 
-// MySQL error numbers
+// MySQL error numbers.
 const (
 	mysqlDupEntry        = 1062
 	mysqlDupUnique       = 1169
@@ -29,6 +29,7 @@ func containsAny(message string, substrings ...string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -94,7 +95,8 @@ func IsForeignKeyError(err error) bool {
 	// Fallback: message matching for SQLite, SQL Server, Oracle
 	message := strings.ToLower(err.Error())
 
-	if containsAny(message,
+	// Common foreign key error patterns.
+	hasFKPattern := containsAny(message,
 		// PostgreSQL
 		"violates foreign key constraint", "foreign key violation",
 		// MySQL
@@ -110,14 +112,12 @@ func IsForeignKeyError(err error) bool {
 		"statement conflicted with the foreign key",
 		// Oracle (ORA-02291, ORA-02292)
 		"ora-02291", "ora-02292",
-	) {
-		return true
-	}
+	)
 
-	// Oracle: integrity constraint violated with parent/child key
-	if strings.Contains(message, "integrity constraint") && strings.Contains(message, "violated") {
-		return strings.Contains(message, "parent key not found") || strings.Contains(message, "child record found")
-	}
+	// Oracle: integrity constraint violated with parent/child key.
+	hasOracleIntegrityPattern := strings.Contains(message, "integrity constraint") &&
+		strings.Contains(message, "violated") &&
+		(strings.Contains(message, "parent key not found") || strings.Contains(message, "child record found"))
 
-	return false
+	return hasFKPattern || hasOracleIntegrityPattern
 }

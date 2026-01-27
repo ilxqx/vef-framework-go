@@ -25,9 +25,11 @@ type AtlasInspector struct {
 
 // NewInspector creates a new Atlas Inspector for the given database connection.
 func NewInspector(db *sql.DB, dbType constants.DBType, schemaName string) (Inspector, error) {
-	var inspector as.Inspector
-	var schema string
-	var err error
+	var (
+		inspector as.Inspector
+		schema    string
+		err       error
+	)
 
 	switch dbType {
 	case constants.Postgres:

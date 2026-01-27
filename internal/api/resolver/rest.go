@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 )
 
 type REST struct{}
@@ -13,14 +13,14 @@ func NewRest() api.HandlerResolver {
 	return new(REST)
 }
 
-func (r *REST) Resolve(resource api.Resource, spec api.OperationSpec) (any, error) {
+func (*REST) Resolve(resource api.Resource, spec api.OperationSpec) (any, error) {
 	if resource.Kind() != api.KindREST {
 		return nil, nil
 	}
 
 	if spec.Handler == nil {
 		return nil, fmt.Errorf("%w (resource: %s, action: %s)",
-			common.ErrHandlerRequired, resource.Name(), spec.Action)
+			shared.ErrHandlerRequired, resource.Name(), spec.Action)
 	}
 
 	return resolveHandlerFromSpec(spec, resource)

@@ -217,15 +217,15 @@ func (b *QueryExprBuilder) IsFalse(expr any) schema.QueryAppender {
 
 // ========== Expression Building ==========
 
-func (b *QueryExprBuilder) Expr(expr string, args ...any) schema.QueryAppender {
+func (*QueryExprBuilder) Expr(expr string, args ...any) schema.QueryAppender {
 	return bun.SafeQuery(expr, args...)
 }
 
-func (b *QueryExprBuilder) Exprs(exprs ...any) schema.QueryAppender {
+func (*QueryExprBuilder) Exprs(exprs ...any) schema.QueryAppender {
 	return newExpressions(constants.CommaSpace, exprs...)
 }
 
-func (b *QueryExprBuilder) ExprsWithSep(sep any, exprs ...any) schema.QueryAppender {
+func (*QueryExprBuilder) ExprsWithSep(sep any, exprs ...any) schema.QueryAppender {
 	return newExpressions(sep, exprs...)
 }
 
@@ -673,14 +673,14 @@ func (b *QueryExprBuilder) WinVariance(builder func(WindowVarianceBuilder)) sche
 	return cb
 }
 
-func (b *QueryExprBuilder) WinJsonObjectAgg(builder func(WindowJSONObjectAggBuilder)) schema.QueryAppender {
+func (b *QueryExprBuilder) WinJSONObjectAgg(builder func(WindowJSONObjectAggBuilder)) schema.QueryAppender {
 	cb := newWindowJSONObjectAggExpr(b.qb)
 	builder(cb)
 
 	return cb
 }
 
-func (b *QueryExprBuilder) WinJsonArrayAgg(builder func(WindowJSONArrayAggBuilder)) schema.QueryAppender {
+func (b *QueryExprBuilder) WinJSONArrayAgg(builder func(WindowJSONArrayAggBuilder)) schema.QueryAppender {
 	cb := newWindowJSONArrayAggExpr(b.qb)
 	builder(cb)
 
@@ -1112,12 +1112,12 @@ func (b *QueryExprBuilder) DateTrunc(unit DateTimeUnit, expr any) schema.QueryAp
 				return b.Expr("DATE_FORMAT(?, ?)", expr, "%Y-01-01")
 			case UnitMonth:
 				return b.Expr("DATE_FORMAT(?, ?)", expr, "%Y-%m-01")
-			case UnitDay:
-				return b.Expr("DATE(?)", expr)
 			case UnitHour:
 				return b.Expr("DATE_FORMAT(?, ?)", expr, "%Y-%m-%d %H:00:00")
 			case UnitMinute:
 				return b.Expr("DATE_FORMAT(?, ?)", expr, "%Y-%m-%d %H:%i:00")
+			case UnitDay:
+				fallthrough
 			default:
 				return b.Expr("DATE(?)", expr)
 			}
@@ -1128,12 +1128,12 @@ func (b *QueryExprBuilder) DateTrunc(unit DateTimeUnit, expr any) schema.QueryAp
 				return b.Expr("STRFTIME(?, ?)", "%Y-01-01", expr)
 			case UnitMonth:
 				return b.Expr("STRFTIME(?, ?)", "%Y-%m-01", expr)
-			case UnitDay:
-				return b.Expr("DATE(?)", expr)
 			case UnitHour:
 				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:00:00", expr)
 			case UnitMinute:
 				return b.Expr("STRFTIME(?, ?)", "%Y-%m-%d %H:%M:00", expr)
+			case UnitDay:
+				fallthrough
 			default:
 				return b.Expr("DATE(?)", expr)
 			}
@@ -1192,14 +1192,14 @@ func (b *QueryExprBuilder) DateDiff(start, end any, unit DateTimeUnit) schema.Qu
 				return b.Divide(epochDiff, 60)
 			case UnitHour:
 				return b.Divide(epochDiff, 3600)
-			case UnitDay:
-				return b.Divide(epochDiff, 86400)
 			case UnitMonth:
 				// Approximate: 30.44 days per month on average
 				return b.Divide(epochDiff, 2629800)
 			case UnitYear:
 				// Approximate: 365.25 days per year on average
 				return b.Divide(epochDiff, 31557600)
+			case UnitDay:
+				fallthrough
 			default:
 				return b.Divide(epochDiff, 86400) // default to days
 			}
@@ -1235,8 +1235,6 @@ func (b *QueryExprBuilder) DateDiff(start, end any, unit DateTimeUnit) schema.Qu
 					24,
 				)
 
-			case UnitDay:
-				return b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))
 			case UnitMonth:
 				// Approximate: (JULIANDAY difference) / 30.44 days per month
 				return b.Divide(
@@ -1251,6 +1249,8 @@ func (b *QueryExprBuilder) DateDiff(start, end any, unit DateTimeUnit) schema.Qu
 					365.25,
 				)
 
+			case UnitDay:
+				fallthrough
 			default:
 				return b.Subtract(b.Expr("JULIANDAY(?)", end), b.Expr("JULIANDAY(?)", start))
 			}
@@ -1764,9 +1764,9 @@ func (b *QueryExprBuilder) ToJSON(expr any) schema.QueryAppender {
 
 // ========== JSON Functions ==========
 
-// processJsonPath formats the JSON path according to the dialect requirements.
+// processJSONPath formats the JSON path according to the dialect requirements.
 // Input path is expected to be in "key1.key2" format (dot-separated keys).
-func (b *QueryExprBuilder) processJsonPath(path any, dialectName dialect.Name) any {
+func (b *QueryExprBuilder) processJSONPath(path any, dialectName dialect.Name) any {
 	switch dialectName {
 	case dialect.PG:
 		if pathStr, ok := path.(string); ok {
@@ -1800,16 +1800,16 @@ func (b *QueryExprBuilder) processJsonPath(path any, dialectName dialect.Name) a
 func (b *QueryExprBuilder) JSONExtract(json, path any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			return b.Expr("? #>> ?::text[]", b.ToJSON(json), b.processJsonPath(path, dialect.PG))
+			return b.Expr("? #>> ?::text[]", b.ToJSON(json), b.processJSONPath(path, dialect.PG))
 		},
 		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJsonPath(path, dialect.MySQL))
+			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJSONPath(path, dialect.MySQL))
 		},
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJsonPath(path, dialect.SQLite))
+			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJSONPath(path, dialect.SQLite))
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJsonPath(path, dialect.MySQL))
+			return b.Expr("JSON_EXTRACT(?, ?)", json, b.processJSONPath(path, dialect.MySQL))
 		},
 	})
 }
@@ -1929,16 +1929,16 @@ func (b *QueryExprBuilder) JSONContainsPath(json, path any) schema.QueryAppender
 		Postgres: func() schema.QueryAppender {
 			// PostgreSQL uses jsonb_path_exists which requires JSONPath syntax ($.key)
 			// We use the same path formatting as MySQL
-			return b.Expr("JSONB_PATH_EXISTS(?, ?::jsonpath)", b.ToJSON(json), b.processJsonPath(path, dialect.MySQL))
+			return b.Expr("JSONB_PATH_EXISTS(?, ?::jsonpath)", b.ToJSON(json), b.processJSONPath(path, dialect.MySQL))
 		},
 		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_CONTAINS_PATH(?, ?, ?)", json, "one", b.processJsonPath(path, dialect.MySQL))
+			return b.Expr("JSON_CONTAINS_PATH(?, ?, ?)", json, "one", b.processJSONPath(path, dialect.MySQL))
 		},
 		SQLite: func() schema.QueryAppender {
 			return b.IsNotNull(b.JSONExtract(json, path))
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("JSON_CONTAINS_PATH(?, ?, ?)", json, "one", b.processJsonPath(path, dialect.MySQL))
+			return b.Expr("JSON_CONTAINS_PATH(?, ?, ?)", json, "one", b.processJSONPath(path, dialect.MySQL))
 		},
 	})
 }
@@ -1947,14 +1947,14 @@ func (b *QueryExprBuilder) JSONKeys(json any, path ...any) schema.QueryAppender 
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSONB_OBJECT_KEYS(? #> ?::text[])", b.ToJSON(json), b.processJsonPath(path[0], dialect.PG))
+				return b.Expr("JSONB_OBJECT_KEYS(? #> ?::text[])", b.ToJSON(json), b.processJSONPath(path[0], dialect.PG))
 			}
 
 			return b.Expr("JSONB_OBJECT_KEYS(?)", b.ToJSON(json))
 		},
 		MySQL: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSON_KEYS(?, ?)", json, b.processJsonPath(path[0], dialect.MySQL))
+				return b.Expr("JSON_KEYS(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
 			}
 
 			return b.Expr("JSON_KEYS(?)", json)
@@ -1980,7 +1980,7 @@ func (b *QueryExprBuilder) JSONKeys(json any, path ...any) schema.QueryAppender 
 		},
 		Default: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSON_KEYS(?, ?)", json, b.processJsonPath(path[0], dialect.MySQL))
+				return b.Expr("JSON_KEYS(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
 			}
 
 			return b.Expr("JSON_KEYS(?)", json)
@@ -1998,7 +1998,7 @@ func (b *QueryExprBuilder) JSONLength(json any, path ...any) schema.QueryAppende
 			var jsonExpr schema.QueryAppender
 			if len(path) > 0 {
 				// With path: extract the value at path first
-				jsonExpr = b.Expr("? #> ?::text[]", b.ToJSON(json), b.processJsonPath(path[0], dialect.PG))
+				jsonExpr = b.Expr("? #> ?::text[]", b.ToJSON(json), b.processJSONPath(path[0], dialect.PG))
 			} else {
 				// Without path: work on the root value
 				jsonExpr = b.ToJSON(json)
@@ -2019,7 +2019,7 @@ func (b *QueryExprBuilder) JSONLength(json any, path ...any) schema.QueryAppende
 		MySQL: func() schema.QueryAppender {
 			// MySQL has JSON_LENGTH that works with both arrays and objects
 			if len(path) > 0 {
-				return b.Expr("JSON_LENGTH(?, ?)", json, b.processJsonPath(path[0], dialect.MySQL))
+				return b.Expr("JSON_LENGTH(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
 			}
 
 			return b.Expr("JSON_LENGTH(?)", json)
@@ -2050,7 +2050,7 @@ func (b *QueryExprBuilder) JSONLength(json any, path ...any) schema.QueryAppende
 		},
 		Default: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSON_LENGTH(?, ?)", json, b.processJsonPath(path[0], dialect.MySQL))
+				return b.Expr("JSON_LENGTH(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
 			}
 
 			return b.Expr("JSON_LENGTH(?)", json)
@@ -2062,28 +2062,28 @@ func (b *QueryExprBuilder) JSONType(json any, path ...any) schema.QueryAppender 
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSONB_TYPEOF(? #> ?::text[])", b.ToJSON(json), b.processJsonPath(path[0], dialect.PG))
+				return b.Expr("JSONB_TYPEOF(? #> ?::text[])", b.ToJSON(json), b.processJSONPath(path[0], dialect.PG))
 			}
 
 			return b.Expr("JSONB_TYPEOF(?)", b.ToJSON(json))
 		},
 		MySQL: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSON_TYPE(?, ?)", json, b.processJsonPath(path[0], dialect.MySQL))
+				return b.Expr("JSON_TYPE(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
 			}
 
 			return b.Expr("JSON_TYPE(?)", json)
 		},
 		SQLite: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSON_TYPE(?, ?)", json, b.processJsonPath(path[0], dialect.SQLite))
+				return b.Expr("JSON_TYPE(?, ?)", json, b.processJSONPath(path[0], dialect.SQLite))
 			}
 
 			return b.Expr("JSON_TYPE(?)", json)
 		},
 		Default: func() schema.QueryAppender {
 			if len(path) > 0 {
-				return b.Expr("JSON_TYPE(?, ?)", json, b.processJsonPath(path[0], dialect.MySQL))
+				return b.Expr("JSON_TYPE(?, ?)", json, b.processJSONPath(path[0], dialect.MySQL))
 			}
 
 			return b.Expr("JSON_TYPE(?)", json)
@@ -2111,16 +2111,16 @@ func (b *QueryExprBuilder) JSONValid(expr any) schema.QueryAppender {
 func (b *QueryExprBuilder) JSONSet(json, path, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			return b.Expr("JSONB_SET(?, ?::text[], ?, TRUE)", b.ToJSON(json), b.processJsonPath(path, dialect.PG), b.ToJSON(value))
+			return b.Expr("JSONB_SET(?, ?::text[], ?, TRUE)", b.ToJSON(json), b.processJSONPath(path, dialect.PG), b.ToJSON(value))
 		},
 		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJsonPath(path, dialect.SQLite), value)
+			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJSONPath(path, dialect.SQLite), value)
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_SET(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 	})
 }
@@ -2128,16 +2128,16 @@ func (b *QueryExprBuilder) JSONSet(json, path, value any) schema.QueryAppender {
 func (b *QueryExprBuilder) JSONInsert(json, path, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			return b.Expr("JSONB_INSERT(?, ?::text[], TO_JSONB(?), FALSE)", b.ToJSON(json), b.processJsonPath(path, dialect.PG), value)
+			return b.Expr("JSONB_INSERT(?, ?::text[], TO_JSONB(?), FALSE)", b.ToJSON(json), b.processJSONPath(path, dialect.PG), value)
 		},
 		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJsonPath(path, dialect.SQLite), value)
+			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJSONPath(path, dialect.SQLite), value)
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_INSERT(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 	})
 }
@@ -2145,16 +2145,16 @@ func (b *QueryExprBuilder) JSONInsert(json, path, value any) schema.QueryAppende
 func (b *QueryExprBuilder) JSONReplace(json, path, value any) schema.QueryAppender {
 	return b.ExprByDialect(DialectExprs{
 		Postgres: func() schema.QueryAppender {
-			return b.Expr("JSONB_SET(?, ?::text[], TO_JSONB(?), FALSE)", b.ToJSON(json), b.processJsonPath(path, dialect.PG), value)
+			return b.Expr("JSONB_SET(?, ?::text[], TO_JSONB(?), FALSE)", b.ToJSON(json), b.processJSONPath(path, dialect.PG), value)
 		},
 		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 		SQLite: func() schema.QueryAppender {
-			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJsonPath(path, dialect.SQLite), value)
+			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJSONPath(path, dialect.SQLite), value)
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_REPLACE(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 	})
 }
@@ -2167,7 +2167,7 @@ func (b *QueryExprBuilder) JSONArrayAppend(json, path, value any) schema.QueryAp
 				return b.Expr("(? || ?)", b.ToJSON(json), b.JSONArray(value))
 			}
 
-			pgPath := b.processJsonPath(path, dialect.PG)
+			pgPath := b.processJSONPath(path, dialect.PG)
 
 			// Nested array - use jsonb_set with concatenation
 			return b.Expr(
@@ -2182,7 +2182,7 @@ func (b *QueryExprBuilder) JSONArrayAppend(json, path, value any) schema.QueryAp
 			)
 		},
 		MySQL: func() schema.QueryAppender {
-			return b.Expr("JSON_ARRAY_APPEND(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_ARRAY_APPEND(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 		SQLite: func() schema.QueryAppender {
 			// Use helper composition to reuse JSON path logic
@@ -2200,7 +2200,7 @@ func (b *QueryExprBuilder) JSONArrayAppend(json, path, value any) schema.QueryAp
 			)
 		},
 		Default: func() schema.QueryAppender {
-			return b.Expr("JSON_ARRAY_APPEND(?, ?, ?)", json, b.processJsonPath(path, dialect.MySQL), value)
+			return b.Expr("JSON_ARRAY_APPEND(?, ?, ?)", json, b.processJSONPath(path, dialect.MySQL), value)
 		},
 	})
 }

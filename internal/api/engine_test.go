@@ -8,9 +8,10 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 )
 
 // mockResource implements api.Resource for testing.
@@ -115,26 +116,30 @@ func TestNewEngine(t *testing.T) {
 
 	t.Run("DefaultTimeout", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Equal(t, 30*time.Second, e.defaultTimeout, "Default timeout should be 30 seconds")
 	})
 
 	t.Run("DefaultVersion", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Equal(t, api.VersionV1, e.defaultVersion, "Default version should be v1")
 	})
 
 	t.Run("DefaultAuthIsBearer", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.NotNil(t, e.defaultAuth, "Default auth should not be nil")
 		assert.Equal(t, api.AuthStrategyBearer, e.defaultAuth.Strategy, "Default auth strategy should be bearer")
 	})
 
 	t.Run("DefaultRateLimit", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.NotNil(t, e.defaultRateLimit, "Default rate limit should not be nil")
 		assert.Equal(t, 100, e.defaultRateLimit.Max, "Default rate limit max should be 100")
 		assert.Equal(t, 5*time.Minute, e.defaultRateLimit.Period, "Default rate limit period should be 5 minutes")
@@ -142,7 +147,8 @@ func TestNewEngine(t *testing.T) {
 
 	t.Run("OperationsMapInitialized", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.NotNil(t, e.operations, "Operations map should be initialized")
 	})
 }
@@ -153,21 +159,24 @@ func TestEngineOptions(t *testing.T) {
 	t.Run("WithDefaultTimeout", func(t *testing.T) {
 		customTimeout := 60 * time.Second
 		eng, _ := NewEngine(WithDefaultTimeout(customTimeout))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Equal(t, customTimeout, e.defaultTimeout, "Custom timeout should be applied")
 	})
 
 	t.Run("WithDefaultVersion", func(t *testing.T) {
 		customVersion := "v2"
 		eng, _ := NewEngine(WithDefaultVersion(customVersion))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Equal(t, customVersion, e.defaultVersion, "Custom version should be applied")
 	})
 
 	t.Run("WithDefaultAuth", func(t *testing.T) {
 		customAuth := api.SignatureAuth()
 		eng, _ := NewEngine(WithDefaultAuth(customAuth))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Equal(t, api.AuthStrategySignature, e.defaultAuth.Strategy, "Custom auth strategy should be applied")
 	})
 
@@ -177,7 +186,8 @@ func TestEngineOptions(t *testing.T) {
 			Period: 1 * time.Minute,
 		}
 		eng, _ := NewEngine(WithDefaultRateLimit(customRateLimit))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Equal(t, 50, e.defaultRateLimit.Max, "Custom rate limit max should be applied")
 		assert.Equal(t, 1*time.Minute, e.defaultRateLimit.Period, "Custom rate limit period should be applied")
 	})
@@ -186,7 +196,8 @@ func TestEngineOptions(t *testing.T) {
 		router1 := &mockRouterStrategy{name: "rpc"}
 		router2 := &mockRouterStrategy{name: "rest"}
 		eng, _ := NewEngine(WithRouters(router1, router2))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.NotNil(t, e.routerOperations, "Router operations map should be initialized")
 		assert.Equal(t, 2, e.routerOperations.Size(), "Should have 2 routers")
 	})
@@ -194,21 +205,24 @@ func TestEngineOptions(t *testing.T) {
 	t.Run("WithOperationCollectors", func(t *testing.T) {
 		collector := &mockOperationsCollector{}
 		eng, _ := NewEngine(WithOperationCollectors(collector))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Len(t, e.collectors, 1, "Should have 1 collector")
 	})
 
 	t.Run("WithHandlerResolvers", func(t *testing.T) {
 		resolver := &mockHandlerResolver{handler: dummyHandler}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Len(t, e.resolvers, 1, "Should have 1 resolver")
 	})
 
 	t.Run("WithHandlerAdapters", func(t *testing.T) {
 		adapter := &mockHandlerAdapter{}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Len(t, e.adapters, 1, "Should have 1 adapter")
 	})
 
@@ -218,7 +232,8 @@ func TestEngineOptions(t *testing.T) {
 			WithDefaultVersion("v3"),
 			WithDefaultAuth(api.Public()),
 		)
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 		assert.Equal(t, 45*time.Second, e.defaultTimeout, "Custom timeout should be applied")
 		assert.Equal(t, "v3", e.defaultVersion, "Custom version should be applied")
 		assert.Equal(t, api.AuthStrategyNone, e.defaultAuth.Strategy, "Custom auth should be applied")
@@ -426,7 +441,7 @@ func TestEngineRegister(t *testing.T) {
 		op := eng.Lookup(api.Identifier{Resource: "sys/user", Action: "delete", Version: api.VersionV1})
 		assert.NotNil(t, op, "Operation should be found")
 		assert.NotNil(t, op.Auth.Options, "Auth options should not be nil")
-		assert.Equal(t, "sys:user:delete", op.Auth.Options[common.AuthOptionPermToken], "PermToken should be stored correctly")
+		assert.Equal(t, "sys:user:delete", op.Auth.Options[shared.AuthOptionPermToken], "PermToken should be stored correctly")
 	})
 
 	t.Run("OperationWithCustomTimeout", func(t *testing.T) {
@@ -680,7 +695,8 @@ func TestEngineMount(t *testing.T) {
 	t.Run("OperationNotFoundInOperationsMap", func(t *testing.T) {
 		router := &mockRouterStrategy{name: "rpc"}
 		eng, _ := NewEngine(WithRouters(router))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
 
 		// Manually add an identifier to routerOperations without adding to operations
 		identifier := api.Identifier{Resource: "ghost/resource", Action: "create", Version: api.VersionV1}
@@ -702,21 +718,27 @@ func TestResolveTimeout(t *testing.T) {
 
 	t.Run("ZeroUsesDefault", func(t *testing.T) {
 		eng, _ := NewEngine(WithDefaultTimeout(30 * time.Second))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.resolveTimeout(0)
 		assert.Equal(t, 30*time.Second, result, "Zero timeout should use default")
 	})
 
 	t.Run("CustomTimeoutUsed", func(t *testing.T) {
 		eng, _ := NewEngine(WithDefaultTimeout(30 * time.Second))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.resolveTimeout(60 * time.Second)
 		assert.Equal(t, 60*time.Second, result, "Custom timeout should be used")
 	})
 
 	t.Run("NegativeUsesDefault", func(t *testing.T) {
 		eng, _ := NewEngine(WithDefaultTimeout(30 * time.Second))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.resolveTimeout(-1 * time.Second)
 		assert.Equal(t, 30*time.Second, result, "Negative timeout should use default")
 	})
@@ -728,7 +750,9 @@ func TestResolveRateLimit(t *testing.T) {
 	t.Run("NilUsesDefault", func(t *testing.T) {
 		defaultLimit := &api.RateLimitConfig{Max: 100, Period: 5 * time.Minute}
 		eng, _ := NewEngine(WithDefaultRateLimit(defaultLimit))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.resolveRateLimit(nil)
 		assert.Equal(t, defaultLimit, result, "Nil rate limit should use default")
 	})
@@ -737,7 +761,9 @@ func TestResolveRateLimit(t *testing.T) {
 		defaultLimit := &api.RateLimitConfig{Max: 100, Period: 5 * time.Minute}
 		customLimit := &api.RateLimitConfig{Max: 10, Period: 1 * time.Minute}
 		eng, _ := NewEngine(WithDefaultRateLimit(defaultLimit))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.resolveRateLimit(customLimit)
 		assert.Equal(t, customLimit, result, "Custom rate limit should be used")
 	})
@@ -750,7 +776,9 @@ func TestFindRouterStrategy(t *testing.T) {
 		rpcRouter := &mockRouterStrategy{name: "rpc"}
 		restRouter := &mockRouterStrategy{name: "rest"}
 		eng, _ := NewEngine(WithRouters(rpcRouter, restRouter))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.findRouterStrategy(api.KindRPC)
 		assert.NotNil(t, result, "Should find RPC router")
 		assert.Equal(t, "rpc", result.Name(), "Router name should be rpc")
@@ -760,7 +788,9 @@ func TestFindRouterStrategy(t *testing.T) {
 		rpcRouter := &mockRouterStrategy{name: "rpc"}
 		restRouter := &mockRouterStrategy{name: "rest"}
 		eng, _ := NewEngine(WithRouters(rpcRouter, restRouter))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.findRouterStrategy(api.KindREST)
 		assert.NotNil(t, result, "Should find REST router")
 		assert.Equal(t, "rest", result.Name(), "Router name should be rest")
@@ -769,7 +799,9 @@ func TestFindRouterStrategy(t *testing.T) {
 	t.Run("NotFound", func(t *testing.T) {
 		rpcRouter := &mockRouterStrategy{name: "rpc"}
 		eng, _ := NewEngine(WithRouters(rpcRouter))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		result := e.findRouterStrategy(api.KindREST)
 		assert.Nil(t, result, "Should return nil for unknown kind")
 	})
@@ -782,7 +814,9 @@ func TestAdaptHandler(t *testing.T) {
 		adapter1 := &mockHandlerAdapter{}
 		adapter2 := &mockHandlerAdapter{}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter1, adapter2))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Handler: dummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.NoError(t, err, "adaptHandler should not return error")
@@ -793,7 +827,9 @@ func TestAdaptHandler(t *testing.T) {
 		adapter1 := &mockHandlerAdapter{returnNil: true} // Returns nil to trigger chain
 		adapter2 := &mockHandlerAdapter{}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter1, adapter2))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Handler: dummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.NoError(t, err, "adaptHandler should not return error")
@@ -802,7 +838,9 @@ func TestAdaptHandler(t *testing.T) {
 
 	t.Run("NoAdaptersConfigured", func(t *testing.T) {
 		eng, _ := NewEngine() // No adapters
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Handler: dummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error when no adapter handles")
@@ -813,7 +851,9 @@ func TestAdaptHandler(t *testing.T) {
 	t.Run("AdapterError", func(t *testing.T) {
 		adapter := &mockHandlerAdapter{err: errors.New("adapt failed")}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Handler: dummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error")
@@ -826,7 +866,9 @@ func TestWrapHandlerIfNecessary(t *testing.T) {
 
 	t.Run("NoWrapWhenZeroTimeout", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Timeout: 0}
 		handler := func(fiber.Ctx) error { return nil }
 		result := e.wrapHandlerIfNecessary(handler, op)
@@ -836,7 +878,9 @@ func TestWrapHandlerIfNecessary(t *testing.T) {
 
 	t.Run("WrapsWhenPositiveTimeout", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Timeout: 30 * time.Second}
 		handler := func(fiber.Ctx) error { return nil }
 		result := e.wrapHandlerIfNecessary(handler, op)
@@ -845,7 +889,9 @@ func TestWrapHandlerIfNecessary(t *testing.T) {
 
 	t.Run("NoWrapWhenNegativeTimeout", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Timeout: -1 * time.Second}
 		handler := func(fiber.Ctx) error { return nil }
 		result := e.wrapHandlerIfNecessary(handler, op)
@@ -854,7 +900,9 @@ func TestWrapHandlerIfNecessary(t *testing.T) {
 
 	t.Run("TimeoutReturnsErrRequestTimeout", func(t *testing.T) {
 		eng, _ := NewEngine()
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Timeout: 10 * time.Millisecond}
 		slowHandler := func(fiber.Ctx) error {
 			time.Sleep(100 * time.Millisecond)
@@ -882,7 +930,9 @@ func TestResolveAuthConfig(t *testing.T) {
 
 	t.Run("PublicSpecReturnsPublicAuth", func(t *testing.T) {
 		eng, _ := NewEngine(WithDefaultAuth(api.BearerAuth()))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "ping", Public: true}
 
@@ -895,7 +945,9 @@ func TestResolveAuthConfig(t *testing.T) {
 		defaultAuth := api.BearerAuth()
 		resourceAuth := api.SignatureAuth()
 		eng, _ := NewEngine(WithDefaultAuth(defaultAuth))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource", auth: resourceAuth}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -907,7 +959,9 @@ func TestResolveAuthConfig(t *testing.T) {
 	t.Run("DefaultAuthUsedWhenNoResourceAuth", func(t *testing.T) {
 		defaultAuth := api.BearerAuth()
 		eng, _ := NewEngine(WithDefaultAuth(defaultAuth))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -919,7 +973,9 @@ func TestResolveAuthConfig(t *testing.T) {
 	t.Run("AuthConfigIsCloned", func(t *testing.T) {
 		defaultAuth := api.BearerAuth()
 		eng, _ := NewEngine(WithDefaultAuth(defaultAuth))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -932,7 +988,9 @@ func TestResolveAuthConfig(t *testing.T) {
 	t.Run("ResourceAuthConfigIsCloned", func(t *testing.T) {
 		resourceAuth := api.SignatureAuth()
 		eng, _ := NewEngine(WithDefaultAuth(api.BearerAuth()))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource", auth: resourceAuth}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -950,7 +1008,9 @@ func TestResolveHandler(t *testing.T) {
 		resolver1 := &mockHandlerResolver{handler: dummyHandler}
 		resolver2 := &mockHandlerResolver{handler: dummyHandler}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver1, resolver2))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -963,7 +1023,9 @@ func TestResolveHandler(t *testing.T) {
 		resolver1 := &mockHandlerResolver{returnNil: true}
 		resolver2 := &mockHandlerResolver{handler: dummyHandler}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver1, resolver2))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -976,7 +1038,9 @@ func TestResolveHandler(t *testing.T) {
 		resolver1 := &mockHandlerResolver{returnNil: true}
 		resolver2 := &mockHandlerResolver{returnNil: true}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver1, resolver2))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -989,7 +1053,9 @@ func TestResolveHandler(t *testing.T) {
 	t.Run("ResolverError", func(t *testing.T) {
 		resolver := &mockHandlerResolver{err: errors.New("resolve failed")}
 		eng, _ := NewEngine(WithHandlerResolvers(resolver))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 		spec := api.OperationSpec{Action: "create"}
 
@@ -1005,7 +1071,9 @@ func TestRegisterResource(t *testing.T) {
 	t.Run("NoCollectorsReturnsSuccess", func(t *testing.T) {
 		router := &mockRouterStrategy{name: "rpc"}
 		eng, _ := NewEngine(WithRouters(router))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 
 		err := e.registerResource(res)
@@ -1016,7 +1084,9 @@ func TestRegisterResource(t *testing.T) {
 		router := &mockRouterStrategy{name: "rpc"}
 		collector := &mockOperationsCollector{specs: []api.OperationSpec{}}
 		eng, _ := NewEngine(WithRouters(router), WithOperationCollectors(collector))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		res := &mockResource{kind: api.KindRPC, name: "test/resource"}
 
 		err := e.registerResource(res)
@@ -1087,7 +1157,9 @@ func TestAdaptHandlerAllReturnNil(t *testing.T) {
 	t.Run("SingleAdapterReturnsNil", func(t *testing.T) {
 		adapter := &mockHandlerAdapter{returnNil: true}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Handler: dummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error when adapter returns nil")
@@ -1099,7 +1171,9 @@ func TestAdaptHandlerAllReturnNil(t *testing.T) {
 		adapter1 := &mockHandlerAdapter{returnNil: true}
 		adapter2 := &mockHandlerAdapter{returnNil: true}
 		eng, _ := NewEngine(WithHandlerAdapters(adapter1, adapter2))
-		e := eng.(*engine)
+		e, ok := eng.(*engine)
+		require.True(t, ok, "Type assertion to *engine should succeed")
+
 		op := &api.Operation{Handler: dummyHandler}
 		result, err := e.adaptHandler(op)
 		assert.Error(t, err, "adaptHandler should return error when all adapters return nil")

@@ -64,7 +64,7 @@ func (vr ValidationRule) register(validator *v.Validate) error {
 	return nil
 }
 
-func (vr ValidationRule) replacePlaceholders(message string, params []string) string {
+func (ValidationRule) replacePlaceholders(message string, params []string) string {
 	result := message
 	for i, param := range params {
 		placeholder := fmt.Sprintf("{%d}", i)

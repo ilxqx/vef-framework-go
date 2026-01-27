@@ -7,12 +7,13 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/spf13/cast"
+
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/log"
 	"github.com/ilxqx/vef-framework-go/mold"
 	"github.com/ilxqx/vef-framework-go/null"
 	"github.com/ilxqx/vef-framework-go/reflectx"
-	"github.com/spf13/cast"
 )
 
 const (
@@ -79,6 +80,7 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 		if !nullInt.Valid {
 			return constants.Empty, nil
 		}
+
 		return cast.ToStringE(nullInt.Int64)
 
 	case fieldType == nullInt16Type:
@@ -86,6 +88,7 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 		if !nullInt16.Valid {
 			return constants.Empty, nil
 		}
+
 		return cast.ToStringE(nullInt16.Int16)
 
 	case fieldType == nullInt32Type:
@@ -93,10 +96,16 @@ func extractStringValue(fieldName string, field reflect.Value) (string, error) {
 		if !nullInt32.Valid {
 			return constants.Empty, nil
 		}
+
 		return cast.ToStringE(nullInt32.Int32)
 
 	default:
-		return constants.Empty, fmt.Errorf("%w: field %q has unsupported type %v (supported: string, *string, null.String, null.Int, null.Int16, null.Int32, integers and their pointer forms)", ErrUnsupportedFieldType, fieldName, fieldType)
+		return constants.Empty, fmt.Errorf(
+			"%w: field %q has unsupported type %v (supported: string, *string, null.String, null.Int, null.Int16, null.Int32, integers and their pointer forms)",
+			ErrUnsupportedFieldType,
+			fieldName,
+			fieldType,
+		)
 	}
 }
 
@@ -140,6 +149,7 @@ func setTranslatedValue(translatedField reflect.Value, translated, translatedFie
 
 	if fieldKind == reflect.String {
 		translatedField.SetString(translated)
+
 		return nil
 	}
 
@@ -152,12 +162,15 @@ func setTranslatedValue(translatedField reflect.Value, translated, translatedFie
 		if translatedField.IsNil() {
 			translatedField.Set(reflect.New(elemType))
 		}
+
 		translatedField.Elem().SetString(translated)
+
 		return nil
 	}
 
 	if translatedFieldType == nullStringType {
 		translatedField.Set(reflect.ValueOf(null.StringFrom(translated)))
+
 		return nil
 	}
 

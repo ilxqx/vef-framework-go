@@ -65,18 +65,22 @@ func ParseTag(input string, opts ...ParseOption) map[string]string {
 		idx := strings.IndexRune(pair, cfg.valueSeparator)
 		if idx >= 0 {
 			result[pair[:idx]] = pair[idx+1:]
+
 			continue
 		}
 
 		if cfg.bareValueMode == BareAsKey {
 			result[pair] = constants.Empty
+
 			continue
 		}
 
 		if _, exists := result[DefaultKey]; exists {
 			logger.Warnf("Ignoring duplicate default value %q in input: %s", pair, input)
+
 			continue
 		}
+
 		result[DefaultKey] = pair
 	}
 

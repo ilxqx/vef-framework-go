@@ -27,6 +27,7 @@ func (e *ErrUndefinedTag) Error() string {
 	if e.field == "" {
 		return fmt.Sprintf("unregistered/undefined transformation %q found on field", e.tag)
 	}
+
 	return fmt.Sprintf("unregistered/undefined transformation %q found on field %s", e.tag, e.field)
 }
 
@@ -50,9 +51,11 @@ func (e *ErrInvalidTransformValue) Error() string {
 	if e.typ == nil {
 		return fmt.Sprintf("mold: %s(nil)", e.fn)
 	}
+
 	if e.typ.Kind() != reflect.Pointer {
 		return fmt.Sprintf("mold: %s(non-pointer %s)", e.fn, e.typ.String())
 	}
+
 	return fmt.Sprintf("mold: %s(nil %s)", e.fn, e.typ.String())
 }
 

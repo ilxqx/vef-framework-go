@@ -10,15 +10,15 @@ import (
 )
 
 var (
-	ErrDangerousSql   = errors.New("dangerous sql detected")
-	ErrSqlParseFailed = errors.New("failed to parse sql")
+	ErrDangerousSQL   = errors.New("dangerous sql detected")
+	ErrSQLParseFailed = errors.New("failed to parse sql")
 )
 
 // GuardError wraps a sql guard error with additional context.
 type GuardError struct {
 	Err       error
 	Violation *Violation
-	Sql       string
+	SQL       string
 }
 
 func (e *GuardError) Error() string {
@@ -69,9 +69,9 @@ func (g *Guard) Check(sql string) error {
 				violation.Rule, violation.Statement, sql)
 
 			return &GuardError{
-				Err:       ErrDangerousSql,
+				Err:       ErrDangerousSQL,
 				Violation: violation,
-				Sql:       sql,
+				SQL:       sql,
 			}
 		}
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
@@ -29,18 +29,18 @@ type BearerStrategy struct {
 	authenticators []TokenAuthenticator
 }
 
-// bearerOption configures BearerStrategy.
-type bearerOption func(*BearerStrategy)
+// BearerOption configures BearerStrategy.
+type BearerOption func(*BearerStrategy)
 
 // WithTokenExtractor sets a custom token extractor.
-func WithTokenExtractor(e extractors.Extractor) bearerOption {
+func WithTokenExtractor(e extractors.Extractor) BearerOption {
 	return func(s *BearerStrategy) {
 		s.extractor = e
 	}
 }
 
 // NewBearer creates a new Bearer token authentication strategy.
-func NewBearer(authenticators []TokenAuthenticator, opts ...bearerOption) api.AuthStrategy {
+func NewBearer(authenticators []TokenAuthenticator, opts ...BearerOption) api.AuthStrategy {
 	s := &BearerStrategy{
 		authenticators: authenticators,
 		extractor:      defaultTokenExtractor,
@@ -54,7 +54,7 @@ func NewBearer(authenticators []TokenAuthenticator, opts ...bearerOption) api.Au
 }
 
 // Name returns the strategy name.
-func (s *BearerStrategy) Name() string {
+func (*BearerStrategy) Name() string {
 	return api.AuthStrategyBearer
 }
 
@@ -67,8 +67,8 @@ func (s *BearerStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*securit
 			extractErr = fiber.ErrUnauthorized
 		}
 
-		if op := common.Operation(ctx); op != nil {
-			return nil, &common.BaseError{
+		if op := shared.Operation(ctx); op != nil {
+			return nil, &shared.BaseError{
 				Identifier: &op.Identifier,
 				Err:        extractErr,
 			}

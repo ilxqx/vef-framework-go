@@ -12,7 +12,7 @@ type jobAdapter struct {
 	job gocron.Job
 }
 
-func (j *jobAdapter) Id() string {
+func (j *jobAdapter) ID() string {
 	return j.job.ID().String()
 }
 

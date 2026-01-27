@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 )
 
 type MetaResolver struct{}
@@ -16,7 +16,7 @@ func (*MetaResolver) Type() reflect.Type {
 }
 
 func (*MetaResolver) Resolve(ctx fiber.Ctx) (reflect.Value, error) {
-	if req := common.Request(ctx); req != nil && req.Meta != nil {
+	if req := shared.Request(ctx); req != nil && req.Meta != nil {
 		return reflect.ValueOf(req.Meta), nil
 	}
 

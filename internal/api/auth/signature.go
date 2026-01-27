@@ -74,7 +74,7 @@ func NewSignature(loader ExternalAppLoader, opts ...SignatureOption) api.AuthStr
 }
 
 // Name returns the strategy name.
-func (s *SignatureStrategy) Name() string {
+func (*SignatureStrategy) Name() string {
 	return api.AuthStrategySignature
 }
 
@@ -113,10 +113,10 @@ func (s *SignatureStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*secu
 }
 
 // verifySignature verifies the HMAC signature.
-func (s *SignatureStrategy) verifySignature(appID, timestamp string, body []byte, secret, signature string) bool {
+func (*SignatureStrategy) verifySignature(appID, timestamp string, body []byte, secret, signature string) bool {
 	message := appID + timestamp + string(body)
 	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(message))
+	_, _ = mac.Write([]byte(message))
 	expected := hex.EncodeToString(mac.Sum(nil))
 
 	return hmac.Equal([]byte(signature), []byte(expected))

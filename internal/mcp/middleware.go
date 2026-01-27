@@ -31,11 +31,11 @@ func NewMiddleware(params MiddlewareParams) app.Middleware {
 	return &McpMiddleware{handler: params.Handler}
 }
 
-func (m *McpMiddleware) Name() string {
+func (*McpMiddleware) Name() string {
 	return "mcp"
 }
 
-func (m *McpMiddleware) Order() int {
+func (*McpMiddleware) Order() int {
 	return 500
 }
 

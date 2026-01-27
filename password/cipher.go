@@ -2,18 +2,18 @@ package password
 
 import (
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/crypto"
+	"github.com/ilxqx/vef-framework-go/cryptox"
 )
 
 type cipherEncoder struct {
-	cipher  crypto.Cipher
+	cipher  cryptox.Cipher
 	encoder Encoder
 }
 
 // NewCipherEncoder creates a new cipher-based password encoder that decrypts passwords before encoding.
 // The cipher decrypts encrypted passwords, and the encoder performs the actual password encoding.
 // Both cipher and encoder are required parameters.
-func NewCipherEncoder(cipher crypto.Cipher, encoder Encoder) Encoder {
+func NewCipherEncoder(cipher cryptox.Cipher, encoder Encoder) Encoder {
 	return &cipherEncoder{
 		cipher:  cipher,
 		encoder: encoder,

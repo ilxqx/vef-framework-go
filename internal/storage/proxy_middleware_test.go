@@ -21,7 +21,7 @@ type MockStorageService struct {
 	mock.Mock
 }
 
-func (m *MockStorageService) PutObject(_ context.Context, _ storage.PutObjectOptions) (*storage.ObjectInfo, error) {
+func (*MockStorageService) PutObject(_ context.Context, _ storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 
@@ -35,27 +35,27 @@ func (m *MockStorageService) GetObject(_ context.Context, opts storage.GetObject
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
 
-func (m *MockStorageService) DeleteObject(_ context.Context, _ storage.DeleteObjectOptions) error {
+func (*MockStorageService) DeleteObject(_ context.Context, _ storage.DeleteObjectOptions) error {
 	return nil
 }
 
-func (m *MockStorageService) DeleteObjects(_ context.Context, _ storage.DeleteObjectsOptions) error {
+func (*MockStorageService) DeleteObjects(_ context.Context, _ storage.DeleteObjectsOptions) error {
 	return nil
 }
 
-func (m *MockStorageService) ListObjects(_ context.Context, _ storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
+func (*MockStorageService) ListObjects(_ context.Context, _ storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *MockStorageService) GetPresignedURL(_ context.Context, _ storage.PresignedURLOptions) (string, error) {
+func (*MockStorageService) GetPresignedURL(_ context.Context, _ storage.PresignedURLOptions) (string, error) {
 	return "", nil
 }
 
-func (m *MockStorageService) CopyObject(_ context.Context, _ storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
+func (*MockStorageService) CopyObject(_ context.Context, _ storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *MockStorageService) MoveObject(_ context.Context, _ storage.MoveObjectOptions) (*storage.ObjectInfo, error) {
+func (*MockStorageService) MoveObject(_ context.Context, _ storage.MoveObjectOptions) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 
@@ -69,7 +69,7 @@ func (m *MockStorageService) StatObject(_ context.Context, opts storage.StatObje
 	return args.Get(0).(*storage.ObjectInfo), args.Error(1)
 }
 
-func (m *MockStorageService) PromoteObject(_ context.Context, _ string) (*storage.ObjectInfo, error) {
+func (*MockStorageService) PromoteObject(_ context.Context, _ string) (*storage.ObjectInfo, error) {
 	return nil, nil
 }
 

@@ -10,7 +10,7 @@ import (
 // ranking functions (RowNumber, Rank, DenseRank, PercentRank, CumeDist, NTile),
 // offset functions (Lag, Lead), value functions (FirstValue, LastValue, NthValue),
 // and aggregate window functions (WinCount, WinSum, WinAvg, WinMin, WinMax, WinStringAgg,
-// WinArrayAgg, WinStdDev, WinVariance, WinJsonObjectAgg, WinJsonArrayAgg, WinBitOr,
+// WinArrayAgg, WinStdDev, WinVariance, WinJSONObjectAgg, WinJSONArrayAgg, WinBitOr,
 // WinBitAnd, WinBoolOr, WinBoolAnd).
 //
 // This suite verifies cross-database compatibility for window functions across
@@ -954,76 +954,76 @@ func (suite *WindowFunctionsTestSuite) TestWinVariance() {
 	})
 }
 
-// TestWinJsonObjectAgg tests the JSON_OBJECT_AGG window function.
-func (suite *WindowFunctionsTestSuite) TestWinJsonObjectAgg() {
-	suite.T().Logf("Testing WinJsonObjectAgg function for %s", suite.dbType)
+// TestWinJSONObjectAgg tests the JSON_OBJECT_AGG window function.
+func (suite *WindowFunctionsTestSuite) TestWinJSONObjectAgg() {
+	suite.T().Logf("Testing WinJSONObjectAgg function for %s", suite.dbType)
 
-	suite.Run("JsonObjectAggPartitionedByStatus", func() {
-		type WindowJsonObjectResult struct {
+	suite.Run("JSONObjectAggPartitionedByStatus", func() {
+		type WindowJSONObjectResult struct {
 			ID            string `bun:"id"`
 			Status        string `bun:"status"`
-			JsonObjectAgg string `bun:"json_object_agg"`
+			JSONObjectAgg string `bun:"json_object_agg"`
 		}
 
-		var windowJsonObjectResults []WindowJsonObjectResult
+		var windowJSONObjectResults []WindowJSONObjectResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinJsonObjectAgg(func(wjoab WindowJSONObjectAggBuilder) {
+				return eb.WinJSONObjectAgg(func(wjoab WindowJSONObjectAggBuilder) {
 					wjoab.KeyColumn("id").Column("title").Over().PartitionBy("status")
 				})
 			}, "json_object_agg").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.ctx, &windowJsonObjectResults)
+			Scan(suite.ctx, &windowJSONObjectResults)
 
-		suite.NoError(err, "WinJsonObjectAgg should work correctly")
-		suite.True(len(windowJsonObjectResults) > 0, "Should have window JSON object agg results")
+		suite.NoError(err, "WinJSONObjectAgg should work correctly")
+		suite.True(len(windowJSONObjectResults) > 0, "Should have window JSON object agg results")
 
-		for _, result := range windowJsonObjectResults {
-			suite.True(len(result.JsonObjectAgg) > 0, "JSON object should not be empty")
-			suite.True(strings.HasPrefix(result.JsonObjectAgg, "{"), "Should be a JSON object")
-			suite.T().Logf("ID: %s, Status: %s, JsonObjectAgg: %s",
-				result.ID, result.Status, result.JsonObjectAgg)
+		for _, result := range windowJSONObjectResults {
+			suite.True(len(result.JSONObjectAgg) > 0, "JSON object should not be empty")
+			suite.True(strings.HasPrefix(result.JSONObjectAgg, "{"), "Should be a JSON object")
+			suite.T().Logf("ID: %s, Status: %s, JSONObjectAgg: %s",
+				result.ID, result.Status, result.JSONObjectAgg)
 		}
 	})
 }
 
-// TestWinJsonArrayAgg tests the JSON_ARRAY_AGG window function.
-func (suite *WindowFunctionsTestSuite) TestWinJsonArrayAgg() {
-	suite.T().Logf("Testing WinJsonArrayAgg function for %s", suite.dbType)
+// TestWinJSONArrayAgg tests the JSON_ARRAY_AGG window function.
+func (suite *WindowFunctionsTestSuite) TestWinJSONArrayAgg() {
+	suite.T().Logf("Testing WinJSONArrayAgg function for %s", suite.dbType)
 
-	suite.Run("JsonArrayAggPartitionedByStatus", func() {
-		type WindowJsonResult struct {
+	suite.Run("JSONArrayAggPartitionedByStatus", func() {
+		type WindowJSONResult struct {
 			ID           string `bun:"id"`
 			Status       string `bun:"status"`
-			JsonArrayAgg string `bun:"json_array_agg"`
+			JSONArrayAgg string `bun:"json_array_agg"`
 		}
 
-		var windowJsonResults []WindowJsonResult
+		var windowJSONResults []WindowJSONResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "status").
 			SelectExpr(func(eb ExprBuilder) any {
-				return eb.WinJsonArrayAgg(func(wjaab WindowJSONArrayAggBuilder) {
+				return eb.WinJSONArrayAgg(func(wjaab WindowJSONArrayAggBuilder) {
 					wjaab.Column("title").Over().PartitionBy("status")
 				})
 			}, "json_array_agg").
 			OrderBy("status", "id").
 			Limit(5).
-			Scan(suite.ctx, &windowJsonResults)
+			Scan(suite.ctx, &windowJSONResults)
 
-		suite.NoError(err, "WinJsonArrayAgg should work correctly")
-		suite.True(len(windowJsonResults) > 0, "Should have window JSON array agg results")
+		suite.NoError(err, "WinJSONArrayAgg should work correctly")
+		suite.True(len(windowJSONResults) > 0, "Should have window JSON array agg results")
 
-		for _, result := range windowJsonResults {
-			suite.True(len(result.JsonArrayAgg) > 0, "JSON array should not be empty")
-			suite.True(strings.HasPrefix(result.JsonArrayAgg, "["), "Should be a JSON array")
-			suite.T().Logf("ID: %s, Status: %s, JsonArrayAgg: %s",
-				result.ID, result.Status, result.JsonArrayAgg)
+		for _, result := range windowJSONResults {
+			suite.True(len(result.JSONArrayAgg) > 0, "JSON array should not be empty")
+			suite.True(strings.HasPrefix(result.JSONArrayAgg, "["), "Should be a JSON array")
+			suite.T().Logf("ID: %s, Status: %s, JSONArrayAgg: %s",
+				result.ID, result.Status, result.JSONArrayAgg)
 		}
 	})
 }

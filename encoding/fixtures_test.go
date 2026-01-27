@@ -2,6 +2,7 @@ package encoding
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -431,7 +432,7 @@ func TestAssertStructEqual(t *testing.T) {
 }
 
 func TestAssertErrorContains(t *testing.T) {
-	err := fmt.Errorf("this is a test error with keyword")
+	err := errors.New("this is a test error with keyword")
 
 	// Just verify the function works without panicking
 	_ = assertErrorContains(t, err, "keyword", "error should contain keyword")
@@ -445,7 +446,7 @@ func TestAssertHelpers(t *testing.T) {
 
 	t.Run("assertErrorWithContext", func(t *testing.T) {
 		// Just verify the function works without panicking
-		_ = assertErrorWithContext(t, fmt.Errorf("error"), "test context")
+		_ = assertErrorWithContext(t, errors.New("error"), "test context")
 	})
 
 	t.Run("assertNotEmptyWithContext", func(t *testing.T) {

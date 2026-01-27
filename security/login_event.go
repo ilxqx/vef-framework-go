@@ -25,24 +25,32 @@ type LoginEvent struct {
 	ErrorCode  int    `json:"errorCode"`
 }
 
+// LoginEventParams contains parameters for creating a LoginEvent.
+type LoginEventParams struct {
+	AuthType   string
+	UserID     string
+	Username   string
+	LoginIP    string
+	UserAgent  string
+	TraceID    string
+	IsOk       bool
+	FailReason string
+	ErrorCode  int
+}
+
 // NewLoginEvent creates a new login event with the given parameters.
-func NewLoginEvent(
-	authType string,
-	userID, username string,
-	loginIP, userAgent, traceID string,
-	isOk bool, failReason string, errorCode int,
-) *LoginEvent {
+func NewLoginEvent(params LoginEventParams) *LoginEvent {
 	return &LoginEvent{
 		BaseEvent:  event.NewBaseEvent(eventTypeLogin),
-		AuthType:   authType,
-		UserID:     userID,
-		Username:   username,
-		LoginIP:    loginIP,
-		UserAgent:  userAgent,
-		TraceID:    traceID,
-		IsOk:       isOk,
-		FailReason: failReason,
-		ErrorCode:  errorCode,
+		AuthType:   params.AuthType,
+		UserID:     params.UserID,
+		Username:   params.Username,
+		LoginIP:    params.LoginIP,
+		UserAgent:  params.UserAgent,
+		TraceID:    params.TraceID,
+		IsOk:       params.IsOk,
+		FailReason: params.FailReason,
+		ErrorCode:  params.ErrorCode,
 	}
 }
 

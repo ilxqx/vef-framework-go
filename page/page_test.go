@@ -108,7 +108,7 @@ func TestNewPageWithNilItems(t *testing.T) {
 
 	assert.NotNil(t, page.Items, "Items should be empty slice, not nil")
 	assert.Empty(t, page.Items, "Items should be empty")
-	t.Logf("✓ Page created with nil items - Items initialized as empty slice")
+	t.Log("✓ Page created with nil items - Items initialized as empty slice")
 }
 
 func TestPageTotalPages(t *testing.T) {

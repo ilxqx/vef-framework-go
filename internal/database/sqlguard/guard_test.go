@@ -24,9 +24,9 @@ func TestGuardCheck(t *testing.T) {
 		{"SafeDeleteWithWhere", "DELETE FROM users WHERE id = 1", false, nil},
 		{"SafeInsert", "INSERT INTO users (name) VALUES ('test')", false, nil},
 		{"SafeUpdateWithWhere", "UPDATE users SET name = 'test' WHERE id = 1", false, nil},
-		{"DangerousDrop", "DROP TABLE users", true, ErrDangerousSql},
-		{"DangerousTruncate", "TRUNCATE TABLE users", true, ErrDangerousSql},
-		{"DangerousDeleteWithoutWhere", "DELETE FROM users", true, ErrDangerousSql},
+		{"DangerousDrop", "DROP TABLE users", true, ErrDangerousSQL},
+		{"DangerousTruncate", "TRUNCATE TABLE users", true, ErrDangerousSQL},
+		{"DangerousDeleteWithoutWhere", "DELETE FROM users", true, ErrDangerousSQL},
 		{"InvalidSqlShouldPass", "INVALID SQL SYNTAX HERE", false, nil},
 	}
 
@@ -74,28 +74,28 @@ func TestGuardEmptyRulesUsesDefaults(t *testing.T) {
 func TestGuardError(t *testing.T) {
 	t.Run("WithViolation", func(t *testing.T) {
 		err := &GuardError{
-			Err: ErrDangerousSql,
+			Err: ErrDangerousSQL,
 			Violation: &Violation{
 				Rule:        "no_drop",
 				Statement:   "DROP",
 				Description: "DROP statements are prohibited",
 			},
-			Sql: "DROP TABLE users",
+			SQL: "DROP TABLE users",
 		}
 
 		assert.Contains(t, err.Error(), "dangerous sql detected")
 		assert.Contains(t, err.Error(), "no_drop")
 		assert.Contains(t, err.Error(), "DROP")
-		assert.True(t, errors.Is(err, ErrDangerousSql))
+		assert.True(t, errors.Is(err, ErrDangerousSQL))
 	})
 
 	t.Run("WithoutViolation", func(t *testing.T) {
 		err := &GuardError{
-			Err: ErrSqlParseFailed,
-			Sql: "INVALID SQL",
+			Err: ErrSQLParseFailed,
+			SQL: "INVALID SQL",
 		}
 
-		assert.Equal(t, ErrSqlParseFailed.Error(), err.Error())
-		assert.True(t, errors.Is(err, ErrSqlParseFailed))
+		assert.Equal(t, ErrSQLParseFailed.Error(), err.Error())
+		assert.True(t, errors.Is(err, ErrSQLParseFailed))
 	})
 }

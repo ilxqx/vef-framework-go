@@ -13,21 +13,21 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 )
 
-type provider struct {
+type Provider struct {
 	dbType constants.DBType
 }
 
-func NewProvider() *provider {
-	return &provider{
+func NewProvider() *Provider {
+	return &Provider{
 		dbType: constants.SQLite,
 	}
 }
 
-func (p *provider) Type() constants.DBType {
+func (p *Provider) Type() constants.DBType {
 	return p.dbType
 }
 
-func (p *provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
+func (p *Provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialect, error) {
 	if err := p.ValidateConfig(cfg); err != nil {
 		return nil, nil, err
 	}
@@ -40,18 +40,18 @@ func (p *provider) Connect(cfg *config.DatasourceConfig) (*sql.DB, schema.Dialec
 	return db, sqlitedialect.New(), nil
 }
 
-func (p *provider) ValidateConfig(_ *config.DatasourceConfig) error {
+func (*Provider) ValidateConfig(_ *config.DatasourceConfig) error {
 	return nil
 }
 
-func (p *provider) QueryVersion(db *bun.DB) (string, error) {
+func (*Provider) QueryVersion(db *bun.DB) (string, error) {
 	return queryVersion(db)
 }
 
 // buildDsn returns the DSN for SQLite. When no path is specified, it uses
 // file::memory: with shared cache to ensure multiple connections share
 // the same in-memory database.
-func (p *provider) buildDsn(cfg *config.DatasourceConfig) string {
+func (*Provider) buildDsn(cfg *config.DatasourceConfig) string {
 	if cfg.Path == constants.Empty {
 		return "file::memory:?mode=memory&cache=shared"
 	}

@@ -1,3 +1,4 @@
+//nolint:revive // package name is intentional
 package api
 
 import (

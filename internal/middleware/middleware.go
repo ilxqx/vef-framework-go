@@ -24,6 +24,7 @@ func (m *SimpleMiddleware) Order() int {
 func (m *SimpleMiddleware) Apply(router fiber.Router) {
 	if m.path == constants.Empty {
 		router.Use(m.handler)
+
 		return
 	}
 

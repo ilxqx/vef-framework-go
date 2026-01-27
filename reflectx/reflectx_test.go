@@ -12,11 +12,11 @@ type BaseStruct struct {
 	Value string
 }
 
-func (b BaseStruct) BaseMethod() string {
+func (BaseStruct) BaseMethod() string {
 	return "base method"
 }
 
-func (b *BaseStruct) BasePointerMethod() string {
+func (*BaseStruct) BasePointerMethod() string {
 	return "base pointer method"
 }
 
@@ -26,7 +26,7 @@ type EmbeddedStruct struct {
 	Name string
 }
 
-func (e EmbeddedStruct) EmbeddedMethod() string {
+func (EmbeddedStruct) EmbeddedMethod() string {
 	return "embedded method"
 }
 
@@ -36,7 +36,7 @@ type NestedStruct struct {
 	Age int
 }
 
-func (n *NestedStruct) NestedPointerMethod() string {
+func (*NestedStruct) NestedPointerMethod() string {
 	return "nested pointer method"
 }
 
@@ -420,6 +420,7 @@ func TestCollectMethods(t *testing.T) {
 
 	t.Run("NilPointer", func(t *testing.T) {
 		var base *BaseStruct
+
 		rv := reflect.ValueOf(base)
 
 		methods := CollectMethods(rv)

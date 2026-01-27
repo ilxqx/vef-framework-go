@@ -17,10 +17,10 @@ func NewPublisherResolver(publisher event.Publisher) api.HandlerParamResolver {
 	return &PublisherResolver{publisher: publisher}
 }
 
-func (r *PublisherResolver) Type() reflect.Type {
+func (*PublisherResolver) Type() reflect.Type {
 	return reflect.TypeFor[event.Publisher]()
 }
 
-func (r *PublisherResolver) Resolve(fiber.Ctx) (reflect.Value, error) {
+func (r *PublisherResolver) Resolve(_ fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(r.publisher), nil
 }

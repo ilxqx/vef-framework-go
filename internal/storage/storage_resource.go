@@ -104,7 +104,7 @@ func (r *Resource) Upload(ctx fiber.Ctx, params UploadParams) error {
 	return result.Ok(info).Response(ctx)
 }
 
-func (r *Resource) generateObjectKey(filename string) string {
+func (*Resource) generateObjectKey(filename string) string {
 	datePath := time.Now().Format(templateDatePath)
 	uuid := id.GenerateUUID()
 

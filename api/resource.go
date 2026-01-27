@@ -36,7 +36,7 @@ var (
 	resourceNamePattern     = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*(/[a-z][a-z0-9]*(_[a-z0-9]+)*)*$`)
 	restResourceNamePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*(/[a-z][a-z0-9]*(-[a-z0-9]+)*)*$`)
 
-	validHttpVerbs = collections.NewHashSetFrom(
+	validHTTPVerbs = collections.NewHashSetFrom(
 		"get",
 		"post",
 		"put",
@@ -83,7 +83,7 @@ func validateRESTAction(action string) error {
 	}
 
 	verb := parts[0]
-	if !validHttpVerbs.Contains(verb) {
+	if !validHTTPVerbs.Contains(verb) {
 		return fmt.Errorf("%w (invalid verb %q): %q", ErrInvalidActionName, verb, action)
 	}
 
@@ -170,16 +170,16 @@ func (r *baseResource) validateOperations() error {
 }
 
 // NewRESTResource creates a new REST resource with the given name and options.
-func NewRESTResource(name string, opts ...resourceOption) baseResource {
+func NewRESTResource(name string, opts ...ResourceOption) Resource {
 	return newResource(KindREST, name, opts...)
 }
 
 // NewRPCResource creates a new baseResource with the given name and options.
-func NewRPCResource(name string, opts ...resourceOption) baseResource {
+func NewRPCResource(name string, opts ...ResourceOption) Resource {
 	return newResource(KindRPC, name, opts...)
 }
 
-func newResource(kind Kind, name string, opts ...resourceOption) baseResource {
+func newResource(kind Kind, name string, opts ...ResourceOption) Resource {
 	r := baseResource{
 		kind: kind,
 		name: name,
@@ -210,25 +210,25 @@ func (r baseResource) Auth() *AuthConfig { return r.auth }
 // Operations returns the resource operations.
 func (r baseResource) Operations() []OperationSpec { return r.operations }
 
-// resourceOption configures a baseResource.
-type resourceOption func(*baseResource)
+// ResourceOption configures a baseResource.
+type ResourceOption func(*baseResource)
 
 // WithVersion sets the resource version.
-func WithVersion(v string) resourceOption {
+func WithVersion(v string) ResourceOption {
 	return func(r *baseResource) {
 		r.version = v
 	}
 }
 
 // WithOperations sets the resource operations.
-func WithOperations(ops ...OperationSpec) resourceOption {
+func WithOperations(ops ...OperationSpec) ResourceOption {
 	return func(r *baseResource) {
 		r.operations = ops
 	}
 }
 
 // WithAuth sets the resource authentication configuration.
-func WithAuth(auth *AuthConfig) resourceOption {
+func WithAuth(auth *AuthConfig) ResourceOption {
 	return func(r *baseResource) {
 		r.auth = auth
 	}

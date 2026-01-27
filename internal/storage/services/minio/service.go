@@ -264,7 +264,7 @@ func (s *Service) PromoteObject(ctx context.Context, tempKey string) (*storage.O
 	})
 }
 
-func (s *Service) translateError(err error) error {
+func (*Service) translateError(err error) error {
 	if err == nil {
 		return nil
 	}

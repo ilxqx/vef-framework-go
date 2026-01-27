@@ -36,7 +36,7 @@ func NewTestUserCreateManyWithPreHookResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_create_many_prehook"),
 		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().
 			Public().
-			WithPreCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.DB) error {
+			WithPreCreateMany(func(models []TestUser, _ []TestUserCreateParams, _ orm.InsertQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Add prefix to all names
 				for i := range models {
 					models[i].Name = "Mr. " + models[i].Name
@@ -58,7 +58,7 @@ func NewTestUserCreateManyWithPostHookResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_create_many_posthook"),
 		CreateMany: apis.NewCreateMany[TestUser, TestUserCreateParams]().
 			Public().
-			WithPostCreateMany(func(models []TestUser, paramsList []TestUserCreateParams, ctx fiber.Ctx, tx orm.DB) error {
+			WithPostCreateMany(func(models []TestUser, _ []TestUserCreateParams, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count
 				ctx.Set("X-Created-Count", strconv.Itoa(len(models)))
 

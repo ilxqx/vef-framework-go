@@ -1,6 +1,6 @@
 package csv
 
-type importOptions struct {
+type importConfig struct {
 	delimiter rune
 	hasHeader bool
 	skipRows  int
@@ -8,61 +8,61 @@ type importOptions struct {
 	comment   rune
 }
 
-type ImportOption func(*importOptions)
+type ImportOption func(*importConfig)
 
 func WithImportDelimiter(delimiter rune) ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.delimiter = delimiter
 	}
 }
 
 func WithoutHeader() ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.hasHeader = false
 	}
 }
 
 func WithSkipRows(rows int) ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.skipRows = rows
 	}
 }
 
 func WithoutTrimSpace() ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.trimSpace = false
 	}
 }
 
 func WithComment(comment rune) ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.comment = comment
 	}
 }
 
-type exportOptions struct {
+type exportConfig struct {
 	delimiter   rune
 	writeHeader bool
 	useCrlf     bool
 }
 
-type ExportOption func(*exportOptions)
+type ExportOption func(*exportConfig)
 
 func WithExportDelimiter(delimiter rune) ExportOption {
-	return func(o *exportOptions) {
+	return func(o *exportConfig) {
 		o.delimiter = delimiter
 	}
 }
 
 func WithoutWriteHeader() ExportOption {
-	return func(o *exportOptions) {
+	return func(o *exportConfig) {
 		o.writeHeader = false
 	}
 }
 
 // WithCrlf enables Windows-style line endings for compatibility with legacy systems.
 func WithCrlf() ExportOption {
-	return func(o *exportOptions) {
+	return func(o *exportConfig) {
 		o.useCrlf = true
 	}
 }

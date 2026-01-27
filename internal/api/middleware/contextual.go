@@ -8,7 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/security"
 )
@@ -28,13 +28,13 @@ func NewContextual(db orm.DB) api.Middleware {
 }
 
 // Name returns the middleware name.
-func (m *Contextual) Name() string {
+func (*Contextual) Name() string {
 	return "contextual"
 }
 
 // Order returns the middleware order.
 // Runs after authentication (-100) but before authorization (-90).
-func (m *Contextual) Order() int {
+func (*Contextual) Order() int {
 	return -90
 }
 
@@ -49,7 +49,7 @@ func (m *Contextual) Process(ctx fiber.Ctx) error {
 	contextx.SetDB(ctx, db)
 	ctx.SetContext(contextx.SetDB(ctx.Context(), db))
 
-	req := common.Request(ctx)
+	req := shared.Request(ctx)
 
 	lgr := contextx.Logger(ctx)
 	if req != nil && lgr != nil {

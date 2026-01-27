@@ -7,9 +7,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ilxqx/go-collections"
 	"github.com/ilxqx/go-streams"
-
-	collections "github.com/ilxqx/go-collections"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/event"
@@ -43,9 +42,7 @@ func getStringValue(fieldValue reflect.Value) (string, bool) {
 		return fieldValue.String(), true
 	}
 
-	if fieldType.Kind() == reflect.Pointer &&
-		fieldType.Elem().Kind() == reflect.String {
-
+	if fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.String {
 		if fieldValue.IsNil() {
 			return constants.Empty, false
 		}
@@ -73,9 +70,7 @@ func setStringValue(fieldValue reflect.Value, value string) {
 		return
 	}
 
-	if fieldType.Kind() == reflect.Pointer &&
-		fieldType.Elem().Kind() == reflect.String {
-
+	if fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.String {
 		strValue := value
 		fieldValue.Set(reflect.ValueOf(&strValue))
 
@@ -90,9 +85,7 @@ func setStringValue(fieldValue reflect.Value, value string) {
 func getStringSliceValue(fieldValue reflect.Value) ([]string, bool) {
 	fieldType := fieldValue.Type()
 
-	if fieldType.Kind() == reflect.Slice &&
-		fieldType.Elem().Kind() == reflect.String {
-
+	if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String {
 		if fieldValue.IsNil() {
 			return nil, false
 		}
@@ -106,9 +99,7 @@ func getStringSliceValue(fieldValue reflect.Value) ([]string, bool) {
 func setStringSliceValue(fieldValue reflect.Value, value []string) {
 	fieldType := fieldValue.Type()
 
-	if fieldType.Kind() == reflect.Slice &&
-		fieldType.Elem().Kind() == reflect.String {
-
+	if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String {
 		fieldValue.Set(reflect.ValueOf(value))
 	}
 }
@@ -130,9 +121,7 @@ func isStringType(fieldType reflect.Type) bool {
 		return true
 	}
 
-	if fieldType.Kind() == reflect.Pointer &&
-		fieldType.Elem().Kind() == reflect.String {
-
+	if fieldType.Kind() == reflect.Pointer && fieldType.Elem().Kind() == reflect.String {
 		return true
 	}
 
@@ -175,7 +164,7 @@ func parseMetaFields(typ reflect.Type) []metaField {
 	fields := make([]metaField, 0)
 
 	visitor := reflectx.TypeVisitor{
-		VisitFieldType: func(field reflect.StructField, depth int) reflectx.VisitAction {
+		VisitFieldType: func(field reflect.StructField, _ int) reflectx.VisitAction {
 			tag, hasTag := field.Tag.Lookup(tagMeta)
 			if !hasTag {
 				return reflectx.SkipChildren
@@ -300,7 +289,7 @@ func (p *defaultPromoter[T]) promoteFiles(ctx context.Context, model *T) error {
 			return p.promoteUploadedFileField(ctx, fieldValue, field.isArray, field.typ, field.attrs)
 
 		case MetaTypeRichText:
-			return p.promoteContentField(ctx, fieldValue, extractHTMLURLs, replaceHTMLURLs, field.typ, field.attrs)
+			return p.promoteContentField(ctx, fieldValue, extractHtmlURLs, replaceHTMLURLs, field.typ, field.attrs)
 
 		case MetaTypeMarkdown:
 			return p.promoteContentField(ctx, fieldValue, extractMarkdownURLs, replaceMarkdownURLs, field.typ, field.attrs)
@@ -526,7 +515,7 @@ func (p *defaultPromoter[T]) extractAllFileKeysWithInfo(model *T) []fileInfo {
 
 		case MetaTypeRichText:
 			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
-				urls := extractHTMLURLs(content)
+				urls := extractHtmlURLs(content)
 				for _, url := range urls {
 					allFiles = append(allFiles, fileInfo{
 						key:      url,
@@ -585,7 +574,7 @@ func (p *defaultPromoter[T]) extractAllFileKeys(model *T) []string {
 
 		case MetaTypeRichText:
 			if content, valid := getStringValue(fieldValue); valid && content != constants.Empty {
-				urls := extractHTMLURLs(content)
+				urls := extractHtmlURLs(content)
 				allKeys = append(allKeys, urls...)
 			}
 

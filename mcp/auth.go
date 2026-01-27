@@ -17,11 +17,13 @@ func GetPrincipalFromContext(ctx context.Context) *security.Principal {
 			return principal
 		}
 	}
+
 	return security.PrincipalAnonymous
 }
 
 // DBWithOperator returns a database connection with the operator ID bound from the MCP context.
 func DBWithOperator(ctx context.Context, db orm.DB) orm.DB {
 	principal := GetPrincipalFromContext(ctx)
+
 	return db.WithNamedArg(constants.PlaceholderKeyOperator, principal.ID)
 }

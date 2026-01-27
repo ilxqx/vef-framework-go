@@ -12,9 +12,9 @@ func WithMemMaxSize(size int64) MemoryOption {
 	}
 }
 
-func WithMemDefaultTtl(ttl time.Duration) MemoryOption {
+func WithMemDefaultTTL(ttl time.Duration) MemoryOption {
 	return func(cfg *memoryConfig) {
-		cfg.defaultTtl = ttl
+		cfg.defaultTTL = ttl
 	}
 }
 
@@ -34,8 +34,8 @@ func WithMemGCInterval(interval time.Duration) MemoryOption {
 // RedisOption configures Redis-backed cache instances.
 type RedisOption func(*redisConfig)
 
-func WithRdsDefaultTtl(ttl time.Duration) RedisOption {
+func WithRdsDefaultTTL(ttl time.Duration) RedisOption {
 	return func(cfg *redisConfig) {
-		cfg.defaultTtl = ttl
+		cfg.defaultTTL = ttl
 	}
 }

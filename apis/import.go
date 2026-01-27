@@ -118,7 +118,13 @@ func (i *importApi[TModel]) importData() func(ctx fiber.Ctx, db orm.DB, logger l
 			return err
 		}
 
-		models := modelsAny.([]TModel)
+		models, ok := modelsAny.([]TModel)
+		if !ok {
+			return result.Result{
+				Code:    result.ErrCodeDefault,
+				Message: "import type assertion failed",
+			}.Response(ctx)
+		}
 
 		if len(importErrors) > 0 {
 			return result.Result{

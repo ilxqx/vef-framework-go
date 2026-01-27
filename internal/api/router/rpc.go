@@ -13,8 +13,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
 	"github.com/ilxqx/vef-framework-go/internal/api/middleware"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
@@ -82,8 +82,8 @@ func (r *RPC) resolve(ctx fiber.Ctx) error {
 
 	entry, ok := r.operations.Get(req.Identifier)
 	if !ok {
-		return &common.NotFoundError{
-			BaseError: common.BaseError{
+		return &shared.NotFoundError{
+			BaseError: shared.BaseError{
 				Identifier: &req.Identifier,
 				Err:        fiber.ErrNotFound,
 			},
@@ -91,8 +91,8 @@ func (r *RPC) resolve(ctx fiber.Ctx) error {
 		}
 	}
 
-	common.SetRequest(ctx, req)
-	common.SetOperation(ctx, entry.op)
+	shared.SetRequest(ctx, req)
+	shared.SetOperation(ctx, entry.op)
 
 	return ctx.Next()
 }
@@ -105,12 +105,12 @@ func (r *RPC) Route(handler fiber.Handler, op *api.Operation) {
 }
 
 func (r *RPC) dispatch(ctx fiber.Ctx) error {
-	req := common.Request(ctx)
+	req := shared.Request(ctx)
 
 	entry, ok := r.operations.Get(req.Identifier)
 	if !ok {
-		return &common.NotFoundError{
-			BaseError: common.BaseError{
+		return &shared.NotFoundError{
+			BaseError: shared.BaseError{
 				Identifier: &req.Identifier,
 				Err:        fiber.ErrNotFound,
 			},

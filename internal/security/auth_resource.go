@@ -64,7 +64,7 @@ type LoginParams struct {
 
 // Login authenticates a user and returns token credentials.
 func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
-	loginIp := webhelpers.GetIP(ctx)
+	loginIP := webhelpers.GetIP(ctx)
 	userAgent := ctx.Get(fiber.HeaderUserAgent)
 	traceID := contextx.RequestID(ctx)
 	username := params.Principal
@@ -84,17 +84,17 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 			errorCode = result.ErrCodeUnknown
 		}
 
-		loginEvent := security.NewLoginEvent(
-			params.Kind,
-			constants.Empty,
-			username,
-			loginIp,
-			userAgent,
-			traceID,
-			false,
-			failReason,
-			errorCode,
-		)
+		loginEvent := security.NewLoginEvent(security.LoginEventParams{
+			AuthType:   params.Kind,
+			UserID:     constants.Empty,
+			Username:   username,
+			LoginIP:    loginIP,
+			UserAgent:  userAgent,
+			TraceID:    traceID,
+			IsOk:       false,
+			FailReason: failReason,
+			ErrorCode:  errorCode,
+		})
 		a.publisher.Publish(loginEvent)
 
 		return err
@@ -105,17 +105,17 @@ func (a *AuthResource) Login(ctx fiber.Ctx, params LoginParams) error {
 		return err
 	}
 
-	loginEvent := security.NewLoginEvent(
-		params.Kind,
-		principal.ID,
-		username,
-		loginIp,
-		userAgent,
-		traceID,
-		true,
-		constants.Empty,
-		0,
-	)
+	loginEvent := security.NewLoginEvent(security.LoginEventParams{
+		AuthType:   params.Kind,
+		UserID:     principal.ID,
+		Username:   username,
+		LoginIP:    loginIP,
+		UserAgent:  userAgent,
+		TraceID:    traceID,
+		IsOk:       true,
+		FailReason: constants.Empty,
+		ErrorCode:  0,
+	})
 	a.publisher.Publish(loginEvent)
 
 	return result.Ok(credentials).Response(ctx)

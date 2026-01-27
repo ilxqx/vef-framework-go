@@ -256,11 +256,11 @@ func (suite *SchemaResourceTestSuite) readBody(resp *http.Response) result.Resul
 }
 
 func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
-	var ordersSql, itemsSql string
+	var ordersSQL, itemsSQL string
 
 	switch dbType {
 	case constants.Postgres:
-		ordersSql = `
+		ordersSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id SERIAL PRIMARY KEY,
 				customer_name VARCHAR(100) NOT NULL,
@@ -268,7 +268,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 				status VARCHAR(20) DEFAULT 'pending',
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
-		itemsSql = `
+		itemsSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_items (
 				id SERIAL PRIMARY KEY,
 				order_id INTEGER NOT NULL REFERENCES resource_test_orders(id) ON DELETE CASCADE,
@@ -279,7 +279,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 			)`
 
 	case constants.MySQL:
-		ordersSql = `
+		ordersSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				customer_name VARCHAR(100) NOT NULL,
@@ -287,7 +287,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 				status VARCHAR(20) DEFAULT 'pending',
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
-		itemsSql = `
+		itemsSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_items (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				order_id INT NOT NULL,
@@ -300,7 +300,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 			)`
 
 	case constants.SQLite:
-		ordersSql = `
+		ordersSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_orders (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				customer_name TEXT NOT NULL,
@@ -308,7 +308,7 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 				status TEXT DEFAULT 'pending',
 				created_at TEXT DEFAULT CURRENT_TIMESTAMP
 			)`
-		itemsSql = `
+		itemsSQL = `
 			CREATE TABLE IF NOT EXISTS resource_test_items (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				order_id INTEGER NOT NULL REFERENCES resource_test_orders(id) ON DELETE CASCADE,
@@ -319,10 +319,10 @@ func (suite *SchemaResourceTestSuite) setupTestTables(db *sql.DB, dbType constan
 			)`
 	}
 
-	_, err := db.ExecContext(suite.ctx, ordersSql)
+	_, err := db.ExecContext(suite.ctx, ordersSQL)
 	suite.Require().NoError(err, "Creating resource_test_orders table should succeed")
 
-	_, err = db.ExecContext(suite.ctx, itemsSql)
+	_, err = db.ExecContext(suite.ctx, itemsSQL)
 	suite.Require().NoError(err, "Creating resource_test_items table should succeed")
 }
 

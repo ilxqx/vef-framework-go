@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/build_info"
+	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/buildinfo"
 	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/create"
-	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/model_schema"
+	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd/modelschema"
 )
 
 var (
@@ -30,22 +30,24 @@ func Init(ldflagsVersion, ldflagsDate string) {
 }
 
 // Execute runs the root command.
-func Execute() {
+func Execute() error {
 	rootCmd.Version = Version
 	rootCmd.SetVersionTemplate(Banner + fmt.Sprintf("\nVersion: %s | Built: %s\n", Version, Date))
 
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 
-		os.Exit(1)
+		return err
 	}
+
+	return nil
 }
 
 func init() {
 	subCommands := []*cobra.Command{
 		create.Command(),
-		build_info.Command(),
-		model_schema.Command(),
+		buildinfo.Command(),
+		modelschema.Command(),
 	}
 
 	setupHelpColors(rootCmd)

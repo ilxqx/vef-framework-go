@@ -23,7 +23,7 @@ func NewEmbeddedProviderCollector() api.OperationsCollector {
 }
 
 // Collect gathers all API specs from embedded providers in the resource.
-func (c *EmbeddedProviderCollector) Collect(resource api.Resource) []api.OperationSpec {
+func (*EmbeddedProviderCollector) Collect(resource api.Resource) []api.OperationSpec {
 	var specs []api.OperationSpec
 
 	visitor := reflectx.Visitor{

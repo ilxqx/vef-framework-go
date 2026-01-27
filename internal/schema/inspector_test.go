@@ -115,18 +115,18 @@ func (suite *InspectorTestSuite) runInspectorTests(dsConfig *config.DatasourceCo
 }
 
 func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
-	var usersSql, postsSql string
+	var usersSQL, postsSQL string
 
 	switch dbType {
 	case constants.Postgres:
-		usersSql = `
+		usersSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id SERIAL PRIMARY KEY,
 				name VARCHAR(100) NOT NULL,
 				email VARCHAR(255) UNIQUE NOT NULL,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
-		postsSql = `
+		postsSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_posts (
 				id SERIAL PRIMARY KEY,
 				user_id INTEGER NOT NULL REFERENCES inspector_test_users(id) ON DELETE CASCADE,
@@ -137,7 +137,7 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DB
 			)`
 
 	case constants.MySQL:
-		usersSql = `
+		usersSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				name VARCHAR(100) NOT NULL,
@@ -145,7 +145,7 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DB
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				UNIQUE KEY idx_email (email)
 			)`
-		postsSql = `
+		postsSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_posts (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				user_id INT NOT NULL,
@@ -159,14 +159,14 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DB
 			)`
 
 	case constants.SQLite:
-		usersSql = `
+		usersSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_users (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				name TEXT NOT NULL,
 				email TEXT UNIQUE NOT NULL,
 				created_at TEXT DEFAULT CURRENT_TIMESTAMP
 			)`
-		postsSql = `
+		postsSQL = `
 			CREATE TABLE IF NOT EXISTS inspector_test_posts (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				user_id INTEGER NOT NULL REFERENCES inspector_test_users(id) ON DELETE CASCADE,
@@ -177,10 +177,10 @@ func (suite *InspectorTestSuite) setupTestTables(db *sql.DB, dbType constants.DB
 			)`
 	}
 
-	_, err := db.ExecContext(suite.ctx, usersSql)
+	_, err := db.ExecContext(suite.ctx, usersSQL)
 	suite.Require().NoError(err, "Creating inspector_test_users table should succeed")
 
-	_, err = db.ExecContext(suite.ctx, postsSql)
+	_, err = db.ExecContext(suite.ctx, postsSQL)
 	suite.Require().NoError(err, "Creating inspector_test_posts table should succeed")
 }
 

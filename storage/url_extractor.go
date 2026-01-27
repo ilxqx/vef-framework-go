@@ -55,8 +55,8 @@ func isRelativeURL(url string) bool {
 		!strings.HasPrefix(url, "https://")
 }
 
-// extractHTMLURLs extracts all relative URLs from HTML content.
-func extractHTMLURLs(content string) []string {
+// extractHtmlURLs extracts all relative URLs from HTML content.
+func extractHtmlURLs(content string) []string {
 	if content == constants.Empty {
 		return nil
 	}

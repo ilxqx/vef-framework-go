@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func parseSql(t *testing.T, sql string) *ast.AST {
+func parseSQL(t *testing.T, sql string) *ast.AST {
 	t.Helper()
 
 	astNode, err := gosqlx.Parse(sql)
@@ -35,7 +35,7 @@ func TestDropStatementRule(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			astNode := parseSql(t, tt.sql)
+			astNode := parseSQL(t, tt.sql)
 			violation := rule.Check(astNode)
 
 			if tt.wantBlock {
@@ -64,7 +64,7 @@ func TestTruncateStatementRule(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			astNode := parseSql(t, tt.sql)
+			astNode := parseSQL(t, tt.sql)
 			violation := rule.Check(astNode)
 
 			if tt.wantBlock {
@@ -95,7 +95,7 @@ func TestDeleteWithoutWhereRule(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			astNode := parseSql(t, tt.sql)
+			astNode := parseSQL(t, tt.sql)
 			violation := rule.Check(astNode)
 
 			if tt.wantBlock {

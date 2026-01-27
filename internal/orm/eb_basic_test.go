@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/uptrace/bun/schema"
@@ -2127,7 +2128,7 @@ func (suite *BasicExpressionsTestSuite) TestExecByDialectWithErr() {
 		suite.NoError(err, "Default callback should work without error")
 
 		// Test default callback returning error
-		testErr := fmt.Errorf("default callback error")
+		testErr := errors.New("default callback error")
 		err = eb.ExecByDialectWithErr(DialectExecsWithErr{
 			Default: func() error {
 				return testErr
@@ -2184,7 +2185,7 @@ func (suite *BasicExpressionsTestSuite) TestFragmentByDialect() {
 		eb := query.ExprBuilder()
 
 		// Generate fragment that returns an error
-		testErr := fmt.Errorf("fragment generation error")
+		testErr := errors.New("fragment generation error")
 		fragment, err := eb.FragmentByDialect(DialectFragments{
 			Postgres: func() ([]byte, error) {
 				return nil, testErr

@@ -77,7 +77,7 @@ func TestExtractHTMLURLs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			urls := extractHTMLURLs(tt.html)
+			urls := extractHtmlURLs(tt.html)
 			if len(tt.expected) == 0 {
 				assert.Empty(t, urls)
 			} else {

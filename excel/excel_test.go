@@ -111,7 +111,8 @@ func TestImporterImportFromFile(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -187,7 +188,8 @@ func TestImporterValidationErrors(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, imported)
@@ -231,7 +233,8 @@ func TestExportImportNoTags(t *testing.T) {
 
 	importer := NewImporterFor[TestNoTagStruct]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestNoTagStruct)
+	imported, ok := importedAny.([]TestNoTagStruct)
+	require.True(t, ok, "Type assertion to []TestNoTagStruct should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -358,7 +361,7 @@ func TestExportWithOptions(t *testing.T) {
 
 type prefixParser struct{}
 
-func (p *prefixParser) Parse(cellValue string, targetType reflect.Type) (any, error) {
+func (*prefixParser) Parse(cellValue string, _ reflect.Type) (any, error) {
 	if cellValue == "" {
 		return "", nil
 	}
@@ -401,7 +404,8 @@ func TestImportCustomParser(t *testing.T) {
 	importer.RegisterParser("prefix_parser", &prefixParser{})
 
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -428,7 +432,8 @@ func TestImportFromReader(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.Import(buf)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -464,7 +469,8 @@ func TestImportWithOptions(t *testing.T) {
 
 	importer := NewImporterFor[TestUser](WithImportSheetName("用户数据"))
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -500,7 +506,8 @@ func TestImportEmptyRows(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -534,7 +541,8 @@ func TestImportMissingColumns(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -575,7 +583,8 @@ func TestImportInvalidData(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, imported)
@@ -613,7 +622,8 @@ func TestImportLargeFile(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -662,7 +672,8 @@ func TestExportNullValues(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)
@@ -712,7 +723,8 @@ func TestRoundTrip(t *testing.T) {
 
 	importer := NewImporterFor[TestUser]()
 	importedAny, importErrors, err := importer.ImportFromFile(filename)
-	imported := importedAny.([]TestUser)
+	imported, ok := importedAny.([]TestUser)
+	require.True(t, ok, "Type assertion to []TestUser should succeed")
 
 	require.NoError(t, err)
 	assert.Empty(t, importErrors)

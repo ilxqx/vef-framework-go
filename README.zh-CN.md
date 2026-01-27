@@ -18,7 +18,7 @@
 
 ## 核心特性
 
-- **单一端点 Api 架构** - 所有 Api 请求通过 `POST /api` 统一处理，请求响应格式一致
+- **RPC + REST Api 路由** - RPC 通过 `POST /api`，REST 通过标准 HTTP 方法访问 `/api/<resource>`
 - **泛型 CRUD Api** - 预置类型安全的增删改查操作，极少样板代码
 - **类型安全的 ORM** - 基于 Bun 的流式查询构建器，自动审计字段维护
 - **多策略认证** - 内置 Jwt、OpenApi 签名、密码认证，开箱即用
@@ -177,11 +177,14 @@ var Module = vef.Module(
 
 ## 架构设计
 
-### 单一端点设计
+### RPC 与 REST 路由
 
-VEF 采用单一端点方式，所有 Api 请求通过 `POST /api`（或 `POST /openapi` 用于外部集成）。
+VEF 支持两种路由策略，可同时使用：
 
-**请求格式：**
+- **RPC**：单一端点 `POST /api`，统一请求/响应格式（见下方示例）
+- **REST**：标准 HTTP 方法访问 `/api/<resource>`（默认基路径）。外部应用仍可通过 OpenApi 签名在这些端点上认证。
+
+**RPC 请求格式：**
 
 ```json
 {
@@ -198,7 +201,7 @@ VEF 采用单一端点方式，所有 Api 请求通过 `POST /api`（或 `POST /
 }
 ```
 
-**响应格式：**
+**RPC 响应格式：**
 
 ```json
 {
@@ -213,9 +216,16 @@ VEF 采用单一端点方式，所有 Api 请求通过 `POST /api`（或 `POST /
 }
 ```
 
+**REST 示例（同一基路径）：**
+
+```
+GET /api/sys/user/page?page=1&size=20&keyword=john
+```
+
 参数与元数据：
 - `params`：业务参数（如查询筛选、创建/更新字段）。定义的结构体需嵌入 `api.P`。
 - `meta`：请求级控制信息（如 `find_page` 的分页、导入导出的格式等）。定义的结构体需嵌入 `api.M`（例如 `page.Pageable`）。
+  - 在 REST 下，`params` 可来自 path/query/body，`meta` 可通过 `X-Meta-*` 请求头传入。
 
 ### 依赖注入
 
@@ -366,17 +376,19 @@ type UserNumeric struct {
 这种三级命名空间模式在生产应用中广泛使用，提供了多项优势：
 
 ```go
-// 带应用命名空间的良好示例
-api.NewResource("smp/sys/user")           // 系统用户资源
-api.NewResource("smp/md/organization")    // 主数据组织
-api.NewResource("erp/order/item")         // 清晰的领域分离
+// 带应用命名空间的良好示例（RPC）
+api.NewRPCResource("smp/sys/user")           // 系统用户资源
+api.NewRPCResource("smp/md/organization")    // 主数据组织
+api.NewRPCResource("erp/order/item")         // 清晰的领域分离
 
 // 单应用项目中可接受
-api.NewResource("sys/user")               // 无应用命名空间
+api.NewRPCResource("sys/user")               // 无应用命名空间
 
 // 避免使用 - 过于泛化，存在冲突风险
-api.NewResource("user")                   // ❌ 无命名空间
+api.NewRPCResource("user")                   // ❌ 无命名空间
 ```
+
+**提示：** RPC 资源使用 `snake_case` 风格分段。REST 资源请使用 `api.NewRESTResource` 并采用 `kebab-case`（例如 `sys/data-dict`）。
 
 **应用命名空间的优势：**
 
@@ -456,8 +468,8 @@ type UserUpdateParams struct {
 然后在您的资源中使用特定参数：
 
 ```go
-CreateApi: apis.NewCreateApi[models.User, payloads.UserCreateParams](),
-UpdateApi: apis.NewUpdateApi[models.User, payloads.UserUpdateParams](),
+Create: apis.NewCreate[models.User, payloads.UserCreateParams](),
+Update: apis.NewUpdate[models.User, payloads.UserUpdateParams](),
 ```
 
 **优势：**
@@ -488,21 +500,21 @@ import (
 
 type UserResource struct {
     api.Resource
-    apis.FindAllApi[models.User, payloads.UserSearch]
-    apis.FindPageApi[models.User, payloads.UserSearch]
-    apis.CreateApi[models.User, payloads.UserParams]
-    apis.UpdateApi[models.User, payloads.UserParams]
-    apis.DeleteApi[models.User]
+    apis.FindAll[models.User, payloads.UserSearch]
+    apis.FindPage[models.User, payloads.UserSearch]
+    apis.Create[models.User, payloads.UserParams]
+    apis.Update[models.User, payloads.UserParams]
+    apis.Delete[models.User]
 }
 
 func NewUserResource() api.Resource {
     return &UserResource{
-        Resource: api.NewResource("smp/sys/user"),  // ✓ 使用 应用/领域/实体 命名避免冲突
-        FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
-        FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
-        CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
-        UpdateApi: apis.NewUpdateApi[models.User, payloads.UserParams](),
-        DeleteApi: apis.NewDeleteApi[models.User](),
+        Resource: api.NewRPCResource("smp/sys/user"),  // ✓ 使用 应用/领域/实体 命名避免冲突
+        FindAll: apis.NewFindAll[models.User, payloads.UserSearch](),
+        FindPage: apis.NewFindPage[models.User, payloads.UserSearch](),
+        Create: apis.NewCreate[models.User, payloads.UserParams](),
+        Update: apis.NewUpdate[models.User, payloads.UserParams](),
+        Delete: apis.NewDelete[models.User](),
     }
 }
 ```
@@ -521,27 +533,29 @@ func main() {
 
 | 接口 | 描述 | Action |
 |-----|------|--------|
-| FindOneApi | 查询单条记录 | find_one |
-| FindAllApi | 查询全部记录 | find_all |
-| FindPageApi | 分页查询 | find_page |
-| CreateApi | 创建记录 | create |
-| UpdateApi | 更新记录 | update |
-| DeleteApi | 删除记录 | delete |
-| CreateManyApi | 批量创建 | create_many |
-| UpdateManyApi | 批量更新 | update_many |
-| DeleteManyApi | 批量删除 | delete_many |
-| FindTreeApi | 树形查询 | find_tree |
-| FindOptionsApi | 选项列表(label/value) | find_options |
-| FindTreeOptionsApi | 树形选项 | find_tree_options |
-| ImportApi | 导入 Excel/CSV | import |
-| ExportApi | 导出 Excel/CSV | export |
+| FindOne | 查询单条记录 | find_one |
+| FindAll | 查询全部记录 | find_all |
+| FindPage | 分页查询 | find_page |
+| Create | 创建记录 | create |
+| Update | 更新记录 | update |
+| Delete | 删除记录 | delete |
+| CreateMany | 批量创建 | create_many |
+| UpdateMany | 批量更新 | update_many |
+| DeleteMany | 批量删除 | delete_many |
+| FindTree | 树形查询 | find_tree |
+| FindOptions | 选项列表(label/value) | find_options |
+| FindTreeOptions | 树形选项 | find_tree_options |
+| Import | 导入 Excel/CSV | import |
+| Export | 导出 Excel/CSV | export |
+
+**提示：** 上表中的 action 为 **RPC** 动作名。对于 **REST** 资源，action 以 HTTP 方法与子路径表示（例如 `GET /`、`GET /page`、`POST /`、`PUT /:id`）。
 
 ### Api Builder 方法
 
 使用流式构建器方法配置 Api 行为：
 
 ```go
-CreateApi: apis.NewCreateApi[User, UserParams]().
+Create: apis.NewCreate[User, UserParams]().
     Action("create_user").             // 自定义操作名
     Public().                          // 无需认证
     PermToken("sys.user.create").      // 权限令牌
@@ -550,11 +564,11 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
     RateLimit(10, 1*time.Minute).      // 每分钟 10 次请求
 ```
 
-**注意：** FindApi 类型（FindOneApi、FindAllApi、FindPageApi、FindTreeApi、FindOptionsApi、FindTreeOptionsApi、ExportApi）具有额外的配置方法。详见 [FindApi 配置方法](#findapi-配置方法)。
+**注意：** FindApi 类型（FindOne、FindAll、FindPage、FindTree、FindOptions、FindTreeOptions、Export）具有额外的配置方法。详见 [FindApi 配置方法](#findapi-配置方法)。
 
 ### FindApi 配置方法
 
-所有 FindApi 类型（FindOneApi、FindAllApi、FindPageApi、FindTreeApi、FindOptionsApi、FindTreeOptionsApi、ExportApi）都支持使用流式方法的统一查询配置系统。这些方法允许您自定义查询行为、添加条件、配置排序和处理结果。
+所有 FindApi 类型（FindOne、FindAll、FindPage、FindTree、FindOptions、FindTreeOptions、Export）都支持使用流式方法的统一查询配置系统。这些方法允许您自定义查询行为、添加条件、配置排序和处理结果。
 
 #### 通用配置方法
 
@@ -582,7 +596,7 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
 - **聚合计算**：计算统计信息或摘要
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
         // 数据脱敏
         for i := range users {
@@ -593,7 +607,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     }),
 
 // 示例：分页结果中添加计算字段（处理器接收 items 切片）
-FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
+FindPage: apis.NewFindPage[Order, OrderSearch]().
     WithProcessor(func(items []Order, search OrderSearch, ctx fiber.Ctx) any {
         for i := range items {
             // 计算总金额
@@ -603,7 +617,7 @@ FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
     }),
 
 // 示例：嵌套结构转换
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
         // 按部门分组用户
         type DepartmentUsers struct {
@@ -633,7 +647,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithSelect / WithSelectAs 示例：**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithSelect("username").
     WithSelectAs("email_address", "email"),
 ```
@@ -641,7 +655,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithDefaultSort 示例：**
 
 ```go
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithDefaultSort(&sort.OrderSpec{
         Column:    "created_at",
         Direction: sort.OrderDesc,
@@ -650,14 +664,14 @@ FindPageApi: apis.NewFindPageApi[User, UserSearch]().
 // 生产模式：使用 schema 生成的列名以实现类型安全
 import "my-app/internal/sys/schemas"
 
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithDefaultSort(&sort.OrderSpec{
         Column:    schemas.User.CreatedAt(true), // 类型安全的列名，带表前缀
         Direction: sort.OrderDesc,
     }),
 
 // 对于树形结构，使用 sort_order 字段
-FindTreeApi: apis.NewFindTreeApi[Menu, MenuSearch](buildMenuTree).
+FindTree: apis.NewFindTree[Menu, MenuSearch](buildMenuTree).
     WithDefaultSort(&sort.OrderSpec{
         Column:    schemas.Menu.SortOrder(true),
         Direction: sort.OrderAsc,
@@ -667,14 +681,14 @@ FindTreeApi: apis.NewFindTreeApi[Menu, MenuSearch](buildMenuTree).
 传入空参数可禁用默认排序：
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithDefaultSort(), // 禁用默认排序
 ```
 
 **WithCondition 示例：**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_deleted", false)
         cb.Equals("is_active", true)
@@ -684,7 +698,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithRelation 示例：**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithRelation(&orm.RelationSpec{
         // 关联 Profile 模型；外键/主键按约定自动解析
         Model: (*Profile)(nil),
@@ -700,23 +714,23 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithAuditUserNames 示例：**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithAuditUserNames(&User{}), // 默认使用 "name" 列
 
 // 或指定自定义列名
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithAuditUserNames(&User{}, "username"),
 
 // 生产模式：使用包级别的模型实例
 // 在 models 包中：var UserModel = &User{}
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithAuditUserNames(models.UserModel), // 推荐用于一致性
 ```
 
 **WithQueryApplier 示例：**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithQueryApplier(func(query orm.SelectQuery, search UserSearch, ctx fiber.Ctx) error {
         // 自定义查询逻辑
         if search.IncludeInactive {
@@ -734,11 +748,11 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **DisableDataPerm 示例：**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     DisableDataPerm(), // 必须在 API 注册前调用
 ```
 
-**重要提示：** `DisableDataPerm()` 必须在 API 注册之前调用（在 `Setup` 方法执行之前）。它应该在 `NewFindXxxApi()` 之后立即链式调用。默认情况下，数据权限过滤是启用的，并在 `Setup` 期间自动应用。
+**重要提示：** `DisableDataPerm()` 必须在 API 注册之前调用（在 `Setup` 方法执行之前）。它应该在 `NewFindXxx()` 之后立即链式调用。默认情况下，数据权限过滤是启用的，并在 `Setup` 期间自动应用。
 
 #### QueryPart 系统
 
@@ -759,7 +773,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **普通查询示例：**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithSelect("username").              // 应用于 QueryRoot（主查询）
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_active", true)     // 应用于 QueryRoot（主查询）
@@ -769,7 +783,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **树形查询示例：**
 
 ```go
-FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+FindTree: apis.NewFindTree[Category, CategorySearch](buildTree).
     // 为基础查询和递归查询选择列
     WithSelect("sort", apis.QueryBase, apis.QueryRecursive).
     
@@ -786,7 +800,7 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
 
 #### 树形查询配置
 
-`FindTreeApi` 和 `FindTreeOptionsApi` 使用递归 CTE（公用表表达式）查询层次数据。理解 QueryPart 如何应用于递归查询的不同部分对于正确配置至关重要。
+`FindTree` 和 `FindTreeOptions` 使用递归 CTE（公用表表达式）查询层次数据。理解 QueryPart 如何应用于递归查询的不同部分对于正确配置至关重要。
 
 **递归 CTE 结构：**
 
@@ -815,7 +829,7 @@ SELECT * FROM tree ORDER BY sort
 **完整的树形查询示例：**
 
 ```go
-FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
+FindTree: apis.NewFindTree[Category, CategorySearch](
     func(categories []Category) []Category {
         // 从扁平列表构建树结构
         return buildCategoryTree(categories)
@@ -850,12 +864,12 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
     }),
 ```
 
-**FindTreeOptionsApi 配置：**
+**FindTreeOptions 配置：**
 
-`FindTreeOptionsApi` 遵循与 `FindTreeApi` 相同的配置模式：
+`FindTreeOptions` 遵循与 `FindTree` 相同的配置模式：
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
+FindTreeOptions: apis.NewFindTreeOptions[Category, CategorySearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -869,17 +883,17 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
 
 #### API 特定配置方法
 
-**FindPageApi：**
+**FindPage：**
 
 ```go
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithDefaultPageSize(20), // 设置默认分页大小（当请求未指定或无效时使用）
 ```
 
-**FindOptionsApi：**
+**FindOptions：**
 
 ```go
-FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
+FindOptions: apis.NewFindOptions[User, UserSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn:       "name",        // 选项标签列（默认："name"）
         ValueColumn:       "id",          // 选项值列（默认："id"）
@@ -887,7 +901,7 @@ FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
     }),
 
 // 高级用法：在选项中包含额外的元数据
-FindOptionsApi: apis.NewFindOptionsApi[Menu, MenuSearch]().
+FindOptions: apis.NewFindOptions[Menu, MenuSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn:       "name",
         ValueColumn:       "id",
@@ -900,14 +914,14 @@ FindOptionsApi: apis.NewFindOptionsApi[Menu, MenuSearch]().
     }),
 ```
 
-**FindTreeApi：**
+**FindTree：**
 
-对于层次数据结构，使用 `FindTreeApi` 配合 `treebuilder` 包将扁平数据库结果转换为嵌套树结构：
+对于层次数据结构，使用 `FindTree` 配合 `treebuilder` 包将扁平数据库结果转换为嵌套树结构：
 
 ```go
 import "github.com/ilxqx/vef-framework-go/treebuilder"
 
-FindTreeApi: apis.NewFindTreeApi[models.Organization, payloads.OrganizationSearch](
+FindTree: apis.NewFindTree[models.Organization, payloads.OrganizationSearch](
     buildOrganizationTree,
 ).
     WithIdColumn("id").              // ID 列名（默认："id"）
@@ -948,12 +962,12 @@ type Organization struct {
 
 `treebuilder.Build` 函数处理从扁平列表到层次结构的转换，正确地将子节点嵌套在其父节点下。
 
-**FindTreeOptionsApi：**
+**FindTreeOptions：**
 
 结合选项和树形配置以返回层次选项列表：
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.OrganizationSearch]().
+FindTreeOptions: apis.NewFindTreeOptions[models.Organization, payloads.OrganizationSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -968,10 +982,10 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.Org
 
 树形选项 API 自动使用内部树构建器将扁平结果转换为嵌套选项结构，非常适合级联选择器或层次菜单。
 
-**ExportApi：**
+**Export：**
 
 ```go
-ExportApi: apis.NewExportApi[User, UserSearch]().
+Export: apis.NewExport[User, UserSearch]().
     WithDefaultFormat("excel").                   // 默认导出格式："excel" 或 "csv"
     WithExcelOptions(&excel.ExportOptions{        // Excel 特定选项
         SheetName: "Users",
@@ -997,7 +1011,7 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
 在 CRUD 操作前后添加自定义业务逻辑：
 
 ```go
-CreateApi: apis.NewCreateApi[User, UserParams]().
+Create: apis.NewCreate[User, UserParams]().
     WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.DB) error {
         // 创建用户前对密码进行哈希
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
@@ -1033,7 +1047,7 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
 
 ```go
 // 系统用户保护 - 防止删除关键系统用户
-DeleteApi: apis.NewDeleteApi[User]().
+Delete: apis.NewDelete[User]().
     WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.DB) error {
         // 保护系统内部用户不被删除
         switch model.Username {
@@ -1044,7 +1058,7 @@ DeleteApi: apis.NewDeleteApi[User]().
     }),
 
 // 条件密码哈希 - 仅在密码被修改时进行哈希
-UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
+Update: apis.NewUpdate[User, UserUpdateParams]().
     WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.DB) error {
         // 仅在密码被更新时进行哈希
         if params.Password.Valid && params.Password.String != "" {
@@ -1061,7 +1075,7 @@ UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
     }),
 
 // 业务验证 - 在操作前验证业务规则
-CreateApi: apis.NewCreateApi[Order, OrderParams]().
+Create: apis.NewCreate[Order, OrderParams]().
     WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.DB) error {
         // 验证订单总额是否匹配项目总额
         if model.TotalAmount <= 0 {
@@ -1081,7 +1095,7 @@ CreateApi: apis.NewCreateApi[Order, OrderParams]().
 
 #### 混合生成和自定义 API
 
-您可以使用 `api.WithApis()` 将预构建的 CRUD API 与自定义操作结合。这允许您使用特定领域的操作扩展资源，同时保持框架的约定。
+您可以使用 `api.WithOperations()` 将预构建的 CRUD API 与自定义操作结合。这允许您使用特定领域的操作扩展资源，同时保持框架的约定。**RPC** 资源会将 `action`（snake_case）映射到资源上的 PascalCase 方法（如 `find_role_permissions` → `FindRolePermissions`）。**REST** 资源则必须在 `OperationSpec.Handler` 中显式指定处理器。
 
 ```go
 package resources
@@ -1093,30 +1107,30 @@ import (
 
 type RoleResource struct {
     api.Resource
-    apis.FindPageApi[models.Role, payloads.RoleSearch]
-    apis.CreateApi[models.Role, payloads.RoleParams]
-    apis.UpdateApi[models.Role, payloads.RoleParams]
-    apis.DeleteApi[models.Role]
+    apis.FindPage[models.Role, payloads.RoleSearch]
+    apis.Create[models.Role, payloads.RoleParams]
+    apis.Update[models.Role, payloads.RoleParams]
+    apis.Delete[models.Role]
 }
 
 func NewRoleResource() api.Resource {
     return &RoleResource{
-        Resource: api.NewResource(
+        Resource: api.NewRPCResource(
             "app/sys/role",
-            api.WithApis(
-                api.Spec{
+            api.WithOperations(
+                api.OperationSpec{
                     Action: "find_role_permissions",
                 },
-                api.Spec{
+                api.OperationSpec{
                     Action:      "save_role_permissions",
-                    EnableAudit: true,  // 为此操作启用审计日志
+                    EnableAudit: true, // 为此操作启用审计日志
                 },
             ),
         ),
-        FindPageApi: apis.NewFindPageApi[models.Role, payloads.RoleSearch](),
-        CreateApi:   apis.NewCreateApi[models.Role, payloads.RoleParams](),
-        UpdateApi:   apis.NewUpdateApi[models.Role, payloads.RoleParams](),
-        DeleteApi:   apis.NewDeleteApi[models.Role](),
+        FindPage: apis.NewFindPage[models.Role, payloads.RoleSearch](),
+        Create:   apis.NewCreate[models.Role, payloads.RoleParams](),
+        Update:   apis.NewUpdate[models.Role, payloads.RoleParams](),
+        Delete:   apis.NewDelete[models.Role](),
     }
 }
 
@@ -1152,6 +1166,44 @@ func (r *RoleResource) SaveRolePermissions(
 - **API Spec 配置**：每个自定义操作都可以有自己的配置（权限、审计、速率限制）
 - **注入规则**：自定义处理器方法遵循与生成的处理器相同的参数注入规则
 - **混合 API**：您可以在同一资源中自由混合生成的 CRUD API 和自定义操作
+
+#### REST 资源示例（显式处理器）
+
+REST 操作必须在 `OperationSpec.Handler` 中显式指定处理器。您可以提供方法名或函数。
+
+```go
+type RoleRestResource struct {
+    api.Resource
+}
+
+func NewRoleRestResource() api.Resource {
+    return &RoleRestResource{
+        Resource: api.NewRESTResource(
+            "sys/role",
+            api.WithOperations(
+                api.OperationSpec{
+                    Action:  "get /:id",
+                    Handler: "GetRole",
+                },
+                api.OperationSpec{
+                    Action:  "post /",
+                    Handler: "CreateRole",
+                },
+            ),
+        ),
+    }
+}
+
+func (r *RoleRestResource) GetRole(ctx fiber.Ctx, db orm.DB, params payloads.RoleGetParams) error {
+    // ...
+    return result.Ok(role).Response(ctx)
+}
+
+func (r *RoleRestResource) CreateRole(ctx fiber.Ctx, db orm.DB, params payloads.RoleParams) error {
+    // ...
+    return result.Ok(role).Response(ctx)
+}
+```
 
 #### 简单自定义处理器
 
@@ -1207,7 +1259,7 @@ type UserResource struct {
 
 func NewUserResource(userService *UserService) api.Resource {
     return &UserResource{
-        Resource: api.NewResource("sys/user"),
+        Resource: api.NewRPCResource("sys/user"),
         userService: userService,
     }
 }
@@ -1432,7 +1484,7 @@ func main() {
 在 Api 上设置权限令牌：
 
 ```go
-CreateApi: apis.NewCreateApi[User, UserParams]().
+Create: apis.NewCreate[User, UserParams]().
     PermToken("sys.user.create"),
 ```
 

@@ -34,7 +34,7 @@ func NewTestUserCreateWithPreHookResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_create_prehook"),
 		Create: apis.NewCreate[TestUser, TestUserCreateParams]().
 			Public().
-			WithPreCreate(func(model *TestUser, params *TestUserCreateParams, query orm.InsertQuery, ctx fiber.Ctx, tx orm.DB) error {
+			WithPreCreate(func(model *TestUser, _ *TestUserCreateParams, _ orm.InsertQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Add prefix to name
 				model.Name = "Mr. " + model.Name
 
@@ -54,7 +54,7 @@ func NewTestUserCreateWithPostHookResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_create_posthook"),
 		Create: apis.NewCreate[TestUser, TestUserCreateParams]().
 			Public().
-			WithPostCreate(func(model *TestUser, params *TestUserCreateParams, ctx fiber.Ctx, db orm.DB) error {
+			WithPostCreate(func(model *TestUser, _ *TestUserCreateParams, ctx fiber.Ctx, _ orm.DB) error {
 				// Log or perform additional operations
 				ctx.Set("X-Created-User-ID", model.ID)
 

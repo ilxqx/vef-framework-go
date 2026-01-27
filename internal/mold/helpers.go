@@ -11,12 +11,14 @@ func (t *MoldTransformer) extractType(current reflect.Value) (reflect.Value, ref
 		if current.IsNil() {
 			return current, current.Kind()
 		}
+
 		return t.extractType(current.Elem())
 
 	default:
 		if fn := t.interceptors[current.Type()]; fn != nil {
 			return t.extractType(fn(current))
 		}
+
 		return current, current.Kind()
 	}
 }

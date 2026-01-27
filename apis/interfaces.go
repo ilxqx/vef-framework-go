@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/csv"
 	"github.com/ilxqx/vef-framework-go/excel"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // Builder defines the interface for building Api endpoints.
@@ -20,7 +20,7 @@ type Builder[T any] interface {
 	Timeout(timeout time.Duration) T
 	Public() T
 	PermToken(token string) T
-	RateLimit(max int, period time.Duration) T
+	RateLimit(maxRequests int, period time.Duration) T
 	Build(handler any) api.OperationSpec
 }
 
@@ -122,7 +122,7 @@ type Find[TModel, TSearch, TProcessorIn, TApi any] interface {
 	WithSelect(column string, parts ...QueryPart) TApi
 	// WithSelectAs adds a column with an alias to the SELECT clause for specified query parts.
 	WithSelectAs(column, alias string, parts ...QueryPart) TApi
-	WithDefaultSort(sort ...*sort.OrderSpec) TApi
+	WithDefaultSort(sort ...*sortx.OrderSpec) TApi
 	// WithCondition adds a WHERE condition using ConditionBuilder for specified query parts.
 	WithCondition(fn func(cb orm.ConditionBuilder), parts ...QueryPart) TApi
 	// DisableDataPerm disables automatic data permission filtering for this endpoint.

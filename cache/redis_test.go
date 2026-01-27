@@ -158,21 +158,21 @@ func (suite *RedisCacheTestSuite) TestRedisCacheTtl() {
 	})
 
 	suite.Run("DefaultTtl", func() {
-		cacheWithDefaultTtl := suite.setupRedisCache("test-default-ttl", WithRdsDefaultTtl(100*time.Millisecond))
-		defer cacheWithDefaultTtl.Close()
+		cacheWithDefaultTTL := suite.setupRedisCache("test-default-ttl", WithRdsDefaultTTL(100*time.Millisecond))
+		defer cacheWithDefaultTTL.Close()
 
 		user := TestUser{ID: 6, Name: "Frank", Age: 32}
 
-		err := cacheWithDefaultTtl.Set(suite.ctx, "default-ttl-user", user)
+		err := cacheWithDefaultTTL.Set(suite.ctx, "default-ttl-user", user)
 		suite.Require().NoError(err)
 
-		result, found := cacheWithDefaultTtl.Get(suite.ctx, "default-ttl-user")
+		result, found := cacheWithDefaultTTL.Get(suite.ctx, "default-ttl-user")
 		suite.True(found)
 		suite.Equal(user, result)
 
 		time.Sleep(150 * time.Millisecond)
 
-		_, found = cacheWithDefaultTtl.Get(suite.ctx, "default-ttl-user")
+		_, found = cacheWithDefaultTTL.Get(suite.ctx, "default-ttl-user")
 		suite.False(found)
 	})
 }
@@ -354,7 +354,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheIteration() {
 	suite.Run("ForEachEarlyTermination", func() {
 		var count int
 
-		err := userCache.ForEach(suite.ctx, func(key string, user TestUser) bool {
+		err := userCache.ForEach(suite.ctx, func(_ string, _ TestUser) bool {
 			count++
 
 			return count < 3
@@ -458,7 +458,7 @@ func (suite *RedisCacheTestSuite) TestRedisCacheClose() {
 	suite.Nil(keys)
 
 	called := false
-	err = cache.ForEach(ctx, func(key string, value TestUser) bool {
+	err = cache.ForEach(ctx, func(_ string, _ TestUser) bool {
 		called = true
 
 		return true

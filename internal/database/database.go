@@ -26,7 +26,7 @@ func setupBunDB(sqlDB *sql.DB, dialect schema.Dialect, opts *databaseOptions) *b
 	db := bun.NewDB(sqlDB, dialect, opts.BunOptions...)
 
 	if opts.EnableQueryHook {
-		addQueryHook(db, opts.Logger, opts.SqlGuardConfig)
+		addQueryHook(db, opts.Logger, opts.SQLGuardConfig)
 	}
 
 	db = db.WithNamedArg(constants.PlaceholderKeyOperator, constants.OperatorSystem)

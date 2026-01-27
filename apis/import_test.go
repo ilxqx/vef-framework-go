@@ -73,7 +73,7 @@ func NewTestUserImportWithPreProcessorResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_import_preproc"),
 		Import: apis.NewImport[ImportUser]().
 			Public().
-			WithPreImport(func(models []ImportUser, query orm.InsertQuery, ctx fiber.Ctx, tx orm.DB) error {
+			WithPreImport(func(models []ImportUser, _ orm.InsertQuery, _ fiber.Ctx, _ orm.DB) error {
 				// Pre-process all models - change inactive to pending
 				for i := range models {
 					if models[i].Status == "inactive" {
@@ -96,7 +96,7 @@ func NewTestUserImportWithPostProcessorResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_import_postproc"),
 		Import: apis.NewImport[ImportUser]().
 			Public().
-			WithPostImport(func(models []ImportUser, ctx fiber.Ctx, db orm.DB) error {
+			WithPostImport(func(models []ImportUser, ctx fiber.Ctx, _ orm.DB) error {
 				// Set custom header with count
 				ctx.Set("X-Import-Count", string(rune('0'+len(models))))
 

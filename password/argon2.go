@@ -116,7 +116,7 @@ type argon2Params struct {
 	parallelism uint8
 }
 
-func (e *argon2Encoder) decodeHash(encodedPassword string) (*argon2Params, []byte, []byte, error) {
+func (*argon2Encoder) decodeHash(encodedPassword string) (params *argon2Params, salt, hash []byte, err error) {
 	parts := strings.Split(encodedPassword, "$")
 	if len(parts) != 6 {
 		return nil, nil, nil, ErrInvalidHashFormat
@@ -135,17 +135,17 @@ func (e *argon2Encoder) decodeHash(encodedPassword string) (*argon2Params, []byt
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	params := new(argon2Params)
-	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &params.memory, &params.iterations, &params.parallelism); err != nil {
+	params = new(argon2Params)
+	if _, err = fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &params.memory, &params.iterations, &params.parallelism); err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
+	salt, err = base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	hash, err := base64.RawStdEncoding.DecodeString(parts[5])
+	hash, err = base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}

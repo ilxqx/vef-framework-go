@@ -45,6 +45,7 @@ var Module = fx.Module(
 					}
 				}
 				buildInfo.VEFVersion = constants.VEFVersion
+
 				return buildInfo
 			},
 			fx.ParamTags(`optional:"true"`),

@@ -54,9 +54,11 @@ func (t *MoldTransformer) Register(tag string, fn mold.Func) {
 	if tag == "" {
 		panic("mold: transformation tag cannot be empty")
 	}
+
 	if fn == nil {
 		panic("mold: transformation function cannot be nil")
 	}
+
 	if _, ok := restrictedTags[tag]; ok || strings.ContainsAny(tag, restrictedTagChars) {
 		panic(fmt.Sprintf(restrictedTagErr, tag))
 	}
@@ -72,9 +74,11 @@ func (t *MoldTransformer) RegisterAlias(alias, tags string) {
 	if alias == "" {
 		panic("mold: transformation alias cannot be empty")
 	}
+
 	if tags == "" {
 		panic("mold: aliased tags cannot be empty")
 	}
+
 	if _, ok := restrictedTags[alias]; ok || strings.ContainsAny(alias, restrictedTagChars) {
 		panic(fmt.Sprintf(restrictedAliasErr, alias))
 	}
@@ -89,6 +93,7 @@ func (t *MoldTransformer) RegisterStructLevel(fn mold.StructLevelFunc, types ...
 	if t.structLevelFuncs == nil {
 		t.structLevelFuncs = make(map[reflect.Type]mold.StructLevelFunc)
 	}
+
 	for _, typ := range types {
 		t.structLevelFuncs[reflect.TypeOf(typ)] = fn
 	}
@@ -159,6 +164,7 @@ func (t *MoldTransformer) Field(ctx context.Context, v any, tags string) error {
 	}
 
 	val = val.Elem()
+
 	ctag, err := t.getOrParseTagCache(tags)
 	if err != nil {
 		return err
@@ -185,6 +191,7 @@ func (t *MoldTransformer) getOrParseTagCache(tags string) (*cTag, error) {
 	}
 
 	t.tCache.Set(tags, ctag)
+
 	return ctag, nil
 }
 
@@ -207,12 +214,14 @@ func (t *MoldTransformer) setByFieldInternal(ctx context.Context, name string, o
 
 			case typeDive:
 				ct = ct.next
+
 				return t.handleDive(ctx, current, kind, ct)
 
 			default:
 				if current, kind, err = t.applyTransformation(ctx, name, original, current, ct, structValue, structCache); err != nil {
 					return err
 				}
+
 				ct = ct.next
 			}
 		}
@@ -232,13 +241,22 @@ func (t *MoldTransformer) handleDive(ctx context.Context, current reflect.Value,
 		if innerKind == reflect.Slice || innerKind == reflect.Map {
 			return nil
 		}
+
 		fallthrough
+
 	default:
 		return ErrInvalidDive
 	}
 }
 
-func (t *MoldTransformer) applyTransformation(ctx context.Context, name string, original, current reflect.Value, ct *cTag, structValue reflect.Value, structCache *cStruct) (reflect.Value, reflect.Kind, error) {
+func (t *MoldTransformer) applyTransformation(
+	ctx context.Context,
+	name string,
+	original, current reflect.Value,
+	ct *cTag,
+	structValue reflect.Value,
+	structCache *cStruct,
+) (reflect.Value, reflect.Kind, error) {
 	fl := MoldFieldLevel{
 		transformer: t,
 		name:        name,
@@ -260,6 +278,7 @@ func (t *MoldTransformer) applyTransformation(ctx context.Context, name string, 
 
 		original.Set(reflect.Indirect(newVal))
 		newCurrent, newKind := t.extractType(original)
+
 		return newCurrent, newKind, nil
 	}
 
@@ -268,6 +287,7 @@ func (t *MoldTransformer) applyTransformation(ctx context.Context, name string, 
 	}
 
 	newCurrent, newKind := t.extractType(current)
+
 	return newCurrent, newKind, nil
 }
 
@@ -293,6 +313,7 @@ func (t *MoldTransformer) traverseStruct(ctx context.Context, current, original 
 		}
 
 		original.Set(reflect.Indirect(newVal))
+
 		return nil
 	}
 
@@ -305,6 +326,7 @@ func (t *MoldTransformer) setByIterable(ctx context.Context, current reflect.Val
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -337,5 +359,6 @@ func (t *MoldTransformer) setByMap(ctx context.Context, current reflect.Value, c
 
 		current.SetMapIndex(key, newVal)
 	}
+
 	return nil
 }

@@ -303,7 +303,7 @@ func TestExportCustomFormatter(t *testing.T) {
 
 type prefixParser struct{}
 
-func (p *prefixParser) Parse(cellValue string, targetType reflect.Type) (any, error) {
+func (*prefixParser) Parse(cellValue string, _ reflect.Type) (any, error) {
 	if cellValue == "" {
 		return "", nil
 	}

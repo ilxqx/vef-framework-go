@@ -15,7 +15,7 @@ func NewSchedulerFactoryResolver(scheduler cron.Scheduler) api.FactoryParamResol
 	return &SchedulerFactoryResolver{scheduler: scheduler}
 }
 
-func (r *SchedulerFactoryResolver) Type() reflect.Type {
+func (*SchedulerFactoryResolver) Type() reflect.Type {
 	return reflect.TypeFor[cron.Scheduler]()
 }
 

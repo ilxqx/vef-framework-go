@@ -1,6 +1,10 @@
 package main
 
-import "github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd"
+import (
+	"os"
+
+	"github.com/ilxqx/vef-framework-go/cmd/vef-cli/cmd"
+)
 
 var (
 	version = "0.0.1"
@@ -9,5 +13,8 @@ var (
 
 func main() {
 	cmd.Init(version, date)
-	cmd.Execute()
+
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

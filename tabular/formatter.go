@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cast"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/null"
 )
@@ -19,7 +20,7 @@ type defaultFormatter struct {
 // Format implements the Formatter interface for common Go types.
 func (f *defaultFormatter) Format(value any) (string, error) {
 	if value == nil {
-		return "", nil
+		return constants.Empty, nil
 	}
 
 	// Handle null types first - extract underlying value or return empty for invalid
@@ -28,53 +29,72 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 		return v.ValueOrZero(), nil
 	case null.Int:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Int16:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Int32:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Float:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Bool:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Byte:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.DateTime:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Date:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Time:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
+
 	case null.Decimal:
 		if !v.Valid {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = v.ValueOrZero()
 	}
 
@@ -82,8 +102,9 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 	rv := reflect.ValueOf(value)
 	if rv.Kind() == reflect.Pointer {
 		if rv.IsNil() {
-			return "", nil
+			return constants.Empty, nil
 		}
+
 		value = rv.Elem().Interface()
 	}
 
@@ -112,6 +133,6 @@ func (f *defaultFormatter) Format(value any) (string, error) {
 }
 
 // NewDefaultFormatter creates a default formatter with optional format template.
-func NewDefaultFormatter(format string) *defaultFormatter {
+func NewDefaultFormatter(format string) Formatter {
 	return &defaultFormatter{format: format}
 }

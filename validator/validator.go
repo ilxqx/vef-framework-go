@@ -9,12 +9,12 @@ import (
 	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
-	enLocale "github.com/go-playground/locales/en"
-	zhLocale "github.com/go-playground/locales/zh"
+	enlocale "github.com/go-playground/locales/en"
+	zhlocale "github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	v "github.com/go-playground/validator/v10"
-	enTranslation "github.com/go-playground/validator/v10/translations/en"
-	zhTranslation "github.com/go-playground/validator/v10/translations/zh"
+	entranslation "github.com/go-playground/validator/v10/translations/en"
+	zhtranslation "github.com/go-playground/validator/v10/translations/zh"
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/i18n"
@@ -38,8 +38,8 @@ func init() {
 	preferredLanguage := lo.CoalesceOrEmpty(os.Getenv(constants.EnvI18NLanguage), constants.DefaultI18NLanguage)
 	localeTranslator := lo.TernaryF(
 		preferredLanguage == constants.DefaultI18NLanguage,
-		zhLocale.New,
-		enLocale.New,
+		zhlocale.New,
+		enlocale.New,
 	)
 	universalTranslator := ut.New(localeTranslator, localeTranslator)
 
@@ -55,10 +55,10 @@ func init() {
 	if err := lo.TernaryF(
 		preferredLanguage == constants.DefaultI18NLanguage,
 		func() error {
-			return zhTranslation.RegisterDefaultTranslations(validator, translator)
+			return zhtranslation.RegisterDefaultTranslations(validator, translator)
 		},
 		func() error {
-			return enTranslation.RegisterDefaultTranslations(validator, translator)
+			return entranslation.RegisterDefaultTranslations(validator, translator)
 		},
 	); err != nil {
 		panic(

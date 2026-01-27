@@ -6,7 +6,7 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // BaseAggregate defines the basic aggregate function interface with generic type support.
@@ -328,7 +328,7 @@ var stringAggStrategy = &dialectStrategy{
 
 var stdDevStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
 			state.funcName = "STDDEV" + constants.Underscore + mode
 
@@ -336,7 +336,7 @@ var stdDevStrategy = &dialectStrategy{
 		},
 	},
 	mysql: &dialectAggConfig{
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
 				state.funcName = "STDDEV" + constants.Underscore + state.statisticalMode.String()
 			} else {
@@ -350,7 +350,7 @@ var stdDevStrategy = &dialectStrategy{
 
 var varianceStrategy = &dialectStrategy{
 	postgres: &dialectAggConfig{
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			mode := lo.CoalesceOrEmpty(state.statisticalMode.String(), StatisticalPopulation.String())
 			state.funcName = "VAR" + constants.Underscore + mode
 
@@ -358,7 +358,7 @@ var varianceStrategy = &dialectStrategy{
 		},
 	},
 	mysql: &dialectAggConfig{
-		argsTransformer: func(eb ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
+		argsTransformer: func(_ ExprBuilder, state *aggregateQueryState) schema.QueryAppender {
 			if state.statisticalMode == StatisticalPopulation || state.statisticalMode == StatisticalSample {
 				state.funcName = "VAR" + constants.Underscore + state.statisticalMode.String()
 			} else {
@@ -469,8 +469,8 @@ func (a *baseAggregateExpr) appendOrderBy(columns ...string) {
 		a.orderExprs = append(a.orderExprs, orderExpr{
 			builders:   a.eb,
 			column:     column,
-			direction:  sort.OrderAsc,
-			nullsOrder: sort.NullsDefault,
+			direction:  sortx.OrderAsc,
+			nullsOrder: sortx.NullsDefault,
 		})
 	}
 }
@@ -480,8 +480,8 @@ func (a *baseAggregateExpr) appendOrderByDesc(columns ...string) {
 		a.orderExprs = append(a.orderExprs, orderExpr{
 			builders:   a.eb,
 			column:     column,
-			direction:  sort.OrderDesc,
-			nullsOrder: sort.NullsDefault,
+			direction:  sortx.OrderDesc,
+			nullsOrder: sortx.NullsDefault,
 		})
 	}
 }
@@ -490,8 +490,8 @@ func (a *baseAggregateExpr) appendOrderByExpr(expr any) {
 	a.orderExprs = append(a.orderExprs, orderExpr{
 		builders:   a.eb,
 		expr:       expr,
-		direction:  sort.OrderAsc,
-		nullsOrder: sort.NullsDefault,
+		direction:  sortx.OrderAsc,
+		nullsOrder: sortx.NullsDefault,
 	})
 }
 

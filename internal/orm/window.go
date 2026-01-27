@@ -6,7 +6,7 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // WindowPartitionable defines window functions that support partitioning.
@@ -330,8 +330,8 @@ func (w *baseWindowExpr) appendOrderBy(columns ...string) {
 		w.orderExprs = append(w.orderExprs, orderExpr{
 			builders:   w.eb,
 			column:     column,
-			direction:  sort.OrderAsc,
-			nullsOrder: sort.NullsDefault,
+			direction:  sortx.OrderAsc,
+			nullsOrder: sortx.NullsDefault,
 		})
 	}
 }
@@ -341,8 +341,8 @@ func (w *baseWindowExpr) appendOrderByDesc(columns ...string) {
 		w.orderExprs = append(w.orderExprs, orderExpr{
 			builders:   w.eb,
 			column:     column,
-			direction:  sort.OrderDesc,
-			nullsOrder: sort.NullsDefault,
+			direction:  sortx.OrderDesc,
+			nullsOrder: sortx.NullsDefault,
 		})
 	}
 }
@@ -351,8 +351,8 @@ func (w *baseWindowExpr) appendOrderByExpr(expr any) {
 	w.orderExprs = append(w.orderExprs, orderExpr{
 		builders:   w.eb,
 		expr:       expr,
-		direction:  sort.OrderAsc,
-		nullsOrder: sort.NullsDefault,
+		direction:  sortx.OrderAsc,
+		nullsOrder: sortx.NullsDefault,
 	})
 }
 
@@ -465,7 +465,7 @@ func (w *baseWindowExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, e
 	return b, nil
 }
 
-func (w *baseWindowExpr) appendFrameBound(b []byte, kind FrameBoundKind, n int) []byte {
+func (*baseWindowExpr) appendFrameBound(b []byte, kind FrameBoundKind, n int) []byte {
 	switch kind {
 	case FrameBoundUnboundedPreceding, FrameBoundUnboundedFollowing, FrameBoundCurrentRow:
 		return append(b, kind.String()...)
@@ -1012,31 +1012,31 @@ func (wv *windowVarianceExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []by
 	return wv.baseWindowExpr.AppendQuery(gen, b)
 }
 
-type windowJsonObjectAggExpr struct {
+type windowJSONObjectAggExpr struct {
 	*jsonObjectAggExpr[WindowJSONObjectAggBuilder]
 	*baseWindowExpr
 }
 
-func (wj *windowJsonObjectAggExpr) Over() WindowFrameablePartitionBuilder {
+func (wj *windowJSONObjectAggExpr) Over() WindowFrameablePartitionBuilder {
 	return wj.over()
 }
 
-func (wj *windowJsonObjectAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
+func (wj *windowJSONObjectAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wj.funcExpr = wj.jsonObjectAggExpr
 
 	return wj.baseWindowExpr.AppendQuery(gen, b)
 }
 
-type windowJsonArrayAggExpr struct {
+type windowJSONArrayAggExpr struct {
 	*jsonArrayAggExpr[WindowJSONArrayAggBuilder]
 	*baseWindowExpr
 }
 
-func (wj *windowJsonArrayAggExpr) Over() WindowFrameablePartitionBuilder {
+func (wj *windowJSONArrayAggExpr) Over() WindowFrameablePartitionBuilder {
 	return wj.over()
 }
 
-func (wj *windowJsonArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
+func (wj *windowJSONArrayAggExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err error) {
 	wj.funcExpr = wj.jsonArrayAggExpr
 
 	return wj.baseWindowExpr.AppendQuery(gen, b)
@@ -1348,8 +1348,8 @@ func newWindowVarianceExpr(qb QueryBuilder) *windowVarianceExpr {
 	return expr
 }
 
-func newWindowJSONObjectAggExpr(qb QueryBuilder) *windowJsonObjectAggExpr {
-	expr := &windowJsonObjectAggExpr{
+func newWindowJSONObjectAggExpr(qb QueryBuilder) *windowJSONObjectAggExpr {
+	expr := &windowJSONObjectAggExpr{
 		baseWindowExpr: &baseWindowExpr{
 			eb: qb.ExprBuilder(),
 		},
@@ -1360,8 +1360,8 @@ func newWindowJSONObjectAggExpr(qb QueryBuilder) *windowJsonObjectAggExpr {
 	return expr
 }
 
-func newWindowJSONArrayAggExpr(qb QueryBuilder) *windowJsonArrayAggExpr {
-	expr := &windowJsonArrayAggExpr{
+func newWindowJSONArrayAggExpr(qb QueryBuilder) *windowJSONArrayAggExpr {
+	expr := &windowJSONArrayAggExpr{
 		baseWindowExpr: &baseWindowExpr{
 			eb: qb.ExprBuilder(),
 		},

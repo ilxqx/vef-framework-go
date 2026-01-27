@@ -1,39 +1,39 @@
 package excel
 
-type exportOptions struct {
+type exportConfig struct {
 	sheetName string
 }
 
-type ExportOption func(*exportOptions)
+type ExportOption func(*exportConfig)
 
 func WithSheetName(name string) ExportOption {
-	return func(o *exportOptions) {
+	return func(o *exportConfig) {
 		o.sheetName = name
 	}
 }
 
-type importOptions struct {
+type importConfig struct {
 	sheetName  string
 	sheetIndex int
 	skipRows   int
 }
 
-type ImportOption func(*importOptions)
+type ImportOption func(*importConfig)
 
 func WithImportSheetName(name string) ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.sheetName = name
 	}
 }
 
 func WithImportSheetIndex(index int) ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.sheetIndex = index
 	}
 }
 
 func WithSkipRows(rows int) ImportOption {
-	return func(o *importOptions) {
+	return func(o *importConfig) {
 		o.skipRows = rows
 	}
 }

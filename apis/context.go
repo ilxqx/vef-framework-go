@@ -16,7 +16,15 @@ const (
 // QueryError retrieves the query error stored in the context during CTE building.
 // Returns nil if no error has been stored.
 func QueryError(ctx fiber.Ctx) error {
-	err, _ := ctx.Locals(keyQueryError).(error)
+	val := ctx.Locals(keyQueryError)
+	if val == nil {
+		return nil
+	}
+
+	err, ok := val.(error)
+	if !ok {
+		return nil
+	}
 
 	return err
 }

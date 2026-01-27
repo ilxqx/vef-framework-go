@@ -61,7 +61,7 @@ func (t Time) ValueOr(v datetime.Time) datetime.Time {
 // It will encode null if this time is null.
 func (t Time) MarshalJSON() ([]byte, error) {
 	if !t.Valid {
-		return constants.JsonNullBytes, nil
+		return constants.JSONNullBytes, nil
 	}
 
 	return t.V.MarshalJSON()
@@ -101,7 +101,7 @@ func (t Time) MarshalText() ([]byte, error) {
 func (t *Time) UnmarshalText(text []byte) error {
 	str := string(text)
 	// allowing "null" is for backwards compatibility with v3
-	if str == constants.Empty || str == constants.JsonNull {
+	if str == constants.Empty || str == constants.JSONNull {
 		t.Valid = false
 
 		return nil

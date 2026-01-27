@@ -18,7 +18,7 @@ A modern Go web development framework built on Uber FX dependency injection and 
 
 ## Features
 
-- **Single-Endpoint Api Architecture** - All Api requests through `POST /api` with unified request/response format
+- **RPC + REST Api Routing** - RPC requests via `POST /api`, REST requests via standard HTTP methods under `/api/<resource>`
 - **Generic CRUD Apis** - Pre-built type-safe CRUD operations with minimal boilerplate
 - **Type-Safe ORM** - Bun-based ORM with fluent query builder and automatic audit tracking
 - **Multi-Strategy Authentication** - Jwt, OpenApi signature, and password authentication out of the box
@@ -177,11 +177,14 @@ var Module = vef.Module(
 
 ## Architecture
 
-### Single-Endpoint Design
+### RPC and REST Routing
 
-VEF uses a single-endpoint approach where all Api requests go through `POST /api` (or `POST /openapi` for external integrations).
+VEF supports two routing strategies that can be used side by side:
 
-**Request Format:**
+- **RPC**: Single endpoint `POST /api` with a unified request/response format (example below)
+- **REST**: Standard HTTP verbs under `/api/<resource>` (default base path). External apps can still authenticate with OpenApi signatures on these endpoints.
+
+**RPC Request Format:**
 
 ```json
 {
@@ -198,7 +201,7 @@ VEF uses a single-endpoint approach where all Api requests go through `POST /api
 }
 ```
 
-**Response Format:**
+**RPC Response Format:**
 
 ```json
 {
@@ -213,9 +216,16 @@ VEF uses a single-endpoint approach where all Api requests go through `POST /api
 }
 ```
 
+**REST Example (same base path):**
+
+```
+GET /api/sys/user/page?page=1&size=20&keyword=john
+```
+
 Params vs Meta:
 - `params` carries business data (e.g., search filters, create/update fields). Define your structs embedding `api.P`.
 - `meta` carries request-level options (e.g., pagination for `find_page`, export/import format). Define your structs embedding `api.M` (e.g., `page.Pageable`).
+  - For REST, `params` can come from path/query/body and `meta` can be provided via `X-Meta-*` headers.
 
 ### Dependency Injection
 
@@ -367,17 +377,19 @@ When defining API resources, follow a consistent naming convention to avoid conf
 This three-level namespace pattern is used in production applications and provides several benefits:
 
 ```go
-// Good examples with application namespace
-api.NewResource("smp/sys/user")           // System user resource
-api.NewResource("smp/md/organization")    // Master data organization
-api.NewResource("erp/order/item")         // Clear domain separation
+// Good examples with application namespace (RPC)
+api.NewRPCResource("smp/sys/user")           // System user resource
+api.NewRPCResource("smp/md/organization")    // Master data organization
+api.NewRPCResource("erp/order/item")         // Clear domain separation
 
 // Acceptable for single-app projects
-api.NewResource("sys/user")               // No app namespace
+api.NewRPCResource("sys/user")               // No app namespace
 
 // Avoid - too generic, risks conflicts
-api.NewResource("user")                   // ❌ No namespace
+api.NewRPCResource("user")                   // ❌ No namespace
 ```
+
+**Note:** RPC resources use `snake_case` segments. For REST resources, use `api.NewRESTResource` and `kebab-case` segments (e.g., `sys/data-dict`).
 
 **Benefits of Application Namespacing:**
 
@@ -457,8 +469,8 @@ type UserUpdateParams struct {
 Then use the specific params in your resource:
 
 ```go
-CreateApi: apis.NewCreateApi[models.User, payloads.UserCreateParams](),
-UpdateApi: apis.NewUpdateApi[models.User, payloads.UserUpdateParams](),
+Create: apis.NewCreate[models.User, payloads.UserCreateParams](),
+Update: apis.NewUpdate[models.User, payloads.UserUpdateParams](),
 ```
 
 **Benefits:**
@@ -489,21 +501,21 @@ import (
 
 type UserResource struct {
     api.Resource
-    apis.FindAllApi[models.User, payloads.UserSearch]
-    apis.FindPageApi[models.User, payloads.UserSearch]
-    apis.CreateApi[models.User, payloads.UserParams]
-    apis.UpdateApi[models.User, payloads.UserParams]
-    apis.DeleteApi[models.User]
+    apis.FindAll[models.User, payloads.UserSearch]
+    apis.FindPage[models.User, payloads.UserSearch]
+    apis.Create[models.User, payloads.UserParams]
+    apis.Update[models.User, payloads.UserParams]
+    apis.Delete[models.User]
 }
 
 func NewUserResource() api.Resource {
     return &UserResource{
-        Resource: api.NewResource("smp/sys/user"),  // ✓ Use app/domain/entity to avoid conflicts
-        FindAllApi: apis.NewFindAllApi[models.User, payloads.UserSearch](),
-        FindPageApi: apis.NewFindPageApi[models.User, payloads.UserSearch](),
-        CreateApi: apis.NewCreateApi[models.User, payloads.UserParams](),
-        UpdateApi: apis.NewUpdateApi[models.User, payloads.UserParams](),
-        DeleteApi: apis.NewDeleteApi[models.User](),
+        Resource: api.NewRPCResource("smp/sys/user"),  // ✓ Use app/domain/entity to avoid conflicts
+        FindAll: apis.NewFindAll[models.User, payloads.UserSearch](),
+        FindPage: apis.NewFindPage[models.User, payloads.UserSearch](),
+        Create: apis.NewCreate[models.User, payloads.UserParams](),
+        Update: apis.NewUpdate[models.User, payloads.UserParams](),
+        Delete: apis.NewDelete[models.User](),
     }
 }
 ```
@@ -522,27 +534,29 @@ func main() {
 
 | Api | Description | Action |
 |-----|-------------|--------|
-| FindOneApi | Find single record | find_one |
-| FindAllApi | Find all records | find_all |
-| FindPageApi | Paginated query | find_page |
-| CreateApi | Create record | create |
-| UpdateApi | Update record | update |
-| DeleteApi | Delete record | delete |
-| CreateManyApi | Batch create | create_many |
-| UpdateManyApi | Batch update | update_many |
-| DeleteManyApi | Batch delete | delete_many |
-| FindTreeApi | Hierarchical query | find_tree |
-| FindOptionsApi | Options list (label/value) | find_options |
-| FindTreeOptionsApi | Tree options | find_tree_options |
-| ImportApi | Import from Excel/CSV | import |
-| ExportApi | Export to Excel/CSV | export |
+| FindOne | Find single record | find_one |
+| FindAll | Find all records | find_all |
+| FindPage | Paginated query | find_page |
+| Create | Create record | create |
+| Update | Update record | update |
+| Delete | Delete record | delete |
+| CreateMany | Batch create | create_many |
+| UpdateMany | Batch update | update_many |
+| DeleteMany | Batch delete | delete_many |
+| FindTree | Hierarchical query | find_tree |
+| FindOptions | Options list (label/value) | find_options |
+| FindTreeOptions | Tree options | find_tree_options |
+| Import | Import from Excel/CSV | import |
+| Export | Export to Excel/CSV | export |
+
+**Note:** The actions above are **RPC** action names. For **REST** resources, actions are expressed as HTTP methods and sub-paths (e.g., `GET /`, `GET /page`, `POST /`, `PUT /:id`).
 
 ### Api Builder Methods
 
 Configure Api behavior with fluent builder methods:
 
 ```go
-CreateApi: apis.NewCreateApi[User, UserParams]().
+Create: apis.NewCreate[User, UserParams]().
     Action("create_user").             // Custom action name
     Public().                          // No authentication required
     PermToken("sys.user.create").      // Permission token
@@ -551,11 +565,11 @@ CreateApi: apis.NewCreateApi[User, UserParams]().
     RateLimit(10, 1*time.Minute).      // 10 requests per minute
 ```
 
-**Note:** FindApi types (FindOneApi, FindAllApi, FindPageApi, FindTreeApi, FindOptionsApi, FindTreeOptionsApi, ExportApi) have additional configuration methods. See [FindApi Configuration Methods](#findapi-configuration-methods) for details.
+**Note:** FindApi types (FindOne, FindAll, FindPage, FindTree, FindOptions, FindTreeOptions, Export) have additional configuration methods. See [FindApi Configuration Methods](#findapi-configuration-methods) for details.
 
 ### FindApi Configuration Methods
 
-All FindApi types (FindOneApi, FindAllApi, FindPageApi, FindTreeApi, FindOptionsApi, FindTreeOptionsApi, ExportApi) support a unified query configuration system using fluent methods. These methods allow you to customize query behavior, add conditions, configure sorting, and process results.
+All FindApi types (FindOne, FindAll, FindPage, FindTree, FindOptions, FindTreeOptions, Export) support a unified query configuration system using fluent methods. These methods allow you to customize query behavior, add conditions, configure sorting, and process results.
 
 #### Common Configuration Methods
 
@@ -583,7 +597,7 @@ Common use cases:
 - **Aggregation**: Compute statistics or summaries
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
         // Data masking
         for i := range users {
@@ -594,7 +608,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
     }),
 
 // Example: Adding computed fields in paged results (processor receives items slice)
-FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
+FindPage: apis.NewFindPage[Order, OrderSearch]().
     WithProcessor(func(items []Order, search OrderSearch, ctx fiber.Ctx) any {
         for i := range items {
             // Calculate total amount
@@ -604,7 +618,7 @@ FindPageApi: apis.NewFindPageApi[Order, OrderSearch]().
     }),
 
 // Example: Nested structure transformation
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithProcessor(func(users []User, search UserSearch, ctx fiber.Ctx) any {
         // Group users by department
         type DepartmentUsers struct {
@@ -634,7 +648,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithSelect / WithSelectAs Example:**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithSelect("username").
     WithSelectAs("email_address", "email"),
 ```
@@ -642,7 +656,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithDefaultSort Example:**
 
 ```go
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithDefaultSort(&sort.OrderSpec{
         Column:    "created_at",
         Direction: sort.OrderDesc,
@@ -651,14 +665,14 @@ FindPageApi: apis.NewFindPageApi[User, UserSearch]().
 // Production pattern: Use schema-generated column names for type safety
 import "my-app/internal/sys/schemas"
 
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithDefaultSort(&sort.OrderSpec{
         Column:    schemas.User.CreatedAt(true), // Type-safe column with table prefix
         Direction: sort.OrderDesc,
     }),
 
 // For tree structures, use sort_order field
-FindTreeApi: apis.NewFindTreeApi[Menu, MenuSearch](buildMenuTree).
+FindTree: apis.NewFindTree[Menu, MenuSearch](buildMenuTree).
     WithDefaultSort(&sort.OrderSpec{
         Column:    schemas.Menu.SortOrder(true),
         Direction: sort.OrderAsc,
@@ -668,14 +682,14 @@ FindTreeApi: apis.NewFindTreeApi[Menu, MenuSearch](buildMenuTree).
 Pass empty arguments to disable default sorting:
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithDefaultSort(), // Disable default sorting
 ```
 
 **WithCondition Example:**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_deleted", false)
         cb.Equals("is_active", true)
@@ -685,7 +699,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithRelation Example:**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithRelation(&orm.RelationSpec{
         // Join the Profile model; foreign/referenced keys are auto-resolved
         Model: (*Profile)(nil),
@@ -701,23 +715,23 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **WithAuditUserNames Example:**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithAuditUserNames(&User{}), // Uses "name" column by default
 
 // Or specify custom column name
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithAuditUserNames(&User{}, "username"),
 
 // Production pattern: Use package-level model instance
 // In models package: var UserModel = &User{}
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithAuditUserNames(models.UserModel), // Recommended for consistency
 ```
 
 **WithQueryApplier Example:**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithQueryApplier(func(query orm.SelectQuery, search UserSearch, ctx fiber.Ctx) error {
         // Custom query logic
         if search.IncludeInactive {
@@ -735,11 +749,11 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **DisableDataPerm Example:**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     DisableDataPerm(), // Must be called before API registration
 ```
 
-**Important:** `DisableDataPerm()` must be called before the API is registered (before the `Setup` method is executed). It should be chained immediately after `NewFindXxxApi()`. By default, data permission filtering is enabled and automatically applied during `Setup`.
+**Important:** `DisableDataPerm()` must be called before the API is registered (before the `Setup` method is executed). It should be chained immediately after `NewFindXxx()`. By default, data permission filtering is enabled and automatically applied during `Setup`.
 
 #### QueryPart System
 
@@ -760,7 +774,7 @@ The `parts` parameter in configuration methods specifies which part(s) of the qu
 **Normal Query Example:**
 
 ```go
-FindAllApi: apis.NewFindAllApi[User, UserSearch]().
+FindAll: apis.NewFindAll[User, UserSearch]().
     WithSelect("username").              // Applies to QueryRoot (main query)
     WithCondition(func(cb orm.ConditionBuilder) {
         cb.Equals("is_active", true)     // Applies to QueryRoot (main query)
@@ -770,7 +784,7 @@ FindAllApi: apis.NewFindAllApi[User, UserSearch]().
 **Tree Query Example:**
 
 ```go
-FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
+FindTree: apis.NewFindTree[Category, CategorySearch](buildTree).
     // Select columns for both base and recursive queries
     WithSelect("sort", apis.QueryBase, apis.QueryRecursive).
     
@@ -787,7 +801,7 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](buildTree).
 
 #### Tree Query Configuration
 
-`FindTreeApi` and `FindTreeOptionsApi` use recursive CTEs (Common Table Expressions) to query hierarchical data. Understanding how QueryPart applies to different parts of the recursive query is essential for proper configuration.
+`FindTree` and `FindTreeOptions` use recursive CTEs (Common Table Expressions) to query hierarchical data. Understanding how QueryPart applies to different parts of the recursive query is essential for proper configuration.
 
 **Recursive CTE Structure:**
 
@@ -816,7 +830,7 @@ SELECT * FROM tree ORDER BY sort
 **Complete Tree Query Example:**
 
 ```go
-FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
+FindTree: apis.NewFindTree[Category, CategorySearch](
     func(categories []Category) []Category {
         // Build tree structure from flat list
         return buildCategoryTree(categories)
@@ -851,12 +865,12 @@ FindTreeApi: apis.NewFindTreeApi[Category, CategorySearch](
     }),
 ```
 
-**FindTreeOptionsApi Configuration:**
+**FindTreeOptions Configuration:**
 
-`FindTreeOptionsApi` follows the same configuration pattern as `FindTreeApi`:
+`FindTreeOptions` follows the same configuration pattern as `FindTree`:
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
+FindTreeOptions: apis.NewFindTreeOptions[Category, CategorySearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -870,17 +884,17 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[Category, CategorySearch]().
 
 #### API-Specific Configuration Methods
 
-**FindPageApi:**
+**FindPage:**
 
 ```go
-FindPageApi: apis.NewFindPageApi[User, UserSearch]().
+FindPage: apis.NewFindPage[User, UserSearch]().
     WithDefaultPageSize(20), // Set default page size (used when request doesn't specify or is invalid)
 ```
 
-**FindOptionsApi:**
+**FindOptions:**
 
 ```go
-FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
+FindOptions: apis.NewFindOptions[User, UserSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn:       "name",        // Column for option label (default: "name")
         ValueColumn:       "id",          // Column for option value (default: "id")
@@ -888,7 +902,7 @@ FindOptionsApi: apis.NewFindOptionsApi[User, UserSearch]().
     }),
 
 // Advanced: Include additional metadata in options
-FindOptionsApi: apis.NewFindOptionsApi[Menu, MenuSearch]().
+FindOptions: apis.NewFindOptions[Menu, MenuSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn:       "name",
         ValueColumn:       "id",
@@ -901,14 +915,14 @@ FindOptionsApi: apis.NewFindOptionsApi[Menu, MenuSearch]().
     }),
 ```
 
-**FindTreeApi:**
+**FindTree:**
 
-For hierarchical data structures, use `FindTreeApi` with the `treebuilder` package to convert flat database results into nested tree structures:
+For hierarchical data structures, use `FindTree` with the `treebuilder` package to convert flat database results into nested tree structures:
 
 ```go
 import "github.com/ilxqx/vef-framework-go/treebuilder"
 
-FindTreeApi: apis.NewFindTreeApi[models.Organization, payloads.OrganizationSearch](
+FindTree: apis.NewFindTree[models.Organization, payloads.OrganizationSearch](
     buildOrganizationTree,
 ).
     WithIDColumn("id").              // ID column name (default: "id")
@@ -949,12 +963,12 @@ type Organization struct {
 
 The `treebuilder.Build` function handles the conversion from flat list to hierarchical structure, properly nesting children under their parents.
 
-**FindTreeOptionsApi:**
+**FindTreeOptions:**
 
 Combines both options and tree configuration to return hierarchical option lists:
 
 ```go
-FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.OrganizationSearch]().
+FindTreeOptions: apis.NewFindTreeOptions[models.Organization, payloads.OrganizationSearch]().
     WithDefaultColumnMapping(&apis.DataOptionColumnMapping{
         LabelColumn: "name",
         ValueColumn: "id",
@@ -969,10 +983,10 @@ FindTreeOptionsApi: apis.NewFindTreeOptionsApi[models.Organization, payloads.Org
 
 The tree options API automatically uses the internal tree builder to convert flat results into nested option structures, perfect for cascading selectors or hierarchical menus.
 
-**ExportApi:**
+**Export:**
 
 ```go
-ExportApi: apis.NewExportApi[User, UserSearch]().
+Export: apis.NewExport[User, UserSearch]().
     WithDefaultFormat("excel").                   // Default export format: "excel" or "csv"
     WithExcelOptions(&excel.ExportOptions{        // Excel-specific options
         SheetName: "Users",
@@ -998,7 +1012,7 @@ ExportApi: apis.NewExportApi[User, UserSearch]().
 Add custom business logic before/after CRUD operations:
 
 ```go
-CreateApi: apis.NewCreateApi[User, UserParams]().
+Create: apis.NewCreate[User, UserParams]().
     WithPreCreate(func(model *User, params *UserParams, ctx fiber.Ctx, db orm.DB) error {
         // Hash password before creating user
         hashed, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
@@ -1037,7 +1051,7 @@ Available hooks:
 
 ```go
 // System user protection - Prevent deletion of critical system users
-DeleteApi: apis.NewDeleteApi[User]().
+Delete: apis.NewDelete[User]().
     WithPreDelete(func(model *User, ctx fiber.Ctx, db orm.DB) error {
         // Protect system-internal users from deletion
         switch model.Username {
@@ -1048,7 +1062,7 @@ DeleteApi: apis.NewDeleteApi[User]().
     }),
 
 // Conditional password hashing - Only hash if password is being changed
-UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
+Update: apis.NewUpdate[User, UserUpdateParams]().
     WithPreUpdate(func(oldModel *User, newModel *User, params *UserUpdateParams, ctx fiber.Ctx, db orm.DB) error {
         // Only hash password if it's being updated
         if params.Password.Valid && params.Password.String != "" {
@@ -1065,7 +1079,7 @@ UpdateApi: apis.NewUpdateApi[User, UserUpdateParams]().
     }),
 
 // Business validation - Validate business rules before operation
-CreateApi: apis.NewCreateApi[Order, OrderParams]().
+Create: apis.NewCreate[Order, OrderParams]().
     WithPreCreate(func(model *Order, params *OrderParams, ctx fiber.Ctx, db orm.DB) error {
         // Validate order total matches item totals
         if model.TotalAmount <= 0 {
@@ -1085,7 +1099,7 @@ CreateApi: apis.NewCreateApi[Order, OrderParams]().
 
 #### Mixing Generated and Custom APIs
 
-You can combine pre-built CRUD APIs with custom actions using `api.WithApis()`. This allows you to extend resources with domain-specific operations while maintaining the framework's conventions.
+You can combine pre-built CRUD APIs with custom actions using `api.WithOperations()`. This allows you to extend resources with domain-specific operations while maintaining the framework's conventions. For **RPC** resources, the handler is resolved by mapping `action` (snake_case) to a PascalCase method on the resource (e.g., `find_role_permissions` → `FindRolePermissions`). For **REST** resources, `OperationSpec.Handler` is required.
 
 ```go
 package resources
@@ -1097,30 +1111,30 @@ import (
 
 type RoleResource struct {
     api.Resource
-    apis.FindPageApi[models.Role, payloads.RoleSearch]
-    apis.CreateApi[models.Role, payloads.RoleParams]
-    apis.UpdateApi[models.Role, payloads.RoleParams]
-    apis.DeleteApi[models.Role]
+    apis.FindPage[models.Role, payloads.RoleSearch]
+    apis.Create[models.Role, payloads.RoleParams]
+    apis.Update[models.Role, payloads.RoleParams]
+    apis.Delete[models.Role]
 }
 
 func NewRoleResource() api.Resource {
     return &RoleResource{
-        Resource: api.NewResource(
+        Resource: api.NewRPCResource(
             "app/sys/role",
-            api.WithApis(
-                api.Spec{
+            api.WithOperations(
+                api.OperationSpec{
                     Action: "find_role_permissions",
                 },
-                api.Spec{
+                api.OperationSpec{
                     Action:      "save_role_permissions",
-                    EnableAudit: true,  // Enable audit logging for this action
+                    EnableAudit: true, // Enable audit logging for this action
                 },
             ),
         ),
-        FindPageApi: apis.NewFindPageApi[models.Role, payloads.RoleSearch](),
-        CreateApi:   apis.NewCreateApi[models.Role, payloads.RoleParams](),
-        UpdateApi:   apis.NewUpdateApi[models.Role, payloads.RoleParams](),
-        DeleteApi:   apis.NewDeleteApi[models.Role](),
+        FindPage: apis.NewFindPage[models.Role, payloads.RoleSearch](),
+        Create:   apis.NewCreate[models.Role, payloads.RoleParams](),
+        Update:   apis.NewUpdate[models.Role, payloads.RoleParams](),
+        Delete:   apis.NewDelete[models.Role](),
     }
 }
 
@@ -1156,6 +1170,44 @@ func (r *RoleResource) SaveRolePermissions(
 - **API Spec Configuration**: Each custom action can have its own configuration (permissions, audit, rate limiting)
 - **Injection Rules**: Custom handler methods follow the same parameter injection rules as generated handlers
 - **Mixed APIs**: You can freely mix generated CRUD APIs with custom actions in the same resource
+
+#### REST Resource Example (Explicit Handlers)
+
+REST operations require an explicit handler in `OperationSpec.Handler`. You can provide a method name or a function.
+
+```go
+type RoleRestResource struct {
+    api.Resource
+}
+
+func NewRoleRestResource() api.Resource {
+    return &RoleRestResource{
+        Resource: api.NewRESTResource(
+            "sys/role",
+            api.WithOperations(
+                api.OperationSpec{
+                    Action:  "get /:id",
+                    Handler: "GetRole",
+                },
+                api.OperationSpec{
+                    Action:  "post /",
+                    Handler: "CreateRole",
+                },
+            ),
+        ),
+    }
+}
+
+func (r *RoleRestResource) GetRole(ctx fiber.Ctx, db orm.DB, params payloads.RoleGetParams) error {
+    // ...
+    return result.Ok(role).Response(ctx)
+}
+
+func (r *RoleRestResource) CreateRole(ctx fiber.Ctx, db orm.DB, params payloads.RoleParams) error {
+    // ...
+    return result.Ok(role).Response(ctx)
+}
+```
 
 #### Simple Custom Handlers
 
@@ -1211,7 +1263,7 @@ type UserResource struct {
 
 func NewUserResource(userService *UserService) api.Resource {
     return &UserResource{
-        Resource: api.NewResource("sys/user"),
+        Resource: api.NewRPCResource("sys/user"),
         userService: userService,
     }
 }
@@ -1442,7 +1494,7 @@ func main() {
 Set permission tokens on Apis:
 
 ```go
-CreateApi: apis.NewCreateApi[User, UserParams]().
+Create: apis.NewCreate[User, UserParams]().
     PermToken("sys.user.create"),
 ```
 

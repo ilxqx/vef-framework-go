@@ -16,7 +16,7 @@ func NewResourceProviderCollector() api.OperationsCollector {
 }
 
 // Collect checks if the resource implements api.OperationsProvider and collects its specs.
-func (c *ResourceProviderCollector) Collect(resource api.Resource) []api.OperationSpec {
+func (*ResourceProviderCollector) Collect(resource api.Resource) []api.OperationSpec {
 	specs := resource.Operations()
 	if len(specs) > 0 {
 		logger.Infof(

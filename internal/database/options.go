@@ -14,14 +14,14 @@ type databaseOptions struct {
 	EnableQueryHook bool
 	Logger          log.Logger
 	BunOptions      []bun.DBOption
-	SqlGuardConfig  *sqlguard.Config
+	SQLGuardConfig  *sqlguard.Config
 }
 
 type Option func(*databaseOptions)
 
 func newDefaultOptions(cfg *config.DatasourceConfig) *databaseOptions {
 	var guardConfig *sqlguard.Config
-	if cfg.EnableSqlGuard {
+	if cfg.EnableSQLGuard {
 		guardConfig = sqlguard.DefaultConfig()
 	}
 
@@ -31,7 +31,7 @@ func newDefaultOptions(cfg *config.DatasourceConfig) *databaseOptions {
 		EnableQueryHook: true,
 		Logger:          logger,
 		BunOptions:      []bun.DBOption{bun.WithDiscardUnknownColumns()},
-		SqlGuardConfig:  guardConfig,
+		SQLGuardConfig:  guardConfig,
 	}
 }
 
@@ -60,17 +60,17 @@ func WithBunOptions(bunOpts ...bun.DBOption) Option {
 	}
 }
 
-// WithSqlGuardConfig sets a custom sql guard configuration.
-func WithSqlGuardConfig(cfg *sqlguard.Config) Option {
+// WithSQLGuardConfig sets a custom sql guard configuration.
+func WithSQLGuardConfig(cfg *sqlguard.Config) Option {
 	return func(opts *databaseOptions) {
-		opts.SqlGuardConfig = cfg
+		opts.SQLGuardConfig = cfg
 	}
 }
 
-// DisableSqlGuard disables the sql guard.
-func DisableSqlGuard() Option {
+// DisableSQLGuard disables the sql guard.
+func DisableSQLGuard() Option {
 	return func(opts *databaseOptions) {
-		opts.SqlGuardConfig = nil
+		opts.SQLGuardConfig = nil
 	}
 }
 

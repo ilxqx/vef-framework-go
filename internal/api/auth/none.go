@@ -16,11 +16,11 @@ func NewNone() api.AuthStrategy {
 }
 
 // Name returns the strategy name.
-func (s *NoneStrategy) Name() string {
+func (*NoneStrategy) Name() string {
 	return api.AuthStrategyNone
 }
 
 // Authenticate returns anonymous principal.
-func (s *NoneStrategy) Authenticate(fiber.Ctx, map[string]any) (*security.Principal, error) {
+func (*NoneStrategy) Authenticate(fiber.Ctx, map[string]any) (*security.Principal, error) {
 	return security.PrincipalAnonymous, nil
 }

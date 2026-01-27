@@ -34,7 +34,7 @@ func NewProcessedUserFindPageResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_page_processed"),
 		FindPage: apis.NewFindPage[TestUser, TestUserSearch]().
 			Public().
-			WithProcessor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
+			WithProcessor(func(users []TestUser, _ TestUserSearch, _ fiber.Ctx) any {
 				// Processor must return a slice - convert each user to a processed version
 				processed := make([]ProcessedUser, len(users))
 				for i, user := range users {

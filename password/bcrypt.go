@@ -53,7 +53,7 @@ func (e *bcryptEncoder) Encode(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-func (e *bcryptEncoder) Matches(password, encodedPassword string) bool {
+func (*bcryptEncoder) Matches(password, encodedPassword string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(encodedPassword), []byte(password))
 
 	return err == nil

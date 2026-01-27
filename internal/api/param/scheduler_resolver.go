@@ -17,10 +17,10 @@ func NewSchedulerResolver(scheduler cron.Scheduler) api.HandlerParamResolver {
 	return &SchedulerResolver{scheduler: scheduler}
 }
 
-func (r *SchedulerResolver) Type() reflect.Type {
+func (*SchedulerResolver) Type() reflect.Type {
 	return reflect.TypeFor[cron.Scheduler]()
 }
 
-func (r *SchedulerResolver) Resolve(fiber.Ctx) (reflect.Value, error) {
+func (r *SchedulerResolver) Resolve(_ fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(r.scheduler), nil
 }

@@ -71,7 +71,7 @@ func NewTestUserExportWithFilenameResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_export_filename"),
 		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
-			WithFilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
+			WithFilenameBuilder(func(_ ExportUserSearch, _ fiber.Ctx) string {
 				return "custom_users.xlsx"
 			}),
 	}
@@ -87,7 +87,7 @@ func NewTestUserExportWithPreProcessorResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_export_preproc"),
 		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
-			WithPreExport(func(models []ExportUser, search ExportUserSearch, ctx fiber.Ctx, db orm.DB) error {
+			WithPreExport(func(models []ExportUser, _ ExportUserSearch, ctx fiber.Ctx, _ orm.DB) error {
 				// Add custom header with count
 				ctx.Set("X-Export-Count", string(rune('0'+len(models))))
 
@@ -152,7 +152,7 @@ func NewTestUserExportCSVWithFilenameResource() api.Resource {
 		Export: apis.NewExport[ExportUser, ExportUserSearch]().
 			Public().
 			WithDefaultFormat(apis.FormatCsv).
-			WithFilenameBuilder(func(search ExportUserSearch, ctx fiber.Ctx) string {
+			WithFilenameBuilder(func(_ ExportUserSearch, _ fiber.Ctx) string {
 				return "custom_users.csv"
 			}),
 	}
@@ -330,7 +330,8 @@ func (suite *ExportTestSuite) TestExportWithFilterApplier() {
 	users, _, err := importer.Import(bytes.NewReader(body))
 	suite.NoError(err, "Should parse exported Excel file successfully")
 
-	exportedUsers := users.([]ExportUser)
+	exportedUsers, ok := users.([]ExportUser)
+	suite.True(ok, "Type assertion to []ExportUser should succeed")
 	suite.NotEmpty(exportedUsers, "Should export at least one user")
 
 	// Verify all exported users have status "active"
@@ -394,7 +395,8 @@ func (suite *ExportTestSuite) TestExportWithOptions() {
 	users, _, err := importer.Import(bytes.NewReader(body))
 	suite.NoError(err, "Should parse Excel file with custom sheet name successfully")
 
-	exportedUsers := users.([]ExportUser)
+	exportedUsers, ok := users.([]ExportUser)
+	suite.True(ok, "Type assertion to []ExportUser should succeed")
 	suite.NotEmpty(exportedUsers, "Should export at least one user")
 	suite.T().Logf("Successfully exported %d users with custom options", len(exportedUsers))
 }
@@ -600,7 +602,8 @@ func (suite *ExportTestSuite) TestExportCSVWithOptions() {
 	users, _, err := importer.Import(bytes.NewReader(body))
 	suite.NoError(err, "Should parse CSV with semicolon delimiter successfully")
 
-	exportedUsers := users.([]ExportUser)
+	exportedUsers, ok := users.([]ExportUser)
+	suite.True(ok, "Type assertion to []ExportUser should succeed")
 	suite.NotEmpty(exportedUsers, "Should export at least one user")
 	suite.T().Logf("Successfully parsed CSV with custom delimiter, got %d users", len(exportedUsers))
 }

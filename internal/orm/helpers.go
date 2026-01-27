@@ -10,7 +10,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/dbhelpers"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // getTableSchema extracts the table schema from a struct pointer model.
@@ -117,14 +117,14 @@ func applyRelationSpec(spec *RelationSpec, query SelectQuery) {
 	case JoinFull:
 		query.FullJoin(spec.Model, joinCondition, alias)
 	case JoinCross:
-		logger.Panicf("applyRelationSpec: CROSS JOIN is not supported in RelationSpec, use query.CrossJoin() directly")
+		logger.Panic("applyRelationSpec: CROSS JOIN is not supported in RelationSpec, use query.CrossJoin() directly")
 	default:
 		logger.Panicf("applyRelationSpec: unsupported join type %v", joinType)
 	}
 }
 
 // ApplySort applies the sort orders to the query.
-func ApplySort(query SelectQuery, orders []sort.OrderSpec) {
+func ApplySort(query SelectQuery, orders []sortx.OrderSpec) {
 	for _, order := range orders {
 		if !order.IsValid() {
 			continue
@@ -135,16 +135,16 @@ func ApplySort(query SelectQuery, orders []sort.OrderSpec) {
 				ob.Column(order.Column)
 
 				switch order.Direction {
-				case sort.OrderAsc:
+				case sortx.OrderAsc:
 					ob.Asc()
-				case sort.OrderDesc:
+				case sortx.OrderDesc:
 					ob.Desc()
 				}
 
 				switch order.NullsOrder {
-				case sort.NullsFirst:
+				case sortx.NullsFirst:
 					ob.NullsFirst()
-				case sort.NullsLast:
+				case sortx.NullsLast:
 					ob.NullsLast()
 				}
 			})

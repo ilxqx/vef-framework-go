@@ -35,7 +35,7 @@ func init() {
 	rangeEndFieldIndex = field.Index
 }
 
-func getRangeValue(fieldValue any, conditionParams map[string]string) (any, any, bool) {
+func getRangeValue(fieldValue any, conditionParams map[string]string) (start, end any, _ bool) {
 	value := reflect.Indirect(reflect.ValueOf(fieldValue))
 	valueType := value.Type()
 	kind := valueType.Kind()
@@ -51,7 +51,7 @@ func getRangeValue(fieldValue any, conditionParams map[string]string) (any, any,
 	return nil, nil, false
 }
 
-func parseStringRange(value string, conditionParams map[string]string) (any, any, bool) {
+func parseStringRange(value string, conditionParams map[string]string) (start, end any, _ bool) {
 	if value == constants.Empty {
 		return nil, nil, false
 	}
@@ -80,7 +80,7 @@ func parseStringRange(value string, conditionParams map[string]string) (any, any
 	return nil, nil, false
 }
 
-func parseSliceRange(value reflect.Value) (any, any, bool) {
+func parseSliceRange(value reflect.Value) (start, end any, _ bool) {
 	if value.Len() == 0 {
 		return nil, nil, false
 	}
@@ -94,16 +94,15 @@ func parseSliceRange(value reflect.Value) (any, any, bool) {
 	return value.Index(0).Interface(), value.Index(1).Interface(), true
 }
 
-func parseIntRange(values []string) (any, any, bool) {
-	start, err := cast.ToIntE(values[0])
-	if err != nil {
+func parseIntRange(values []string) (start, end any, _ bool) {
+	var err error
+	if start, err = cast.ToIntE(values[0]); err != nil {
 		logger.Warnf("Invalid range value, expected int, got %v", values[0])
 
 		return nil, nil, false
 	}
 
-	end, err := cast.ToIntE(values[1])
-	if err != nil {
+	if end, err = cast.ToIntE(values[1]); err != nil {
 		logger.Warnf("Invalid range value, expected int, got %v", values[1])
 
 		return nil, nil, false
@@ -112,16 +111,15 @@ func parseIntRange(values []string) (any, any, bool) {
 	return start, end, true
 }
 
-func parseDecimalRange(values []string) (any, any, bool) {
-	start, err := decimal.NewFromString(values[0])
-	if err != nil {
+func parseDecimalRange(values []string) (start, end any, _ bool) {
+	var err error
+	if start, err = decimal.NewFromString(values[0]); err != nil {
 		logger.Warnf("Invalid range value, expected decimal, got %v", values[0])
 
 		return nil, nil, false
 	}
 
-	end, err := decimal.NewFromString(values[1])
-	if err != nil {
+	if end, err = decimal.NewFromString(values[1]); err != nil {
 		logger.Warnf("Invalid range value, expected decimal, got %v", values[1])
 
 		return nil, nil, false
@@ -130,28 +128,27 @@ func parseDecimalRange(values []string) (any, any, bool) {
 	return start, end, true
 }
 
-func parseDateRange(values []string) (any, any, bool) {
+func parseDateRange(values []string) (start, end any, _ bool) {
 	return parseTimeRangeWithLayout(values, time.DateOnly, "date")
 }
 
-func parseTimeRange(values []string) (any, any, bool) {
+func parseTimeRange(values []string) (start, end any, _ bool) {
 	return parseTimeRangeWithLayout(values, time.TimeOnly, "time")
 }
 
-func parseDateTimeRange(values []string) (any, any, bool) {
+func parseDateTimeRange(values []string) (start, end any, _ bool) {
 	return parseTimeRangeWithLayout(values, time.DateTime, "datetime")
 }
 
-func parseTimeRangeWithLayout(values []string, layout, typeName string) (any, any, bool) {
-	start, err := time.ParseInLocation(layout, values[0], time.Local)
-	if err != nil {
+func parseTimeRangeWithLayout(values []string, layout, typeName string) (start, end any, _ bool) {
+	var err error
+	if start, err = time.ParseInLocation(layout, values[0], time.Local); err != nil {
 		logger.Warnf("Invalid range value, expected %s, got %v", typeName, values[0])
 
 		return nil, nil, false
 	}
 
-	end, err := time.ParseInLocation(layout, values[1], time.Local)
-	if err != nil {
+	if end, err = time.ParseInLocation(layout, values[1], time.Local); err != nil {
 		logger.Warnf("Invalid range value, expected %s, got %v", typeName, values[1])
 
 		return nil, nil, false

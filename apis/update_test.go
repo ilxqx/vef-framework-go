@@ -32,7 +32,7 @@ func NewTestUserUpdateWithPreHookResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_update_prehook"),
 		Update: apis.NewUpdate[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPreUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, query orm.UpdateQuery, ctx fiber.Ctx, tx orm.DB) error {
+			WithPreUpdate(func(_, model *TestUser, params *TestUserUpdateParams, _ orm.UpdateQuery, _ fiber.Ctx, _ orm.DB) error {
 				if params.Description != "" {
 					model.Description = params.Description + " [Updated]"
 				}
@@ -52,7 +52,7 @@ func NewTestUserUpdateWithPostHookResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_update_posthook"),
 		Update: apis.NewUpdate[TestUser, TestUserUpdateParams]().
 			Public().
-			WithPostUpdate(func(oldModel, model *TestUser, params *TestUserUpdateParams, ctx fiber.Ctx, tx orm.DB) error {
+			WithPostUpdate(func(_, model *TestUser, _ *TestUserUpdateParams, ctx fiber.Ctx, _ orm.DB) error {
 				ctx.Set("X-Updated-User-Name", model.Name)
 
 				return nil

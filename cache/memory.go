@@ -14,7 +14,7 @@ import (
 
 type memoryConfig struct {
 	maxSize        int64
-	defaultTtl     time.Duration
+	defaultTTL     time.Duration
 	evictionPolicy EvictionPolicy
 	gcInterval     time.Duration
 }
@@ -22,7 +22,7 @@ type memoryConfig struct {
 func defaultMemoryConfig() *memoryConfig {
 	return &memoryConfig{
 		maxSize:        0,
-		defaultTtl:     0,
+		defaultTTL:     0,
 		evictionPolicy: EvictionPolicyLRU,
 		gcInterval:     5 * time.Minute,
 	}
@@ -47,7 +47,7 @@ func (e *cacheEntry[T]) isExpired() bool {
 type memoryCache[T any] struct {
 	data            *xsync.Map[string, *cacheEntry[T]]
 	maxSize         int64
-	defaultTtl      time.Duration
+	defaultTTL      time.Duration
 	evictionPolicy  EvictionPolicy
 	evictionHandler EvictionHandler
 	stopGC          chan struct{}
@@ -88,7 +88,7 @@ func newMemoryCache[T any](cfg *memoryConfig) Cache[T] {
 	m := &memoryCache[T]{
 		data:            xsync.NewMap[string, *cacheEntry[T]](),
 		maxSize:         cfg.maxSize,
-		defaultTtl:      cfg.defaultTtl,
+		defaultTTL:      cfg.defaultTTL,
 		evictionPolicy:  cfg.evictionPolicy,
 		evictionHandler: factory.CreateHandler(cfg.evictionPolicy),
 		stopGC:          make(chan struct{}),
@@ -177,8 +177,8 @@ func (m *memoryCache[T]) Set(_ context.Context, key string, value T, ttl ...time
 	var expireTime int64
 	if len(ttl) > 0 && ttl[0] > 0 {
 		expireTime = time.Now().Add(ttl[0]).UnixNano()
-	} else if m.defaultTtl > 0 {
-		expireTime = time.Now().Add(m.defaultTtl).UnixNano()
+	} else if m.defaultTTL > 0 {
+		expireTime = time.Now().Add(m.defaultTTL).UnixNano()
 	}
 
 	entry := &cacheEntry[T]{

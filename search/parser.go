@@ -33,7 +33,7 @@ func parseStruct(t reflect.Type) []Condition {
 	conditions := make([]Condition, 0)
 
 	visitor := reflectx.TypeVisitor{
-		VisitFieldType: func(field reflect.StructField, depth int) reflectx.VisitAction {
+		VisitFieldType: func(field reflect.StructField, _ int) reflectx.VisitAction {
 			if field.Anonymous && field.Type == apiInType {
 				return reflectx.SkipChildren
 			}

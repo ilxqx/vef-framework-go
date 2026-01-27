@@ -7,9 +7,9 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/gofiber/fiber/v3"
+	"github.com/ilxqx/go-streams"
 	"github.com/samber/lo"
 
-	"github.com/ilxqx/go-streams"
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/config"
 )

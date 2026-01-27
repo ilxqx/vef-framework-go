@@ -25,6 +25,7 @@ func (l *zapLogger) WithCallerSkip(skip int) log.Logger {
 
 func (l *zapLogger) Enabled(level log.Level) bool {
 	zapLevel := toZapLevel(level)
+
 	return l.logger.Level().Enabled(zapLevel)
 }
 
@@ -32,14 +33,14 @@ func toZapLevel(level log.Level) zapcore.Level {
 	switch level {
 	case log.LevelDebug:
 		return zap.DebugLevel
-	case log.LevelInfo:
-		return zap.InfoLevel
 	case log.LevelWarn:
 		return zap.WarnLevel
 	case log.LevelError:
 		return zap.ErrorLevel
 	case log.LevelPanic:
 		return zap.PanicLevel
+	case log.LevelInfo:
+		fallthrough
 	default:
 		return zap.InfoLevel
 	}

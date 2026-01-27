@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 	"github.com/ilxqx/vef-framework-go/treebuilder"
 )
 
@@ -79,7 +79,7 @@ func NewOrderedCategoryFindTreeResource() api.Resource {
 	return &OrderedCategoryFindTreeResource{
 		Resource: api.NewRPCResource("test/category_tree_ordered"),
 		FindTree: apis.NewFindTree[TestCategory, TestCategorySearch](buildCategoryTree).
-			WithDefaultSort(&sort.OrderSpec{
+			WithDefaultSort(&sortx.OrderSpec{
 				Column: "sort",
 			}).
 			Public().

@@ -72,9 +72,11 @@ type Visitor struct {
 	VisitMethod MethodVisitor
 }
 
-type StructVisitor func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction
-type FieldVisitor func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction
-type MethodVisitor func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction
+type (
+	StructVisitor func(structType reflect.Type, structValue reflect.Value, depth int) VisitAction
+	FieldVisitor  func(field reflect.StructField, fieldValue reflect.Value, depth int) VisitAction
+	MethodVisitor func(method reflect.Method, methodValue reflect.Value, depth int) VisitAction
+)
 
 // TypeVisitor defines callback functions for type-only traversal.
 type TypeVisitor struct {
@@ -83,9 +85,11 @@ type TypeVisitor struct {
 	VisitMethodType MethodTypeVisitor
 }
 
-type StructTypeVisitor func(structType reflect.Type, depth int) VisitAction
-type FieldTypeVisitor func(field reflect.StructField, depth int) VisitAction
-type MethodTypeVisitor func(method reflect.Method, receiverType reflect.Type, depth int) VisitAction
+type (
+	StructTypeVisitor func(structType reflect.Type, depth int) VisitAction
+	FieldTypeVisitor  func(field reflect.StructField, depth int) VisitAction
+	MethodTypeVisitor func(method reflect.Method, receiverType reflect.Type, depth int) VisitAction
+)
 
 // VisitFor visits a struct type T using type visitor callbacks.
 func VisitFor[T any](visitor TypeVisitor, opts ...VisitorOption) {
@@ -112,6 +116,7 @@ func Visit(target reflect.Value, visitor Visitor, opts ...VisitorOption) {
 		if target.IsNil() {
 			return
 		}
+
 		target = target.Elem()
 	}
 
@@ -159,6 +164,7 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 		if target.IsNil() {
 			return Continue
 		}
+
 		target = target.Elem()
 	}
 
@@ -170,6 +176,7 @@ func visitDepthFirst(target reflect.Value, config VisitorConfig, visitor Visitor
 	if visited[targetType] {
 		return Continue
 	}
+
 	visited[targetType] = true
 
 	if visitor.VisitStruct != nil {
@@ -233,6 +240,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 			if current.IsNil() {
 				continue
 			}
+
 			current = current.Elem()
 		}
 
@@ -244,6 +252,7 @@ func visitBreadthFirst(target reflect.Value, config VisitorConfig, visitor Visit
 		if visited[currentType] {
 			continue
 		}
+
 		visited[currentType] = true
 
 		if visitor.VisitStruct != nil {
@@ -291,6 +300,7 @@ func visitTypeDepthFirst(targetType reflect.Type, config VisitorConfig, visitor 
 	if visited[targetType] {
 		return Continue
 	}
+
 	visited[targetType] = true
 
 	if visitor.VisitStructType != nil {
@@ -357,6 +367,7 @@ func visitTypeBreadthFirst(targetType reflect.Type, config VisitorConfig, visito
 		if visited[current] {
 			continue
 		}
+
 		visited[current] = true
 
 		if visitor.VisitStructType != nil {
@@ -450,12 +461,15 @@ func buildAbsoluteIndexPath(parentIndexPath []int, field reflect.StructField) []
 		fullIndexPath := make([]int, len(parentIndexPath)+len(field.Index))
 		copy(fullIndexPath, parentIndexPath)
 		copy(fullIndexPath[len(parentIndexPath):], field.Index)
+
 		return fullIndexPath
 	}
+
 	return append([]int(nil), field.Index...)
 }
 
 func fieldWithAbsoluteIndex(field reflect.StructField, parentIndexPath []int) reflect.StructField {
 	field.Index = buildAbsoluteIndexPath(parentIndexPath, field)
+
 	return field
 }

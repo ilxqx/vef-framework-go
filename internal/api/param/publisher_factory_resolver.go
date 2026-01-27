@@ -15,7 +15,7 @@ func NewPublisherFactoryResolver(publisher event.Publisher) api.FactoryParamReso
 	return &PublisherFactoryResolver{publisher: publisher}
 }
 
-func (r *PublisherFactoryResolver) Type() reflect.Type {
+func (*PublisherFactoryResolver) Type() reflect.Type {
 	return reflect.TypeFor[event.Publisher]()
 }
 

@@ -17,10 +17,10 @@ func NewTransformerResolver(transformer mold.Transformer) api.HandlerParamResolv
 	return &TransformerResolver{transformer: transformer}
 }
 
-func (r *TransformerResolver) Type() reflect.Type {
+func (*TransformerResolver) Type() reflect.Type {
 	return reflect.TypeFor[mold.Transformer]()
 }
 
-func (r *TransformerResolver) Resolve(fiber.Ctx) (reflect.Value, error) {
+func (r *TransformerResolver) Resolve(_ fiber.Ctx) (reflect.Value, error) {
 	return reflect.ValueOf(r.transformer), nil
 }

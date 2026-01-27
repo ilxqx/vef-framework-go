@@ -35,7 +35,7 @@ func New() storage.Service {
 	}
 }
 
-func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) PutObject(_ context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	data, err := io.ReadAll(opts.Reader)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) 
 	}, nil
 }
 
-func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
+func (s *Service) GetObject(_ context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -75,7 +75,7 @@ func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) 
 	return io.NopCloser(bytes.NewReader(obj.data)), nil
 }
 
-func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
+func (s *Service) DeleteObject(_ context.Context, opts storage.DeleteObjectOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -84,7 +84,7 @@ func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOpt
 	return nil
 }
 
-func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
+func (s *Service) DeleteObjects(_ context.Context, opts storage.DeleteObjectsOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -95,7 +95,7 @@ func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsO
 	return nil
 }
 
-func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
+func (s *Service) ListObjects(_ context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -131,11 +131,11 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 	return objects, nil
 }
 
-func (s *Service) GetPresignedURL(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
+func (*Service) GetPresignedURL(_ context.Context, opts storage.PresignedURLOptions) (string, error) {
 	return fmt.Sprintf("memory://%s?method=%s&expires=%d", opts.Key, opts.Method, opts.Expires), nil
 }
 
-func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) CopyObject(_ context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -183,7 +183,7 @@ func (s *Service) MoveObject(ctx context.Context, opts storage.MoveObjectOptions
 	return info, err
 }
 
-func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) StatObject(_ context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

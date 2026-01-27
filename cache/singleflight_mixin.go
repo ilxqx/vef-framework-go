@@ -76,5 +76,10 @@ func (m *SingleflightMixin[T]) GetOrLoad(
 		return value, err
 	}
 
-	return result.(T), nil
+	value, ok := result.(T)
+	if !ok {
+		return value, ErrTypeAssertionFailed
+	}
+
+	return value, nil
 }

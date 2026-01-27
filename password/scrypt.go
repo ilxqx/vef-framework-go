@@ -122,7 +122,7 @@ type scryptParams struct {
 	p int
 }
 
-func (e *scryptEncoder) decodeHash(encodedPassword string) (*scryptParams, []byte, []byte, error) {
+func (*scryptEncoder) decodeHash(encodedPassword string) (params *scryptParams, salt, hash []byte, err error) {
 	parts := strings.Split(encodedPassword, "$")
 	if len(parts) != 5 {
 		return nil, nil, nil, ErrInvalidHashFormat
@@ -132,17 +132,17 @@ func (e *scryptEncoder) decodeHash(encodedPassword string) (*scryptParams, []byt
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	params := new(scryptParams)
-	if _, err := fmt.Sscanf(parts[2], "n=%d,r=%d,p=%d", &params.n, &params.r, &params.p); err != nil {
+	params = new(scryptParams)
+	if _, err = fmt.Sscanf(parts[2], "n=%d,r=%d,p=%d", &params.n, &params.r, &params.p); err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	salt, err := base64.RawStdEncoding.DecodeString(parts[3])
+	salt, err = base64.RawStdEncoding.DecodeString(parts[3])
 	if err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}
 
-	hash, err := base64.RawStdEncoding.DecodeString(parts[4])
+	hash, err = base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
 		return nil, nil, nil, ErrInvalidHashFormat
 	}

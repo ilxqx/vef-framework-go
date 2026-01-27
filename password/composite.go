@@ -83,7 +83,7 @@ func (c *compositeEncoder) stripPrefix(encodedPassword string) string {
 
 // parseEncoderPrefix extracts the encoder ID and remaining content from an encoded password.
 // Returns empty EncoderID and original password if no valid prefix found.
-func (c *compositeEncoder) parseEncoderPrefix(encodedPassword string) (EncoderID, string) {
+func (*compositeEncoder) parseEncoderPrefix(encodedPassword string) (EncoderID, string) {
 	if !strings.HasPrefix(encodedPassword, "{") {
 		return EncoderID(constants.Empty), encodedPassword
 	}

@@ -25,11 +25,11 @@ func (e Error) Error() string {
 }
 
 // Err creates a new Error with optional message and options.
-// Usage: Err(), Err("message"), Err("message", WithCode(...)), Err(WithCode(...))
+// Usage: Err(), Err("message"), Err("message", WithCode(...)), Err(WithCode(...)).
 func Err(messageOrOptions ...any) Error {
 	var (
 		message string
-		options []errOption
+		options []ErrOption
 	)
 
 	for i, v := range messageOrOptions {
@@ -38,8 +38,10 @@ func Err(messageOrOptions ...any) Error {
 			if i != 0 {
 				panic("result.Err: message string must be the first argument")
 			}
+
 			message = opt
-		case errOption:
+
+		case ErrOption:
 			options = append(options, opt)
 		default:
 			panic(fmt.Sprintf("result.Err: invalid argument type %T at position %d", v, i))
@@ -64,7 +66,7 @@ func Err(messageOrOptions ...any) Error {
 }
 
 // Errf creates a new Error with a formatted message.
-// Usage: Errf("user %s not found", username), Errf("error %d", code, WithCode(...))
+// Usage: Errf("user %s not found", username), Errf("error %d", code, WithCode(...)).
 func Errf(format string, args ...any) Error {
 	if len(args) == 0 {
 		panic("result.Errf: at least one format argument is required")
@@ -72,20 +74,22 @@ func Errf(format string, args ...any) Error {
 
 	var (
 		formatArgs       []any
-		options          []errOption
+		options          []ErrOption
 		firstOptionIndex = -1
 	)
 
 	for i, v := range args {
-		if opt, ok := v.(errOption); ok {
+		if opt, ok := v.(ErrOption); ok {
 			if firstOptionIndex == -1 {
 				firstOptionIndex = i
 			}
+
 			options = append(options, opt)
 		} else {
 			if firstOptionIndex != -1 {
 				panic("result.Errf: format arguments must come before options")
 			}
+
 			formatArgs = append(formatArgs, v)
 		}
 	}
@@ -109,6 +113,7 @@ func AsErr(err error) (Error, bool) {
 	if errors.As(err, &target) {
 		return target, true
 	}
+
 	return Error{}, false
 }
 

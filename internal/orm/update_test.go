@@ -63,9 +63,9 @@ func (suite *UpdateTestSuite) TestCTE() {
 		suite.NoError(err, "Should fetch posts to update")
 		suite.True(len(postsToUpdate) >= 2, "Should have at least 2 posts to update")
 
-		postIds := make([]string, len(postsToUpdate))
+		postIDs := make([]string, len(postsToUpdate))
 		for i, p := range postsToUpdate {
-			postIds[i] = p.ID
+			postIDs[i] = p.ID
 		}
 
 		type StatusMapping struct {
@@ -87,7 +87,7 @@ func (suite *UpdateTestSuite) TestCTE() {
 			}).
 			Where(func(cb ConditionBuilder) {
 				cb.EqualsColumn("status", "sm.old_status").
-					In("id", postIds) // Only update the specific posts we selected
+					In("id", postIDs) // Only update the specific posts we selected
 			}).
 			Exec(suite.ctx)
 

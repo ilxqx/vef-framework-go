@@ -6,9 +6,10 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/ilxqx/vef-framework-go/i18n/locales"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ilxqx/vef-framework-go/i18n/locales"
 )
 
 // TestConfig tests the Config struct and its field access.
@@ -31,10 +32,12 @@ func TestConfig(t *testing.T) {
 			if file.Name() == "zh-CN.json" {
 				hasZhCN = true
 			}
+
 			if file.Name() == "en.json" {
 				hasEn = true
 			}
 		}
+
 		assert.True(t, hasZhCN, "Should contain zh-CN.json file")
 		assert.True(t, hasEn, "Should contain en.json file")
 	})
@@ -58,6 +61,7 @@ func TestConfig(t *testing.T) {
 	t.Run("ConfigWithEmptyLocales", func(t *testing.T) {
 		// Test with empty embed.FS
 		var emptyFS embed.FS
+
 		emptyConfig := Config{
 			Locales: emptyFS,
 		}
@@ -199,7 +203,7 @@ func TestTranslator(t *testing.T) {
 }
 
 // TestTranslatorInterfaceConsistency tests the consistency between T and Te methods.
-// Feature: i18n-naming-standardization, Property 1: Interface implementation consistency
+// Feature: i18n-naming-standardization, Property 1: Interface implementation consistency.
 func TestTranslatorInterfaceConsistency(t *testing.T) {
 	// Create a translator instance for testing
 	config := Config{
@@ -261,7 +265,7 @@ func TestTranslatorInterfaceConsistency(t *testing.T) {
 }
 
 // TestAPIBehaviorConsistency tests the consistency of API behavior across different scenarios.
-// Feature: i18n-naming-standardization, Property 2: API behavior consistency
+// Feature: i18n-naming-standardization, Property 2: API behavior consistency.
 func TestAPIBehaviorConsistency(t *testing.T) {
 	// Property test: Translation behavior should be consistent regardless of how translator is created
 	property := func(messageID string) bool {
@@ -274,6 +278,7 @@ func TestAPIBehaviorConsistency(t *testing.T) {
 		config := Config{
 			Locales: locales.EmbedLocales,
 		}
+
 		directTranslator, err := New(config)
 		if err != nil {
 			return false // Skip if translator creation fails

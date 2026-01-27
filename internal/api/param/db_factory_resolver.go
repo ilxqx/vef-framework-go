@@ -15,7 +15,7 @@ func NewDBFactoryResolver(db orm.DB) api.FactoryParamResolver {
 	return &DBFactoryResolver{db: db}
 }
 
-func (r *DBFactoryResolver) Type() reflect.Type {
+func (*DBFactoryResolver) Type() reflect.Type {
 	return reflect.TypeFor[orm.DB]()
 }
 

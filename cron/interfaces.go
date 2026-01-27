@@ -9,8 +9,8 @@ import (
 // Job represents a scheduled task in the cron system.
 // It provides methods to inspect and control individual job instances.
 type Job interface {
-	// Id returns the job's unique identifier as a string.
-	Id() string
+	// ID returns the job's unique identifier as a string.
+	ID() string
 	// LastRun returns the time when the job was last executed.
 	LastRun() (time.Time, error)
 	// Name returns the human-readable name assigned to the job.

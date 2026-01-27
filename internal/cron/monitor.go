@@ -13,7 +13,7 @@ import (
 // jobMonitor implements gocron.Monitor interface to track job execution metrics. It provides detailed logging for job lifecycle events including timing and status.
 type jobMonitor struct{}
 
-func (m *jobMonitor) RecordJobTimingWithStatus(startTime, endTime time.Time, id uuid.UUID, name string, tags []string, status gocron.JobStatus, err error) {
+func (*jobMonitor) RecordJobTimingWithStatus(startTime, endTime time.Time, id uuid.UUID, name string, tags []string, status gocron.JobStatus, err error) {
 	switch status {
 	case gocron.Success:
 		logger.Infof(
@@ -48,7 +48,7 @@ func (m *jobMonitor) RecordJobTimingWithStatus(startTime, endTime time.Time, id 
 	}
 }
 
-func (m *jobMonitor) IncrementJob(id uuid.UUID, name string, tags []string, status gocron.JobStatus) {
+func (*jobMonitor) IncrementJob(id uuid.UUID, name string, tags []string, status gocron.JobStatus) {
 	logger.Infof(
 		"Job %q scheduled | id: %s | tags: %s | status: %s",
 		name,
@@ -58,7 +58,7 @@ func (m *jobMonitor) IncrementJob(id uuid.UUID, name string, tags []string, stat
 	)
 }
 
-func (m *jobMonitor) RecordJobTiming(startTime, endTime time.Time, id uuid.UUID, name string, tags []string) {
+func (*jobMonitor) RecordJobTiming(startTime, endTime time.Time, id uuid.UUID, name string, tags []string) {
 	logger.Infof(
 		"Job %q completed | id: %s | tags: %s | elapsed: %s",
 		name,

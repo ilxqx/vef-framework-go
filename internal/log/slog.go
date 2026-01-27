@@ -19,6 +19,7 @@ type sLogHandler struct {
 
 func (s sLogHandler) Enabled(_ context.Context, level slog.Level) bool {
 	logLevel := slogLevelToLogLevel(level)
+
 	return s.logger.Enabled(logLevel) && logLevel >= s.levelFilter
 }
 
@@ -42,6 +43,7 @@ func (s sLogHandler) Handle(_ context.Context, record slog.Record) error {
 		if field := formatAttr(attr); field != constants.Empty {
 			fields = append(fields, field)
 		}
+
 		return true
 	})
 

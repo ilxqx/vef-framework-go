@@ -2,48 +2,48 @@ package result
 
 // i18n message keys for API responses.
 const (
-	OkMessage                             = "ok"
-	ErrMessage                            = "error"
-	ErrMessageRecordNotFound              = "record_not_found"
-	ErrMessageRecordAlreadyExists         = "record_already_exists"
-	ErrMessageForeignKeyViolation         = "foreign_key_violation"
-	ErrMessageUnknown                     = "unknown_error"
-	ErrMessageNotFound                    = "not_found"
-	ErrMessageTooManyRequests             = "too_many_requests"
-	ErrMessageUnauthenticated             = "unauthenticated"
-	ErrMessageTokenExpired                = "token_expired"
-	ErrMessageTokenInvalid                = "token_invalid"
-	ErrMessageTokenNotValidYet            = "token_not_valid_yet"
-	ErrMessageTokenInvalidIssuer          = "token_invalid_issuer"
-	ErrMessageTokenInvalidAudience        = "token_invalid_audience"
-	ErrMessageTokenMissingSubject         = "token_missing_subject"
-	ErrMessageTokenMissingTokenType       = "token_missing_token_type"
-	ErrMessageAppIDRequired               = "app_id_required"
-	ErrMessageTimestampRequired           = "timestamp_required"
-	ErrMessageSignatureRequired           = "signature_required"
-	ErrMessageTimestampInvalid            = "timestamp_invalid"
-	ErrMessageSignatureExpired            = "signature_expired"
-	ErrMessageExternalAppNotFound         = "external_app_not_found"
-	ErrMessageExternalAppDisabled         = "external_app_disabled"
-	ErrMessageIPNotAllowed                = "ip_not_allowed"
-	ErrMessageSignatureInvalid            = "signature_invalid"
-	ErrMessageAccessDenied                = "access_denied"
-	ErrMessageUnsupportedMediaType        = "unsupported_media_type"
-	ErrMessageRequestTimeout              = "request_timeout"
-	ErrMessageMonitorNotReady             = "monitor_not_ready"
-	ErrMessageInvalidFileKey              = "invalid_file_key"
-	ErrMessageFileNotFound                = "file_not_found"
-	ErrMessageFailedToGetFile             = "failed_to_get_file"
-	ErrMessageApiRequestParamsInvalidJSON      = "api_request_params_invalid_json"
-	ErrMessageApiRequestMetaInvalidJSON        = "api_request_meta_invalid_json"
-	ErrMessageDangerousSQL                     = "dangerous_sql"
-	ErrMessageExternalAppLoaderNotImplemented  = "external_app_loader_not_implemented"
-	ErrMessageCredentialsFormatInvalid         = "credentials_format_invalid"
-	ErrMessageCredentialsFieldsRequired        = "credentials_fields_required"
-	ErrMessageSignatureDecodeFailed            = "signature_decode_failed"
-	ErrMessageUnsupportedAuthenticationType    = "unsupported_authentication_type"
-	ErrMessageUserLoaderNotImplemented         = "user_loader_not_implemented"
-	ErrMessageUserInfoLoaderNotImplemented     = "user_info_loader_not_implemented"
+	OkMessage                                 = "ok"
+	ErrMessage                                = "error"
+	ErrMessageRecordNotFound                  = "record_not_found"
+	ErrMessageRecordAlreadyExists             = "record_already_exists"
+	ErrMessageForeignKeyViolation             = "foreign_key_violation"
+	ErrMessageUnknown                         = "unknown_error"
+	ErrMessageNotFound                        = "not_found"
+	ErrMessageTooManyRequests                 = "too_many_requests"
+	ErrMessageUnauthenticated                 = "unauthenticated"
+	ErrMessageTokenExpired                    = "token_expired"
+	ErrMessageTokenInvalid                    = "token_invalid"
+	ErrMessageTokenNotValidYet                = "token_not_valid_yet"
+	ErrMessageTokenInvalidIssuer              = "token_invalid_issuer"
+	ErrMessageTokenInvalidAudience            = "token_invalid_audience"
+	ErrMessageTokenMissingSubject             = "token_missing_subject"
+	ErrMessageTokenMissingTokenType           = "token_missing_token_type"
+	ErrMessageAppIDRequired                   = "app_id_required"
+	ErrMessageTimestampRequired               = "timestamp_required"
+	ErrMessageSignatureRequired               = "signature_required"
+	ErrMessageTimestampInvalid                = "timestamp_invalid"
+	ErrMessageSignatureExpired                = "signature_expired"
+	ErrMessageExternalAppNotFound             = "external_app_not_found"
+	ErrMessageExternalAppDisabled             = "external_app_disabled"
+	ErrMessageIPNotAllowed                    = "ip_not_allowed"
+	ErrMessageSignatureInvalid                = "signature_invalid"
+	ErrMessageAccessDenied                    = "access_denied"
+	ErrMessageUnsupportedMediaType            = "unsupported_media_type"
+	ErrMessageRequestTimeout                  = "request_timeout"
+	ErrMessageMonitorNotReady                 = "monitor_not_ready"
+	ErrMessageInvalidFileKey                  = "invalid_file_key"
+	ErrMessageFileNotFound                    = "file_not_found"
+	ErrMessageFailedToGetFile                 = "failed_to_get_file"
+	ErrMessageApiRequestParamsInvalidJSON     = "api_request_params_invalid_json"
+	ErrMessageApiRequestMetaInvalidJSON       = "api_request_meta_invalid_json"
+	ErrMessageDangerousSQL                    = "dangerous_sql"
+	ErrMessageExternalAppLoaderNotImplemented = "external_app_loader_not_implemented"
+	ErrMessageCredentialsFormatInvalid        = "credentials_format_invalid"
+	ErrMessageCredentialsFieldsRequired       = "credentials_fields_required"
+	ErrMessageSignatureDecodeFailed           = "signature_decode_failed"
+	ErrMessageUnsupportedAuthenticationType   = "unsupported_authentication_type"
+	ErrMessageUserLoaderNotImplemented        = "user_loader_not_implemented"
+	ErrMessageUserInfoLoaderNotImplemented    = "user_info_loader_not_implemented"
 )
 
 // Response codes for API results.
@@ -52,7 +52,7 @@ const (
 const (
 	OkCode = 0
 
-	// Authentication errors (1000-1099)
+	// Authentication errors (1000-1099).
 	ErrCodeUnauthenticated               = 1000
 	ErrCodeUnsupportedAuthenticationType = 1001
 	ErrCodeTokenExpired                  = 1002
@@ -74,30 +74,30 @@ const (
 	ErrCodeIPNotAllowed                  = 1019
 	ErrCodeSignatureInvalid              = 1020
 
-	// Authorization errors (1100-1199)
+	// Authorization errors (1100-1199).
 	ErrCodeAccessDenied = 1100
 
-	// Resource errors (1200-1299)
+	// Resource errors (1200-1299).
 	ErrCodeNotFound = 1200
 
-	// Media type errors (1300-1399)
+	// Media type errors (1300-1399).
 	ErrCodeUnsupportedMediaType = 1300
 
-	// Request errors (1400-1499)
+	// Request errors (1400-1499).
 	ErrCodeBadRequest      = 1400
 	ErrCodeTooManyRequests = 1401
 	ErrCodeRequestTimeout  = 1402
 
-	// Not implemented (1500-1599)
+	// Not implemented (1500-1599).
 	ErrCodeNotImplemented = 1500
 
-	// SQL errors (1600-1699)
+	// SQL errors (1600-1699).
 	ErrCodeDangerousSQL = 1600
 
-	// Unknown errors (1900-1999)
+	// Unknown errors (1900-1999).
 	ErrCodeUnknown = 1900
 
-	// Business errors (2000+)
+	// Business errors (2000+).
 	ErrCodeDefault             = 2000
 	ErrCodeRecordNotFound      = 2001
 	ErrCodeRecordAlreadyExists = 2002

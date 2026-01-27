@@ -58,9 +58,9 @@ func (b *baseBuilder[T]) PermToken(token string) T {
 	return b.self
 }
 
-func (b *baseBuilder[T]) RateLimit(max int, period time.Duration) T {
+func (b *baseBuilder[T]) RateLimit(maxRequests int, period time.Duration) T {
 	b.rateLimit = &api.RateLimitConfig{
-		Max:    max,
+		Max:    maxRequests,
 		Period: period,
 	}
 

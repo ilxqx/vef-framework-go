@@ -8,7 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // Test Resources.
@@ -40,7 +40,7 @@ func NewProcessedUserFindAllResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_all_processed"),
 		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			Public().
-			WithProcessor(func(users []TestUser, search TestUserSearch, ctx fiber.Ctx) any {
+			WithProcessor(func(users []TestUser, _ TestUserSearch, _ fiber.Ctx) any {
 				return ProcessedUserList{
 					Users:     users,
 					Processed: true,
@@ -76,7 +76,7 @@ func NewOrderedUserFindAllResource() api.Resource {
 	return &OrderedUserFindAllResource{
 		Resource: api.NewRPCResource("test/user_all_ordered"),
 		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
-			WithDefaultSort(&sort.OrderSpec{
+			WithDefaultSort(&sortx.OrderSpec{
 				Column: "age",
 			}).
 			Public(),
@@ -124,13 +124,13 @@ func NewMultipleDefaultSortUserFindAllResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_all_multi_sort"),
 		FindAll: apis.NewFindAll[TestUser, TestUserSearch]().
 			WithDefaultSort(
-				&sort.OrderSpec{
+				&sortx.OrderSpec{
 					Column:    "status",
-					Direction: sort.OrderAsc,
+					Direction: sortx.OrderAsc,
 				},
-				&sort.OrderSpec{
+				&sortx.OrderSpec{
 					Column:    "age",
-					Direction: sort.OrderDesc,
+					Direction: sortx.OrderDesc,
 				},
 			).
 			Public(),
@@ -567,10 +567,12 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 		suite.Len(users, 10, "Should return all 10 users")
 
 		firstUser := suite.readDataAsMap(users[0])
-		firstName := firstUser["name"].(string)
+		firstName, ok := firstUser["name"].(string)
+		suite.True(ok, "Type assertion to string should succeed for firstName")
 
 		lastUser := suite.readDataAsMap(users[len(users)-1])
-		lastName := lastUser["name"].(string)
+		lastName, ok := lastUser["name"].(string)
+		suite.True(ok, "Type assertion to string should succeed for lastName")
 
 		suite.True(firstName > lastName, "First name %s should be > last name %s in DESC order", firstName, lastName)
 
@@ -654,7 +656,9 @@ func (suite *FindAllTestSuite) TestFindAllRequestSortOverride() {
 		for i, u := range users {
 			user := suite.readDataAsMap(u)
 
-			email := user["email"].(string)
+			email, ok := user["email"].(string)
+			suite.True(ok, "Type assertion to string should succeed for email")
+
 			if i > 0 {
 				suite.True(email >= prevEmail, "Email %s should be >= previous email %s in ASC order", email, prevEmail)
 			}

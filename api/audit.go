@@ -38,30 +38,49 @@ type AuditEvent struct {
 	ElapsedTime int64 `json:"elapsedTime"` // Elapsed time in milliseconds
 }
 
+// AuditEventParams contains parameters for creating an AuditEvent.
+type AuditEventParams struct {
+	// Api identification
+	Resource string
+	Action   string
+	Version  string
+
+	// User identification
+	UserID    string
+	UserAgent string
+
+	// Request information
+	RequestID     string
+	RequestIP     string
+	RequestParams map[string]any
+	RequestMeta   map[string]any
+
+	// Response information
+	ResultCode    int
+	ResultMessage string
+	ResultData    any
+
+	// Performance metrics
+	ElapsedTime int64
+}
+
 // NewAuditEvent creates a new audit event with the given parameters.
-func NewAuditEvent(
-	apiResource, apiAction, apiVersion string,
-	userID, userAgent string,
-	requestID, requestIP string,
-	requestParams, requestMeta map[string]any,
-	resultCode int, resultMessage string, resultData any,
-	elapsedTime int64,
-) *AuditEvent {
+func NewAuditEvent(params AuditEventParams) *AuditEvent {
 	return &AuditEvent{
 		BaseEvent:     event.NewBaseEvent(eventTypeAudit),
-		Resource:      apiResource,
-		Action:        apiAction,
-		Version:       apiVersion,
-		UserID:        userID,
-		UserAgent:     userAgent,
-		RequestID:     requestID,
-		RequestIP:     requestIP,
-		RequestParams: requestParams,
-		RequestMeta:   requestMeta,
-		ResultCode:    resultCode,
-		ResultMessage: resultMessage,
-		ResultData:    resultData,
-		ElapsedTime:   elapsedTime,
+		Resource:      params.Resource,
+		Action:        params.Action,
+		Version:       params.Version,
+		UserID:        params.UserID,
+		UserAgent:     params.UserAgent,
+		RequestID:     params.RequestID,
+		RequestIP:     params.RequestIP,
+		RequestParams: params.RequestParams,
+		RequestMeta:   params.RequestMeta,
+		ResultCode:    params.ResultCode,
+		ResultMessage: params.ResultMessage,
+		ResultData:    params.ResultData,
+		ElapsedTime:   params.ElapsedTime,
 	}
 }
 

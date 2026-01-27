@@ -33,7 +33,7 @@ func (p *NamingMasterPrompt) Prompts() []mcp.PromptDefinition {
 }
 
 // handleNamingMasterPrompt handles the naming master prompt request.
-func (p *NamingMasterPrompt) handleNamingMasterPrompt(context.Context, *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+func (*NamingMasterPrompt) handleNamingMasterPrompt(context.Context, *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 	return &mcp.GetPromptResult{
 		Description: "Professional IT naming expert for code and database naming conventions",
 		Messages: []*mcp.PromptMessage{

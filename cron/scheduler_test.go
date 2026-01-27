@@ -237,7 +237,7 @@ func TestScheduler_RemoveJob(t *testing.T) {
 	jobs := scheduler.Jobs()
 	assert.Len(t, jobs, 1, "Scheduler should have 1 job before removal")
 
-	err = scheduler.RemoveJob(job.Id())
+	err = scheduler.RemoveJob(job.ID())
 	require.NoError(t, err, "Should remove job")
 
 	jobs = scheduler.Jobs()
@@ -322,7 +322,7 @@ func TestScheduler_UpdateJob(t *testing.T) {
 	job, err := scheduler.NewJob(jobDef1)
 	require.NoError(t, err, "Should create original job")
 
-	originalID := job.Id()
+	originalID := job.ID()
 
 	jobDef2 := NewOneTimeJob(nil,
 		WithName("updated-job"),

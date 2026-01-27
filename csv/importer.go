@@ -19,12 +19,12 @@ var logger = log.Named("csv")
 type importer struct {
 	schema  *tabular.Schema
 	parsers map[string]tabular.ValueParser
-	options importOptions
+	options importConfig
 	typ     reflect.Type
 }
 
-func newImporter(typ reflect.Type, opts ...ImportOption) *importer {
-	options := importOptions{
+func NewImporter(typ reflect.Type, opts ...ImportOption) tabular.Importer {
+	options := importConfig{
 		delimiter: constants.ByteComma,
 		hasHeader: true,
 		skipRows:  0,
@@ -92,6 +92,7 @@ func (i *importer) Import(reader io.Reader) (any, []tabular.ImportError, error) 
 		headerRow := rows[i.options.skipRows]
 
 		var mappingErr error
+
 		columnMapping, mappingErr = i.buildColumnMapping(headerRow)
 		if mappingErr != nil {
 			return nil, nil, fmt.Errorf("build column mapping: %w", mappingErr)

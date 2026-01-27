@@ -58,5 +58,6 @@ func (s *Schema) ColumnNames() []string {
 	for i, col := range s.columns {
 		names[i] = col.Name
 	}
+
 	return names
 }

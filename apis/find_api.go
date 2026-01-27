@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // baseFindApi is the base implementation for all Find APIs.
@@ -23,7 +23,7 @@ type baseFindApi[TModel, TSearch, TProcessorIn, TApi any] struct {
 	optionsByPart       map[QueryPart][]*FindApiOption
 	auditUserModel      any
 	auditUserNameColumn string
-	defaultSort         []*sort.OrderSpec
+	defaultSort         []*sortx.OrderSpec
 	processor           Processor[TProcessorIn, TSearch]
 
 	self TApi
@@ -77,10 +77,10 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.DB, conf
 		if a.defaultSort == nil {
 			if len(table.PKs) == 1 {
 				opt := withSort(
-					[]*sort.OrderSpec{
+					[]*sortx.OrderSpec{
 						{
 							Column:    table.PKs[0].Name,
-							Direction: sort.OrderDesc,
+							Direction: sortx.OrderDesc,
 						},
 					},
 					lo.Ternary(qp.Sort != nil, qp.Sort, []QueryPart{QueryRoot})...,
@@ -89,10 +89,10 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) Setup(db orm.DB, conf
 			} else {
 				if field, ok := table.FieldMap[constants.ColumnCreatedAt]; ok {
 					opt := withSort(
-						[]*sort.OrderSpec{
+						[]*sortx.OrderSpec{
 							{
 								Column:    field.Name,
-								Direction: sort.OrderDesc,
+								Direction: sortx.OrderDesc,
 							},
 						},
 						lo.Ternary(qp.Sort != nil, qp.Sort, []QueryPart{QueryRoot})...,
@@ -129,11 +129,14 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) ConfigureQuery(query 
 			if applied[opt] {
 				continue
 			}
+
 			if err := opt.Applier(query, search, meta, ctx); err != nil {
 				return err
 			}
+
 			applied[opt] = true
 		}
+
 		return nil
 	}
 
@@ -189,11 +192,11 @@ func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithSelectAs(column, 
 
 // This is applied when no dynamic sorting is provided in the request.
 // The orderSpecs are stored and applied during Setup() to allow framework-level defaults.
-func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithDefaultSort(orderSpecs ...*sort.OrderSpec) TApi {
+func (a *baseFindApi[TModel, TSearch, TProcessorIn, TApi]) WithDefaultSort(orderSpecs ...*sortx.OrderSpec) TApi {
 	if len(orderSpecs) > 0 {
 		a.defaultSort = slices.Clone(orderSpecs)
 	} else {
-		a.defaultSort = []*sort.OrderSpec{}
+		a.defaultSort = []*sortx.OrderSpec{}
 	}
 
 	return a.self

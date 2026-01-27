@@ -32,6 +32,7 @@ type subscription struct {
 // NewMemoryBus creates an in-memory event bus.
 func NewMemoryBus(middlewares []event.Middleware) event.Bus {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	return &MemoryBus{
 		middlewares: middlewares,
 		subscribers: make(map[string]map[string]*subscription),
@@ -102,9 +103,11 @@ func (b *MemoryBus) Subscribe(eventType string, handler event.HandlerFunc) event
 	}
 
 	b.mu.Lock()
+
 	if b.subscribers[eventType] == nil {
 		b.subscribers[eventType] = make(map[string]*subscription)
 	}
+
 	b.subscribers[eventType][subID] = sub
 	b.mu.Unlock()
 
@@ -114,6 +117,7 @@ func (b *MemoryBus) Subscribe(eventType string, handler event.HandlerFunc) event
 
 		if subs, exists := b.subscribers[eventType]; exists {
 			delete(subs, subID)
+
 			if len(subs) == 0 {
 				delete(b.subscribers, eventType)
 			}
@@ -129,7 +133,9 @@ func (b *MemoryBus) processEvents() {
 			if !ok {
 				return
 			}
+
 			go b.deliverEvent(evt)
+
 		case <-b.ctx.Done():
 			return
 		}
@@ -143,12 +149,14 @@ func (b *MemoryBus) deliverEvent(evt event.Event) {
 
 	processedEvent := evt
 	if err := streams.FromSlice(b.middlewares).ForEachErr(func(middleware event.Middleware) error {
-		return middleware.Process(b.ctx, processedEvent, func(ctx context.Context, e event.Event) error {
+		return middleware.Process(b.ctx, processedEvent, func(_ context.Context, e event.Event) error {
 			processedEvent = e
+
 			return nil
 		})
 	}); err != nil {
 		logger.Errorf("Error processing event middleware: %v", err)
+
 		return
 	}
 

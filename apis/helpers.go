@@ -184,8 +184,8 @@ func validateMetaColumns(schema *schema.Table, metaColumns []orm.ColumnInfo) err
 	return nil
 }
 
-// buildMetaJsonExpr constructs a JSON_OBJECT expression for meta columns.
-func buildMetaJsonExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.QueryAppender {
+// buildMetaJSONExpr constructs a JSON_OBJECT expression for meta columns.
+func buildMetaJSONExpr(eb orm.ExprBuilder, metaColumns []orm.ColumnInfo) schema.QueryAppender {
 	jsonArgs := make([]any, 0, len(metaColumns)*2)
 	for _, col := range metaColumns {
 		jsonArgs = append(jsonArgs, col.Alias, eb.Column(col.Name))

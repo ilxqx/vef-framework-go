@@ -214,9 +214,7 @@ func (suite *DatabaseTestSuite) testBasicDBOperations(db *bun.DB, dbType string)
 	switch dbType {
 	case "SQLite", "SQLite In-Memory", "SQLite File":
 		err = db.NewSelect().ColumnExpr("sqlite_version()").Scan(suite.ctx, &version)
-	case "PostgreSQL":
-		err = db.NewSelect().ColumnExpr("version()").Scan(suite.ctx, &version)
-	case "MySQL":
+	case "PostgreSQL", "MySQL":
 		err = db.NewSelect().ColumnExpr("version()").Scan(suite.ctx, &version)
 	}
 
@@ -267,23 +265,23 @@ func TestDatabaseSuite(t *testing.T) {
 	suite.Run(t, new(DatabaseTestSuite))
 }
 
-// SqlGuardTestSuite tests SQL guard integration with raw SQL operations.
+// SQLGuardTestSuite tests SQL guard integration with raw SQL operations.
 // Note: GoSQLX parser doesn't support double-quoted identifiers (bun's default),
 // so we use NewRaw with unquoted SQL to test SQL guard functionality.
-type SqlGuardTestSuite struct {
+type SQLGuardTestSuite struct {
 	suite.Suite
 
 	ctx context.Context
 }
 
-func (suite *SqlGuardTestSuite) SetupSuite() {
+func (suite *SQLGuardTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 }
 
-func (suite *SqlGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
+func (suite *SQLGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
 	cfg := &config.DatasourceConfig{
 		Type:           constants.SQLite,
-		EnableSqlGuard: enableGuard,
+		EnableSQLGuard: enableGuard,
 	}
 
 	db, err := New(cfg)
@@ -296,7 +294,7 @@ func (suite *SqlGuardTestSuite) createTestDB(enableGuard bool) *bun.DB {
 	return db
 }
 
-func (suite *SqlGuardTestSuite) TestDropStatementBlocked() {
+func (suite *SQLGuardTestSuite) TestDropStatementBlocked() {
 	db := suite.createTestDB(true)
 	defer db.Close()
 
@@ -314,7 +312,7 @@ func (suite *SqlGuardTestSuite) TestDropStatementBlocked() {
 	suite.NoError(err, "Table should still exist after blocked DROP")
 }
 
-func (suite *SqlGuardTestSuite) TestTruncateStatementBlocked() {
+func (suite *SQLGuardTestSuite) TestTruncateStatementBlocked() {
 	db := suite.createTestDB(true)
 	defer db.Close()
 
@@ -335,7 +333,7 @@ func (suite *SqlGuardTestSuite) TestTruncateStatementBlocked() {
 	suite.Equal(1, count, "Data should still exist after blocked TRUNCATE")
 }
 
-func (suite *SqlGuardTestSuite) TestDeleteWithoutWhereBlocked() {
+func (suite *SQLGuardTestSuite) TestDeleteWithoutWhereBlocked() {
 	db := suite.createTestDB(true)
 	defer db.Close()
 
@@ -356,7 +354,7 @@ func (suite *SqlGuardTestSuite) TestDeleteWithoutWhereBlocked() {
 	suite.Equal(1, count, "Data should still exist after blocked DELETE without WHERE")
 }
 
-func (suite *SqlGuardTestSuite) TestDeleteWithWhereAllowed() {
+func (suite *SQLGuardTestSuite) TestDeleteWithWhereAllowed() {
 	db := suite.createTestDB(true)
 	defer db.Close()
 
@@ -365,7 +363,7 @@ func (suite *SqlGuardTestSuite) TestDeleteWithWhereAllowed() {
 	suite.NoError(err, "DELETE with WHERE should be allowed")
 }
 
-func (suite *SqlGuardTestSuite) TestSelectAllowed() {
+func (suite *SQLGuardTestSuite) TestSelectAllowed() {
 	db := suite.createTestDB(true)
 	defer db.Close()
 
@@ -379,7 +377,7 @@ func (suite *SqlGuardTestSuite) TestSelectAllowed() {
 	suite.NoError(err, "SELECT should be allowed")
 }
 
-func (suite *SqlGuardTestSuite) TestWhitelistBypassesGuard() {
+func (suite *SQLGuardTestSuite) TestWhitelistBypassesGuard() {
 	db := suite.createTestDB(true)
 	defer db.Close()
 
@@ -393,7 +391,7 @@ func (suite *SqlGuardTestSuite) TestWhitelistBypassesGuard() {
 	suite.NoError(err, "DROP should work with whitelisted context")
 }
 
-func (suite *SqlGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
+func (suite *SQLGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
 	db := suite.createTestDB(false)
 	defer db.Close()
 
@@ -403,5 +401,5 @@ func (suite *SqlGuardTestSuite) TestDisabledGuardAllowsDangerousSql() {
 }
 
 func TestSQLGuardSuite(t *testing.T) {
-	suite.Run(t, new(SqlGuardTestSuite))
+	suite.Run(t, new(SQLGuardTestSuite))
 }

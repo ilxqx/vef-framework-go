@@ -10,7 +10,7 @@ import (
 // These handlers automatically manage audit fields like ID generation, timestamps, and user tracking.
 var (
 	autoColumnHandlers = []ColumnHandler{
-		&IdHandler{},
+		&IDHandler{},
 		&CreatedAtHandler{},
 		&UpdatedAtHandler{},
 		&CreatedByHandler{},

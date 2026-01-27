@@ -26,7 +26,7 @@ func NewJWTRefreshAuthenticator(jwt *security.JWT, userLoader security.UserLoade
 	}
 }
 
-func (j *JWTRefreshAuthenticator) Supports(kind string) bool {
+func (*JWTRefreshAuthenticator) Supports(kind string) bool {
 	return kind == AuthKindRefresh
 }
 

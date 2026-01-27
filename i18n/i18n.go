@@ -46,8 +46,10 @@ func newBundle(localesFS embed.FS) (*i18n.Bundle, error) {
 		filename := fmt.Sprintf("%s.json", lang)
 		if _, err := bundle.LoadMessageFileFS(localesFS, filename); err != nil {
 			logger.Errorf("Failed to load language file %s: %v", filename, err)
+
 			return nil, fmt.Errorf("failed to load language file %s: %w", filename, err)
 		}
+
 		logger.Debugf("Successfully loaded language file: %s", filename)
 	}
 

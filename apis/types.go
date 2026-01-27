@@ -5,7 +5,7 @@ import (
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // FindApiConfig contains all configuration for FindApi setup phase.
@@ -51,7 +51,7 @@ type DeleteManyParams struct {
 type Sortable struct {
 	api.M
 
-	Sort []sort.OrderSpec `json:"sort"`
+	Sort []sortx.OrderSpec `json:"sort"`
 }
 
 // Processor transforms query results after execution but before JSON serialization.

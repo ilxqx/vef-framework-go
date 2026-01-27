@@ -475,7 +475,7 @@ func (suite *ConditionalFunctionsTestSuite) TestConditionalFunctionsSpecialValue
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
 			Select("id", "title").
-			SelectExpr(func(eb ExprBuilder) any {
+			SelectExpr(func(_ ExprBuilder) any {
 				return ""
 			}, "empty_not_null").
 			SelectExpr(func(eb ExprBuilder) any {

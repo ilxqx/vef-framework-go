@@ -44,7 +44,7 @@ var (
 
 type (
 	// DecoderOption is a function type for configuring decoder options.
-	decoderOption func(c *mapstructure.DecoderConfig)
+	DecoderOption func(c *mapstructure.DecoderConfig)
 
 	// Metadata is an alias for mapstructure.Metadata that contains decoding metadata.
 	Metadata = mapstructure.Metadata
@@ -52,7 +52,7 @@ type (
 
 // NewDecoder creates a mapstructure decoder with the given result and optional configuration.
 // The decoder is configured with sensible defaults for struct-to-map and map-to-struct conversions.
-func NewDecoder(result any, options ...decoderOption) (*mapstructure.Decoder, error) {
+func NewDecoder(result any, options ...DecoderOption) (*mapstructure.Decoder, error) {
 	config := &mapstructure.DecoderConfig{
 		TagName:              defaultDecoderTagName,
 		IgnoreUntaggedFields: false,
@@ -81,7 +81,7 @@ func NewDecoder(result any, options ...decoderOption) (*mapstructure.Decoder, er
 
 // Default is "json". This specifies which struct tag to read for field names.
 // Example: WithTagName("yaml") will use `yaml:"field_name"` tags.
-func WithTagName(tagName string) decoderOption {
+func WithTagName(tagName string) DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.TagName = tagName
 	}
@@ -90,7 +90,7 @@ func WithTagName(tagName string) decoderOption {
 // WithIgnoreUntaggedFields controls whether struct fields without explicit tags are ignored.
 // When true, fields without tags are skipped during decoding (similar to `mapstructure:"-"`).
 // When false (default), untagged fields use their Go field names for mapping.
-func WithIgnoreUntaggedFields(ignoreUntaggedFields bool) decoderOption {
+func WithIgnoreUntaggedFields(ignoreUntaggedFields bool) DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.IgnoreUntaggedFields = ignoreUntaggedFields
 	}
@@ -99,7 +99,7 @@ func WithIgnoreUntaggedFields(ignoreUntaggedFields bool) decoderOption {
 // The hook is called before decoding and allows modification of values before setting them.
 // It's called for every map and value in the input. Returning an error will cause the entire decode to fail.
 // This replaces the default DecoderHook which includes time, URL, IP, and basic type conversions.
-func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) decoderOption {
+func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.DecodeHook = decodeHook
 	}
@@ -108,7 +108,7 @@ func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) decoderOption {
 // Default uses CamelCase matching. The function receives the map key and struct field name,
 // and should return true if they match. This allows implementing case-sensitive matching,
 // snake_case conversion, or other custom naming strategies.
-func WithMatchName(matchName func(mapKey, fieldName string) bool) decoderOption {
+func WithMatchName(matchName func(mapKey, fieldName string) bool) DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.MatchName = matchName
 	}
@@ -117,7 +117,7 @@ func WithMatchName(matchName func(mapKey, fieldName string) bool) decoderOption 
 // WithErrorUnused enables strict decoding that returns an error for unused keys in the input map.
 // When enabled, any map keys that don't correspond to struct fields will cause decoding to fail.
 // This is useful for validating that all input data is being processed.
-func WithErrorUnused() decoderOption {
+func WithErrorUnused() DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.ErrorUnused = true
 	}
@@ -126,7 +126,7 @@ func WithErrorUnused() decoderOption {
 // WithErrorUnset enables strict decoding that returns an error for unset fields in the result struct.
 // When enabled, any struct fields that remain unset after decoding will cause an error.
 // This applies to all nested structs and is useful for ensuring complete data population.
-func WithErrorUnset() decoderOption {
+func WithErrorUnset() DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.ErrorUnset = true
 	}
@@ -136,7 +136,7 @@ func WithErrorUnset() decoderOption {
 // When enabled, struct fields are reset to their zero values before decoding.
 // For maps, this empties the map before adding decoded values.
 // This is useful when reusing structs or ensuring clean state.
-func WithZeroFields() decoderOption {
+func WithZeroFields() DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.ZeroFields = true
 	}
@@ -145,7 +145,7 @@ func WithZeroFields() decoderOption {
 // WithAllowUnsetPointer prevents pointer-type fields from being reported as unset.
 // When enabled, pointer fields that remain nil won't trigger errors with WithErrorUnset().
 // This allows optional pointer fields without causing validation failures.
-func WithAllowUnsetPointer() decoderOption {
+func WithAllowUnsetPointer() DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.AllowUnsetPointer = true
 	}
@@ -157,7 +157,7 @@ func WithAllowUnsetPointer() decoderOption {
 // - Unused: keys from input that weren't used
 // - Unset: struct fields that weren't set during decoding
 // This is useful for debugging and validation purposes.
-func WithMetadata(metadata *Metadata) decoderOption {
+func WithMetadata(metadata *Metadata) DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.Metadata = metadata
 	}
@@ -169,7 +169,7 @@ func WithMetadata(metadata *Metadata) decoderOption {
 // - Numbers to strings
 // - Various other weak type transformations
 // This is useful when working with loosely-typed data sources like JSON.
-func WithWeaklyTypedInput() decoderOption {
+func WithWeaklyTypedInput() DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.WeaklyTypedInput = true
 	}
@@ -179,19 +179,20 @@ func WithWeaklyTypedInput() decoderOption {
 // When enabled, the decode hook function will be called for nil inputs,
 // allowing the hook to provide default values or perform nil-specific processing.
 // This is useful for implementing default value logic in decode hooks.
-func WithDecodeNil() decoderOption {
+func WithDecodeNil() DecoderOption {
 	return func(c *mapstructure.DecoderConfig) {
 		c.DecodeNil = true
 	}
 }
 
 // ToMap converts a struct value to a map[string]any.
-func ToMap(value any, options ...decoderOption) (map[string]any, error) {
+func ToMap(value any, options ...DecoderOption) (map[string]any, error) {
 	if reflect.Indirect(reflect.ValueOf(value)).Kind() != reflect.Struct {
 		return nil, ErrInvalidToMapValue
 	}
 
 	var result map[string]any
+
 	decoder, err := NewDecoder(&result, options...)
 	if err != nil {
 		return nil, err
@@ -205,12 +206,13 @@ func ToMap(value any, options ...decoderOption) (map[string]any, error) {
 }
 
 // FromMap converts a map[string]any to a struct value.
-func FromMap[T any](value map[string]any, options ...decoderOption) (*T, error) {
+func FromMap[T any](value map[string]any, options ...DecoderOption) (*T, error) {
 	if reflect.TypeFor[T]().Kind() != reflect.Struct {
 		return nil, ErrInvalidFromMapType
 	}
 
 	var result T
+
 	decoder, err := NewDecoder(&result, options...)
 	if err != nil {
 		return nil, err

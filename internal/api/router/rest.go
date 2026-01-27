@@ -12,8 +12,8 @@ import (
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
 	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
 	"github.com/ilxqx/vef-framework-go/internal/api/middleware"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
 )
@@ -65,8 +65,8 @@ func (r *REST) Route(handler fiber.Handler, op *api.Operation) {
 
 	r.group.Add([]string{method}, fullPath, resolver, handlers...)
 
-	op.Meta[common.MetaKeyRESTHttpMethod] = method
-	op.Meta[common.MetaKeyRESTHttpPath] = r.basePath + fullPath
+	op.Meta[shared.MetaKeyRESTHttpMethod] = method
+	op.Meta[shared.MetaKeyRESTHttpPath] = r.basePath + fullPath
 }
 
 // createResolver creates a middleware that parses request and sets operation in context.
@@ -77,8 +77,8 @@ func (r *REST) createResolver(op *api.Operation) fiber.Handler {
 			return err
 		}
 
-		common.SetOperation(ctx, op)
-		common.SetRequest(ctx, req)
+		shared.SetOperation(ctx, op)
+		shared.SetRequest(ctx, req)
 
 		return ctx.Next()
 	}
@@ -86,15 +86,15 @@ func (r *REST) createResolver(op *api.Operation) fiber.Handler {
 
 // parseAction extracts HTTP method and sub-path from action string.
 // Format: "METHOD [/path]" (e.g., "GET", "POST /items", "DELETE /:id").
-func (*REST) parseAction(action string) (string, string) {
+func (*REST) parseAction(action string) (method, subPath string) {
 	parts := strings.SplitN(action, constants.Space, 2)
-	method := strings.ToUpper(parts[0])
+	method = strings.ToUpper(parts[0])
 
 	if len(parts) < 2 {
-		return method, ""
+		return method, subPath
 	}
 
-	subPath := strings.TrimSpace(parts[1])
+	subPath = strings.TrimSpace(parts[1])
 	if !strings.HasPrefix(subPath, constants.Slash) {
 		subPath = constants.Slash + subPath
 	}

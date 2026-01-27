@@ -43,11 +43,11 @@ func NewNoOpEvictionHandler() *NoOpEvictionHandler {
 	return new(NoOpEvictionHandler)
 }
 
-func (h *NoOpEvictionHandler) OnAccess(key string)             {}
-func (h *NoOpEvictionHandler) OnInsert(key string)             {}
-func (h *NoOpEvictionHandler) OnEvict(key string)              {}
-func (h *NoOpEvictionHandler) SelectEvictionCandidate() string { return constants.Empty }
-func (h *NoOpEvictionHandler) Reset()                          {}
+func (*NoOpEvictionHandler) OnAccess(_ string)               {}
+func (*NoOpEvictionHandler) OnInsert(_ string)               {}
+func (*NoOpEvictionHandler) OnEvict(_ string)                {}
+func (*NoOpEvictionHandler) SelectEvictionCandidate() string { return constants.Empty }
+func (*NoOpEvictionHandler) Reset()                          {}
 
 // LruHandler implements Least Recently Used eviction policy.
 type LruHandler struct {
@@ -133,7 +133,7 @@ func NewFifoHandler() *FifoHandler {
 	}
 }
 
-func (h *FifoHandler) OnAccess(key string) {
+func (*FifoHandler) OnAccess(_ string) {
 	// FIFO doesn't track access, only insertion order
 }
 
@@ -241,8 +241,7 @@ func (h *LfuHandler) OnAccess(key string) {
 	if oldFreq == h.minFreq {
 		// Check if old frequency bucket is now empty
 		if bucketElem, exists := h.bucketMap[oldFreq]; exists {
-			bucket := bucketElem.Value.(*lfuFreqBucket)
-			if bucket.entries.Len() == 0 {
+			if bucket, ok := bucketElem.Value.(*lfuFreqBucket); ok && bucket.entries.Len() == 0 {
 				h.minFreq = newFreq
 			}
 		}
@@ -309,8 +308,8 @@ func (h *LfuHandler) SelectEvictionCandidate() string {
 		return constants.Empty
 	}
 
-	bucket := bucketElem.Value.(*lfuFreqBucket)
-	if bucket.entries.Len() == 0 {
+	bucket, ok := bucketElem.Value.(*lfuFreqBucket)
+	if !ok || bucket.entries.Len() == 0 {
 		return constants.Empty
 	}
 
@@ -356,8 +355,8 @@ func (h *LfuHandler) addToFreqBucket(key string, node *lfuNode, freq int64) {
 		// Insert bucket in sorted order
 		bucketElem = h.insertBucketSorted(bucket)
 		h.bucketMap[freq] = bucketElem
-	} else {
-		bucket = bucketElem.Value.(*lfuFreqBucket)
+	} else if b, ok := bucketElem.Value.(*lfuFreqBucket); ok {
+		bucket = b
 	}
 
 	// Add node to bucket (at back for FIFO within same frequency)
@@ -373,7 +372,10 @@ func (h *LfuHandler) removeFromFreqBucket(key string, freq int64) {
 		return
 	}
 
-	bucket := bucketElem.Value.(*lfuFreqBucket)
+	bucket, ok := bucketElem.Value.(*lfuFreqBucket)
+	if !ok {
+		return
+	}
 
 	nodeElem, exists := bucket.nodeMap[key]
 	if !exists {
@@ -401,8 +403,8 @@ func (h *LfuHandler) moveToFreqBucket(key string, node *lfuNode, oldFreq, newFre
 func (h *LfuHandler) insertBucketSorted(bucket *lfuFreqBucket) *list.Element {
 	// Find insertion point
 	for elem := h.freqBuckets.Front(); elem != nil; elem = elem.Next() {
-		existingBucket := elem.Value.(*lfuFreqBucket)
-		if bucket.frequency < existingBucket.frequency {
+		existingBucket, ok := elem.Value.(*lfuFreqBucket)
+		if ok && bucket.frequency < existingBucket.frequency {
 			return h.freqBuckets.InsertBefore(bucket, elem)
 		}
 	}
@@ -422,15 +424,16 @@ func (h *LfuHandler) recalculateMinFreq() {
 	// The first bucket has the minimum frequency
 	elem := h.freqBuckets.Front()
 	if elem != nil {
-		bucket := elem.Value.(*lfuFreqBucket)
-		h.minFreq = bucket.frequency
+		if bucket, ok := elem.Value.(*lfuFreqBucket); ok {
+			h.minFreq = bucket.frequency
+		}
 	}
 }
 
 // EvictionHandlerFactory creates eviction handlers based on policy.
 type EvictionHandlerFactory struct{}
 
-func (f *EvictionHandlerFactory) CreateHandler(policy EvictionPolicy) EvictionHandler {
+func (*EvictionHandlerFactory) CreateHandler(policy EvictionPolicy) EvictionHandler {
 	switch policy {
 	case EvictionPolicyLRU:
 		return NewLruHandler()

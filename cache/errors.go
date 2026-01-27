@@ -11,4 +11,6 @@ var (
 	ErrCacheClosed = errors.New("cache closed")
 	// ErrLoaderRequired is returned when GetOrLoad is called without providing a loader.
 	ErrLoaderRequired = errors.New("cache loader is required")
+	// ErrTypeAssertionFailed is returned when singleflight type assertion fails.
+	ErrTypeAssertionFailed = errors.New("singleflight: type assertion failed")
 )

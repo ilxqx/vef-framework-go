@@ -4,7 +4,7 @@ import (
 	"github.com/uptrace/bun/schema"
 
 	"github.com/ilxqx/vef-framework-go/constants"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // OrderBuilder provides a fluent interface for building ORDER BY clauses.
@@ -23,8 +23,8 @@ type OrderBuilder interface {
 type orderExpr struct {
 	builders   ExprBuilder
 	column     string
-	direction  sort.OrderDirection
-	nullsOrder sort.NullsOrder
+	direction  sortx.OrderDirection
+	nullsOrder sortx.NullsOrder
 	expr       any
 }
 
@@ -43,25 +43,25 @@ func (o *orderExpr) Expr(expr any) OrderBuilder {
 }
 
 func (o *orderExpr) Asc() OrderBuilder {
-	o.direction = sort.OrderAsc
+	o.direction = sortx.OrderAsc
 
 	return o
 }
 
 func (o *orderExpr) Desc() OrderBuilder {
-	o.direction = sort.OrderDesc
+	o.direction = sortx.OrderDesc
 
 	return o
 }
 
 func (o *orderExpr) NullsFirst() OrderBuilder {
-	o.nullsOrder = sort.NullsFirst
+	o.nullsOrder = sortx.NullsFirst
 
 	return o
 }
 
 func (o *orderExpr) NullsLast() OrderBuilder {
-	o.nullsOrder = sort.NullsLast
+	o.nullsOrder = sortx.NullsLast
 
 	return o
 }
@@ -84,7 +84,7 @@ func (o *orderExpr) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, err er
 	b = append(b, constants.ByteSpace)
 	b = append(b, o.direction.String()...)
 
-	if o.nullsOrder != sort.NullsDefault {
+	if o.nullsOrder != sortx.NullsDefault {
 		b = append(b, constants.ByteSpace)
 		b = append(b, o.nullsOrder.String()...)
 	}
@@ -116,8 +116,8 @@ func (o *orderByClause) AppendQuery(gen schema.QueryGen, b []byte) (_ []byte, er
 func newOrderExpr(builders ExprBuilder) *orderExpr {
 	return &orderExpr{
 		builders:   builders,
-		direction:  sort.OrderAsc,
-		nullsOrder: sort.NullsDefault,
+		direction:  sortx.OrderAsc,
+		nullsOrder: sortx.NullsDefault,
 	}
 }
 

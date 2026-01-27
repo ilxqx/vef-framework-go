@@ -26,7 +26,7 @@ This command will set up a complete project skeleton including:
 			path, _ := cmd.Flags().GetString("path")
 			module, _ := cmd.Flags().GetString("module")
 
-			_, _ = fmt.Printf("Creating new VEF project...\n")
+			_, _ = fmt.Println("Creating new VEF project...")
 			_, _ = fmt.Printf("  Project name: %s\n", name)
 			_, _ = fmt.Printf("  Path: %s\n", path)
 			_, _ = fmt.Printf("  Module: %s\n", module)

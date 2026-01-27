@@ -17,7 +17,7 @@ import (
 // TestBadValues tests error handling for invalid inputs and registration panics.
 func TestBadValues(t *testing.T) {
 	transformer := New()
-	transformer.Register("blah", func(ctx context.Context, fl mold.FieldLevel) error { return nil })
+	transformer.Register("blah", func(_ context.Context, _ mold.FieldLevel) error { return nil })
 
 	type InvalidTagStruct struct {
 		Ignore string `mold:"-"`
@@ -63,7 +63,7 @@ func TestBadValues(t *testing.T) {
 	})
 
 	t.Run("InterfacePointerToNil", func(t *testing.T) {
-		var iface any = nil
+		var iface any
 
 		err := transformer.Struct(context.Background(), &iface)
 		assert.Error(t, err, "Should return error for pointer to nil interface")
@@ -94,7 +94,7 @@ func TestBadValues(t *testing.T) {
 			transformer.Register("test", nil)
 		}, "Should panic when registering nil function")
 		assert.PanicsWithValue(t, "mold: tag \",\" either contains restricted characters or is the same as a restricted tag needed for normal operation", func() {
-			transformer.Register(",", func(ctx context.Context, fl mold.FieldLevel) error { return nil })
+			transformer.Register(",", func(_ context.Context, _ mold.FieldLevel) error { return nil })
 		}, "Should panic when registering restricted character")
 	})
 
@@ -118,7 +118,7 @@ func TestBasicTransform(t *testing.T) {
 	}
 
 	transformer := New()
-	transformer.Register("repl", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("repl", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString("test")
 
 		return nil
@@ -202,7 +202,7 @@ func TestBasicTransform(t *testing.T) {
 
 		var tt6 DefaultPointerStruct
 
-		transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
+		transformer.Register("default", func(_ context.Context, fl mold.FieldLevel) error {
 			fl.Field().Set(reflect.New(fl.Field().Type().Elem()))
 
 			return nil
@@ -291,7 +291,7 @@ func TestBasicTransform(t *testing.T) {
 		assert.Equal(t, "unregistered/undefined transformation \"nonexistant\" found on field", err.Error(), "Error message should mention undefined transformation")
 
 		<-done
-		transformer.Register("dummy", func(ctx context.Context, fl mold.FieldLevel) error { return nil })
+		transformer.Register("dummy", func(_ context.Context, _ mold.FieldLevel) error { return nil })
 		err = transformer.Field(context.Background(), &tt6.String, "dummy")
 		assert.NoError(t, err, "Newly registered transformation should work")
 	})
@@ -300,12 +300,12 @@ func TestBasicTransform(t *testing.T) {
 // TestAlias tests transformation alias registration and usage.
 func TestAlias(t *testing.T) {
 	transformer := New()
-	transformer.Register("repl", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("repl", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString("test")
 
 		return nil
 	})
-	transformer.Register("repl2", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("repl2", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString("test2")
 
 		return nil
@@ -356,7 +356,7 @@ func TestAlias(t *testing.T) {
 // TestArray tests array transformations with dive functionality.
 func TestArray(t *testing.T) {
 	transformer := New()
-	transformer.Register("defaultArr", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultArr", func(_ context.Context, fl mold.FieldLevel) error {
 		if hasValue(fl.Field()) {
 			return nil
 		}
@@ -365,7 +365,7 @@ func TestArray(t *testing.T) {
 
 		return nil
 	})
-	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultStr", func(_ context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
@@ -420,7 +420,7 @@ func TestArray(t *testing.T) {
 // TestMap tests map transformations with dive functionality.
 func TestMap(t *testing.T) {
 	transformer := New()
-	transformer.Register("defaultMap", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultMap", func(_ context.Context, fl mold.FieldLevel) error {
 		if hasValue(fl.Field()) {
 			return nil
 		}
@@ -429,7 +429,7 @@ func TestMap(t *testing.T) {
 
 		return nil
 	})
-	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultStr", func(_ context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
@@ -491,17 +491,17 @@ func TestInterface(t *testing.T) {
 	}
 
 	transformer := New()
-	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("default", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(InnerStruct{STR: "test"}))
 
 		return nil
 	})
-	transformer.Register("default2", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("default2", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(InnerErrorStruct{}))
 
 		return nil
 	})
-	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultStr", func(_ context.Context, fl mold.FieldLevel) error {
 		if hasValue(fl.Field()) && fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
@@ -510,7 +510,7 @@ func TestInterface(t *testing.T) {
 
 		return nil
 	})
-	transformer.Register("error", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("error", func(_ context.Context, _ mold.FieldLevel) error {
 		return errors.New("BAD VALUE")
 	})
 
@@ -588,12 +588,12 @@ func TestInterfacePtr(t *testing.T) {
 	}
 
 	transformer := New()
-	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("default", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(new(InnerPtrStruct)))
 
 		return nil
 	})
-	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultStr", func(_ context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
@@ -639,7 +639,7 @@ func TestStructLevel(t *testing.T) {
 	}
 
 	transformer := New()
-	transformer.RegisterStructLevel(func(ctx context.Context, sl mold.StructLevel) error {
+	transformer.RegisterStructLevel(func(_ context.Context, sl mold.StructLevel) error {
 		s := sl.Struct().Interface().(StructLevelStruct)
 		if s.String == "error" {
 			return errors.New("BAD VALUE")
@@ -671,7 +671,7 @@ func TestStructLevel(t *testing.T) {
 // TestTimeType tests transformation of time.Time fields.
 func TestTimeType(t *testing.T) {
 	transformer := New()
-	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("default", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf(time.Now()))
 
 		return nil
@@ -696,7 +696,7 @@ func TestTimeType(t *testing.T) {
 // TestParam tests transformations with parameters.
 func TestParam(t *testing.T) {
 	transformer := New()
-	transformer.Register("ltrim", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("ltrim", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().SetString(strings.TrimLeft(fl.Field().String(), fl.Param()))
 
 		return nil
@@ -717,12 +717,12 @@ func TestParam(t *testing.T) {
 // TestDiveKeys tests map transformations with keys/endkeys tags.
 func TestDiveKeys(t *testing.T) {
 	transformer := New()
-	transformer.Register("default", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("default", func(_ context.Context, fl mold.FieldLevel) error {
 		fl.Field().Set(reflect.ValueOf("after"))
 
 		return nil
 	})
-	transformer.Register("err", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("err", func(_ context.Context, _ mold.FieldLevel) error {
 		return errors.New("err")
 	})
 
@@ -797,7 +797,7 @@ func TestStructArray(t *testing.T) {
 	}
 
 	transformer := New()
-	transformer.Register("defaultArr", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultArr", func(_ context.Context, fl mold.FieldLevel) error {
 		if hasValue(fl.Field()) {
 			return nil
 		}
@@ -806,7 +806,7 @@ func TestStructArray(t *testing.T) {
 
 		return nil
 	})
-	transformer.Register("defaultStr", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("defaultStr", func(_ context.Context, fl mold.FieldLevel) error {
 		if fl.Field().String() == "ok" {
 			return errors.New("ALREADY OK")
 		}
@@ -897,7 +897,7 @@ func TestStructArray(t *testing.T) {
 func TestSiblingField(t *testing.T) {
 	transformer := New()
 
-	transformer.Register("translate", func(ctx context.Context, fl mold.FieldLevel) error {
+	transformer.Register("translate", func(_ context.Context, fl mold.FieldLevel) error {
 		statusValue := fl.Field().Int()
 
 		var translatedName string
@@ -943,7 +943,7 @@ func TestSiblingField(t *testing.T) {
 	})
 
 	t.Run("SiblingFieldNotFound", func(t *testing.T) {
-		transformer.Register("test_missing", func(ctx context.Context, fl mold.FieldLevel) error {
+		transformer.Register("test_missing", func(_ context.Context, fl mold.FieldLevel) error {
 			if _, ok := fl.SiblingField("NonExistentField"); ok {
 				return errors.New("should not find non-existent field")
 			}

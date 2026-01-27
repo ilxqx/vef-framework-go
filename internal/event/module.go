@@ -34,14 +34,18 @@ func createMemoryBus(lc fx.Lifecycle, middlewares []event.Middleware) event.Bus 
 			if err := bus.Start(); err != nil {
 				return fmt.Errorf("failed to start event bus: %w", err)
 			}
+
 			logger.Infof("Memory event bus started (middlewares=%d)", len(middlewares))
+
 			return nil
 		},
 		func(ctx context.Context) error {
 			if err := bus.Shutdown(ctx); err != nil {
 				return fmt.Errorf("failed to stop event bus: %w", err)
 			}
+
 			logger.Infof("Memory event bus stopped")
+
 			return nil
 		},
 	))

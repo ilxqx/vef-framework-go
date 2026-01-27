@@ -25,23 +25,23 @@ func newMockService() *MockService {
 	}
 }
 
-func (m *MockService) PutObject(ctx context.Context, opts PutObjectOptions) (*ObjectInfo, error) {
+func (m *MockService) PutObject(_ context.Context, opts PutObjectOptions) (*ObjectInfo, error) {
 	m.files[opts.Key] = true
 
 	return &ObjectInfo{Key: opts.Key}, nil
 }
 
-func (m *MockService) GetObject(ctx context.Context, opts GetObjectOptions) (io.ReadCloser, error) {
+func (*MockService) GetObject(_ context.Context, _ GetObjectOptions) (io.ReadCloser, error) {
 	return nil, nil
 }
 
-func (m *MockService) DeleteObject(ctx context.Context, opts DeleteObjectOptions) error {
+func (m *MockService) DeleteObject(_ context.Context, opts DeleteObjectOptions) error {
 	delete(m.files, opts.Key)
 
 	return nil
 }
 
-func (m *MockService) DeleteObjects(ctx context.Context, opts DeleteObjectsOptions) error {
+func (m *MockService) DeleteObjects(_ context.Context, opts DeleteObjectsOptions) error {
 	for _, key := range opts.Keys {
 		delete(m.files, key)
 	}
@@ -49,32 +49,32 @@ func (m *MockService) DeleteObjects(ctx context.Context, opts DeleteObjectsOptio
 	return nil
 }
 
-func (m *MockService) ListObjects(ctx context.Context, opts ListObjectsOptions) ([]ObjectInfo, error) {
+func (*MockService) ListObjects(_ context.Context, _ ListObjectsOptions) ([]ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *MockService) GetPresignedURL(ctx context.Context, opts PresignedURLOptions) (string, error) {
+func (*MockService) GetPresignedURL(_ context.Context, _ PresignedURLOptions) (string, error) {
 	return "", nil
 }
 
-func (m *MockService) CopyObject(ctx context.Context, opts CopyObjectOptions) (*ObjectInfo, error) {
+func (m *MockService) CopyObject(_ context.Context, opts CopyObjectOptions) (*ObjectInfo, error) {
 	m.files[opts.DestKey] = true
 
 	return &ObjectInfo{Key: opts.DestKey}, nil
 }
 
-func (m *MockService) MoveObject(ctx context.Context, opts MoveObjectOptions) (*ObjectInfo, error) {
+func (m *MockService) MoveObject(_ context.Context, opts MoveObjectOptions) (*ObjectInfo, error) {
 	m.files[opts.DestKey] = true
 	delete(m.files, opts.SourceKey)
 
 	return &ObjectInfo{Key: opts.DestKey}, nil
 }
 
-func (m *MockService) StatObject(ctx context.Context, opts StatObjectOptions) (*ObjectInfo, error) {
+func (*MockService) StatObject(_ context.Context, _ StatObjectOptions) (*ObjectInfo, error) {
 	return nil, nil
 }
 
-func (m *MockService) PromoteObject(ctx context.Context, tempKey string) (*ObjectInfo, error) {
+func (m *MockService) PromoteObject(_ context.Context, tempKey string) (*ObjectInfo, error) {
 	if !strings.HasPrefix(tempKey, TempPrefix) {
 		return nil, nil
 	}
@@ -279,7 +279,7 @@ func TestParseMetaFields(t *testing.T) {
 
 func TestPromote(t *testing.T) {
 	t.Run("Create_UploadedFile", func(t *testing.T) {
-		t.Logf("Testing file promotion for uploaded_file fields")
+		t.Log("Testing file promotion for uploaded_file fields")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -306,7 +306,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("Create_RichText", func(t *testing.T) {
-		t.Logf("Testing URL promotion in richtext fields")
+		t.Log("Testing URL promotion in richtext fields")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -330,7 +330,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("Create_Markdown", func(t *testing.T) {
-		t.Logf("Testing URL promotion in markdown fields")
+		t.Log("Testing URL promotion in markdown fields")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -354,7 +354,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("Update_ReplaceFiles", func(t *testing.T) {
-		t.Logf("Testing file replacement during update")
+		t.Log("Testing file replacement during update")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -394,7 +394,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("Update_PartialChange", func(t *testing.T) {
-		t.Logf("Testing partial file updates")
+		t.Log("Testing partial file updates")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -434,7 +434,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("Update_RichtextUrlChange", func(t *testing.T) {
-		t.Logf("Testing richtext URL updates")
+		t.Log("Testing richtext URL updates")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -463,7 +463,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		t.Logf("Testing file deletion when model is deleted")
+		t.Log("Testing file deletion when model is deleted")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -489,7 +489,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("NonTempFiles", func(t *testing.T) {
-		t.Logf("Testing that non-temp files are not promoted")
+		t.Log("Testing that non-temp files are not promoted")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -509,7 +509,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("EmptyFields", func(t *testing.T) {
-		t.Logf("Testing handling of empty fields")
+		t.Log("Testing handling of empty fields")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -531,7 +531,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("ArrayWithEmptyStrings", func(t *testing.T) {
-		t.Logf("Testing array with empty string elements")
+		t.Log("Testing array with empty string elements")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -552,7 +552,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("MixedTempAndPermanentUrls", func(t *testing.T) {
-		t.Logf("Testing mixed temp and permanent URLs in content")
+		t.Log("Testing mixed temp and permanent URLs in content")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -581,7 +581,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("ContentWithoutUrls", func(t *testing.T) {
-		t.Logf("Testing content without any URLs")
+		t.Log("Testing content without any URLs")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -601,7 +601,7 @@ func TestPromote(t *testing.T) {
 	})
 
 	t.Run("BothModelsNil", func(t *testing.T) {
-		t.Logf("Testing nil model handling")
+		t.Log("Testing nil model handling")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -615,7 +615,7 @@ func TestPromote(t *testing.T) {
 
 func TestPromoterTypes(t *testing.T) {
 	t.Run("PointerTypes_Create", func(t *testing.T) {
-		t.Logf("Testing file promotion with pointer field types")
+		t.Log("Testing file promotion with pointer field types")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModelWithPointers](service)
@@ -638,7 +638,7 @@ func TestPromoterTypes(t *testing.T) {
 	})
 
 	t.Run("PointerTypes_Update", func(t *testing.T) {
-		t.Logf("Testing file updates with pointer field types")
+		t.Log("Testing file updates with pointer field types")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModelWithPointers](service)
@@ -668,7 +668,7 @@ func TestPromoterTypes(t *testing.T) {
 	})
 
 	t.Run("PointerTypes_NilPointers", func(t *testing.T) {
-		t.Logf("Testing nil pointer handling")
+		t.Log("Testing nil pointer handling")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModelWithPointers](service)
@@ -686,7 +686,7 @@ func TestPromoterTypes(t *testing.T) {
 	})
 
 	t.Run("NullTypes_Create", func(t *testing.T) {
-		t.Logf("Testing file promotion with null.String types")
+		t.Log("Testing file promotion with null.String types")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModelWithNull](service)
@@ -714,7 +714,7 @@ func TestPromoterTypes(t *testing.T) {
 	})
 
 	t.Run("NullTypes_Update", func(t *testing.T) {
-		t.Logf("Testing null type field updates")
+		t.Log("Testing null type field updates")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModelWithNull](service)
@@ -740,7 +740,7 @@ func TestPromoterTypes(t *testing.T) {
 	})
 
 	t.Run("NullTypes_InvalidNull", func(t *testing.T) {
-		t.Logf("Testing invalid null.String handling")
+		t.Log("Testing invalid null.String handling")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModelWithNull](service)
@@ -762,7 +762,7 @@ func TestPromoterTypes(t *testing.T) {
 
 func TestPromoterEvents(t *testing.T) {
 	t.Run("WithEventPublisher", func(t *testing.T) {
-		t.Logf("Testing event publishing during promotion")
+		t.Log("Testing event publishing during promotion")
 
 		service := newMockService()
 		publisher := &MockPublisher{}
@@ -797,7 +797,7 @@ func TestPromoterEvents(t *testing.T) {
 	})
 
 	t.Run("WithoutEventPublisher", func(t *testing.T) {
-		t.Logf("Testing promotion without event publisher")
+		t.Log("Testing promotion without event publisher")
 
 		service := newMockService()
 		promoter := NewPromoter[TestModel](service)
@@ -814,7 +814,7 @@ func TestPromoterEvents(t *testing.T) {
 	})
 
 	t.Run("DeleteEvents", func(t *testing.T) {
-		t.Logf("Testing delete event publishing")
+		t.Log("Testing delete event publishing")
 
 		service := newMockService()
 		publisher := &MockPublisher{}
@@ -850,7 +850,7 @@ func TestPromoterEvents(t *testing.T) {
 	})
 
 	t.Run("CleanupEvents", func(t *testing.T) {
-		t.Logf("Testing cleanup event publishing during updates")
+		t.Log("Testing cleanup event publishing during updates")
 
 		service := newMockService()
 		publisher := &MockPublisher{}
@@ -900,7 +900,7 @@ func TestPromoterEvents(t *testing.T) {
 	})
 
 	t.Run("RichtextWithAttrs", func(t *testing.T) {
-		t.Logf("Testing event publishing for richtext with attributes")
+		t.Log("Testing event publishing for richtext with attributes")
 
 		type ModelWithRichtext struct {
 			Content string `meta:"richtext=sanitize:true max_size:10MB"`

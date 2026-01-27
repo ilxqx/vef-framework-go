@@ -15,7 +15,7 @@ func NewTransformerFactoryResolver(transformer mold.Transformer) api.FactoryPara
 	return &TransformerFactoryResolver{transformer: transformer}
 }
 
-func (r *TransformerFactoryResolver) Type() reflect.Type {
+func (*TransformerFactoryResolver) Type() reflect.Type {
 	return reflect.TypeFor[mold.Transformer]()
 }
 

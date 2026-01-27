@@ -19,12 +19,12 @@ var logger = log.Named("excel")
 type importer struct {
 	schema  *tabular.Schema
 	parsers map[string]tabular.ValueParser
-	options importOptions
+	options importConfig
 	typ     reflect.Type
 }
 
-func newImporter(typ reflect.Type, opts ...ImportOption) *importer {
-	options := importOptions{
+func NewImporter(typ reflect.Type, opts ...ImportOption) tabular.Importer {
+	options := importConfig{
 		sheetIndex: 0,
 	}
 	for _, opt := range opts {
@@ -216,7 +216,7 @@ func (i *importer) parseValue(cellValue string, targetType reflect.Type, col *ta
 	return parser.Parse(cellValue, targetType)
 }
 
-func (i *importer) isEmptyRow(row []string) bool {
+func (*importer) isEmptyRow(row []string) bool {
 	return streams.FromSlice(row).AllMatch(func(cell string) bool {
 		return cell == constants.Empty
 	})

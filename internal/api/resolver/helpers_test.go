@@ -74,7 +74,7 @@ func TestValidateHandlerSignature(t *testing.T) {
 	})
 
 	t.Run("WithParameters", func(t *testing.T) {
-		fn := func(a int, b string) error { return nil }
+		fn := func(_ int, _ string) error { return nil }
 		err := validateHandlerSignature(reflect.TypeOf(fn))
 		assert.NoError(t, err, "Handler with parameters should be valid")
 	})
@@ -102,7 +102,7 @@ func TestIsHandlerFactory(t *testing.T) {
 	})
 
 	t.Run("FactoryWithParams", func(t *testing.T) {
-		fn := func(a int) func() error { return nil }
+		fn := func(_ int) func() error { return nil }
 		result := isHandlerFactory(reflect.TypeOf(fn))
 		assert.True(t, result, "Factory with parameters should be valid")
 	})
@@ -167,15 +167,15 @@ type mockResource struct {
 	api.Resource
 }
 
-func (m *mockResource) GetUser() error {
+func (*mockResource) GetUser() error {
 	return nil
 }
 
-func (m *mockResource) GetCPU() error {
+func (*mockResource) GetCPU() error {
 	return nil
 }
 
-func (m *mockResource) CreateUserFactory() func() error {
+func (*mockResource) CreateUserFactory() func() error {
 	return func() error { return nil }
 }
 

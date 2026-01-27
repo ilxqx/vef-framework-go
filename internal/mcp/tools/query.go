@@ -13,7 +13,7 @@ import (
 
 // QueryArgs defines the expected arguments for the database_query tool.
 type QueryArgs struct {
-	Sql    string `json:"sql" jsonschema:"required,description=The SQL query with placeholders (?) for parameters"`
+	SQL    string `json:"sql" jsonschema:"required,description=The SQL query with placeholders (?) for parameters"`
 	Params []any  `json:"params,omitempty" jsonschema:"description=Parameters for the SQL query placeholders"`
 }
 
@@ -49,13 +49,14 @@ func (t *QueryTool) handleQuery(ctx context.Context, req *mcp.CallToolRequest) (
 		return mcp.NewToolResultError("Failed to parse arguments: " + err.Error()), nil
 	}
 
-	if args.Sql == constants.Empty {
+	if args.SQL == constants.Empty {
 		return mcp.NewToolResultError("Sql parameter is required and must not be empty"), nil
 	}
 
 	db := mcp.DBWithOperator(ctx, t.db)
+
 	var results []map[string]any
-	if err := db.NewRaw(args.Sql, args.Params...).Scan(ctx, &results); err != nil {
+	if err := db.NewRaw(args.SQL, args.Params...).Scan(ctx, &results); err != nil {
 		//nolint:nilerr // MCP handler should return error result with nil error
 		return mcp.NewToolResultError("Query execution failed: " + err.Error()), nil
 	}

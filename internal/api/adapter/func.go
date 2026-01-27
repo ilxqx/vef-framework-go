@@ -7,9 +7,9 @@ import (
 	"github.com/gofiber/fiber/v3"
 
 	"github.com/ilxqx/vef-framework-go/api"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
 	"github.com/ilxqx/vef-framework-go/internal/api/handler"
 	"github.com/ilxqx/vef-framework-go/internal/api/param"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 )
 
 type FuncHandler struct {
@@ -33,7 +33,7 @@ func (a *FuncHandler) Adapt(h any, op *api.Operation) (fiber.Handler, error) {
 }
 
 func (a *FuncHandler) adaptHandler(funcH handler.Func, op *api.Operation) (fiber.Handler, error) {
-	resource := reflect.ValueOf(op.Meta[common.MetaKeyResource].(api.Resource))
+	resource := reflect.ValueOf(op.Meta[shared.MetaKeyResource].(api.Resource))
 	h := funcH.H()
 
 	if funcH.IsFactory() {
@@ -74,7 +74,12 @@ func (a *FuncHandler) createHandler(factory, target reflect.Value) (reflect.Valu
 		return results[0], nil
 	case 2:
 		if !results[1].IsNil() {
-			return reflect.Value{}, results[1].Interface().(error)
+			err, ok := results[1].Interface().(error)
+			if !ok {
+				return reflect.Value{}, ErrHandlerFactoryReturnNotError
+			}
+
+			return reflect.Value{}, err
 		}
 
 		return results[0], nil
@@ -112,6 +117,11 @@ func (a *FuncHandler) buildHandler(handler, target reflect.Value) (fiber.Handler
 			return nil
 		}
 
-		return results[0].Interface().(error)
+		err, ok := results[0].Interface().(error)
+		if !ok {
+			return ErrHandlerReturnNotError
+		}
+
+		return err
 	}, nil
 }

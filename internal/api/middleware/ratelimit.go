@@ -10,7 +10,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/contextx"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 	"github.com/ilxqx/vef-framework-go/webhelpers"
@@ -33,7 +33,7 @@ func NewRateLimit() api.Middleware {
 		h: limiter.New(limiter.Config{
 			LimiterMiddleware: limiter.FixedWindow{},
 			MaxFunc: func(ctx fiber.Ctx) int {
-				if op := common.Operation(ctx); op != nil {
+				if op := shared.Operation(ctx); op != nil {
 					return op.RateLimit.Max
 				}
 
@@ -44,7 +44,7 @@ func NewRateLimit() api.Middleware {
 			SkipSuccessfulRequests: false,
 			KeyGenerator: func(ctx fiber.Ctx) string {
 				var sb strings.Builder
-				if req := common.Request(ctx); req != nil {
+				if req := shared.Request(ctx); req != nil {
 					sb.WriteString(req.Resource)
 					sb.WriteByte(constants.ByteColon)
 					sb.WriteString(req.Version)
@@ -72,12 +72,12 @@ func NewRateLimit() api.Middleware {
 }
 
 // Name returns the middleware name.
-func (m *RateLimit) Name() string {
+func (*RateLimit) Name() string {
 	return "ratelimit"
 }
 
 // Order returns the middleware order.
-func (m *RateLimit) Order() int {
+func (*RateLimit) Order() int {
 	return -70
 }
 

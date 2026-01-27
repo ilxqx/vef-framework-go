@@ -23,7 +23,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		wg.Add(1)
 
-		unsubscribe := bus.Subscribe("user.created", func(ctx context.Context, evt event.Event) {
+		unsubscribe := bus.Subscribe("user.created", func(_ context.Context, evt event.Event) {
 			receivedEvent = evt
 
 			wg.Done()
@@ -69,7 +69,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		// Create multiple subscribers
 		var unsubscribers []event.UnsubscribeFunc
 		for range subscriberCount {
-			unsub := bus.Subscribe("order.placed", func(ctx context.Context, evt event.Event) {
+			unsub := bus.Subscribe("order.placed", func(_ context.Context, evt event.Event) {
 				mu.Lock()
 
 				receivedEvents = append(receivedEvents, evt)
@@ -132,7 +132,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 
 		wg.Add(2) // Expecting 2 events
 
-		unsubUser := bus.Subscribe("user.registered", func(ctx context.Context, evt event.Event) {
+		unsubUser := bus.Subscribe("user.registered", func(_ context.Context, evt event.Event) {
 			mu.Lock()
 
 			userEvents = append(userEvents, evt)
@@ -142,7 +142,7 @@ func TestMemoryEventBus_BasicPublishSubscribe(t *testing.T) {
 		})
 		defer unsubUser()
 
-		unsubOrder := bus.Subscribe("order.created", func(ctx context.Context, evt event.Event) {
+		unsubOrder := bus.Subscribe("order.created", func(_ context.Context, evt event.Event) {
 			mu.Lock()
 
 			orderEvents = append(orderEvents, evt)
@@ -193,7 +193,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 			mu         sync.Mutex
 		)
 
-		unsubscribe := bus.Subscribe("payment.processed", func(ctx context.Context, evt event.Event) {
+		unsubscribe := bus.Subscribe("payment.processed", func(_ context.Context, _ event.Event) {
 			mu.Lock()
 
 			eventCount++
@@ -245,7 +245,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		)
 
 		// First subscriber
-		unsubscribe1 := bus.Subscribe("notification.sent", func(ctx context.Context, evt event.Event) {
+		unsubscribe1 := bus.Subscribe("notification.sent", func(_ context.Context, _ event.Event) {
 			mu.Lock()
 
 			subscriber1Count++
@@ -254,7 +254,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		})
 
 		// Second subscriber
-		unsubscribe2 := bus.Subscribe("notification.sent", func(ctx context.Context, evt event.Event) {
+		unsubscribe2 := bus.Subscribe("notification.sent", func(_ context.Context, _ event.Event) {
 			mu.Lock()
 
 			subscriber2Count++
@@ -305,7 +305,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 			mu         sync.Mutex
 		)
 
-		unsubscribe := bus.Subscribe("test.event", func(ctx context.Context, evt event.Event) {
+		unsubscribe := bus.Subscribe("test.event", func(_ context.Context, _ event.Event) {
 			mu.Lock()
 
 			eventCount++
@@ -317,7 +317,7 @@ func TestMemoryEventBus_Unsubscribe(t *testing.T) {
 		unsubscribe()
 		unsubscribe()
 		unsubscribe()
-		t.Logf("Unsubscribe called 3 times without panic")
+		t.Log("Unsubscribe called 3 times without panic")
 
 		// Event should not be delivered
 		testEvent := event.NewBaseEvent("test.event")
@@ -350,7 +350,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		// Start the bus
 		err := bus.Start()
 		require.NoError(t, err, "Bus should start successfully")
-		t.Logf("Bus started successfully")
+		t.Log("Bus started successfully")
 
 		// Verify it's started
 		assert.True(t, bus.started, "Bus should be marked as started")
@@ -359,7 +359,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		err = bus.Start()
 		assert.Error(t, err, "Starting an already started bus should return error")
 		assert.Contains(t, err.Error(), "already started", "Error should indicate bus is already started")
-		t.Logf("Correctly prevented double start")
+		t.Log("Correctly prevented double start")
 
 		// Shutdown the bus
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -367,7 +367,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 
 		err = bus.Shutdown(shutdownCtx)
 		require.NoError(t, err, "Bus should shutdown successfully")
-		t.Logf("✓ Bus lifecycle completed - Start → Shutdown")
+		t.Log("✓ Bus lifecycle completed - Start → Shutdown")
 	})
 
 	t.Run("ShutdownWithoutStart", func(t *testing.T) {
@@ -384,7 +384,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 		// Shutdown without starting - should not error
 		err := bus.Shutdown(context.Background())
 		assert.NoError(t, err, "Shutdown without start should not return error")
-		t.Logf("✓ Graceful shutdown without start verified")
+		t.Log("✓ Graceful shutdown without start verified")
 	})
 
 	t.Run("EventsAreProcessedAfterStart", func(t *testing.T) {
@@ -397,7 +397,7 @@ func TestMemoryEventBus_Lifecycle(t *testing.T) {
 
 		wg.Add(1)
 
-		unsubscribe := bus.Subscribe("lifecycle.test", func(ctx context.Context, evt event.Event) {
+		unsubscribe := bus.Subscribe("lifecycle.test", func(_ context.Context, evt event.Event) {
 			receivedEvent = evt
 
 			wg.Done()
@@ -452,7 +452,7 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 
 		wg.Add(1)
 
-		unsubscribe := bus.Subscribe("middleware.test", func(ctx context.Context, evt event.Event) {
+		unsubscribe := bus.Subscribe("middleware.test", func(_ context.Context, evt event.Event) {
 			receivedEvent = evt
 
 			wg.Done()
@@ -522,7 +522,7 @@ func TestMemoryEventBus_Middleware(t *testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(1)
 
-		unsubscribe := bus.Subscribe("chain.test", func(ctx context.Context, evt event.Event) {
+		unsubscribe := bus.Subscribe("chain.test", func(_ context.Context, _ event.Event) {
 			wg.Done()
 		})
 		defer unsubscribe()
@@ -575,7 +575,7 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 		for range numSubscribers {
 			wg.Add(eventsPerPublisher * numPublishers) // Each subscriber should receive all events
 
-			unsub := bus.Subscribe("concurrent.test", func(ctx context.Context, evt event.Event) {
+			unsub := bus.Subscribe("concurrent.test", func(_ context.Context, _ event.Event) {
 				mu.Lock()
 
 				totalReceived++
@@ -644,7 +644,7 @@ func TestMemoryEventBus_Concurrency(t *testing.T) {
 			go func() {
 				defer wg.Done()
 
-				unsubscribe := bus.Subscribe("concurrent.unsub.test", func(ctx context.Context, evt event.Event) {
+				unsubscribe := bus.Subscribe("concurrent.unsub.test", func(_ context.Context, _ event.Event) {
 					// Do nothing
 				})
 

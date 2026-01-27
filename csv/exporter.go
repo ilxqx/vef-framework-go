@@ -14,12 +14,12 @@ import (
 type exporter struct {
 	schema     *tabular.Schema
 	formatters map[string]tabular.Formatter
-	options    exportOptions
+	options    exportConfig
 	typ        reflect.Type
 }
 
-func newExporter(typ reflect.Type, opts ...ExportOption) *exporter {
-	options := exportOptions{
+func NewExporter(typ reflect.Type, opts ...ExportOption) tabular.Exporter {
+	options := exportConfig{
 		delimiter:   constants.ByteComma,
 		writeHeader: true,
 		useCrlf:     false,

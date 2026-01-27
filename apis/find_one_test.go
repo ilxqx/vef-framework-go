@@ -8,7 +8,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/i18n"
 	"github.com/ilxqx/vef-framework-go/internal/orm"
 	"github.com/ilxqx/vef-framework-go/result"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // Test Resources.
@@ -41,7 +41,7 @@ func NewProcessedUserFindOneResource() api.Resource {
 		Resource: api.NewRPCResource("test/user_processed"),
 		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
 			Public().
-			WithProcessor(func(user TestUser, search TestUserSearch, ctx fiber.Ctx) any {
+			WithProcessor(func(user TestUser, _ TestUserSearch, _ fiber.Ctx) any {
 				return ProcessedUser{
 					TestUser:  user,
 					Processed: true,
@@ -77,9 +77,9 @@ func NewOrderedUserFindOneResource() api.Resource {
 	return &OrderedUserFindOneResource{
 		Resource: api.NewRPCResource("test/user_ordered"),
 		FindOne: apis.NewFindOne[TestUser, TestUserSearch]().
-			WithDefaultSort(&sort.OrderSpec{
+			WithDefaultSort(&sortx.OrderSpec{
 				Column:    "age",
-				Direction: sort.OrderDesc,
+				Direction: sortx.OrderDesc,
 			}).
 			Public(),
 	}

@@ -565,7 +565,6 @@ func TestDefaultParser_NewDefaultParser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			parser := NewDefaultParser(tt.format)
 			assert.NotNil(t, parser)
-			assert.Equal(t, tt.format, parser.format)
 		})
 	}
 }

@@ -74,7 +74,7 @@ func TestCipherEncoder_Encode(t *testing.T) {
 
 	t.Run("ErrorWhenDecryptionFails", func(t *testing.T) {
 		failingCipher := &mockCipher{
-			decryptFunc: func(s string) (string, error) {
+			decryptFunc: func(_ string) (string, error) {
 				return "", errors.New("decryption failed")
 			},
 		}
@@ -177,7 +177,7 @@ func TestCipherEncoder_Matches(t *testing.T) {
 
 	t.Run("ReturnsFalseWhenDecryptionFails", func(t *testing.T) {
 		failingCipher := &mockCipher{
-			decryptFunc: func(s string) (string, error) {
+			decryptFunc: func(_ string) (string, error) {
 				return "", errors.New("decryption failed")
 			},
 		}

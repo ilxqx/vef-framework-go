@@ -13,7 +13,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/encoding"
 	"github.com/ilxqx/vef-framework-go/event"
 	"github.com/ilxqx/vef-framework-go/i18n"
-	"github.com/ilxqx/vef-framework-go/internal/api/common"
+	"github.com/ilxqx/vef-framework-go/internal/api/shared"
 	"github.com/ilxqx/vef-framework-go/internal/app"
 	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
@@ -33,18 +33,18 @@ func NewAudit(publisher event.Publisher) api.Middleware {
 }
 
 // Name returns the middleware name.
-func (m *Audit) Name() string {
+func (*Audit) Name() string {
 	return "audit"
 }
 
 // Order returns the middleware order.
-func (m *Audit) Order() int {
+func (*Audit) Order() int {
 	return -60
 }
 
 // Process handles the audit logging.
 func (m *Audit) Process(ctx fiber.Ctx) error {
-	op := common.Operation(ctx)
+	op := shared.Operation(ctx)
 	if op == nil {
 		contextx.Logger(ctx).Warnf("Audit skipped: %v", ErrOperationNotFound)
 
@@ -78,7 +78,7 @@ func (m *Audit) audit(ctx fiber.Ctx, op *api.Operation) error {
 }
 
 func buildAuditEvent(ctx fiber.Ctx, elapsed int64, err error) (*api.AuditEvent, error) {
-	req := common.Request(ctx)
+	req := shared.Request(ctx)
 	if req == nil {
 		return nil, ErrRequestNotFound
 	}
@@ -111,12 +111,21 @@ func buildAuditEvent(ctx fiber.Ctx, elapsed int64, err error) (*api.AuditEvent, 
 		resultData = res.Data
 	}
 
-	return api.NewAuditEvent(
-		req.Resource, req.Action, req.Version,
-		userID, userAgent, requestID, requestIP,
-		req.Params, req.Meta,
-		resultCode, resultMsg, resultData, elapsed,
-	), nil
+	return api.NewAuditEvent(api.AuditEventParams{
+		Resource:      req.Resource,
+		Action:        req.Action,
+		Version:       req.Version,
+		UserID:        userID,
+		UserAgent:     userAgent,
+		RequestID:     requestID,
+		RequestIP:     requestIP,
+		RequestParams: req.Params,
+		RequestMeta:   req.Meta,
+		ResultCode:    resultCode,
+		ResultMessage: resultMsg,
+		ResultData:    resultData,
+		ElapsedTime:   elapsed,
+	}), nil
 }
 
 func extractErrorInfo(err error) (code int, message string) {

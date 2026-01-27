@@ -477,10 +477,10 @@ type ExprBuilder interface {
 	WinStdDev(func(WindowStdDevBuilder)) schema.QueryAppender
 	// WinVariance builds a VARIANCE window function expression.
 	WinVariance(func(WindowVarianceBuilder)) schema.QueryAppender
-	// WinJsonObjectAgg builds a JSON_OBJECT_AGG window function expression.
-	WinJsonObjectAgg(func(WindowJSONObjectAggBuilder)) schema.QueryAppender
-	// WinJsonArrayAgg builds a JSON_ARRAY_AGG window function expression.
-	WinJsonArrayAgg(func(WindowJSONArrayAggBuilder)) schema.QueryAppender
+	// WinJSONObjectAgg builds a JSON_OBJECT_AGG window function expression.
+	WinJSONObjectAgg(func(WindowJSONObjectAggBuilder)) schema.QueryAppender
+	// WinJSONArrayAgg builds a JSON_ARRAY_AGG window function expression.
+	WinJSONArrayAgg(func(WindowJSONArrayAggBuilder)) schema.QueryAppender
 	// WinBitOr builds a BIT_OR window function expression.
 	WinBitOr(func(WindowBitOrBuilder)) schema.QueryAppender
 	// WinBitAnd builds a BIT_AND window function expression.

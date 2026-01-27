@@ -264,7 +264,7 @@ func runAllExprBuilderTests(t *testing.T, ctx context.Context, dbType constants.
 		},
 	}
 
-	jsonFunctionsSuite := &JsonFunctionsTestSuite{
+	jsonFunctionsSuite := &JSONFunctionsTestSuite{
 		OrmTestSuite: &OrmTestSuite{
 			ctx:    ctx,
 			dbType: dbType,

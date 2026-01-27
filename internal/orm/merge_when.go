@@ -90,9 +90,9 @@ func (b *mergeWhenBuilder) buildWhenExpr() string {
 		}
 
 		return string(whenExpr)
-	} else {
-		return b.when
 	}
+
+	return b.when
 }
 
 func (b *mergeWhenBuilder) ThenUpdate(builder func(MergeUpdateBuilder)) MergeQuery {

@@ -36,6 +36,7 @@ func NewResource(service monitor.Service) api.Resource {
 // Resource handles system monitoring-related API endpoints.
 type Resource struct {
 	api.Resource
+
 	service monitor.Service
 }
 
@@ -45,6 +46,7 @@ func (r *Resource) GetOverview(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	return result.Ok(overview).Response(ctx)
 }
 
@@ -57,6 +59,7 @@ func (r *Resource) GetCPU(ctx fiber.Ctx) error {
 			result.WithCode(result.ErrCodeMonitorNotReady),
 		)
 	}
+
 	return result.Ok(cpuInfo).Response(ctx)
 }
 
@@ -66,6 +69,7 @@ func (r *Resource) GetMemory(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	return result.Ok(memInfo).Response(ctx)
 }
 
@@ -75,6 +79,7 @@ func (r *Resource) GetDisk(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	return result.Ok(diskInfo).Response(ctx)
 }
 
@@ -84,6 +89,7 @@ func (r *Resource) GetNetwork(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	return result.Ok(netInfo).Response(ctx)
 }
 
@@ -93,6 +99,7 @@ func (r *Resource) GetHost(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	return result.Ok(hostInfo).Response(ctx)
 }
 
@@ -105,6 +112,7 @@ func (r *Resource) GetProcess(ctx fiber.Ctx) error {
 			result.WithCode(result.ErrCodeMonitorNotReady),
 		)
 	}
+
 	return result.Ok(procInfo).Response(ctx)
 }
 
@@ -114,6 +122,7 @@ func (r *Resource) GetLoad(ctx fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
 	return result.Ok(loadInfo).Response(ctx)
 }
 

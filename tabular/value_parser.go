@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cast"
 
+	"github.com/ilxqx/vef-framework-go/constants"
 	"github.com/ilxqx/vef-framework-go/datetime"
 	"github.com/ilxqx/vef-framework-go/decimal"
 	"github.com/ilxqx/vef-framework-go/null"
@@ -36,12 +37,13 @@ type defaultParser struct {
 
 // Parse implements the ValueParser interface for common Go types.
 func (p *defaultParser) Parse(cellValue string, targetType reflect.Type) (any, error) {
-	if cellValue == "" {
+	if cellValue == constants.Empty {
 		return reflect.Zero(targetType).Interface(), nil
 	}
 
 	if targetType.Kind() == reflect.Pointer {
 		elemType := targetType.Elem()
+
 		value, err := p.parseValue(cellValue, elemType)
 		if err != nil {
 			return nil, err
@@ -49,6 +51,7 @@ func (p *defaultParser) Parse(cellValue string, targetType reflect.Type) (any, e
 
 		ptr := reflect.New(elemType)
 		ptr.Elem().Set(reflect.ValueOf(value))
+
 		return ptr.Interface(), nil
 	}
 
@@ -79,6 +82,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Int{}, true, fmt.Errorf("parse int: %w", err)
 		}
+
 		return null.IntFrom(v), true, nil
 
 	case typeNullInt16:
@@ -86,6 +90,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Int16{}, true, fmt.Errorf("parse int16: %w", err)
 		}
+
 		return null.Int16From(v), true, nil
 
 	case typeNullInt32:
@@ -93,6 +98,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Int32{}, true, fmt.Errorf("parse int32: %w", err)
 		}
+
 		return null.Int32From(v), true, nil
 
 	case typeNullFloat:
@@ -100,6 +106,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Float{}, true, fmt.Errorf("parse float: %w", err)
 		}
+
 		return null.FloatFrom(v), true, nil
 
 	case typeNullBool:
@@ -107,6 +114,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Bool{}, true, fmt.Errorf("parse bool: %w", err)
 		}
+
 		return null.BoolFrom(v), true, nil
 
 	case typeNullByte:
@@ -114,6 +122,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Byte{}, true, fmt.Errorf("parse byte: %w", err)
 		}
+
 		return null.ByteFrom(v), true, nil
 
 	case typeNullDateTime:
@@ -121,6 +130,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.DateTime{}, true, fmt.Errorf("parse datetime: %w", err)
 		}
+
 		return null.DateTimeFrom(datetime.DateTime(v)), true, nil
 
 	case typeNullDate:
@@ -128,6 +138,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Date{}, true, fmt.Errorf("parse date: %w", err)
 		}
+
 		return null.DateFrom(datetime.Date(v)), true, nil
 
 	case typeNullTime:
@@ -135,6 +146,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Time{}, true, fmt.Errorf("parse time: %w", err)
 		}
+
 		return null.TimeFrom(datetime.Time(v)), true, nil
 
 	case typeNullDecimal:
@@ -142,6 +154,7 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 		if err != nil {
 			return null.Decimal{}, true, fmt.Errorf("parse decimal: %w", err)
 		}
+
 		return null.DecimalFrom(v), true, nil
 
 	default:
@@ -152,9 +165,10 @@ func (p *defaultParser) parseNullType(cellValue string, targetType reflect.Type)
 // parseTemporalValue parses temporal values with format handling.
 func (p *defaultParser) parseTemporalValue(cellValue, defaultFormat string) (time.Time, error) {
 	format := p.format
-	if format == "" {
+	if format == constants.Empty {
 		format = defaultFormat
 	}
+
 	return time.ParseInLocation(format, cellValue, time.Local)
 }
 
@@ -167,14 +181,17 @@ func (p *defaultParser) parseStructType(cellValue string, targetType reflect.Typ
 	switch targetType {
 	case typeTime:
 		format := p.format
-		if format == "" {
+		if format == constants.Empty {
 			format = time.DateTime
 		}
+
 		v, err := time.ParseInLocation(format, cellValue, time.Local)
+
 		return v, true, err
 
 	case typeDecimal:
 		v, err := decimal.NewFromString(cellValue)
+
 		return v, true, err
 
 	default:
@@ -183,7 +200,7 @@ func (p *defaultParser) parseStructType(cellValue string, targetType reflect.Typ
 }
 
 // parseBasicType handles basic Go types by kind.
-func (p *defaultParser) parseBasicType(cellValue string, targetType reflect.Type) (any, error) {
+func (*defaultParser) parseBasicType(cellValue string, targetType reflect.Type) (any, error) {
 	switch targetType.Kind() {
 	case reflect.String:
 		return cellValue, nil
@@ -219,6 +236,6 @@ func (p *defaultParser) parseBasicType(cellValue string, targetType reflect.Type
 }
 
 // NewDefaultParser creates a default parser with optional format template.
-func NewDefaultParser(format string) *defaultParser {
+func NewDefaultParser(format string) ValueParser {
 	return &defaultParser{format: format}
 }

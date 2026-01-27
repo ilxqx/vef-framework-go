@@ -86,6 +86,7 @@ func applySpa(router fiber.Router, config *middleware.SPAConfig) {
 		Compress:      true,
 		NotFoundHandler: func(ctx fiber.Ctx) error {
 			ctx.Path(fallbackPath)
+
 			return ctx.RestartRouting()
 		},
 	}))

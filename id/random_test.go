@@ -162,12 +162,12 @@ func TestRandomIDGenerator(t *testing.T) {
 			ids[i] = generator.Generate()
 		}
 
-		uniqueIds := make(map[string]bool)
+		uniqueIDs := make(map[string]bool)
 		for _, id := range ids {
-			uniqueIds[id] = true
+			uniqueIDs[id] = true
 		}
 
-		assert.GreaterOrEqual(t, len(uniqueIds), 95,
+		assert.GreaterOrEqual(t, len(uniqueIDs), 95,
 			"Should generate mostly unique IDs with sufficient entropy")
 	})
 }

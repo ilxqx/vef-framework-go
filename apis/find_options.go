@@ -79,7 +79,7 @@ func (a *findOptionsApi[TModel, TSearch]) findOptions(db orm.DB) (func(ctx fiber
 		query.ApplyIf(len(metaColumns) > 0, func(sq orm.SelectQuery) {
 			sq.SelectExpr(
 				func(eb orm.ExprBuilder) any {
-					return buildMetaJsonExpr(eb, metaColumns)
+					return buildMetaJSONExpr(eb, metaColumns)
 				},
 				"meta",
 			)

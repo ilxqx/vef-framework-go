@@ -83,7 +83,7 @@ func (s *DefaultService) convertTable(t *as.Table) *schema.TableSchema {
 }
 
 // extractPrimaryKey extracts primary key information and returns a set of primary key column names.
-func (s *DefaultService) extractPrimaryKey(t *as.Table, info *schema.TableSchema) map[string]bool {
+func (*DefaultService) extractPrimaryKey(t *as.Table, info *schema.TableSchema) map[string]bool {
 	pkColumns := make(map[string]bool)
 
 	if t.PrimaryKey == nil {
@@ -109,7 +109,7 @@ func (s *DefaultService) extractPrimaryKey(t *as.Table, info *schema.TableSchema
 }
 
 // convertColumns converts Atlas columns to schema columns.
-func (s *DefaultService) convertColumns(t *as.Table, info *schema.TableSchema, pkColumns map[string]bool) {
+func (*DefaultService) convertColumns(t *as.Table, info *schema.TableSchema, pkColumns map[string]bool) {
 	for i, col := range t.Columns {
 		colInfo := schema.Column{
 			Name:            col.Name,
@@ -131,7 +131,7 @@ func (s *DefaultService) convertColumns(t *as.Table, info *schema.TableSchema, p
 }
 
 // convertIndexes converts Atlas indexes to schema indexes and unique keys.
-func (s *DefaultService) convertIndexes(t *as.Table, info *schema.TableSchema) {
+func (*DefaultService) convertIndexes(t *as.Table, info *schema.TableSchema) {
 	for _, idx := range t.Indexes {
 		columns := extractIndexColumns(idx.Parts)
 
@@ -150,7 +150,7 @@ func (s *DefaultService) convertIndexes(t *as.Table, info *schema.TableSchema) {
 }
 
 // convertForeignKeys converts Atlas foreign keys to schema foreign keys.
-func (s *DefaultService) convertForeignKeys(t *as.Table, info *schema.TableSchema) {
+func (*DefaultService) convertForeignKeys(t *as.Table, info *schema.TableSchema) {
 	for _, fk := range t.ForeignKeys {
 		fkInfo := schema.ForeignKey{
 			Name:       fk.Symbol,
@@ -177,7 +177,7 @@ func (s *DefaultService) convertForeignKeys(t *as.Table, info *schema.TableSchem
 }
 
 // convertTableAttributes converts Atlas table attributes to schema attributes.
-func (s *DefaultService) convertTableAttributes(t *as.Table, info *schema.TableSchema) {
+func (*DefaultService) convertTableAttributes(t *as.Table, info *schema.TableSchema) {
 	for _, attr := range t.Attrs {
 		switch a := attr.(type) {
 		case *as.Comment:
@@ -309,6 +309,7 @@ func (s *DefaultService) ListTriggers(ctx context.Context) ([]schema.Trigger, er
 		if t.Table != nil {
 			trigger.Table = t.Table.Name
 		}
+
 		if t.View != nil {
 			trigger.View = t.View.Name
 		}

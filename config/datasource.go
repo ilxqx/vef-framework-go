@@ -12,5 +12,5 @@ type DatasourceConfig struct {
 	Database       string           `config:"database"`
 	Schema         string           `config:"schema"`
 	Path           string           `config:"path"`
-	EnableSqlGuard bool             `config:"enable_sql_guard"`
+	EnableSQLGuard bool             `config:"enable_sql_guard"`
 }

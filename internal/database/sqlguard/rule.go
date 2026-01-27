@@ -20,7 +20,7 @@ type Rule interface {
 // DropStatementRule blocks DROP statements.
 type DropStatementRule struct{}
 
-func (r *DropStatementRule) Name() string {
+func (*DropStatementRule) Name() string {
 	return "no_drop"
 }
 
@@ -41,7 +41,7 @@ func (r *DropStatementRule) Check(astNode *ast.AST) *Violation {
 // TruncateStatementRule blocks TRUNCATE statements.
 type TruncateStatementRule struct{}
 
-func (r *TruncateStatementRule) Name() string {
+func (*TruncateStatementRule) Name() string {
 	return "no_truncate"
 }
 
@@ -62,7 +62,7 @@ func (r *TruncateStatementRule) Check(astNode *ast.AST) *Violation {
 // DeleteWithoutWhereRule blocks DELETE statements without WHERE clause.
 type DeleteWithoutWhereRule struct{}
 
-func (r *DeleteWithoutWhereRule) Name() string {
+func (*DeleteWithoutWhereRule) Name() string {
 	return "delete_requires_where"
 }
 

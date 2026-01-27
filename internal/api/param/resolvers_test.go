@@ -218,31 +218,31 @@ func NewTestParamResolversResource() api.Resource {
 	}
 }
 
-func (r *TestParamResolversResource) VerifyCtx(ctx fiber.Ctx) error {
+func (*TestParamResolversResource) VerifyCtx(ctx fiber.Ctx) error {
 	injected := ctx != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyDB(ctx fiber.Ctx, db orm.DB) error {
+func (*TestParamResolversResource) VerifyDB(ctx fiber.Ctx, db orm.DB) error {
 	injected := db != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyLogger(ctx fiber.Ctx, logger log.Logger) error {
+func (*TestParamResolversResource) VerifyLogger(ctx fiber.Ctx, logger log.Logger) error {
 	injected := logger != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyPrincipal(ctx fiber.Ctx, principal *security.Principal) error {
+func (*TestParamResolversResource) VerifyPrincipal(ctx fiber.Ctx, principal *security.Principal) error {
 	injected := principal != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyDbFactory(db orm.DB) func(ctx fiber.Ctx) error {
+func (*TestParamResolversResource) VerifyDbFactory(db orm.DB) func(ctx fiber.Ctx) error {
 	injected := db != nil
 
 	return func(ctx fiber.Ctx) error {
@@ -250,13 +250,13 @@ func (r *TestParamResolversResource) VerifyDbFactory(db orm.DB) func(ctx fiber.C
 	}
 }
 
-func (r *TestParamResolversResource) VerifyStorage(ctx fiber.Ctx, service storage.Service) error {
+func (*TestParamResolversResource) VerifyStorage(ctx fiber.Ctx, service storage.Service) error {
 	injected := service != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyStorageFactory(service storage.Service) func(ctx fiber.Ctx) error {
+func (*TestParamResolversResource) VerifyStorageFactory(service storage.Service) func(ctx fiber.Ctx) error {
 	injected := service != nil
 
 	return func(ctx fiber.Ctx) error {
@@ -264,13 +264,13 @@ func (r *TestParamResolversResource) VerifyStorageFactory(service storage.Servic
 	}
 }
 
-func (r *TestParamResolversResource) VerifyMold(ctx fiber.Ctx, transformer mold.Transformer) error {
+func (*TestParamResolversResource) VerifyMold(ctx fiber.Ctx, transformer mold.Transformer) error {
 	injected := transformer != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyMoldFactory(transformer mold.Transformer) func(ctx fiber.Ctx) error {
+func (*TestParamResolversResource) VerifyMoldFactory(transformer mold.Transformer) func(ctx fiber.Ctx) error {
 	injected := transformer != nil
 
 	return func(ctx fiber.Ctx) error {
@@ -278,13 +278,13 @@ func (r *TestParamResolversResource) VerifyMoldFactory(transformer mold.Transfor
 	}
 }
 
-func (r *TestParamResolversResource) VerifyEvent(ctx fiber.Ctx, publisher event.Publisher) error {
+func (*TestParamResolversResource) VerifyEvent(ctx fiber.Ctx, publisher event.Publisher) error {
 	injected := publisher != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyEventFactory(publisher event.Publisher) func(ctx fiber.Ctx) error {
+func (*TestParamResolversResource) VerifyEventFactory(publisher event.Publisher) func(ctx fiber.Ctx) error {
 	injected := publisher != nil
 
 	return func(ctx fiber.Ctx) error {
@@ -292,13 +292,13 @@ func (r *TestParamResolversResource) VerifyEventFactory(publisher event.Publishe
 	}
 }
 
-func (r *TestParamResolversResource) VerifyCron(ctx fiber.Ctx, scheduler cron.Scheduler) error {
+func (*TestParamResolversResource) VerifyCron(ctx fiber.Ctx, scheduler cron.Scheduler) error {
 	injected := scheduler != nil
 
 	return result.Ok(map[string]any{"injected": injected}).Response(ctx)
 }
 
-func (r *TestParamResolversResource) VerifyCronFactory(scheduler cron.Scheduler) func(ctx fiber.Ctx) error {
+func (*TestParamResolversResource) VerifyCronFactory(scheduler cron.Scheduler) func(ctx fiber.Ctx) error {
 	injected := scheduler != nil
 
 	return func(ctx fiber.Ctx) error {

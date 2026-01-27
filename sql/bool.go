@@ -12,5 +12,6 @@ func (b Bool) Value() (driver.Value, error) {
 	if b {
 		return int16(1), nil
 	}
+
 	return int16(0), nil
 }

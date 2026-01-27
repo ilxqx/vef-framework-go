@@ -631,7 +631,7 @@ func TestAdapter_EdgeCases(t *testing.T) {
 		assert.Equal(t, "unicode_测试_🌟", emailChild.Children[0].ID)
 	})
 
-	t.Run("Concurrent read safety", func(t *testing.T) {
+	t.Run("Concurrent read safety", func(*testing.T) {
 		nodes := createComplexTestNodes()
 		adapter := createTestNodeAdapter()
 		tree := Build(nodes, adapter)

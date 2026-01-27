@@ -14,7 +14,7 @@ func NewRPC() api.HandlerResolver {
 	return new(RPC)
 }
 
-func (r *RPC) Resolve(resource api.Resource, spec api.OperationSpec) (any, error) {
+func (*RPC) Resolve(resource api.Resource, spec api.OperationSpec) (any, error) {
 	if resource.Kind() != api.KindRPC {
 		return nil, nil
 	}

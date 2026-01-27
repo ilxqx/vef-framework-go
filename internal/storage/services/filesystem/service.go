@@ -41,7 +41,7 @@ func (s *Service) resolvePath(key string) string {
 	return filepath.Join(s.root, filepath.FromSlash(key))
 }
 
-func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) PutObject(_ context.Context, opts storage.PutObjectOptions) (*storage.ObjectInfo, error) {
 	path := s.resolvePath(opts.Key)
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -81,7 +81,7 @@ func (s *Service) PutObject(ctx context.Context, opts storage.PutObjectOptions) 
 	}, nil
 }
 
-func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
+func (s *Service) GetObject(_ context.Context, opts storage.GetObjectOptions) (io.ReadCloser, error) {
 	path := s.resolvePath(opts.Key)
 
 	file, err := os.Open(path)
@@ -96,7 +96,7 @@ func (s *Service) GetObject(ctx context.Context, opts storage.GetObjectOptions) 
 	return file, nil
 }
 
-func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOptions) error {
+func (s *Service) DeleteObject(_ context.Context, opts storage.DeleteObjectOptions) error {
 	path := s.resolvePath(opts.Key)
 
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
@@ -108,13 +108,13 @@ func (s *Service) DeleteObject(ctx context.Context, opts storage.DeleteObjectOpt
 	return nil
 }
 
-func (s *Service) DeleteObjects(ctx context.Context, opts storage.DeleteObjectsOptions) error {
+func (s *Service) DeleteObjects(_ context.Context, opts storage.DeleteObjectsOptions) error {
 	return streams.FromSlice(opts.Keys).ForEachErr(func(key string) error {
-		return s.DeleteObject(ctx, storage.DeleteObjectOptions{Key: key})
+		return s.DeleteObject(context.Background(), storage.DeleteObjectOptions{Key: key})
 	})
 }
 
-func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
+func (s *Service) ListObjects(_ context.Context, opts storage.ListObjectsOptions) ([]storage.ObjectInfo, error) {
 	var objects []storage.ObjectInfo
 
 	prefix := opts.Prefix
@@ -181,7 +181,7 @@ func (s *Service) ListObjects(ctx context.Context, opts storage.ListObjectsOptio
 	return objects, nil
 }
 
-func (s *Service) GetPresignedURL(ctx context.Context, opts storage.PresignedURLOptions) (string, error) {
+func (s *Service) GetPresignedURL(_ context.Context, opts storage.PresignedURLOptions) (string, error) {
 	path := s.resolvePath(opts.Key)
 
 	absPath, err := filepath.Abs(path)
@@ -192,7 +192,7 @@ func (s *Service) GetPresignedURL(ctx context.Context, opts storage.PresignedURL
 	return fmt.Sprintf("file://%s", absPath), nil
 }
 
-func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) CopyObject(_ context.Context, opts storage.CopyObjectOptions) (*storage.ObjectInfo, error) {
 	srcPath := s.resolvePath(opts.SourceKey)
 	destPath := s.resolvePath(opts.DestKey)
 
@@ -245,20 +245,20 @@ func (s *Service) CopyObject(ctx context.Context, opts storage.CopyObjectOptions
 	}, nil
 }
 
-func (s *Service) MoveObject(ctx context.Context, opts storage.MoveObjectOptions) (*storage.ObjectInfo, error) {
-	info, err := s.CopyObject(ctx, opts.CopyObjectOptions)
+func (s *Service) MoveObject(_ context.Context, opts storage.MoveObjectOptions) (*storage.ObjectInfo, error) {
+	info, err := s.CopyObject(context.Background(), opts.CopyObjectOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.DeleteObject(ctx, storage.DeleteObjectOptions{Key: opts.SourceKey}); err != nil {
+	if err := s.DeleteObject(context.Background(), storage.DeleteObjectOptions{Key: opts.SourceKey}); err != nil {
 		return nil, fmt.Errorf("copied successfully but failed to delete source: %w", err)
 	}
 
 	return info, nil
 }
 
-func (s *Service) StatObject(ctx context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
+func (s *Service) StatObject(_ context.Context, opts storage.StatObjectOptions) (*storage.ObjectInfo, error) {
 	path := s.resolvePath(opts.Key)
 
 	stat, err := os.Stat(path)
@@ -312,7 +312,7 @@ func (s *Service) cleanupEmptyDirs(dir string) {
 	}
 }
 
-func (s *Service) calculateMd5(path string) (string, error) {
+func (*Service) calculateMd5(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return constants.Empty, err

@@ -17,6 +17,7 @@ var baseModelType = reflect.TypeFor[schema.BaseModel]()
 func parseStruct(t reflect.Type) []*Column {
 	if t = reflectx.Indirect(t); t.Kind() != reflect.Struct {
 		logger.Warnf("Invalid value type, expected struct, got %s", t.Name())
+
 		return nil
 	}
 
@@ -24,7 +25,7 @@ func parseStruct(t reflect.Type) []*Column {
 	columnOrder := 0
 
 	visitor := reflectx.TypeVisitor{
-		VisitFieldType: func(field reflect.StructField, depth int) reflectx.VisitAction {
+		VisitFieldType: func(field reflect.StructField, _ int) reflectx.VisitAction {
 			if field.Anonymous && field.Type == baseModelType {
 				return reflectx.SkipChildren
 			}
@@ -34,9 +35,11 @@ func parseStruct(t reflect.Type) []*Column {
 				if field.Anonymous {
 					return reflectx.SkipChildren
 				}
+
 				column := buildColumn(field, make(map[string]string), columnOrder)
 				columns = append(columns, column)
 				columnOrder++
+
 				return reflectx.SkipChildren
 			}
 
@@ -52,6 +55,7 @@ func parseStruct(t reflect.Type) []*Column {
 			column := buildColumn(field, attrs, columnOrder)
 			columns = append(columns, column)
 			columnOrder++
+
 			return reflectx.SkipChildren
 		},
 	}

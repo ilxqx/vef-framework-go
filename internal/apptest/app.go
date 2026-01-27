@@ -28,7 +28,7 @@ import (
 // MockConfig implements config.Config for testing without file dependencies.
 type MockConfig struct{}
 
-func (m *MockConfig) Unmarshal(_ string, _ any) error {
+func (*MockConfig) Unmarshal(_ string, _ any) error {
 	return nil
 }
 

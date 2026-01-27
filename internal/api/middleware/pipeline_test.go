@@ -23,7 +23,7 @@ func (m *mockMiddleware) Order() int {
 	return m.order
 }
 
-func (m *mockMiddleware) Process(ctx fiber.Ctx) error {
+func (*mockMiddleware) Process(ctx fiber.Ctx) error {
 	return ctx.Next()
 }
 

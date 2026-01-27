@@ -180,19 +180,21 @@ func (suite *ServiceTestSuite) runServiceTests(dsConfig *config.DatasourceConfig
 }
 
 func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBType) {
-	var categoriesSql, productsSql string
-	var additionalSql []string
+	var (
+		categoriesSQL, productsSQL string
+		additionalSQL              []string
+	)
 
 	switch dbType {
 	case constants.Postgres:
-		categoriesSql = `
+		categoriesSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id SERIAL PRIMARY KEY,
 				name VARCHAR(100) NOT NULL,
 				description TEXT,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
-		productsSql = `
+		productsSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_products (
 				id SERIAL PRIMARY KEY,
 				category_id INTEGER NOT NULL REFERENCES service_test_categories(id) ON DELETE CASCADE,
@@ -204,20 +206,20 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBTy
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				CONSTRAINT uq_product_sku UNIQUE (sku)
 			)`
-		additionalSql = []string{
+		additionalSQL = []string{
 			"CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)",
 			"CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)",
 		}
 
 	case constants.MySQL:
-		categoriesSql = `
+		categoriesSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				name VARCHAR(100) NOT NULL,
 				description TEXT,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)`
-		productsSql = `
+		productsSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_products (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				category_id INT NOT NULL,
@@ -234,14 +236,14 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBTy
 			)`
 
 	case constants.SQLite:
-		categoriesSql = `
+		categoriesSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_categories (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				name TEXT NOT NULL,
 				description TEXT,
 				created_at TEXT DEFAULT CURRENT_TIMESTAMP
 			)`
-		productsSql = `
+		productsSQL = `
 			CREATE TABLE IF NOT EXISTS service_test_products (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				category_id INTEGER NOT NULL REFERENCES service_test_categories(id) ON DELETE CASCADE,
@@ -252,19 +254,19 @@ func (suite *ServiceTestSuite) setupTestTables(db *sql.DB, dbType constants.DBTy
 				is_active INTEGER DEFAULT 1,
 				created_at TEXT DEFAULT CURRENT_TIMESTAMP
 			)`
-		additionalSql = []string{
+		additionalSQL = []string{
 			"CREATE INDEX IF NOT EXISTS idx_products_category ON service_test_products(category_id)",
 			"CREATE INDEX IF NOT EXISTS idx_products_price ON service_test_products(price)",
 		}
 	}
 
-	_, err := db.ExecContext(suite.ctx, categoriesSql)
+	_, err := db.ExecContext(suite.ctx, categoriesSQL)
 	suite.Require().NoError(err, "Creating service_test_categories table should succeed")
 
-	_, err = db.ExecContext(suite.ctx, productsSql)
+	_, err = db.ExecContext(suite.ctx, productsSQL)
 	suite.Require().NoError(err, "Creating service_test_products table should succeed")
 
-	for _, sql := range additionalSql {
+	for _, sql := range additionalSQL {
 		_, _ = db.ExecContext(suite.ctx, sql)
 	}
 }

@@ -15,7 +15,7 @@ import (
 // CreateTokenVerifier creates an auth.TokenVerifier that bridges MCP SDK auth
 // with the vef's AuthManager.
 func CreateTokenVerifier(authManager security.AuthManager) auth.TokenVerifier {
-	return func(ctx context.Context, tokenString string, req *http.Request) (*auth.TokenInfo, error) {
+	return func(ctx context.Context, tokenString string, _ *http.Request) (*auth.TokenInfo, error) {
 		principal, err := authManager.Authenticate(ctx, security.Authentication{
 			Kind:      isecurity.AuthKindToken,
 			Principal: tokenString,

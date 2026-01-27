@@ -47,6 +47,7 @@ func createHTTPHandler(server *mcp.Server) http.Handler {
 
 func applyAuthMiddleware(handler http.Handler, authManager security.AuthManager) http.Handler {
 	verifier := CreateTokenVerifier(authManager)
+
 	return auth.RequireBearerToken(verifier, nil)(handler)
 }
 

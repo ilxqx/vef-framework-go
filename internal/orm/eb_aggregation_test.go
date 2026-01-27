@@ -688,12 +688,12 @@ func (suite *AggregationFunctionsTestSuite) TestJsonObjectAgg() {
 	suite.T().Logf("Testing JsonObjectAgg function for %s", suite.dbType)
 
 	suite.Run("JsonObjectAggGroupedByStatus", func() {
-		type JsonObjectAggResult struct {
+		type JSONObjectAggResult struct {
 			Status     string `bun:"status"`
 			StatusMeta string `bun:"status_meta"`
 		}
 
-		var results []JsonObjectAggResult
+		var results []JSONObjectAggResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
@@ -724,12 +724,12 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 	suite.T().Logf("Testing JsonArrayAgg function for %s", suite.dbType)
 
 	suite.Run("JsonArrayAggBasic", func() {
-		type JsonArrayAggResult struct {
+		type JSONArrayAggResult struct {
 			Status     string `bun:"status"`
 			TitlesJSON string `bun:"titles_json"`
 		}
 
-		var results []JsonArrayAggResult
+		var results []JSONArrayAggResult
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
@@ -759,12 +759,12 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 			return
 		}
 
-		type OrderedJsonArray struct {
+		type OrderedJSONArray struct {
 			Status     string `bun:"status"`
 			TitlesJSON string `bun:"titles_json"`
 		}
 
-		var results []OrderedJsonArray
+		var results []OrderedJSONArray
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).
@@ -794,11 +794,11 @@ func (suite *AggregationFunctionsTestSuite) TestJsonArrayAgg() {
 			return
 		}
 
-		type DistinctStatusJson struct {
+		type DistinctStatusJSON struct {
 			AllStatuses string `bun:"all_statuses"`
 		}
 
-		var result DistinctStatusJson
+		var result DistinctStatusJSON
 
 		err := suite.db.NewSelect().
 			Model((*Post)(nil)).

@@ -78,7 +78,7 @@ func (qh *queryHook) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 	}
 }
 
-func (qh *queryHook) extractGuardError(event *bun.QueryEvent) error {
+func (*queryHook) extractGuardError(event *bun.QueryEvent) error {
 	if event.Stash == nil {
 		return nil
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/orm"
 	"github.com/ilxqx/vef-framework-go/search"
-	"github.com/ilxqx/vef-framework-go/sort"
+	"github.com/ilxqx/vef-framework-go/sortx"
 )
 
 // QueryPart defines which part(s) of a query an option applies to.
@@ -90,7 +90,7 @@ func withSelectAs(column, alias string, parts ...QueryPart) *FindApiOption {
 // withSort adds ordering based on sort.OrderSpec specifications.
 // Applies to root query only by default (QueryRoot).
 // Supports ascending/descending order and NULLS FIRST/LAST positioning.
-func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
+func withSort(specs []*sortx.OrderSpec, parts ...QueryPart) *FindApiOption {
 	return &FindApiOption{
 		Parts: resolveQueryParts(parts...),
 		Applier: func(query orm.SelectQuery, _ any, meta api.Meta, _ fiber.Ctx) error {
@@ -99,7 +99,7 @@ func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
 				return err
 			}
 
-			applyOrderSpec := func(spec sort.OrderSpec) {
+			applyOrderSpec := func(spec sortx.OrderSpec) {
 				if !spec.IsValid() {
 					return
 				}
@@ -109,16 +109,16 @@ func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
 						ob.Column(spec.Column)
 
 						switch spec.Direction {
-						case sort.OrderAsc:
+						case sortx.OrderAsc:
 							ob.Asc()
-						case sort.OrderDesc:
+						case sortx.OrderDesc:
 							ob.Desc()
 						}
 
 						switch spec.NullsOrder {
-						case sort.NullsFirst:
+						case sortx.NullsFirst:
 							ob.NullsFirst()
-						case sort.NullsLast:
+						case sortx.NullsLast:
 							ob.NullsLast()
 						}
 					})
@@ -127,12 +127,12 @@ func withSort(specs []*sort.OrderSpec, parts ...QueryPart) *FindApiOption {
 
 			if len(sortable.Sort) > 0 {
 				streams.FromSlice(sortable.Sort).
-					ForEach(func(spec sort.OrderSpec) {
+					ForEach(func(spec sortx.OrderSpec) {
 						applyOrderSpec(spec)
 					})
 			} else {
 				streams.FromSlice(specs).
-					ForEach(func(spec *sort.OrderSpec) {
+					ForEach(func(spec *sortx.OrderSpec) {
 						applyOrderSpec(*spec)
 					})
 			}

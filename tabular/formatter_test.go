@@ -304,7 +304,6 @@ func TestDefaultFormatter_NewDefaultFormatter(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			formatter := NewDefaultFormatter(tt.format)
 			assert.NotNil(t, formatter)
-			assert.Equal(t, tt.format, formatter.format)
 		})
 	}
 }

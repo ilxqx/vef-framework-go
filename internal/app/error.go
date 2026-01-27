@@ -95,5 +95,6 @@ func MapFiberError(statusCode int) (code int, messageKey string, ok bool) {
 	if !ok {
 		return result.ErrCodeUnknown, result.ErrMessageUnknown, false
 	}
+
 	return mapping.code, mapping.message, true
 }
