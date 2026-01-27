@@ -49,7 +49,7 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 
 func (am *AuthenticatorAuthManager) findAuthenticator(authType string) security.Authenticator {
 	for _, authenticator := range am.authenticators {
-		if authenticator != nil && authenticator.Supports(authType) {
+		if authenticator.Supports(authType) {
 			return authenticator
 		}
 	}
@@ -63,8 +63,7 @@ func maskPrincipal(principal string) string {
 		return "<empty>"
 	}
 
-	length := len(principal)
-	if length <= 3 {
+	if length := len(principal); length <= 3 {
 		return "***"
 	}
 

@@ -36,7 +36,7 @@ func NewIPWhitelistValidator(whitelist string) *IPWhitelistValidator {
 		return validator
 	}
 
-	for _, entry := range strings.Split(whitelist, ",") {
+	for entry := range strings.SplitSeq(whitelist, constants.Comma) {
 		entry = strings.TrimSpace(entry)
 		if entry == constants.Empty {
 			continue

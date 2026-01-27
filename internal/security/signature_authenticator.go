@@ -21,15 +21,10 @@ type SignatureAuthenticator struct {
 }
 
 // NewSignatureAuthenticator creates a new signature authenticator.
-// Returns nil if loader is nil (optional dependency pattern for FX).
 func NewSignatureAuthenticator(
 	loader security.ExternalAppLoader,
 	nonceStore security.NonceStore,
-) (security.Authenticator, error) {
-	if loader == nil {
-		return nil, nil
-	}
-
+) security.Authenticator {
 	var options []security.SignatureOption
 	if nonceStore != nil {
 		options = append(options, security.WithNonceStore(nonceStore))
@@ -38,7 +33,7 @@ func NewSignatureAuthenticator(
 	return &SignatureAuthenticator{
 		loader:  loader,
 		options: options,
-	}, nil
+	}
 }
 
 func (*SignatureAuthenticator) Supports(kind string) bool {
@@ -46,6 +41,10 @@ func (*SignatureAuthenticator) Supports(kind string) bool {
 }
 
 func (a *SignatureAuthenticator) Authenticate(ctx context.Context, authentication security.Authentication) (*security.Principal, error) {
+	if a.loader == nil {
+		return nil, result.ErrNotImplemented(i18n.T(result.ErrMessageExternalAppLoaderNotImplemented))
+	}
+
 	appID := authentication.Principal
 	if appID == constants.Empty {
 		return nil, result.ErrAppIDRequired

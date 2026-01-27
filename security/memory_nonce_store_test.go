@@ -250,7 +250,7 @@ func TestMemoryNonceStore_MultipleNonces(t *testing.T) {
 	t.Run("LargeNumberOfNonces", func(t *testing.T) {
 		largeStore := NewMemoryNonceStore()
 
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			nonce := "nonce-" + string(rune('a'+i%26)) + string(rune('0'+i%10))
 			err := largeStore.Store(ctx, "test-app", nonce, 5*time.Minute)
 			require.NoError(t, err, "Should store nonce without error")

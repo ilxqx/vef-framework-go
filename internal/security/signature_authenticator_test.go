@@ -65,33 +65,29 @@ func generateValidCredentials(t *testing.T, appID, secret string) *security.Sign
 func TestNewSignatureAuthenticator(t *testing.T) {
 	t.Run("WithLoader", func(t *testing.T) {
 		loader := new(MockExternalAppLoader)
-		auth, err := NewSignatureAuthenticator(loader, nil)
+		auth := NewSignatureAuthenticator(loader, nil)
 
-		require.NoError(t, err, "Should create authenticator with loader")
 		assert.NotNil(t, auth, "Authenticator should not be nil")
 	})
 
 	t.Run("WithoutLoader", func(t *testing.T) {
-		auth, err := NewSignatureAuthenticator(nil, nil)
+		auth := NewSignatureAuthenticator(nil, nil)
 
-		require.NoError(t, err, "Should not return error when loader is nil")
-		assert.Nil(t, auth, "Authenticator should be nil when loader is nil")
+		assert.NotNil(t, auth, "Authenticator should not be nil even without loader")
 	})
 
 	t.Run("WithNonceStore", func(t *testing.T) {
 		loader := new(MockExternalAppLoader)
 		nonceStore := new(MockNonceStore)
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
-		require.NoError(t, err, "Should create authenticator with nonce store")
 		assert.NotNil(t, auth, "Authenticator should not be nil")
 	})
 }
 
 func TestSignatureAuthenticator_Supports(t *testing.T) {
 	loader := new(MockExternalAppLoader)
-	auth, err := NewSignatureAuthenticator(loader, nil)
-	require.NoError(t, err)
+	auth := NewSignatureAuthenticator(loader, nil)
 
 	t.Run("SupportedKind", func(t *testing.T) {
 		assert.True(t, auth.Supports(AuthKindSignature), "Should support signature kind")
@@ -113,10 +109,9 @@ func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 
 	t.Run("MissingAppID", func(t *testing.T) {
 		loader := new(MockExternalAppLoader)
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "",
 			Credentials: &security.SignatureCredentials{
@@ -131,8 +126,7 @@ func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 
 	t.Run("InvalidCredentials", func(t *testing.T) {
 		loader := new(MockExternalAppLoader)
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
 		testCases := []struct {
 			name        string
@@ -161,10 +155,9 @@ func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 		loader := new(MockExternalAppLoader)
 		loader.On("LoadByID", mock.Anything, "app1").Return(nil, "", nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -183,10 +176,9 @@ func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 		expectedErr := errors.New("database connection failed")
 		loader.On("LoadByID", mock.Anything, "app1").Return(nil, "", expectedErr)
 
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -205,10 +197,9 @@ func TestSignatureAuthenticator_Authenticate(t *testing.T) {
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, "", nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -231,12 +222,11 @@ func TestSignatureAuthenticator_TimestampValidation(t *testing.T) {
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
 		oldTimestamp := time.Now().Add(-10 * time.Minute).Unix()
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -255,12 +245,11 @@ func TestSignatureAuthenticator_TimestampValidation(t *testing.T) {
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
 		futureTimestamp := time.Now().Add(10 * time.Minute).Unix()
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -283,8 +272,7 @@ func TestSignatureAuthenticator_TimestampValidation(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
@@ -312,10 +300,9 @@ func TestSignatureAuthenticator_SignatureValidation(t *testing.T) {
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -337,10 +324,9 @@ func TestSignatureAuthenticator_SignatureValidation(t *testing.T) {
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -363,12 +349,11 @@ func TestSignatureAuthenticator_SignatureValidation(t *testing.T) {
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, wrongSecret, nil)
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:        AuthKindSignature,
 			Principal:   "app1",
 			Credentials: credentials,
@@ -390,12 +375,11 @@ func TestSignatureAuthenticator_NonceValidation(t *testing.T) {
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(true, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:        AuthKindSignature,
 			Principal:   "app1",
 			Credentials: credentials,
@@ -414,12 +398,11 @@ func TestSignatureAuthenticator_NonceValidation(t *testing.T) {
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, errors.New("redis connection failed"))
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:        AuthKindSignature,
 			Principal:   "app1",
 			Credentials: credentials,
@@ -439,12 +422,11 @@ func TestSignatureAuthenticator_NonceValidation(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(errors.New("redis write failed"))
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:        AuthKindSignature,
 			Principal:   "app1",
 			Credentials: credentials,
@@ -468,10 +450,9 @@ func TestSignatureAuthenticator_IPWhitelist(t *testing.T) {
 		}
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
-		_, err = auth.Authenticate(ctx, security.Authentication{
+		_, err := auth.Authenticate(ctx, security.Authentication{
 			Kind:      AuthKindSignature,
 			Principal: "app1",
 			Credentials: &security.SignatureCredentials{
@@ -498,8 +479,7 @@ func TestSignatureAuthenticator_IPWhitelist(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
@@ -524,8 +504,7 @@ func TestSignatureAuthenticator_IPWhitelist(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
@@ -554,8 +533,7 @@ func TestSignatureAuthenticator_SuccessfulAuthentication(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, "app1", mock.AnythingOfType("string")).Return(false, nil)
 		nonceStore.On("Store", mock.Anything, "app1", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
@@ -580,8 +558,7 @@ func TestSignatureAuthenticator_SuccessfulAuthentication(t *testing.T) {
 		principal := security.NewExternalApp("app1", "Test App", "api_user")
 		loader.On("LoadByID", mock.Anything, "app1").Return(principal, testSecretHex, nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nil)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nil)
 
 		credentials := generateValidCredentials(t, "app1", testSecretHex)
 
@@ -612,8 +589,7 @@ func TestSignatureAuthenticator_SuccessfulAuthentication(t *testing.T) {
 		nonceStore.On("Exists", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false, nil)
 		nonceStore.On("Store", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration")).Return(nil)
 
-		auth, err := NewSignatureAuthenticator(loader, nonceStore)
-		require.NoError(t, err)
+		auth := NewSignatureAuthenticator(loader, nonceStore)
 
 		// Authenticate app1
 		creds1 := generateValidCredentials(t, "app1", secret1)
