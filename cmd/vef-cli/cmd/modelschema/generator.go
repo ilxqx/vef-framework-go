@@ -396,7 +396,7 @@ func parseInheritedFieldsFromType(typ types.Type, prefix string) []ModelField {
 
 		label := extractLabelFromTag(tag)
 
-		methodName := lo.PascalCase(prefix + fieldName)
+		methodName := lo.PascalCase(prefix) + fieldName
 		if reservedMethodNames[methodName] {
 			methodName = "Col" + methodName
 		}
