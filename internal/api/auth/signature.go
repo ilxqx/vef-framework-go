@@ -1,76 +1,35 @@
 package auth
 
 import (
-	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
-	"strconv"
-	"time"
-
 	"github.com/gofiber/fiber/v3"
+	"github.com/spf13/cast"
 
 	"github.com/ilxqx/vef-framework-go/api"
 	"github.com/ilxqx/vef-framework-go/constants"
+	isecurity "github.com/ilxqx/vef-framework-go/internal/security"
+	"github.com/ilxqx/vef-framework-go/result"
 	"github.com/ilxqx/vef-framework-go/security"
 )
 
-// ExternalApp represents an external application for signature authentication.
-type ExternalApp struct {
-	ID        string
-	Secret    string
-	Principal *security.Principal
-}
-
-// ExternalAppLoader loads external app by ID.
-type ExternalAppLoader interface {
-	Load(ctx context.Context, appID string) (*ExternalApp, error)
-}
-
 // SignatureStrategy implements api.AuthStrategy for HMAC signature authentication.
+// It extracts credentials from HTTP headers and delegates authentication
+// to the security.AuthManager, following the Spring Security pattern.
+//
+// Required headers:
+//   - X-App-ID: Application identifier (used as Principal)
+//   - X-Timestamp: Unix timestamp in seconds
+//   - X-Nonce: Random string for replay attack prevention
+//   - X-Signature: HMAC signature in hex encoding
 type SignatureStrategy struct {
-	appLoader ExternalAppLoader
-	tolerance time.Duration
-
-	// Header names
-	appIDHeader     string
-	timestampHeader string
-	signatureHeader string
-}
-
-// SignatureOption configures SignatureStrategy.
-type SignatureOption func(*SignatureStrategy)
-
-// WithTimestampTolerance sets the timestamp tolerance.
-func WithTimestampTolerance(d time.Duration) SignatureOption {
-	return func(s *SignatureStrategy) {
-		s.tolerance = d
-	}
-}
-
-// WithHeaders sets custom header names.
-func WithHeaders(appID, timestamp, signature string) SignatureOption {
-	return func(s *SignatureStrategy) {
-		s.appIDHeader = appID
-		s.timestampHeader = timestamp
-		s.signatureHeader = signature
-	}
+	authManager security.AuthManager
 }
 
 // NewSignature creates a new signature authentication strategy.
-func NewSignature(loader ExternalAppLoader, opts ...SignatureOption) api.AuthStrategy {
-	s := &SignatureStrategy{
-		appLoader:       loader,
-		tolerance:       5 * time.Minute,
-		appIDHeader:     "X-App-ID",
-		timestampHeader: "X-Timestamp",
-		signatureHeader: "X-Signature",
+// The authManager is used to delegate the actual authentication to SignatureAuthenticator.
+func NewSignature(authManager security.AuthManager) api.AuthStrategy {
+	return &SignatureStrategy{
+		authManager: authManager,
 	}
-	for _, opt := range opts {
-		opt(s)
-	}
-
-	return s
 }
 
 // Name returns the strategy name.
@@ -78,46 +37,47 @@ func (*SignatureStrategy) Name() string {
 	return api.AuthStrategySignature
 }
 
-// Authenticate validates the signature and returns the principal.
+// Authenticate extracts credentials from request headers and delegates
+// authentication to the AuthManager.
+// Headers are extracted and formatted as: Principal=AppID, Credentials="timestamp:nonce:signature".
 func (s *SignatureStrategy) Authenticate(ctx fiber.Ctx, _ map[string]any) (*security.Principal, error) {
-	appID := ctx.Get(s.appIDHeader)
-	timestamp := ctx.Get(s.timestampHeader)
-	signature := ctx.Get(s.signatureHeader)
+	appID := ctx.Get(constants.HeaderXAppID)
+	timestampStr := ctx.Get(constants.HeaderXTimestamp)
+	nonce := ctx.Get(constants.HeaderXNonce)
+	signature := ctx.Get(constants.HeaderXSignature)
 
-	if appID == constants.Empty || timestamp == constants.Empty || signature == constants.Empty {
-		return nil, ErrMissingAuthHeaders
+	if appID == constants.Empty {
+		return nil, result.ErrAppIDRequired
 	}
 
-	// Validate timestamp
-	ts, err := strconv.ParseInt(timestamp, 10, 64)
+	if timestampStr == constants.Empty {
+		return nil, result.ErrTimestampRequired
+	}
+
+	if nonce == constants.Empty {
+		return nil, result.ErrNonceRequired
+	}
+
+	if signature == constants.Empty {
+		return nil, result.ErrSignatureRequired
+	}
+
+	timestamp, err := cast.ToInt64E(timestampStr)
 	if err != nil {
-		return nil, ErrInvalidTimestamp
+		return nil, result.ErrTimestampInvalid
 	}
 
-	if time.Since(time.Unix(ts, 0)) > s.tolerance {
-		return nil, ErrRequestExpired
+	credentials := &security.SignatureCredentials{
+		Timestamp: timestamp,
+		Nonce:     nonce,
+		Signature: signature,
 	}
 
-	// Load app
-	app, err := s.appLoader.Load(ctx.Context(), appID)
-	if err != nil {
-		return nil, err
+	authentication := security.Authentication{
+		Kind:        isecurity.AuthKindSignature,
+		Principal:   appID,
+		Credentials: credentials,
 	}
 
-	// Verify signature
-	if !s.verifySignature(appID, timestamp, ctx.Body(), app.Secret, signature) {
-		return nil, ErrInvalidSignature
-	}
-
-	return app.Principal, nil
-}
-
-// verifySignature verifies the HMAC signature.
-func (*SignatureStrategy) verifySignature(appID, timestamp string, body []byte, secret, signature string) bool {
-	message := appID + timestamp + string(body)
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write([]byte(message))
-	expected := hex.EncodeToString(mac.Sum(nil))
-
-	return hmac.Equal([]byte(signature), []byte(expected))
+	return s.authManager.Authenticate(ctx.Context(), authentication)
 }

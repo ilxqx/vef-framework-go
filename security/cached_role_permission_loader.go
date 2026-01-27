@@ -66,6 +66,7 @@ func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Conte
 		return
 	}
 
+	// Empty roles means clear all cache
 	if len(changeEvent.Roles) == 0 {
 		if err := c.permCache.Clear(ctx); err != nil {
 			c.logger.Errorf("Failed to clear all role permissions cache: %v", err)
@@ -76,6 +77,7 @@ func (c *CachedRolePermissionsLoader) handlePermissionsChanged(ctx context.Conte
 		return
 	}
 
+	// Clear cache for specific roles
 	for _, role := range changeEvent.Roles {
 		if err := c.permCache.Delete(ctx, role); err != nil {
 			c.logger.Errorf("Failed to delete cache for role %s: %v", role, err)

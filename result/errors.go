@@ -97,6 +97,31 @@ var (
 		WithCode(ErrCodeIPNotAllowed),
 		WithStatus(fiber.StatusUnauthorized),
 	)
+	ErrNonceRequired = Err(
+		i18n.T(ErrMessageNonceRequired),
+		WithCode(ErrCodeNonceRequired),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrNonceInvalid = Err(
+		i18n.T(ErrMessageNonceInvalid),
+		WithCode(ErrCodeNonceInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrNonceAlreadyUsed = Err(
+		i18n.T(ErrMessageNonceAlreadyUsed),
+		WithCode(ErrCodeNonceAlreadyUsed),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrAuthHeaderMissing = Err(
+		i18n.T(ErrMessageAuthHeaderMissing),
+		WithCode(ErrCodeAuthHeaderMissing),
+		WithStatus(fiber.StatusUnauthorized),
+	)
+	ErrAuthHeaderInvalid = Err(
+		i18n.T(ErrMessageAuthHeaderInvalid),
+		WithCode(ErrCodeAuthHeaderInvalid),
+		WithStatus(fiber.StatusUnauthorized),
+	)
 )
 
 // Predefined authorization and request errors.

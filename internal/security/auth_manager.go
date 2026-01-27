@@ -49,7 +49,7 @@ func (am *AuthenticatorAuthManager) Authenticate(ctx context.Context, authentica
 
 func (am *AuthenticatorAuthManager) findAuthenticator(authType string) security.Authenticator {
 	for _, authenticator := range am.authenticators {
-		if authenticator.Supports(authType) {
+		if authenticator != nil && authenticator.Supports(authType) {
 			return authenticator
 		}
 	}

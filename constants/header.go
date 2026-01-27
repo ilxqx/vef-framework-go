@@ -2,9 +2,9 @@ package constants
 
 // HTTP header keys used by the framework.
 const (
-	HeaderXAppID      = "X-App-Id"
+	HeaderXAppID      = "X-App-ID"
 	HeaderXTimestamp  = "X-Timestamp"
+	HeaderXNonce      = "X-Nonce"
 	HeaderXSignature  = "X-Signature"
-	HeaderXRequestID  = "X-Request-Id"
-	HeaderXMetaPrefix = "X-Meta-" // Prefix for REST API meta values (format: X-Meta-<Key>)
+	HeaderXMetaPrefix = "X-Meta-"
 )

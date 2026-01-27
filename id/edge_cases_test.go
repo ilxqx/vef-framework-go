@@ -49,7 +49,7 @@ func TestSnowflakeEdgeCases(t *testing.T) {
 
 func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	t.Run("EmptyAlphabet", func(t *testing.T) {
-		generator := NewRandomIDGenerator("", 10)
+		generator := NewRandomIDGenerator(WithAlphabet(""), WithLength(10))
 		assert.NotNil(t, generator, "Should create generator even with empty alphabet")
 
 		assert.Panics(t, func() {
@@ -58,7 +58,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("ZeroLength", func(t *testing.T) {
-		generator := NewRandomIDGenerator("abc", 0)
+		generator := NewRandomIDGenerator(WithAlphabet("abc"), WithLength(0))
 
 		assert.Panics(t, func() {
 			generator.Generate()
@@ -66,13 +66,13 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("SingleCharacterAlphabet", func(t *testing.T) {
-		generator := NewRandomIDGenerator("X", 10)
+		generator := NewRandomIDGenerator(WithAlphabet("X"), WithLength(10))
 		id := generator.Generate()
 		assert.Equal(t, "XXXXXXXXXX", id, "Single character alphabet should repeat character")
 	})
 
 	t.Run("VeryLongIds", func(t *testing.T) {
-		generator := NewRandomIDGenerator("0123456789", 1000)
+		generator := NewRandomIDGenerator(WithAlphabet("0123456789"), WithLength(1000))
 		id := generator.Generate()
 		assert.Len(t, id, 1000, "Should handle very long ID generation")
 
@@ -82,7 +82,7 @@ func TestRandomIdGeneratorEdgeCases(t *testing.T) {
 	})
 
 	t.Run("UnicodeCharacters", func(t *testing.T) {
-		generator := NewRandomIDGenerator("αβγδε", 5)
+		generator := NewRandomIDGenerator(WithAlphabet("αβγδε"), WithLength(5))
 		id := generator.Generate()
 		assert.NotEmpty(t, id, "Should handle unicode alphabet")
 
@@ -189,7 +189,7 @@ func TestInterfaceCompliance(t *testing.T) {
 		generators := []IDGenerator{
 			NewXIDGenerator(),
 			NewUUIDGenerator(),
-			NewRandomIDGenerator("abc", 10),
+			NewRandomIDGenerator(WithAlphabet("abc"), WithLength(10)),
 			DefaultXIDGenerator,
 			DefaultUUIDGenerator,
 			DefaultSnowflakeIDGenerator,
@@ -217,7 +217,7 @@ func TestMemoryUsage(t *testing.T) {
 		for i := range 1000 {
 			_ = NewXIDGenerator()
 			_ = NewUUIDGenerator()
-			_ = NewRandomIDGenerator("abc", 10)
+			_ = NewRandomIDGenerator(WithAlphabet("abc"), WithLength(10))
 
 			if i%100 == 0 {
 				DefaultXIDGenerator.Generate()
@@ -236,7 +236,7 @@ func TestStringManipulation(t *testing.T) {
 			DefaultXIDGenerator,
 			DefaultUUIDGenerator,
 			DefaultSnowflakeIDGenerator,
-			NewRandomIDGenerator("0123456789abcdef", 16),
+			NewRandomIDGenerator(WithAlphabet("0123456789abcdef"), WithLength(16)),
 		}
 
 		for _, generator := range generators {

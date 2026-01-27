@@ -80,7 +80,7 @@ func BenchmarkUUIDGenerator_Parallel(b *testing.B) {
 }
 
 func BenchmarkRandomIDGenerator_Short(b *testing.B) {
-	generator := NewRandomIDGenerator("0123456789abcdef", 8)
+	generator := NewRandomIDGenerator(WithAlphabet("0123456789abcdef"), WithLength(8))
 
 	for b.Loop() {
 		_ = generator.Generate()
@@ -88,7 +88,7 @@ func BenchmarkRandomIDGenerator_Short(b *testing.B) {
 }
 
 func BenchmarkRandomIDGenerator_Medium(b *testing.B) {
-	generator := NewRandomIDGenerator("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 21)
+	generator := NewRandomIDGenerator(WithAlphabet("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), WithLength(21))
 
 	for b.Loop() {
 		_ = generator.Generate()
@@ -96,7 +96,7 @@ func BenchmarkRandomIDGenerator_Medium(b *testing.B) {
 }
 
 func BenchmarkRandomIDGenerator_Long(b *testing.B) {
-	generator := NewRandomIDGenerator("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-", 64)
+	generator := NewRandomIDGenerator(WithAlphabet("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-"), WithLength(64))
 
 	for b.Loop() {
 		_ = generator.Generate()
@@ -104,7 +104,7 @@ func BenchmarkRandomIDGenerator_Long(b *testing.B) {
 }
 
 func BenchmarkRandomIDGenerator_Parallel(b *testing.B) {
-	generator := NewRandomIDGenerator("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", 21)
+	generator := NewRandomIDGenerator(WithAlphabet("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), WithLength(21))
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -175,7 +175,7 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 	})
 
 	b.Run("RandomID", func(b *testing.B) {
-		generator := NewRandomIDGenerator("0123456789abcdefghijklmnopqrstuvwxyz", 21)
+		generator := NewRandomIDGenerator(WithAlphabet("0123456789abcdefghijklmnopqrstuvwxyz"), WithLength(21))
 
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -221,7 +221,7 @@ func BenchmarkConcurrentPerformance(b *testing.B) {
 	})
 
 	b.Run("RandomID_Concurrent", func(b *testing.B) {
-		generator := NewRandomIDGenerator("0123456789abcdefghijklmnopqrstuvwxyz", 21)
+		generator := NewRandomIDGenerator(WithAlphabet("0123456789abcdefghijklmnopqrstuvwxyz"), WithLength(21))
 
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {

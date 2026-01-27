@@ -15,6 +15,7 @@ type contextKey int
 const (
 	KeyRequest contextKey = iota
 	KeyRequestID
+	KeyRequestIP
 	KeyPrincipal
 	KeyLogger
 	KeyDB
@@ -80,4 +81,14 @@ func DataPermApplier(ctx context.Context) security.DataPermissionApplier {
 
 func SetDataPermApplier(ctx context.Context, applier security.DataPermissionApplier) context.Context {
 	return setValue(ctx, KeyDataPermApplier, applier)
+}
+
+func RequestIP(ctx context.Context) string {
+	ip, _ := ctx.Value(KeyRequestIP).(string)
+
+	return ip
+}
+
+func SetRequestIP(ctx context.Context, ip string) context.Context {
+	return setValue(ctx, KeyRequestIP, ip)
 }

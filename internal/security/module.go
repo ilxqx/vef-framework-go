@@ -58,8 +58,8 @@ var Module = fx.Module(
 		),
 		NewJWTTokenGenerator,
 		fx.Annotate(
-			NewOpenApiAuthenticator,
-			fx.ParamTags(`optional:"true"`),
+			NewSignatureAuthenticator,
+			fx.ParamTags(`optional:"true"`, `optional:"true"`),
 			fx.ResultTags(`group:"vef:security:authenticators"`),
 		),
 		fx.Annotate(

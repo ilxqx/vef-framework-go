@@ -41,6 +41,11 @@ const (
 	ErrMessageCredentialsFormatInvalid        = "credentials_format_invalid"
 	ErrMessageCredentialsFieldsRequired       = "credentials_fields_required"
 	ErrMessageSignatureDecodeFailed           = "signature_decode_failed"
+	ErrMessageNonceRequired                   = "nonce_required"
+	ErrMessageNonceInvalid                    = "nonce_invalid"
+	ErrMessageNonceAlreadyUsed                = "nonce_already_used"
+	ErrMessageAuthHeaderMissing               = "auth_header_missing"
+	ErrMessageAuthHeaderInvalid               = "auth_header_invalid"
 	ErrMessageUnsupportedAuthenticationType   = "unsupported_authentication_type"
 	ErrMessageUserLoaderNotImplemented        = "user_loader_not_implemented"
 	ErrMessageUserInfoLoaderNotImplemented    = "user_info_loader_not_implemented"
@@ -73,6 +78,11 @@ const (
 	ErrCodeExternalAppDisabled           = 1018
 	ErrCodeIPNotAllowed                  = 1019
 	ErrCodeSignatureInvalid              = 1020
+	ErrCodeNonceRequired                 = 1021
+	ErrCodeNonceInvalid                  = 1022
+	ErrCodeNonceAlreadyUsed              = 1023
+	ErrCodeAuthHeaderMissing             = 1024
+	ErrCodeAuthHeaderInvalid             = 1025
 
 	// Authorization errors (1100-1199).
 	ErrCodeAccessDenied = 1100

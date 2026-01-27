@@ -124,6 +124,7 @@ func unmarshalDetails(data json.RawMessage, detailsType reflect.Type) any {
 
 // AttemptUnmarshalDetails attempts to unmarshal the details into the principal.
 func (p *Principal) AttemptUnmarshalDetails(details any) {
+	// Non-user/external-app types keep details as-is
 	if p.Type != PrincipalTypeUser && p.Type != PrincipalTypeExternalApp {
 		p.Details = details
 
@@ -131,12 +132,16 @@ func (p *Principal) AttemptUnmarshalDetails(details any) {
 	}
 
 	detailsType := lo.Ternary(p.Type == PrincipalTypeUser, userDetailsType, externalAppDetailsType)
-	if _, ok := details.(map[string]any); !ok || detailsType.AssignableTo(reflect.TypeFor[map[string]any]()) {
+
+	// If details is not a map or target type is already map[string]any, keep as-is
+	detailsMap, isMap := details.(map[string]any)
+	if !isMap || detailsType.AssignableTo(reflect.TypeFor[map[string]any]()) {
 		p.Details = details
 
 		return
 	}
 
+	// Attempt to decode map into the configured struct type
 	value := reflect.New(detailsType).Interface()
 
 	decoder, err := mapx.NewDecoder(value)
@@ -146,7 +151,7 @@ func (p *Principal) AttemptUnmarshalDetails(details any) {
 		return
 	}
 
-	if err := decoder.Decode(details); err != nil {
+	if err := decoder.Decode(detailsMap); err != nil {
 		p.Details = details
 
 		return
