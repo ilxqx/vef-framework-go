@@ -64,7 +64,7 @@ func applySpa(router fiber.Router, config *middleware.SPAConfig) {
 			CrossOriginOpenerPolicy:   "unsafe-none",
 			CrossOriginResourcePolicy: "cross-origin",
 			OriginAgentCluster:        "?0",
-			ContentSecurityPolicy:     "default-src 'self'; img-src * data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+			ContentSecurityPolicy:     "default-src 'self'; img-src * data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ws: wss:; media-src 'self' blob:; object-src 'none'; worker-src 'self' blob:; frame-src 'self'",
 		}),
 	)
 
