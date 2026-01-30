@@ -6,12 +6,12 @@ require (
 	ariga.io/atlas v1.0.0
 	github.com/ajitpratap0/GoSQLX v1.6.0
 	github.com/bwmarrin/snowflake v0.3.0
-	github.com/cloudwego/eino v0.7.21
+	github.com/cloudwego/eino v0.7.28
 	github.com/dlclark/regexp2 v1.11.5
 	github.com/dop251/goja v0.0.0-20260106131823-651366fbe6e3
 	github.com/dustin/go-humanize v1.0.1
 	github.com/expr-lang/expr v1.17.7
-	github.com/go-co-op/gocron/v2 v2.19.0
+	github.com/go-co-op/gocron/v2 v2.19.1
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.30.1
@@ -19,7 +19,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/gofiber/fiber/v3 v3.0.0-rc.3
 	github.com/gofiber/utils/v2 v2.0.0-rc.4
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/guregu/null/v6 v6.0.0
 	github.com/hbollon/go-edlib v1.7.0
@@ -32,8 +32,8 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.2.0
 	github.com/muesli/termenv v0.16.0
 	github.com/nicksnyder/go-i18n/v2 v2.6.1
-	github.com/puzpuzpuz/xsync/v4 v4.3.0
-	github.com/redis/go-redis/v9 v9.17.2
+	github.com/puzpuzpuz/xsync/v4 v4.4.0
+	github.com/redis/go-redis/v9 v9.17.3
 	github.com/rs/xid v1.6.0
 	github.com/samber/lo v1.52.0
 	github.com/shirou/gopsutil/v4 v4.25.12
